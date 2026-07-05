@@ -67,6 +67,9 @@ public partial class MainWindow : Window
             case "journal_entries":
                 PageHost.Content = new Views.Pages.JournalEntriesPage();
                 return;
+            case "trial_balance":
+                PageHost.Content = new Views.Pages.TrialBalancePage();
+                return;
         }
         ShowPlaceholder(pageKey, title);
     }

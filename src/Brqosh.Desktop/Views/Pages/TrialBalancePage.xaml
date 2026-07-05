@@ -1,0 +1,47 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.TrialBalancePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft"
+             FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- الفترة -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <DatePicker x:Name="FromDate" Width="160" FontSize="14"/>
+                <TextBlock Text="إلى" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                <DatePicker x:Name="ToDate" Width="160" FontSize="14"/>
+                <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
+            </StackPanel>
+        </Border>
+
+        <!-- الجدول -->
+        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                      FontSize="14" RowHeight="34" Background="Transparent" EnableRowVirtualization="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم الحساب" Binding="{Binding AccountCode}" Width="110"/>
+                    <DataGridTextColumn Header="اسم الحساب" Binding="{Binding AccountNameAr}" Width="*"/>
+                    <DataGridTextColumn Header="مجموع مدين" Binding="{Binding TotalDebit, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="مجموع دائن" Binding="{Binding TotalCredit, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="رصيد مدين" Binding="{Binding BalanceDebit, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="رصيد دائن" Binding="{Binding BalanceCredit, StringFormat=N2}" Width="130"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- الإجماليات -->
+        <Border Grid.Row="2" Background="{StaticResource SidebarBrush}" CornerRadius="10" Padding="16,10" Margin="0,12,0,0">
+            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="14"/>
+        </Border>
+    </Grid>
+</UserControl>
