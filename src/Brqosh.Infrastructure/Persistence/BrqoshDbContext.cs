@@ -1,6 +1,7 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Persistence;
@@ -17,6 +18,8 @@ public class BrqoshDbContext : DbContext
     public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesInvoice> SalesInvoices => Set<SalesInvoice>();
+    public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+    public DbSet<ReceiptVoucher> ReceiptVouchers => Set<ReceiptVoucher>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -108,6 +111,44 @@ public class BrqoshDbContext : DbContext
 
             entity.Navigation(i => i.Lines)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<CreditNote>(entity =>
+        {
+            entity.ToTable("credit_notes");
+            entity.Property(n => n.NoteNumber).HasMaxLength(32);
+            entity.Property(n => n.Reason).HasMaxLength(512).IsRequired();
+            entity.Property(n => n.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(n => new { n.CompanyId, n.NoteNumber }).IsUnique();
+            entity.HasIndex(n => n.OriginalInvoiceId);
+            entity.HasIndex(n => n.CustomerId);
+
+            entity.OwnsMany(n => n.Lines, lines =>
+            {
+                lines.ToTable("credit_note_lines");
+                lines.WithOwner().HasForeignKey("credit_note_id");
+                lines.Property<long>("id");
+                lines.HasKey("id");
+                lines.Property(l => l.Description).HasMaxLength(512).IsRequired();
+                lines.Property(l => l.Quantity).HasPrecision(18, 4);
+                lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
+            });
+
+            entity.Navigation(n => n.Lines)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<ReceiptVoucher>(entity =>
+        {
+            entity.ToTable("receipt_vouchers");
+            entity.Property(v => v.VoucherNumber).HasMaxLength(32);
+            entity.Property(v => v.Description).HasMaxLength(512).IsRequired();
+            entity.Property(v => v.Reference).HasMaxLength(128);
+            entity.Property(v => v.Amount).HasPrecision(18, 2);
+            entity.Property(v => v.Method).HasConversion<string>().HasMaxLength(16);
+            entity.Property(v => v.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(v => new { v.CompanyId, v.VoucherNumber }).IsUnique();
+            entity.HasIndex(v => v.CustomerId);
         });
     }
 }

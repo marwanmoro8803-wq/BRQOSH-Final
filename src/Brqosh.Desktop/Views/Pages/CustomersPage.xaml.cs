@@ -8,9 +8,10 @@ namespace Brqosh.Desktop.Views.Pages;
 public partial class CustomersPage : UserControl
 {
     public record CustomerRow(long Id, string NameAr, string VatRegistrationNumber,
-        string Phone, string Address, string InvoiceKind);
+        string Phone, string Address, string InvoiceKind, decimal Balance);
 
     private List<Customer> _customers = [];
+    private IReadOnlyDictionary<long, decimal> _balances = new Dictionary<long, decimal>();
 
     public CustomersPage()
     {
@@ -26,6 +27,8 @@ public partial class CustomersPage : UserControl
             .OrderBy(c => c.NameAr)
             .Take(500)
             .ToListAsync();
+        _balances = await new Brqosh.Infrastructure.Sales.CustomerBalanceQuery(db)
+            .AllBalancesAsync(AppServices.CompanyId);
         Render(SearchBox.Text.Trim());
     }
 
@@ -37,7 +40,8 @@ public partial class CustomersPage : UserControl
 
         CustomersGrid.ItemsSource = visible.Select(c => new CustomerRow(
             c.Id, c.NameAr, c.VatRegistrationNumber, c.Phone, c.Address,
-            c.SupportsStandardTaxInvoice ? "ضريبية (B2B)" : "مبسطة (B2C)")).ToList();
+            c.SupportsStandardTaxInvoice ? "ضريبية (B2B)" : "مبسطة (B2C)",
+            _balances.GetValueOrDefault(c.Id))).ToList();
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => Render(SearchBox.Text.Trim());

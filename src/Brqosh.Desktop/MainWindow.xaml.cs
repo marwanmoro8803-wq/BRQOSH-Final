@@ -79,6 +79,12 @@ public partial class MainWindow : Window
             case "fiscal_periods":
                 PageHost.Content = new Views.Pages.FiscalPeriodsPage();
                 return;
+            case "sales_returns":
+                PageHost.Content = new Views.Pages.CreditNotesPage();
+                return;
+            case "receipt_vouchers":
+                PageHost.Content = new Views.Pages.ReceiptVouchersPage();
+                return;
         }
         ShowPlaceholder(pageKey, title);
     }

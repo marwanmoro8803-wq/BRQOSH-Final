@@ -31,6 +31,7 @@
                     <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="140"/>
                     <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="220"/>
                     <DataGridTextColumn Header="نوع الفاتورة" Binding="{Binding InvoiceKind}" Width="120"/>
+                    <DataGridTextColumn Header="الرصيد المستحق" Binding="{Binding Balance, StringFormat=N2}" Width="130"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
