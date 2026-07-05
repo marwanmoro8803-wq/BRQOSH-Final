@@ -1,5 +1,6 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
+using Brqosh.Domain.Sales;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Persistence;
@@ -13,6 +14,9 @@ public class BrqoshDbContext : DbContext
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<SalesInvoice> SalesInvoices => Set<SalesInvoice>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +65,48 @@ public class BrqoshDbContext : DbContext
             });
 
             entity.Navigation(e => e.Lines)
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<FiscalPeriod>(entity =>
+        {
+            entity.ToTable("fiscal_periods");
+            entity.Property(p => p.Code).HasMaxLength(7).IsRequired();
+            entity.Property(p => p.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(p => new { p.CompanyId, p.Code }).IsUnique();
+        });
+
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.ToTable("customers");
+            entity.Property(c => c.NameAr).HasMaxLength(256).IsRequired();
+            entity.Property(c => c.VatRegistrationNumber).HasMaxLength(15);
+            entity.Property(c => c.Phone).HasMaxLength(32);
+            entity.Property(c => c.Address).HasMaxLength(512);
+            entity.HasIndex(c => new { c.CompanyId, c.NameAr });
+        });
+
+        modelBuilder.Entity<SalesInvoice>(entity =>
+        {
+            entity.ToTable("sales_invoices");
+            entity.Property(i => i.InvoiceNumber).HasMaxLength(32);
+            entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(i => new { i.CompanyId, i.InvoiceDate });
+            entity.HasIndex(i => new { i.CompanyId, i.InvoiceNumber }).IsUnique();
+            entity.HasIndex(i => i.CustomerId);
+
+            entity.OwnsMany(i => i.Lines, lines =>
+            {
+                lines.ToTable("sales_invoice_lines");
+                lines.WithOwner().HasForeignKey("sales_invoice_id");
+                lines.Property<long>("id");
+                lines.HasKey("id");
+                lines.Property(l => l.Description).HasMaxLength(512).IsRequired();
+                lines.Property(l => l.Quantity).HasPrecision(18, 4);
+                lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
+            });
+
+            entity.Navigation(i => i.Lines)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
     }

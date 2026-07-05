@@ -70,6 +70,15 @@ public partial class MainWindow : Window
             case "trial_balance":
                 PageHost.Content = new Views.Pages.TrialBalancePage();
                 return;
+            case "customers":
+                PageHost.Content = new Views.Pages.CustomersPage();
+                return;
+            case "sales_invoices":
+                PageHost.Content = new Views.Pages.SalesInvoicesPage();
+                return;
+            case "fiscal_periods":
+                PageHost.Content = new Views.Pages.FiscalPeriodsPage();
+                return;
         }
         ShowPlaceholder(pageKey, title);
     }

@@ -89,11 +89,8 @@ public partial class JournalEntryDialog : Window
             }
 
             await using var db = AppServices.CreateDb();
-            var number = await new JournalEntryNumberGenerator(db).NextAsync(AppServices.CompanyId, entryDate);
-            entry.Post(number);
-
-            db.JournalEntries.Add(entry);
-            await db.SaveChangesAsync();
+            // بوابة الترحيل الموحدة: تتحقق من الفترة المالية وتمنح الرقم التسلسلي
+            await new Brqosh.Infrastructure.Accounting.JournalPostingService(db).PostAsync(entry);
 
             DialogResult = true;
             Close();

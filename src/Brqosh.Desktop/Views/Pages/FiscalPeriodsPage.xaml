@@ -1,0 +1,39 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.FiscalPeriodsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft"
+             FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="إقفال الفترة المحددة" Style="{StaticResource PrimaryButton}" Padding="18,8" Click="OnClose"/>
+                <Button Content="إعادة فتح الفترة المحددة" Padding="18,8" Margin="10,0,0,0" Click="OnReopen"/>
+                <TextBlock Text="الفترات تُنشأ تلقائياً عند أول ترحيل في الشهر. الإقفال يمنع أي ترحيل جديد داخل الفترة."
+                           VerticalAlignment="Center" Margin="20,0,0,0" FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <DataGrid x:Name="PeriodsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                      FontSize="14" RowHeight="36" Background="Transparent" SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الفترة" Binding="{Binding Code}" Width="120"/>
+                    <DataGridTextColumn Header="من" Binding="{Binding StartDate}" Width="120"/>
+                    <DataGridTextColumn Header="إلى" Binding="{Binding EndDate}" Width="120"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusAr}" Width="110"/>
+                    <DataGridTextColumn Header="عدد القيود" Binding="{Binding EntryCount}" Width="110"/>
+                    <DataGridTextColumn Header="أُقفلت في" Binding="{Binding ClosedAt}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
