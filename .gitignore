@@ -1,0 +1,35 @@
+# .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+artifacts/
+
+# Rider / VS Code
+.idea/
+*.sln.iml
+
+# Test results
+TestResults/
+coverage/
+*.trx
+
+# Packages
+*.nupkg
+packages/
+
+# Local settings & secrets
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.pem
+secrets/
+
+# PostgreSQL local data
+pgdata/
+
+# OS
+Thumbs.db
+Desktop.ini
