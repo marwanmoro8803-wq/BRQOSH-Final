@@ -7,6 +7,7 @@ namespace Brqosh.Domain.Accounting;
 public class Account
 {
     public long Id { get; private set; }
+    public long CompanyId { get; private set; }
 
     /// <summary>رقم الحساب الهرمي (مثل 1101 نقدية بالصندوق تحت 11 الأصول المتداولة).</summary>
     public string Code { get; private set; }
@@ -28,6 +29,14 @@ public class Account
 
     public bool IsActive { get; private set; } = true;
 
+    // EF Core
+    private Account()
+    {
+        Code = null!;
+        NameAr = null!;
+        NameEn = null!;
+    }
+
     private Account(string code, string nameAr, string nameEn, AccountType type, long? parentId, bool isGroup, bool isSystem)
     {
         Code = code;
@@ -46,7 +55,8 @@ public class Account
         AccountType type,
         long? parentId = null,
         bool isGroup = false,
-        bool isSystem = false)
+        bool isSystem = false,
+        long companyId = 0)
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new AccountingException("رقم الحساب مطلوب.");
@@ -55,7 +65,10 @@ public class Account
         if (string.IsNullOrWhiteSpace(nameAr))
             throw new AccountingException("اسم الحساب العربي مطلوب.");
 
-        return new Account(code.Trim(), nameAr.Trim(), (nameEn ?? string.Empty).Trim(), type, parentId, isGroup, isSystem);
+        return new Account(code.Trim(), nameAr.Trim(), (nameEn ?? string.Empty).Trim(), type, parentId, isGroup, isSystem)
+        {
+            CompanyId = companyId,
+        };
     }
 
     /// <summary>هل يقبل هذا الحساب ترحيل قيود مباشرة؟</summary>

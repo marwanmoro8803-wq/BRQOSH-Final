@@ -50,10 +50,25 @@ public partial class MainWindow : Window
                     Content = $"{page.Icon}  {page.TitleAr}",
                     Tag = page,
                 };
-                button.Click += (_, _) => ShowPlaceholder(page.Key, page.TitleAr);
+                button.Click += (_, _) => Navigate(page.Key, page.TitleAr);
                 NavPanel.Children.Add(button);
             }
         }
+    }
+
+    private void Navigate(string pageKey, string title)
+    {
+        PageTitle.Text = title;
+        switch (pageKey)
+        {
+            case "chart_of_accounts":
+                PageHost.Content = new Views.Pages.ChartOfAccountsPage();
+                return;
+            case "journal_entries":
+                PageHost.Content = new Views.Pages.JournalEntriesPage();
+                return;
+        }
+        ShowPlaceholder(pageKey, title);
     }
 
     private void ShowPlaceholder(string pageKey, string title)

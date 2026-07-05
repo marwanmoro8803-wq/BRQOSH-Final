@@ -44,6 +44,12 @@ public class JournalEntry
     public decimal TotalCredit => _lines.Sum(l => l.Credit);
     public bool IsBalanced => TotalDebit == TotalCredit;
 
+    // EF Core
+    private JournalEntry()
+    {
+        Description = null!;
+    }
+
     private JournalEntry(long companyId, DateOnly entryDate, string description, string? sourceDocument)
     {
         CompanyId = companyId;
