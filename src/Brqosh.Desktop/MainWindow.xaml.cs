@@ -1,23 +1,94 @@
-﻿using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using Brqosh.Application.Setup;
+using Brqosh.Desktop.Navigation;
+using Brqosh.Domain.Modules;
 
 namespace Brqosh.Desktop;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    private readonly SetupState _setup;
+
+    public MainWindow(SetupState setup)
     {
+        _setup = setup;
         InitializeComponent();
+        CompanyNameText.Text = setup.CompanyName;
+        ProfileBadge.Text = ProfileLabel(setup.Profile);
+        BuildNavigation();
+        ShowPlaceholder("dashboard", "لوحة التحكم");
+    }
+
+    private static string ProfileLabel(BusinessProfile profile) => profile switch
+    {
+        BusinessProfile.Construction => "مقاولات عامة",
+        BusinessProfile.Manufacturing => "مصنع / إنتاج",
+        BusinessProfile.Retail => "محل / تسويق",
+        _ => "محاسبة عامة",
+    };
+
+    private void BuildNavigation()
+    {
+        foreach (var group in NavigationCatalog.ForProfile(_setup.Profile))
+        {
+            NavPanel.Children.Add(new TextBlock
+            {
+                Text = group.TitleAr,
+                FontSize = 11,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B)),
+                Margin = new Thickness(24, 18, 24, 6),
+            });
+
+            foreach (var page in group.Pages)
+            {
+                var button = new Button
+                {
+                    Style = (Style)FindResource("NavItem"),
+                    Content = $"{page.Icon}  {page.TitleAr}",
+                    Tag = page,
+                };
+                button.Click += (_, _) => ShowPlaceholder(page.Key, page.TitleAr);
+                NavPanel.Children.Add(button);
+            }
+        }
+    }
+
+    private void ShowPlaceholder(string pageKey, string title)
+    {
+        PageTitle.Text = title;
+
+        // مرحلي: صفحات فعلية تُبنى تباعاً في المراحل القادمة
+        PageHost.Content = new Border
+        {
+            Background = (Brush)FindResource("SurfaceBrush"),
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(40),
+            Child = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = title,
+                        FontSize = 24,
+                        FontWeight = FontWeights.Bold,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                    },
+                    new TextBlock
+                    {
+                        Text = $"هذه الشاشة قيد البناء ({pageKey}) — ستتوفر في المرحلة القادمة.",
+                        FontSize = 14,
+                        Foreground = (Brush)FindResource("TextSecondaryBrush"),
+                        Margin = new Thickness(0, 10, 0, 0),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                    },
+                },
+            },
+        };
     }
 }

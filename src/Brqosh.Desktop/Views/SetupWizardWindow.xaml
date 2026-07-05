@@ -1,0 +1,95 @@
+<Window x:Class="Brqosh.Desktop.Views.SetupWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="BRQOSH — إعداد النظام"
+        Width="860" Height="700"
+        MinWidth="760" MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="48,36" MaxWidth="760">
+
+            <!-- الترويسة -->
+            <TextBlock Text="مرحباً بك في BRQOSH"
+                       FontSize="30" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="اختر نظام العمل المناسب لنشاطك — سيُفعّل النظام الوحدات والقوائم والحسابات المناسبة تلقائياً. يمكنك تعديل الوحدات لاحقاً من الإعدادات."
+                       FontSize="15" Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="0,8,0,24"/>
+
+            <!-- بطاقات أنظمة العمل -->
+            <UniformGrid Columns="2">
+                <RadioButton x:Name="ConstructionCard" Style="{StaticResource ProfileCard}" GroupName="Profile">
+                    <StackPanel>
+                        <TextBlock Text="🏗️" FontSize="34"/>
+                        <TextBlock Text="مقاولات عامة" FontSize="18" FontWeight="Bold" Margin="0,8,0,4"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="مشاريع، عقود، جداول كميات (BOQ)، مستخلصات، مقاولو باطن، محتجزات، وتقارير ربحية المشروع."
+                                   FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton x:Name="ManufacturingCard" Style="{StaticResource ProfileCard}" GroupName="Profile">
+                    <StackPanel>
+                        <TextBlock Text="🏭" FontSize="34"/>
+                        <TextBlock Text="مصنع / إنتاج" FontSize="18" FontWeight="Bold" Margin="0,8,0,4"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="قوائم مواد (BOM)، أوامر إنتاج، أعمال تحت التشغيل، تكلفة صناعية، ومخزون خام ومنتج تام."
+                                   FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton x:Name="RetailCard" Style="{StaticResource ProfileCard}" GroupName="Profile">
+                    <StackPanel>
+                        <TextBlock Text="🛒" FontSize="34"/>
+                        <TextBlock Text="محل / تسويق" FontSize="18" FontWeight="Bold" Margin="0,8,0,4"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="نقاط بيع سريعة، باركود، مبيعات يومية، جرد مخزون، وفروع متعددة."
+                                   FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </RadioButton>
+
+                <RadioButton x:Name="GeneralCard" Style="{StaticResource ProfileCard}" GroupName="Profile">
+                    <StackPanel>
+                        <TextBlock Text="📒" FontSize="34"/>
+                        <TextBlock Text="محاسبة عامة" FontSize="18" FontWeight="Bold" Margin="0,8,0,4"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <TextBlock Text="النواة المحاسبية الكاملة: دليل حسابات، قيود، خزينة، وتقارير مالية — بدون وحدات تخصصية."
+                                   FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </RadioButton>
+            </UniformGrid>
+
+            <!-- بيانات الشركة -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="14" Padding="24" Margin="8,20,8,0"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="بيانات المنشأة" FontSize="17" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+
+                    <TextBlock Text="اسم المنشأة *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"/>
+                    <TextBox x:Name="CompanyNameBox" Style="{StaticResource AppTextBox}"/>
+
+                    <TextBlock Text="الرقم الضريبي (ضريبة القيمة المضافة — 15 خانة)" FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,6"/>
+                    <TextBox x:Name="VatNumberBox" Style="{StaticResource AppTextBox}" MaxLength="15"/>
+                    <TextBlock Text="اختياري الآن — مطلوب قبل تفعيل الفوترة الإلكترونية (ZATCA)."
+                               FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- رسالة الخطأ -->
+            <TextBlock x:Name="ErrorText" Foreground="#DC2626" FontSize="13" FontWeight="SemiBold"
+                       Margin="8,12,8,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+            <!-- زر البدء -->
+            <Button Content="ابدأ العمل"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Left"
+                    Margin="8,20,8,0"
+                    Click="OnStartClicked"/>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

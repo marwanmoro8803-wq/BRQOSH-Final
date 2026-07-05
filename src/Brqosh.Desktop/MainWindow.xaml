@@ -1,12 +1,56 @@
 ﻿<Window x:Class="Brqosh.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Brqosh.Desktop"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="BRQOSH ERP"
+        Width="1280" Height="800"
+        MinWidth="1024" MinHeight="680"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="272"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
+        <!-- الشريط الجانبي -->
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
+            <DockPanel>
+                <!-- الشعار -->
+                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,16">
+                    <TextBlock Text="BRQOSH" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock x:Name="CompanyNameText" FontSize="13" Foreground="#94A3B8" Margin="0,4,0,0"/>
+                    <Border Background="{StaticResource AccentBrush}" CornerRadius="6" Padding="8,3"
+                            HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <TextBlock x:Name="ProfileBadge" FontSize="12" FontWeight="SemiBold" Foreground="#111827"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- القوائم -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="NavPanel" Margin="0,0,0,24"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- منطقة العمل -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- الترويسة -->
+            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="28,16">
+                <TextBlock x:Name="PageTitle" Text="لوحة التحكم" FontSize="20" FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+            </Border>
+
+            <!-- المحتوى -->
+            <ContentControl Grid.Row="1" x:Name="PageHost" Margin="28"/>
+        </Grid>
     </Grid>
 </Window>
