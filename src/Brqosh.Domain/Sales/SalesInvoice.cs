@@ -67,7 +67,8 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         return new SalesInvoice(companyId, customerId, invoiceDate);
     }
 
-    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null)
+    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
+        Tax.VatCategory vatCategory = Tax.VatCategory.Standard)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -77,7 +78,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         if (unitPrice < 0)
             throw new AccountingException("سعر الوحدة لا يكون سالباً.");
 
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory));
         RecalculateTotals();
     }
 
@@ -156,7 +157,12 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     }
 }
 
-public record SalesInvoiceLine(string Description, decimal Quantity, decimal UnitPrice, long? ProductId = null)
+public record SalesInvoiceLine(
+    string Description,
+    decimal Quantity,
+    decimal UnitPrice,
+    long? ProductId = null,
+    Tax.VatCategory VatCategory = Tax.VatCategory.Standard)
 {
     public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
 }

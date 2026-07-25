@@ -18,7 +18,48 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
             await ApplySqlitePatchesAsync(ct);
+
+        // (CEEF-207) فئة الضريبة لأسطر المستندات — بعد اكتمال إنشاء الجداول أعلاه،
+        // فإضافة عمود إلى جدول لم يُنشأ بعد تفشل صراحةً (وهو الصواب: لا ابتلاع أخطاء).
+        // الافتراضي Standard يحفظ سلوك كل المستندات القائمة.
+        await EnsureVatCategoryColumnsAsync(isPg, ct);
     }
+
+    private async Task EnsureVatCategoryColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        foreach (var table in VatCategoryLineTables)
+        {
+            // قاعدة أقدم قد لا تحوي الجدول أصلاً (أوامر البيع مثلاً أُضيفت لاحقاً).
+            // تخطّيه صواب لا ابتلاع: الجدول حين يُنشأ من نموذج EF يحمل العمود ضمناً.
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+                await EnsurePgColumnAsync(table, "VatCategory",
+                    "character varying(16) NOT NULL DEFAULT 'Standard'", ct);
+            else
+                await EnsureSqliteColumnAsync(table, "VatCategory",
+                    "TEXT NOT NULL DEFAULT 'Standard'", ct);
+        }
+    }
+
+    private async Task<bool> TableExistsAsync(string table, bool isPg, CancellationToken ct)
+    {
+        SchemaSqlGuard.ValidateTable(table);
+        var sql = isPg
+            ? $"""SELECT COUNT(*) AS "Value" FROM information_schema.tables WHERE table_schema='public' AND table_name='{table}'"""
+            : $"""SELECT COUNT(*) AS "Value" FROM sqlite_master WHERE type='table' AND name='{table}'""";
+
+        var count = await db.Database.SqlQueryRaw<int>(sql).SingleAsync(ct);
+        return count > 0;
+    }
+
+    /// <summary>جداول أسطر المستندات التي تحمل فئة ضريبية (CEEF-207).</summary>
+    private static readonly string[] VatCategoryLineTables =
+    [
+        "sales_invoice_lines", "credit_note_lines", "purchase_invoice_lines",
+        "purchase_order_lines", "debit_note_lines", "sales_order_lines",
+    ];
 
     private async Task ApplyPostgreSqlPatchesAsync(CancellationToken ct)
     {

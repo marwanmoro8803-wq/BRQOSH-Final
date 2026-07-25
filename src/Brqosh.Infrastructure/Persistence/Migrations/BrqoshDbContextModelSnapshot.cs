@@ -922,6 +922,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("WarehouseId")
                         .HasColumnType("bigint");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
@@ -3278,6 +3284,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<long>("debit_note_id")
                                 .HasColumnType("bigint");
 
@@ -3372,6 +3383,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<long>("purchase_invoice_id")
                                 .HasColumnType("bigint");
 
@@ -3413,6 +3429,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
+
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<long>("purchase_order_id")
                                 .HasColumnType("bigint");
@@ -3456,6 +3477,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
+                            b1.Property<int>("VatCategory")
+                                .HasColumnType("integer");
+
                             b1.Property<long>("purchase_request_id")
                                 .HasColumnType("bigint");
 
@@ -3497,6 +3521,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
+
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<long>("credit_note_id")
                                 .HasColumnType("bigint");
@@ -3546,6 +3575,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<long>("sales_invoice_id")
                                 .HasColumnType("bigint");
 
@@ -3588,6 +3622,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<long>("sales_order_id")
                                 .HasColumnType("bigint");
 
@@ -3629,6 +3668,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
+
+                            b1.Property<int>("VatCategory")
+                                .HasColumnType("integer");
 
                             b1.Property<long>("sales_quotation_id")
                                 .HasColumnType("bigint");

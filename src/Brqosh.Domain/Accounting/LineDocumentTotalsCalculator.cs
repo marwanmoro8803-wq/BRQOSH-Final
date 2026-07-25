@@ -1,6 +1,10 @@
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 
 namespace Brqosh.Domain.Accounting;
+
+/// <summary>وعاء ضريبيّ واحد: أسطر تشترك في الفئة والنسبة (cac:TaxSubtotal في UBL).</summary>
+public record VatSubtotal(VatCategory Category, decimal Rate, decimal TaxableAmount, decimal VatAmount);
 
 /// <summary>
 /// حساب إجماليات مستندات السطور — Subtotal و VatAmount مُخزَّنان في DB.
@@ -9,13 +13,37 @@ namespace Brqosh.Domain.Accounting;
 /// </summary>
 public static class LineDocumentTotalsCalculator
 {
+    /// <summary>
+    /// الأوعية الضريبية مجمَّعة بالفئة (CEEF-207).
+    ///
+    /// التقريب على مستوى **الوعاء** لا المستند ولا السطر — وهو ما تفرضه دلالة
+    /// cac:TaxSubtotal لدى الهيئة. وحين تكون كل الأسطر أساسية (الحالة السائدة)
+    /// يصير الوعاء واحداً فتطابق النتيجة السلوك السابق حرفياً — لا انزياح في أرقام قائمة.
+    /// </summary>
+    public static IReadOnlyList<VatSubtotal> ComputeSubtotals(
+        IEnumerable<SalesInvoiceLine> lines,
+        decimal standardRate = SalesInvoice.SaudiVatRate) =>
+        lines
+            .GroupBy(l => l.VatCategory)
+            .OrderBy(g => g.Key)
+            .Select(g =>
+            {
+                var rate = g.Key.RateFor(standardRate);
+                var taxable = g.Sum(l => l.LineTotal);
+                return new VatSubtotal(
+                    g.Key,
+                    rate,
+                    taxable,
+                    Math.Round(taxable * rate, 2, MidpointRounding.AwayFromZero));
+            })
+            .ToList();
+
     public static (decimal Subtotal, decimal VatAmount) Compute(
         IEnumerable<SalesInvoiceLine> lines,
         decimal vatRate = SalesInvoice.SaudiVatRate)
     {
-        var subtotal = lines.Sum(l => l.LineTotal);
-        var vat = Math.Round(subtotal * vatRate, 2, MidpointRounding.AwayFromZero);
-        return (subtotal, vat);
+        var subtotals = ComputeSubtotals(lines, vatRate);
+        return (subtotals.Sum(s => s.TaxableAmount), subtotals.Sum(s => s.VatAmount));
     }
 }
 

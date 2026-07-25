@@ -95,6 +95,54 @@ public class ZatcaGoldenTests : IDisposable
         Assert.Equal(docTaxTotal.Element(cbc + "TaxAmount")?.Value, subtotal.Element(cbc + "TaxAmount")?.Value);
     }
 
+    /// <summary>
+    /// (CEEF-207) فاتورة بفئتين ضريبيتين تُنتج وعاءين في XML، ونسبة كل وعاء تطابق مبلغه.
+    /// كان XML يعلن 15.00 لكل سطر ويصنّف الصفريّ "O" — تناقض يرفضه مدقّق الهيئة.
+    /// </summary>
+    [Fact]
+    public async Task Ubl_MixedVatCategories_EmitOneSubtotalEach()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("شركة", "310123456700005", BusinessProfile.Retail);
+        var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
+        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        await _db.SaveChangesAsync();
+
+        var customer = Customer.Create(company.Id, "عميل", "311111111100003");
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var invoice = SalesInvoice.CreateDraft(company.Id, customer.Id, new DateOnly(2026, 7, 8));
+        invoice.AddLine("بيع محلي", 1m, 1000m);
+        invoice.AddLine("تصدير", 1m, 500m, vatCategory: Brqosh.Domain.Tax.VatCategory.ZeroRated);
+        await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        var doc = await _db.ZatcaEInvoiceDocuments.SingleAsync();
+        var xml = XDocument.Load(doc.XmlFilePath);
+        XNamespace cbc = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
+        XNamespace cac = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
+
+        var taxTotal = xml.Root!.Elements(cac + "TaxTotal").First();
+        var subtotals = taxTotal.Elements(cac + "TaxSubtotal").ToList();
+        Assert.Equal(2, subtotals.Count);
+
+        var standard = subtotals.Single(s =>
+            s.Element(cac + "TaxCategory")!.Element(cbc + "ID")!.Value == "S");
+        Assert.Equal("1000.00", standard.Element(cbc + "TaxableAmount")?.Value);
+        Assert.Equal("150.00", standard.Element(cbc + "TaxAmount")?.Value);
+        Assert.Equal("15.00", standard.Element(cac + "TaxCategory")!.Element(cbc + "Percent")?.Value);
+
+        var zero = subtotals.Single(s =>
+            s.Element(cac + "TaxCategory")!.Element(cbc + "ID")!.Value == "Z");
+        Assert.Equal("500.00", zero.Element(cbc + "TaxableAmount")?.Value);
+        Assert.Equal("0.00", zero.Element(cbc + "TaxAmount")?.Value);
+        // النسبة المعلنة تطابق المبلغ — لا صفر مصنّف بنسبة 15.
+        Assert.Equal("0.00", zero.Element(cac + "TaxCategory")!.Element(cbc + "Percent")?.Value);
+
+        // اتساق حسابيّ: إجمالي ضريبة المستند = مجموع الأوعية.
+        Assert.Equal("150.00", taxTotal.Element(cbc + "TaxAmount")?.Value);
+    }
+
     [Fact]
     public async Task SecondInvoice_IcvIncrementsSequentially()
     {

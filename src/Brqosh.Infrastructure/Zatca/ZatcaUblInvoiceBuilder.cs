@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 
 namespace Brqosh.Infrastructure.Zatca;
 
@@ -65,18 +67,25 @@ public static class ZatcaUblInvoiceBuilder
 
         // cac:TaxSubtotal إلزاميّ لدى الهيئة (BR-CO-18/KSA): وعاء الضريبة + فئتها + نسبتها.
         // كان غائباً تماماً فتُرفض الفاتورة في الفحص رغم صحة التوقيع (ع-Z2، CEEF-202).
-        var isTaxable = data.VatAmount > 0m;
+        //
+        // (CEEF-207) وعاء لكل فئة ضريبية حاضرة في الفاتورة، لا وعاء واحد بنسبة مسمّرة:
+        // فاتورة فيها سطر أساسيّ وآخر صفريّ تُنتج وعاءين — والنسبة المعلنة في كل وعاء
+        // تطابق مبلغ ضريبته، فينتفي التناقض الذي كان يرفضه المدقّق (صفر مصنّف بنسبة 15).
+        var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(data.Lines);
         var taxTotal = new XElement(Cac + "TaxTotal",
-            El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")),
-            new XElement(Cac + "TaxSubtotal",
-                El(Cbc, "TaxableAmount", F(data.Subtotal), ("currencyID", "SAR")),
-                El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")),
+            El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")));
+
+        foreach (var sub in subtotals)
+        {
+            taxTotal.Add(new XElement(Cac + "TaxSubtotal",
+                El(Cbc, "TaxableAmount", F(sub.TaxableAmount), ("currencyID", "SAR")),
+                El(Cbc, "TaxAmount", F(sub.VatAmount), ("currencyID", "SAR")),
                 new XElement(Cac + "TaxCategory",
-                    El(Cbc, "ID", isTaxable ? "S" : "O"),
-                    El(Cbc, "Percent", isTaxable
-                        ? (SalesInvoice.SaudiVatRate * 100m).ToString("0.00", CultureInfo.InvariantCulture)
-                        : "0.00"),
+                    El(Cbc, "ID", sub.Category.UblCode()),
+                    El(Cbc, "Percent", (sub.Rate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
                     new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
+        }
+
         root.Add(taxTotal);
 
         var monetary = new XElement(Cac + "LegalMonetaryTotal",
@@ -90,7 +99,10 @@ public static class ZatcaUblInvoiceBuilder
         foreach (var line in data.Lines)
         {
             var lineNet = line.LineTotal;
-            var lineVat = Math.Round(lineNet * SalesInvoice.SaudiVatRate, 2, MidpointRounding.AwayFromZero);
+            // (CEEF-207) نسبة السطر من فئته: الصفريّ والمعفى ينتجان ضريبة صفراً ونسبة 0.00،
+            // بدل ضرب كل سطر 15% ثم تصنيفه "O" بنسبة معلنة 15.00 — تناقض يرفضه المدقّق.
+            var lineRate = line.VatCategory.RateFor(SalesInvoice.SaudiVatRate);
+            var lineVat = Math.Round(lineNet * lineRate, 2, MidpointRounding.AwayFromZero);
             var invLine = new XElement(Cac + "InvoiceLine",
                 El(Cbc, "ID", idx.ToString()),
                 El(Cbc, "InvoicedQuantity", F(line.Quantity), ("unitCode", "PCE")),
@@ -99,8 +111,8 @@ public static class ZatcaUblInvoiceBuilder
                 new XElement(Cac + "Item",
                     El(Cbc, "Name", line.Description),
                     new XElement(Cac + "ClassifiedTaxCategory",
-                        El(Cbc, "ID", lineVat > 0 ? "S" : "O"),
-                        El(Cbc, "Percent", "15.00"),
+                        El(Cbc, "ID", line.VatCategory.UblCode()),
+                        El(Cbc, "Percent", (lineRate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
                         new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))),
                 new XElement(Cac + "Price", El(Cbc, "PriceAmount", F(line.UnitPrice), ("currencyID", "SAR"))));
             root.Add(invLine);

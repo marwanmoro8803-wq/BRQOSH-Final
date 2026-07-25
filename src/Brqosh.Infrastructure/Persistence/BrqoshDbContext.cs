@@ -252,6 +252,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
             entity.Navigation(i => i.Lines)
@@ -281,6 +283,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
             entity.Navigation(n => n.Lines)
@@ -345,6 +349,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
             entity.Navigation(i => i.Lines)
@@ -555,6 +561,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
             entity.Navigation(o => o.Lines)
@@ -662,6 +670,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(n => n.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
@@ -884,6 +894,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(o => o.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });

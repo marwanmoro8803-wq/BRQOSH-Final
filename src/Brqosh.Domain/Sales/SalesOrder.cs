@@ -44,14 +44,15 @@ public class SalesOrder : ILineDocumentTotals
         return new SalesOrder(companyId, customerId, orderDate, quotationId);
     }
 
-    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null)
+    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
+        Tax.VatCategory vatCategory = Tax.VatCategory.Standard)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
             throw new AccountingException("وصف الصنف مطلوب.");
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory));
         RecalculateTotals();
     }
 
