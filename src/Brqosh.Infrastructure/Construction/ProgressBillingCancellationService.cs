@@ -37,7 +37,7 @@ public class ProgressBillingCancellationService(BrqoshDbContext db)
             await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, cancellationDate, username, fromSourceDocument: true, token);
 
-            billing.MarkCancelled();
+            billing.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء مستخلص أعمال",

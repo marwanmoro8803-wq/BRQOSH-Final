@@ -60,7 +60,7 @@ public class DebitNoteCancellationService(BrqoshDbContext db)
                 }
             }
 
-            note.MarkCancelled();
+            note.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء إشعار مدين",

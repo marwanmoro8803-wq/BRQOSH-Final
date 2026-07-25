@@ -45,6 +45,14 @@ public class ProgressBilling : IBranchScoped
     /// <summary>إجمالي مستحق على العميل (ذمم + محتجز + ضريبة).</summary>
     public decimal GrandTotal => NetBillableAmount + RetentionAmount + VatAmount;
 
+
+    /// <summary>
+    /// تاريخ الإلغاء (O-21، CEEF-219). الإقرار الضريبي يعكس **وقائع الفترة**:
+    /// المستند الملغى يبقى في إقرار فترة إصداره كما قُدِّم للهيئة، ويظهر أثر إلغائه
+    /// في فترة الإلغاء. بدون هذا التاريخ لا سبيل لوضع الأثر في فترته الصحيحة.
+    /// </summary>
+    public DateOnly? CancelledAt { get; private set; }
+
     private ProgressBilling()
     {
         PeriodDescription = null!;
@@ -121,11 +129,12 @@ public class ProgressBilling : IBranchScoped
 
     public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
 
-    public void MarkCancelled()
+    public void MarkCancelled(DateOnly cancelledAt)
     {
         if (Status != ProgressBillingStatus.Posted)
             throw new AccountingException("لا يُلغى إلا مستخلص مرحّل.");
         Status = ProgressBillingStatus.Cancelled;
+        CancelledAt = cancelledAt;
     }
 
     private void EnsureDraft()

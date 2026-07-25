@@ -86,20 +86,26 @@ public static class XamlUiLocalizer
 
     private static string Resolve(DependencyObject node, string text)
     {
-        if (!ContainsArabic(text) && !OriginalAr.TryGetValue(node, out _))
+        var hasStored = OriginalAr.TryGetValue(node, out var original);
+
+        // نصّ غير عربيّ لم يُسجَّل له أصل — لا شأن للترجمة به.
+        if (!ContainsArabic(text) && !hasStored)
             return text;
 
-        if (!OriginalAr.TryGetValue(node, out var original))
+        // نصّ عربيّ جديد: إمّا أوّل مرور على العنصر، أو تغيّرت بياناته (بطاقة لوحة،
+        // سطر نشاط، رسالة مساعد) — فيصير هو الأصل المحفوظ.
+        //
+        // **AddOrUpdate لا Add**: `ConditionalWeakTable.Add` يرمي
+        // ArgumentException("An item with the same key has already been added")
+        // متى وُجد المفتاح؛ وهذا الفرع لا يُدخَل إلا والمفتاح موجود فعلاً — أي
+        // رمية مضمونة، تصعد إلى DispatcherUnhandledException كنافذة خطأ للمستخدم.
+        if (ContainsArabic(text) && (!hasStored || text != original))
         {
-            if (ContainsArabic(text))
-                OriginalAr.Add(node, text);
+            OriginalAr.AddOrUpdate(node, text);
             original = text;
         }
-        else if (ContainsArabic(text) && text != original)
-            OriginalAr.Add(node, text);
 
-        var ar = OriginalAr.TryGetValue(node, out var stored) ? stored : text;
-        return ResolveText(ar);
+        return ResolveText(original ?? text);
     }
 
     private static string ResolveText(string arabic) =>

@@ -46,6 +46,14 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
     public decimal Subtotal { get; private set; }
     public decimal VatAmount { get; private set; }
 
+
+    /// <summary>
+    /// تاريخ الإلغاء (O-21، CEEF-219). الإقرار الضريبي يعكس **وقائع الفترة**:
+    /// المستند الملغى يبقى في إقرار فترة إصداره كما قُدِّم للهيئة، ويظهر أثر إلغائه
+    /// في فترة الإلغاء. بدون هذا التاريخ لا سبيل لوضع الأثر في فترته الصحيحة.
+    /// </summary>
+    public DateOnly? CancelledAt { get; private set; }
+
     // EF Core
     private PurchaseInvoice()
     {
@@ -163,11 +171,12 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         PurchaseOrderId = purchaseOrderId;
     }
 
-    public void MarkCancelled()
+    public void MarkCancelled(DateOnly cancelledAt)
     {
         if (Status != PurchaseInvoiceStatus.Posted)
             throw new AccountingException("لا يُلغى إلا فاتورة مشتريات مرحّلة.");
         Status = PurchaseInvoiceStatus.Cancelled;
+        CancelledAt = cancelledAt;
     }
 
     private void EnsureDraft()

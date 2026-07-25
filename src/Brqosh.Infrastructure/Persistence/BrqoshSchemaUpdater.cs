@@ -14,6 +14,18 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     {
         var isPg = db.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
 
+        // (O-21، CEEF-219) تاريخ إلغاء المستندات الضريبية على القواعد القائمة.
+        // NULL يعني «أُلغي قبل تفعيل الميزة» — يتصرّف كالسلوك السابق تماماً، فلا
+        // تتغيّر أرقام إقرارات قديمة بأثر رجعيّ مفاجئ.
+        //
+        // **موضعه هنا مقصود — قبل ترقيعات المزوّد.** تلك الترقيعات تُجري استعلامات
+        // EF على كيانات المستندات (BackfillDocumentTotalsAsync مثلاً)، و EF يبني
+        // SELECT بكل أعمدة النموذج — فعمود مفقود يُسقط الإقلاع كلّه بـ
+        // 42703: column s.CancelledAt does not exist. الجداول الخمسة أساسية موجودة
+        // قبل هذه المرحلة، وحارس TableExistsAsync يتخطّى القاعدة الجديدة التي
+        // ينشئها EnsureCreated من النموذج (فالعمود فيها أصلاً).
+        await EnsureCancelledAtColumnsAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -27,6 +39,27 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (O-19، CEEF-212) أعمدة سلسلة تجزئة سجل التدقيق على القواعد القائمة.
         // Sequence=0 يعني «ما قبل تفعيل السلسلة» — يتخطاه المدقّق ولا يعدّه كسراً.
         await EnsureAuditChainColumnsAsync(isPg, ct);
+    }
+
+    /// <summary>جداول المستندات الضريبية التي تدخل الإقرار (CEEF-219).</summary>
+    private static readonly string[] CancellableTaxDocumentTables =
+    [
+        "sales_invoices", "credit_notes", "purchase_invoices",
+        "debit_notes", "progress_billings",
+    ];
+
+    private async Task EnsureCancelledAtColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        foreach (var table in CancellableTaxDocumentTables)
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+                await EnsurePgColumnAsync(table, "CancelledAt", "DATE NULL", ct);
+            else
+                await EnsureSqliteColumnAsync(table, "CancelledAt", "TEXT NULL", ct);
+        }
     }
 
     private async Task EnsureAuditChainColumnsAsync(bool isPg, CancellationToken ct)

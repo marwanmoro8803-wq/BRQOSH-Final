@@ -598,6 +598,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateOnly?>("CancelledAt")
+                        .HasColumnType("date");
+
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
@@ -1470,6 +1473,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateOnly?>("CancelledAt")
+                        .HasColumnType("date");
+
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
@@ -1588,6 +1594,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("CancelledAt")
+                        .HasColumnType("date");
 
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
@@ -1925,6 +1934,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateOnly?>("CancelledAt")
+                        .HasColumnType("date");
+
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
@@ -2044,6 +2056,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("CancelledAt")
+                        .HasColumnType("date");
 
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");

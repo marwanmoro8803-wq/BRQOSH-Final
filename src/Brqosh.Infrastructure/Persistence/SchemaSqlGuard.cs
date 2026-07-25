@@ -16,6 +16,8 @@ internal static class SchemaSqlGuard
         "UUID NULL",
         "UUID NOT NULL DEFAULT gen_random_uuid()",
         "TIMESTAMPTZ NULL",
+        // (O-21) تاريخ إلغاء المستندات الضريبية.
+        "DATE NULL",
         "character varying(16) NULL",
         "character varying(3) NOT NULL DEFAULT 'SAR'",
         "character varying(32) NOT NULL DEFAULT 'WeightedAverage'",

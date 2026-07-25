@@ -59,7 +59,7 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
                 }
             }
 
-            invoice.MarkCancelled();
+            invoice.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء فاتورة مشتريات",
