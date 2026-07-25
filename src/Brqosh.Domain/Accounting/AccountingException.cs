@@ -6,4 +6,10 @@ public class AccountingException : Exception
     public AccountingException(string message) : base(message)
     {
     }
+
+    /// <summary>يحفظ السبب التقني الأصلي خلف رسالة عربية مفهومة للمستخدم.</summary>
+    public AccountingException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }

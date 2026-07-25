@@ -148,6 +148,75 @@ catch (Exception ex)
     return 6;
 }
 
+// الاختبار الحاسم الرابع (ع-D1، CEEF-205): ضياع تحديث رصيد المخزون.
+// كان التحديث قراءة-ثم-كتابة بقيمة مطلقة: بيعان متزامنان لنفس الصنف يقرآن نفس الرصيد
+// ويكتبان نفس القيمة — فتضيع إحدى العمليتين صامتاً ويبقى المخزون أعلى من الحقيقة.
+// رمز التزامن (xmin) يجب أن يجعل النتيجة إمّا نجاحين صحيحين أو فشلاً صريحاً — لا ضياعاً.
+try
+{
+    var companyId3 = await db.Companies.OrderBy(c => c.Id).Select(c => c.Id).FirstAsync();
+
+    var product = Brqosh.Domain.Inventory.Product.Create(
+        companyId3, "CONC-P", "صنف اختبار التزامن", "قطعة",
+        Brqosh.Domain.Inventory.ProductType.Stockable, 50m);
+    db.Products.Add(product);
+    await db.SaveChangesAsync();
+
+    var invSvc = new Brqosh.Infrastructure.Inventory.InventoryService(db);
+    var wh = await invSvc.GetDefaultWarehouseAsync(companyId3);
+
+    // رصيد افتتاحي 100
+    await invSvc.ApplyReceiptCostAsync(companyId3, product.Id, 100m, 10m);
+    var opening = Brqosh.Domain.Inventory.InventoryBalance.Create(companyId3, wh.Id, product.Id, 100m);
+    db.InventoryBalances.Add(opening);
+    await db.SaveChangesAsync();
+
+    const int Writers = 6;
+    const decimal EachTakes = 5m;
+
+    var results = await Task.WhenAll(Enumerable.Range(0, Writers).Select(async _ =>
+    {
+        await using var ctx = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, cs);
+        try
+        {
+            var bal = await ctx.InventoryBalances.SingleAsync(b =>
+                b.CompanyId == companyId3 && b.WarehouseId == wh.Id && b.ProductId == product.Id);
+            bal.ApplyDelta(-EachTakes);          // قراءة ثم كتابة قيمة مطلقة
+            await Task.Delay(30);                // توسيع نافذة السباق عمداً
+            await ctx.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;                        // تعارض مكشوف — لا ضياع صامت
+        }
+    }));
+
+    var succeeded = results.Count(r => r);
+    var conflicted = results.Length - succeeded;
+
+    await using var check = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, cs);
+    var finalQty = (await check.InventoryBalances.SingleAsync(b =>
+        b.CompanyId == companyId3 && b.WarehouseId == wh.Id && b.ProductId == product.Id)).QuantityOnHand;
+
+    var expected = 100m - (succeeded * EachTakes);
+    if (finalQty != expected)
+    {
+        Console.WriteLine($"[FAIL] ضياع تحديث: نجح {succeeded} صرفاً — المتوقع {expected} والفعلي {finalQty}");
+        return 7;
+    }
+
+    Console.WriteLine(
+        $"[OK] {Writers} كتّاب متزامنين على نفس الرصيد — نجح {succeeded}، وكُشف {conflicted} تعارضاً؛ " +
+        $"الرصيد {finalQty} مطابق تماماً (لا ضياع صامت)");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[FAIL] اختبار تزامن المخزون: {ex.GetType().Name}: {ex.Message}");
+    if (ex.InnerException is not null) Console.WriteLine($"       inner: {ex.InnerException.Message}");
+    return 8;
+}
+
 Console.WriteLine();
-Console.WriteLine("=== PASS: تثبيت PostgreSQL نظيف + ترحيل محاسبي + تزامن آمن ===");
+Console.WriteLine("=== PASS: هجرات + ترحيل محاسبي + تزامن الترقيم + سلامة أرصدة المخزون ===");
 return 0;

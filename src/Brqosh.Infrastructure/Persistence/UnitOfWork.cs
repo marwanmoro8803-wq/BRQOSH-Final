@@ -30,6 +30,18 @@ public static class UnitOfWork
                 await tx.CommitAsync(ct);
                 return value;
             }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                await tx.RollbackAsync(ct);
+
+                // (ع-D1، CEEF-205) رمز التزامن كشف أن صفاً تغيّر بين القراءة والكتابة —
+                // مستخدم آخر رحّل على نفس الصنف/الرصيد. العملية ارتدّت كاملة، فلا فساد.
+                // لا نُعيد المحاولة تلقائياً: السياق يحمل كيانات قديمة، وإعادة ترحيل بحالة
+                // بائتة في نظام محاسبي أخطر من خطأ واضح يعيده المستخدم بنفسه.
+                throw new Domain.Accounting.AccountingException(
+                    "تعذّر إتمام العملية: عُدِّلت البيانات من جلسة أخرى أثناء الحفظ. " +
+                    "لم يُحفظ أي تغيير — أعد فتح الشاشة وحاول مرة أخرى.", ex);
+            }
             catch
             {
                 await tx.RollbackAsync(ct);

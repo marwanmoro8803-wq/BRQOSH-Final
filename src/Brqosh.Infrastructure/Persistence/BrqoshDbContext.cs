@@ -424,6 +424,18 @@ public class BrqoshDbContext : DbContext
             entity.Property(b => b.QuantityOnHand).HasPrecision(18, 4);
             entity.HasIndex(b => new { b.CompanyId, b.WarehouseId, b.ProductId }).IsUnique();
             entity.HasIndex(b => b.ProductId);
+
+            // رمز تزامن (ع-D1، CEEF-205): تحديث الرصيد قراءة-ثم-كتابة بقيمة مطلقة،
+            // فترحيلان متزامنان لنفس الصنف يقرآن نفس الرصيد ويكتبان نفس القيمة —
+            // آخر كاتب يمحو أثر الأول (ضياع تحديث صامت يفسد المخزون وتكلفة المبيعات).
+            // xmin عمود نظام في PostgreSQL يتغيّر مع كل تحديث للصف، فيكشف التعارض
+            // ويحوّل الفساد الصامت إلى DbUpdateConcurrencyException صريح يُعاد معه.
+            if (Database.IsNpgsql())
+                entity.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasColumnType("xid")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
         });
 
         modelBuilder.Entity<ZatcaSettings>(entity =>
