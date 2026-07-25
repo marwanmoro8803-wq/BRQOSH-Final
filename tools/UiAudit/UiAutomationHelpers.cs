@@ -41,6 +41,38 @@ internal static class UiAutomationHelpers
         return null;
     }
 
+    /// <summary>
+    /// العملية التي تملك نافذة التطبيق فعلاً.
+    ///
+    /// (CEEF-209) حين يُشغَّل التطبيق بـ <c>dotnet run</c> تكون العملية المُعادة هي المُشغِّل
+    /// (كونسول) و<c>MainWindowHandle</c> فيها صفر دائماً — فينتظر التدقيق نافذةً على العملية
+    /// الخطأ إلى أن تنقضي المهلة، بينما النافذة تخصّ العملية الابنة Brqosh.Desktop.
+    /// هذا سبب تعطّل تدقيق الواجهة الحيّ.
+    /// </summary>
+    public static Process ResolveWindowOwner(Process launched)
+    {
+        try
+        {
+            launched.Refresh();
+            if (!launched.HasExited && launched.MainWindowHandle != IntPtr.Zero)
+                return launched;
+        }
+        catch { /* العملية قد تنتهي أثناء الفحص */ }
+
+        foreach (var candidate in Process.GetProcessesByName("Brqosh.Desktop"))
+        {
+            try
+            {
+                candidate.Refresh();
+                if (!candidate.HasExited && candidate.MainWindowHandle != IntPtr.Zero)
+                    return candidate;
+            }
+            catch { /* تجاهل عملية تعذّر فحصها */ }
+        }
+
+        return launched;
+    }
+
     public static bool TryAttachMainWindow(
         UIA3Automation automation,
         Process process,
@@ -52,6 +84,9 @@ internal static class UiAutomationHelpers
         mainWindow = null;
         try
         {
+            // اربط بالعملية صاحبة النافذة لا بالمُشغِّل (CEEF-209).
+            process = ResolveWindowOwner(process);
+
             process.Refresh();
             if (process.HasExited || process.MainWindowHandle == IntPtr.Zero)
                 return false;

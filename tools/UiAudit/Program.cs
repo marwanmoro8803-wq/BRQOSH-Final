@@ -342,7 +342,10 @@ internal static class Program
                 if (process.HasExited)
                     return;
 
-                if (process.MainWindowHandle != IntPtr.Zero || process.Responding)
+                // (CEEF-209) الاستعداد = وجود نافذة فعلية، لا مجرد استجابة العملية:
+                // كونسول `dotnet run` يستجيب فوراً بينما التطبيق لم يبدأ بعد، فكان الانتظار
+                // ينتهي مبكراً ويبدأ البحث عن نافذة غير موجودة.
+                if (UiAutomationHelpers.ResolveWindowOwner(process).MainWindowHandle != IntPtr.Zero)
                     return;
             }
             catch
