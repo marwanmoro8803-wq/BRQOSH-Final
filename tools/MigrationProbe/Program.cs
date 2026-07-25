@@ -101,6 +101,53 @@ catch (Exception ex)
     return 4;
 }
 
+// الاختبار الحاسم الثالث (ع-D1، CEEF-203): ترحيل متزامن على PostgreSQL.
+// حماية ACC-006 (pg_advisory_xact_lock) لم تكن تعمل إطلاقاً — فلم يكن هناك ما يمنع
+// رقمَي قيد متطابقين تحت التوازي. هذه الخطوة تُثبت أن القفل يعمل فعلاً.
+try
+{
+    const int Parallel = 8;
+    var companyId2 = await db.Companies.OrderBy(c => c.Id).Select(c => c.Id).FirstAsync();
+
+    var tasks = Enumerable.Range(0, Parallel).Select(async i =>
+    {
+        // سياق مستقل لكل مهمة = اتصال مستقل = تزامن حقيقي لا تسلسل
+        await using var ctx = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, cs);
+        Brqosh.Infrastructure.Security.SecurityContext.CurrentRole =
+            Brqosh.Domain.Security.UserRole.Administrator;
+        Brqosh.Infrastructure.Security.SecurityContext.CurrentUsername = "probe-concurrency";
+
+        var cashAcc = await ctx.Accounts.FirstAsync(a => a.CompanyId == companyId2 && a.Code == "1101" && !a.IsGroup);
+        var capAcc = await ctx.Accounts.FirstAsync(a => a.CompanyId == companyId2 && a.Code == "3101" && !a.IsGroup);
+
+        var je = Brqosh.Domain.Accounting.JournalEntry.CreateDraft(
+            companyId2, new DateOnly(2026, 7, 25), $"قيد متزامن {i}");
+        je.AddLine(cashAcc, 10m, 0m);
+        je.AddLine(capAcc, 0m, 10m);
+
+        var p = await new Brqosh.Infrastructure.Accounting.JournalPostingService(ctx).PostAsync(je);
+        return p.EntryNumber!;
+    });
+
+    var numbers = await Task.WhenAll(tasks);
+    var distinct = numbers.Distinct().Count();
+
+    if (distinct != numbers.Length)
+    {
+        var dups = numbers.GroupBy(n => n).Where(g => g.Count() > 1).Select(g => g.Key);
+        Console.WriteLine($"[FAIL] أرقام قيود مكررة تحت التوازي: {string.Join(", ", dups)}");
+        return 5;
+    }
+
+    Console.WriteLine($"[OK] {Parallel} ترحيلات متزامنة — {distinct} رقماً فريداً بلا تكرار");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[FAIL] الترحيل المتزامن: {ex.GetType().Name}: {ex.Message}");
+    if (ex.InnerException is not null) Console.WriteLine($"       inner: {ex.InnerException.Message}");
+    return 6;
+}
+
 Console.WriteLine();
-Console.WriteLine("=== PASS: تثبيت PostgreSQL نظيف + ترحيل محاسبي يعملان ===");
+Console.WriteLine("=== PASS: تثبيت PostgreSQL نظيف + ترحيل محاسبي + تزامن آمن ===");
 return 0;
