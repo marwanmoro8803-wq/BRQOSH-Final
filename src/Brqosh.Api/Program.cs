@@ -229,6 +229,10 @@ app.MapGet("/api/v1/reports/trial-balance", async (
 
 app.MapGet("/api/v1/company-groups", async (BrqoshDbContext db, CancellationToken ct) =>
 {
+    // أمن (ع-A1، CEEF-200): في وضع SaaS، ارفض السرد بلا هوية مستأجر.
+    if (TenantContext.EnforceTenantIsolation && TenantContext.CurrentTenantId is null)
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
     var query = db.CompanyGroups.AsQueryable();
     if (TenantContext.CurrentTenantId is not null)
     {
@@ -400,6 +404,11 @@ app.MapGet("/api/v1/tenants/subscription", async (IBillingPlanCatalog catalog, C
 
 app.MapGet("/api/v1/companies", async (BrqoshDbContext db, CancellationToken ct) =>
 {
+    // أمن (ع-A1، CEEF-200): في وضع SaaS، ارفض السرد بلا هوية مستأجر —
+    // يمنع حامل المفتاح المشترك من سرد كل الشركات بحذف ترويسة X-Tenant-Id.
+    if (TenantContext.EnforceTenantIsolation && TenantContext.CurrentTenantId is null)
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+
     var query = db.Companies.AsQueryable();
     if (TenantContext.CurrentTenantId is not null)
         query = query.Where(c => c.TenantId == TenantContext.CurrentTenantId.Value);
