@@ -87,7 +87,14 @@ function Get-PageInventory {
         foreach ($e in $Scope.FindAll($TS::Descendants, $cond)) {
             $name = $e.Current.Name
             if ([string]::IsNullOrWhiteSpace($name)) {
-                if ($t -eq $CT::Button) { $items += [pscustomobject]@{ Type = 'Button'; Text = '<بلا اسم>' } }
+                # زرّ بلا اسم = عيب وصول **إن كان مرئياً**. أزرار PageUp/PageDown داخل
+                # شريط التمرير بلا اسم بالتصميم وبارتفاع صفر؛ عدّها عيباً أنتج 120
+                # اكتشافاً كلّها ضجيج (2 لكل صفحة). فلا يُعدّ إلا ما له مساحة فعلية.
+                $r = $e.Current.BoundingRectangle
+                if ($t -eq $CT::Button -and -not $e.Current.IsOffscreen `
+                    -and [double]::IsFinite($r.Width) -and $r.Width -ge 8 -and $r.Height -ge 8) {
+                    $items += [pscustomobject]@{ Type = 'Button'; Text = '<بلا اسم>' }
+                }
                 continue
             }
             $items += [pscustomobject]@{ Type = $t.ProgrammaticName -replace '^ControlType\.', ''; Text = $name }
@@ -185,9 +192,10 @@ function Invoke-Sweep {
             Start-Sleep -Milliseconds 300
         }
 
-        $hostCond = New-Object System.Windows.Automation.PropertyCondition($AE::AutomationIdProperty, 'PageHost')
-        $pageHost = $win.FindFirst($TS::Descendants, $hostCond)
-        if ($null -eq $pageHost) { $pageHost = $win }
+        # PageHost هو ContentControl ولا يظهر في «عرض التحكّم» الافتراضي لـUIA، فالبحث
+        # عنه بالمعرّف يفشل ويقع الجرد على النافذة كاملة (شريط جانبي + لوحة مساعد).
+        # التصريح بذلك مقصود: الأرقام أدناه **على مستوى النافذة** لا الصفحة وحدها.
+        $pageHost = $win
 
         Set-ScrollPercent -Scope $pageHost -Percent 0 | Out-Null
         Save-WindowShot -Win $win -Path (Join-Path $langDir "$key`__01_top.png") | Out-Null

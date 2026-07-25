@@ -216,7 +216,11 @@ public partial class MainWindow : Window
         UserNameText.Text = displayName;
         UserRoleText.Text = RoleLabel(user?.Role);
         HeaderUserText.Text = displayName;
-        DateText.Text = DateTime.Now.ToString("dddd، d MMMM yyyy", new System.Globalization.CultureInfo("ar-SA"));
+        // (O-27) التاريخ يتبع اللغة الجارية — كان مثبّتاً على ar-SA فيظهر
+        // «السبت، 25 يوليو 2026» داخل واجهة إنجليزية بالكامل.
+        DateText.Text = LocaleManager.IsEnglish
+            ? DateTime.Now.ToString("dddd, d MMMM yyyy", new System.Globalization.CultureInfo("en-GB"))
+            : DateTime.Now.ToString("dddd، d MMMM yyyy", new System.Globalization.CultureInfo("ar-SA"));
         UserInitialText.Text = displayName.Length > 0 ? displayName[..1] : "م";
         UpdateSessionStatus();
     }
@@ -365,6 +369,7 @@ public partial class MainWindow : Window
         //  فبقي ما لا مدخل له في سجلّ الترجمة عربياً — واجهة نصفان.)
         BuildNavigation();
         RefreshThemeToggleText();
+        BindUserHeader();          // (O-27) التاريخ في الشريط العلويّ يتبع اللغة
         UpdateSessionStatus();
         _ = RefreshDbHealthAsync();
 
