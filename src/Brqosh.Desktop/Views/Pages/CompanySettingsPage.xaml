@@ -21,7 +21,7 @@
                     <TextBlock Text="الهوية والطباعة" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
 
                     <TextBlock Text="شعار الشركة" Style="{StaticResource FieldLabel}"/>
-                    <Border BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="8"
+                    <Border BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8"
                             Padding="12" Margin="0,0,0,8" HorizontalAlignment="Left">
                         <Grid Width="180" Height="100">
                             <TextBlock x:Name="LogoPreviewPlaceholder" Text="لا يوجد شعار"

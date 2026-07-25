@@ -13,13 +13,21 @@ public static class ThemeManager
     public static void Apply(bool dark)
     {
         IsDark = dark;
-        var r = System.Windows.Application.Current.Resources;
+        ApplyTo(System.Windows.Application.Current.Resources, dark);
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// يطبّق اللوحة على قاموس موارد بعينه — يفصل الثيم عن <c>Application.Current</c>
+    /// ليصير قابلاً للقياس في اختبار بلا تشغيل التطبيق (CEEF-222).
+    /// </summary>
+    public static void ApplyTo(ResourceDictionary r, bool dark)
+    {
         EnsureMutableBrushes(r);
         if (dark)
             ApplyLuxuryDark(r);
         else
             ApplyLuxuryLight(r);
-        Changed?.Invoke();
     }
 
     public static void Toggle() => Apply(!IsDark);
@@ -43,6 +51,9 @@ public static class ThemeManager
         SetColor(r, "StatusBarColor", "StatusBarBrush", "#030712");
         SetColor(r, "StatusBarTextColor", "StatusBarTextBrush", "#94A3B8");
         SetColor(r, "SidebarColor", "SidebarBrush", "#050B18");
+        // (CEEF-222) صفوف الجداول تتبع الثيم — وإلا نصّ #F8FAFC فوق أبيض.
+        SetColor(r, "RowAltColor", "RowAltBrush", "#0F1B2E");
+        SetColor(r, "RowHoverColor", "RowHoverBrush", "#1B2E4A");
         UpdateSidebarGradient(r, "#050B18", "#0B1426", "#050B18");
     }
 
@@ -65,6 +76,8 @@ public static class ThemeManager
         SetColor(r, "StatusBarColor", "StatusBarBrush", "#1C1917");
         SetColor(r, "StatusBarTextColor", "StatusBarTextBrush", "#D6D3D1");
         SetColor(r, "SidebarColor", "SidebarBrush", "#1C1917");
+        SetColor(r, "RowAltColor", "RowAltBrush", "#FAF9F7");
+        SetColor(r, "RowHoverColor", "RowHoverBrush", "#F0EEEA");
         UpdateSidebarGradient(r, "#1C1917", "#292524", "#1C1917");
     }
 
@@ -114,15 +127,12 @@ public static class ThemeManager
     /// </summary>
     private static void EnsureMutableBrushes(ResourceDictionary r)
     {
-        if (_brushesUnfrozen) return;
-        _brushesUnfrozen = true;
-
+        // بلا علَم ساكن: المرور مُبطِل لذاته (بعد أول مرّة لا فرشاة مجمّدة)، والعلَم
+        // كان يمنع تحرير قاموس ثانٍ — وهو ما يحتاجه الاختبار.
         foreach (var key in r.Keys.Cast<object>().ToList())
         {
             if (r[key] is SolidColorBrush { IsFrozen: true } frozen)
                 r[key] = new SolidColorBrush(frozen.Color);
         }
     }
-
-    private static bool _brushesUnfrozen;
 }
