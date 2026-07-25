@@ -23,6 +23,29 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // فإضافة عمود إلى جدول لم يُنشأ بعد تفشل صراحةً (وهو الصواب: لا ابتلاع أخطاء).
         // الافتراضي Standard يحفظ سلوك كل المستندات القائمة.
         await EnsureVatCategoryColumnsAsync(isPg, ct);
+
+        // (O-19، CEEF-212) أعمدة سلسلة تجزئة سجل التدقيق على القواعد القائمة.
+        // Sequence=0 يعني «ما قبل تفعيل السلسلة» — يتخطاه المدقّق ولا يعدّه كسراً.
+        await EnsureAuditChainColumnsAsync(isPg, ct);
+    }
+
+    private async Task EnsureAuditChainColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("audit_log", isPg, ct))
+            return;
+
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("audit_log", "Sequence", "BIGINT NOT NULL DEFAULT 0", ct);
+            await EnsurePgColumnAsync("audit_log", "PreviousHash", "character varying(64) NOT NULL DEFAULT ''", ct);
+            await EnsurePgColumnAsync("audit_log", "EntryHash", "character varying(64) NOT NULL DEFAULT ''", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("audit_log", "Sequence", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsureSqliteColumnAsync("audit_log", "PreviousHash", "TEXT NOT NULL DEFAULT ''", ct);
+            await EnsureSqliteColumnAsync("audit_log", "EntryHash", "TEXT NOT NULL DEFAULT ''", ct);
+        }
     }
 
     private async Task EnsureVatCategoryColumnsAsync(bool isPg, CancellationToken ct)

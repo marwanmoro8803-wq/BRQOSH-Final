@@ -2287,12 +2287,25 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("EntryHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<DateTime>("OccurredAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PreviousHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("Reason")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
+
+                    b.Property<long>("Sequence")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -2302,6 +2315,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "OccurredAtUtc");
+
+                    b.HasIndex("CompanyId", "Sequence")
+                        .IsUnique();
 
                     b.ToTable("audit_log", (string)null);
                 });

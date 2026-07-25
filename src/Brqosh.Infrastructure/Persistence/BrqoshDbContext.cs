@@ -821,6 +821,12 @@ public class BrqoshDbContext : DbContext
             entity.Property(a => a.Details).HasMaxLength(2048);
             entity.Property(a => a.Reason).HasMaxLength(512);
             entity.HasIndex(a => new { a.CompanyId, a.OccurredAtUtc });
+
+            // (O-19، CEEF-212) سلسلة تجزئة كاشفة للعبث.
+            entity.Property(a => a.PreviousHash).HasMaxLength(64).IsRequired();
+            entity.Property(a => a.EntryHash).HasMaxLength(64).IsRequired();
+            // فريد: يمنع تفرّع السلسلة حتى لو أخفق القفل الاستشاري (SQLite مثلاً).
+            entity.HasIndex(a => new { a.CompanyId, a.Sequence }).IsUnique();
         });
 
         modelBuilder.Entity<FixedAsset>(entity =>

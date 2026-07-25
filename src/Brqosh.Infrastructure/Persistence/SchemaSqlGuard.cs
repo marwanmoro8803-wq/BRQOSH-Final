@@ -25,6 +25,9 @@ internal static class SchemaSqlGuard
         "character varying(16) NOT NULL DEFAULT 'Active'",
         // (CEEF-207) فئة الضريبة لأسطر المستندات.
         "character varying(16) NOT NULL DEFAULT 'Standard'",
+        // (O-19) أعمدة سلسلة تجزئة سجل التدقيق.
+        "BIGINT NOT NULL DEFAULT 0",
+        "character varying(64) NOT NULL DEFAULT ''",
         "character varying(64) NULL",
         "character varying(128) NULL",
         "character varying(256) NULL",
@@ -45,6 +48,8 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT 'Active'",
         // (CEEF-207) فئة الضريبة لأسطر المستندات — قيمة ثابتة ضمن قائمة السماح.
         "TEXT NOT NULL DEFAULT 'Standard'",
+        // (O-19) أعمدة سلسلة تجزئة سجل التدقيق.
+        "TEXT NOT NULL DEFAULT ''",
         "REAL NULL",
         "REAL NOT NULL DEFAULT 0",
     };
