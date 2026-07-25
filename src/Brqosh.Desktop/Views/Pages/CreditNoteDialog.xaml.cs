@@ -87,7 +87,8 @@ public partial class CreditNoteDialog : Window
                 ReasonBox.Text);
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
-                note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice);
+                note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice,
+                    vatCategory: row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<CreditNotePostingService>().PostAsync(note);

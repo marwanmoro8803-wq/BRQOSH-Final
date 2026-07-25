@@ -87,7 +87,7 @@ public partial class PurchaseInvoiceDialog : Window
                 DeductibleCheck.IsChecked == true);
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
-                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId);
+                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.PostPurchaseInvoiceAsync(invoice);

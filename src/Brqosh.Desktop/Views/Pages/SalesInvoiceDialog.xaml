@@ -1,6 +1,7 @@
 <Window x:Class="Brqosh.Desktop.Views.Pages.SalesInvoiceDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:Brqosh.Desktop.Ui"
         Title="فاتورة مبيعات جديدة"
         Width="1040" Height="640"
         MinWidth="900" MinHeight="560"
@@ -55,6 +56,11 @@
                         <DataGridTextColumn Header="الوصف / الصنف" Binding="{Binding Description}" Width="*"/>
                         <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="110"/>
                         <DataGridTextColumn Header="سعر الوحدة" Binding="{Binding UnitPrice, StringFormat=N2}" Width="130"/>
+                        <DataGridComboBoxColumn Header="الفئة الضريبية" Width="150"
+                                                SelectedValueBinding="{Binding VatCategory}"
+                                                SelectedValuePath="Value"
+                                                DisplayMemberPath="Display"
+                                                ItemsSource="{Binding Source={x:Static ui:VatCategoryOptions.All}}"/>
                         <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="130" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>

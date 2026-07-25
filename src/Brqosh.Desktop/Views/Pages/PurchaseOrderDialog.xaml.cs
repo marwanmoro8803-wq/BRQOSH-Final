@@ -57,7 +57,7 @@ public partial class PurchaseOrderDialog : Window
                 notes: "", expectedDelivery: expected);
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description)))
-                order.AddLine(row.Description!, row.Quantity, row.UnitPrice, row.ProductId);
+                order.AddLine(row.Description!, row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<PurchaseOrderService>().ApproveAsync(order);

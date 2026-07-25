@@ -20,6 +20,10 @@ public partial class SalesInvoiceDialog : Window
         public string? Description { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+
+        /// <summary>الفئة الضريبية للسطر — الافتراضي أساسية 15% (CEEF-208).</summary>
+        public Brqosh.Domain.Tax.VatCategory VatCategory { get; set; }
+            = Brqosh.Domain.Tax.VatCategory.Standard;
         public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
     }
 
@@ -133,7 +137,7 @@ public partial class SalesInvoiceDialog : Window
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value));
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
-                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId);
+                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.PostSalesInvoiceAsync(invoice);
