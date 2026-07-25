@@ -47,14 +47,17 @@ public class BalanceSheetQuery(BrqoshDbContext db)
             .OrderBy(r => r.AccountCode)
             .ToList();
 
-        // أرباح العام الجاري غير المقفلة — من قائمة الدخل حتى تاريخ التقرير
-        var yearStart = new DateOnly(asOfDate.Year, 1, 1);
-        var pnl = await new IncomeStatementQuery(db).ExecuteAsync(companyId, yearStart, asOfDate);
+        // الأرباح غير المقفلة — تراكمياً منذ التأسيس حتى تاريخ التقرير، لا السنة التقويمية الجارية وحدها.
+        // (ع-R1، CEEF-201): حصرها في السنة الجارية كان يُسقط أرباح أي سنة سابقة لم يُشغَّل إقفالها
+        // فتظهر الميزانية غير متوازنة طوال السنة التالية.
+        // لا ازدواج حساب: قيد الإقفال السنوي يصفّر حسابات الإيراد/المصروف وينقل الصافي إلى حساب
+        // حقوق ملكية (3104/3103) المحسوب أصلاً أعلاه — فالسنوات المقفلة تساهم بصفر هنا.
+        var pnl = await new IncomeStatementQuery(db).ExecuteAsync(companyId, from, asOfDate);
         if (pnl.NetIncome != 0)
         {
             equity.Add(new BalanceSheetRow(
                 "3999",
-                "أرباح العام الجاري (غير مقفلة)",
+                "أرباح غير مقفلة",
                 AccountType.Equity,
                 pnl.NetIncome));
             equity = equity.OrderBy(e => e.AccountCode).ToList();
