@@ -1386,6 +1386,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("DispatchAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DispatchedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
@@ -1393,6 +1399,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<string>("LastDispatchError")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
 
                     b.Property<DateTime>("OccurredAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -1402,6 +1412,8 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DispatchedAtUtc");
 
                     b.HasIndex("EventId")
                         .IsUnique();

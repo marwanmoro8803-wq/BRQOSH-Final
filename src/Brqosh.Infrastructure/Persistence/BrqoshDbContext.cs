@@ -964,8 +964,11 @@ public class BrqoshDbContext : DbContext
             entity.ToTable("domain_events");
             entity.Property(e => e.EventType).HasMaxLength(128).IsRequired();
             entity.Property(e => e.PayloadJson).IsRequired();
+            entity.Property(e => e.LastDispatchError).HasMaxLength(512);
             entity.HasIndex(e => e.EventId).IsUnique();
             entity.HasIndex(e => new { e.CompanyId, e.OccurredAtUtc });
+            // طابور Outbox: استعلام «غير المُرسَل» يجري بعد كل ترحيل (CEEF-204).
+            entity.HasIndex(e => e.DispatchedAtUtc);
         });
 
         modelBuilder.Entity<ReportSnapshot>(entity =>

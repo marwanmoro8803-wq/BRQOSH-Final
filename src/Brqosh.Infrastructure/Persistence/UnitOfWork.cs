@@ -12,18 +12,23 @@ public static class UnitOfWork
         Func<CancellationToken, Task<T>> action,
         CancellationToken ct = default)
     {
+        // معاملة متداخلة: السياق مربوط أصلاً من المستوى الخارجي.
         if (db.Database.CurrentTransaction is not null)
             return await action(ct);
 
         var strategy = db.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(async () =>
+        var result = await strategy.ExecuteAsync(async () =>
         {
+            // Outbox (ع-D2، CEEF-204): ربط السياق يجعل أحداث النطاق تُكتب داخل هذه المعاملة،
+            // فتُلغى مع المستند إن ارتدّت — بدل حدث «شبح» عن فاتورة لا وجود لها.
+            using var ambient = AmbientDbContext.Bind(db);
+
             await using var tx = await db.Database.BeginTransactionAsync(ct);
             try
             {
-                var result = await action(ct);
+                var value = await action(ct);
                 await tx.CommitAsync(ct);
-                return result;
+                return value;
             }
             catch
             {
@@ -31,6 +36,11 @@ public static class UnitOfWork
                 throw;
             }
         });
+
+        // الإرسال الخارجي بعد الالتزام حصراً — لا يُخطَر أحد بما قد يُلغى.
+        // فشل الإرسال لا يُفشل العملية المحاسبية؛ الأحداث تبقى في الطابور لإعادة المحاولة.
+        await OutboxDispatchHook.OnCommittedAsync(db, ct);
+        return result;
     }
 
     public static Task ExecuteInTransactionAsync(

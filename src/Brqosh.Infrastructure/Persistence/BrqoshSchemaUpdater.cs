@@ -572,6 +572,31 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               """;
         try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
         catch { /* EnsureCreated may create later */ }
+
+        // أعمدة طابور Outbox على القواعد القائمة (ع-D2، CEEF-204).
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("domain_events", "DispatchedAtUtc", "TIMESTAMPTZ NULL", ct);
+            await EnsurePgColumnAsync("domain_events", "DispatchAttempts", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsurePgColumnAsync("domain_events", "LastDispatchError", "character varying(512) NULL", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("domain_events", "DispatchedAtUtc", "TEXT NULL", ct);
+            await EnsureSqliteColumnAsync("domain_events", "DispatchAttempts", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsureSqliteColumnAsync("domain_events", "LastDispatchError", "TEXT NULL", ct);
+        }
+
+        // الأحداث السابقة تُعتبر مُرسَلة — الطابور للجديد فقط، لا لإعادة إرسال التاريخ.
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                isPg
+                    ? """UPDATE domain_events SET "DispatchedAtUtc" = "OccurredAtUtc" WHERE "DispatchedAtUtc" IS NULL"""
+                    : "UPDATE domain_events SET DispatchedAtUtc = OccurredAtUtc WHERE DispatchedAtUtc IS NULL",
+                ct);
+        }
+        catch { /* الأعمدة قد تُنشأ لاحقاً عبر EnsureCreated */ }
     }
 
     private async Task EnsureReportSnapshotsTableAsync(bool isPg, CancellationToken ct)

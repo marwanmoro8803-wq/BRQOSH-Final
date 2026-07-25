@@ -170,6 +170,13 @@ public static class InfrastructureServiceCollectionExtensions
                 sp.GetRequiredService<IServiceScopeFactory>(),
                 sp.GetRequiredService<IWebhookDispatcher>());
             DomainEventHub.Current = publisher;
+
+            // Outbox (ع-D2، CEEF-204): تفريغ الطابور بعد الالتزام حصراً.
+            // يُوصَل هنا لأن UnitOfWork ساكن بلا حاوية حقن — نفس نمط DomainEventHub.
+            OutboxDispatchHook.Wire((db, ct) =>
+                new OutboxDispatcher(sp.GetRequiredService<IWebhookDispatcher>())
+                    .DispatchPendingAsync(db, ct));
+
             return publisher;
         });
         return services;

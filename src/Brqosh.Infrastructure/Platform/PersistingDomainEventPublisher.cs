@@ -39,6 +39,18 @@ public sealed class PersistingDomainEventPublisher : IDomainEventPublisher
         var payloadJson = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), JsonOptions);
         var stored = StoredDomainEvent.From(domainEvent, ExtractCompanyId(domainEvent), payloadJson);
 
+        // Outbox (ع-D2، CEEF-204): داخل معاملة جارية — اكتب الحدث في نفس السياق
+        // فيلتزم أو يرتدّ مع المستند، ولا تُرسل شيئاً للخارج قبل الالتزام.
+        // الإرسال يتولاه OutboxDispatchHook بعد نجاح الـcommit.
+        if (AmbientDbContext.Current is { } ambient)
+        {
+            ambient.StoredDomainEvents.Add(stored);
+            await ambient.SaveChangesAsync(ct);
+            AppMetrics.IncEventStored();
+            return;
+        }
+
+        // خارج أي معاملة (نشر مباشر): السلوك السابق — حفظ فوري ثم إرسال.
         using var scope = _scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<BrqoshDbContext>();
         db.StoredDomainEvents.Add(stored);
@@ -48,9 +60,13 @@ public sealed class PersistingDomainEventPublisher : IDomainEventPublisher
         try
         {
             await _webhooks.DispatchAsync(domainEvent, ct);
+            stored.MarkDispatched();
+            await db.SaveChangesAsync(ct);
         }
         catch (Exception ex)
         {
+            stored.MarkDispatchFailed(ex.Message);
+            try { await db.SaveChangesAsync(ct); } catch { /* لا تُخفِ الخطأ الأصلي */ }
             var log = scope.ServiceProvider.GetService<ILogger<PersistingDomainEventPublisher>>();
             log?.LogWarning(ex, "Webhook dispatch pipeline failed for {EventType}", domainEvent.GetType().Name);
         }
