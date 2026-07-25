@@ -72,6 +72,15 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // (ع-D3، CEEF-202): أعلِم المستخدم إن عمل على قاعدة غير التي هيّأها — قبل أن يُدخل أي بيانات.
+        if (AppServices.DatabaseFallbackWarning is { } fallbackWarning)
+        {
+            MessageBox.Show(
+                fallbackWarning,
+                "BRQOSH — تنبيه: تغيّرت قاعدة البيانات",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
         try
         {
             // CEEF-200: التمهيد عبر DI scope (المصنع كان ينشئ الخدمة يدوياً — يكسر حارس DI،

@@ -51,6 +51,50 @@ public class ZatcaGoldenTests : IDisposable
         Assert.Equal("388", xml.Descendants(cbc + "InvoiceTypeCode").First().Value);
     }
 
+    /// <summary>
+    /// ع-Z2 (CEEF-202) — cac:TaxSubtotal إلزاميّ لدى الهيئة (BR-CO-18/KSA) وكان غائباً تماماً،
+    /// فتُرفض الفاتورة في الفحص رغم صحة التوقيع.
+    /// </summary>
+    [Fact]
+    public async Task Ubl_TaxTotal_ContainsMandatoryTaxSubtotal()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("شركة", "310123456700004", BusinessProfile.Retail);
+        var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
+        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        await _db.SaveChangesAsync();
+
+        var customer = Customer.Create(company.Id, "عميل", "311111111100003");
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var invoice = SalesInvoice.CreateDraft(company.Id, customer.Id, new DateOnly(2026, 7, 8));
+        invoice.AddLine("صنف", 2m, 100m);
+        await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        var doc = await _db.ZatcaEInvoiceDocuments.SingleAsync();
+        var xml = XDocument.Load(doc.XmlFilePath);
+        XNamespace cbc = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
+        XNamespace cac = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
+
+        // TaxSubtotal على مستوى المستند (لا داخل سطور الفاتورة)
+        var docTaxTotal = xml.Root!.Elements(cac + "TaxTotal").First();
+        var subtotal = docTaxTotal.Element(cac + "TaxSubtotal");
+        Assert.NotNull(subtotal);
+
+        Assert.Equal("200.00", subtotal!.Element(cbc + "TaxableAmount")?.Value);
+        Assert.Equal("30.00", subtotal.Element(cbc + "TaxAmount")?.Value);
+
+        var category = subtotal.Element(cac + "TaxCategory");
+        Assert.NotNull(category);
+        Assert.Equal("S", category!.Element(cbc + "ID")?.Value);
+        Assert.Equal("15.00", category.Element(cbc + "Percent")?.Value);
+        Assert.Equal("VAT", category.Element(cac + "TaxScheme")?.Element(cbc + "ID")?.Value);
+
+        // إجمالي ضريبة المستند = ضريبة الوعاء (اتساق حسابي يفحصه مدقق الهيئة)
+        Assert.Equal(docTaxTotal.Element(cbc + "TaxAmount")?.Value, subtotal.Element(cbc + "TaxAmount")?.Value);
+    }
+
     [Fact]
     public async Task SecondInvoice_IcvIncrementsSequentially()
     {

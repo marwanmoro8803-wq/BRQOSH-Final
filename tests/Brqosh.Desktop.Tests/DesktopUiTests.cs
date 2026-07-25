@@ -78,7 +78,9 @@ public class EmptyStateCatalogTests
     public void Resolve_customers_grid()
     {
         var spec = EmptyStateCatalog.Resolve("CustomersGrid");
-        Assert.Contains("عملاء", spec.Title);
+        // TitleAr لا Title: الأخيرة تعتمد على LocaleManager (حالة ساكنة عامة) الذي يبدّله
+        // LocaleManagerTests — فكان الاختبار يتذبذب حسب ترتيب التشغيل (CEEF-202).
+        Assert.Contains("عملاء", spec.TitleAr);
     }
 }
 

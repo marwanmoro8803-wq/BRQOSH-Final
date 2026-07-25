@@ -83,6 +83,12 @@ public static class AppServices
 
     public static string ActiveProviderLabel => _provider == DatabaseProvider.PostgreSql ? "PostgreSQL" : "SQLite";
 
+    /// <summary>
+    /// نصّ تحذير يُملأ عند التحويل الاضطراري من PostgreSQL إلى SQLite (تطوير فقط) —
+    /// تعرضه الواجهة عند الإقلاع. null يعني لم يحدث تحويل (ع-D3، CEEF-202).
+    /// </summary>
+    public static string? DatabaseFallbackWarning { get; private set; }
+
     public static void LoadDatabaseConfig()
     {
         _provider = DatabaseProvider.Sqlite;
@@ -145,10 +151,18 @@ public static class AppServices
 
             if (_provider == DatabaseProvider.PostgreSql)
             {
+                var sqlitePath = BrqoshDbContextFactory.DefaultSqlitePath();
                 _provider = DatabaseProvider.Sqlite;
-                _connectionString = $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}";
-                // أعد ربط ناشر الأحداث على SQLite بعد التحويل الصامت
+                _connectionString = $"Data Source={sqlitePath}";
                 WireDomainEventPersistence();
+
+                // (ع-D3، CEEF-202): التحويل لم يعد صامتاً. العمل على قاعدة غير التي هيّأها
+                // المستخدم يعني كتابة القيود في دفتر آخر — يجب أن يراه لا أن يكتشفه لاحقاً.
+                DatabaseFallbackWarning =
+                    "تعذر الاتصال بـ PostgreSQL المهيّأ، وتم التحويل إلى قاعدة SQLite محلية.\n\n" +
+                    $"المسار: {sqlitePath}\n" +
+                    $"السبب: {ex.Message}\n\n" +
+                    "تنبيه: أي عمليات تُدخلها الآن ستُحفظ في هذه القاعدة المحلية، لا في PostgreSQL.";
             }
         }
     }

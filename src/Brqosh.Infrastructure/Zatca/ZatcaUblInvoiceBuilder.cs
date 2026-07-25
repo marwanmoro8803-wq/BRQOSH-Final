@@ -63,7 +63,20 @@ public static class ZatcaUblInvoiceBuilder
         if (!string.IsNullOrWhiteSpace(data.CustomerName) || !string.IsNullOrWhiteSpace(data.CustomerVat))
             AddCustomer(root, data.CustomerName, data.CustomerVat);
 
-        var taxTotal = new XElement(Cac + "TaxTotal", El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")));
+        // cac:TaxSubtotal إلزاميّ لدى الهيئة (BR-CO-18/KSA): وعاء الضريبة + فئتها + نسبتها.
+        // كان غائباً تماماً فتُرفض الفاتورة في الفحص رغم صحة التوقيع (ع-Z2، CEEF-202).
+        var isTaxable = data.VatAmount > 0m;
+        var taxTotal = new XElement(Cac + "TaxTotal",
+            El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")),
+            new XElement(Cac + "TaxSubtotal",
+                El(Cbc, "TaxableAmount", F(data.Subtotal), ("currencyID", "SAR")),
+                El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")),
+                new XElement(Cac + "TaxCategory",
+                    El(Cbc, "ID", isTaxable ? "S" : "O"),
+                    El(Cbc, "Percent", isTaxable
+                        ? (SalesInvoice.SaudiVatRate * 100m).ToString("0.00", CultureInfo.InvariantCulture)
+                        : "0.00"),
+                    new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
         root.Add(taxTotal);
 
         var monetary = new XElement(Cac + "LegalMonetaryTotal",
