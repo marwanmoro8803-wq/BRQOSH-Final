@@ -23,12 +23,19 @@ public record TrialBalanceRow(
 /// </summary>
 public class TrialBalanceQuery(BrqoshDbContext db)
 {
+    /// <param name="excludeYearEndClosing">
+    /// استبعاد قيود الإقفال السنوي — تستخدمه قائمة الدخل لعرض أداء الفترة (ع-R2).
+    /// الافتراضي false: ميزان المراجعة سجل خام للأستاذ، وقيد الإقفال قيد مرحّل حقيقي فيه.
+    /// </param>
     public async Task<IReadOnlyList<TrialBalanceRow>> ExecuteAsync(
-        long companyId, DateOnly fromDate, DateOnly toDate)
+        long companyId, DateOnly fromDate, DateOnly toDate, bool excludeYearEndClosing = false)
     {
+        var entries = db.JournalEntries.WhereReportable(companyId, fromDate, toDate);
+        if (excludeYearEndClosing)
+            entries = entries.ExcludeYearEndClosing();
+
         // تجميع على مستوى قاعدة البيانات — لا تحميل سطور القيود إلى الذاكرة
-        var totals = await db.JournalEntries
-            .WhereReportable(companyId, fromDate, toDate)
+        var totals = await entries
             .SelectMany(e => e.Lines)
             .GroupBy(l => l.AccountId)
             .Select(g => new

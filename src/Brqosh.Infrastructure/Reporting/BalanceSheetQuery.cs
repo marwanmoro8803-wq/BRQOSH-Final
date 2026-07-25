@@ -52,7 +52,8 @@ public class BalanceSheetQuery(BrqoshDbContext db)
         // فتظهر الميزانية غير متوازنة طوال السنة التالية.
         // لا ازدواج حساب: قيد الإقفال السنوي يصفّر حسابات الإيراد/المصروف وينقل الصافي إلى حساب
         // حقوق ملكية (3104/3103) المحسوب أصلاً أعلاه — فالسنوات المقفلة تساهم بصفر هنا.
-        var pnl = await new IncomeStatementQuery(db).ExecuteAsync(companyId, from, asOfDate);
+        var pnl = await new IncomeStatementQuery(db)
+            .ExecuteAsync(companyId, from, asOfDate, excludeYearEndClosing: false);
         if (pnl.NetIncome != 0)
         {
             equity.Add(new BalanceSheetRow(

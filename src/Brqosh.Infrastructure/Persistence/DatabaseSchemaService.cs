@@ -26,6 +26,19 @@ public class DatabaseSchemaService(BrqoshDbContext db)
             return;
         }
 
+        // SQLite = تطوير/اختبار فقط، والهجرات مولَّدة لـ PostgreSQL حصراً (ح-2، CEEF-201).
+        // تهيئته من النموذج مباشرة بدل تطبيق DDL بأنواع مزوّد آخر.
+        if (db.Database.IsSqlite())
+        {
+            if (isProduction)
+                throw new InvalidOperationException(
+                    "وضع الإنتاج لا يدعم SQLite — استخدم PostgreSQL.");
+
+            await db.Database.EnsureCreatedAsync(ct);
+            await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
+            return;
+        }
+
         var historyExists = await MigrationHistoryTableExistsAsync(ct);
         var appliedCount = historyExists ? await AppliedMigrationCountAsync(ct) : 0;
         var coreTableExists = await CoreTableExistsAsync(ct);

@@ -20,9 +20,15 @@ public record IncomeStatementResult(
 /// <summary>قائمة الدخل — حركة الإيرادات والمصروفات خلال الفترة (القيود المرحّلة فقط).</summary>
 public class IncomeStatementQuery(BrqoshDbContext db)
 {
-    public async Task<IncomeStatementResult> ExecuteAsync(long companyId, DateOnly from, DateOnly to)
+    /// <param name="excludeYearEndClosing">
+    /// الافتراضي true: قائمة الدخل تعرض أداء الفترة، لا أثر قيد إقفالها (ع-R2، CEEF-201).
+    /// تمرّر الميزانية العمومية false عمداً لاحتساب الأرباح غير المقفلة: إدراج قيد الإقفال
+    /// يجعل السنوات المقفلة تساوي صفراً فلا تُحتسب مرتين (مرة هنا ومرة في حساب حقوق الملكية).
+    /// </param>
+    public async Task<IncomeStatementResult> ExecuteAsync(
+        long companyId, DateOnly from, DateOnly to, bool excludeYearEndClosing = true)
     {
-        var rows = await new TrialBalanceQuery(db).ExecuteAsync(companyId, from, to);
+        var rows = await new TrialBalanceQuery(db).ExecuteAsync(companyId, from, to, excludeYearEndClosing);
         var revenue = rows
             .Where(r => r.Type == AccountType.Revenue)
             .Select(r => new IncomeStatementRow(r.AccountCode, r.AccountNameAr, r.Type, r.TotalCredit - r.TotalDebit))
