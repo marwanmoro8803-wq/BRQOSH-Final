@@ -234,14 +234,17 @@ public partial class MainWindow : Window
             await using var db = AppServices.CreateDb();
             var ok = await db.Database.CanConnectAsync();
             StatusDbDot.Background = (System.Windows.Media.Brush)FindResource(ok ? "SuccessBrush" : "DangerBrush");
-            StatusDbText.Text = ok
-                ? $"قاعدة البيانات: {AppServices.ActiveProviderLabel} · متصل"
-                : $"قاعدة البيانات: {AppServices.ActiveProviderLabel} · غير متصل";
+            var state = ok
+                ? LocaleManager.T("متصل", "Connected")
+                : LocaleManager.T("غير متصل", "Disconnected");
+            StatusDbText.Text = $"{LocaleManager.T("قاعدة البيانات", "Database")}: {AppServices.ActiveProviderLabel} · {state}";
         }
         catch
         {
             StatusDbDot.Background = (System.Windows.Media.Brush)FindResource("DangerBrush");
-            StatusDbText.Text = $"قاعدة البيانات: {AppServices.ActiveProviderLabel} · خطأ اتصال";
+            StatusDbText.Text =
+                $"{LocaleManager.T("قاعدة البيانات", "Database")}: {AppServices.ActiveProviderLabel} · " +
+                LocaleManager.T("خطأ اتصال", "Connection error");
         }
     }
 
@@ -251,9 +254,9 @@ public partial class MainWindow : Window
         var branch = AppServices.CurrentBranchLabel;
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(user))
-            parts.Add($"جلسة · {user}");
+            parts.Add($"{LocaleManager.T("جلسة", "Session")} · {user}");
         else
-            parts.Add("الجلسة نشطة");
+            parts.Add(LocaleManager.T("الجلسة نشطة", "Session active"));
         if (!string.IsNullOrWhiteSpace(branch))
             parts.Add(branch);
         StatusSessionText.Text = string.Join(" · ", parts);
@@ -318,9 +321,22 @@ public partial class MainWindow : Window
     private void OnToggleTheme(object sender, RoutedEventArgs e)
     {
         ThemeManager.Toggle();
-        ThemeToggleBtn.Content = ThemeManager.IsDark ? "فاتح" : "داكن";
-        ThemeToggleBtn.ToolTip = ThemeManager.IsDark ? "التبديل إلى الوضع الفاتح" : "التبديل إلى الوضع الداكن";
+        RefreshThemeToggleText();
         RefreshActivePage();
+    }
+
+    /// <summary>
+    /// نصّ زرّ الثيم باللغة الجارية (O-25). كان مثبّتاً بالعربية فيبقى «فاتح» في
+    /// الوضع الإنجليزيّ — وهو ما رصده المسح الحيّ على الستّين صفحة كلّها.
+    /// </summary>
+    private void RefreshThemeToggleText()
+    {
+        ThemeToggleBtn.Content = ThemeManager.IsDark
+            ? LocaleManager.T("فاتح", "Light")
+            : LocaleManager.T("داكن", "Dark");
+        ThemeToggleBtn.ToolTip = ThemeManager.IsDark
+            ? LocaleManager.T("التبديل إلى الوضع الفاتح", "Switch to light mode")
+            : LocaleManager.T("التبديل إلى الوضع الداكن", "Switch to dark mode");
     }
 
     private void OnThemeChanged() =>
@@ -340,9 +356,34 @@ public partial class MainWindow : Window
         LanguageToggleBtn.Content = LocaleManager.LanguageLabel;
         FlowDirection = LocaleManager.Flow;
         RefreshChromeText();
+
+        // (O-25، CEEF-223) إعادة بناء التنقّل **إلزامية**: أزرار الشريط الجانبي تُنشأ
+        // مرّة بعناوين `NavigationCatalog.PageTitleEn/GroupTitleEn`، فبلا إعادة بناء
+        // تبقى بلغة الإقلاع. المقيس في المسح الحيّ: كل عناوين المجموعات وعدّة عناصر
+        // بقيت عربية بعد التبديل — والكتالوج مترجَم 100%، لكنّه لم يكن يُستخدَم.
+        // (ما ظهر إنجليزياً كان من مرور XamlUiLocalizer على الشجرة، لا من الكتالوج،
+        //  فبقي ما لا مدخل له في سجلّ الترجمة عربياً — واجهة نصفان.)
+        BuildNavigation();
+        RefreshThemeToggleText();
+        UpdateSessionStatus();
+        _ = RefreshDbHealthAsync();
+
         var key = _activePageKey;
-        var title = PageTitle.Text;
-        Navigate(key, title);
+        Navigate(key, NavTitleFor(key));
+    }
+
+    /// <summary>عنوان الصفحة باللغة الجارية من الكتالوج — لا من نصّ الشاشة الحاليّ.</summary>
+    private static string NavTitleFor(string pageKey)
+    {
+        foreach (var group in NavigationCatalog.Groups)
+        {
+            foreach (var page in group.Pages)
+            {
+                if (page.Key == pageKey)
+                    return LocaleManager.T(page.TitleAr, NavigationCatalog.PageTitleEn(page.Key));
+            }
+        }
+        return pageKey;
     }
 
     private void OnToggleAiPanel(object sender, RoutedEventArgs e)

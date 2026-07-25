@@ -8,6 +8,15 @@ var missingFile = Path.Combine(repoRoot, "dist", "evidence", "i18n-audit", "regi
 
 var glossary = LoadGlossary(Path.Combine(repoRoot, "assets", "i18n", "erp-glossary.json"));
 MergeGlossary(glossary, Path.Combine(repoRoot, "assets", "i18n", "erp-glossary-extended.json"));
+
+// (CEEF-223) ترجمات عبارات كاملة بخطّ اليد — تُدمج **أخيراً** فتغلب قاموس الكلمات.
+// الاستبدال كلمةً بكلمة يُنتج ركاكة لكل عبارة غير مغطّاة بالكامل ("12 حرفاً on الأقل
+// with حرف كبير…")، وكانت 188 من 799 مدخلاً تحوي عربياً في نصّها الإنجليزيّ.
+// وجودها في ملف بيانات يعني أنّ إعادة التوليد لا تمحوها.
+var overridesPath = Path.Combine(repoRoot, "assets", "i18n", "ui-overrides.json");
+MergeGlossary(glossary, overridesPath);
+glossary.Remove("_comment");
+ glossary.Remove("_comment2");
 var navMap = ParseNavMap(Path.Combine(desktopRoot, "Navigation", "NavigationCatalog.cs"));
 var emptyMap = ParseEmptyState(Path.Combine(desktopRoot, "Ui", "EmptyStateCatalog.cs"));
 
