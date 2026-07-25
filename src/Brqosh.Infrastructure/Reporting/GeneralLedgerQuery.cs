@@ -30,22 +30,34 @@ public class GeneralLedgerQuery(BrqoshDbContext db)
             .OrderBy(e => e.EntryDate).ThenBy(e => e.EntryNumber)
             .ToListAsync();
 
-        var priorEntries = await db.JournalEntries
+        // (CEEF-206) الأرصدة الافتتاحية تُجمَّع في قاعدة البيانات لا في الذاكرة.
+        // كان يُحمَّل كل تاريخ القيود منذ التأسيس بسطوره المملوكة لمجرّد جمع مدين/دائن
+        // لكل حساب — مئات آلاف الصفوف في كل فتح للتقرير. نفس نمط TrialBalanceQuery.
+        var priorTotals = await db.JournalEntries
             .WhereReportable(companyId, to: from.AddDays(-1))
-            .Include(e => e.Lines)
+            .SelectMany(e => e.Lines)
+            .GroupBy(l => l.AccountId)
+            .Select(g => new
+            {
+                AccountId = g.Key,
+                Debit = g.Sum(l => l.Debit),
+                Credit = g.Sum(l => l.Credit),
+            })
             .ToListAsync();
 
         var accountIds = entries.SelectMany(e => e.Lines).Select(l => l.AccountId)
-            .Concat(priorEntries.SelectMany(e => e.Lines).Select(l => l.AccountId))
+            .Concat(priorTotals.Select(t => t.AccountId))
             .Distinct().ToList();
         var accounts = await db.Accounts
             .Where(a => accountIds.Contains(a.Id))
             .ToDictionaryAsync(a => a.Id);
 
-        var openingByAccount = priorEntries
-            .SelectMany(e => e.Lines)
-            .GroupBy(l => l.AccountId)
-            .ToDictionary(g => g.Key, g => SumDelta(accounts[g.Key], g));
+        // الرصيد الافتتاحي: الفرق حسب طبيعة الحساب — مشتقّ من المجاميع المُجمَّعة في SQL.
+        var openingByAccount = priorTotals.ToDictionary(
+            t => t.AccountId,
+            t => accounts[t.AccountId].Type.IsDebitNature()
+                ? t.Debit - t.Credit
+                : t.Credit - t.Debit);
 
         var byAccount = entries
             .SelectMany(e => e.Lines.Select(l => new { Entry = e, Line = l }))
@@ -96,6 +108,4 @@ public class GeneralLedgerQuery(BrqoshDbContext db)
         return result;
     }
 
-    private static decimal SumDelta(Account account, IEnumerable<JournalLine> lines) =>
-        lines.Sum(l => account.Type.IsDebitNature() ? l.Debit - l.Credit : l.Credit - l.Debit);
 }

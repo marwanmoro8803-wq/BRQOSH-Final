@@ -989,24 +989,55 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await BackfillDocumentTotalsAsync(ct);
     }
 
+    /// <summary>
+    /// ملء إجماليات المستندات التي أُنشئت قبل إضافة عمودَي Subtotal/VatAmount.
+    ///
+    /// (CEEF-206) كان يحمّل **كل** الفواتير والإشعارات والأوامر بسطورها المملوكة إلى
+    /// الذاكرة في كل إقلاع ويجري تتبّع تغييرات عليها — يتناقض مع هدف «إقلاع أقل من
+    /// 3 ثوانٍ» ويتحوّل إلى دقائق مع نمو البيانات. الآن يُرشَّح على ما يحتاج المعالجة
+    /// فعلاً (إجمالي صفر مع وجود سطور)، فالحالة الشائعة استعلام يعود فارغاً.
+    /// </summary>
     private async Task BackfillDocumentTotalsAsync(CancellationToken ct)
     {
-        foreach (var invoice in await db.SalesInvoices.ToListAsync(ct))
+        var touched = false;
+
+        foreach (var invoice in await db.SalesInvoices
+            .Where(i => i.Subtotal == 0 && i.Lines.Any()).ToListAsync(ct))
+        {
             invoice.RecalculateTotals();
+            touched = true;
+        }
 
-        foreach (var invoice in await db.PurchaseInvoices.ToListAsync(ct))
+        foreach (var invoice in await db.PurchaseInvoices
+            .Where(i => i.Subtotal == 0 && i.Lines.Any()).ToListAsync(ct))
+        {
             invoice.RecalculateTotals();
+            touched = true;
+        }
 
-        foreach (var note in await db.CreditNotes.ToListAsync(ct))
+        foreach (var note in await db.CreditNotes
+            .Where(n => n.Subtotal == 0 && n.Lines.Any()).ToListAsync(ct))
+        {
             note.RecalculateTotals();
+            touched = true;
+        }
 
-        foreach (var note in await db.DebitNotes.ToListAsync(ct))
+        foreach (var note in await db.DebitNotes
+            .Where(n => n.Subtotal == 0 && n.Lines.Any()).ToListAsync(ct))
+        {
             note.RecalculateTotals();
+            touched = true;
+        }
 
-        foreach (var order in await db.PurchaseOrders.ToListAsync(ct))
+        foreach (var order in await db.PurchaseOrders
+            .Where(o => o.Subtotal == 0 && o.Lines.Any()).ToListAsync(ct))
+        {
             order.RecalculateTotals();
+            touched = true;
+        }
 
-        await db.SaveChangesAsync(ct);
+        if (touched)
+            await db.SaveChangesAsync(ct);
     }
 
     private async Task EnsureMasterDataGovernanceColumnsAsync(bool isPg, CancellationToken ct)
