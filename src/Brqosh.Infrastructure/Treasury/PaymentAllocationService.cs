@@ -124,7 +124,10 @@ public class PaymentAllocationService(BrqoshDbContext db)
 
             var original = await OriginalAmountAsync(companyId, line.Type, line.DocumentId, ct);
             var remaining = await RemainingAsync(companyId, line.Type, line.DocumentId, original, ct);
-            if (line.Amount > remaining + 0.01m)
+            // (CEEF-206) بلا تفاوت: كل المبالغ مقرّبة لخانتين أصلاً، فالتفاوت 0.01 كان
+            // يسمح بتجاوز المتبقي بهللة لكل سطر — وتخصيصات متتابعة تُراكم الفارق حتى
+            // يظهر مستند مسدَّداً بأكثر من قيمته في تقارير الذمم.
+            if (line.Amount > remaining)
                 throw new AccountingException(
                     $"التخصيص على {line.Number} ({line.Amount:N2}) يتجاوز المتبقي {remaining:N2}.");
 

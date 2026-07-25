@@ -1,5 +1,6 @@
 using Brqosh.Application.Setup;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Brqosh.Infrastructure;
 using Brqosh.Infrastructure.Persistence;
@@ -204,11 +205,29 @@ public static class AppServices
 
         try
         {
-            return JsonSerializer.Deserialize<DatabaseConfig>(File.ReadAllText(configPath));
+            var config = JsonSerializer.Deserialize<DatabaseConfig>(File.ReadAllText(configPath));
+            if (config is null)
+                return null;
+
+            // (CEEF-206) سلسلة الاتصال قد تحمل كلمة مرور PostgreSQL الإنتاجية. تُقبل مشفّرة
+            // بـ DPAPI أو صريحة (توافق مع الملفات القائمة) — Unprotect يمرّر غير المشفّر كما هو.
+            // DPAPI مناسب هنا تحديداً لأن الملف محلي يقرؤه مستخدم الجهاز نفسه؛ وهو غير مناسب
+            // لأسرار تُخزَّن في قاعدة مشتركة (تصير غير قابلة للفك من جهاز آخر).
+            return config with
+            {
+                ConnectionString = LocalSecretProtector.Unprotect(config.ConnectionString),
+            };
         }
         catch (JsonException)
         {
             return null;
+        }
+        catch (CryptographicException)
+        {
+            // مشفَّرة بملف تعريف مستخدم آخر — لا تُسقط التشغيل بصمت على قاعدة خاطئة.
+            throw new InvalidOperationException(
+                "تعذّر فكّ تشفير سلسلة الاتصال في database.json — أُنشئت على حساب مستخدم آخر. " +
+                "أعد ضبط الاتصال من هذا الحساب.");
         }
     }
 }

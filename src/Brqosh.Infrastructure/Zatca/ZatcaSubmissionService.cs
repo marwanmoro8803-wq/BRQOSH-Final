@@ -95,6 +95,8 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
         };
         request.Headers.Authorization = ParseAuth(ZatcaSettingsSecrets.GetApiToken(settings));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        // (CEEF-206) واجهات الهيئة تشترط Accept-Version؛ غيابها يرفض الطلب رغم صحة المسار والحمولة.
+        request.Headers.Add("Accept-Version", "V2");
 
         var response = await Http.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();

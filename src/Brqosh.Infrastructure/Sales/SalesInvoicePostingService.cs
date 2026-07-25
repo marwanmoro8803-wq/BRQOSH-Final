@@ -162,13 +162,20 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
         {
 
+            // (CEEF-206) الدفع المختلط لا يُرحَّل: لا يوجد في النموذج أي حقل يحمل تقسيم
+            // المبلغ بين النقد والشبكة، وكان يُقيَّد بالكامل على الصندوق — فتخالف عهدة
+            // الصندوق الدفترية الفعلية وتفشل مطابقة الوردية، ولا تظهر حصة الشبكة في البنك.
+            // ترحيل قيد نعلم أنه خاطئ أسوأ من رفضه. البديل التشغيلي: فاتورتان منفصلتان.
+            if (method == PosPaymentMethod.Mixed)
+                throw new AccountingException(
+                    "الدفع المختلط غير مدعوم في الترحيل بعد — لا يمكن تحديد حصة النقد من حصة الشبكة. " +
+                    "أصدر فاتورتين منفصلتين (نقد وبطاقة) حتى يُضاف تفصيل المبلغين.");
+
             var code = method switch
 
             {
 
                 PosPaymentMethod.Card => SaudiChartOfAccounts.SystemCodes.CashAtBanks,
-
-                PosPaymentMethod.Mixed => SaudiChartOfAccounts.SystemCodes.CashOnHand,
 
                 _ => SaudiChartOfAccounts.SystemCodes.CashOnHand,
 
@@ -204,7 +211,12 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
             .Where(i => i.CompanyId == companyId && i.InvoiceNumber != null && i.InvoiceNumber.StartsWith(prefix))
 
-            .OrderByDescending(i => i.InvoiceNumber)
+            // (CEEF-206) الترتيب بالطول أولاً ثم نصياً: التسلسل مصفوف بست خانات، فبعد
+            // تجاوز 999,999 يصبح الترتيب النصي وحده خاطئاً ("INV-2026-999999" أكبر من
+            // "INV-2026-1000000") فيتكرر الرقم أو يقفز — والمنشآت عالية الحجم تبلغه.
+            .OrderByDescending(i => i.InvoiceNumber!.Length)
+
+            .ThenByDescending(i => i.InvoiceNumber)
 
             .Select(i => i.InvoiceNumber)
 

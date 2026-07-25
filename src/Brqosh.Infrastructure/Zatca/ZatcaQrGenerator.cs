@@ -86,15 +86,24 @@ public static class ZatcaQrGenerator
 
             payload.WriteByte(tag);
 
-            // TLV length encoding: إذا > 127 نستخدم 2 bytes
+            // ترميز طول TLV (BER):
+            // (CEEF-206) الفرع الطويل كان يكتب 0x81 ثم (byte)Length — فأي طول ≥ 256
+            // يُقصّ إلى بايت واحد (300 تصير 44) وينتج رمزاً تالفاً بلا أي استثناء.
+            // اسم بائع عربي طويل يتجاوز 255 بايتاً في UTF-8 يبلغ هذا الحد فعلاً.
             if (data.Length <= 127)
             {
                 payload.WriteByte((byte)data.Length);
             }
-            else
+            else if (data.Length <= 255)
             {
                 payload.WriteByte(0x81);
                 payload.WriteByte((byte)data.Length);
+            }
+            else
+            {
+                payload.WriteByte(0x82);
+                payload.WriteByte((byte)(data.Length >> 8));
+                payload.WriteByte((byte)(data.Length & 0xFF));
             }
 
             payload.Write(data);
