@@ -1,0 +1,9 @@
+{
+  "id": "hospitality",
+  "businessProfile": "Hospitality",
+  "nameAr": "ضيافة ومطاعم",
+  "nameEn": "Hospitality",
+  "modules": ["GeneralLedger", "PointOfSale", "Sales", "Inventory", "Treasury", "Reports", "Zatca", "FixedAssets", "Payroll"],
+  "features": ["RestaurantPOS", "RoomRevenue", "Banquet", "KitchenInventory"],
+  "defaults": { "costingMethod": "Fifo", "defaultRetentionPercent": 0 }
+}

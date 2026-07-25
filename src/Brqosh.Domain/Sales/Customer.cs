@@ -1,7 +1,7 @@
 namespace Brqosh.Domain.Sales;
 
 /// <summary>عميل — طرف الذمم المدينة؛ الرقم الضريبي مطلوب للفاتورة الضريبية (B2B).</summary>
-public class Customer
+public class Customer : ISoftDeletable
 {
     public long Id { get; private set; }
     public long CompanyId { get; private set; }
@@ -10,7 +10,10 @@ public class Customer
     public string Phone { get; private set; }
     public string Address { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public DateTime? DeletedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public DateTime? ModifiedAtUtc { get; private set; }
+    public string? ModifiedBy { get; private set; }
 
     // EF Core
     private Customer()
@@ -46,7 +49,7 @@ public class Customer
     /// <summary>فاتورة ضريبية (B2B) تتطلب رقماً ضريبياً؛ بدونه تكون الفاتورة مبسطة (B2C).</summary>
     public bool SupportsStandardTaxInvoice => VatRegistrationNumber.Length == 15;
 
-    public void Update(string nameAr, string vatNumber, string phone, string address)
+    public void Update(string nameAr, string vatNumber, string phone, string address, string? modifiedBy = null)
     {
         if (string.IsNullOrWhiteSpace(nameAr))
             throw new ArgumentException("اسم العميل مطلوب.", nameof(nameAr));
@@ -58,7 +61,14 @@ public class Customer
         VatRegistrationNumber = vat;
         Phone = (phone ?? "").Trim();
         Address = (address ?? "").Trim();
+        ModifiedAtUtc = DateTime.UtcNow;
+        ModifiedBy = string.IsNullOrWhiteSpace(modifiedBy) ? null : modifiedBy.Trim();
     }
 
-    public void Deactivate() => IsActive = false;
+    public void Deactivate()
+    {
+        if (DeletedAtUtc is not null) return;
+        DeletedAtUtc = DateTime.UtcNow;
+        IsActive = false;
+    }
 }

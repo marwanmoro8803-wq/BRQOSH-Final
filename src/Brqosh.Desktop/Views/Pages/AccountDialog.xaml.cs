@@ -1,5 +1,6 @@
 using System.Windows;
 using Brqosh.Domain.Accounting;
+using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -10,10 +11,31 @@ public partial class AccountDialog : Window
         public override string ToString() => Label;
     }
 
+    private long? _accountId;
+
     public AccountDialog(IReadOnlyList<Account> accounts, Account? preselectedParent)
     {
         InitializeComponent();
+        PopulateParents(accounts, preselectedParent);
+    }
 
+    public static AccountDialog ForEdit(IReadOnlyList<Account> accounts, Account editAccount)
+    {
+        var dialog = new AccountDialog(accounts, accounts.FirstOrDefault(a => a.Id == editAccount.ParentId));
+        dialog._accountId = editAccount.Id;
+        dialog.Title = editAccount.IsSystem ? "حساب نظامي — تعديل الاسم فقط" : "تعديل حساب";
+        dialog.CodeBox.Text = editAccount.Code;
+        dialog.CodeBox.IsReadOnly = true;
+        dialog.NameArBox.Text = editAccount.NameAr;
+        dialog.NameEnBox.Text = editAccount.NameEn;
+        dialog.IsGroupCheck.IsChecked = editAccount.IsGroup;
+        dialog.IsGroupCheck.IsEnabled = false;
+        dialog.ParentCombo.IsEnabled = false;
+        return dialog;
+    }
+
+    private void PopulateParents(IReadOnlyList<Account> accounts, Account? preselectedParent)
+    {
         ParentCombo.Items.Add(new ParentOption(null, "— بدون (حساب جذري) —"));
         foreach (var group in accounts.Where(a => a.IsGroup).OrderBy(a => a.Code))
         {
@@ -28,13 +50,24 @@ public partial class AccountDialog : Window
 
     private async void OnSave(object sender, RoutedEventArgs e)
     {
-        var parent = (ParentCombo.SelectedItem as ParentOption)?.Account;
         try
         {
-            // نوع الحساب يُشتق من الأب؛ الحساب الجذري يتطلب كوداً يبدأ بتصنيف معروف
+            await using var db = AppServices.CreateDb();
+
+            if (_accountId is long id)
+            {
+                var account = await db.Accounts.SingleAsync(a => a.Id == id);
+                account.Rename(NameArBox.Text, NameEnBox.Text);
+                await db.SaveChangesAsync();
+                DialogResult = true;
+                Close();
+                return;
+            }
+
+            var parent = (ParentCombo.SelectedItem as ParentOption)?.Account;
             var type = parent?.Type ?? InferTypeFromCode(CodeBox.Text.Trim());
 
-            var account = Account.Create(
+            var newAccount = Account.Create(
                 CodeBox.Text.Trim(),
                 NameArBox.Text.Trim(),
                 NameEnBox.Text.Trim(),
@@ -44,19 +77,18 @@ public partial class AccountDialog : Window
                 isSystem: false,
                 AppServices.CompanyId);
 
-            if (parent is not null && !account.Code.StartsWith(parent.Code, StringComparison.Ordinal))
+            if (parent is not null && !newAccount.Code.StartsWith(parent.Code, StringComparison.Ordinal))
                 throw new AccountingException($"رقم الحساب يجب أن يبدأ برقم الحساب الأب ({parent.Code}).");
 
-            await using var db = AppServices.CreateDb();
-            if (db.Accounts.Any(a => a.CompanyId == AppServices.CompanyId && a.Code == account.Code))
-                throw new AccountingException($"رقم الحساب {account.Code} مستخدم مسبقاً.");
+            if (db.Accounts.Any(a => a.CompanyId == AppServices.CompanyId && a.Code == newAccount.Code))
+                throw new AccountingException($"رقم الحساب {newAccount.Code} مستخدم مسبقاً.");
 
-            db.Accounts.Add(account);
+            db.Accounts.Add(newAccount);
             await db.SaveChangesAsync();
             DialogResult = true;
             Close();
         }
-        catch (AccountingException ex)
+        catch (Exception ex)
         {
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;

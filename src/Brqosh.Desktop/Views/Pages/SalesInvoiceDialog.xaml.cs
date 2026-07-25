@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +16,7 @@ public partial class SalesInvoiceDialog : Window
 
     public class LineRow
     {
+        public long? ProductId { get; set; }
         public string? Description { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
@@ -21,13 +24,55 @@ public partial class SalesInvoiceDialog : Window
     }
 
     private readonly ObservableCollection<LineRow> _rows = [];
+    private List<ProductOption> _products = [];
+
+    public record ProductOption(long Id, string Display, decimal SalePrice, string NameAr);
 
     public SalesInvoiceDialog()
     {
         InitializeComponent();
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
-        Loaded += async (_, _) => await LoadCustomersAsync();
+        Loaded += async (_, _) =>
+        {
+            HeroSubtitleText.Text = LocaleManager.T(
+                "مسار ذهبي: بيع → ZATCA → تحصيل — Financial Truth First.",
+                "Golden path: Sell → ZATCA → Collect — Financial Truth First.");
+            await LoadCustomersAsync();
+            await LoadProductsAsync();
+            await LoadZatcaPanelAsync();
+        };
+    }
+
+    private async Task LoadZatcaPanelAsync()
+    {
+        await using var db = AppServices.CreateDb();
+        var settings = await db.ZatcaSettings.FirstOrDefaultAsync(s => s.CompanyId == AppServices.CompanyId);
+        if (settings is { IsEnabled: true })
+        {
+            ZatcaStatusText.Text = LocaleManager.T(
+                $"مفعّل · البيئة: {settings.Environment}",
+                $"Enabled · Environment: {settings.Environment}");
+            ZatcaHintText.Text = LocaleManager.T(
+                "UUID · QR · UBL XML — يُولَّد تلقائياً عند الترحيل.",
+                "UUID · QR · UBL XML — generated automatically on post.");
+        }
+        else
+        {
+            ZatcaStatusText.Text = LocaleManager.T("ZATCA غير مفعّل", "ZATCA not enabled");
+            ZatcaHintText.Text = LocaleManager.T(
+                "فعّل من شاشة إعدادات ZATCA للفوترة الإلكترونية.",
+                "Enable from ZATCA settings for e-invoicing.");
+        }
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        await using var db = AppServices.CreateDb();
+        _products = await db.Products.Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive)
+            .OrderBy(p => p.Code)
+            .Select(p => new ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
+            .ToListAsync();
     }
 
     private async Task LoadCustomersAsync()
@@ -66,20 +111,37 @@ public partial class SalesInvoiceDialog : Window
             if (CustomerCombo.SelectedValue is not long customerId)
                 throw new AccountingException("اختر العميل.");
 
+            var priceWarnings = _rows
+                .Where(r => r.ProductId is long pid && _products.FirstOrDefault(p => p.Id == pid) is { SalePrice: > 0 } product
+                    && r.UnitPrice != product.SalePrice
+                    && Math.Abs(r.UnitPrice - product.SalePrice) / product.SalePrice > 0.01m)
+                .Select(r =>
+                {
+                    var p = _products.First(x => x.Id == r.ProductId);
+                    return $"{p.NameAr}: {r.UnitPrice:N2} (الافتراضي {p.SalePrice:N2})";
+                })
+                .ToList();
+
+            if (priceWarnings.Count > 0 &&
+                MessageBox.Show(
+                    "أسعار تختلف عن سعر البيع الافتراضي:\n" + string.Join("\n", priceWarnings) + "\n\nمتابعة؟",
+                    "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
             var invoice = SalesInvoice.CreateDraft(
                 AppServices.CompanyId, customerId,
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value));
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
-                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice);
+                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId);
 
-            await using var db = AppServices.CreateDb();
-            await new SalesInvoicePostingService(db).PostAsync(invoice);
+            using var facade = new DesktopAccountingFacade();
+            await facade.PostSalesInvoiceAsync(invoice);
 
             DialogResult = true;
             Close();
         }
-        catch (AccountingException ex)
+        catch (Exception ex)
         {
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;

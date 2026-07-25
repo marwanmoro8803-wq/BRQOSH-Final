@@ -1,0 +1,44 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.WarehousesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="المستودعات" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="مواقع تخزين · افتراضي · جرد"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ مستودع جديد" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9"
+                        Click="OnDeactivate"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="WarehouseSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      MouseDoubleClick="OnEdit">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="100"/>
+                    <DataGridTextColumn Header="اسم المستودع" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="افتراضي" Binding="{Binding DefaultAr}" Width="90"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

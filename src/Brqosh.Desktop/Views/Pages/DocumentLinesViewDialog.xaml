@@ -1,0 +1,45 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.DocumentLinesViewDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="عرض المستند"
+        Width="780" Height="480"
+        MinWidth="640" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="TitleText" Style="{StaticResource PageTitleText}"
+                   Margin="0,0,0,10"/>
+
+        <TextBlock Grid.Row="1" x:Name="HeaderText" Style="{StaticResource PageSubtitleText}"
+                   TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" Background="Transparent">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="100"/>
+                    <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <DockPanel Grid.Row="3" Margin="0,14,0,0" LastChildFill="False">
+            <TextBlock x:Name="TotalsText" DockPanel.Dock="Left" VerticalAlignment="Center"
+                       FontWeight="Bold" FontSize="14"/>
+            <Button Content="إغلاق" DockPanel.Dock="Right"
+                    Style="{StaticResource SecondaryButton}" Padding="24,9"
+                    IsCancel="True" Click="OnClose"/>
+        </DockPanel>
+    </Grid>
+</Window>

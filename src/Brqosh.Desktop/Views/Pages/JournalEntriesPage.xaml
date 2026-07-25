@@ -6,28 +6,52 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DockPanel>
-                <Button Content="＋ قيد جديد" Style="{StaticResource PrimaryButton}" Padding="18,8"
-                        DockPanel.Dock="Left" Click="OnNewEntry"/>
-                <TextBlock x:Name="CountText" DockPanel.Dock="Right" VerticalAlignment="Center"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" HorizontalAlignment="Right"/>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="قيود اليومية" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="GL · ترحيل · عكس · تدقيق"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="NewEntryBtn" Content="＋ قيد جديد"
+                            Style="{StaticResource PrimaryButton}" Padding="18,9"
+                            Click="OnNewEntry"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="عرض" Padding="16,9" Margin="0,0,8,0" Click="OnView"/>
+                    <Button x:Name="PrevBtn" Content="→" Padding="12,9" Margin="0,0,6,0"
+                            ToolTip="الصفحة السابقة" Click="OnPrev"/>
+                    <Button x:Name="NextBtn" Content="←" Padding="12,9"
+                            ToolTip="الصفحة التالية" Click="OnNext"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button DockPanel.Dock="Right" x:Name="ReverseBtn" Content="↩ عكس القيد"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9"
+                        Click="OnReverse"/>
+                <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
+                        CornerRadius="20" Padding="12,5" VerticalAlignment="Center">
+                    <TextBlock x:Name="CountText" FontSize="12.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                </Border>
             </DockPanel>
         </Border>
 
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DataGrid x:Name="EntriesGrid"
-                      AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal"
-                      HeadersVisibility="Column" FontSize="14"
-                      RowHeight="38" Background="Transparent"
-                      SelectionMode="Single"
-                      EnableRowVirtualization="True">
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="EntrySummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="EntriesGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" Background="Transparent"
+                      MouseDoubleClick="OnGridDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="رقم القيد" Binding="{Binding EntryNumber}" Width="150"/>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding EntryDate}" Width="110"/>

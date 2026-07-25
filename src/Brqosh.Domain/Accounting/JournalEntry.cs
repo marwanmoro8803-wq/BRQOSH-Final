@@ -1,3 +1,4 @@
+using Brqosh.Domain.Companies;
 namespace Brqosh.Domain.Accounting;
 
 /// <summary>حالة القيد في دورة حياته المحاسبية.</summary>
@@ -18,12 +19,13 @@ public enum JournalEntryStatus
 /// القاعدة الذهبية: مجموع المدين = مجموع الدائن، دائماً وبلا استثناء.
 /// القيد المرحّل غير قابل للتعديل — التصحيح يكون بقيد عكسي (Audit-safe).
 /// </summary>
-public class JournalEntry
+public class JournalEntry : IBranchScoped
 {
     private readonly List<JournalLine> _lines = [];
 
     public long Id { get; private set; }
     public long CompanyId { get; private set; }
+    public long? BranchId { get; private set; }
 
     /// <summary>الرقم التسلسلي للقيد ضمن السنة المالية (يُمنح عند الترحيل).</summary>
     public string? EntryNumber { get; private set; }
@@ -37,6 +39,17 @@ public class JournalEntry
 
     /// <summary>المستند المصدر (فاتورة، سند، مستخلص...) الذي ولّد القيد آلياً — null للقيود اليدوية.</summary>
     public string? SourceDocument { get; private set; }
+
+    public long? WorkflowInstanceId { get; private set; }
+
+    /// <summary>قيد يدوي — لا مستند مصدر آلي.</summary>
+    public bool IsManual => string.IsNullOrWhiteSpace(SourceDocument);
+
+    /// <summary>قيد بين شركات المجموعة — يُستبعد عند التوحيد.</summary>
+    public bool IsIntercompany { get; private set; }
+
+    /// <summary>الشركة المقابلة في معاملة بين الشركات.</summary>
+    public long? CounterpartyCompanyId { get; private set; }
 
     public IReadOnlyList<JournalLine> Lines => _lines.AsReadOnly();
 
@@ -63,6 +76,41 @@ public class JournalEntry
         if (string.IsNullOrWhiteSpace(description))
             throw new AccountingException("بيان القيد مطلوب.");
         return new JournalEntry(companyId, entryDate, description.Trim(), sourceDocument);
+    }
+
+    public void AssignBranch(long branchId)
+    {
+        if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");
+        EnsureDraft("تعيين الفرع");
+        BranchId = branchId;
+    }
+
+    public void MarkSubmittedForApproval(long workflowInstanceId)
+    {
+        EnsureDraft("إرسال للموافقة");
+        if (!IsManual)
+            throw new AccountingException("سير العمل للقيود اليدوية فقط.");
+        if (_lines.Count < 2)
+            throw new AccountingException("القيد اليدوي يحتاج سطرين على الأقل قبل الإرسال.");
+        WorkflowInstanceId = workflowInstanceId;
+    }
+
+    public void MarkRejected()
+    {
+        if (WorkflowInstanceId is null)
+            throw new AccountingException("القيد ليس ضمن سير عمل.");
+        WorkflowInstanceId = null;
+    }
+
+    public void MarkIntercompany(long counterpartyCompanyId)
+    {
+        EnsureDraft("تعيين معاملة بين الشركات");
+        if (counterpartyCompanyId <= 0)
+            throw new AccountingException("الشركة المقابلة غير صالحة.");
+        if (counterpartyCompanyId == CompanyId)
+            throw new AccountingException("لا يمكن أن تكون الشركة المقابلة هي نفس الشركة.");
+        IsIntercompany = true;
+        CounterpartyCompanyId = counterpartyCompanyId;
     }
 
     public void AddLine(Account account, decimal debit, decimal credit, string? lineDescription = null, long? costCenterId = null)
@@ -103,7 +151,7 @@ public class JournalEntry
     /// <summary>
     /// إنشاء قيد عكسي يلغي أثر هذا القيد — الطريقة الوحيدة لتصحيح قيد مرحّل.
     /// </summary>
-    public JournalEntry CreateReversal(DateOnly reversalDate, long reversalEntryIdPlaceholder = 0)
+    public JournalEntry CreateReversal(DateOnly reversalDate)
     {
         if (Status != JournalEntryStatus.Posted)
             throw new AccountingException("لا يُعكس إلا قيد مرحّل.");
@@ -120,9 +168,10 @@ public class JournalEntry
         }
 
         Status = JournalEntryStatus.Reversed;
-        ReversalEntryId = reversalEntryIdPlaceholder;
         return reversal;
     }
+
+    public void LinkReversalEntry(long reversalEntryId) => ReversalEntryId = reversalEntryId;
 
     private void EnsureDraft(string operation)
     {

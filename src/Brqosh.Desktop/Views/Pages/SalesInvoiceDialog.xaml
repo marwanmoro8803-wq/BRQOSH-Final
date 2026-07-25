@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="فاتورة مبيعات جديدة"
-        Width="900" Height="620"
-        MinWidth="800" MinHeight="540"
+        Width="1040" Height="640"
+        MinWidth="900" MinHeight="560"
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
@@ -17,8 +17,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="فاتورة مبيعات" FontSize="20" FontWeight="Bold"
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="16,12" Margin="0,0,0,14">
+            <StackPanel>
+                <TextBlock Text="فاتورة مبيعات" Style="{StaticResource PageTitleText}"/>
+                <TextBlock x:Name="HeroSubtitleText" Style="{StaticResource PageSubtitleText}" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
 
         <Grid Grid.Row="1" Margin="0,0,0,14">
             <Grid.ColumnDefinitions>
@@ -26,50 +30,67 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                <TextBlock Text="التاريخ *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
                 <DatePicker x:Name="DatePickerBox" FontSize="14"/>
             </StackPanel>
             <StackPanel Grid.Column="1">
-                <TextBlock Text="العميل *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="العميل *" Style="{StaticResource FieldLabel}"/>
                 <ComboBox x:Name="CustomerCombo" FontSize="14" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>
 
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="14" RowHeight="36" Background="Transparent"
-                      CellEditEnding="OnCellEditEnding">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="الوصف / الصنف" Binding="{Binding Description}" Width="*"/>
-                    <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="110"/>
-                    <DataGridTextColumn Header="سعر الوحدة" Binding="{Binding UnitPrice, StringFormat=N2}" Width="130"/>
-                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="130" IsReadOnly="True"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280"/>
+            </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="16,10" Margin="0,12,0,0"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="قبل الضريبة:" FontWeight="SemiBold"/>
-                <TextBlock x:Name="SubtotalText" Text="0.00" Margin="8,0,28,0" FontWeight="Bold"/>
-                <TextBlock Text="الضريبة 15%:" FontWeight="SemiBold"/>
-                <TextBlock x:Name="VatText" Text="0.00" Margin="8,0,28,0" FontWeight="Bold"/>
-                <TextBlock Text="الإجمالي:" FontWeight="SemiBold"/>
-                <TextBlock x:Name="TotalText" Text="0.00" Margin="8,0,0,0" FontWeight="Bold"
-                           Foreground="{StaticResource PrimaryBrush}" FontSize="16"/>
+            <Border Grid.Column="0" Style="{StaticResource ContentCard}" Margin="0,0,12,0">
+                <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
+                          BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                          FontSize="14" RowHeight="36" Background="Transparent"
+                          CellEditEnding="OnCellEditEnding">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الوصف / الصنف" Binding="{Binding Description}" Width="*"/>
+                        <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="110"/>
+                        <DataGridTextColumn Header="سعر الوحدة" Binding="{Binding UnitPrice, StringFormat=N2}" Width="130"/>
+                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="130" IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <StackPanel Grid.Column="1">
+                <Border Style="{StaticResource ContentCard}" Padding="16" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="ملخص مالي" Style="{StaticResource FieldLabel}" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="قبل الضريبة" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock x:Name="SubtotalText" Text="0.00" Style="{StaticResource TabularText}" FontSize="18" Margin="0,0,0,8"/>
+                        <TextBlock Text="الضريبة 15%" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock x:Name="VatText" Text="0.00" Style="{StaticResource TabularText}" Margin="0,0,0,8"/>
+                        <TextBlock Text="الإجمالي" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock x:Name="TotalText" Text="0.00" Style="{StaticResource TabularText}"
+                                   Foreground="{StaticResource PrimaryBrush}" FontSize="22" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GlassPanel}" Padding="16">
+                    <StackPanel>
+                        <TextBlock Text="ZATCA e-Invoice" Style="{StaticResource FieldLabel}" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="ZatcaStatusText" TextWrapping="Wrap" Style="{StaticResource PageSubtitleText}"/>
+                        <TextBlock x:Name="ZatcaHintText" Margin="0,10,0,0" TextWrapping="Wrap"
+                                   Style="{StaticResource PageSubtitleText}" Foreground="{StaticResource AccentBrush}"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
-        </Border>
+        </Grid>
 
-        <DockPanel Grid.Row="4" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="#DC2626" FontSize="13" FontWeight="SemiBold"
+        <DockPanel Grid.Row="3" Margin="0,16,0,0">
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
-                <Button Content="ترحيل الفاتورة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
-                <Button Content="إلغاء" Margin="10,0,0,0" Padding="24,9" Click="OnCancel"/>
+                <Button Content="ترحيل الفاتورة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost" IsDefault="True"/>
+                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
             </StackPanel>
         </DockPanel>
     </Grid>

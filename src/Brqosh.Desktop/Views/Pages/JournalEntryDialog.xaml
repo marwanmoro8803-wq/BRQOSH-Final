@@ -12,13 +12,13 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="قيد يومية" FontSize="20" FontWeight="Bold"
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,14"/>
+        <TextBlock Grid.Row="0" Text="قيد يومية" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
 
         <!-- رأس القيد -->
         <Grid Grid.Row="1" Margin="0,0,0,14">
@@ -27,18 +27,30 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                <TextBlock Text="التاريخ *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
                 <DatePicker x:Name="DatePickerBox" FontSize="14"/>
             </StackPanel>
             <StackPanel Grid.Column="1">
-                <TextBlock Text="البيان *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="DescriptionBox" Style="{StaticResource AppTextBox}"/>
             </StackPanel>
         </Grid>
 
+        <!-- معاملة بين الشركات -->
+        <Border Grid.Row="2" x:Name="IntercompanyPanel" Margin="0,0,0,14" Padding="12,10"
+                Style="{StaticResource ContentCard}" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="IntercompanyCheck" Content="معاملة بين الشركات" VerticalAlignment="Center"
+                          Checked="OnIntercompanyToggled" Unchecked="OnIntercompanyToggled"/>
+                <TextBlock Text="الشركة المقابلة:" Style="{StaticResource FieldLabel}" Margin="24,0,8,0"
+                           VerticalAlignment="Center"/>
+                <ComboBox x:Name="CounterpartyCombo" Width="280" IsEnabled="False"
+                          DisplayMemberPath="Display" SelectedValuePath="Id"/>
+            </StackPanel>
+        </Border>
+
         <!-- سطور القيد -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid"
                       AutoGenerateColumns="False"
                       CanUserAddRows="True"
@@ -50,7 +62,10 @@
                     <DataGridComboBoxColumn x:Name="AccountColumn" Header="الحساب" Width="*"
                                             SelectedValueBinding="{Binding AccountId, UpdateSourceTrigger=PropertyChanged}"
                                             SelectedValuePath="Id" DisplayMemberPath="Display"/>
-                    <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="220"/>
+                    <DataGridComboBoxColumn x:Name="CostCenterColumn" Header="مركز التكلفة" Width="180"
+                                            SelectedValueBinding="{Binding CostCenterId, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedValuePath="Id" DisplayMemberPath="Display"/>
+                    <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="180"/>
                     <DataGridTextColumn Header="مدين" Binding="{Binding Debit, StringFormat=N2}" Width="130"/>
                     <DataGridTextColumn Header="دائن" Binding="{Binding Credit, StringFormat=N2}" Width="130"/>
                 </DataGrid.Columns>
@@ -58,8 +73,7 @@
         </Border>
 
         <!-- الإجماليات -->
-        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="10" Padding="16,10" Margin="0,12,0,0"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border Grid.Row="4" Style="{StaticResource TotalsCard}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="إجمالي المدين:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="TotalDebitText" Text="0.00" Margin="8,0,32,0" FontWeight="Bold"
@@ -72,12 +86,12 @@
         </Border>
 
         <!-- الأزرار -->
-        <DockPanel Grid.Row="4" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="#DC2626" FontSize="13" FontWeight="SemiBold"
+        <DockPanel Grid.Row="5" Margin="0,16,0,0">
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
-                <Button Content="ترحيل القيد" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
-                <Button Content="إلغاء" Margin="10,0,0,0" Padding="24,9" Click="OnCancel"/>
+                <Button Content="ترحيل القيد" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost" IsDefault="True"/>
+                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
             </StackPanel>
         </DockPanel>
     </Grid>

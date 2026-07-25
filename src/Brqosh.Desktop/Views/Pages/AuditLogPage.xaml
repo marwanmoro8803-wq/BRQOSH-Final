@@ -1,0 +1,44 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.AuditLogPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="سجل التدقيق" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="من · ماذا · متى · أثر مالي"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button x:Name="PrevBtn" Content="السابق" Style="{StaticResource SecondaryButton}" Padding="14,7" Click="OnPrev" IsEnabled="False"/>
+                    <Button x:Name="NextBtn" Content="التالي" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="8,0,0,0" Click="OnNext"/>
+                </StackPanel>
+                <TextBlock x:Name="CountText" DockPanel.Dock="Left" VerticalAlignment="Center"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="AuditSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding OccurredAt}" Width="150"/>
+                    <DataGridTextColumn Header="المستخدم" Binding="{Binding Username}" Width="120"/>
+                    <DataGridTextColumn Header="الإجراء" Binding="{Binding Action}" Width="140"/>
+                    <DataGridTextColumn Header="النوع" Binding="{Binding EntityType}" Width="120"/>
+                    <DataGridTextColumn Header="المعرّف" Binding="{Binding EntityKey}" Width="130"/>
+                    <DataGridTextColumn Header="التفاصيل" Binding="{Binding Details}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore Brqosh.sln
+
+      - name: Build Release
+        run: dotnet build Brqosh.sln -c Release --no-restore
+
+      - name: Security static scan
+        shell: pwsh
+        run: ./scripts/security-static-scan.ps1
+
+      - name: UI UX Pro Max audit
+        shell: pwsh
+        run: ./scripts/ui-ux-pro-max-audit.ps1
+
+      - name: Test Release + Coverage
+        env:
+          BRQOSH_SKIP_STRESS: "1"
+          BRQOSH_TEST: "1"
+        run: >
+          dotnet test Brqosh.sln -c Release --no-build --verbosity normal
+          -p:XUnitParallelizeAssembly=false
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      # 75% line-rate on collected cobertura (Application.Tests dominate; not full-solution LOC).
+      - name: Enforce coverage gate (75% line-rate)
+        shell: pwsh
+        run: ./scripts/check-coverage.ps1 -MinimumLineRate 0.75
+
+      - name: Report per-assembly coverage (informational)
+        shell: pwsh
+        continue-on-error: true
+        run: ./scripts/check-coverage-by-assembly.ps1 -MinimumLineRate 0.75
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn

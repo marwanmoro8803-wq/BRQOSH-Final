@@ -1,0 +1,46 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PlatformEventsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="أحداث المنصة" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="Domain events · تتبع · Observability"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <DatePicker x:Name="FromDate" Width="140" FontSize="14"/>
+                <TextBlock Text="إلى" VerticalAlignment="Center" Margin="12,0,8,0"/>
+                <DatePicker x:Name="ToDate" Width="140" FontSize="14"/>
+                <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="EventsSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      FontSize="14" RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="نوع الحدث" Binding="{Binding EventType}" Width="*"/>
+                    <DataGridTextColumn Header="العدد" Binding="{Binding Count}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

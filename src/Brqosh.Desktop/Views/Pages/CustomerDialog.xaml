@@ -9,28 +9,26 @@
         Background="{StaticResource BackgroundBrush}"
         ResizeMode="NoResize">
     <StackPanel Margin="28,24">
-        <TextBlock Text="إضافة عميل" FontSize="19" FontWeight="Bold"
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+        <TextBlock Text="إضافة عميل" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
 
-        <TextBlock Text="اسم العميل *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
-        <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}"/>
+        <TextBlock Text="اسم العميل *" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <TextBlock Text="الرقم الضريبي (15 خانة — يلزم للفاتورة الضريبية B2B)" FontSize="13"
-                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,4"/>
-        <TextBox x:Name="VatBox" Style="{StaticResource AppTextBox}" MaxLength="15"/>
+        <TextBlock Text="الرقم الضريبي (15 خانة — يلزم للفاتورة الضريبية B2B)" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="VatBox" Style="{StaticResource AppTextBox}" MaxLength="15" Margin="0,0,0,14"/>
 
-        <TextBlock Text="الهاتف" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,4"/>
-        <TextBox x:Name="PhoneBox" Style="{StaticResource AppTextBox}"/>
+        <TextBlock Text="الهاتف" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="PhoneBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <TextBlock Text="العنوان" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,4"/>
-        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}"/>
+        <TextBlock Text="العنوان" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
 
-        <TextBlock x:Name="ErrorText" Foreground="#DC2626" FontSize="13" FontWeight="SemiBold"
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                    Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-            <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave"/>
-            <Button Content="إلغاء" Margin="10,0,0,0" Padding="24,9" Click="OnCancel"/>
+            <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
+            <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
         </StackPanel>
     </StackPanel>
 </Window>

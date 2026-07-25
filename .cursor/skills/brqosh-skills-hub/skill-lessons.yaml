@@ -1,0 +1,241 @@
+# Distilled lessons per skill — append-only principles (not chat logs)
+# Rule: brqosh-continuous-learning.mdc
+# Router: .cursor/LEARNING-INDEX.yaml
+# Index: docs/PROJECT-MEMORY.yaml (MEM rows link here via links.skill_lesson)
+
+version: 1
+updated: "2026-07-11"
+
+skills:
+  brqosh-agent-protocol:
+    lessons:
+      - id: L-AP-001
+        date: "2026-07-10"
+        mem: MEM-001
+        topic: deep memory
+        anti_pattern: "Assume prior session context without grep"
+        do_instead: "grep PROJECT-MEMORY.yaml + skill-lessons before code"
+        verify: "validate-project-memory.ps1"
+
+  brqosh-agent-protocol/knowledge:
+    lessons:
+      - id: L-AP-002
+        date: "2026-07-10"
+        mem: MEM-006
+        topic: continuous learning
+        anti_pattern: "Paste conversation into SKILL.md after each chat"
+        do_instead: "LEARN loop → route via LEARNING-INDEX → one primary home + MEM"
+        verify: "validate-learning-index.ps1"
+
+  supreme-programming-mastery:
+    lessons:
+      - id: L-SP-001
+        date: "2026-07-10"
+        mem: MEM-003
+        topic: skills load
+        anti_pattern: "Load all 31 supreme-programming files every session"
+        do_instead: "FILE-ROADMAP load_tiers — session ≤4 files"
+        verify: "agent-skill-regression.ps1"
+
+  brqosh-engineering:
+    lessons:
+      - id: L-EN-001
+        date: "2026-07-10"
+        mem: MEM-004
+        topic: schema
+        anti_pattern: "Close schema change on SQLite PASS only"
+        do_instead: "schema-gate-pg.ps1 before ✅"
+        verify: "scripts/ops/schema-gate-pg.ps1"
+
+  brqosh-debug:
+    lessons: []
+
+  brqosh-closure:
+    lessons: []
+
+  fable-omni-core:
+    lessons:
+      - id: L-FO-001
+        date: "2026-07-10"
+        topic: memory phrases
+        anti_pattern: "Say I remember from our past chats"
+        do_instead: "Cite PROJECT-MEMORY path or git commit"
+        verify: "context-continuity.md compliance"
+
+  claude-fable-5:
+    lessons:
+      - id: L-FABLE-001
+        date: "2026-07-11"
+        mem: MEM-163
+        topic: tri-source raw grep
+        anti_pattern: "Bulk-load raw/claude-fable-5.md or merged_claude.md in session"
+        do_instead: "tri-source-index.yaml → synthesis module → grep one section on gap only"
+        verify: "validate-tri-source.ps1"
+      - id: L-FABLE-002
+        date: "2026-07-11"
+        mem: MEM-163
+        topic: Shura binding
+        anti_pattern: "Implement Fable law without Shura-approved P0 stack"
+        do_instead: "Follow SHURA-DECISION-FABLE-TRI-SOURCE-003.md P0-P3 orders"
+        verify: "run-shura-council.ps1 exit 0 on CEEF"
+      - id: L-FABLE-003
+        date: "2026-07-11"
+        mem: MEM-165
+        topic: master Fable gate
+        anti_pattern: "Run tri-source validators separately and miss learning-index or skill count"
+        do_instead: "validate-fable-skills-stack.ps1 — single master gate before wave close"
+        verify: "validate-fable-skills-stack.ps1 exit 0"
+
+  brqosh-analysis:
+    lessons:
+      - id: L-SHURA-001
+        date: "2026-07-11"
+        mem: MEM-166
+        topic: Shura constitution
+        anti_pattern: "Theatrical 12-persona chat without run-shura-council.ps1"
+        do_instead: "shura-constitution.md -> SAVE CEEF -> council tool -> Dynamo heartbeat -> MEM"
+        verify: "validate-shura-constitution.ps1 exit 0"
+      - id: L-SHURA-002
+        date: "2026-07-11"
+        mem: MEM-167
+        topic: binding orders compliance
+        anti_pattern: "Claim Shura compliance without run-shura-compliance-gate.ps1 evidence JSON"
+        do_instead: "run-shura-compliance-gate.ps1 -> council on CEEF -> Dynamo heartbeat"
+        verify: "run-shura-compliance-gate.ps1 exit 0"
+      - id: L-SHURA-003
+        date: "2026-07-11"
+        mem: MEM-168
+        topic: Dynamo F00 pulse
+        anti_pattern: "Invoke-OpsScriptPulse without Out-Null — pipeline output corrupts exit code"
+        do_instead: "Pipe ops script to Out-Null; use $opsArgs not $args; verify C-04 F00 pulse"
+        verify: "Invoke-ShuraPulse.ps1 -SeatId F00 exit 0"
+      - id: L-CEEF-150-001
+        date: "2026-07-11"
+        mem: MEM-020
+        topic: omnibus analysis baseline
+        anti_pattern: "Trust prior CEEF grades without live dotnet test + gates + delta table"
+        do_instead: "Re-measure to dist/evidence/CEEF-NNN-omnibus/ · document delta vs prior CEEF · run Shura on SAVE"
+        verify: "dotnet test PASS · run-shura-council.ps1 · council-*.json overallConsensus"
+    lessons: []
+
+  brqosh-ui:
+    lessons: []
+
+  brqosh-review:
+    lessons: []
+
+  ai-dev-platform:
+    lessons:
+      - id: L-ADP-001
+        date: "2026-07-10"
+        topic: platform stack
+        anti_pattern: "Build platform features without attach stack or Shura on launch"
+        do_instead: "ai-dev-platform SKILL → orchestration/sdlc module → verify-gates → Shura if SAVE"
+        verify: 'rg "[\u0600-\u06FF]" .cursor/skills/ai-dev-platform/'
+      - id: L-ADP-002
+        date: "2026-07-11"
+        topic: omega gap closure wave
+        anti_pattern: "Claim Omega plan 100% from birth gate alone when CEEF index and ICellHealth gaps remain"
+        do_instead: "System 121 CEEF + gap script + Shura on CEEF-OMEGA-GAP-121 · keep O-P EXTERNAL honest"
+        verify: ".\\scripts\\ops\\write-system121-gap-closure.ps1 · dotnet test 128+ PASS"
+
+  omni-qa-army:
+    lessons:
+      - id: L-OQA-001
+        date: "2026-07-10"
+        topic: shura P0 scope
+        anti_pattern: "Implement 20 Python modules or launcher before P0 skills land"
+        do_instead: "P0 skills only → vision-perception + report-excellence → P1 Plan Mode for code"
+        verify: 'rg "[\u0600-\u06FF]" .cursor/skills/omni-qa-army/'
+      - id: L-OQA-002
+        date: "2026-07-10"
+        topic: P1 ten roles
+        anti_pattern: "Jump to Python launcher before role skills and PLAN exist"
+        do_instead: "10 roles/role-*.md · prompt-source-law · skills only until user release"
+        verify: 'Get-ChildItem .cursor/skills/omni-qa-army/roles/role-*.md | Measure-Object'
+      - id: L-OQA-003
+        date: "2026-07-10"
+        topic: P1b.1 code (historical — removed)
+        anti_pattern: "Claim full QA army runnable after skills only"
+        do_instead: "skills only · Test-Path cognitive-qa = False"
+        verify: "Test-Path cognitive-qa"
+      - id: L-OQA-004
+        date: "2026-07-10"
+        topic: P1b.2 vision navigator (historical — removed)
+        anti_pattern: "Wire pywinauto in unit tests or skip detect_new_surface"
+        do_instead: "VisionBackend spec in skills · no code until user release"
+        verify: "Test-Path cognitive-qa"
+      - id: L-OQA-005
+        date: "2026-07-10"
+        topic: P1b.3 orchestrator (historical — removed)
+        anti_pattern: "Hard-code explore steps in cli.py for each app"
+        do_instead: "orchestrator-law.md skill spec only"
+        verify: "Test-Path cognitive-qa"
+      - id: L-OQA-006
+        date: "2026-07-10"
+        topic: prompt source freeze
+        anti_pattern: "Implement launcher or 20 Python modules from raw prompt during foundation phase"
+        do_instead: "prompt-source-law.md — Shura/skills synthesis only until user says implement"
+        verify: "read .cursor/skills/omni-qa-army/prompt-source-law.md"
+      - id: L-OQA-007
+        date: "2026-07-10"
+        topic: prompt code removal
+        anti_pattern: "Keep cognitive-qa after user says prompt is ideas-only"
+        do_instead: "Delete prompt-derived code · keep skills · Test-Path cognitive-qa = False"
+        verify: "Test-Path cognitive-qa"
+      - id: L-OQA-008
+        date: "2026-07-10"
+        topic: shura prompt governance
+        anti_pattern: "Decide prompt phase from chat without CEEF SAVE + council exit 0"
+        do_instead: "SAVE CEEF → scripts/ops/run-shura-council.ps1"
+        verify: "dist/evidence/shura-council/council-*.md · exit 0 · DP1–DP9"
+      - id: L-OQA-009
+        date: "2026-07-10"
+        mem: MEM-101
+        topic: P2 deep engines
+        anti_pattern: "Paste raw prompt sabotage/empathy sections into SKILL.md"
+        do_instead: "Synthesize to dedicated P2 modules · Shura DP7 · validate-prompt-governance"
+        verify: "scripts/ops/validate-prompt-governance.ps1"
+      - id: L-OQA-010
+        date: "2026-07-10"
+        mem: MEM-102
+        topic: P3 launcher law
+        anti_pattern: "Build PySide6 launcher during skills-only phase"
+        do_instead: "launcher-architecture.md spec only · CEEF-PROMPT-004 · DP9"
+        verify: "Test-Path cognitive-qa/launcher = False"
+      - id: L-SHURA-001
+        date: "2026-07-10"
+        topic: shura v3 supreme gates
+        anti_pattern: "Claim supreme council without LeakSynthesisEngine + 6-gate verify"
+        do_instead: "Run ShuraCouncil v3 · check JSON supremeCertified · integrity ≥70"
+        verify: "dist/evidence/shura-council/council-*.json · supremeCertified: true"
+      - id: L-PAE-001
+        date: "2026-07-10"
+        topic: prompt audit engine harness
+        anti_pattern: "Recreate cognitive-qa Python when user asked for always-on audit"
+        do_instead: "PromptAuditEngine C# + prompt-audit-engine.md skill · PS06 law"
+        verify: ".\\scripts\\ops\\run-prompt-audit-engine.ps1 -SkipBuild · Test-Path cognitive-qa = False"
+      - id: L-KARP-001
+        date: "2026-07-10"
+        topic: karpathy think-before-coding
+        anti_pattern: "Silent assumptions on vague export/fix requests"
+        do_instead: "List assumptions · one question max · present forks before code"
+        verify: "karpathy-synthesis.md §2 K1 · impact-before-change"
+      - id: L-KARP-002
+        date: "2026-07-10"
+        topic: karpathy simplicity-first
+        anti_pattern: "Strategy pattern or abstraction for a single discount/export path"
+        do_instead: "One function until second real use case · smallest complete diff"
+        verify: "karpathy-synthesis.md §4 · supreme-programming scope law"
+      - id: L-KARP-003
+        date: "2026-07-10"
+        topic: karpathy surgical-changes
+        anti_pattern: "Reformat quotes or add type hints while fixing one-line bug"
+        do_instead: "Touch only lines that trace to the user request"
+        verify: "agent-workflow.md §3 · git diff scope check"
+      - id: L-KARP-004
+        date: "2026-07-10"
+        topic: karpathy goal-driven execution
+        anti_pattern: "Review and improve without measurable success criteria"
+        do_instead: "Repro test → fix → named verify command per step"
+        verify: "karpathy-synthesis.md §3 verify-plan template · brqosh-debug report format"

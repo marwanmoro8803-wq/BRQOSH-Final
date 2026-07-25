@@ -1,0 +1,9 @@
+{
+  "id": "real-estate",
+  "businessProfile": "RealEstate",
+  "nameAr": "عقارات وإيجارات",
+  "nameEn": "Real Estate",
+  "modules": ["GeneralLedger", "Sales", "Treasury", "Reports", "Zatca", "FixedAssets", "Payroll"],
+  "features": ["LeaseContracts", "TenantBilling", "PropertyUnits", "CAM"],
+  "defaults": { "costingMethod": "WeightedAverage", "defaultRetentionPercent": 0 }
+}

@@ -1,3 +1,5 @@
+using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
 
 namespace Brqosh.Domain.Companies;
@@ -8,10 +10,38 @@ public class Company
     public long Id { get; private set; }
     public string NameAr { get; private set; }
 
+    /// <summary>اسم المنشأة بالإنجليزية — يظهر في رأس المطبوعات.</summary>
+    public string? NameEn { get; private set; }
+
+    /// <summary>عنوان المنشأة — يظهر في رأس المطبوعات.</summary>
+    public string? AddressAr { get; private set; }
+
+    /// <summary>مسار ملف الشعار المحلي (AppData) — يُطبَّق على كل المخرجات.</summary>
+    public string? LogoFilePath { get; private set; }
+
+    /// <summary>خط الطباعة العربي — QuestPDF FontFamily.</summary>
+    public string PrintFontFamily { get; private set; } = "Tahoma";
+
     /// <summary>الرقم الضريبي (15 خانة) — مطلوب لتفعيل ZATCA.</summary>
     public string VatRegistrationNumber { get; private set; }
 
     public BusinessProfile Profile { get; private set; }
+    public InventoryCostingMethod CostingMethod { get; private set; } = InventoryCostingMethod.WeightedAverage;
+
+    /// <summary>عملة العرض الافتراضية (ISO 4217) — SAR للسوق السعودي.</summary>
+    public string BaseCurrencyCode { get; private set; } = "SAR";
+
+    /// <summary>عملة القياس المحاسبي — تُستخدم في التقارير الموحدة.</summary>
+    public string FunctionalCurrencyCode { get; private set; } = "SAR";
+
+    /// <summary>معرّف المستأجر — أساس multi-tenant (مرحلة 7).</summary>
+    public Guid TenantId { get; private set; }
+
+    /// <summary>مجموعة التقارير الموحّدة — اختياري.</summary>
+    public long? CompanyGroupId { get; private set; }
+
+    public CompanyOperationalMode OperationalMode { get; private set; } = CompanyOperationalMode.Active;
+
     public DateTime CreatedAtUtc { get; private set; }
 
     // EF Core
@@ -19,6 +49,9 @@ public class Company
     {
         NameAr = null!;
         VatRegistrationNumber = null!;
+        BaseCurrencyCode = "SAR";
+        FunctionalCurrencyCode = "SAR";
+        TenantId = Guid.NewGuid();
     }
 
     private Company(string nameAr, string vatRegistrationNumber, BusinessProfile profile)
@@ -26,6 +59,10 @@ public class Company
         NameAr = nameAr;
         VatRegistrationNumber = vatRegistrationNumber;
         Profile = profile;
+        CostingMethod = InventoryCostingMethod.WeightedAverage;
+        BaseCurrencyCode = "SAR";
+        FunctionalCurrencyCode = "SAR";
+        TenantId = Guid.NewGuid();
         CreatedAtUtc = DateTime.UtcNow;
     }
 
@@ -39,5 +76,85 @@ public class Company
             throw new ArgumentException("الرقم الضريبي يجب أن يتكون من 15 رقماً.", nameof(vatRegistrationNumber));
 
         return new Company(nameAr.Trim(), vat, profile);
+    }
+
+    /// <summary>إنشاء شركة لمستأجر SaaS معرف مسبقاً (O-09 stub).</summary>
+    public static Company CreateForTenant(Guid tenantId, string nameAr, string vatRegistrationNumber, BusinessProfile profile)
+    {
+        if (tenantId == Guid.Empty)
+            throw new ArgumentException("معرّف المستأجر مطلوب.", nameof(tenantId));
+
+        var company = Create(nameAr, vatRegistrationNumber, profile);
+        company.SetTenantIdForProvisioning(tenantId);
+        return company;
+    }
+
+    internal void SetTenantIdForProvisioning(Guid tenantId)
+    {
+        if (tenantId == Guid.Empty)
+            throw new ArgumentException("معرّف المستأجر غير صالح.", nameof(tenantId));
+        TenantId = tenantId;
+    }
+
+    public void Update(string nameAr, string vatRegistrationNumber)
+    {
+        if (string.IsNullOrWhiteSpace(nameAr))
+            throw new ArgumentException("اسم المنشأة مطلوب.", nameof(nameAr));
+
+        var vat = (vatRegistrationNumber ?? string.Empty).Trim();
+        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
+            throw new ArgumentException("الرقم الضريبي يجب أن يتكون من 15 رقماً.", nameof(vatRegistrationNumber));
+
+        NameAr = nameAr.Trim();
+        VatRegistrationNumber = vat;
+    }
+
+    public void UpdateBranding(string? nameEn, string? addressAr, string printFontFamily)
+    {
+        NameEn = TrimOrNull(nameEn);
+        AddressAr = TrimOrNull(addressAr);
+        var font = (printFontFamily ?? string.Empty).Trim();
+        PrintFontFamily = font.Length > 0 ? font : "Tahoma";
+    }
+
+    public void SetLogoFilePath(string? path) =>
+        LogoFilePath = TrimOrNull(path);
+
+    public void SetCostingMethod(InventoryCostingMethod method) => CostingMethod = method;
+
+    public void SetCurrencies(string baseCurrencyCode, string functionalCurrencyCode)
+    {
+        BaseCurrencyCode = NormalizeCurrency(baseCurrencyCode);
+        FunctionalCurrencyCode = NormalizeCurrency(functionalCurrencyCode);
+    }
+
+    public void AssignCompanyGroup(long? groupId) =>
+        CompanyGroupId = groupId is > 0 ? groupId : null;
+
+    public void SetOperationalMode(CompanyOperationalMode mode) => OperationalMode = mode;
+
+    /// <summary>تغيير ملف العمل — يُستخدم في تدقيق UiAudit متعدد الملفات.</summary>
+    public void UpdateBusinessProfile(BusinessProfile profile) => Profile = profile;
+
+    public void EnsureCanPost()
+    {
+        if (OperationalMode == CompanyOperationalMode.Archived)
+            throw new AccountingException("المنشأة مؤرشفة — الترحيل محظور.");
+        if (OperationalMode == CompanyOperationalMode.ReadOnly)
+            throw new AccountingException("المنشأة في وضع القراءة فقط — الترحيل محظور.");
+    }
+
+    private static string NormalizeCurrency(string code)
+    {
+        var c = (code ?? "").Trim().ToUpperInvariant();
+        if (c.Length != 3 || !c.All(char.IsLetter))
+            throw new ArgumentException("رمز العملة يجب أن يكون ISO 4217 من 3 أحرف.", nameof(code));
+        return c;
+    }
+
+    private static string? TrimOrNull(string? value)
+    {
+        var t = (value ?? string.Empty).Trim();
+        return t.Length > 0 ? t : null;
     }
 }

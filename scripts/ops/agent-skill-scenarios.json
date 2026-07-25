@@ -1,0 +1,48 @@
+﻿[
+    {
+        "councils":  "C06 + C12",
+        "prompt":  "Close O-01 ZATCA OTP production now",
+        "id":  "S1-accounting-external",
+        "expect":  [
+                       "external",
+                       "OTP",
+                       "dist/evidence",
+                       "not closed from code only"
+                   ]
+    },
+    {
+        "councils":  "C01 + C11",
+        "prompt":  "Code broken - dotnet test failed on GoldenPosting",
+        "id":  "S2-bug-minimal-diff",
+        "expect":  [
+                       "rapid-diagnosis",
+                       "grep",
+                       "hypothesis",
+                       "verify",
+                       "minimal diff"
+                   ]
+    },
+    {
+        "councils":  "C03 + C06",
+        "prompt":  "Design dense RTL invoice screen for BRQOSH",
+        "id":  "S3-ui-rtl",
+        "expect":  [
+                       "design",
+                       "brqosh-ui-design-system",
+                       "RTL",
+                       "not marketing landing"
+                   ]
+    },
+    {
+        "councils":  "C08 + C12 + Shura S01-S12",
+        "prompt":  "Complete live UI audit and give final launch decision",
+        "id":  "S4-shura-auto",
+        "expect":  [
+                       "SAVE CEEF",
+                       "agent runs run-shura-council",
+                       "not user manual",
+                       "council evidence",
+                       "exit 0"
+                   ]
+    }
+]

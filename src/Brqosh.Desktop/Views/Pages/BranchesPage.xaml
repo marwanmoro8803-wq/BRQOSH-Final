@@ -1,0 +1,44 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.BranchesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الفروع" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="جلسة تشغيلية · HQ · نطاق ترحيل"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="NewBtn" Content="＋ فرع جديد" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button DockPanel.Dock="Right" x:Name="DeactivateBtn" Content="إيقاف"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnDeactivate"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="BranchSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="100"/>
+                    <DataGridTextColumn Header="اسم الفرع" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="رئيسي" Binding="{Binding HeadquartersAr}" Width="80"/>
+                    <DataGridTextColumn Header="نشط" Binding="{Binding ActiveAr}" Width="80"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

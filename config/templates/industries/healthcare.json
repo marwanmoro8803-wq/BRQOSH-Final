@@ -1,0 +1,9 @@
+{
+  "id": "healthcare",
+  "businessProfile": "Healthcare",
+  "nameAr": "قطاع صحي",
+  "nameEn": "Healthcare",
+  "modules": ["GeneralLedger", "Sales", "Purchasing", "Inventory", "Treasury", "Reports", "Zatca", "FixedAssets", "Payroll"],
+  "features": ["PatientBilling", "Pharmacy", "InsuranceClaims", "ClinicalSupplies"],
+  "defaults": { "costingMethod": "WeightedAverage", "defaultRetentionPercent": 0 }
+}

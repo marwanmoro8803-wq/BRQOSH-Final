@@ -1,7 +1,9 @@
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Construction;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Treasury;
+using Brqosh.Infrastructure.Construction;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Treasury;
@@ -137,6 +139,33 @@ public class CreditNoteAndReceiptTests : IDisposable
     }
 
     [Fact]
+    public async Task CustomerBalance_IncludesPostedProgressBillings()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("شركة مقاولات", "310123456700003", BusinessProfile.Construction);
+        var customer = Customer.Create(company.Id, "عميل مشروع", "311111111100003");
+        _db.Customers.Add(customer);
+        var project = ConstructionProject.Create(company.Id, "PRJ-BAL", "مشروع رصيد", customer.Id,
+            contractValue: 500_000m, retentionPercent: 10m);
+        project.Activate();
+        await new ConstructionProjectService(_db).CreateAsync(project);
+        await _db.SaveChangesAsync();
+
+        var billing = ProgressBilling.CreateDraft(
+            company.Id, project.Id, customer.Id, new DateOnly(2026, 7, 4),
+            "مستخلص", 100_000m, 10m);
+        await new ProgressBillingPostingService(_db).PostAsync(billing);
+
+        var balance = await new CustomerBalanceQuery(_db).ForCustomerAsync(company.Id, customer.Id);
+        Assert.Equal(115_000m, balance.Invoiced);
+        Assert.Equal(115_000m, balance.Balance);
+
+        var statement = await new CustomerBalanceQuery(_db).StatementAsync(company.Id, customer.Id);
+        Assert.Single(statement);
+        Assert.Equal("مستخلص أعمال", statement[0].DocumentType);
+    }
+
+    [Fact]
     public async Task CreditNote_RequiresPostedInvoiceAndMatchingCustomer()
     {
         var invoice = await SetupWithInvoiceAsync();
@@ -150,5 +179,26 @@ public class CreditNoteAndReceiptTests : IDisposable
 
         await Assert.ThrowsAsync<AccountingException>(
             () => new CreditNotePostingService(_db).PostAsync(note));
+    }
+
+    [Fact]
+    public async Task PostedCreditNote_Cancel_ReversesJournalAndMarksCancelled()
+    {
+        var invoice = await SetupWithInvoiceAsync();
+
+        var note = CreditNote.CreateDraft(_companyId, _customerId, invoice.Id, new DateOnly(2026, 7, 3), "مرتجع");
+        note.AddLine("مرتجع", 1m, 100m);
+        var posted = await new CreditNotePostingService(_db).PostAsync(note);
+        var originalEntryId = posted.JournalEntryId!.Value;
+
+        await new CreditNoteCancellationService(_db).CancelAsync(
+            _companyId, posted.Id, new DateOnly(2026, 7, 4), "admin");
+
+        var reloaded = await _db.CreditNotes.SingleAsync(n => n.Id == posted.Id);
+        Assert.Equal(CreditNoteStatus.Cancelled, reloaded.Status);
+
+        var original = await _db.JournalEntries.SingleAsync(e => e.Id == originalEntryId);
+        Assert.Equal(JournalEntryStatus.Reversed, original.Status);
+        Assert.NotNull(original.ReversalEntryId);
     }
 }

@@ -1,3 +1,6 @@
+using Brqosh.Infrastructure.Accounting;
+using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Persistence;
@@ -16,41 +19,75 @@ public record CustomerStatementLine(DateOnly Date, string DocumentNumber, string
 
 /// <summary>
 /// دفتر مساعد للعملاء: الرصيد وكشف الحساب يُبنيان من المستندات المرحّلة
-/// (فواتير − إشعارات دائنة − سندات قبض) — التجميع في قاعدة البيانات لا في الذاكرة.
+/// (فواتير آجلة + مستخلصات − إشعارات دائنة − سندات قبض − شيكات واردة محصّلة/قيد التحصيل).
+/// تُستبعد فواتير نقاط البيع النقدية لأنها لا تُقيَّد على ذمم العملاء.
 /// </summary>
 public class CustomerBalanceQuery(BrqoshDbContext db)
 {
+    /// <summary>شيك وارد سجّل تخفيض ذمة العميل عند الاستلام.</summary>
+    private static readonly ChequeStatus[] ReceivedChequeCreditStatuses =
+    [
+        ChequeStatus.InPortfolio,
+        ChequeStatus.Deposited,
+        ChequeStatus.Cleared,
+    ];
+
+    private static IQueryable<SalesInvoice> ArSalesInvoices(BrqoshDbContext db, long companyId, long? customerId = null)
+    {
+        var q = db.SalesInvoices.Where(i =>
+            i.CompanyId == companyId
+            && i.Status == SalesInvoiceStatus.Posted
+            && i.PosShiftId == null);
+        return customerId is long cid ? q.Where(i => i.CustomerId == cid) : q;
+    }
+
     public async Task<CustomerBalance> ForCustomerAsync(long companyId, long customerId)
     {
-        var invoiced = await db.SalesInvoices
-            .Where(i => i.CompanyId == companyId && i.CustomerId == customerId && i.Status == SalesInvoiceStatus.Posted)
-            .ToListAsync();
+        var invoiced = await ArSalesInvoices(db, companyId, customerId).SumGrandTotalAsync();
+
+        var billings = (await db.ProgressBillings
+            .Where(b => b.CompanyId == companyId && b.CustomerId == customerId && b.Status == ProgressBillingStatus.Posted)
+            .ToListAsync())
+            .Sum(b => b.GrandTotal);
+
         var credited = await db.CreditNotes
             .Where(n => n.CompanyId == companyId && n.CustomerId == customerId && n.Status == CreditNoteStatus.Posted)
-            .ToListAsync();
+            .SumGrandTotalAsync();
+
         var received = await db.ReceiptVouchers
             .Where(v => v.CompanyId == companyId && v.CustomerId == customerId && v.Status == ReceiptVoucherStatus.Posted)
             .SumAsync(v => (decimal?)v.Amount) ?? 0m;
 
-        return new CustomerBalance(customerId,
-            invoiced.Sum(i => i.GrandTotal),
-            credited.Sum(n => n.GrandTotal),
-            received);
+        received += await db.Cheques
+            .Where(c => c.CompanyId == companyId && c.CustomerId == customerId
+                        && c.Type == ChequeType.Received
+                        && ReceivedChequeCreditStatuses.Contains(c.Status))
+            .SumAsync(c => (decimal?)c.Amount) ?? 0m;
+
+        return new CustomerBalance(customerId, invoiced + billings, credited, received);
     }
 
     public async Task<IReadOnlyDictionary<long, decimal>> AllBalancesAsync(long companyId)
     {
-        var invoiced = (await db.SalesInvoices
-            .Where(i => i.CompanyId == companyId && i.Status == SalesInvoiceStatus.Posted)
-            .ToListAsync())
+        var invoiced = await db.SalesInvoices
+            .Where(i => i.CompanyId == companyId
+                        && i.Status == SalesInvoiceStatus.Posted
+                        && i.PosShiftId == null)
             .GroupBy(i => i.CustomerId)
-            .ToDictionary(g => g.Key, g => g.Sum(i => i.GrandTotal));
+            .Select(g => new { CustomerId = g.Key, Total = g.Sum(i => i.Subtotal + i.VatAmount) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
-        var credited = (await db.CreditNotes
-            .Where(n => n.CompanyId == companyId && n.Status == CreditNoteStatus.Posted)
+        var billings = (await db.ProgressBillings
+            .Where(b => b.CompanyId == companyId && b.Status == ProgressBillingStatus.Posted)
             .ToListAsync())
+            .GroupBy(b => b.CustomerId)
+            .ToDictionary(g => g.Key, g => g.Sum(b => b.GrandTotal));
+
+        var credited = await db.CreditNotes
+            .Where(n => n.CompanyId == companyId && n.Status == CreditNoteStatus.Posted)
             .GroupBy(n => n.CustomerId)
-            .ToDictionary(g => g.Key, g => g.Sum(n => n.GrandTotal));
+            .Select(g => new { CustomerId = g.Key, Total = g.Sum(n => n.Subtotal + n.VatAmount) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
         var received = await db.ReceiptVouchers
             .Where(v => v.CompanyId == companyId && v.Status == ReceiptVoucherStatus.Posted)
@@ -58,9 +95,25 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
             .Select(g => new { CustomerId = g.Key, Total = g.Sum(v => v.Amount) })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
-        var all = invoiced.Keys.Union(credited.Keys).Union(received.Keys);
-        return all.ToDictionary(id => id,
-            id => invoiced.GetValueOrDefault(id) - credited.GetValueOrDefault(id) - received.GetValueOrDefault(id));
+        var chequeReceived = await db.Cheques
+            .Where(c => c.CompanyId == companyId && c.CustomerId != null
+                        && c.Type == ChequeType.Received
+                        && ReceivedChequeCreditStatuses.Contains(c.Status))
+            .GroupBy(c => c.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Total = g.Sum(c => c.Amount) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
+
+        var all = invoiced.Keys
+            .Union(billings.Keys)
+            .Union(credited.Keys)
+            .Union(received.Keys)
+            .Union(chequeReceived.Keys);
+
+        return all.ToDictionary(id =>
+            id,
+            id => invoiced.GetValueOrDefault(id) + billings.GetValueOrDefault(id)
+                  - credited.GetValueOrDefault(id) - received.GetValueOrDefault(id)
+                  - chequeReceived.GetValueOrDefault(id));
     }
 
     /// <summary>كشف حساب العميل زمنياً مع رصيد متحرك.</summary>
@@ -68,20 +121,73 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
     {
         var rows = new List<(DateOnly Date, string Number, string Type, decimal Debit, decimal Credit)>();
 
+        foreach (var i in await ArSalesInvoices(db, companyId, customerId).ToListAsync())
+            rows.Add((i.InvoiceDate, i.InvoiceNumber ?? "", "فاتورة مبيعات", i.GrandTotal(), 0m));
+
         foreach (var i in await db.SalesInvoices
-            .Where(i => i.CompanyId == companyId && i.CustomerId == customerId && i.Status == SalesInvoiceStatus.Posted)
+            .Where(i => i.CompanyId == companyId && i.CustomerId == customerId
+                        && i.Status == SalesInvoiceStatus.Cancelled && i.PosShiftId == null)
             .ToListAsync())
-            rows.Add((i.InvoiceDate, i.InvoiceNumber ?? "", "فاتورة مبيعات", i.GrandTotal, 0m));
+        {
+            await AppendCancellationRowAsync(rows, i.InvoiceDate, i.InvoiceNumber ?? "", "فاتورة مبيعات",
+                i.GrandTotal(), 0m, i.JournalEntryId);
+        }
+
+        foreach (var b in await db.ProgressBillings
+            .Where(b => b.CompanyId == companyId && b.CustomerId == customerId && b.Status == ProgressBillingStatus.Posted)
+            .ToListAsync())
+            rows.Add((b.BillingDate, b.BillingNumber ?? "", "مستخلص أعمال", b.GrandTotal, 0m));
+
+        foreach (var b in await db.ProgressBillings
+            .Where(b => b.CompanyId == companyId && b.CustomerId == customerId && b.Status == ProgressBillingStatus.Cancelled)
+            .ToListAsync())
+        {
+            await AppendCancellationRowAsync(rows, b.BillingDate, b.BillingNumber ?? "", "مستخلص أعمال",
+                b.GrandTotal, 0m, b.JournalEntryId);
+        }
 
         foreach (var n in await db.CreditNotes
             .Where(n => n.CompanyId == companyId && n.CustomerId == customerId && n.Status == CreditNoteStatus.Posted)
             .ToListAsync())
-            rows.Add((n.NoteDate, n.NoteNumber ?? "", "إشعار دائن", 0m, n.GrandTotal));
+            rows.Add((n.NoteDate, n.NoteNumber ?? "", "إشعار دائن", 0m, n.GrandTotal()));
+
+        foreach (var n in await db.CreditNotes
+            .Where(n => n.CompanyId == companyId && n.CustomerId == customerId && n.Status == CreditNoteStatus.Cancelled)
+            .ToListAsync())
+        {
+            await AppendCancellationRowAsync(rows, n.NoteDate, n.NoteNumber ?? "", "إشعار دائن",
+                0m, n.GrandTotal(), n.JournalEntryId);
+        }
 
         foreach (var v in await db.ReceiptVouchers
-            .Where(v => v.CompanyId == companyId && v.CustomerId == customerId && v.Status == ReceiptVoucherStatus.Posted)
+            .Where(v => v.CompanyId == companyId && v.CustomerId == customerId
+                        && (v.Status == ReceiptVoucherStatus.Posted || v.Status == ReceiptVoucherStatus.Reversed))
             .ToListAsync())
+        {
             rows.Add((v.VoucherDate, v.VoucherNumber ?? "", "سند قبض", 0m, v.Amount));
+            if (v.Status == ReceiptVoucherStatus.Reversed && v.JournalEntryId is long jeId)
+            {
+                var original = await db.JournalEntries.SingleOrDefaultAsync(e => e.Id == jeId);
+                if (original?.ReversalEntryId is long revId)
+                {
+                    var reversal = await db.JournalEntries.SingleAsync(e => e.Id == revId);
+                    rows.Add((reversal.EntryDate, v.VoucherNumber ?? "", "عكس سند قبض", v.Amount, 0m));
+                }
+            }
+        }
+
+        foreach (var c in await db.Cheques
+            .Where(c => c.CompanyId == companyId && c.CustomerId == customerId && c.Type == ChequeType.Received)
+            .ToListAsync())
+        {
+            if (ReceivedChequeCreditStatuses.Contains(c.Status))
+                rows.Add((c.ChequeDate, c.ChequeNumber, "شيك وارد", 0m, c.Amount));
+            else if (c.Status == ChequeStatus.Bounced)
+            {
+                rows.Add((c.ChequeDate, c.ChequeNumber, "شيك وارد", 0m, c.Amount));
+                rows.Add((c.ChequeDate, c.ChequeNumber, "ارتجاع شيك", c.Amount, 0m));
+            }
+        }
 
         var running = 0m;
         return rows
@@ -92,5 +198,20 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                 return new CustomerStatementLine(r.Date, r.Number, r.Type, r.Debit, r.Credit, running);
             })
             .ToList();
+    }
+
+    private async Task AppendCancellationRowAsync(
+        List<(DateOnly Date, string Number, string Type, decimal Debit, decimal Credit)> rows,
+        DateOnly docDate, string number, string typeLabel,
+        decimal debit, decimal credit, long? journalEntryId)
+    {
+        rows.Add((docDate, number, typeLabel, debit, credit));
+        if (journalEntryId is not long jeId) return;
+
+        var original = await db.JournalEntries.SingleOrDefaultAsync(e => e.Id == jeId);
+        if (original?.ReversalEntryId is not long revId) return;
+
+        var reversal = await db.JournalEntries.SingleAsync(e => e.Id == revId);
+        rows.Add((reversal.EntryDate, number, $"إلغاء {typeLabel}", credit, debit));
     }
 }

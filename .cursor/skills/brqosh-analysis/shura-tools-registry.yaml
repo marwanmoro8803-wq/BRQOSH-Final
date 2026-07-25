@@ -1,0 +1,122 @@
+# Shura Tools Registry v5 — every executable component
+version: v5
+updated: "2026-07-11"
+constitution: .cursor/skills/brqosh-analysis/shura-constitution.md
+
+layers:
+  consensus:
+    description: "Evidence-gated 12-seat vote + F00 + disciplines"
+    tools:
+      - id: shura-council-cs
+        path: ShuraCouncil/
+        entry: Program.cs
+        build: dotnet build ShuraCouncil/ShuraCouncil.csproj -c Release
+        outputs: [dist/evidence/shura-council/council-*.md, dist/evidence/shura-council/council-*.json]
+        exit_codes: { "0": approved, "1": not_met, "2": repo_not_found }
+
+      - id: run-shura-council-ops
+        path: scripts/ops/run-shura-council.ps1
+        delegates: ShuraCouncil/run-shura-council.ps1
+        post_action: merge-council-chronicle.ps1
+        agent_law: .cursor/rules/brqosh-shura-auto.mdc
+
+      - id: run-shura-council-local
+        path: ShuraCouncil/run-shura-council.ps1
+        args: [-Source, CEEF_path]
+
+  heartbeat:
+    description: "Shura Dynamo — 41 member pulses"
+    tools:
+      - id: run-shura-dynamo
+        path: scripts/ops/run-shura-dynamo.ps1
+        modes: [Auto, Maintain, Manual]
+
+      - id: shura-dynamo-orchestrator
+        path: scripts/ops/shura-dynamo/run-shura-dynamo.ps1
+
+      - id: resolve-dispatch
+        path: scripts/ops/shura-dynamo/Resolve-ShuraDispatch.ps1
+        reads: dist/evidence/shura-council/council-*.json
+        writes: dist/evidence/shura-dynamo/dispatch/dispatch-*.json
+
+      - id: invoke-pulse
+        path: scripts/ops/shura-dynamo/Invoke-ShuraPulse.ps1
+        phases: [START, OPS, DOTNET, NPM, SCAN, END]
+        evidence: dist/evidence/shura-dynamo/pulses/
+
+      - id: dynamo-registry
+        path: scripts/ops/shura-dynamo/shura-dynamo-registry.json
+        members: 41
+
+      - id: pulse-scripts
+        path: scripts/ops/shura-dynamo/pulses/
+        pattern: pulse-{F00,S01..S12,D01..D28}.ps1
+
+  chronicle:
+    description: "Unified AiCouncil + Shura timeline"
+    tools:
+      - id: merge-chronicle
+        path: scripts/ops/merge-council-chronicle.ps1
+        output: dist/evidence/council-chronicle/CHRONICLE.md
+        csharp: CognitiveQa/src/CognitiveQa.Core/CouncilChronicleMerger.cs
+
+  desktop_integration:
+    description: "CognitiveQa shell integration"
+    tools:
+      - id: shura-integration
+        path: CognitiveQa/src/CognitiveQa.Core/ShuraCouncilIntegration.cs
+        system: 88
+
+      - id: dynamo-integration
+        path: CognitiveQa/src/CognitiveQa.Core/ShuraDynamoIntegration.cs
+        system: 92
+
+      - id: omega-cell
+        path: CognitiveQa/src/CognitiveQa.Core/OmegaCellHealth.cs
+        cell: GovernCell
+
+  validation:
+    tools:
+      - id: validate-constitution
+        path: scripts/ops/validate-shura-constitution.ps1
+
+      - id: validate-prompt-governance
+        path: scripts/ops/validate-prompt-governance.ps1
+
+  intelligence_cs:
+    description: "C# engines inside ShuraCouncil/"
+    files:
+      - EvidenceLoader.cs
+      - SeatEvaluators.cs
+      - PromptGovernanceSeatEvaluators.cs
+      - ConsensusEngine.cs
+      - PromptConsensusEngine.cs
+      - AdversarialVerifier.cs
+      - ConflictResolver.cs
+      - FacilitatorEngine.cs
+      - LeakSynthesisEngine.cs
+      - SupremeGateEngine.cs
+      - SeatIntelligenceRegistry.cs
+      - PromptSeatIntelligenceRegistry.cs
+      - ProgrammingDisciplineRegistry.cs
+      - ProgrammingDisciplineEvaluators.cs
+      - MarkdownReportWriter.cs
+
+  skills_docs:
+    primary:
+      - .cursor/skills/brqosh-analysis/shura-constitution.md
+      - .cursor/skills/brqosh-analysis/shura-council-protocol.md
+      - .cursor/skills/brqosh-analysis/shura-intelligence-core.md
+      - .cursor/skills/brqosh-analysis/shura-heartbeat-core.md
+      - .cursor/skills/brqosh-analysis/shura-members-registry.yaml
+      - .cursor/skills/brqosh-analysis/shura-prompt-governance.md
+      - .cursor/skills/ai-dev-platform/shura-governance.md
+
+pipeline:
+  - ANALYZE
+  - SAVE_CEEF
+  - run-shura-council.ps1
+  - read_council_json
+  - run-shura-dynamo.ps1
+  - merge-council-chronicle.ps1
+  - PROJECT_MEMORY_yaml

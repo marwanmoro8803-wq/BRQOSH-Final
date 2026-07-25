@@ -6,25 +6,34 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="ميزان المراجعة" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="مجاميع وأرصدة · قيود مرحّلة فقط"/>
+            </StackPanel>
+        </Border>
+
         <!-- الفترة -->
-        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <DatePicker x:Name="FromDate" Width="160" FontSize="14"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="16,0,8,0"/>
                 <DatePicker x:Name="ToDate" Width="160" FontSize="14"/>
-                <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
+                <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun" IsDefault="True"/>
+                <Button Content="PDF" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportPdf"/>
+                <Button Content="Excel" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportExcel"/>
             </StackPanel>
         </Border>
 
         <!-- الجدول -->
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
                       FontSize="14" RowHeight="34" Background="Transparent" EnableRowVirtualization="True">
@@ -40,7 +49,7 @@
         </Border>
 
         <!-- الإجماليات -->
-        <Border Grid.Row="2" Background="{StaticResource SidebarBrush}" CornerRadius="10" Padding="16,10" Margin="0,12,0,0">
+        <Border Grid.Row="3" Style="{StaticResource SummaryCard}">
             <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="14"/>
         </Border>
     </Grid>

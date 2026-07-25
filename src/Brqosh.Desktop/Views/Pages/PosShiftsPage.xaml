@@ -1,0 +1,47 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PosShiftsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="ورديات نقاط البيع" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="فتح · إغلاق · نقد افتتاحي · مبيعات"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="OpenBtn" Content="＋ فتح وردية" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnOpenShift"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button DockPanel.Dock="Right" x:Name="CloseBtn" Content="إغلاق المحدد"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCloseShift"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="ShiftSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                      BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكاشير" Binding="{Binding CashierName}" Width="*"/>
+                    <DataGridTextColumn Header="الفتح" Binding="{Binding OpenedAt}" Width="150"/>
+                    <DataGridTextColumn Header="الإغلاق" Binding="{Binding ClosedAt}" Width="150"/>
+                    <DataGridTextColumn Header="نقد افتتاحي" Binding="{Binding OpeningCash, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="المبيعات" Binding="{Binding TotalSales, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="المعاملات" Binding="{Binding TransactionCount}" Width="90"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusAr}" Width="90"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

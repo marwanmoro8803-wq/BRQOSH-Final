@@ -1,0 +1,44 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.DataQualityPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="جودة البيانات" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="قيود · فواتير · مخزون · فروع · أحداث نطاق"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <Button DockPanel.Dock="Right" Content="فحص الآن" Style="{StaticResource PrimaryButton}"
+                        Padding="24,9" Click="OnRun"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="QualitySummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      FontSize="14" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="160"/>
+                    <DataGridTextColumn Header="الخطورة" Binding="{Binding Severity}" Width="100"/>
+                    <DataGridTextColumn Header="الرسالة" Binding="{Binding Message}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

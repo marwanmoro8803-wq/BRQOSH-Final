@@ -1,0 +1,132 @@
+using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Companies;
+
+namespace Brqosh.Domain.Treasury;
+
+public enum PaymentVoucherStatus
+{
+    Draft = 0,
+    Posted = 1,
+    Reversed = 2,
+    Submitted = 3,
+    Rejected = 4,
+}
+
+/// <summary>
+/// سند صرف — سداد لمورد. القيد الآلي: الموردون (مدين) ← الصندوق/البنك (دائن).
+/// </summary>
+public class PaymentVoucher : IBranchScoped
+{
+    public long Id { get; private set; }
+    public long CompanyId { get; private set; }
+    public long? BranchId { get; private set; }
+    public long SupplierId { get; private set; }
+    public string? VoucherNumber { get; private set; }
+    public DateOnly VoucherDate { get; private set; }
+    public decimal Amount { get; private set; }
+    public ReceiptMethod Method { get; private set; }
+    public string Description { get; private set; }
+    public string Reference { get; private set; }
+    public PaymentVoucherStatus Status { get; private set; } = PaymentVoucherStatus.Draft;
+    public long? WorkflowInstanceId { get; private set; }
+    public long? JournalEntryId { get; private set; }
+
+    /// <summary>الحساب البنكي عند طريقة الصرف بنك.</summary>
+    public long? BankAccountId { get; private set; }
+
+    // EF Core
+    private PaymentVoucher()
+    {
+        Description = null!;
+        Reference = null!;
+    }
+
+    private PaymentVoucher(long companyId, long supplierId, DateOnly voucherDate,
+        decimal amount, ReceiptMethod method, string description, string reference)
+    {
+        CompanyId = companyId;
+        SupplierId = supplierId;
+        VoucherDate = voucherDate;
+        Amount = amount;
+        Method = method;
+        Description = description;
+        Reference = reference;
+    }
+
+    public static PaymentVoucher CreateDraft(long companyId, long supplierId, DateOnly voucherDate,
+        decimal amount, ReceiptMethod method, string description, string reference = "",
+        long? bankAccountId = null)
+    {
+        if (supplierId <= 0)
+            throw new AccountingException("المورد مطلوب لسند الصرف.");
+        if (amount <= 0)
+            throw new AccountingException("مبلغ السند يجب أن يكون أكبر من صفر.");
+        if (string.IsNullOrWhiteSpace(description))
+            throw new AccountingException("بيان السند مطلوب.");
+
+        var voucher = new PaymentVoucher(companyId, supplierId, voucherDate,
+            Math.Round(amount, 2, MidpointRounding.AwayFromZero),
+            method, description.Trim(), (reference ?? "").Trim());
+        voucher.AssignBankAccount(bankAccountId);
+        return voucher;
+    }
+
+    public void AssignBranch(long branchId)
+    {
+        if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");
+        if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل.");
+        BranchId = branchId;
+    }
+
+    public void AssignBankAccount(long? bankAccountId)
+    {
+        BankAccountId = Method == ReceiptMethod.Cash ? null : bankAccountId;
+    }
+
+    public void MarkSubmitted(long workflowInstanceId)
+    {
+        if (Status != PaymentVoucherStatus.Draft)
+            throw new AccountingException("يُرسَل السند من مسودة فقط.");
+        WorkflowInstanceId = workflowInstanceId;
+        Status = PaymentVoucherStatus.Submitted;
+    }
+
+    public void MarkRejected()
+    {
+        if (Status != PaymentVoucherStatus.Submitted)
+            throw new AccountingException("يُرفض سند مُرسَل فقط.");
+        Status = PaymentVoucherStatus.Rejected;
+    }
+
+    /// <summary>الترحيل: مدين الموردين، دائن الصندوق/البنك.</summary>
+    public JournalEntry Post(string voucherNumber, Account payableAccount, Account cashOrBankAccount)
+    {
+        if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل.");
+        if (string.IsNullOrWhiteSpace(voucherNumber))
+            throw new AccountingException("رقم السند مطلوب عند الترحيل.");
+
+        var entry = JournalEntry.CreateDraft(
+            CompanyId, VoucherDate,
+            $"سند صرف رقم {voucherNumber} — {Description}",
+            sourceDocument: $"PaymentVoucher:{voucherNumber}");
+
+        entry.AddLine(payableAccount, Amount, 0m, "سداد ذمة المورد");
+        entry.AddLine(cashOrBankAccount, 0m, Amount,
+            Method == ReceiptMethod.Cash ? "صرف نقدي" : $"صرف بنكي {Reference}".Trim());
+
+        VoucherNumber = voucherNumber.Trim();
+        Status = PaymentVoucherStatus.Posted;
+        return entry;
+    }
+
+    public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
+
+    public void MarkReversed()
+    {
+        if (Status != PaymentVoucherStatus.Posted)
+            throw new AccountingException("لا يُعكس إلا سند صرف مرحّل.");
+        Status = PaymentVoucherStatus.Reversed;
+    }
+}

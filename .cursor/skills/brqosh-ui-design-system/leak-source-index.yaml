@@ -1,0 +1,82 @@
+# Leak source index — UI design synthesis (v18 Strict)
+
+> Grep `system_prompts_leaks-main/system_prompts_leaks-main/` only.  
+> Merge targets: modules in this folder — never paste raw into SKILL.md.  
+> **Language:** English only in all modules.
+
+corpus_zip: system_prompts_leaks-main.zip
+corpus_path: system_prompts_leaks-main/system_prompts_leaks-main
+version: v18
+updated: "2026-07-10"
+
+topic_routing:
+  program_fundamentals:
+    merge_into: program-design-mastery.md
+    grep:
+      - Anthropic/Claude Code/bundled-skills/artifact-design.md
+      - Anthropic/claude-design.md
+      - Misc/amp-code.md
+    sections: [Fundamentals, UI not document, Writing copy, Anti-patterns, Exception design system]
+
+  frontend_empathy:
+    merge_into: program-design-mastery.md
+    grep:
+      - OpenAI/Codex/gpt-5.5.md
+      - OpenAI/Codex/gpt-5.5-full.md
+    sections: [Frontend guidance, Build with empathy, Design instructions]
+
+  universal_foundations:
+    merge_into: design-foundations.md
+    grep:
+      - Anthropic/visualize.md
+    sections: [Core Design System, Philosophy, CSS Variables, mockup]
+
+  interaction_filters:
+    merge_into: interaction-environment.md
+    grep:
+      - Anthropic/Claude Code/bundled-skills/dataviz/references/interaction.md
+      - OpenAI/Codex/gpt-5.5.md
+    sections: [Filters, Tooltips, stable dimensions]
+
+  charts_kpi:
+    merge_into: visual-effects.md
+    grep:
+      - Anthropic/Claude Code/bundled-skills/dataviz/SKILL.md
+      - Anthropic/Claude Code/bundled-skills/dataviz/references/anti-patterns.md
+      - Anthropic/Claude Code/bundled-skills/dataviz/references/choosing-a-form.md
+      - Anthropic/Claude Code/bundled-skills/dataviz/references/color-formula.md
+      - Anthropic/Claude Code/bundled-skills/dataviz/references/marks-and-anatomy.md
+      - Anthropic/Claude Code/bundled-skills/dataviz/references/components.md
+
+  views_dashboard:
+    merge_into: modules.md
+    grep:
+      - Notion/notion-ai.md
+    sections: [Views, Dashboard, Table]
+
+  real_data:
+    merge_into: program-design-mastery.md
+    grep:
+      - Google/ai-studio-build.md
+    sections: [Never placeholder data, Real integrations]
+
+  tokens_motion:
+    merge_into: tokens.md
+    grep:
+      - Anthropic/visualize.md
+      - Anthropic/Claude Code/bundled-skills/artifact-design.md
+    sections: [Color, Type, Layout, motion, border-radius]
+
+module_stack_order:
+  - enforcement.md
+  - program-design-mastery.md
+  - design-foundations.md
+  - interaction-environment.md
+  - tokens.md
+  - modules.md
+  - visual-effects.md
+  - human-interface.md
+  - wpf-patterns.md
+
+maintenance: |
+  On deepen request: grep one file → extract principle → update module → note in leak-synthesis.md

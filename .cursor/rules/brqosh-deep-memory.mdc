@@ -1,0 +1,106 @@
+---
+description: >-
+  BRQOSH deep memory v1 — pre-change impact law · post-change MEM writeback ·
+  PROJECT-MEMORY.yaml truth. alwaysApply — never assume history without grep.
+alwaysApply: true
+---
+
+# BRQOSH — Deep Memory & Pre-Change Impact Law v1
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Fable: `claude-fable-5/tri-source-index.yaml`
+
+**Truth sources:** `docs/PROJECT-MEMORY.yaml` · `docs/memory/` · `STATUS.yaml` · `docs/OPEN_ITEMS.md` · `تقارير/CEEF-*`  
+**Continuous learning:** `brqosh-continuous-learning.mdc` · `LEARNING-INDEX.yaml` · `skill-lessons.yaml`
+
+**Workflow module:** `brqosh-agent-protocol/impact-before-change.md` · `knowledge-accumulation.md`
+
+---
+
+## Two Laws (non-negotiable)
+
+### Law 1 — Understand dimensions BEFORE any change
+
+Before **add · remove · refactor · rule · schema · posting · UI flow**:
+
+```
+① SCOPE      — files · DOMAIN_MAP module · wave boundary
+② LINKS      — callers · callees · DI · events · shared DTOs (grep)
+③ SHARED     — schema SQLite+PG · BranchId · RBAC · posting chain
+④ IMPACT     — accounting · security · workflow · RTL UX · tests
+⑤ CONFLICTS  — OPEN_ITEMS · parallel wave · removed behavior · CEEF scope
+⑥ VERIFY PLAN— which build/test/gate proves safety?
+```
+
+**Mandatory Plan Mode** when: 5+ modules · migration/schema · posting/Golden/ZATCA · API/behavior removal · new always-on rule.
+
+**Skip only for:** typo · single obvious test-red fix · user question-only (Inquiry).
+
+### Law 2 — Write memory AFTER verified change
+
+After **verify PASS** (or explicit ⏭ external boundary):
+
+Append one entry to `docs/PROJECT-MEMORY.yaml`:
+
+| Field | Required |
+|-------|----------|
+| `id` | `MEM-NNN` sequential |
+| `date` | ISO date |
+| `type` | `fix` · `feature` · `removal` · `rule` · `decision` · `lesson` · `note` |
+| `problem` | what was wrong or needed (1–2 sentences) |
+| `affected` | modules · tests · workflows impacted |
+| `how` | what we did (1–2 sentences) |
+| `verify` | command or evidence path |
+| `links` | `ceef` · `rule` · `files` · `detail` (optional) |
+
+**Tiering:**
+
+| Size | Where |
+|------|-------|
+| Small fix · single rule | `PROJECT-MEMORY.yaml` only |
+| 3+ modules · architectural fork | `docs/memory/MEM-NNN-slug.md` + YAML row |
+| Full wave close | CEEF in `تقارير/` + YAML row pointing to CEEF |
+
+**Never:** claim "done" without verify · write MEM before verify · CEEF for every typo.
+
+---
+
+## Session Wake (add to open-items wake)
+
+```
+⑤ Grep docs/PROJECT-MEMORY.yaml for topic/module before assuming "never done"
+⑥ Read impact-before-change.md before first Write/StrReplace of session
+```
+
+---
+
+## Governor 9 — Accumulation (operational)
+
+```
+Every meaningful change → MEM entry (+ rule file if new law)  
+Every verify fail / correction → MEM `type: lesson` + skill-lessons.yaml  
+Every wave close       → CEEF + MEM + STATUS + leak-synthesis lesson  
+Every substantive turn → LEARN loop per brqosh-continuous-learning.mdc
+```
+
+---
+
+## Agent Forbidden
+
+| DO NOT | DO INSTEAD |
+|--------|------------|
+| "I remember we fixed this" | grep `PROJECT-MEMORY.yaml` + git log |
+| Edit without caller grep | impact checklist §② |
+| Skip MEM after behavior change | append YAML row same turn |
+| Full CEEF for 3-line fix | MEM row only |
+| Chat as memory | files in repo |
+
+---
+
+## Quick grep
+
+```powershell
+rg -n "PostingOrchestrator|MEM-" docs/PROJECT-MEMORY.yaml docs/memory/
+rg -n "ClassName" src/ --glob "*.cs"   # callers before edit
+```
+
+**Related:** `brqosh-supreme-cortex` · `brqosh-schema-governance` · `brqosh-open-items` · `context-continuity.md`

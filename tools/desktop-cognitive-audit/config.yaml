@@ -1,0 +1,57 @@
+# BRQOSH Desktop Cognitive Audit — configuration
+repo_root: "../../"
+desktop_project: "src/Brqosh.Desktop/Brqosh.Desktop.csproj"
+desktop_source: "src/Brqosh.Desktop"
+full_scenario_audit: "tools/FullScenarioAudit/FullScenarioAudit.csproj"
+page_audit_catalog: "tools/UiAudit/PageAuditCatalog.cs"
+
+app:
+  process_name: "Brqosh.Desktop"
+  window_title_login: "تسجيل الدخول"
+  window_title_main: "BRQOSH ERP"
+  exe_candidates:
+    - "src/Brqosh.Desktop/bin/Release/net9.0-windows/Brqosh.Desktop.exe"
+    - "src/Brqosh.Desktop/bin/Debug/net9.0-windows/Brqosh.Desktop.exe"
+  env:
+    BRQOSH_UITEST: "1"
+    BRQOSH_TEST: "1"
+
+credentials:
+  username_env: "BRQOSH_TEST_USERNAME"
+  password_env: "BRQOSH_TEST_PASSWORD"
+  default_username: "marwan"
+  default_password: "UiAudit9!"
+
+audit:
+  # Run all profiles for maximum module coverage (Manufacturing + Construction + Retail)
+  profiles:
+    - Retail
+    - Construction
+    - Manufacturing
+  seed_data: true
+  payloads_per_field: 8
+  chaos_probability: 0.15
+  sabotage_enabled: true
+  resize_stress: true
+  interaction_delay_ms: 600
+  login_timeout_sec: 120
+
+automation:
+  backend: "uia"
+  ocr_enabled: true
+  ocr_lang: "ara+eng"
+
+forensics:
+  log_paths:
+    - "%LOCALAPPDATA%/BRQOSH/logs"
+    - "dist/evidence"
+  audit_log_table: "AuditLog"
+
+output:
+  base_dir: "output"
+  screenshots_dir: "output/screenshots"
+  diary_file: "output/CHRONICLE.md"
+  state_model: "output/app_state_model.json"
+  audit_report: "output/AUDIT_REPORT.md"
+  security_report: "output/SECURITY_SABOTAGE.md"
+  crisis_log: "output/logs/crisis.jsonl"

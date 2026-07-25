@@ -35,8 +35,8 @@ public static class SaudiChartOfAccounts
         new("1110", "دفعات مقدمة للموردين", "Advances to Suppliers", AccountType.Asset, "11", IsGroup: false),
         new("1111", "ضريبة القيمة المضافة — مدخلات", "VAT Input (Recoverable)", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1112", "عهد وسلف الموظفين", "Employee Advances & Custodies", AccountType.Asset, "11", IsGroup: false),
-        new("1113", "أعمال تحت التنفيذ (مستخلصات غير مفوترة)", "Work in Progress - Unbilled", AccountType.Asset, "11", IsGroup: false),
-        new("1114", "محتجزات لدى العملاء", "Retention Receivable", AccountType.Asset, "11", IsGroup: false),
+        new("1113", "أعمال تحت التنفيذ (مستخلصات غير مفوترة)", "Work in Progress - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+        new("1114", "محتجزات لدى العملاء", "Retention Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
         new("12", "الأصول غير المتداولة", "Non-Current Assets", AccountType.Asset, "1", IsGroup: true),
         new("1201", "الأراضي", "Land", AccountType.Asset, "12", IsGroup: false),
@@ -56,12 +56,12 @@ public static class SaudiChartOfAccounts
         new("2102", "أوراق الدفع", "Notes Payable", AccountType.Liability, "21", IsGroup: false),
         new("2103", "شيكات برسم الدفع", "Cheques Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2104", "مصروفات مستحقة", "Accrued Expenses", AccountType.Liability, "21", IsGroup: false),
-        new("2105", "دفعات مقدمة من العملاء", "Advances from Customers", AccountType.Liability, "21", IsGroup: false),
+        new("2105", "دفعات مقدمة من العملاء", "Advances from Customers", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2106", "ضريبة القيمة المضافة — مخرجات", "VAT Output (Payable)", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2107", "صافي ضريبة القيمة المضافة المستحقة", "VAT Net Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2108", "رواتب وأجور مستحقة", "Salaries & Wages Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2109", "التأمينات الاجتماعية المستحقة", "GOSI Payable", AccountType.Liability, "21", IsGroup: false),
-        new("2110", "محتجزات مستحقة لمقاولي الباطن", "Retention Payable - Subcontractors", AccountType.Liability, "21", IsGroup: false),
+        new("2110", "محتجزات مستحقة لمقاولي الباطن", "Retention Payable - Subcontractors", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2111", "الزكاة وضريبة الدخل المستحقة", "Zakat & Income Tax Payable", AccountType.Liability, "21", IsGroup: false),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
@@ -75,15 +75,17 @@ public static class SaudiChartOfAccounts
         new("3103", "الأرباح المبقاة (المرحّلة)", "Retained Earnings", AccountType.Equity, "3", IsGroup: false, IsSystem: true),
         new("3104", "أرباح/خسائر العام الحالي", "Current Year Profit/Loss", AccountType.Equity, "3", IsGroup: false, IsSystem: true),
         new("3105", "جاري الشركاء", "Partners' Current Account", AccountType.Equity, "3", IsGroup: false),
+        new("3106", "احتياطي ترجمة العملات", "Currency Translation Reserve (CTA)", AccountType.Equity, "3", IsGroup: false, IsSystem: true),
 
         // ============ 4 — الإيرادات ============
         new("4", "الإيرادات", "Revenue", AccountType.Revenue, null, IsGroup: true),
         new("4101", "إيرادات المبيعات", "Sales Revenue", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
         new("4102", "مردودات ومسموحات المبيعات", "Sales Returns & Allowances", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
         new("4103", "خصم مسموح به", "Sales Discounts", AccountType.Revenue, "4", IsGroup: false),
-        new("4104", "إيرادات عقود المقاولات (المستخلصات)", "Contract Revenue - Progress Billings", AccountType.Revenue, "4", IsGroup: false),
+        new("4104", "إيرادات عقود المقاولات (المستخلصات)", "Contract Revenue - Progress Billings", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
         new("4105", "إيرادات الخدمات", "Service Revenue", AccountType.Revenue, "4", IsGroup: false),
-        new("4106", "إيرادات أخرى", "Other Income", AccountType.Revenue, "4", IsGroup: false),
+        new("4106", "إيرادات أخرى", "Other Income", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
+        new("4107", "أرباح فروق عملة غير محققة", "Unrealized FX Gain", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
 
         // ============ 5 — المصروفات ============
         new("5", "المصروفات", "Expenses", AccountType.Expense, null, IsGroup: true),
@@ -92,7 +94,7 @@ public static class SaudiChartOfAccounts
         new("5101", "تكلفة البضاعة المباعة", "Cost of Goods Sold", AccountType.Expense, "51", IsGroup: false, IsSystem: true),
         new("5102", "مشتريات", "Purchases", AccountType.Expense, "51", IsGroup: false),
         new("5103", "مردودات ومسموحات المشتريات", "Purchase Returns & Allowances", AccountType.Expense, "51", IsGroup: false),
-        new("5104", "تكاليف مقاولي الباطن", "Subcontractor Costs", AccountType.Expense, "51", IsGroup: false),
+        new("5104", "تكاليف مقاولي الباطن", "Subcontractor Costs", AccountType.Expense, "51", IsGroup: false, IsSystem: true),
         new("5105", "مواد ومهمات المشاريع", "Project Materials & Supplies", AccountType.Expense, "51", IsGroup: false),
         new("5106", "أجور عمالة مباشرة", "Direct Labor", AccountType.Expense, "51", IsGroup: false),
         new("5107", "تكاليف صناعية غير مباشرة", "Manufacturing Overhead", AccountType.Expense, "51", IsGroup: false),
@@ -110,10 +112,11 @@ public static class SaudiChartOfAccounts
         new("5210", "أتعاب مهنية واستشارية", "Professional & Consulting Fees", AccountType.Expense, "52", IsGroup: false),
         new("5211", "مصروف إهلاك الأصول الثابتة", "Depreciation Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         new("5212", "ديون معدومة", "Bad Debts Expense", AccountType.Expense, "52", IsGroup: false),
-        new("5213", "عمولات ورسوم بنكية", "Bank Charges & Commissions", AccountType.Expense, "52", IsGroup: false),
+        new("5213", "عمولات ورسوم بنكية", "Bank Charges & Commissions", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         new("5214", "خصم مكتسب", "Purchase Discounts Earned", AccountType.Expense, "52", IsGroup: false),
         new("5215", "مصروفات متنوعة", "Miscellaneous Expenses", AccountType.Expense, "52", IsGroup: false),
         new("5216", "مصروف الزكاة", "Zakat Expense", AccountType.Expense, "52", IsGroup: false),
+        new("5217", "خسائر فروق عملة غير محققة", "Unrealized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>
@@ -121,10 +124,12 @@ public static class SaudiChartOfAccounts
     {
         public const string CashOnHand = "1101";
         public const string CashAtBanks = "1102";
+        public const string ChequesUnderCollection = "1103";
         public const string AccountsReceivable = "1104";
         public const string Inventory = "1107";
         public const string VatInput = "1111";
         public const string AccountsPayable = "2101";
+        public const string ChequesPayable = "2103";
         public const string VatOutput = "2106";
         public const string VatNetPayable = "2107";
         public const string SalesRevenue = "4101";
@@ -133,6 +138,17 @@ public static class SaudiChartOfAccounts
         public const string SalariesExpense = "5201";
         public const string RetainedEarnings = "3103";
         public const string CurrentYearProfit = "3104";
+        public const string TranslationReserve = "3106";
+        public const string RetentionReceivable = "1114";
+        public const string RetentionPayableSubcontractors = "2110";
+        public const string ContractRevenue = "4104";
+        public const string SubcontractorCosts = "5104";
+        public const string AdvancesFromCustomers = "2105";
+        public const string WorkInProgress = "1113";
+        public const string UnrealizedFxGain = "4107";
+        public const string UnrealizedFxLoss = "5217";
+        public const string BankCharges = "5213";
+        public const string OtherIncome = "4106";
     }
 
     /// <summary>

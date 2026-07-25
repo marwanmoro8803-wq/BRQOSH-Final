@@ -1,0 +1,61 @@
+# BRQOSH — Cloud Code Agent Law v1
+
+**Truth sources:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · `docs/PLATFORM-MAP.md` · `README.md`  
+**Product:** `CognitiveQa/` · `CognitiveQa/STATUS.yaml`
+
+---
+
+## Immutable law
+
+Every agent working on Program Developer / CognitiveQa MUST read the Cloud Code guide **before** first code mutation in a session.
+
+```
+Session start → README.md → CLOUD-CODE-AGENT-GUIDE.md → attach skill stack → IMPACT → ACT → VERIFY
+```
+
+---
+
+## Mandatory pointers
+
+| Document | Purpose |
+|----------|---------|
+| [docs/CLOUD-CODE-AGENT-GUIDE.md](../../docs/CLOUD-CODE-AGENT-GUIDE.md) | Full onboarding · pipeline · verify |
+| [docs/PLATFORM-MAP.md](../../docs/PLATFORM-MAP.md) | Every folder and program |
+| [.cursor/skills/brqosh-skills-hub/CLOUD-CODE-READ-ORDER.md](../skills/brqosh-skills-hub/CLOUD-CODE-READ-ORDER.md) | Ordered read list |
+| [CognitiveQa/design-system/CLOUD-CODE-SHELL.md](../../CognitiveQa/design-system/CLOUD-CODE-SHELL.md) | UI shell regions |
+
+---
+
+## Language
+
+| Scope | Language |
+|-------|----------|
+| Skills · rules · plans · agent README/guides | **English only** (MUST/MUST NOT) |
+| Desktop UI at runtime | Bilingual via `LocaleService` toggle |
+| Legal stubs in `docs/legal/` | Exception — not agent law |
+
+Verify: `language-enforcement.md` in brqosh-skills-hub.
+
+---
+
+## Skill stack (this workspace)
+
+```
+fable-omni-core → supreme-programming-mastery → ai-dev-platform → domain (1–3)
+```
+
+Primary domain for CognitiveQa UI: `omni-qa-army` + `brqosh-ui`.
+
+---
+
+## FORBIDDEN
+
+| ID | Forbidden |
+|----|-----------|
+| CC-F01 | Implement without reading CLOUD-CODE-AGENT-GUIDE |
+| CC-F02 | Arabic paragraphs in new skill/rule/plan content |
+| CC-F03 | Extend `cognitive-qa/` Python tree |
+| CC-F04 | Bulk-load leak corpus or full `claude-fable-5.md` |
+| CC-F05 | Claim wave complete without `dotnet test` when code touched |
+
+**Related:** `brqosh-supreme-cortex.mdc` · `brqosh-shura-auto.mdc`

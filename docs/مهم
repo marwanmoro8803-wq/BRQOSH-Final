@@ -1,0 +1,520 @@
+# خارطة طريق BRQOSH — نظام التشغيل المالي والتجاري والإداري العالمي
+
+**الإصدار:** 4.0 — مجلس الخبراء العالمي المستقل
+**الحالة:** معتمدة بعد إعادة هندسة استراتيجية
+**الهدف:** بناء منصة ERP مالية وتجارية وإدارية عالمية وليس مجرد برنامج محاسبة
+
+> **خارطة التنفيذ الرسمية (MASTER):** [`docs/EXECUTION_ROADMAP_MASTER.md`](EXECUTION_ROADMAP_MASTER.md) — **مغلقة V1–V11 · CEEF-100**  
+> **تكامل نظام التصميم:** [`docs/EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md) · [`docs/EXECUTION_ROADMAP_V2.md`](EXECUTION_ROADMAP_V2.md) · [`docs/EXECUTION_ROADMAP_V3.md`](EXECUTION_ROADMAP_V3.md) · [`docs/EXECUTION_ROADMAP_V4.md`](EXECUTION_ROADMAP_V4.md) · [`docs/EXECUTION_ROADMAP_V5.md`](EXECUTION_ROADMAP_V5.md) · [`docs/EXECUTION_ROADMAP_V6.md`](EXECUTION_ROADMAP_V6.md) · [`docs/EXECUTION_ROADMAP_V7.md`](EXECUTION_ROADMAP_V7.md) · [`docs/EXECUTION_ROADMAP_V8.md`](EXECUTION_ROADMAP_V8.md) · [`docs/EXECUTION_ROADMAP_V9.md`](EXECUTION_ROADMAP_V9.md) · [`docs/EXECUTION_ROADMAP_V10.md`](EXECUTION_ROADMAP_V10.md) · [`docs/EXECUTION_ROADMAP_V11.md`](EXECUTION_ROADMAP_V11.md) · [`design-system/PLATFORM-ROADMAP.md`](../design-system/PLATFORM-ROADMAP.md) · [`LIFECYCLE-ROADMAP-100.md`](../design-system/LIFECYCLE-ROADMAP-100.md) · [`ECOSYSTEM-VISION.md`](../design-system/ECOSYSTEM-VISION.md) · مهارة الوكيل `.cursor/skills/brqosh-ui-design-system/`
+
+---
+
+# 0. الرؤية النهائية
+
+BRQOSH ليس نظام محاسبة.
+
+BRQOSH هو:
+
+> نظام تشغيل اقتصادي للمؤسسات، يجمع المحاسبة، التجارة، الإدارة، العمليات، الامتثال، الذكاء الاصطناعي، والتحليلات في منصة واحدة قابلة للتوسع عالميًا.
+
+الهدف:
+
+خدمة:
+
+* الأفراد.
+* الشركات الصغيرة والمتوسطة.
+* المؤسسات الكبرى.
+* الحكومات.
+* الشركات متعددة الدول.
+
+مع دعم:
+
+* تعدد الدول.
+* تعدد العملات.
+* تعدد التشريعات.
+* تعدد القطاعات.
+
+---
+
+# 1. التعديل الاستراتيجي الأساسي
+
+قبل إضافة أي وحدات جديدة:
+
+يجب تثبيت الأساس التالي:
+
+## Financial Truth First
+
+أي نظام ERP عالمي يجب أن يجيب بثقة:
+
+* أين ذهبت الأموال؟
+* لماذا حدثت الحركة؟
+* من قام بها؟
+* متى حدثت؟
+* ما أثرها المالي؟
+* هل يمكن تدقيقها؟
+
+لذلك الأولوية:
+
+1. صحة المحاسبة.
+2. سلامة البيانات.
+3. الأمن.
+4. الامتثال.
+5. التوسع.
+
+---
+
+# المرحلة -1 — Enterprise Domain Architecture Freeze
+
+## الهدف
+
+منع تحول النظام إلى شبكة مترابطة يصعب تطويرها.
+
+## المخرجات المطلوبة:
+
+### 1. Domain Map
+
+تقسيم النظام إلى نطاقات مستقلة:
+
+```
+Financial Core
+
+├── General Ledger
+├── Accounts Payable
+├── Accounts Receivable
+├── Treasury
+├── Fixed Assets
+├── Tax Engine
+
+
+Commercial Core
+
+├── Sales
+├── Procurement
+├── Inventory
+├── Pricing
+├── CRM
+
+
+Operational Core
+
+├── Projects
+├── Construction
+├── Manufacturing
+├── HR
+├── Payroll
+
+
+Platform Core
+
+├── Identity
+├── Workflow
+├── Audit
+├── Notifications
+├── Reporting
+├── AI Platform
+```
+
+---
+
+# المرحلة 0 — Financial Integrity Layer
+
+## الهدف
+
+إنشاء قلب مالي لا يمكن فقدان الثقة به.
+
+إضافة:
+
+## Accounting Rules Engine
+
+مسؤول عن:
+
+* قواعد القيود.
+* الحسابات الافتراضية.
+* منع القيود غير الصحيحة.
+* التحقق قبل الترحيل.
+
+---
+
+## Immutable Audit Ledger
+
+إضافة:
+
+* سجل غير قابل للتعديل.
+* تاريخ كامل لكل تغيير.
+* من قام بالتغيير.
+* السبب.
+
+---
+
+## Golden Accounting Tests
+
+اختبارات محاسبية معيارية:
+
+أمثلة:
+
+* شراء أصل.
+* بيع أصل.
+* إهلاك.
+* جرد.
+* مرتجع.
+* ضريبة.
+* فروقات عملة.
+
+ويجب أن تثبت:
+
+القيد + التقرير + الأثر المالي.
+
+---
+
+# المرحلة 1 — P0 Production Safety
+
+تبقى كما هي مع تعزيز:
+
+## Security
+
+* Fail Closed.
+* RBAC كامل.
+* Session Security.
+* Permission Matrix.
+
+## Accounting
+
+* ACC-001.
+* ACC-002.
+* ACC-003.
+* ACC-006.
+
+## ZATCA
+
+* P-256.
+* Transaction Integrity.
+* Live Validation.
+
+معايير النجاح:
+
+* لا يوجد مسار ترحيل بدون صلاحية.
+* لا يوجد تقرير مالي غير صحيح.
+* لا يوجد مستند مالي غير قابل للتدقيق.
+
+---
+
+# المرحلة 2 — P1 Enterprise Foundation
+
+## 1. Workflow Engine (تم رفعه من P2 إلى P1)
+
+لأن المؤسسات لا تعمل بدون موافقات.
+
+يدعم:
+
+* Approval Chains.
+* Delegation.
+* Escalation.
+* Separation of Duties.
+
+مثال:
+
+```
+Purchase Request
+
+Employee
+ ↓
+Manager
+ ↓
+Finance
+ ↓
+Payment
+```
+
+---
+
+# 2. Master Data Governance
+
+إضافة طبقة إدارة البيانات الأساسية.
+
+تشمل:
+
+## العملاء
+
+* منع التكرار.
+* دورة اعتماد.
+* تاريخ التعديل.
+
+## الأصناف
+
+* وحدات القياس.
+* التصنيفات.
+* البدائل.
+
+## الحسابات
+
+* Versioning.
+* Validation.
+
+## الموردون
+
+* اعتماد.
+* تقييم.
+
+---
+
+# 3. Treasury Management
+
+إضافة إدارة الخزينة:
+
+تشمل:
+
+* الحسابات البنكية.
+* التسويات البنكية.
+* التدفقات النقدية.
+* توقع السيولة.
+* إدارة المدفوعات.
+* التحصيل.
+
+---
+
+# المرحلة 3 — Saudi Market Production
+
+هدفها:
+
+ERP سعودي جاهز للسوق.
+
+تشمل:
+
+* ZATCA Production.
+* SOCPA.
+* VAT.
+* GOSI.
+* المقاولات.
+* التصنيع.
+* المخزون.
+
+إضافة:
+
+## Configuration Engine
+
+بدل برمجة كل دولة:
+
+```
+Country Template
+
+Saudi Arabia
+ ├── VAT
+ ├── ZATCA
+ ├── SOCPA
+
+
+Industry Template
+
+Construction
+ ├── Retention
+ ├── BOQ
+ ├── IFRS15
+```
+
+---
+
+# المرحلة 4 — Enterprise ERP Maturity
+
+## إعادة بناء Application Layer
+
+تنفيذ:
+
+* Clean Architecture كامل.
+* Use Cases.
+* Dependency Injection.
+* إزالة Service Locator.
+
+---
+
+## API Platform
+
+إضافة:
+
+* REST API.
+* Webhooks.
+* Integration Framework.
+
+للتكامل مع:
+
+* Banks.
+* E-commerce.
+* Government Systems.
+
+---
+
+# المرحلة 5 — Data Intelligence Platform
+
+قبل AI:
+
+إنشاء:
+
+## Data Foundation
+
+يشمل:
+
+* Data Warehouse.
+* Historical Data.
+* Data Quality.
+* Event Tracking.
+
+---
+
+# المرحلة 6 — AI Financial Intelligence
+
+بعد توفر البيانات:
+
+إضافة:
+
+## AI CFO Assistant
+
+وظائف:
+
+* تحليل الأداء.
+* اكتشاف المخاطر.
+* توقع السيولة.
+* كشف الاحتيال.
+* اقتراح القرارات.
+
+AI يجب أن يكون:
+
+Decision Support
+
+وليس مجرد Chatbot.
+
+---
+
+# المرحلة 7 — Global Platform
+
+التحول إلى منصة عالمية:
+
+## Multi Tenant
+
+* عزل البيانات.
+* Billing.
+* Provisioning.
+
+## Multi Country
+
+* ضرائب.
+* عملات.
+* قوانين.
+
+## Cloud Native
+
+* High Availability.
+* Disaster Recovery.
+* Auto Scaling.
+
+---
+
+# طبقات إلزامية جديدة
+
+## Observability Platform
+
+قبل SaaS:
+
+يشمل:
+
+* Logs.
+* Metrics.
+* Tracing.
+* Alerts.
+* Health Monitoring.
+
+---
+
+# استراتيجية الجودة الجديدة
+
+بدل اختبار الكود فقط:
+
+اختبار النظام بالكامل:
+
+## Technical Tests
+
+* Unit.
+* Integration.
+* Performance.
+* Security.
+
+## Financial Tests
+
+* Accounting Scenarios.
+* Tax Scenarios.
+* Audit Scenarios.
+
+## Business Tests
+
+* Real company workflows.
+
+---
+
+# مؤشرات الجاهزية (محدّثة — CEEF-041 / V12)
+
+> **تنبيه:** النسب أدناه **مؤشرات رؤية نسبية** وليست جاهزية إنتاج حي. بعد إغلاق V12: **~75%** نواة محاسبية داخل المستودع · **~40%** إنتاج حي (يحتاج O-01…O-05).
+
+| المرحلة | هدف رؤية | كود داخلي (تقدير) | تشغيل حي |
+| ----------------------- | ----- | ----- | ----- |
+| بعد Financial Integrity | 45% | ✅ V12-1 CEEF-102…104 | — |
+| بعد P0 | 55% | ✅ ACC + RBAC | ⏭ ZATCA OTP |
+| بعد P1 Foundation | 70% | ✅ V12-2 CEEF-105…107 | — |
+| بعد Saudi Production | 80% | ✅ ~75% | ⏭ O-01…O-03 |
+| بعد Enterprise ERP | 90% | ✅ V12-4 CEEF-109…110 | — |
+| بعد Global Platform | 95% | ⏭ ~10% stub | ⏭ O-09…O-13 |
+
+## تعريف الإغلاق (4 مستويات)
+
+| المستوى | الرمز | دليل |
+|---------|-------|------|
+| كود | ✅ كود | `src/` + build |
+| اختبار | ✅ اختبار | `dotnet test` PASS |
+| تشغيل حي | ✅ حي | `dist/evidence/O-XX/` |
+| خارجي | ⏭ | runbook + سبب |
+
+---
+
+# دورة الحياة التشغيلية — 100 خطوة (من الدخول إلى الإقفال)
+
+> **الوثيقة الكاملة:** [`design-system/LIFECYCLE-ROADMAP-100.md`](../design-system/LIFECYCLE-ROADMAP-100.md)
+
+نواة ERP محاسبي/ZATCA — من تسجيل الدخول حتى الإقفال النهائي:
+
+| # | المجال | الخطوات | جوهر |
+|---|--------|---------|------|
+| 1 | البنية الأساسية | 1–10 | هوية · MFA · جلسات · tenants · فروع · فترات |
+| 2 | إعداد المحاسبة | 11–20 | COA · قواعد ترحيل · ضريبة · إقفال |
+| 3 | دورة المستند | 21–30 | Draft→Posted · audit · attachments · period |
+| 4 | المبيعات | 31–40 | عروض → فاتورة → ترحيل AR/ضريبة |
+| 5 | **ZATCA** | 41–50 | XML · QR · UUID · Hash · CSID · إرسال · أرشفة |
+| 6 | المشتريات | 51–60 | PO · GRN · 3-way match · AP · دفع |
+| 7 | النقد والبنوك | 61–70 | صندوق · بنك · مطابقة · تقارير |
+| 8 | القيود | 71–80 | يدوي/تلقائي · إهلاك · عكس · قفل فترة |
+| 9 | المخزون | 81–90 | أصناف · حركات · جرد · تكلفة |
+| 10 | الإقفال | 91–100 | إغلاق فترة · قوائم · سنة · أرشفة · تجميد |
+
+**ZATCA:** الفاتورة الإلكترونية السعودية تتطلب XML (UBL) · QR (TLV) · CSID · UUID · Hash/ICV · حقول محددة. المواصفات الرسمية على [fatoora.zatca.gov.sa](https://fatoora.zatca.gov.sa). ⏭ OTP/Production = بوابة خارجية.
+
+**Golden paths:** بيع→ZATCA→تحصيل · شراء→استلام→دفع · إقفال شهري · إقفال سنوي.
+
+---
+
+# الحكم النهائي للمجلس
+
+BRQOSH يجب ألا يبنى كبرنامج.
+
+يجب بناؤه كـ:
+
+**Financial Operating System Platform**
+
+القاعدة:
+
+لا توسع قبل الثقة.
+
+لا ذكاء قبل البيانات.
+
+لا عالمية قبل المعمارية.
+
+لا ميزات قبل صحة المال.
+
+الهدف النهائي:
+
+بناء نظام مؤسسي يمكن الاعتماد عليه ماليًا وتشغيليًا عالميًا، وليس مجرد تطبيق ناجح.

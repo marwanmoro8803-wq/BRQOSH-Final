@@ -1,0 +1,182 @@
+---
+description: >-
+  Schema governance v17 — SQLite+PG mandatory · 60s diagnosis · SchemaSqlGuard ·
+  zero false closure. Activates on Persistence/Domain/Schema paths.
+globs:
+  - src/Brqosh.Infrastructure/Persistence/**
+  - src/Brqosh.Domain/**
+  - tests/**/Persistence/**
+  - tests/**/*Schema*
+  - tools/DbStartupProbe/**
+  - tools/FullScenarioAudit/**
+alwaysApply: false
+---
+
+# BRQOSH — Schema Governance Law v17
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Sibling ERP schema law — not CognitiveQa primary
+
+## Golden Rule
+
+**Every schema change must pass SQLite AND PostgreSQL before ✅.**
+
+No column, table, or migration is "closed" on SQLite alone. PostgreSQL = production. SQLite = fast dev/CI. **Both are mandatory.**
+
+---
+
+## 60-Second Agent Diagnosis
+
+```
+PG error in Desktop/test
+├─ "Unsupported PostgreSQL column type"?
+│  └─ unregistered type → AllowedPgTypes + SchemaSqlGuardTests + PG re-test
+├─ column in SQLite not PG (or reverse)?
+│  └─ drift → sync ApplySqlitePatchesAsync + ApplyPostgreSqlPatchesAsync
+├─ EF Entity changed without SchemaUpdater?
+│  └─ add incremental migration — EnsureCreated insufficient for old DBs
+└─ SQLite PASS only?
+   └─ NOT CLOSED — run schema-gate-pg.ps1
+```
+
+---
+
+## Recurring Failures (do not repeat)
+
+| Symptom | Root cause | Agent action |
+|---------|------------|--------------|
+| `Unsupported PostgreSQL column type: character varying(128)` | PG type not in registry | register + theory + PG test |
+| V12 passes SQLite · Desktop fails PG | SQLite-only column | sync both paths |
+| agent says "complete" | CI = SQLite in-memory | state SQLite ✅ / PG ✅ or ❌ explicitly |
+| EF ↔ SchemaUpdater drift | separate DDL paths | review all three: EF + Updater + Guard |
+
+---
+
+## BrqoshSchemaUpdater Rules
+
+### 1. Type Registry — `MapPostgresType` / `SchemaSqlGuard`
+
+Every new PostgreSQL type in `EnsurePgColumnAsync` or raw DDL **must** register in `SchemaSqlGuard.AllowedPgTypes`.
+
+**If missing — refuse closure:**
+
+> Unsupported PostgreSQL column type: {type}. Add to AllowedPgTypes and run PostgreSqlStartupTests before closure.
+
+### 2. Column Read — `ReadExistingColumns`
+
+Before `ALTER TABLE ADD COLUMN`:
+- **PostgreSQL:** `information_schema.columns`
+- **SQLite:** `pragma_table_info`
+
+Every new column = same PascalCase name in **both** paths with equivalent types.
+
+### 3. Forbidden
+
+| Forbidden | Required |
+|-----------|----------|
+| PG-only column | same column in SQLite path |
+| PG type without registry | registry + SchemaSqlGuardTests |
+| Entity change without SchemaUpdater | incremental upgrade |
+| close on SQLite PASS only | PG gate mandatory |
+
+---
+
+## Supported PostgreSQL Types (live source: `SchemaSqlGuard.cs`)
+
+| Family | Registered | Notes |
+|--------|------------|-------|
+| varchar | `character varying(3\|16\|32\|64\|128\|512)` | new length = explicit register |
+| integer | `INTEGER NOT NULL DEFAULT 0` | SQLite: INTEGER |
+| bigint | `BIGINT NULL` | FK · BranchId |
+| boolean | `BOOLEAN NOT NULL DEFAULT false` | SQLite: 0/1 |
+| numeric | `NUMERIC(18,2) NOT NULL DEFAULT 0` | money |
+| uuid | `UUID NULL/NOT NULL` | TenantId |
+| timestamptz | `TIMESTAMPTZ NULL` | DeletedAtUtc |
+| text/jsonb/date | mandatory register on add | |
+
+---
+
+## EF vs SchemaUpdater — Source of Truth
+
+| Layer | Role |
+|-------|------|
+| **EF (`BrqoshDbContext`)** | truth for empty DB (`EnsureCreated`) |
+| **BrqoshSchemaUpdater** | incremental upgrade for existing DBs |
+| **SchemaSqlGuard** | gate — rejects unregistered DDL |
+
+**Sync rule:** change touching one touches all three.
+
+---
+
+## 4-Level Schema Closure
+
+| # | Level | Proof |
+|---|-------|-------|
+| 1 | Code | Entity + DbContext + Updater (SQLite+PG) + Guard |
+| 2 | SQLite | `dotnet test` — SchemaUpdater tests |
+| 3 | PostgreSQL | `PostgreSqlStartupTests` + `SchemaSqlGuardTests` |
+| 4 | Desktop PG | `DatabaseBootstrapService` — zero exceptions |
+
+**No ✅ schema** without all four. Levels 3–4 are not optional.
+
+---
+
+## Agent Workflow (schema change)
+
+```
+① Read Entity + DbContext + SchemaUpdater (both paths) + SchemaSqlGuard
+② Apply synchronized change
+③ Register new PG types + theory tests
+④ dotnet test (SQLite)
+⑤ schema-gate-pg.ps1 — BRQOSH_REQUIRE_PG=1 for closure
+⑥ Report: SQLite ✅ / PG ✅ — or ❌ with next step
+```
+
+---
+
+## PR Gate Checklist
+
+- [ ] **schema-gate-sqlite:** `dotnet test` PASS
+- [ ] **schema-gate-pg:** `PostgreSqlStartupTests` with `%AppData%/BRQOSH/database.json`
+- [ ] **schema-type-registry:** every new PG type in AllowedPgTypes + theory
+- [ ] **Desktop smoke PG:** no `Unsupported PostgreSQL column type`
+- [ ] **no drift:** identical columns in SQLite and PG paths
+
+```powershell
+.\scripts\ops\schema-gate-pg.ps1
+$env:BRQOSH_REQUIRE_PG='1'; .\scripts\ops\schema-gate-pg.ps1
+dotnet test Brqosh.sln -c Release --filter "FullyQualifiedName~SchemaSqlGuard|FullyQualifiedName~ImmutableAudit"
+dotnet test tests/Brqosh.Application.Tests -c Release --filter "FullyQualifiedName~PostgreSqlStartup"
+dotnet run --project tools/DbStartupProbe
+```
+
+---
+
+## On PG Failure — Agent Response
+
+**Never offer "try SQLite" as final solution.**
+
+1. Read error — usually unregistered type  
+2. Add to registry + theory  
+3. Re-run PostgreSqlStartupTests + Desktop smoke  
+4. Close only after **both** PASS  
+
+SQLite PASS ≠ problem solved.
+
+---
+
+## Agent Forbidden Claims
+
+| Forbidden | Required |
+|-----------|----------|
+| "column added — tests PASS" | SQLite ✅ / PostgreSQL ✅ or ❌ |
+| skip PG because CI lacks it | PG = mandatory manual gate |
+| fix Guard without PG test | PostgreSqlStartupTests locally |
+| close schema without PG | remains 🔶 |
+
+---
+
+## References
+
+- `docs/SCHEMA_GOVERNANCE.md` · `docs/OPEN_ITEMS.md`
+- `src/Brqosh.Infrastructure/Persistence/SchemaSqlGuard.cs`
+- `tests/Brqosh.Application.Tests/Persistence/PostgreSqlStartupTests.cs`

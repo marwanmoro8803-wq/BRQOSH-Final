@@ -1,0 +1,52 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.CustomerSupportPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="دعم العملاء" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="G-31 · SLA · قنوات التواصل · تذاكر الدعم (MVP)"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock FontWeight="SemiBold" Text="مستويات الخدمة (SLA)" Margin="0,0,0,8"/>
+                <DataGrid x:Name="SlaGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                          FontSize="14" RowHeight="32" MaxHeight="140">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الباقة" Binding="{Binding Plan}" Width="*"/>
+                        <DataGridTextColumn Header="زمن الاستجابة" Binding="{Binding Response}" Width="160"/>
+                        <DataGridTextColumn Header="ساعات العمل" Binding="{Binding Hours}" Width="160"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Margin="0,12,0,0" Foreground="{StaticResource TextSecondaryBrush}"
+                           Text="البريد: support@brqosh.sa · الهاتف: 9200XXXXXX (MVP — يُحدَّث عند الإطلاق)"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <StackPanel>
+                <TextBlock FontWeight="SemiBold" Text="تذاكر الدعم" Margin="0,0,0,8"/>
+                <TextBlock x:Name="TicketsSummaryText" Margin="0,0,0,8"/>
+                <DataGrid x:Name="TicketsGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                          FontSize="14" RowHeight="34">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding Id}" Width="80"/>
+                        <DataGridTextColumn Header="الموضوع" Binding="{Binding Subject}" Width="*"/>
+                        <DataGridTextColumn Header="الأولوية" Binding="{Binding Priority}" Width="100"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="120"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

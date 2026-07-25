@@ -17,4 +17,5 @@ public enum ModuleKey
     PointOfSale,
     Manufacturing,
     ProjectsConstruction,
+    Crm,
 }

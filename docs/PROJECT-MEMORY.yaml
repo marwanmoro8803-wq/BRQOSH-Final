@@ -1,0 +1,494 @@
+# BRQOSH Project Memory — فهرس الذاكرة السريعة
+# Purpose: permanent trace of fixes · features · rules · decisions
+# Rule: .cursor/rules/brqosh-deep-memory.mdc · brqosh-continuous-learning.mdc
+# Workflow: .cursor/skills/brqosh-agent-protocol/impact-before-change.md
+# Detail files: docs/memory/MEM-NNN-slug.md (when 3+ modules)
+# Wave closure: تقارير/CEEF-XXX + row here with links.ceef
+
+version: 1
+updated: "2026-07-10"
+next_id: 18
+
+entries:
+  - id: MEM-001
+    date: "2026-07-10"
+    type: rule
+    problem: "لا سجل موحّد يذكر ماذا أُصلح/طُوّر/حُذف ولماذا — الوكيل يعتمد على المحادثة"
+    affected:
+      - agent-protocol
+      - all development sessions
+    how: "قانون brqosh-deep-memory.mdc + impact-before-change.md + PROJECT-MEMORY.yaml"
+    verify: "agent reads rule each session · append MEM after verified change"
+    links:
+      rule: ".cursor/rules/brqosh-deep-memory.mdc"
+      files:
+        - ".cursor/skills/brqosh-agent-protocol/impact-before-change.md"
+        - "docs/PROJECT-MEMORY.yaml"
+
+  - id: MEM-002
+    date: "2026-07-10"
+    type: decision
+    problem: "خطة CEEF-120 Supreme Closure — 7 phases · O-01..O-05 حي خارجي"
+    affected:
+      - CEEF-120..137
+      - Desktop DI
+      - skills v16
+      - PG schema gate
+      - V13 market (CRM · OpenAPI · Gulf VAT · i18n)
+    how: "Phases 0–3+5 in-repo مغلقة · Phase 4 ⏭ live OTP/SOCPA/VM/ZAP"
+    verify: "459/459 PASS · dist/evidence/CEEF-137-ceef120-closure/"
+    links:
+      ceef: "تقارير/CEEF-137_CEEF120_Plan_Closure.md"
+      detail: "docs/memory/MEM-002-ceef120-closure.md"
+
+  - id: MEM-003
+    date: "2026-07-10"
+    type: feature
+    problem: "تكرار قواعد الأدوات بين skills · تحميل 31 ملفاً في الجلسة"
+    affected:
+      - supreme-programming-mastery
+      - brqosh-engineering
+      - FILE-ROADMAP load_tiers
+    how: "tools-cursor.md canonical · engineering/tools redirect · load_tiers session≤4"
+    verify: "scripts/ops/agent-skill-regression.ps1 PASS"
+    links:
+      ceef: "تقارير/CEEF-121_Skills_v16.md"
+      files:
+        - ".cursor/skills/supreme-programming-mastery/tools-cursor.md"
+
+  - id: MEM-004
+    date: "2026-07-10"
+    type: fix
+    problem: "إغلاق schema على SQLite فقط — PG production drift risk"
+    affected:
+      - Brqosh.Infrastructure.Persistence
+      - SchemaSqlGuard
+      - schema-gate-pg
+    how: "PG gate mandatory · BRQOSH_TEST production guard · brqosh-schema-governance.mdc"
+    verify: "schema-gate-pg.ps1 PASS · CEEF-125"
+    links:
+      ceef: "تقارير/CEEF-125_Schema_PG_Security_Gate.md"
+      rule: ".cursor/rules/brqosh-schema-governance.mdc"
+
+  - id: MEM-005
+    date: "2026-07-10"
+    type: feature
+    problem: "Desktop new XxxService() — DI bypass · testability gap"
+    affected:
+      - Brqosh.Desktop
+      - AppServices
+      - DesktopDiGuardTests
+    how: "Tier P0–P3 migration · grep zero new Service() · facade registration CEEF-122..124"
+    verify: "DesktopDiGuardTests · grep 'new .*Service(' → 0"
+    links:
+      ceef: "تقارير/CEEF-124_Desktop_Tier_P2_P3_Complete.md"
+      files:
+        - "tests/Brqosh.Desktop.Tests/DesktopDiGuardTests.cs"
+
+  - id: MEM-006
+    date: "2026-07-10"
+    type: rule
+    problem: "Skills/rules/plans لا تتعلم تلقائياً — المعرفة تضيع مع انتهاء المحادثة"
+    affected:
+      - all .cursor/skills
+      - .cursor/rules
+      - .cursor/plans
+      - agent sessions
+    how: "brqosh-continuous-learning.mdc + LEARNING-INDEX.yaml + skill-lessons.yaml + knowledge-accumulation LEARN loop"
+    verify: "validate-learning-index.ps1 · validate-project-memory.ps1"
+    links:
+      rule: ".cursor/rules/brqosh-continuous-learning.mdc"
+      files:
+        - ".cursor/LEARNING-INDEX.yaml"
+        - ".cursor/skills/brqosh-skills-hub/skill-lessons.yaml"
+        - ".cursor/skills/brqosh-agent-protocol/knowledge-accumulation.md"
+      skill_lesson: L-AP-002
+
+  - id: MEM-007
+    date: "2026-07-10"
+    type: feature
+    problem: "CEEF-137 numbers unverified — needed independent A-to-Z audit with live evidence"
+    affected:
+      - tests harness
+      - security API/RBAC
+      - market gaps G-01..G-69
+      - STATUS.yaml
+    how: "CEEF-138..144 supreme audit · 470/470 PASS clean run · security-findings.csv · market-gap-verified.csv · evidence pack"
+    verify: "dist/evidence/CEEF-138-supreme-audit/dotnet-test.log · تقارير/CEEF-138_Supreme_AZ_Audit_Master.md"
+    links:
+      ceef: "تقارير/CEEF-138_Supreme_AZ_Audit_Master.md"
+      files:
+        - "dist/evidence/CEEF-138-supreme-audit/security-findings.csv"
+        - "dist/evidence/CEEF-138-supreme-audit/market-gap-verified.csv"
+        - ".cursor/skills/brqosh-skills-hub/STATUS.yaml"
+
+  - id: MEM-008
+    date: "2026-07-10"
+    type: feature
+    problem: "لا تدقيق واجهة حي شامل بمستخدم marwan — FlaUI كان يفشل في التنقل/الدخول"
+    affected:
+      - tools/UiAudit
+      - src/Brqosh.Desktop/Views/LoginWindow.xaml
+      - tools/FullScenarioAudit
+    how: "NavKeyMap · LoginAsync UIA ids · Click fallback · marwan auth sync · 216/229 FlaUI PASS · CEEF-145"
+    verify: "dist/evidence/live-ui-audit/audit-20260710-110822.txt · تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
+    links:
+      ceef: "تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
+      files:
+        - "tools/UiAudit/NavKeyMap.cs"
+        - "tools/UiAudit/UiAutomationHelpers.cs"
+        - "dist/evidence/live-ui-audit/audit-20260710-110822.txt"
+
+  - id: MEM-009
+    date: "2026-07-10"
+    type: feature
+    problem: "CEEF-145 LIVE-002..008 — شريط حفظ ثابت · تحويل بنكي · UiAudit ليلي · تسميات"
+    affected:
+      - CompanySettingsPage
+      - BankTransfersPage
+      - CreditNotesPage
+      - tools/UiAudit
+      - scripts/ops/run-ui-audit-nightly.ps1
+    how: "sticky footer إعدادات · BankTransfersPage+Dialog+nav · ActiveModulesText · PublishSummary سندات · nightly script"
+    verify: "dotnet build PASS · Desktop.Tests 114/114 PASS"
+    links:
+      ceef: "تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
+      files:
+        - "src/Brqosh.Desktop/Views/Pages/BankTransfersPage.xaml"
+        - "src/Brqosh.Desktop/Views/Pages/CompanySettingsPage.xaml"
+        - "scripts/ops/run-ui-audit-nightly.ps1"
+
+  - id: MEM-010
+    date: "2026-07-10"
+    type: decision
+    problem: "بعد التحليل الحي الشامل — لا قاعدة لحفظ التقرير وإجماع متعدد التخصصات قبل القرار"
+    affected:
+      - agent-protocol
+      - analysis workflow
+      - CEEF-145 UI audit
+    how: "shura-council-protocol.md + brqosh-analysis-closure.mdc + CEEF-146 إجماع 12 دور"
+    verify: "تقارير/CEEF-146_Shura_Council_UI_Audit_Consensus.md · قرار موحّد P0→P3"
+    links:
+      ceef: "تقارير/CEEF-146_Shura_Council_UI_Audit_Consensus.md"
+      rule: ".cursor/rules/brqosh-analysis-closure.mdc"
+      files:
+        - ".cursor/skills/brqosh-analysis/shura-council-protocol.md"
+        - "تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
+        - "dist/evidence/live-ui-audit/audit-20260710-110822.txt"
+
+  - id: MEM-011
+    date: "2026-07-10"
+    type: feature
+    problem: "مجلس الشورى CEEF-146 كان نصاً مسرحياً — المستخدم طلب مجلساً حقيقياً قابلاً للتنفيذ وليس ادعاءات"
+    affected:
+      - analysis workflow
+      - agent-protocol
+      - CEEF-145/146 consensus
+    how: "tools/ShuraCouncil — 12 مقعد يقرأ أدلة حقيقية (STATUS·security·market·FlaUI·OPEN_ITEMS) + إجماع D1-D7 + exit code؛ run-shura-council.ps1"
+    verify: "dotnet build tools/ShuraCouncil PASS · run-shura-council.ps1 exit 0 · dist/evidence/shura-council/council-*.md"
+    links:
+      ceef: "تقارير/CEEF-146_Shura_Council_UI_Audit_Consensus.md"
+      rule: ".cursor/rules/brqosh-analysis-closure.mdc"
+      files:
+        - "tools/ShuraCouncil/Program.cs"
+        - "scripts/ops/run-shura-council.ps1"
+        - ".cursor/skills/brqosh-analysis/shura-council-protocol.md"
+        - "dist/evidence/shura-council/council-20260710-083557.json"
+
+  - id: MEM-012
+    date: "2026-07-10"
+    type: rule
+    problem: "المستخدم لا يريد تشغيل الشورى يدوياً — يريدها قانوناً أساسياً في سير التطوير مع ذكاء مجالس من leak corpus"
+    affected:
+      - agent-protocol
+      - all analysis sessions
+      - brqosh-agents
+      - ShuraCouncil tool
+    how: "brqosh-shura-auto.mdc alwaysApply + council-intelligence-matrix.md + AUTO-SHURA في cortex/harness/session + SeatIntelligenceRegistry"
+    verify: "agent-skill-regression.ps1 PASS · dotnet build tools/ShuraCouncil PASS"
+    links:
+      rule: ".cursor/rules/brqosh-shura-auto.mdc"
+      files:
+        - ".cursor/skills/brqosh-agents/council-intelligence-matrix.md"
+        - ".cursor/rules/brqosh-supreme-cortex.mdc"
+        - "scripts/ops/agent-skill-regression.ps1"
+
+  - id: MEM-013
+    date: "2026-07-10"
+    type: fix
+    problem: "مجلس الشورى P0 — 5 ثغرات API مفتوحة (AUDIT-SEC-001..004 · 018) تمنع الإطلاق"
+    affected:
+      - Brqosh.Api
+      - Brqosh.Infrastructure
+      - security-findings.csv
+      - ShuraCouncil evidence
+    how: "EnsureProductionApiKey · SecretComparer · X-Provisioning-Key · WebhookUrlValidator SSRF · TenantGuard EnforceTenantIsolation · security-static-scan extended · 6 Api.Tests"
+    verify: "dotnet test 482 PASS · security-static-scan.ps1 PASS · ShuraCouncil P0=0"
+    links:
+      ceef: "تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
+      files:
+        - "src/Brqosh.Api/Program.cs"
+        - "src/Brqosh.Infrastructure/Security/ApiSecuritySettings.cs"
+        - "src/Brqosh.Infrastructure/Webhooks/WebhookUrlValidator.cs"
+        - "dist/evidence/shura-council/council-20260710-090012.json"
+
+  - id: MEM-014
+    date: "2026-07-10"
+    type: feature
+    problem: "G-27 i18n sweep و LIVE-003/010 من CEEF-145 — XAML عربي ثابت بدون EN runtime"
+    affected:
+      - Desktop UI i18n
+      - UiAudit multi-profile
+      - design-system
+    how: "XamlUiLocalizer + UiBilingualRegistry (I18nRegistryGen) · BRQOSH_AUDIT_ALL_PROFILES · 7 design specs"
+    verify: "dotnet build PASS · i18n-coverage-audit.ps1 PASS · G27I18nRegistryTests"
+    links:
+      ceef: "تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
+      files:
+        - "src/Brqosh.Desktop/Ui/XamlUiLocalizer.cs"
+        - "tools/I18nRegistryGen/Program.cs"
+
+  - id: MEM-015
+    date: "2026-07-10"
+    type: feature
+    problem: "مجلس الشورى P1 — G-31/G-32 كانت ZERO بدون صفحات دعم/تسعير"
+    affected:
+      - Desktop navigation
+      - market-gap G-31 G-32
+      - ShuraCouncil S07 S04
+    how: "CustomerSupportPage (SLA MVP) + PricingPlansPage (BillingPlanCatalog) · NavigationCatalog · UiAudit catalog"
+    verify: "dotnet test 482 PASS · ShuraCouncil S07 3/3 · market-gap MVP"
+    links:
+      ceef: "dist/evidence/shura-council/council-20260710-091055.json"
+      files:
+        - "src/Brqosh.Desktop/Views/Pages/CustomerSupportPage.xaml"
+        - "src/Brqosh.Desktop/Views/Pages/PricingPlansPage.xaml"
+
+  - id: MEM-016
+    date: "2026-07-10"
+    type: decision
+    problem: "تنفيذ قرارات الشورى D3/D5/D7 — بوابات وFlaUI متعدد الملفات"
+    affected:
+      - run-external-gates.ps1
+      - run-ui-audit-nightly.ps1
+      - UiAudit ComprehensiveAuditor
+      - ShuraCouncil EvidenceLoader
+    how: "Shura gate في external-gates · nightly يزامن FullScenarioAudit · إصلاح بناء UiAudit · STATUS 482"
+    verify: "run-shura-council exit 0 · dotnet build UiAudit PASS · sync-agent-status 482"
+    links:
+      ceef: "تقارير/CEEF-146_Shura_Council_UI_Audit_Consensus.md"
+      rule: ".cursor/rules/brqosh-shura-auto.mdc"
+      files:
+        - "scripts/ops/run-external-gates.ps1"
+        - "scripts/ops/run-ui-audit-nightly.ps1"
+
+  - id: MEM-017
+    date: "2026-07-10"
+    type: lesson
+    problem: "D5 FlaUI 3 ملفات — exit 1: 81 فشل/315 (74.3%)؛ Manufacturing timeout؛ Retail انهيار تنقل"
+    affected:
+      - UiAudit multi-profile
+      - ShuraCouncil D5
+      - CEEF-145
+    how: "شُغّل nightly 3 profiles · التقرير audit-20260710-130916.txt · الشورى APPROVED لكن D5 مشروط"
+    verify: "dist/evidence/live-ui-audit/audit-20260710-130916.txt · council-20260710-101002.json"
+    links:
+      ceef: "dist/evidence/shura-council/council-20260710-101002.json"
+      files:
+        - "tools/UiAudit/Program.cs"
+
+  - id: MEM-026
+    date: "2026-07-11"
+    type: feature
+    problem: "المساعد لا يدمج المساعدة في كل سؤال عن البرنامج/الصفحة بإتقان"
+    affected:
+      - Brqosh.Application.Intelligence
+      - Brqosh.Infrastructure.Intelligence
+    how: "v2 ComposeExpert · ProgramWorkflowKnowledge · ProgramQuestionMatcher · ProgramReplyComposer · 11 اختبار"
+    verify: "ProgramAssistant 11/11 PASS · CEEF-155"
+    links:
+      ceef: "تقارير/CEEF-155_Program_Assistant_v2.md"
+      files:
+        - "src/Brqosh.Infrastructure/Intelligence/ProgramAssistantService.cs"
+        - "src/Brqosh.Application/Intelligence/ProgramReplyComposer.cs"
+
+  - id: MEM-027
+    date: "2026-07-11"
+    type: decision
+    problem: "هل المساعد الذكي v2 «كامل ومتكامل» لكل سيناريو ERP؟"
+    affected:
+      - Brqosh.Application.Intelligence
+      - Brqosh.Desktop
+      - docs/OPEN_ITEMS.md
+    how: "CEEF-156 تدقيق شامل — B+ تشغيلي in-repo · C خبير شامل · F AI CFO/O-12 · Shura APPROVED · موجة P1 CEEF-157"
+    verify: "تقارير/CEEF-156 · council-20260711-185644 exit 0"
+    links:
+      ceef: "تقارير/CEEF-156_Program_Assistant_Audit.md"
+      detail: "dist/evidence/shura-council/council-20260711-185644.json"
+      files:
+        - "src/Brqosh.Application/Intelligence/ProgramKnowledge.cs"
+        - "تقارير/CEEF-157_Program_Assistant_P1.md"
+
+  - id: MEM-028
+    date: "2026-07-11"
+    type: feature
+    problem: "تنفيذ أوامر الشورى CEEF-156 — D5 FlaUI timeout · D4 O-01 prep · مساعد shortcuts"
+    affected:
+      - tools/UiAudit
+      - scripts/ops/run-ui-audit-nightly.ps1
+      - Brqosh.Desktop
+      - dist/evidence/O-01-zatca
+    how: "UiAudit retry/COM/process-wait · Manufacturing 4/6 FlaUI PASS · quick prompts AI · CEEF-158 · Shura council-20260711-193313 APPROVED"
+    verify: "511/511 PASS · audit-20260711-222738 · run-shura-council exit 0"
+    links:
+      ceef: "تقارير/CEEF-158_Shura_Execution_Wave.md"
+      detail: "dist/evidence/shura-council/council-20260711-193313.json"
+      files:
+        - "tools/UiAudit/Program.cs"
+        - "src/Brqosh.Desktop/Ui/AiAssistantPanelBuilder.cs"
+
+  - id: MEM-029
+    date: "2026-07-11"
+    type: fix
+    problem: "D5 FlaUI — KPI dashboard FAIL + nightly 3-profile main window fail"
+    affected:
+      - tools/UiAudit
+      - Brqosh.Desktop.Views.Pages.DashboardPage
+      - scripts/ops/run-ui-audit-nightly.ps1
+    how: "BrqoshKpiGrid unify · WaitForDashboardKpisAsync · per-page UIA catch · profile gap 15s · password env · CEEF-159"
+      verify: "audit-20260711-222738 Manufacturing 4/6 · CEEF-159 UITEST session · build PASS"
+    links:
+      ceef: "تقارير/CEEF-159_Shura_FlaUI_D5_Closure.md"
+      files:
+        - "tools/UiAudit/UiAutomationHelpers.cs"
+        - "src/Brqosh.Desktop/Views/Pages/DashboardPage.xaml"
+
+  - id: MEM-018
+    date: "2026-07-10"
+    type: feature
+    problem: "Omni-Agent mandate — Python desktop audit suite with static map, pywinauto UIA, payloads, crisis loop, AUDIT_REPORT"
+    affected:
+      - tools/desktop-omni-audit
+      - UiAudit complement
+    how: "7 modules + config.yaml + README; ui_map 765 elements; login via AutomationId mirror UiAutomationHelpers; Nav_* nav; smoke 2/2 PASS"
+    verify: "audit_orchestrator.py --max-pages 2 --no-payloads exit 0 · output/AUDIT_REPORT.md"
+    links:
+      ceef: "تقارير/CEEF-147_Desktop_Omni_Audit_Python.md"
+      files:
+        - "tools/desktop-omni-audit/audit_orchestrator.py"
+        - "tools/desktop-omni-audit/ui_map_builder.py"
+        - "tools/desktop-omni-audit/ui_navigator.py"
+
+  - id: MEM-019
+    date: "2026-07-10"
+    type: feature
+    problem: "Cognitive audit v2 mandate — human-like vision, learning state machine, sabotage, ORAR diary, empathetic layer"
+    affected:
+      - tools/desktop-cognitive-audit
+      - desktop-omni-audit complement
+    how: "11 modules: vision_brain, human_navigator, cognitive_engine, chronicle_logger, app_state_model, forensic_handler, payload_factory; PageAuditCatalog sync; nav scroll fix"
+    verify: "py_compile PASS · audit_orchestrator.py --profile Retail"
+    links:
+      ceef: "تقارير/CEEF-149_Desktop_Cognitive_Audit_v2.md"
+      files:
+        - "tools/desktop-cognitive-audit/audit_orchestrator.py"
+        - "tools/desktop-cognitive-audit/cognitive_engine.py"
+
+  - id: MEM-020
+    date: "2026-07-11"
+    type: decision
+    problem: "طلب تحليل شامل Fable+Skills+Shura — قياس مستقل بعد CEEF-138 بدون Desktop حي"
+    affected:
+      - all axes AX-01..AX-13
+      - ShuraCouncil
+      - external-gates
+    how: "CEEF-150 omnibus: 482 PASS · API P0=0 · in-repo B+ · market C− · Shura APPROVED · delta vs 138 documented"
+    verify: "dist/evidence/CEEF-150-omnibus/ · council-20260711-113023.json overallConsensus=true"
+    links:
+      ceef: "تقارير/CEEF-150_Supreme_Omnibus_Analysis.md"
+      detail: "dist/evidence/shura-council/council-20260711-113023.json"
+      files:
+        - "dist/evidence/CEEF-150-omnibus/axis-scores.csv"
+        - "dist/evidence/CEEF-150-omnibus/security-findings.csv"
+
+  - id: MEM-021
+    date: "2026-07-11"
+    type: decision
+    problem: "طلب رأي مجلس الشورى الرسمي بدمج Fable+Skills+Shura"
+    affected:
+      - ShuraCouncil
+      - brqosh-analysis
+      - fable-omni-core
+    how: "RAI-SHURA-CEEF-150.md — 12 مقعد · D1-D7 · رأي موحّد ملزم · 4 مستويات إغلاق"
+    verify: "dist/evidence/shura-council/RAI-SHURA-CEEF-150.md · council-20260711-113023.json"
+    links:
+      ceef: "تقارير/CEEF-150_Supreme_Omnibus_Analysis.md"
+      detail: "dist/evidence/shura-council/council-20260711-113023.json"
+      files:
+        - "dist/evidence/shura-council/RAI-SHURA-CEEF-150.md"
+
+  - id: MEM-022
+    date: "2026-07-11"
+    type: fix
+    problem: "تنفيذ أوامر الشورى P1 in-repo — SecurityContext API · print guard · rate limit · merge chronicle"
+    affected:
+      - Brqosh.Api
+      - Brqosh.Infrastructure.Reporting
+      - scripts/ops/merge-council-chronicle.ps1
+    how: "ApiSecurityContextMiddleware · ApiRateLimitMiddleware · PrintPostedGuard · graceful chronicle skip · +6 tests"
+    verify: "dotnet test 488 PASS · CEEF-151"
+    links:
+      ceef: "تقارير/CEEF-151_Shura_Execution_Wave.md"
+      files:
+        - "src/Brqosh.Api/Middleware/ApiSecurityContextMiddleware.cs"
+        - "src/Brqosh.Infrastructure/Reporting/PrintPostedGuard.cs"
+
+  - id: MEM-023
+    date: "2026-07-11"
+    type: feature
+    problem: "المساعد الذكي السابق مالي فقط — لا يربط بالشاشة الحالية ولا بمعرفة البرنامج"
+    affected:
+      - Brqosh.Application.Intelligence
+      - Brqosh.Infrastructure.Intelligence
+      - Brqosh.Desktop.MainWindow
+    how: "IProgramAssistantService · ProgramKnowledge · توجيه شاشة/ترحيل/ZATCA/RBAC/مالي · بطاقة سياق عند التنقل"
+    verify: "dotnet test 491 PASS · CEEF-152"
+    links:
+      ceef: "تقارير/CEEF-152_Program_AI_Assistant.md"
+      files:
+        - "src/Brqosh.Infrastructure/Intelligence/ProgramAssistantService.cs"
+        - "src/Brqosh.Application/Intelligence/ProgramKnowledge.cs"
+
+  - id: MEM-024
+    date: "2026-07-11"
+    type: fix
+    problem: "أوامر الشورى P1 — FlaUI Construction/Retail · SKIP يُحسب فشلاً · ProgramKnowledge ضيق"
+    affected:
+      - tools/UiAudit
+      - tools/FullScenarioAudit
+      - tools/ShuraCouncil
+      - Brqosh.Application.Intelligence
+    how: "ProfileAuditContext · NavKeyModuleMap · SKIP≠FAIL · nav scroll reset · بذور مقاولات/POS · +14 دليل شاشة · ShuraCouncil parser"
+    verify: "dotnet test 497 PASS · CEEF-153 · UiAudit+ShuraCouncil build PASS"
+    links:
+      ceef: "تقارير/CEEF-153_Shura_FlaUI_Profiles.md"
+      files:
+        - "tools/UiAudit/UiAuditResult.cs"
+        - "tools/UiAudit/NavKeyModuleMap.cs"
+        - "src/Brqosh.Application/Intelligence/ProgramKnowledge.cs"
+
+  - id: MEM-025
+    date: "2026-07-11"
+    type: feature
+    problem: "طلب إغلاق أوامر الشورى على أكمل وجه — تغطية مساعد لكل الشاشات + FlaUI nightly + O-01 prep"
+    affected:
+      - Brqosh.Application.Intelligence
+      - tools/UiAudit
+      - dist/evidence/O-01-zatca
+    how: "ProgramNavCatalog 68 مفتاح · UiAudit timeout/env/COM retry · nightly محاولة · O-01 readiness محدّث"
+    verify: "dotnet test 498 PASS · CEEF-154"
+    links:
+      ceef: "تقارير/CEEF-154_Shura_Full_Closure.md"
+      files:
+        - "src/Brqosh.Application/Intelligence/ProgramNavCatalog.cs"
+        - "tools/UiAudit/Program.cs"

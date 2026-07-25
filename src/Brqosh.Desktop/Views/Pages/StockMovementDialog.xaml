@@ -1,0 +1,58 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.StockMovementDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="حركة مخزنية" Width="780" Height="560" MinWidth="700"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
+                <DatePicker x:Name="DateBox" FontSize="14"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                <TextBlock Text="نوع الحركة *" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="TypeCombo" FontSize="14" Padding="10,8" SelectionChanged="OnTypeChanged">
+                    <ComboBoxItem Content="رصيد افتتاحي" Tag="Opening"/>
+                    <ComboBoxItem Content="تسوية زيادة (جرد)" Tag="AdjustmentIn"/>
+                    <ComboBoxItem Content="تسوية نقص (جرد)" Tag="AdjustmentOut"/>
+                    <ComboBoxItem Content="تحويل بين مستودعين" Tag="Transfer"/>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="المستودع *" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="WarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+            </StackPanel>
+        </Grid>
+        <StackPanel Grid.Row="1" x:Name="ToWarehousePanel" Visibility="Collapsed" Margin="0,0,0,12">
+            <TextBlock Text="مستودع الوجهة *" Style="{StaticResource FieldLabel}"/>
+            <ComboBox x:Name="ToWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+        </StackPanel>
+        <TextBox x:Name="DescBox" Grid.Row="1" Style="{StaticResource AppTextBox}" Margin="0,0,0,12"
+                 ToolTip="البيان" Visibility="Collapsed"/>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True" BorderThickness="0"
+                      GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridComboBoxColumn x:Name="ProductColumn" Header="الصنف" Width="*" SelectedValueBinding="{Binding ProductId}"
+                                            DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                    <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="تكلفة الوحدة" Binding="{Binding UnitCost, StringFormat=N4}" Width="130"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+        <DockPanel Grid.Row="3" Margin="0,14,0,0">
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" Visibility="Collapsed"/>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Content="ترحيل" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost" IsDefault="True"/>
+                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,28 @@
+{
+  "id": "construction",
+  "businessProfile": "Construction",
+  "nameAr": "مقاولات عامة",
+  "nameEn": "Construction",
+  "modules": [
+    "GeneralLedger",
+    "ProjectsConstruction",
+    "Purchasing",
+    "Treasury",
+    "Reports",
+    "Zatca",
+    "FixedAssets",
+    "Payroll"
+  ],
+  "features": [
+    "Retention",
+    "BOQ",
+    "IFRS15",
+    "ProgressBilling",
+    "Subcontractors",
+    "ProjectProfitability"
+  ],
+  "defaults": {
+    "costingMethod": "WeightedAverage",
+    "defaultRetentionPercent": 10
+  }
+}

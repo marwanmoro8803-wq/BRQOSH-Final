@@ -1,0 +1,16 @@
+# توحيد نهايات الأسطر — يمنع ضجيج CRLF↔LF عبر الأجهزة
+* text=auto eol=lf
+
+# ملفات ويندوز الأصلية تبقى CRLF
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# ثنائيات — لا تحويل
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.pdf   binary
+*.dll   binary
+*.exe   binary
+*.pfx   binary

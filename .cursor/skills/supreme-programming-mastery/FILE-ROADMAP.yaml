@@ -1,0 +1,212 @@
+# FILE-ROADMAP — supreme-programming-mastery
+version: v16
+default_path: P-CODE
+
+# v16 load tiers — never bulk-load all 31 files
+load_tiers:
+  session:   # every code session (≤4 files)
+    - SKILL.md
+    - skills-first.md
+    - agent-workflow.md
+    - testing.md
+  wave:      # feature/refactor waves (add on demand)
+    - twelve-axes.md
+    - tools-cursor.md
+    - architecture.md
+    - brqosh-bridge.md
+  deep:      # trigger-only reference (grep first)
+    - api-design.md
+    - database.md
+    - frontend.md
+    - security-coding.md
+    - debug.md
+    - review.md
+    - git-delivery.md
+    - devops.md
+    - paradigms.md
+    - anti-patterns.md
+    - polyglot-pitfalls.md
+    - fable-code-index.md
+    - file-vs-inline.md
+
+files:
+  SKILL.md:
+    id: supreme-programming:SKILL
+    layer: L0
+    step: 0/8
+    trigger: any_code_task
+    next: [skills-first.md]
+    time_budget: 20s
+
+  skills-first.md:
+    id: supreme-programming:skills-first
+    layer: L1
+    step: 1/8
+    trigger: before_first_line_of_code
+    skip_when: never
+    fable_tag: skills
+    exit_criteria:
+      - all_relevant_SKILL_md_read
+      - fable_omni_and_brqosh_checked
+    anti_patterns:
+      - write_code_before_reading_skills
+      - read_only_one_skill_when_several_apply
+    time_budget: 60s
+    verify: listed_skills_read_in_response_or_thinking
+
+  agent-workflow.md:
+    id: supreme-programming:agent-workflow
+    layer: L1
+    step: 2/8
+    trigger: implement|fix|refactor
+    prereq: [skills-first.md]
+    next: [file-vs-inline.md, twelve-axes.md]
+    fable_tag: str_replace_stale_context
+    exit_criteria: [five_step_plan, read_before_edit]
+    anti_patterns:
+      - edit_without_reread_after_patch
+      - stop_at_suggestion_when_execute_requested
+    time_budget: 45s
+
+  file-vs-inline.md:
+    id: supreme-programming:file-vs-inline
+    layer: L1
+    step: 2b/8
+    trigger: new_content|deliverable_type_decision
+    fable_tag: file_creation_advice|artifact_usage_criteria
+    exit_criteria: [artifact_vs_inline_decided]
+    anti_patterns:
+      - dump_200_lines_in_chat
+      - unsolicited_markdown_in_repo
+    time_budget: 20s
+
+  twelve-axes.md:
+    id: supreme-programming:twelve-axes
+    layer: L1
+    step: 3/8
+    trigger: every_code_change
+    exit_criteria: [12_axes_mentally_checked]
+    time_budget: 30s
+
+  tools-cursor.md:
+    id: supreme-programming:tools-cursor
+    layer: L2
+    step: 3b/8
+    trigger: tool_selection|mcp|grep_read_shell
+    fable_tag: file_handling_rules
+    time_budget: 30s
+
+  fable-code-index.md:
+    id: supreme-programming:fable-index
+    layer: L-ref
+    trigger: code_fable_section_not_in_modules
+    time_budget: 30s
+
+  brqosh-bridge.md:
+    id: supreme-programming:brqosh-bridge
+    layer: L2
+    step: 4/8
+    trigger: Brqosh.sln|BRQOSH_paths
+    next: [brqosh-engineering]
+    time_budget: 20s
+
+  architecture.md:
+    id: supreme-programming:architecture
+    layer: L3
+    step: 5a/8
+    trigger: new_feature|large_refactor
+    prereq: [twelve-axes.md]
+    time_budget: 90s
+
+  api-design.md:
+    id: supreme-programming:api-design
+    layer: L3
+    trigger: endpoints|contracts|dto
+    time_budget: 60s
+
+  database.md:
+    id: supreme-programming:database
+    layer: L3
+    trigger: schema|migration|sql
+    time_budget: 60s
+
+  frontend.md:
+    id: supreme-programming:frontend
+    layer: L3
+    trigger: non_wpf_ui_code
+    time_budget: 45s
+
+  testing.md:
+    id: supreme-programming:testing
+    layer: L1
+    step: 7/8
+    trigger: before_claim_done
+    exit_criteria: [test_command_run]
+    time_budget: varies
+
+  security-coding.md:
+    id: supreme-programming:security
+    layer: L3
+    trigger: auth|secrets|owasp|review
+    fable_tag: refusal_handling_malware
+    time_budget: 45s
+
+  debug.md:
+    id: supreme-programming:debug
+    layer: L3
+    trigger: bug_non_brqosh
+    next: [brqosh-debug if BRQOSH]
+    time_budget: 60s
+
+  review.md:
+    id: supreme-programming:review
+    layer: L3
+    trigger: code_review_general
+    next: [brqosh-review if BRQOSH]
+    time_budget: 60s
+
+  git-delivery.md:
+    id: supreme-programming:git
+    layer: L3
+    step: 8/8
+    trigger: commit|pr|branch
+    time_budget: 30s
+
+  devops.md:
+    id: supreme-programming:devops
+    layer: L3
+    trigger: ci|docker|deploy
+    time_budget: 45s
+
+  paradigms.md:
+    id: supreme-programming:paradigms
+    layer: L3
+    trigger: paradigm_choice
+    time_budget: 30s
+
+  anti-patterns.md:
+    id: supreme-programming:anti-patterns
+    layer: L3
+    trigger: smell|refactor_review
+    time_budget: 30s
+
+  polyglot-pitfalls.md:
+    id: supreme-programming:polyglot
+    layer: L3
+    trigger: multi_language_diff
+    time_budget: 30s
+
+language_pattern:
+  path: languages/{stack}.md
+  layer: L3
+  step: 5/8
+  trigger: stack_detected_from_manifest
+  manifests:
+    dotnet: "*.csproj"
+    typescript: package.json
+    python: pyproject.toml|requirements.txt
+    rust: Cargo.toml
+    go: go.mod
+    sql: "*.sql|migrations"
+  prereq: [agent-workflow.md]
+  time_budget: 45s

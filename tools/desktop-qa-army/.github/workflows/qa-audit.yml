@@ -1,0 +1,32 @@
+# Sample — copy to repo root .github/workflows/ if desired
+name: Desktop QA Army
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 0"
+
+jobs:
+  qa-army:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build Desktop
+        run: dotnet build src/Brqosh.Desktop/Brqosh.Desktop.csproj -c Release --nologo
+      - name: QA Army (Retail smoke)
+        shell: pwsh
+        run: |
+          cd tools/desktop-qa-army
+          python -m venv .venv
+          .\.venv\Scripts\pip install -r requirements.txt
+          .\.venv\Scripts\python audit_orchestrator.py --profile Retail --headless
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qa-army-reports
+          path: tools/desktop-qa-army/audit_reports/

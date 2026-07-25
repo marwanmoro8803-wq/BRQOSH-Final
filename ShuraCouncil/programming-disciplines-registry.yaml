@@ -1,0 +1,64 @@
+# Programming Discipline Council — Shura v5
+# One advisory seat per programming specialty. Core 12 seats remain voting authority.
+# Machine source: ProgrammingDisciplineRegistry.cs (keep in sync)
+
+version: v5
+total_seats: 28
+id_prefix: D
+categories:
+  - Languages
+  - Systems
+  - Mobile
+  - Ops
+  - Security
+  - Architecture
+  - Integration
+  - UI
+  - QA
+  - Data
+  - AI
+  - Web
+  - Paradigms
+  - Docs
+  - Quality
+
+disciplines:
+  - { id: D01, ar: "مهندس C# / .NET", en: "C# / .NET", category: Languages }
+  - { id: D02, ar: "مهندس Python", en: "Python", category: Languages }
+  - { id: D03, ar: "مهندس TypeScript/JS", en: "TypeScript / JavaScript", category: Languages }
+  - { id: D04, ar: "مهندس قواعد البيانات", en: "Database / SQL", category: Data }
+  - { id: D05, ar: "مهندس Rust", en: "Rust", category: Systems }
+  - { id: D06, ar: "مهندس Go", en: "Go", category: Systems }
+  - { id: D07, ar: "مهندس Java/Kotlin", en: "Java / Kotlin JVM", category: Languages }
+  - { id: D08, ar: "مهندس C/C++", en: "C / C++ Native", category: Systems }
+  - { id: D09, ar: "مهندس iOS/Swift", en: "iOS / Swift", category: Mobile }
+  - { id: D10, ar: "مهندس Android", en: "Android", category: Mobile }
+  - { id: D11, ar: "مهندس DevOps/CI", en: "DevOps / CI/CD", category: Ops }
+  - { id: D12, ar: "مهندس Cloud", en: "Cloud / Azure", category: Ops }
+  - { id: D13, ar: "مهندس الأمن", en: "Security", category: Security }
+  - { id: D14, ar: "مهندس المعمارية", en: "Software Architect", category: Architecture }
+  - { id: D15, ar: "مهندس API", en: "API / REST / OpenAPI", category: Integration }
+  - { id: D16, ar: "مهندس UI/UX", en: "UI / UX / Accessibility", category: UI }
+  - { id: D17, ar: "مهندس الاختبار", en: "Testing / QA", category: QA }
+  - { id: D18, ar: "مهندس البيانات", en: "Data Engineering", category: Data }
+  - { id: D19, ar: "مهندس ML/AI", en: "ML / AI Integration", category: AI }
+  - { id: D20, ar: "مهندس Web Frontend", en: "Web Frontend", category: Web }
+  - { id: D21, ar: "مهندس Web Backend", en: "Web Backend", category: Web }
+  - { id: D22, ar: "مهندس البرمجة الوظيفية", en: "Functional Programming", category: Paradigms }
+  - { id: D23, ar: "مهندس Shell/Scripts", en: "Shell / PowerShell", category: Ops }
+  - { id: D24, ar: "مهندس التوثيق", en: "Technical Documentation", category: Docs }
+  - { id: D25, ar: "مهندس الأداء", en: "Performance", category: Quality }
+  - { id: D26, ar: "مهندس التزامن", en: "Concurrency / Async", category: Paradigms }
+  - { id: D27, ar: "مهندس Git/Workflow", en: "Version Control", category: Ops }
+  - { id: D28, ar: "مهندس البرومبت/الوكلاء", en: "Prompt / Agent Engineering", category: AI }
+
+evaluation_checks:
+  - FILES: repo file globs (*.cs, *.py, …)
+  - MARKERS: path markers (CognitiveQa/, scripts/ops/, …)
+  - SKILLS: .cursor/skills/*/SKILL.md modules
+  - STACK: stack-specific (tests, CI, FlaUI, Shura, leaks)
+
+gate:
+  id: G-DISCIPLINE
+  threshold_percent: 60
+  advisory: true  # does not block core 12-seat consensus

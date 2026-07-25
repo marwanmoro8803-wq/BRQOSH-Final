@@ -6,25 +6,40 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DockPanel>
-                <Button Content="＋ عميل جديد" Style="{StaticResource PrimaryButton}" Padding="18,8"
-                        DockPanel.Dock="Left" Click="OnAddCustomer"/>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddCustomerBtn" Content="＋ عميل جديد" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAddCustomer"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9"
+                        Click="OnDeactivate"/>
                 <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="320"
-                         DockPanel.Dock="Right" HorizontalAlignment="Right"
+                         DockPanel.Dock="Left" VerticalAlignment="Center"
                          TextChanged="OnSearchChanged" ToolTip="بحث بالاسم أو الرقم الضريبي"/>
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="العملاء" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="AR · أرصدة · B2B/B2C"/>
+                </StackPanel>
             </DockPanel>
         </Border>
 
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="CustomerSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="CustomersGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="14" RowHeight="36" Background="Transparent" EnableRowVirtualization="True">
+                      MouseDoubleClick="OnEdit" BorderThickness="0" Background="Transparent">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="اسم العميل" Binding="{Binding NameAr}" Width="*"/>
                     <DataGridTextColumn Header="الرقم الضريبي" Binding="{Binding VatRegistrationNumber}" Width="160"/>

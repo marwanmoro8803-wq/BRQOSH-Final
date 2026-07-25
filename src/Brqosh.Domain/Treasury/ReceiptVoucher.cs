@@ -1,4 +1,5 @@
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Treasury;
 
@@ -15,15 +16,17 @@ public enum ReceiptVoucherStatus
 {
     Draft = 0,
     Posted = 1,
+    Reversed = 2,
 }
 
 /// <summary>
 /// سند قبض — تحصيل من عميل. القيد الآلي: الصندوق/البنك (مدين) ← العملاء (دائن).
 /// </summary>
-public class ReceiptVoucher
+public class ReceiptVoucher : IBranchScoped
 {
     public long Id { get; private set; }
     public long CompanyId { get; private set; }
+    public long? BranchId { get; private set; }
     public long CustomerId { get; private set; }
     public string? VoucherNumber { get; private set; }
     public DateOnly VoucherDate { get; private set; }
@@ -36,6 +39,9 @@ public class ReceiptVoucher
 
     public ReceiptVoucherStatus Status { get; private set; } = ReceiptVoucherStatus.Draft;
     public long? JournalEntryId { get; private set; }
+
+    /// <summary>الحساب البنكي عند طريقة القبض بنك — يُقيَّد على حسابه الفرعي في الأستاذ.</summary>
+    public long? BankAccountId { get; private set; }
 
     // EF Core
     private ReceiptVoucher()
@@ -57,7 +63,8 @@ public class ReceiptVoucher
     }
 
     public static ReceiptVoucher CreateDraft(long companyId, long customerId, DateOnly voucherDate,
-        decimal amount, ReceiptMethod method, string description, string reference = "")
+        decimal amount, ReceiptMethod method, string description, string reference = "",
+        long? bankAccountId = null)
     {
         if (customerId <= 0)
             throw new AccountingException("العميل مطلوب لسند القبض.");
@@ -66,9 +73,24 @@ public class ReceiptVoucher
         if (string.IsNullOrWhiteSpace(description))
             throw new AccountingException("بيان السند مطلوب.");
 
-        return new ReceiptVoucher(companyId, customerId, voucherDate,
+        var voucher = new ReceiptVoucher(companyId, customerId, voucherDate,
             Math.Round(amount, 2, MidpointRounding.AwayFromZero),
             method, description.Trim(), (reference ?? "").Trim());
+        voucher.AssignBankAccount(bankAccountId);
+        return voucher;
+    }
+
+    public void AssignBranch(long branchId)
+    {
+        if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");
+        if (Status != ReceiptVoucherStatus.Draft)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل، والتصحيح بقيد عكسي.");
+        BranchId = branchId;
+    }
+
+    public void AssignBankAccount(long? bankAccountId)
+    {
+        BankAccountId = Method == ReceiptMethod.Cash ? null : bankAccountId;
     }
 
     /// <summary>الترحيل: مدين الصندوق/البنك، دائن العملاء.</summary>
@@ -94,4 +116,11 @@ public class ReceiptVoucher
     }
 
     public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
+
+    public void MarkReversed()
+    {
+        if (Status != ReceiptVoucherStatus.Posted)
+            throw new AccountingException("لا يُعكس إلا سند قبض مرحّل.");
+        Status = ReceiptVoucherStatus.Reversed;
+    }
 }

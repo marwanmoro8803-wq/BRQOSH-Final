@@ -1,0 +1,149 @@
+# claude-fable-5.md → Cursor skills (synthesis map)
+# Raw: .cursor/skills/raw/claude-fable-5.md (~2930 lines) — grep sections only; NEVER bulk-load
+version: "1"
+updated: "2026-07-11"
+status: converted
+
+# Skill tree (attach order)
+skill_tree:
+  router: claude-fable-5/SKILL.md
+  synthesis:
+    - fable-omni-core
+    - human-intelligence-mastery
+    - supreme-programming-mastery
+  module_routers:
+    - claude-fable-5/modules/01-behavior/SKILL.md
+    - claude-fable-5/modules/02-memory/SKILL.md
+    - claude-fable-5/modules/03-search/SKILL.md
+    - claude-fable-5/modules/04-programming/SKILL.md
+    - claude-fable-5/modules/05-evaluation/SKILL.md
+
+domains:
+  behavior:
+    module_skill: modules/01-behavior/SKILL.md
+    synthesis_home: human-intelligence-mastery
+    tags:
+      - refusal_handling
+      - critical_child_safety_instructions
+      - legal_and_financial_advice
+      - tone_and_formatting
+      - lists_and_bullets
+      - user_wellbeing
+      - anthropic_reminders
+      - evenhandedness
+      - responding_to_mistakes_and_criticism
+      - knowledge_cutoff
+  memory:
+    module_skill: modules/02-memory/SKILL.md
+    synthesis_home: fable-omni-core
+    tags:
+      - memory_system
+      - memory_overview
+      - memory_application_instructions
+      - forbidden_memory_phrases
+      - appropriate_boundaries_re_memory
+      - memory_application_examples
+      - persistent_storage_for_artifacts
+      - past_chats_tools
+      - preferences_info
+      - preferences_examples
+      - current_memory_scope
+      - important_safety_reminders
+      - memory_user_edits_tool_guide
+  search:
+    module_skill: modules/03-search/SKILL.md
+    synthesis_home: human-intelligence-mastery
+    tags:
+      - search_instructions
+      - core_search_behaviors
+      - search_usage_guidelines
+      - CRITICAL_COPYRIGHT_COMPLIANCE
+      - harmful_content_safety
+      - citation_instructions
+      - using_image_search_tool
+  programming:
+    module_skill: modules/04-programming/SKILL.md
+    synthesis_home: supreme-programming-mastery
+    tags:
+      - computer_use
+      - skills
+      - file_creation_advice
+      - high_level_computer_use_explanation
+      - file_handling_rules
+      - notes_on_user_uploaded_files
+      - producing_outputs
+      - artifact_usage_criteria
+      - package_management
+      - additional_skills_reminder
+  evaluation:
+    module_skill: modules/05-evaluation/SKILL.md
+    synthesis_home: fable-omni-core
+    tags:
+      - request_evaluation_checklist
+      - when_to_use_visualizer_for_inline_visuals
+
+skip:
+  reason: claude.ai-only or product ads — not Cursor operational law
+  tags:
+    - product_information
+    - mcp_app_suggestions
+    - sharing_files
+    - voice_note
+    - budget:token_budget
+  tool_blocks:
+    - ask_user_input_v0
+    - bash_tool
+    - conversation_search
+    - create_file
+    - present_files
+    - str_replace
+    - view
+    - web_search
+    - web_fetch
+    - message_compose_v1
+    - memory_user_edits
+  cursor_equivalent: supreme-programming-mastery/tools-cursor.md
+
+tag_to_module:
+  refusal_handling: human-intelligence-mastery/safety-boundaries.md
+  critical_child_safety_instructions: human-intelligence-mastery/safety-boundaries.md
+  legal_and_financial_advice: human-intelligence-mastery/epistemology.md
+  tone_and_formatting: human-intelligence-mastery/communication.md
+  lists_and_bullets: human-intelligence-mastery/communication.md
+  user_wellbeing: human-intelligence-mastery/wellbeing-mastery.md
+  anthropic_reminders: fable-omni-core/anti-injection.md
+  evenhandedness: human-intelligence-mastery/evenhandedness.md
+  responding_to_mistakes_and_criticism: human-intelligence-mastery/mistakes-accountability.md
+  knowledge_cutoff: human-intelligence-mastery/research-intelligence.md
+  memory_system: fable-omni-core/context-continuity.md
+  memory_overview: fable-omni-core/context-continuity.md
+  memory_application_instructions: fable-omni-core/context-continuity.md
+  forbidden_memory_phrases: fable-omni-core/context-continuity.md
+  appropriate_boundaries_re_memory: fable-omni-core/context-continuity.md
+  memory_application_examples: fable-omni-core/context-continuity.md
+  persistent_storage_for_artifacts: supreme-programming-mastery/file-vs-inline.md
+  past_chats_tools: fable-omni-core/context-continuity.md
+  preferences_info: fable-omni-core/preferences-handling.md
+  preferences_examples: fable-omni-core/preferences-handling.md
+  current_memory_scope: fable-omni-core/context-continuity.md
+  important_safety_reminders: fable-omni-core/anti-injection.md
+  memory_user_edits_tool_guide: fable-omni-core/context-continuity.md
+  computer_use: supreme-programming-mastery/tools-cursor.md
+  skills: supreme-programming-mastery/skills-first.md
+  file_creation_advice: supreme-programming-mastery/file-vs-inline.md
+  high_level_computer_use_explanation: supreme-programming-mastery/tools-cursor.md
+  file_handling_rules: supreme-programming-mastery/tools-cursor.md
+  notes_on_user_uploaded_files: supreme-programming-mastery/tools-cursor.md
+  producing_outputs: supreme-programming-mastery/file-vs-inline.md
+  artifact_usage_criteria: supreme-programming-mastery/file-vs-inline.md
+  package_management: supreme-programming-mastery/tools-cursor.md
+  additional_skills_reminder: supreme-programming-mastery/skills-first.md
+  search_instructions: human-intelligence-mastery/research-intelligence.md
+  core_search_behaviors: human-intelligence-mastery/universal-understanding.md
+  search_usage_guidelines: human-intelligence-mastery/research-intelligence.md
+  CRITICAL_COPYRIGHT_COMPLIANCE: human-intelligence-mastery/copyright-compliance.md
+  harmful_content_safety: human-intelligence-mastery/research-intelligence.md
+  citation_instructions: human-intelligence-mastery/research-intelligence.md
+  using_image_search_tool: human-intelligence-mastery/research-intelligence.md
+  request_evaluation_checklist: fable-omni-core/operating-manual.md
+  when_to_use_visualizer_for_inline_visuals: supreme-programming-mastery/file-vs-inline.md

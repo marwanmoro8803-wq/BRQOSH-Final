@@ -1,0 +1,61 @@
+<Window x:Class="Brqosh.Desktop.Views.ZatcaCsidWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="تسجيل CSID — ZATCA"
+        Width="640" Height="560"
+        MinWidth="560" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="28,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="معالج تسجيل الشهادة (CSID)" Style="{StaticResource PageTitleText}"/>
+            <Border Height="3" Width="56" CornerRadius="2" HorizontalAlignment="Right"
+                    Background="{StaticResource BrandAccentGradient}" Margin="0,8,0,0"/>
+            <TextBlock Style="{StaticResource PageSubtitleText}"
+                       Text="الخطوات: توليد مفتاح → OTP من بوابة فاتورة → شهادة امتثال → شهادة إنتاج"
+                       Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Padding="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="1 — توليد المفتاح و CSR" Style="{StaticResource FormSectionTitle}" Margin="0,0,0,8"/>
+                    <Button x:Name="GenerateBtn" Content="توليد مفتاح ECDSA + CSR"
+                            Style="{StaticResource PrimaryButton}" Padding="18,8"
+                            HorizontalAlignment="Right" Click="OnGenerate"/>
+                    <TextBlock x:Name="CsrStatusText" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,16"
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                    <TextBlock Text="2 — شهادة الامتثال (Compliance CSID)" Style="{StaticResource FormSectionTitle}" Margin="0,0,0,8"/>
+                    <TextBlock Text="رمز OTP من بوابة فاتورة (صالح 1 ساعة)" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="OtpBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,8"/>
+                    <Button Content="طلب شهادة الامتثال" Style="{StaticResource SecondaryButton}"
+                            Padding="18,8" HorizontalAlignment="Right" Click="OnCompliance"/>
+
+                    <TextBlock Text="3 — شهادة الإنتاج (Production CSID)" Style="{StaticResource FormSectionTitle}" Margin="0,16,0,8"/>
+                    <TextBlock Text="بعد اجتياز اختبارات الامتثال في البوابة" Style="{StaticResource PageSubtitleText}"
+                               Margin="0,0,0,8"/>
+                    <Button Content="طلب شهادة الإنتاج" Style="{StaticResource SecondaryButton}"
+                            Padding="18,8" HorizontalAlignment="Right" Click="OnProduction"/>
+
+                    <TextBlock x:Name="ResultText" TextWrapping="Wrap" FontSize="13" Margin="0,16,0,0"/>
+                    <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                               FontSize="13" Margin="0,10,0,0" Visibility="Collapsed"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,16,0,0">
+            <Button Content="إغلاق" Style="{StaticResource SecondaryButton}"
+                    Padding="24,9" IsCancel="True" Click="OnClose"/>
+        </StackPanel>
+    </Grid>
+</Window>

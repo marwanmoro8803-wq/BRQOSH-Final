@@ -28,9 +28,7 @@ public class TrialBalanceQuery(BrqoshDbContext db)
     {
         // تجميع على مستوى قاعدة البيانات — لا تحميل سطور القيود إلى الذاكرة
         var totals = await db.JournalEntries
-            .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
-                        && e.EntryDate >= fromDate && e.EntryDate <= toDate)
+            .WhereReportable(companyId, fromDate, toDate)
             .SelectMany(e => e.Lines)
             .GroupBy(l => l.AccountId)
             .Select(g => new

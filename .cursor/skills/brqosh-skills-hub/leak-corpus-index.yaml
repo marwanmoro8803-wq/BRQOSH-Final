@@ -1,0 +1,450 @@
+# Leak corpus index — system_prompts_leaks-main (287 files)
+# Grep-only source. Principles merged into domain skills — never load bulk in sessions.
+
+corpus_path: system_prompts_leaks-main/system_prompts_leaks-main
+total_files: 279
+version: v15
+updated: "2026-07-10"
+
+rule: |
+  Extract principles only into .cursor/skills/ modules.
+  Never paste leak text into SKILL.md.
+  Use this index to grep a specific family file when deepening a module.
+
+family_routing:
+  .github:
+    count: 1
+    merge_into:
+      - brqosh-analysis/deep-cognition.md
+      - universal-coding/reference.md
+  Anthropic:
+    count: 119
+    merge_into:
+      - fable-omni-core/operating-manual.md
+      - human-intelligence-mastery/research-intelligence.md
+      - brqosh-review/code-review.md
+      - brqosh-review/security.md
+      - brqosh-agents/harness.md
+      - brqosh-ui-design-system/enforcement.md
+      - brqosh-ui-design-system/program-design-mastery.md
+      - brqosh-ui-design-system/visual-effects.md
+      - brqosh-ui-design-system/design-foundations.md
+  Cursor:
+    count: 1
+    merge_into:
+      - supreme-programming-mastery/tools-cursor.md
+      - supreme-programming-mastery/agent-workflow.md
+  Google:
+    count: 22
+    merge_into:
+      - brqosh-agent-protocol/protocol.md
+      - brqosh-agents/reference.md
+      - brqosh-analysis/deep-cognition.md
+      - brqosh-ui-design-system/program-design-mastery.md
+  Meta:
+    count: 1
+    merge_into:
+      - human-intelligence-mastery/evenhandedness.md
+  Microsoft:
+    count: 5
+    merge_into:
+      - brqosh-engineering/tools.md
+      - brqosh-review/code-review.md
+  Misc:
+    count: 23
+    merge_into:
+      - brqosh-analysis/deep-cognition.md
+      - universal-coding/reference.md
+      - brqosh-ui-design-system/program-design-mastery.md
+  Mistral:
+    count: 2
+    merge_into:
+      - brqosh-analysis/deep-cognition.md
+      - universal-coding/reference.md
+  Notion:
+    count: 1
+    merge_into:
+      - brqosh-analysis/deep-cognition.md
+      - universal-coding/reference.md
+      - brqosh-ui-design-system/modules.md
+  OpenAI:
+    count: 88
+    merge_into:
+      - supreme-programming-mastery/agent-workflow.md
+      - supreme-programming-mastery/tools-cursor.md
+      - brqosh-engineering/engineering.md
+      - brqosh-communication/human-parity.md
+      - brqosh-ui-design-system/program-design-mastery.md
+  Perplexity:
+    count: 3
+    merge_into:
+      - human-intelligence-mastery/research-intelligence.md
+      - brqosh-agents/reference.md
+  Qwen:
+    count: 1
+    merge_into:
+      - supreme-programming-mastery/polyglot-pitfalls.md
+  README.md:
+    count: 1
+    merge_into:
+      - brqosh-analysis/deep-cognition.md
+      - universal-coding/reference.md
+  xAI:
+    count: 11
+    merge_into:
+      - brqosh-agents/reference.md
+      - brqosh-agents/session-protocol.md
+      - fable-omni-core/ai-supremacy.md
+      - brqosh-analysis/shura-intelligence-core.md
+  omni-qa-army:
+    count: 35
+    note: synthesized from البرومبيت.txt + 35 leak files — desktop cognitive QA · P0 complete
+    merge_into:
+      - ai-dev-platform/omni-qa-prompt-analysis.md
+      - omni-qa-army/SKILL.md
+      - omni-qa-army/superintelligence-core.md
+      - omni-qa-army/vision-perception.md
+      - omni-qa-army/exploratory-mindset.md
+      - omni-qa-army/report-excellence.md
+      - omni-qa-army/bug-tracker-spec.md
+      - omni-qa-army/arabic-qa.md
+      - omni-qa-army/roles/
+      - omni-qa-army/orchestrator-law.md
+  ai-dev-platform:
+    count: 0
+    note: platform synthesis — Program Developer workspace
+    merge_into:
+      - ai-dev-platform/SKILL.md
+      - ai-dev-platform/agent-orchestration.md
+      - ai-dev-platform/sdlc-pipeline.md
+      - ai-dev-platform/leak-platform-synthesis.md
+      - ai-dev-platform/skill-studio.md
+  Shura:
+    count: 0
+    note: synthesized from 14 families — v4 Supreme engine + platform bridge
+    merge_into:
+      - brqosh-analysis/shura-intelligence-core.md
+      - brqosh-analysis/shura-council-protocol.md
+      - brqosh-agents/council-intelligence-matrix.md
+      - brqosh-skills-hub/language-enforcement.md
+      - ShuraCouncil/AdversarialVerifier.cs
+      - ShuraCouncil/FacilitatorEngine.cs
+      - ShuraCouncil/ConflictResolver.cs
+      - ShuraCouncil/LeakSynthesisEngine.cs
+      - ShuraCouncil/SupremeGateEngine.cs
+  Karpathy:
+    count: 9
+    note: andrej-karpathy-skills-main — 4 principles · EXAMPLES anti-patterns · synthesis only
+    corpus_path: andrej-karpathy-skills-main/andrej-karpathy-skills-main
+    merge_into:
+      - supreme-programming-mastery/karpathy-synthesis.md
+      - supreme-programming-mastery/agent-workflow.md
+      - brqosh-debug/SKILL.md
+      - omni-qa-army/orchestrator-law.md
+      - omni-qa-army/prompt-audit-engine.md
+      - brqosh-skills-hub/skill-lessons.yaml
+
+files_by_family:
+  Karpathy:
+    - skills/karpathy-guidelines/SKILL.md
+    - .cursor/rules/karpathy-guidelines.mdc
+    - CLAUDE.md
+    - EXAMPLES.md
+    - CURSOR.md
+    - README.md
+    - README.zh.md
+    - CLAUDE.md
+    - .claude-plugin/plugin.json
+  .github:
+    - .github/CONTRIBUTING.md
+  Anthropic:
+    - Anthropic/anthropic_reminders.md
+    - Anthropic/Claude Code/bundled-skills/artifact-design.md
+    - Anthropic/Claude Code/bundled-skills/batch.md
+    - Anthropic/Claude Code/bundled-skills/claude-api.md
+    - Anthropic/Claude Code/bundled-skills/code-review/high.md
+    - Anthropic/Claude Code/bundled-skills/code-review/low.md
+    - Anthropic/Claude Code/bundled-skills/code-review/max.md
+    - Anthropic/Claude Code/bundled-skills/code-review/medium.md
+    - Anthropic/Claude Code/bundled-skills/code-review/README.md
+    - Anthropic/Claude Code/bundled-skills/code-review/report-findings-tool.md
+    - Anthropic/Claude Code/bundled-skills/code-review/xhigh.md
+    - Anthropic/Claude Code/bundled-skills/code-review.md
+    - Anthropic/Claude Code/bundled-skills/compact.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/anti-patterns.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/choosing-a-form.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/color-formula.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/components.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/interaction.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/marks-and-anatomy.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/references/palette.md
+    - Anthropic/Claude Code/bundled-skills/dataviz/SKILL.md
+    - Anthropic/Claude Code/bundled-skills/debug.md
+    - Anthropic/Claude Code/bundled-skills/deep-research/SKILL.md
+    - Anthropic/Claude Code/bundled-skills/doctor/SKILL.md
+    - Anthropic/Claude Code/bundled-skills/fewer-permission-prompts.md
+    - Anthropic/Claude Code/bundled-skills/init-new.md
+    - Anthropic/Claude Code/bundled-skills/init.md
+    - Anthropic/Claude Code/bundled-skills/keybindings-help.md
+    - Anthropic/Claude Code/bundled-skills/loop.md
+    - Anthropic/Claude Code/bundled-skills/review.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/examples/cli.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/examples/electron.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/examples/library.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/examples/playwright.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/examples/server.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/examples/tui.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/SKILL.md
+    - Anthropic/Claude Code/bundled-skills/run-skill-generator/template.md
+    - Anthropic/Claude Code/bundled-skills/run.md
+    - Anthropic/Claude Code/bundled-skills/schedule.md
+    - Anthropic/Claude Code/bundled-skills/security-review.md
+    - Anthropic/Claude Code/bundled-skills/simplify.md
+    - Anthropic/Claude Code/bundled-skills/update-config.md
+    - Anthropic/Claude Code/bundled-skills/verify.md
+    - Anthropic/Claude Code/claude-code-2.1.172-fable-5.md
+    - Anthropic/Claude Code/claude-code-2.1.172-opus-4.6.md
+    - Anthropic/Claude Code/claude-code-2.1.172-opus-4.8.md
+    - Anthropic/Claude Code/claude-code-docs-assistant.md
+    - Anthropic/Claude Code/claude-code-opus-4.6.md
+    - Anthropic/Claude Code/claude-code-opus-4.8.md
+    - Anthropic/Claude Code/deferred-tools.md
+    - Anthropic/Claude Code/glob-tool.md
+    - Anthropic/Claude Code/grep-tool.md
+    - Anthropic/claude-cowork-dispatch.md
+    - Anthropic/claude-cowork.md
+    - Anthropic/claude-design.md
+    - Anthropic/claude-desktop-code.md
+    - Anthropic/claude-fable-5.md
+    - Anthropic/claude-for-excel.md
+    - Anthropic/claude-for-word.md
+    - Anthropic/claude-in-chrome.md
+    - Anthropic/claude-in-powerpoint.md
+    - Anthropic/claude-mobile-ios.md
+    - Anthropic/claude-opus-4.6-no-tools.md
+    - Anthropic/claude-opus-4.6.md
+    - Anthropic/claude-opus-4.7.md
+    - Anthropic/claude-opus-4.8.md
+    - Anthropic/claude-sonnet-4.6-no-tools.md
+    - Anthropic/claude-sonnet-4.6.md
+    - Anthropic/claude-sonnet-5.md
+    - Anthropic/default-styles.md
+    - Anthropic/Official/2024-07-12-claude-haiku-3.md
+    - Anthropic/Official/2024-07-12-claude-opus-3.md
+    - Anthropic/Official/2024-07-12-claude-sonnet-3.5-text-and-images.md
+    - Anthropic/Official/2024-09-09-claude-sonnet-3.5-text-and-images.md
+    - Anthropic/Official/2024-09-09-claude-sonnet-3.5-text-only.md
+    - Anthropic/Official/2024-10-22-claude-haiku-3.5-text-only.md
+    - Anthropic/Official/2024-10-22-claude-sonnet-3.5-text-and-images.md
+    - Anthropic/Official/2024-10-22-claude-sonnet-3.5-text-only.md
+    - Anthropic/Official/2024-11-22-claude-sonnet-3.5-text-and-images.md
+    - Anthropic/Official/2024-11-22-claude-sonnet-3.5-text-only.md
+    - Anthropic/Official/2025-02-24-claude-haiku-3.5-text-and-images.md
+    - Anthropic/Official/2025-02-24-claude-sonnet-3.7.md
+    - Anthropic/Official/2025-05-22-claude-opus-4.md
+    - Anthropic/Official/2025-05-22-claude-sonnet-4.md
+    - Anthropic/Official/2025-07-31-claude-opus-4.md
+    - Anthropic/Official/2025-07-31-claude-sonnet-4.md
+    - Anthropic/Official/2025-08-05-claude-opus-4.1.md
+    - Anthropic/Official/2025-08-05-claude-opus-4.md
+    - Anthropic/Official/2025-08-05-claude-sonnet-4.md
+    - Anthropic/Official/2025-09-29-claude-sonnet-4.5.md
+    - Anthropic/Official/2025-10-15-claude-haiku-4.5.md
+    - Anthropic/Official/2025-11-19-claude-haiku-4.5.md
+    - Anthropic/Official/2025-11-19-claude-sonnet-4.5.md
+    - Anthropic/Official/2025-11-24-claude-opus-4.5.md
+    - Anthropic/Official/2026-01-18-claude-haiku-4.5.md
+    - Anthropic/Official/2026-01-18-claude-opus-4.5.md
+    - Anthropic/Official/2026-01-18-claude-sonnet-4.5.md
+    - Anthropic/Official/2026-02-05-claude-opus-4.6.md
+    - Anthropic/Official/2026-02-17-claude-sonnet-4.6.md
+    - Anthropic/Official/2026-04-16-claude-opus-4.7.md
+    - Anthropic/Official/2026-05-28-claude-opus-4.8.md
+    - Anthropic/Official/all.md
+    - Anthropic/Official/README.md
+    - Anthropic/old/claude-3.7-full-system-message-with-all-tools.md
+    - Anthropic/old/claude-3.7-sonnet-full-system-message-humanreadable.md
+    - Anthropic/old/claude-3.7-sonnet-w-tools.md
+    - Anthropic/old/claude-3.7-sonnet.md
+    - Anthropic/old/claude-4.1-opus-thinking.md
+    - Anthropic/old/claude-4.5-sonnet.md
+    - Anthropic/old/claude-opus-4.5.md
+    - Anthropic/old/claude-sonnet-4.md
+    - Anthropic/raw/claude-opus-4.6-no-tools-raw.md
+    - Anthropic/raw/claude-opus-4.6-raw.md
+    - Anthropic/raw/claude-sonnet-4.6-no-tools-raw.md
+    - Anthropic/raw/claude-sonnet-4.6-raw.md
+    - Anthropic/research_instructions.md
+    - Anthropic/sonnet-4.6-reminders.md
+    - Anthropic/visualize.md
+  Cursor:
+    - Cursor/cursor.md
+  Google:
+    - Google/ai-studio-build.md
+    - Google/antigravity-cli.md
+    - Google/gemini-2.0-flash-webapp.md
+    - Google/gemini-2.5-flash-image-preview.md
+    - Google/gemini-2.5-pro-api.md
+    - Google/gemini-2.5-pro-guided-learning.md
+    - Google/gemini-2.5-pro-webapp.md
+    - Google/gemini-3-flash.md
+    - Google/gemini-3-pro.md
+    - Google/gemini-3.1-pro-api.md
+    - Google/gemini-3.1-pro.md
+    - Google/gemini-3.5-flash-ai-studio.md
+    - Google/gemini-3.5-flash.md
+    - Google/gemini-cli.md
+    - Google/gemini-diffusion.md
+    - Google/gemini-in-chrome.md
+    - Google/gemini-workspace.md
+    - Google/gemini-youtube.md
+    - Google/google-search-ai-mode.md
+    - Google/jules.md
+    - Google/nano-banana-2-api.md
+    - Google/notebooklm-chat.md
+  Meta:
+    - Meta/meta-ai.md
+  Microsoft:
+    - Microsoft/copilot-cli.md
+    - Microsoft/copilot-in-microsoft-word.md
+    - Microsoft/copilot-macos-app.md
+    - Microsoft/github-copilot.md
+    - Microsoft/vscode-copilot-agent.md
+  Misc:
+    - Misc/amp-code.md
+    - Misc/brave-search.md
+    - Misc/character-ai.md
+    - Misc/confer.md
+    - Misc/devin-cli.md
+    - Misc/docker-gordon-ai.md
+    - Misc/elevenlabs-voice-agent.md
+    - Misc/fellou-browser.md
+    - Misc/gizmo-ai.md
+    - Misc/hermes.md
+    - Misc/indus-ai.md
+    - Misc/kagi-assistant.md
+    - Misc/minimax-m2.5.md
+    - Misc/opencode.md
+    - Misc/proton-lumo-ai.md
+    - Misc/raycast-ai.md
+    - Misc/reddit-answers.md
+    - Misc/sesame-ai-maya.md
+    - Misc/stack-overflow-ai-assist.md
+    - Misc/t3-code.md
+    - Misc/t3.chat.md
+    - Misc/warp-2.0-agent.md
+    - Misc/zed.md
+  Mistral:
+    - Mistral/mistral-code.md
+    - Mistral/mistral-medium-3.5.md
+  Notion:
+    - Notion/notion-ai.md
+  OpenAI:
+    - OpenAI/4o-2025-09-03-new-personality.md
+    - OpenAI/API/gpt-5-reasoning-effort-high-api.md
+    - OpenAI/API/o3-high-api.md
+    - OpenAI/API/o3-low-api.md
+    - OpenAI/API/o3-medium-api.md
+    - OpenAI/API/o4-mini-high.md
+    - OpenAI/API/o4-mini-low-api.md
+    - OpenAI/API/o4-mini-medium-api.md
+    - OpenAI/API/README.md
+    - OpenAI/chatgpt-4.5.md
+    - OpenAI/chatgpt-atlas.md
+    - OpenAI/chatgpt-gpt-5-agent-mode.md
+    - OpenAI/Codex/codex-auto-review.md
+    - OpenAI/Codex/computer-use.md
+    - OpenAI/Codex/control-chrome.md
+    - OpenAI/Codex/control-in-app-browser.md
+    - OpenAI/Codex/gpt-5.3-codex-spark.md
+    - OpenAI/Codex/gpt-5.4-mini.md
+    - OpenAI/Codex/gpt-5.4.md
+    - OpenAI/Codex/gpt-5.5-full.md
+    - OpenAI/Codex/gpt-5.5.md
+    - OpenAI/Codex/old/gpt-5-codex-mini.md
+    - OpenAI/Codex/old/gpt-5-codex.md
+    - OpenAI/Codex/old/gpt-5.1-codex-max.md
+    - OpenAI/Codex/old/gpt-5.1-codex-mini.md
+    - OpenAI/Codex/old/gpt-5.1-codex.md
+    - OpenAI/Codex/old/gpt-5.1.md
+    - OpenAI/Codex/old/gpt-5.2-codex.md
+    - OpenAI/Codex/old/gpt-5.2.md
+    - OpenAI/Codex/old/gpt-5.3-codex.md
+    - OpenAI/Codex/old/gpt-5.md
+    - OpenAI/Codex/old/personality_friendly_gpt-5.2-codex.md
+    - OpenAI/Codex/old/personality_pragmatic_gpt-5.2-codex.md
+    - OpenAI/Codex/personality_friendly.md
+    - OpenAI/Codex/personality_friendly_gpt-5.5.md
+    - OpenAI/Codex/personality_pragmatic.md
+    - OpenAI/Codex/personality_pragmatic_gpt-5.5.md
+    - OpenAI/Codex/plan_mode.md
+    - OpenAI/gpt-4.1-mini.md
+    - OpenAI/gpt-4.1.md
+    - OpenAI/gpt-4.5.md
+    - OpenAI/gpt-4o-advanced-voice-mode.md
+    - OpenAI/gpt-4o-legacy-voice-mode.md
+    - OpenAI/gpt-4o-whatsapp.md
+    - OpenAI/gpt-4o.md
+    - OpenAI/gpt-5-cynic-personality.md
+    - OpenAI/gpt-5-listener-personality.md
+    - OpenAI/gpt-5-nerdy-personality.md
+    - OpenAI/gpt-5-robot-personality.md
+    - OpenAI/gpt-5-thinking.md
+    - OpenAI/gpt-5.1-candid.md
+    - OpenAI/gpt-5.1-cynical.md
+    - OpenAI/gpt-5.1-default.md
+    - OpenAI/gpt-5.1-efficient.md
+    - OpenAI/gpt-5.1-friendly.md
+    - OpenAI/gpt-5.1-nerdy.md
+    - OpenAI/gpt-5.1-professional.md
+    - OpenAI/gpt-5.1-quirky.md
+    - OpenAI/gpt-5.2-mini-free-account.md
+    - OpenAI/gpt-5.2-thinking.md
+    - OpenAI/gpt-5.3-chat-api.md
+    - OpenAI/gpt-5.3-codex-api.md
+    - OpenAI/gpt-5.3-instant.md
+    - OpenAI/gpt-5.4-api.md
+    - OpenAI/gpt-5.4-thinking.md
+    - OpenAI/gpt-5.5-api.md
+    - OpenAI/gpt-5.5-instant.md
+    - OpenAI/gpt-5.5-pro-api.md
+    - OpenAI/gpt-5.5-thinking.md
+    - OpenAI/image-safety-policies.md
+    - OpenAI/monday-gpt.md
+    - OpenAI/o3.md
+    - OpenAI/o4-mini-high.md
+    - OpenAI/o4-mini.md
+    - OpenAI/Old/chatgpt.com-o4-mini.md
+    - OpenAI/prompt-automation-context.md
+    - OpenAI/prompt-image-safety-policies.md
+    - OpenAI/study-and-learn.md
+    - OpenAI/tool-advanced-memory.md
+    - OpenAI/tool-canvas-canmore.md
+    - OpenAI/tool-create-image-image_gen.md
+    - OpenAI/tool-deep-research.md
+    - OpenAI/tool-file_search.md
+    - OpenAI/tool-memory-bio.md
+    - OpenAI/tool-python-code.md
+    - OpenAI/tool-python.md
+    - OpenAI/tool-web-search.md
+    - OpenAI/Old/chatgpt-4o-mini.txt
+  Perplexity:
+    - Perplexity/comet-browser-assistant.md
+    - Perplexity/perplexity-computer.md
+    - Perplexity/voice-assistant.md
+  Qwen:
+    - Qwen/qwen-3.6-plus.md
+  README.md:
+    - README.md
+  xAI:
+    - xAI/grok-3.md
+    - xAI/grok-4.1-beta.md
+    - xAI/grok-4.2.md
+    - xAI/grok-4.3-beta.md
+    - xAI/grok-4.md
+    - xAI/grok-account.md
+    - xAI/grok-api.md
+    - xAI/grok-build.md
+    - xAI/grok-expert.md
+    - xAI/grok-personas.md
+    - xAI/grok.com-post-new-safety-instructions.md

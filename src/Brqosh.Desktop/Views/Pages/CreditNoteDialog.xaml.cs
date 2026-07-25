@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,8 +38,8 @@ public partial class CreditNoteDialog : Window
             .ToDictionaryAsync(c => c.Id, c => c.NameAr);
 
         InvoiceCombo.ItemsSource = invoices.Select(i => new InvoiceOption(
-            i.Id, i.CustomerId, i.GrandTotal,
-            $"{i.InvoiceNumber} — {customers.GetValueOrDefault(i.CustomerId, "؟")} — {i.GrandTotal:N2}")).ToList();
+            i.Id, i.CustomerId, i.GrandTotal(),
+            $"{i.InvoiceNumber} — {customers.GetValueOrDefault(i.CustomerId, "؟")} — {i.GrandTotal():N2}")).ToList();
     }
 
     private async void OnInvoiceSelected(object sender, SelectionChangedEventArgs e)
@@ -52,7 +53,7 @@ public partial class CreditNoteDialog : Window
                         && n.OriginalInvoiceId == option.Id
                         && n.Status == CreditNoteStatus.Posted)
             .ToListAsync())
-            .Sum(n => n.GrandTotal);
+            .SumGrandTotal();
 
         RemainingText.Text = (option.GrandTotal - credited).ToString("N2");
     }
@@ -88,13 +89,13 @@ public partial class CreditNoteDialog : Window
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
                 note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice);
 
-            await using var db = AppServices.CreateDb();
-            await new CreditNotePostingService(db).PostAsync(note);
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<CreditNotePostingService>().PostAsync(note);
 
             DialogResult = true;
             Close();
         }
-        catch (AccountingException ex)
+        catch (Exception ex)
         {
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;

@@ -6,24 +6,42 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- شريط الأدوات -->
-        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DockPanel>
-                <Button Content="＋ حساب جديد" Style="{StaticResource PrimaryButton}" Padding="18,8"
-                        DockPanel.Dock="Left" Click="OnAddAccount"/>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="دليل الحسابات" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="شجرة GL · SOCPA · حسابات نظامية"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddAccountBtn" Content="＋ حساب جديد" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAddAccount"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="EditBtn" Content="تعديل" Padding="16,9" Click="OnEdit"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnDeactivate"/>
                 <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="320"
-                         DockPanel.Dock="Right" HorizontalAlignment="Right"
+                         DockPanel.Dock="Left" VerticalAlignment="Center"
                          TextChanged="OnSearchChanged" ToolTip="بحث بالكود أو الاسم"/>
             </DockPanel>
         </Border>
 
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="CoaSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
         <!-- شجرة الحسابات -->
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="8"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" Padding="8">
             <TreeView x:Name="AccountsTree" BorderThickness="0" FontSize="14">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem">

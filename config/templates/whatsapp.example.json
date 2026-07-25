@@ -1,0 +1,8 @@
+{
+  "AccessToken": "ضع_رمز_الوصول_من_Meta_هنا",
+  "PhoneNumberId": "ضع_Phone_Number_ID_هنا",
+  "TemplateName": "brqosh_otp",
+  "TemplateLanguage": "ar",
+  "UseAuthenticationTemplate": true,
+  "ApiVersion": "v21.0"
+}

@@ -1,5 +1,10 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Platform;
+using Brqosh.Infrastructure.Companies;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Platform;
+using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Workflow;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Accounting;
@@ -10,17 +15,37 @@ namespace Brqosh.Infrastructure.Accounting;
 /// </summary>
 public class JournalPostingService(BrqoshDbContext db)
 {
-    public async Task<JournalEntry> PostAsync(JournalEntry entry)
-    {
-        await EnsurePeriodOpenAsync(entry.CompanyId, entry.EntryDate);
+    private readonly PostingOrchestrator _orchestrator = new(db);
 
-        var number = await new JournalEntryNumberGenerator(db).NextAsync(entry.CompanyId, entry.EntryDate);
-        entry.Post(number);
+    public Task<JournalEntry> PostAsync(JournalEntry entry) =>
+        UnitOfWork.ExecuteInTransactionAsync(db, async _ =>
+        {
+            SecurityContext.EnsureCanPostAccounting();
+            if (entry.BranchId is null)
+                entry.AssignBranch(await new BranchAssignmentService(db)
+                .ResolveBranchIdAsync(entry.CompanyId, BranchSessionContext.PreferredBranchId));
+            if (entry.IsManual && entry.WorkflowInstanceId is not null)
+                await new ManualJournalEntryWorkflowService(db, new WorkflowEngine(db))
+                    .EnsureWorkflowApprovedAsync(entry);
 
-        db.JournalEntries.Add(entry);
-        await db.SaveChangesAsync();
-        return entry;
-    }
+            await _orchestrator.ValidateJournalEntryAsync(entry);
+
+            var number = await new JournalEntryNumberGenerator(db).NextAsync(entry.CompanyId, entry.EntryDate);
+            entry.Post(number);
+
+            if (entry.Id == 0)
+                db.JournalEntries.Add(entry);
+            await db.SaveChangesAsync();
+
+            await AuditPostingHelper.LogPostAsync(
+                db, entry.CompanyId, "JournalEntry", entry.EntryNumber ?? entry.Id.ToString(),
+                reason: "ترحيل قيد يومية", details: entry.Description ?? "");
+
+            await DomainEventHub.PublishAsync(new JournalEntryPostedEvent(
+                entry.CompanyId, entry.Id, entry.EntryNumber!, entry.EntryDate));
+
+            return entry;
+        });
 
     public async Task EnsurePeriodOpenAsync(long companyId, DateOnly date)
     {

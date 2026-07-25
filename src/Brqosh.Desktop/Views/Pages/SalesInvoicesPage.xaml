@@ -6,32 +6,116 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16,12" Margin="0,0,0,16"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DockPanel>
-                <Button Content="＋ فاتورة جديدة" Style="{StaticResource PrimaryButton}" Padding="18,8"
-                        DockPanel.Dock="Left" Click="OnNewInvoice"/>
-                <TextBlock x:Name="CountText" DockPanel.Dock="Right" VerticalAlignment="Center"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" HorizontalAlignment="Right"/>
+        <!-- ══ شريط الأدوات ══ -->
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="فواتير المبيعات" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="بيع → ZATCA → ترحيل AR"/>
+                </StackPanel>
+                <!-- المجموعة الأساسية: الإجراء الرئيسي -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="NewInvoiceBtn"
+                            Content="＋ فاتورة جديدة"
+                            Style="{StaticResource PrimaryButton}"
+                            Padding="18,9"
+                            Click="OnNewInvoice"/>
+                </StackPanel>
+
+                <!-- فاصل -->
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+
+                <!-- مجموعة ثانوية: عرض وإجراءات غير تدميرية -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="عرض"
+                            Padding="16,9" Margin="0,0,8,0"
+                            Click="OnView"/>
+                    <Button Content="عرض القيد"
+                            Padding="16,9" Margin="0,0,8,0"
+                            Click="OnViewJournal"/>
+                    <Button Content="طباعة PDF"
+                            Padding="16,9"
+                            Click="OnPrintPdf"/>
+                </StackPanel>
+
+                <!-- فاصل -->
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+
+                <!-- مجموعة التنقل بين الصفحات -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="PrevBtn" Content="→"
+                            Padding="12,9" Margin="0,0,6,0"
+                            ToolTip="الصفحة السابقة"
+                            Click="OnPrev"/>
+                    <Button x:Name="NextBtn" Content="←"
+                            Padding="12,9"
+                            ToolTip="الصفحة التالية"
+                            Click="OnNext"/>
+                </StackPanel>
+
+                <!-- فاصل -->
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+
+                <!-- زر الخطر: إلغاء — منفصل عن الباقي -->
+                <Button DockPanel.Dock="Right"
+                        x:Name="CancelInvoiceBtn"
+                        Content="إلغاء"
+                        Style="{StaticResource SoftDangerButton}"
+                        Padding="16,9"
+                        Click="OnCancelInvoice"/>
+
+                <!-- عداد النتائج (يسار الشريط = يمين الشاشة في RTL) -->
+                <Border DockPanel.Dock="Left"
+                        Background="{StaticResource PrimarySoftBrush}"
+                        CornerRadius="20" Padding="12,5"
+                        VerticalAlignment="Center">
+                    <TextBlock x:Name="CountText"
+                               FontSize="12.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                </Border>
             </DockPanel>
         </Border>
 
-        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="4"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <DataGrid x:Name="InvoicesGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="14" RowHeight="36" Background="Transparent" EnableRowVirtualization="True">
+        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Padding="8" Margin="0,12,0,12">
+            <UniformGrid x:Name="KpiGrid" Columns="3"/>
+        </Border>
+
+        <!-- ══ جدول الفواتير ══ -->
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="InvoicesGrid"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      BorderThickness="0"
+                      Background="Transparent"
+                      MouseDoubleClick="OnGridDoubleClick">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="150"/>
-                    <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate}" Width="110"/>
-                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
-                    <DataGridTextColumn Header="قبل الضريبة" Binding="{Binding Subtotal, StringFormat=N2}" Width="120"/>
-                    <DataGridTextColumn Header="الضريبة 15%" Binding="{Binding VatAmount, StringFormat=N2}" Width="110"/>
-                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding GrandTotal, StringFormat=N2}" Width="120"/>
-                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusAr}" Width="90"/>
+                    <DataGridTextColumn Header="رقم الفاتورة"
+                                        Binding="{Binding InvoiceNumber}"
+                                        Width="150"/>
+                    <DataGridTextColumn Header="التاريخ"
+                                        Binding="{Binding InvoiceDate}"
+                                        Width="110"/>
+                    <DataGridTextColumn Header="العميل"
+                                        Binding="{Binding CustomerName}"
+                                        Width="*"/>
+                    <DataGridTextColumn Header="قبل الضريبة"
+                                        Binding="{Binding Subtotal, StringFormat=N2}"
+                                        Width="120"/>
+                    <DataGridTextColumn Header="الضريبة 15%"
+                                        Binding="{Binding VatAmount, StringFormat=N2}"
+                                        Width="110"/>
+                    <DataGridTextColumn Header="الإجمالي"
+                                        Binding="{Binding GrandTotal, StringFormat=N2}"
+                                        Width="125"/>
+                    <DataGridTextColumn Header="الحالة"
+                                        Binding="{Binding StatusAr}"
+                                        Width="90"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

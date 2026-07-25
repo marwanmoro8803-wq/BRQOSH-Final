@@ -1,0 +1,126 @@
+---
+description: >-
+  BRQOSH open-phase memory · closure law · agent decision trees · O-01..O-13.
+  alwaysApply — never close external items from code alone.
+alwaysApply: true
+---
+
+# BRQOSH — Open Items & Closure Law v17
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Fable: `claude-fable-5/tri-source-index.yaml`
+
+**Truth sources:** `STATUS.yaml` · `docs/PROJECT-MEMORY.yaml` · `docs/OPEN_ITEMS.md` · `docs/ops/WAKE_UP_CHECKLIST.md`
+
+---
+
+## Immutable Closure Law
+
+- **Never** present partial closure as complete.
+- Every ✅ requires operational proof: test · build · script · CEEF report.
+- OTP authority · external auditor · 1M devices · live ZAP · real SaaS = **⏭ EXTERNAL** — document explicitly; not "missing code".
+- Agent **must not** mark OPEN_ITEMS closed for live items without `dist/evidence/`.
+
+---
+
+## Session Wake Protocol (every new session)
+
+```
+① Read STATUS.yaml — test count · phase · latest CEEF
+② Grep PROJECT-MEMORY.yaml — prior fix/rule on same topic
+③ Read WAKE_UP_CHECKLIST.md if task involves run/close/deploy
+④ Classify: in-repo vs external — never mix
+⑤ Run verify before any "complete" claim
+⑥ impact-before-change before first code mutation
+⑦ LEARN loop after substantive work — knowledge-accumulation.md
+```
+
+---
+
+## Closed In-Repo (reference)
+
+| Wave | CEEF |
+|------|------|
+| P0…P1 | CEEF-013…014 |
+| Pilot…ERP | CEEF-015…016 |
+| M12 + phase 5 | CEEF-017…020 |
+| Data Intel + AI rules | CEEF-021…022 |
+| Ops audit + branch/dormancy/RBAC | CEEF-023…024 |
+| BranchId comprehensive | CEEF-025 |
+| Global Platform + FX + IC | CEEF-026…033 |
+| SAMA chain + SaaS stubs + gates A→Z | CEEF-034…037 |
+| UI UX Pro Max + Empty State + Desktop.Tests | CEEF-038…039 |
+| **V12 Integrity + LIFECYCLE** | **CEEF-101…116** |
+| **V13 G-69 + quotations** | **CEEF-117** |
+| **V13 in-repo (switcher·SO·CFS·migration·GTM)** | **CEEF-118** |
+| **O-01..O-05 in-repo prep** | **CEEF-119** |
+| **Supreme Audit + Desktop DI + PG gate** | **CEEF-120…125** |
+| **V13 G-69 establishments + G-08/09 sales UI** | **CEEF-129…130** |
+| **OpenAPI + CRM + Gulf VAT + i18n nav** | **CEEF-131…135** |
+| **Plan reconciliation + EmptyState bilingual** | **CEEF-136** |
+| **CEEF-120 Supreme plan closure** | **CEEF-137** |
+| **Supreme A-to-Z independent audit** | **CEEF-138** |
+
+**Last measure:** **470** tests PASS · CEEF-101…138 · harness PASS
+
+---
+
+## ⏭ Open (live / external)
+
+| Item | Blocker | In-repo prep |
+|------|---------|--------------|
+| O-01 | Live ZATCA OTP | `dist/evidence/O-01-*/` · CEEF-119 |
+| O-02 | SOCPA external auditor | `dist/evidence/O-02-*/` |
+| O-03 | MSI VM deployment | `dist/evidence/O-03-*/` |
+| O-04 | 1M device scale | `dist/evidence/O-04-*/` |
+| O-05 | Live ZAP scan | `dist/evidence/O-05-*/` |
+| O-06 | Desktop LOC coverlet | Desktop.Tests covers static UI — LOC metric meaningless |
+| O-08 | Live SAMA feed | official authority feed |
+| O-09 | Full SaaS | Stripe · billing · real multi-tenant |
+| O-10…O-13 | Cloud · BI · LLM · Mobile | roadmap — out of current scope |
+
+---
+
+## Agent Decision Tree
+
+```
+User requests "close" or "done"
+├─ touches O-01..O-05 or OTP/ZAP/SOCPA?
+│  ├─ YES → ⏭ EXTERNAL — document dist/evidence path — NO ✅
+│  └─ NO → continue
+├─ touches Persistence/schema?
+│  ├─ YES → SQLite ✅ AND PostgreSQL ✅ (schema-governance)
+│  └─ NO → continue
+├─ dotnet build + test PASS?
+│  ├─ NO → fix first — no CEEF
+│  └─ YES → CEEF if wave · sync-agent-status
+└─ state all 4 closure levels explicitly
+```
+
+---
+
+## Agent Permissions Matrix
+
+| DO | DO NOT |
+|----|--------|
+| prepare code/tests/scripts for live gates | claim OTP success without evidence |
+| document ⏭ with required evidence path | edit OPEN_ITEMS to close O-* |
+| run in-repo gates (`run-external-gates.ps1`) | skip PG because CI = SQLite only |
+| write CEEF on in-repo wave close | present SaaS stub as complete |
+| cite test count from STATUS.yaml | recall test counts from memory |
+
+---
+
+## Current Phase
+
+**CEEF-138 Supreme A-to-Z audit complete** · **Next: O-01 OTP + API P0 hardening** — `docs/ops/WAKE_UP_CHECKLIST.md`
+
+**Runbooks:** `dist/evidence/` · `brqosh-closure/zero-gap-matrix.md`
+
+---
+
+## Template Response (external close request)
+
+> This item is **⏭ EXTERNAL** — requires [OTP/SOCPA/ZAP/VM/1M].  
+> Completed in-repo: [prep/script/test].  
+> Required from you: [specific live step].  
+> Path: `dist/evidence/O-0X-*/` · `docs/OPEN_ITEMS.md`

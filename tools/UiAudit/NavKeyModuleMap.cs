@@ -1,0 +1,89 @@
+using Brqosh.Domain.Modules;
+
+namespace UiAudit;
+
+/// <summary>ربط مفاتيح التنقل بالوحدات — متزامن مع NavigationCatalog.</summary>
+internal static class NavKeyModuleMap
+{
+    private static readonly Dictionary<string, ModuleKey> KeyToModule = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["dashboard"] = ModuleKey.GeneralLedger,
+        ["chart_of_accounts"] = ModuleKey.GeneralLedger,
+        ["journal_entries"] = ModuleKey.GeneralLedger,
+        ["cost_centers"] = ModuleKey.GeneralLedger,
+        ["fiscal_periods"] = ModuleKey.GeneralLedger,
+        ["company_settings"] = ModuleKey.GeneralLedger,
+        ["organizations"] = ModuleKey.GeneralLedger,
+        ["company_groups"] = ModuleKey.GeneralLedger,
+        ["branches"] = ModuleKey.GeneralLedger,
+        ["users"] = ModuleKey.GeneralLedger,
+        ["audit_log"] = ModuleKey.GeneralLedger,
+        ["data_quality"] = ModuleKey.GeneralLedger,
+        ["platform_events"] = ModuleKey.GeneralLedger,
+        ["customer_support"] = ModuleKey.GeneralLedger,
+        ["pricing_plans"] = ModuleKey.GeneralLedger,
+        ["projects"] = ModuleKey.ProjectsConstruction,
+        ["contracts"] = ModuleKey.ProjectsConstruction,
+        ["boq"] = ModuleKey.ProjectsConstruction,
+        ["progress_billings"] = ModuleKey.ProjectsConstruction,
+        ["subcontractors"] = ModuleKey.ProjectsConstruction,
+        ["retentions"] = ModuleKey.ProjectsConstruction,
+        ["project_profitability"] = ModuleKey.ProjectsConstruction,
+        ["bom"] = ModuleKey.Manufacturing,
+        ["work_orders"] = ModuleKey.Manufacturing,
+        ["wip"] = ModuleKey.Manufacturing,
+        ["pos_session"] = ModuleKey.PointOfSale,
+        ["pos_shifts"] = ModuleKey.PointOfSale,
+        ["pos_reports"] = ModuleKey.PointOfSale,
+        ["customers"] = ModuleKey.Sales,
+        ["customer_statement"] = ModuleKey.Sales,
+        ["sales_quotations"] = ModuleKey.Sales,
+        ["sales_orders"] = ModuleKey.Sales,
+        ["sales_invoices"] = ModuleKey.Sales,
+        ["sales_returns"] = ModuleKey.Sales,
+        ["crm_leads"] = ModuleKey.Crm,
+        ["crm_opportunities"] = ModuleKey.Crm,
+        ["crm_activities"] = ModuleKey.Crm,
+        ["suppliers"] = ModuleKey.Purchasing,
+        ["supplier_statement"] = ModuleKey.Purchasing,
+        ["purchase_requests"] = ModuleKey.Purchasing,
+        ["purchase_orders"] = ModuleKey.Purchasing,
+        ["goods_receipts"] = ModuleKey.Purchasing,
+        ["purchase_invoices"] = ModuleKey.Purchasing,
+        ["debit_notes"] = ModuleKey.Purchasing,
+        ["products"] = ModuleKey.Inventory,
+        ["warehouses"] = ModuleKey.Inventory,
+        ["stock_movements"] = ModuleKey.Inventory,
+        ["stock_count"] = ModuleKey.Inventory,
+        ["landed_cost"] = ModuleKey.Inventory,
+        ["receipt_vouchers"] = ModuleKey.Treasury,
+        ["payment_vouchers"] = ModuleKey.Treasury,
+        ["bank_accounts"] = ModuleKey.Treasury,
+        ["bank_transfers"] = ModuleKey.Treasury,
+        ["exchange_rates"] = ModuleKey.Treasury,
+        ["cheques"] = ModuleKey.Treasury,
+        ["bank_reconciliation"] = ModuleKey.Treasury,
+        ["zatca_invoices"] = ModuleKey.Zatca,
+        ["zatca_settings"] = ModuleKey.Zatca,
+        ["trial_balance"] = ModuleKey.Reports,
+        ["income_statement"] = ModuleKey.Reports,
+        ["balance_sheet"] = ModuleKey.Reports,
+        ["cash_flow_statement"] = ModuleKey.Reports,
+        ["consolidated_trial_balance"] = ModuleKey.Reports,
+        ["consolidated_income_statement"] = ModuleKey.Reports,
+        ["consolidated_balance_sheet"] = ModuleKey.Reports,
+        ["intercompany_elimination"] = ModuleKey.Reports,
+        ["vat_return"] = ModuleKey.Reports,
+        ["general_ledger_report"] = ModuleKey.Reports,
+        ["fixed_assets"] = ModuleKey.FixedAssets,
+        ["payroll"] = ModuleKey.Payroll,
+    };
+
+    public static bool IsInProfile(string navKey, BusinessProfile profile)
+    {
+        if (!KeyToModule.TryGetValue(navKey, out var module))
+            return true;
+
+        return ModuleCatalog.ResolveModules(profile).Contains(module);
+    }
+}

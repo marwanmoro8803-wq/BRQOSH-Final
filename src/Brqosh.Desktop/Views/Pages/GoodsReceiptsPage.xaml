@@ -1,0 +1,45 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.GoodsReceiptsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أذون الاستلام" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="GRN · مطابقة ثلاثية · حركة مخزون"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="NewBtn" Content="＋ إذن استلام من أمر شراء"
+                            Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnNew"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button DockPanel.Dock="Right" x:Name="CancelBtn" Content="إلغاء الاستلام"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCancel"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="ReceiptSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الرقم" Binding="{Binding ReceiptNumber}" Width="140"/>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding ReceiptDate}" Width="110"/>
+                    <DataGridTextColumn Header="أمر الشراء" Binding="{Binding OrderNumber}" Width="140"/>
+                    <DataGridTextColumn Header="المورد" Binding="{Binding SupplierName}" Width="*"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusAr}" Width="90"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

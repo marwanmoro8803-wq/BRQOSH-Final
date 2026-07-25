@@ -1,0 +1,54 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.IntercompanyEliminationPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="إزالة المعاملات بين الشركات" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="IC elimination · خرائط حسابات · قيود بين الشركات"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="المجموعة" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="GroupCombo" Width="280" FontSize="14" DisplayMemberPath="Display" SelectedValuePath="Id"/>
+                <TextBlock Text="من" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                <DatePicker x:Name="FromDate" Width="140" FontSize="14"/>
+                <TextBlock Text="إلى" VerticalAlignment="Center" Margin="12,0,8,0"/>
+                <DatePicker x:Name="ToDate" Width="140" FontSize="14"/>
+                <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="EliminationSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رمز الحساب" Binding="{Binding AccountCode}" Width="120"/>
+                    <DataGridTextColumn Header="مدين مُزال" Binding="{Binding EliminatedDebit, StringFormat=N2}" Width="140"/>
+                    <DataGridTextColumn Header="دائن مُزال" Binding="{Binding EliminatedCredit, StringFormat=N2}" Width="140"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <Border Grid.Row="4" Style="{StaticResource SummaryCard}">
+            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="14"/>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,33 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.SalesQuotationsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="＋ عرض سعر"
+                        Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="عروض الأسعار" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}" Text="LIFECYCLE-31 · مبيعات مبكرة"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Margin="0,12,0,0">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم العرض" Binding="{Binding QuotationNumber}" Width="120"/>
+                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding QuotationDate}" Width="110"/>
+                    <DataGridTextColumn Header="صالح حتى" Binding="{Binding ValidUntil}" Width="110"/>
+                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding GrandTotal, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

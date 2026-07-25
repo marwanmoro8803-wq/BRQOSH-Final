@@ -1,0 +1,171 @@
+# Shura Members Registry v5 — unified 41-seat identity
+# Sync: PromptSeatIntelligenceRegistry.cs · SeatIntelligenceRegistry.cs · shura-dynamo-registry.json
+version: v5
+updated: "2026-07-11"
+total_members: 41
+tiers:
+  facilitator: 1   # F00 — non-voting
+  voting_core: 12  # S01–S12
+  discipline: 28   # D01–D28 — advisory
+
+consensus:
+  approve_threshold: 9
+  max_p0_oppose: 1
+  adversarial_voters: [S02, S03, S12]
+  adversarial_kill_ratio: "2/3"
+
+conflict_priority:
+  - S05_security
+  - S08_accounting
+  - S03_verify
+  - S04_architecture
+  - S01_product
+  - S10_scope
+  - S03_ui
+  - aesthetics
+
+facilitator:
+  id: F00
+  role_ar: "الوسيط العليم"
+  role_en: "Omniscient Facilitator"
+  votes: false
+  councils: [C08, C13]
+  leak_families: [OpenAI/Codex/escalation, xAI/steelman, Anthropic/deep-research, Meta/meta-ai]
+  skills:
+    - shura-intelligence-core.md
+    - shura-constitution.md
+    - omni-qa-army/orchestrator-law.md
+    - council-intelligence-matrix.md
+  standing_question: "Is consensus honest? Where is hidden risk?"
+  dynamo:
+    ops_script: merge-council-chronicle.ps1
+    band: facilitator
+  heartbeat_phases: [START, OPS, END]
+
+voting_core:
+  - id: S01
+    role_brqosh: Advocate
+    role_pd: "QA Automation (مهندس الأتمتة)"
+    councils: [C01, C11]
+    leak_families: [Anthropic/Claude Code, OpenAI/Codex]
+    skills: [omni-qa-army/roles/role-automation.md, supreme-programming-mastery/skills-first.md]
+    standing_question: "What works today with evidence?"
+    dynamo: { ops_script: run-prompt-audit-engine.ps1, band: automation }
+    position_default: positive
+
+  - id: S02
+    role_brqosh: Opponent
+    role_pd: "Manual Exploratory QA (مستكشف يدوي)"
+    councils: [C11, C13]
+    leak_families: [Microsoft/copilot-cli, Anthropic/Fable]
+    skills: [omni-qa-army/roles/role-exploratory.md, shura-intelligence-core.md]
+    standing_question: "Where is the evidence? What is overstated?"
+    dynamo: { ops_script: run-cognitive-audit.ps1, band: quality }
+    adversarial_voter: true
+    position_default: negative
+
+  - id: S03
+    role_brqosh: Critic
+    role_pd: "UX Accessibility (مدقق UX/وصول)"
+    councils: [C03, C11]
+    leak_families: [Anthropic/verify, Google/gemini-cli]
+    skills: [omni-qa-army/roles/role-accessibility.md, brqosh-ui-design-system/SKILL.md]
+    standing_question: "What was not checked?"
+    dynamo: { ops_script: run-cognitive-perception.ps1, band: quality }
+    adversarial_voter: true
+
+  - id: S04
+    role_brqosh: Strategist
+    role_pd: "Penetration Tester (اختبار اختراق)"
+    councils: [C07]
+    leak_families: [Anthropic/security-review]
+    skills: [omni-qa-army/roles/role-pentest.md, brqosh-review/security.md]
+    standing_question: "Platform or screen? What can be stolen?"
+    dynamo: { ops_script: validate-prompt-governance.ps1, band: security }
+    conflict_weight: 1
+
+  - id: S05
+    role_brqosh: Security
+    role_pd: "Beta Tester (مختبر بيتا)"
+    councils: [C03, C10]
+    leak_families: [xAI/grok-build]
+    skills: [omni-qa-army/roles/role-beta.md]
+    standing_question: "What can be exploited emotionally or technically?"
+    dynamo: { ops_script: run-cognitive-live-smoke.ps1, band: quality }
+
+  - id: S06
+    role_brqosh: Engineer
+    role_pd: "Performance (أداء وذاكرة)"
+    councils: [C11, C14]
+    leak_families: [OpenAI/Codex, Karpathy]
+    skills: [omni-qa-army/roles/role-performance.md, supreme-programming-mastery/karpathy-synthesis.md]
+    standing_question: "Smallest correct diff?"
+    dynamo: { dotnet_command: "test CognitiveQa/CognitiveQa.sln -c Release --nologo -v q", band: quality }
+
+  - id: S07
+    role_brqosh: Market
+    role_pd: "L10n Arabic RTL (تدويل وعربي)"
+    councils: [C03, C10]
+    leak_families: [Anthropic/Fable, Perplexity]
+    skills: [omni-qa-army/roles/role-i18n.md, omni-qa-army/arabic-qa.md]
+    standing_question: "Will it sell? Is RTL correct?"
+    dynamo: { marker_scan: [arabic-qa.md, FlowDirection, RTL], band: advisory }
+
+  - id: S08
+    role_brqosh: Accountant
+    role_pd: "DevOps Integration"
+    councils: [C08, C01]
+    leak_families: [Anthropic/doctor, chronicle-unified]
+    skills: [omni-qa-army/roles/role-devops.md, brqosh-closure/SKILL.md]
+    standing_question: "Debit=credit? Is CI honest?"
+    dynamo: { ops_script: run-shura-council.ps1, band: platform }
+    conflict_weight: 2
+
+  - id: S09
+    role_brqosh: Economist
+    role_pd: "Compatibility (توافق وأجهزة)"
+    councils: [C03, C11]
+    leak_families: [Cursor]
+    skills: [omni-qa-army/roles/role-compatibility.md]
+    standing_question: "Will the customer pay? DPI matrix?"
+    dynamo: { ops_script: run-cognitive-multi-target.ps1, band: advisory }
+
+  - id: S10
+    role_brqosh: CEO
+    role_pd: "Tech Copywriter (نسّاخ تقني)"
+    councils: [C10]
+    leak_families: [OpenAI/Codex]
+    skills: [omni-qa-army/roles/role-copy.md, brqosh-communication/SKILL.md]
+    standing_question: "What do we stop to ship?"
+    dynamo: { ops_script: merge-council-chronicle.ps1, band: advisory }
+
+  - id: S11
+    role_brqosh: Tax authority
+    role_pd: "Superintelligence (المراقب الخارق)"
+    councils: [C13, C02]
+    leak_families: [Anthropic/deep-research, ai-dev-platform, Karpathy]
+    skills: [omni-qa-army/superintelligence-core.md, shura-intelligence-core.md]
+    standing_question: "Live compliance or stub? Cross-correlation?"
+    dynamo: { ops_script: run-omni-qa-gates.ps1, band: superintelligence }
+
+  - id: S12
+    role_brqosh: External auditor
+    role_pd: "Report Auditor (مدقق التقارير)"
+    councils: [C08, C11]
+    leak_families: [Anthropic/code-review, Anthropic/Fable, chronicle-unified]
+    skills: [omni-qa-army/report-excellence.md, brqosh-closure/SKILL.md]
+    standing_question: "False closure? Reproducible evidence?"
+    dynamo: { ops_script: sync-cognitive-status.ps1, band: quality }
+    adversarial_voter: true
+
+discipline_council:
+  source: ShuraCouncil/programming-disciplines-registry.yaml
+  dynamo_source: scripts/ops/shura-dynamo/shura-dynamo-registry.json
+  gate: G-DISCIPLINE
+  threshold_percent: 60
+  advisory: true
+  ids: [D01, D02, D03, D04, D05, D06, D07, D08, D09, D10, D11, D12, D13, D14, D15, D16, D17, D18, D19, D20, D21, D22, D23, D24, D25, D26, D27, D28]
+
+verify:
+  - scripts/ops/validate-shura-constitution.ps1
+  - ShuraCouncil/programming-disciplines-registry.yaml

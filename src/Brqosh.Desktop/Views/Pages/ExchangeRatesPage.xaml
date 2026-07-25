@@ -1,0 +1,45 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.ExchangeRatesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أسعار الصرف" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="SAMA · Frankfurter · إعادة تقييم FX"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <TextBlock Text="تاريخ الجلب:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <DatePicker x:Name="SyncDatePicker" Width="140" FontSize="14"/>
+                    <Button x:Name="SyncBtn" Content="جلب أسعار حية" Style="{StaticResource PrimaryButton}"
+                            Margin="12,0,0,0" Padding="18,9" Click="OnSyncLive"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="RateSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="من" Binding="{Binding FromCurrency}" Width="80"/>
+                    <DataGridTextColumn Header="إلى" Binding="{Binding ToCurrency}" Width="80"/>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding EffectiveDate}" Width="110"/>
+                    <DataGridTextColumn Header="السعر" Binding="{Binding Rate}" Width="120"/>
+                    <DataGridTextColumn Header="المصدر" Binding="{Binding Source}" Width="120"/>
+                    <DataGridTextColumn Header="أُدخل" Binding="{Binding CreatedAtUtc}" Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

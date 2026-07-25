@@ -1,0 +1,152 @@
+# BRQOSH Cursor Learning Router — where knowledge lives
+# Rule: .cursor/rules/brqosh-continuous-learning.mdc
+# Workflow: .cursor/skills/brqosh-agent-protocol/knowledge-accumulation.md
+
+version: 1
+last_updated: "2026-07-11"
+
+# Primary route per signal — write ONE primary; index others via MEM links
+routes:
+  - id: R-FIX
+    signal: "bug fix · test green after change"
+    primary: docs/PROJECT-MEMORY.yaml
+    secondary: .cursor/skills/brqosh-skills-hub/skill-lessons.yaml
+    mem_type: fix
+
+  - id: R-FEATURE
+    signal: "new behavior · screen · API · module"
+    primary: docs/PROJECT-MEMORY.yaml
+    secondary: .cursor/skills/brqosh-skills-hub/skill-lessons.yaml
+    mem_type: feature
+
+  - id: R-LESSON
+    signal: "verify fail · user correction · wrong approach · regression"
+    primary: docs/PROJECT-MEMORY.yaml
+    secondary: .cursor/skills/brqosh-skills-hub/skill-lessons.yaml
+    mem_type: lesson
+    promote_after_repeats: 2
+    promote_to: .cursor/rules/
+
+  - id: R-RULE
+    signal: "new always-on law · governance · mandatory workflow"
+    primary: .cursor/rules/
+    secondary: docs/PROJECT-MEMORY.yaml
+    mem_type: rule
+
+  - id: R-DECISION
+    signal: "architecture · scope · trade-off · approved plan"
+    primary: docs/PROJECT-MEMORY.yaml
+    secondary: docs/memory/
+    mem_type: decision
+
+  - id: R-NOTE
+    signal: "discussion · analysis · user asked to remember"
+    primary: docs/PROJECT-MEMORY.yaml
+    mem_type: note
+
+  - id: R-WAVE
+    signal: "CEEF close · competition mode complete"
+    primary: reports/
+    secondary: docs/PROJECT-MEMORY.yaml
+    also:
+      - .cursor/skills/brqosh-skills-hub/leak-synthesis.md
+      - .cursor/skills/brqosh-skills-hub/STATUS.yaml
+
+  - id: R-PLAN-ACTIVE
+    signal: "work against .cursor/plans/*.plan.md"
+    primary: .cursor/plans/
+    action: "update status + checkboxes in plan header"
+
+  - id: R-PLAN-CLOSE
+    signal: "plan goal achieved or superseded"
+    primary: docs/PROJECT-MEMORY.yaml
+    secondary: .cursor/plans/
+    action: "plan status closed · mem field set"
+
+  - id: R-EXTERNAL
+    signal: "OTP · SOCPA · ZAP · VM · SaaS live"
+    primary: docs/OPEN_ITEMS.md
+    secondary: docs/PROJECT-MEMORY.yaml
+    mem_type: decision
+    never: "claim closed without dist/evidence"
+
+  - id: R-SKILL-WORKFLOW
+    signal: "harness gap · routing wrong · skill roadmap outdated"
+    primary: .cursor/skills/
+    target_hint: "SKILL.md or reference module for that package"
+    secondary: .cursor/skills/brqosh-skills-hub/skill-lessons.yaml
+
+  - id: R-SHURA
+    signal: "analysis SAVE · shura council · launch decision · comprehensive audit · majlis development"
+    primary: .cursor/skills/brqosh-analysis/shura-constitution.md
+    secondary: dist/evidence/shura-council/
+    also:
+      - .cursor/skills/brqosh-analysis/shura-members-registry.yaml
+      - .cursor/skills/brqosh-analysis/shura-heartbeat-core.md
+      - .cursor/skills/brqosh-analysis/shura-tools-registry.yaml
+    mem_type: decision
+    agent_action: "run run-shura-compliance-gate.ps1 then run-shura-council.ps1 — user never"
+
+  - id: R-AIDEV
+    signal: "platform feature · orchestration · skill studio · Program Developer"
+    primary: .cursor/skills/ai-dev-platform/
+    secondary: docs/PROJECT-MEMORY.yaml
+    mem_type: feature
+
+  - id: R-OMNIQA
+    signal: "desktop audit · البرومبيت · QA army · vision automation"
+    primary: .cursor/skills/omni-qa-army/
+    secondary: .cursor/skills/ai-dev-platform/omni-qa-prompt-analysis.md
+    mem_type: feature
+
+  - id: R-FABLE-TRI
+    signal: "/claude-fable-5 · Fable discipline · tri-source raw grep · skill conversion"
+    primary: .cursor/skills/claude-fable-5/
+    secondary: .cursor/skills/fable-omni-core/
+    also:
+      - .cursor/skills/claude-fable-5/tri-source-index.yaml
+      - .cursor/skills/raw/
+    mem_type: decision
+    verify: scripts/ops/validate-tri-source.ps1
+
+  - id: R-CLOUD-CODE-KNOWLEDGE
+    signal: "Cloud Code agent onboarding · skills/rules/README knowledge wave"
+    primary: docs/CLOUD-CODE-AGENT-GUIDE.md
+    secondary: docs/PROJECT-MEMORY.yaml
+    also:
+      - .cursor/skills/brqosh-skills-hub/CLOUD-CODE-READ-ORDER.md
+      - .cursor/skills/brqosh-skills-hub/SKILLS-CLOUD-CODE-INDEX.yaml
+      - dist/evidence/prompt-governance/SHURA-DECISION-FABLE-TRI-SOURCE-003.md
+    mem_type: feature
+
+  - id: R-ADR
+    signal: "tech stack · module boundary · platform fork"
+    primary: docs/architecture/
+    secondary: docs/PROJECT-MEMORY.yaml
+
+# Domain → skill-lessons bucket (for R-LESSON / R-FIX secondary routing)
+skill_buckets:
+  posting_zatca_gl: brqosh-accounting
+  wpf_rtl_ui: brqosh-ui
+  schema_persistence: brqosh-engineering
+  debug_test_fail: brqosh-debug
+  closure_ceef: brqosh-closure
+  review_security: brqosh-review
+  analysis_arch: brqosh-analysis
+  agent_harness: brqosh-agent-protocol
+  ai_dev_platform: ai-dev-platform
+  omni_qa_army: omni-qa-army
+  fable_cognition: fable-omni-core
+  general_code: supreme-programming-mastery
+
+# Artifact authority (conflict resolution)
+authority_order:
+  - system_safety
+  - .cursor/rules/brqosh-supreme-cortex.mdc
+  - .cursor/rules/brqosh-continuous-learning.mdc
+  - .cursor/rules/brqosh-deep-memory.mdc
+  - docs/PROJECT-MEMORY.yaml
+  - .cursor/skills/brqosh-skills-hub/STATUS.yaml
+  - docs/OPEN_ITEMS.md
+  - .cursor/plans/   # historical — not live if closed
+  - chat             # never authority

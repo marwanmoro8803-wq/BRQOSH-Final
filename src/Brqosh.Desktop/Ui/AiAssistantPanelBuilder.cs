@@ -1,0 +1,211 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
+using Brqosh.Application.Intelligence;
+
+namespace Brqosh.Desktop.Ui;
+
+/// <summary>بناء واجهة المساعد الذكي — فقاعات، بطاقات رؤى، شريط إدخال.</summary>
+public static class AiAssistantPanelBuilder
+{
+    public static void ClearThread(StackPanel chatHost) => chatHost.Children.Clear();
+
+    public static void AppendUserBubble(FrameworkElement host, StackPanel chatHost, string text)
+    {
+        chatHost.Children.Add(new Border
+        {
+            Style = UiResources.StyleOf(host, "AiUserBubble"),
+            Margin = new Thickness(24, 0, 0, 8),
+            Child = new TextBlock
+            {
+                Text = text,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12.5,
+                Foreground = UiResources.BrushOf(host, "TextPrimaryBrush"),
+            },
+        });
+        ScrollChatToEnd(chatHost);
+    }
+
+    public static void AppendAssistantBubble(FrameworkElement host, StackPanel chatHost, FinancialAssistantReply reply)
+    {
+        var answer = LocaleManager.T(reply.AnswerAr, reply.AnswerEn);
+        chatHost.Children.Add(new Border
+        {
+            Style = UiResources.StyleOf(host, "AiInsightCard"),
+            Margin = new Thickness(0, 0, 0, 8),
+            Child = new TextBlock
+            {
+                Text = answer,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12.5,
+                Foreground = UiResources.BrushOf(host, "TextPrimaryBrush"),
+            },
+        });
+        ScrollChatToEnd(chatHost);
+    }
+
+    /// <summary>تمرير تلقائي لآخر رسالة في لوحة المحادثة.</summary>
+    public static void ScrollChatToEnd(StackPanel chatHost)
+    {
+        var scroll = FindAncestor<ScrollViewer>(chatHost);
+        if (scroll is null)
+            return;
+
+        chatHost.Dispatcher.BeginInvoke(
+            () => scroll.ScrollToEnd(),
+            DispatcherPriority.Loaded);
+    }
+
+    private static T? FindAncestor<T>(DependencyObject child) where T : DependencyObject
+    {
+        var current = child;
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
+    }
+
+    public static void RenderInsightCards(
+        FrameworkElement host, StackPanel insightHost, IReadOnlyList<FinancialInsight> insights)
+    {
+        insightHost.Children.Clear();
+        foreach (var insight in insights.Take(5))
+            insightHost.Children.Add(BuildInsightCard(host, insight));
+    }
+
+    public static void RenderStarterTips(FrameworkElement host, StackPanel insightHost)
+    {
+        insightHost.Children.Clear();
+        var tips = new[]
+        {
+            LocaleManager.T("تحقق من ذمم العملاء المتأخرة هذا الأسبوع.", "Review overdue receivables this week."),
+            LocaleManager.T("راجع إقرار VAT قبل نهاية الفترة.", "Review VAT return before period close."),
+            LocaleManager.T("قارن التدفق النقدي بالميزانية.", "Compare cash flow against budget."),
+        };
+        foreach (var tip in tips)
+        {
+            insightHost.Children.Add(new Border
+            {
+                Style = UiResources.StyleOf(host, "AiInsightCard"),
+                Margin = new Thickness(0, 0, 0, 8),
+                Child = new TextBlock
+                {
+                    Text = tip,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 12.5,
+                    Foreground = UiResources.BrushOf(host, "TextPrimaryBrush"),
+                },
+            });
+        }
+    }
+
+    public static Border BuildInsightCard(FrameworkElement host, FinancialInsight insight)
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock
+        {
+            Text = insight.TitleAr,
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 13,
+            Foreground = UiResources.BrushOf(host, "TextPrimaryBrush"),
+            TextWrapping = TextWrapping.Wrap,
+        });
+
+        if (!string.IsNullOrWhiteSpace(insight.DetailAr))
+        {
+            stack.Children.Add(new TextBlock
+            {
+                Text = insight.DetailAr,
+                FontSize = 12,
+                Foreground = UiResources.BrushOf(host, "TextSecondaryBrush"),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+        }
+
+        var card = new Border
+        {
+            Style = UiResources.StyleOf(host, "AiInsightCard"),
+            Margin = new Thickness(0, 0, 0, 8),
+            Child = stack,
+        };
+
+        if (insight.Severity is "Warning" or "Error")
+            card.BorderBrush = UiResources.BrushOf(host, "WarningBrush");
+
+        return card;
+    }
+
+    public static void WireInput(
+        FrameworkElement host,
+        TextBox input,
+        Button sendButton,
+        Func<string, Task> onSendAsync)
+    {
+        async void Submit()
+        {
+            var text = input.Text.Trim();
+            if (string.IsNullOrWhiteSpace(text)) return;
+            input.IsEnabled = false;
+            sendButton.IsEnabled = false;
+            try
+            {
+                await onSendAsync(text);
+                input.Clear();
+            }
+            finally
+            {
+                input.IsEnabled = true;
+                sendButton.IsEnabled = true;
+                input.Focus();
+            }
+        }
+
+        sendButton.Click += (_, _) => Submit();
+        input.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                Submit();
+            }
+        };
+    }
+
+    public static void RenderQuickPrompts(
+        FrameworkElement host,
+        WrapPanel promptHost,
+        Func<string, Task> onSendAsync)
+    {
+        promptHost.Children.Clear();
+        var prompts = new[]
+        {
+            LocaleManager.T("كيف أرحّل؟", "How to post?"),
+            LocaleManager.T("صلاحياتي", "My permissions"),
+            LocaleManager.T("التدفق النقدي", "Cash flow"),
+            LocaleManager.T("ZATCA / OTP", "ZATCA / OTP"),
+        };
+
+        foreach (var prompt in prompts)
+        {
+            var btn = new Button
+            {
+                Content = prompt,
+                Margin = new Thickness(0, 0, 6, 6),
+                Padding = new Thickness(10, 4, 10, 4),
+                FontSize = 11,
+                Cursor = Cursors.Hand,
+            };
+
+            btn.Click += async (_, _) => await onSendAsync(prompt);
+            promptHost.Children.Add(btn);
+        }
+    }
+}

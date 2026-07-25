@@ -1,0 +1,148 @@
+---
+description: >-
+  BRQOSH review governance v17 — 8-angle code review · security-first ·
+  findings by severity · confidence filter. Activates on src/ and tests/.
+globs:
+  - src/**
+  - tests/**
+  - scripts/**
+alwaysApply: false
+---
+
+# BRQOSH — Review Governance v17
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Fable: `claude-fable-5/tri-source-index.yaml`
+
+> **Synthesis:** Anthropic code-review (8 angles) · security-review (3-phase) · Codex findings-first · Copilot parallel scan  
+> **Corpus:** `system_prompts_leaks-main/Anthropic/Claude Code/` — principles only via `brqosh-review/`
+
+---
+
+## When This Rule Activates
+
+Any request containing: **review · audit · PR · security · simplify · check my changes**
+
+Default to **review mode** — findings first, not summary fluff.
+
+---
+
+## Scope Collection (before opinions)
+
+```powershell
+git diff main...HEAD
+git diff HEAD   # if dirty worktree
+```
+
+Scope = diff + touched functions even when line itself unchanged.
+
+---
+
+## Review Order (strict — non-negotiable)
+
+```
+1. SECURITY (C07)     — RBAC bypass · secrets · injection · SchemaSqlGuard
+2. SPEC               — user request · docs · CEEF claim
+3. BUGS               — concrete failure scenarios only
+4. STANDARDS          — rules · DOMAIN_MAP · conventions
+5. CLEANUP            — simplify only after above
+```
+
+**Security findings:** confidence ≥80% or drop.  
+**Total findings:** ≤10 — quality over quantity.
+
+---
+
+## 8-Angle Independent Scan
+
+Run mentally or via parallel readonly subagents:
+
+| Angle | Hunt for |
+|-------|----------|
+| A Line-by-line | off-by-one · null · missing await · decimal rounding |
+| B Removed-behavior | deleted guard/test/validation — where restored? |
+| C Cross-file trace | caller impact · return shape change |
+| D Reuse | reimplemented helper — grep first |
+| E Simplification | deep nesting · dead code · duplicate state |
+| F Efficiency | N+1 EF · sequential I/O · full List load |
+| G Altitude | bandaid vs fix mechanism (e.g. PostingPolicy) |
+| H Conventions | rules · Arabic UI · CompanyId on queries |
+
+**Full rubric:** `brqosh-review/code-review.md`
+
+---
+
+## Effort Levels (scale with risk — Codex judgment)
+
+| Level | When |
+|-------|------|
+| low | narrow change · typo |
+| medium | single feature |
+| high | posting · RBAC · schema |
+| max | CEEF wave · Golden tests |
+
+---
+
+## Financial PR Overlay (BRQOSH — always)
+
+When diff touches posting · GL · ZATCA · amounts:
+
+- [ ] debit = credit preserved  
+- [ ] audit trail intact  
+- [ ] Golden tests considered  
+- [ ] no rounding regression  
+- [ ] C06 council lead — aesthetics last  
+
+**Module:** `brqosh-accounting/SKILL.md`
+
+---
+
+## Finding Template
+
+```
+[Severity: critical|high|medium|low] file:line
+Issue: one sentence
+Scenario: concrete failure path
+Fix: smallest correct change
+```
+
+Present **findings first** — summary only after enumeration.  
+If zero findings: state explicitly + residual risks + testing gaps.
+
+---
+
+## Simplify Pass (separate from bug review)
+
+`simplify` = reuse · efficiency · altitude — **not** bug hunting.  
+Run only when user asks or after security+bugs clean.
+
+**Module:** `brqosh-review/simplify.md`
+
+---
+
+## Agent Forbidden in Review
+
+| Forbidden | Required |
+|-----------|----------|
+| "looks good" without reading diff | scope collection first |
+| speculative findings <80% | drop or label assumption |
+| style nitpicks before security | security first |
+| approve posting change without Golden check | flag test gap |
+| 20+ low-confidence nits | ≤10 high-quality findings |
+
+---
+
+## Parallel Review Pattern (large PR)
+
+```
+readonly: security angle ║ spec angle ║ bugs angle
+synthesize → dedupe → severity order → report
+```
+
+**Never** parallel-mutate files during review.
+
+---
+
+## References
+
+- `brqosh-review/code-review.md` · `security.md` · `standards.md`
+- `brqosh-supreme-cortex.mdc` — CHAMPION checklist

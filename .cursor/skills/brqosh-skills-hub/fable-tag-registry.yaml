@@ -1,0 +1,159 @@
+# Fable tag → synthesis module registry
+# Source: .cursor/skills/claude-fable-5.md (grep only)
+# Full map: ../claude-fable-5/CONVERSION-MAP.yaml
+version: v13
+updated: "2026-07-11"
+
+tags:
+  refusal_handling:
+    module: human-intelligence-mastery/safety-boundaries.md
+    domain: behavior
+  critical_child_safety_instructions:
+    module: human-intelligence-mastery/safety-boundaries.md
+    domain: behavior
+  legal_and_financial_advice:
+    module: human-intelligence-mastery/epistemology.md
+    domain: behavior
+  tone_and_formatting:
+    module: human-intelligence-mastery/communication.md
+    domain: behavior
+  lists_and_bullets:
+    module: human-intelligence-mastery/communication.md
+    domain: behavior
+  user_wellbeing:
+    module: human-intelligence-mastery/wellbeing-mastery.md
+    domain: behavior
+  anthropic_reminders:
+    module: fable-omni-core/anti-injection.md
+    domain: behavior
+  evenhandedness:
+    module: human-intelligence-mastery/evenhandedness.md
+    domain: behavior
+  responding_to_mistakes_and_criticism:
+    module: human-intelligence-mastery/mistakes-accountability.md
+    domain: behavior
+  knowledge_cutoff:
+    module: human-intelligence-mastery/research-intelligence.md
+    domain: behavior
+  memory_system:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  memory_overview:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  memory_application_instructions:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  forbidden_memory_phrases:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  preferences_info:
+    module: fable-omni-core/preferences-handling.md
+    domain: memory
+  past_chats_tools:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  important_safety_reminders:
+    module: fable-omni-core/anti-injection.md
+    domain: memory
+  persistent_storage_for_artifacts:
+    module: supreme-programming-mastery/file-vs-inline.md
+    domain: memory
+  skills:
+    module: supreme-programming-mastery/skills-first.md
+    domain: programming
+  file_creation_advice:
+    module: supreme-programming-mastery/file-vs-inline.md
+    domain: programming
+  computer_use:
+    module: supreme-programming-mastery/tools-cursor.md
+    domain: programming
+  file_handling_rules:
+    module: supreme-programming-mastery/tools-cursor.md
+    domain: programming
+  producing_outputs:
+    module: supreme-programming-mastery/file-vs-inline.md
+    domain: programming
+  artifact_usage_criteria:
+    module: supreme-programming-mastery/file-vs-inline.md
+    domain: programming
+  package_management:
+    module: supreme-programming-mastery/tools-cursor.md
+    domain: programming
+  core_search_behaviors:
+    module: human-intelligence-mastery/universal-understanding.md
+    domain: search
+  CRITICAL_COPYRIGHT_COMPLIANCE:
+    module: human-intelligence-mastery/copyright-compliance.md
+    domain: search
+  search_instructions:
+    module: human-intelligence-mastery/research-intelligence.md
+    domain: search
+  search_usage_guidelines:
+    module: human-intelligence-mastery/research-intelligence.md
+    domain: search
+  harmful_content_safety:
+    module: human-intelligence-mastery/research-intelligence.md
+    domain: search
+  citation_instructions:
+    module: human-intelligence-mastery/research-intelligence.md
+    domain: search
+  using_image_search_tool:
+    module: human-intelligence-mastery/research-intelligence.md
+    domain: search
+  appropriate_boundaries_re_memory:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  memory_application_examples:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  preferences_examples:
+    module: fable-omni-core/preferences-handling.md
+    domain: memory
+  current_memory_scope:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  memory_user_edits_tool_guide:
+    module: fable-omni-core/context-continuity.md
+    domain: memory
+  high_level_computer_use_explanation:
+    module: supreme-programming-mastery/tools-cursor.md
+    domain: programming
+  notes_on_user_uploaded_files:
+    module: supreme-programming-mastery/tools-cursor.md
+    domain: programming
+  additional_skills_reminder:
+    module: supreme-programming-mastery/skills-first.md
+    domain: programming
+  when_to_use_visualizer_for_inline_visuals:
+    module: supreme-programming-mastery/file-vs-inline.md
+    domain: evaluation
+  request_evaluation_checklist:
+    module: fable-omni-core/operating-manual.md
+    domain: evaluation
+
+module_skills:
+  behavior: claude-fable-5/modules/01-behavior/SKILL.md
+  memory: claude-fable-5/modules/02-memory/SKILL.md
+  search: claude-fable-5/modules/03-search/SKILL.md
+  programming: claude-fable-5/modules/04-programming/SKILL.md
+  evaluation: claude-fable-5/modules/05-evaluation/SKILL.md
+
+paths:
+  P-OMNI:
+    - fable-omni-core/SKILL.md
+    - fable-omni-core/operating-manual.md
+    - human-intelligence-mastery/universal-understanding.md
+  P-CODE:
+    - supreme-programming-mastery/skills-first.md
+    - supreme-programming-mastery/agent-workflow.md
+    - supreme-programming-mastery/twelve-axes.md
+  P-BRQOSH-BUG:
+    - supreme-programming-mastery/skills-first.md
+    - brqosh-debug/SKILL.md
+    - brqosh-debug/reference.md
+    - brqosh-engineering/engineering.md
+  P-RESEARCH:
+    - human-intelligence-mastery/universal-understanding.md
+    - human-intelligence-mastery/research-intelligence.md
+    - human-intelligence-mastery/copyright-compliance.md

@@ -2,55 +2,294 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="BRQOSH ERP"
-        Width="1280" Height="800"
-        MinWidth="1024" MinHeight="680"
+        Width="1400" Height="900"
+        MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{StaticResource BackgroundBrush}">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="272"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <!-- الشريط الجانبي -->
-        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}">
-            <DockPanel>
-                <!-- الشعار -->
-                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,16">
-                    <TextBlock Text="BRQOSH" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock x:Name="CompanyNameText" FontSize="13" Foreground="#94A3B8" Margin="0,4,0,0"/>
-                    <Border Background="{StaticResource AccentBrush}" CornerRadius="6" Padding="8,3"
-                            HorizontalAlignment="Right" Margin="0,8,0,0">
-                        <TextBlock x:Name="ProfileBadge" FontSize="12" FontWeight="SemiBold" Foreground="#111827"/>
+        <!-- ── محتوى رئيسي (شريط جانبي + منطقة عمل) ── -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="272"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition x:Name="AiColumn" Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ══════════════════════════════════════
+                 الشريط الجانبي
+            ══════════════════════════════════════ -->
+            <Border Grid.Column="0" Background="{StaticResource SidebarGradientBrush}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- الشعار والهوية -->
+                    <StackPanel Grid.Row="0" Margin="20,26,20,16">
+                        <!-- خط تمييز علوي بتدرج العلامة التجارية -->
+                        <Border Height="3" CornerRadius="2" Margin="0,0,0,18"
+                                Background="{StaticResource BrandAccentGradient}"/>
+
+                        <!-- اسم النظام -->
+                        <TextBlock Text="BRQOSH"
+                                   FontSize="26" FontWeight="Black" Foreground="White"/>
+                        <TextBlock Text="نظام تخطيط موارد المؤسسة"
+                                   FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+
+                        <!-- اسم المنشأة -->
+                        <TextBlock x:Name="CompanyNameText"
+                                   FontSize="12.5" Foreground="#94A3B8"
+                                   Margin="0,12,0,0" TextWrapping="Wrap"/>
+
+                        <!-- شارة نمط العمل -->
+                        <Border Background="{StaticResource AccentBrush}" CornerRadius="20"
+                                Padding="10,4" HorizontalAlignment="Right" Margin="0,10,0,0">
+                            <TextBlock x:Name="ProfileBadge"
+                                       FontSize="11" FontWeight="Bold" Foreground="#1C1917"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- قائمة التنقل -->
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="0,0,2,8">
+                        <StackPanel x:Name="NavPanel"/>
+                    </ScrollViewer>
+
+                    <!-- بطاقة المستخدم السفلية -->
+                    <Border Grid.Row="2" Background="#1E293B"
+                            CornerRadius="12" Margin="12,0,12,16" Padding="14,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock x:Name="UserNameText"
+                                           FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                                <TextBlock x:Name="UserRoleText"
+                                           FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Width="38" Height="38" CornerRadius="19"
+                                    Background="{StaticResource PrimaryBrush}"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="UserInitialText"
+                                           Text="م" FontSize="15" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
                     </Border>
-                </StackPanel>
-
-                <!-- القوائم -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="NavPanel" Margin="0,0,0,24"/>
-                </ScrollViewer>
-            </DockPanel>
-        </Border>
-
-        <!-- منطقة العمل -->
-        <Grid Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- الترويسة -->
-            <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="28,16">
-                <TextBlock x:Name="PageTitle" Text="لوحة التحكم" FontSize="20" FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                </Grid>
             </Border>
 
-            <!-- المحتوى -->
-            <ContentControl Grid.Row="1" x:Name="PageHost" Margin="28"/>
+            <!-- ══════════════════════════════════════
+                 منطقة العمل
+            ══════════════════════════════════════ -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- ترويسة الصفحة -->
+                <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="28,16"
+                        Effect="{StaticResource CardShadow}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- مسار التنقل والعنوان -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="الصفحة الحالية"
+                                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,0,0,2"/>
+                            <TextBlock x:Name="PageTitle"
+                                       AutomationProperties.AutomationId="PageTitle"
+                                       Text="لوحة التحكم"
+                                       FontSize="20" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </StackPanel>
+
+                        <!-- أدوات الترويسة -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+
+                            <TextBlock Text="المنشأة" FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox x:Name="CompanyCombo" Width="200" MinHeight="36"
+                                      Style="{StaticResource AppComboBox}"
+                                      DisplayMemberPath="Display" SelectedValuePath="Id"
+                                      SelectionChanged="OnCompanyChanged"
+                                      Margin="0,0,16,0"/>
+
+                            <TextBlock Text="الفرع" FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox x:Name="BranchCombo" Width="180" MinHeight="36"
+                                      Style="{StaticResource AppComboBox}"
+                                      DisplayMemberPath="Display" SelectedValuePath="Id"
+                                      SelectionChanged="OnBranchChanged"
+                                      Margin="0,0,16,0"/>
+
+                            <!-- زر الوضع الداكن -->
+                            <Button x:Name="LanguageToggleBtn" Content="EN"
+                                    ToolTip="تبديل اللغة / Switch language"
+                                    Style="{StaticResource GhostButton}"
+                                    MinWidth="44" MinHeight="36"
+                                    Margin="0,0,8,0"
+                                    Click="OnToggleLanguage"/>
+
+                            <Button x:Name="AiToggleBtn" Content="AI"
+                                    ToolTip="إظهار/إخفاء المساعد الذكي"
+                                    Style="{StaticResource GhostButton}"
+                                    MinWidth="44" MinHeight="36"
+                                    Margin="0,0,8,0"
+                                    Click="OnToggleAiPanel"/>
+
+                            <Button x:Name="ThemeToggleBtn" Content="داكن"
+                                    ToolTip="تبديل المظهر"
+                                    Style="{StaticResource GhostButton}"
+                                    MinWidth="52" MinHeight="36"
+                                    Margin="0,0,8,0"
+                                    Click="OnToggleTheme"/>
+
+                            <!-- التاريخ الهجري/الميلادي -->
+                            <TextBlock x:Name="DateText"
+                                       FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,18,0"/>
+
+                            <!-- شارة المستخدم -->
+                            <Border Background="{StaticResource PrimarySoftBrush}"
+                                    CornerRadius="20" Padding="14,7">
+                                <TextBlock x:Name="HeaderUserText"
+                                           FontSize="12.5" FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryDarkBrush}"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- منطقة الصفحة + Toast -->
+                <Grid Grid.Row="1" Margin="20">
+                    <ContentControl x:Name="PageHost"
+                                    AutomationProperties.AutomationId="PageHost"/>
+                    <Grid x:Name="ToastOverlay" IsHitTestVisible="False"/>
+                </Grid>
+            </Grid>
+
+            <!-- ══ AI Assistant Panel — Luxury Glass ══ -->
+            <Border x:Name="AiPanel" Grid.Column="2" Style="{StaticResource AiPanelShell}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                        <TextBlock Text="BRQOSH AI"
+                                   FontSize="14" FontWeight="Bold"
+                                   Foreground="{StaticResource ElectricCyanBrush}"/>
+                        <TextBlock x:Name="AiSubtitleText"
+                                   Text="مساعد مالي ذكي"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="رؤى فورية"
+                                       x:Name="AiInsightsLabel"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Margin="0,0,0,8"/>
+                            <StackPanel x:Name="AiInsightHost"/>
+                            <TextBlock Text="المحادثة"
+                                       x:Name="AiChatLabel"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Margin="0,12,0,8"/>
+                            <StackPanel x:Name="AiChatHost"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <StackPanel Grid.Row="2" Margin="0,12,0,0">
+                        <WrapPanel x:Name="AiQuickPromptsHost" Margin="0,0,0,8"/>
+                        <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="AiInputBox"
+                                 Grid.Column="0"
+                                 MinHeight="36"
+                                 Style="{StaticResource AppTextBox}"
+                                 Margin="0,0,8,0"
+                                 AutomationProperties.AutomationId="AiInputBox"/>
+                        <Button x:Name="AiSendBtn"
+                                Grid.Column="1"
+                                Content="إرسال"
+                                Style="{StaticResource PrimaryButton}"
+                                MinWidth="64" MinHeight="36"
+                                AutomationProperties.AutomationId="AiSendBtn"/>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
+
+        <!-- ══════════════════════════════════════
+             شريط الحالة السفلي
+        ══════════════════════════════════════ -->
+        <Border Grid.Row="1" Background="{StaticResource StatusBarBrush}"
+                Padding="20,5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border x:Name="StatusDbDot" Width="6" Height="6" CornerRadius="3"
+                            Background="{StaticResource SuccessBrush}"
+                            VerticalAlignment="Center" Margin="0,0,7,0"/>
+                    <TextBlock x:Name="StatusDbText"
+                               Text="قاعدة البيانات: متصل"
+                               FontSize="11" Foreground="{StaticResource StatusBarTextBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Border Grid.Column="1" Width="1" Background="#1E293B"
+                        Margin="16,3"/>
+
+                <TextBlock Grid.Column="2" x:Name="StatusSessionText"
+                           Text="الجلسة نشطة"
+                           FontSize="11" Foreground="{StaticResource StatusBarTextBrush}"
+                           VerticalAlignment="Center" Margin="16,0,0,0"/>
+
+                <TextBlock Grid.Column="3"
+                           Text="BRQOSH ERP"
+                           FontSize="11" Foreground="#334155"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

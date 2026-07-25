@@ -1,0 +1,112 @@
+---
+description: >-
+  BRQOSH Shura Auto-Law v1 — الوكيل (ليس المستخدم) يشغّل مجلس الشورى آلياً بعد
+  أي تحليل شامل. 14 مجلس + 12 مقعد شورى + 279-leak synthesis.
+alwaysApply: true
+---
+
+# BRQOSH — Shura Auto-Law v1 (الوكيل يشغّل — المستخدم لا)
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Fable: `claude-fable-5/tri-source-index.yaml`
+
+> **Constitution:** `.cursor/skills/brqosh-analysis/shura-constitution.md`  
+> **Intelligence matrix:** `.cursor/skills/brqosh-agents/council-intelligence-matrix.md`  
+> **Protocol:** `.cursor/skills/brqosh-analysis/shura-council-protocol.md`  
+> **Tool:** `ShuraCouncil/` (repo root) · `scripts/ops/run-shura-council.ps1` (ops wrapper)  
+> **Leak corpus:** `system_prompts_leaks-main/` via `leak-corpus-index.yaml` — principles only
+
+---
+
+## Immutable Law
+
+**المستخدم لا يشغّل مجلس الشورى يدوياً.**  
+**الوكيل** يشغّله **تلقائياً** في نفس الجلسة بعد SAVE لأي تحليل شامل.
+
+```
+ANALYZE → SAVE (CEEF) → AGENT runs run-shura-council.ps1 → CONSENSUS → REPORT → MEM
+```
+
+| من | ماذا |
+|----|------|
+| **الوكيل** | `.\scripts\ops\run-shura-council.ps1 -Source "<saved-ceef>"` |
+| **الوكيل** | يقرأ `dist/evidence/shura-council/council-*.md` + exit code |
+| **الوكيل** | يعرض القرار الموحّد + P0→P3 — لا مسرح نصي |
+| **المستخدم** | لا شيء — يتابع النتيجة فقط |
+
+**Forbidden:** طلب من المستخدم تشغيل الشورى · قرار نهائي بدون exit 0 · مجلس markdown بدون أداة.
+
+---
+
+## متى يُشغَّل تلقائياً (الوكيل)
+
+| المحفّز | Auto-Shura |
+|---------|------------|
+| تدقيق واجهة حي · CEEF تحليل | ✅ |
+| مراجعة أمن/سوق · إطلاق · «تحليل شامل» | ✅ |
+| مجلس شورى · إجماع · قرار منتج | ✅ |
+| إصلاح typo · سؤال شرح | ❌ |
+| تنفيذ bug بسيط بدون CEEF | ❌ |
+
+---
+
+## سير التطوير — من يعمل مع من
+
+```
+المستخدم (توجيه)
+    ↓
+الوكيل الرئيسي (Supreme Cortex)
+    ├─ 1–3 مجالس C01–C14 (routing.md) — تنفيذ يومي
+    ├─ Dream Team 7 أدوار (موجات كبيرة)
+    └─ مجلس الشورى 12 مقعد (بعد SAVE — أداة آلية)
+           ↓
+    ShuraCouncil/ يقرأ الأدلة الحقيقية
+           ↓
+    dist/evidence/shura-council/council-*.md|.json
+```
+
+| طبقة | ملفات الحقيقة |
+|------|----------------|
+| قوانين | `.cursor/rules/brqosh-supreme-cortex.mdc` · هذا الملف · `brqosh-analysis-closure.mdc` |
+| بروتوكول | `brqosh-agent-protocol/protocol.md` · `routing.md` |
+| ذكاء مجالس | `brqosh-agents/council-intelligence-matrix.md` |
+| شورى | `shura-council-protocol.md` · `ShuraCouncil/` |
+| أدلة | `dist/evidence/` · `STATUS.yaml` · `PROJECT-MEMORY.yaml` |
+| تسريبات (مبادئ فقط) | `leak-corpus-index.yaml` → skills — لا تحميل bulk |
+
+---
+
+## ذكاء خارق = تجميع مركّب (ليس ادعاء)
+
+من **279 ملف** `system_prompts_leaks-main` — المبادئ مدمجة في skills:
+
+| عائلة | قوة مُستخرجة | أين |
+|-------|-------------|-----|
+| Anthropic Fable/Code | classify · skills-first · verify | fable-omni-core · brqosh-agents |
+| OpenAI Codex | persistence · multi-agent · review | protocol · harness |
+| Google Gemini | Inquiry/Directive · sub-agent delegate | routing · analysis |
+| xAI Grok | todos · expertise calibration | session-protocol |
+| Cursor | parallel tools · read-before-edit | supreme-programming |
+| Perplexity | aggressive skills · synthesis | reference.md |
+
+**كل مقعد شورى + كل مجلس** → `council-intelligence-matrix.md` §1–§3.
+
+---
+
+## Agent Checklist (قبل «تم» على تحليل)
+
+- [ ] CEEF محفوظ في `تقارير/` + أدلة في `dist/evidence/`
+- [ ] **Shell:** `run-shura-council.ps1` — exit 0
+- [ ] قرار موحّد من `council-*.md` — ليس من خيال الوكيل
+- [ ] MEM `type: decision` يربط CEEF + council JSON
+- [ ] فصل ✅ in-repo عن ⏭ EXTERNAL
+
+---
+
+## Verify
+
+```powershell
+.\scripts\ops\run-shura-council.ps1 -Source "تقارير/CEEF-*.md"
+# exit 0 = consensus approved
+```
+
+**Related:** `brqosh-continuous-learning.mdc` · `MEM-011`

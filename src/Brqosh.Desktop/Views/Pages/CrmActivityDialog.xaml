@@ -1,0 +1,27 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.CrmActivityDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="نشاط CRM"
+        Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}"
+        ResizeMode="NoResize">
+    <StackPanel Margin="28,24">
+        <TextBlock Text="تسجيل نشاط" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
+        <TextBlock Text="النوع" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="TypeBox" Style="{StaticResource AppComboBox}" Margin="0,0,0,14"/>
+        <TextBlock Text="الموضوع *" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="SubjectBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+        <TextBlock Text="ملاحظات" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="NotesBox" Style="{StaticResource AppTextBox}" MinHeight="72" TextWrapping="Wrap"
+                 AcceptsReturn="True" Margin="0,0,0,4"/>
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+                   Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+            <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
+            <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

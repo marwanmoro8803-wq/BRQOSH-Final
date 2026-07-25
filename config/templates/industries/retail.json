@@ -1,0 +1,9 @@
+{
+  "id": "retail",
+  "businessProfile": "Retail",
+  "nameAr": "محل / تسويق",
+  "nameEn": "Retail",
+  "modules": ["GeneralLedger", "PointOfSale", "Sales", "Inventory", "Treasury", "Reports", "Zatca", "FixedAssets", "Payroll"],
+  "features": ["POS", "Barcode", "DailySales", "MultiBranch"],
+  "defaults": { "costingMethod": "Fifo", "defaultRetentionPercent": 0 }
+}

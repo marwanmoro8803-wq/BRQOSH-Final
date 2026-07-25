@@ -33,3 +33,19 @@ pgdata/
 # OS
 Thumbs.db
 Desktop.ini
+
+# Build output / توزيع (ثنائيات كبيرة — لا تُرتكب)
+dist/
+
+# مواد مستوردة أجنبية ليست جزءاً من المنتج
+system_prompts_leaks-main/
+claude-fable-5.md
+claude-code-2.1.172-fable-5.md
+
+# Python tool caches
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+.venv/
+venv/

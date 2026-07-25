@@ -1,0 +1,21 @@
+# Sample Azure Pipelines — Desktop QA Army
+trigger: none
+pool:
+  vmImage: windows-latest
+steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: sdk
+      version: 9.0.x
+  - script: dotnet build src/Brqosh.Desktop/Brqosh.Desktop.csproj -c Release --nologo
+    displayName: Build Desktop
+  - script: |
+      cd tools/desktop-qa-army
+      python -m venv .venv
+      .venv\Scripts\pip install -r requirements.txt
+      .venv\Scripts\python audit_orchestrator.py --profile Retail --headless
+    displayName: QA Army Retail smoke
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: tools/desktop-qa-army/audit_reports
+      ArtifactName: qa-army-reports

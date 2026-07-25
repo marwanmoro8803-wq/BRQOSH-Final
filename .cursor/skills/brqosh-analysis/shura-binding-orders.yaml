@@ -1,0 +1,83 @@
+# Shura Binding Orders — machine compliance map (P0-P3)
+# Authority: SHURA-DECISION-FABLE-TRI-SOURCE-003.md · shura-constitution.md
+version: v1
+updated: "2026-07-11"
+decision: dist/evidence/prompt-governance/SHURA-DECISION-FABLE-TRI-SOURCE-003.md
+constitution: .cursor/skills/brqosh-analysis/shura-constitution.md
+
+orders:
+  P0:
+    - id: P0-01
+      order: "Attach claude-fable-5 -> tri-source stack"
+      verify: scripts/ops/validate-tri-source.ps1
+    - id: P0-02
+      order: "Stack fable-omni-core -> human-intelligence -> supreme-programming"
+      verify: scripts/ops/validate-fable-conversion.ps1
+    - id: P0-03
+      order: "CLOUD-CODE-AGENT-GUIDE exists"
+      verify_file: docs/CLOUD-CODE-AGENT-GUIDE.md
+    - id: P0-04
+      order: "PROJECT-MEMORY.yaml exists"
+      verify_file: docs/PROJECT-MEMORY.yaml
+    - id: P0-05
+      order: "Synthesis first — raw grep only on gap"
+      verify: scripts/ops/validate-fable-skills-stack.ps1
+
+  P1:
+    - id: P1-06
+      order: "Raw in .cursor/skills/raw/ — never bulk"
+      verify: scripts/ops/validate-tri-source.ps1
+    - id: P1-07
+      order: "Fable modules 01-05"
+      verify_glob: .cursor/skills/claude-fable-5/modules/*/SKILL.md
+      min_count: 5
+    - id: P1-08
+      order: "CLI harness claude-code-cli.md"
+      verify_file: .cursor/skills/supreme-programming-mastery/claude-code-cli.md
+    - id: P1-09
+      order: "merged-claude-index.yaml"
+      verify: scripts/ops/validate-merged-claude-index.ps1
+    - id: P1-10
+      order: "leak-corpus-index.yaml"
+      verify_file: .cursor/skills/brqosh-skills-hub/leak-corpus-index.yaml
+    - id: P1-11
+      order: "Primary CognitiveQa .NET — Python cognitive-qa FROZEN"
+      verify_primary: CognitiveQa/
+      frozen_marker: cognitive-qa/
+      frozen_policy: skills_only_no_active_impl
+
+  P2:
+    - id: P2-12
+      order: "26 skill routers"
+      verify_min_skill_md: 26
+    - id: P2-13
+      order: "CLOUD-CODE-SHELL law"
+      verify_file: CognitiveQa/design-system/CLOUD-CODE-SHELL.md
+    - id: P2-14
+      order: "English agent law — language-enforcement.md"
+      verify_file: .cursor/skills/brqosh-skills-hub/language-enforcement.md
+    - id: P2-15
+      order: "dotnet test after behavior change"
+      verify: dotnet_test_cognitiveqa
+
+  constitution:
+    - id: C-01
+      order: "Shura constitution complete"
+      verify: scripts/ops/validate-shura-constitution.ps1
+    - id: C-02
+      order: "Shura auto-law"
+      verify_file: .cursor/rules/brqosh-shura-auto.mdc
+    - id: C-03
+      order: "41 Dynamo pulses"
+      verify_json_members: scripts/ops/shura-dynamo/shura-dynamo-registry.json
+      expected_count: 41
+    - id: C-04
+      order: "F00 Dynamo heartbeat pulse"
+      verify: scripts/ops/shura-dynamo/Invoke-ShuraPulse.ps1 -SeatId F00
+
+pipeline:
+  - validate_all
+  - dotnet_test
+  - f00_pulse
+  - run_shura_dynamo_auto
+  - mem_on_save

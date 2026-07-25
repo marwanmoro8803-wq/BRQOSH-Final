@@ -1,0 +1,9 @@
+{
+  "id": "logistics",
+  "businessProfile": "Logistics",
+  "nameAr": "لوجستيات ونقل",
+  "nameEn": "Logistics",
+  "modules": ["GeneralLedger", "Sales", "Purchasing", "Inventory", "Treasury", "Reports", "Zatca", "FixedAssets", "Payroll"],
+  "features": ["Warehousing", "Fleet", "DeliveryRoutes", "3PL"],
+  "defaults": { "costingMethod": "WeightedAverage", "defaultRetentionPercent": 0 }
+}

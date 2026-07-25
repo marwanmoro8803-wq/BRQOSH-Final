@@ -21,19 +21,28 @@ public static class ModuleCatalog
             [ModuleKey.PointOfSale] = [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Inventory, ModuleKey.Treasury],
             [ModuleKey.Manufacturing] = [ModuleKey.GeneralLedger, ModuleKey.Inventory, ModuleKey.Purchasing],
             [ModuleKey.ProjectsConstruction] = [ModuleKey.GeneralLedger, ModuleKey.Purchasing, ModuleKey.Treasury],
+            [ModuleKey.Crm] = [ModuleKey.GeneralLedger, ModuleKey.Sales],
         };
 
     private static readonly IReadOnlyDictionary<BusinessProfile, ModuleKey[]> ProfileModules =
         new Dictionary<BusinessProfile, ModuleKey[]>
         {
             [BusinessProfile.General] =
-                [ModuleKey.GeneralLedger, ModuleKey.Treasury, ModuleKey.Reports],
+                [ModuleKey.GeneralLedger, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Construction] =
-                [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca],
+                [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Manufacturing] =
-                [ModuleKey.GeneralLedger, ModuleKey.Manufacturing, ModuleKey.Inventory, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca],
+                [ModuleKey.GeneralLedger, ModuleKey.Manufacturing, ModuleKey.Inventory, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Retail] =
-                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca],
+                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+            [BusinessProfile.Healthcare] =
+                [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+            [BusinessProfile.Logistics] =
+                [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+            [BusinessProfile.RealEstate] =
+                [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+            [BusinessProfile.Hospitality] =
+                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
         };
 
     /// <summary>

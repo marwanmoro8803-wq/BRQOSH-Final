@@ -1,0 +1,31 @@
+﻿version: v16
+updated: "2026-07-11"
+
+skills_architecture: "SKILL.md + reference modules; leak corpus grep-only; archive deleted"
+
+tests:
+  total: 511
+  failed: 0
+  breakdown:
+    Domain: 64
+    Desktop: 123
+    Api: 38
+    Application: 286
+
+phase:
+  current: "CEEF-158 Shura execution — FlaUI retry 4/6 Manufacturing"
+  in_repo_closed: "V12 + V13 + CEEF-120..158 in-repo"
+  next: "O-01 OTP (user) · FlaUI Construction+Retail full · G-27 P2"
+
+ceef:
+  latest_in_repo: 158
+  open_items: "docs/OPEN_ITEMS.md"
+
+verify:
+  build: "dotnet build Brqosh.sln -c Release --nologo"
+  test: "dotnet test Brqosh.sln -c Release --nologo"
+  gates: "scripts/ops/run-external-gates.ps1"
+  i18n: "scripts/ops/i18n-coverage-audit.ps1"
+  env:
+    BRQOSH_SKIP_STRESS: "1"
+    BRQOSH_TEST: "1"

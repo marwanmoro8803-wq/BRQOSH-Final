@@ -16,4 +16,16 @@ public enum BusinessProfile
 
     /// <summary>محل / شركة تسويق — نقاط بيع، باركود، مبيعات سريعة.</summary>
     Retail,
+
+    /// <summary>منشأة صحية — عيادات، مستشفيات، صيدليات.</summary>
+    Healthcare,
+
+    /// <summary>لوجستيات ونقل — مستودعات، شحن، توزيع.</summary>
+    Logistics,
+
+    /// <summary>عقارات وإيجارات — مولات، وحدات، عقود إيجار.</summary>
+    RealEstate,
+
+    /// <summary>ضيافة ومطاعم — فنادق، مطاعم، خدمات ضيافة.</summary>
+    Hospitality,
 }

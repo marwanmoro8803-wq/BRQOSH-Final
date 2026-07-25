@@ -1,0 +1,76 @@
+# Fable 5 tri-source index — grep sections only; NEVER bulk-load
+version: "1"
+updated: "2026-07-11"
+status: active
+
+rule: |
+  Read synthesis modules first. Grep one tagged section (~50–200 lines) only when
+  synthesis has a gap. Never paste raw prompt text into SKILL.md or rules.
+
+raw_dir: .cursor/skills/raw
+
+sources:
+  claude_fable_5:
+    path: .cursor/skills/raw/claude-fable-5.md
+    lines: 2930
+    role: Fable 5 web behavior — safety, memory, search, skills, evaluation
+    index: claude-fable-5/source-index.md
+    map: claude-fable-5/CONVERSION-MAP.yaml
+    grep_tags: true
+
+  claude_code_fable:
+    path: .cursor/skills/raw/claude-code-2.1.172-fable-5.md
+    lines: 1497
+    role: Claude Code CLI harness + tool schemas (Fable 5 model)
+    index: claude-fable-5/claude-code-fable-index.md
+    grep_sections: true
+
+  merged_claude:
+    path: .cursor/skills/raw/merged_claude.md
+    lines: 3288
+    role: Combined CLI harness + Fable behavior tags + artifacts
+    index: brqosh-skills-hub/merged-claude-index.yaml
+    note: Superset of claude-code-fable; use when CLI+behavior gap in one file
+
+attach_stack:
+  - fable-omni-core
+  - human-intelligence-mastery
+  - supreme-programming-mastery
+
+route_by_signal:
+  behavior_safety_wellbeing:
+    source: claude_fable_5
+    synthesis: human-intelligence-mastery
+    module: modules/01-behavior/SKILL.md
+  memory_preferences:
+    source: claude_fable_5
+    synthesis: fable-omni-core
+    module: modules/02-memory/SKILL.md
+  search_research_copyright:
+    source: claude_fable_5
+    synthesis: human-intelligence-mastery
+    module: modules/03-search/SKILL.md
+  skills_files_tools:
+    source: claude_fable_5
+    synthesis: supreme-programming-mastery
+    module: modules/04-programming/SKILL.md
+  classify_evaluate:
+    source: claude_fable_5
+    synthesis: fable-omni-core
+    module: modules/05-evaluation/SKILL.md
+  cli_harness_persistence:
+    source: claude_code_fable
+    synthesis: supreme-programming-mastery/claude-code-cli.md
+  cli_tools_agent_skill_task:
+    source: claude_code_fable
+    synthesis: supreme-programming-mastery/claude-code-cli.md
+  merged_only_artifacts:
+    source: merged_claude
+    synthesis: supreme-programming-mastery/file-vs-inline.md
+    skip: claude.ai React artifact sandbox
+
+cursor_adaptations: claude-fable-5/cursor-adaptations.md
+
+verify:
+  - scripts/ops/validate-fable-conversion.ps1
+  - scripts/ops/validate-tri-source.ps1

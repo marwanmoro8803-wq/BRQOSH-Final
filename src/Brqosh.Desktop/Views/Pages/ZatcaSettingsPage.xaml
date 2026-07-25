@@ -1,0 +1,40 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.ZatcaSettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,24" MaxWidth="720">
+            <Border Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="إعدادات الفوترة الإلكترونية (ZATCA)" Style="{StaticResource PageTitleText}"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="CSID · شهادة · بيئة محاكاة/إنتاج"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource ContentCard}" Padding="24">
+                <StackPanel>
+                    <CheckBox x:Name="EnabledCheck" Content="تفعيل ZATCA — توليد تلقائي عند ترحيل فاتورة المبيعات/إشعار الدائن" Margin="0,0,0,14"/>
+                    <TextBlock Text="البيئة" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="EnvCombo" FontSize="14" Padding="10,8" Margin="0,0,0,14">
+                        <ComboBoxItem Content="محاكاة (Simulation)" Tag="Simulation"/>
+                        <ComboBoxItem Content="إنتاج (Production)" Tag="Production"/>
+                    </ComboBox>
+                    <TextBlock Text="عنوان API" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="ApiUrlBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+                    <TextBlock Text="رمز المصادقة (Basic/Bearer)" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="ApiTokenBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+                    <TextBlock Text="مسار ملف الشهادة (.pem)" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="CertPathBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+                    <TextBlock Text="مسار المفتاح الخاص (.pem)" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="KeyPathBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+                    <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave"/>
+                        <Button x:Name="ValidateBtn" Content="فحص الجاهزية" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnValidate"/>
+                        <Button x:Name="CsidWizardBtn" Content="معالج CSID" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCsidWizard"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

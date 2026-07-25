@@ -1,0 +1,54 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.ProjectProfitabilityPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="ربحية المشاريع" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="هامش تقديري · إيراد معترف · تكاليف فعلية"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Content="تحديث" Style="{StaticResource PrimaryButton}" Padding="18,8" Click="OnRefresh"/>
+                    <Button Content="تصدير Excel" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnExport"/>
+                </StackPanel>
+                <TextBlock x:Name="CountText" DockPanel.Dock="Right" VerticalAlignment="Center"
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" Padding="8" Margin="0,12,0,12">
+            <UniformGrid x:Name="KpiGrid" Columns="3"/>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" FontSize="13" RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="90"/>
+                    <DataGridTextColumn Header="المشروع" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="العقد" Binding="{Binding ContractValue, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="تكلفة مقدّرة" Binding="{Binding EstimatedTotalCost, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="تكاليف فعلية" Binding="{Binding IncurredCost, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="مفوتر" Binding="{Binding BilledWork, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="إيراد مقدّر" Binding="{Binding RecognizedRevenueEstimate, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="محتجز" Binding="{Binding RetentionHeld, StringFormat=N2}" Width="90"/>
+                    <DataGridTextColumn Header="هامش" Binding="{Binding GrossMarginEstimate, StringFormat=N2}" Width="100"/>
+                    <DataGridTextColumn Header="الطريقة" Binding="{Binding CompletionMethod}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,35 @@
+# BRQOSH Desktop QA Army — ten-role cognitive audit
+repo_root: "../../"
+desktop_project: "src/Brqosh.Desktop/Brqosh.Desktop.csproj"
+desktop_source: "src/Brqosh.Desktop"
+full_scenario_audit: "tools/FullScenarioAudit/FullScenarioAudit.csproj"
+
+app:
+  process_name: "Brqosh.Desktop"
+  window_title_main: "BRQOSH ERP"
+  exe_candidates:
+    - "src/Brqosh.Desktop/bin/Release/net9.0-windows/Brqosh.Desktop.exe"
+  env:
+    BRQOSH_UITEST: "1"
+    BRQOSH_TEST: "1"
+
+credentials:
+  default_username: "marwan"
+  default_password: "UiAudit9!"
+
+audit:
+  profiles: [Retail, Construction, Manufacturing]
+  seed_data: true
+  payloads_per_field: 6
+  chaos_probability: 0.12
+  sabotage_enabled: true
+  resize_stress: true
+  performance_loops: 20
+  interaction_delay_ms: 500
+
+output:
+  base_dir: "audit_reports"
+  screenshots_dir: "audit_reports/screenshots"
+  diary_file: "audit_reports/CHRONICLE.md"
+  state_model: "audit_reports/app_state_model.json"
+  master_report: "audit_reports/AUDIT_REPORT.md"

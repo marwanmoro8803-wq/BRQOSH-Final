@@ -8,7 +8,8 @@ public record SetupState(
     BusinessProfile Profile,
     string CompanyName,
     string VatRegistrationNumber,
-    DateTime CompletedAtUtc);
+    DateTime CompletedAtUtc,
+    string CountryTemplateId = "saudi-arabia");
 
 /// <summary>مخزن حالة الإعداد — التنفيذ الحالي ملف محلي، وسيصبح PostgreSQL في مرحلة قاعدة البيانات.</summary>
 public interface ISetupStateStore

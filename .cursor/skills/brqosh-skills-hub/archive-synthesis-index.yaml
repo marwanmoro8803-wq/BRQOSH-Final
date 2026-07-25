@@ -1,0 +1,105 @@
+# Archive → active skills synthesis index (v14 final)
+# archive/ folder REMOVED — this file is the permanent merge record.
+
+version: v14-final
+updated: "2026-07-09"
+skills_architecture: "SKILL.md only (+ reference modules); legacy supreme-intelligence-hub redirect; archive deleted"
+
+layers:
+  L0_always_on:
+    archive: always-on-protocol-v10.md
+    skill: brqosh-agent-protocol/protocol.md
+  L1_councils:
+    archive: council-supremacy-v10.md
+    skill: brqosh-agent-protocol/routing.md
+  L1_constitution:
+    archive: MASTER-CONSTITUTION.md
+    skill: brqosh-agent-protocol/constitution.md
+  L2_diagnosis:
+    archive: rapid-diagnosis-v10.md
+    skill: brqosh-debug/reference.md
+  L3_human:
+    archive: human-cognition-council-v10.md
+    skill: brqosh-communication/human-cognition.md
+  L3_human_parity:
+    archive: human-parity.md
+    skill: brqosh-communication/human-parity.md
+  L3_creative:
+    archive: creative-media-council-v10.md
+    skill: brqosh-creative/reference.md
+  L4_universal:
+    archive: universal-supremacy-v9.md
+    skill: universal-coding/reference.md
+  L4_meta:
+    archive: meta-cognition-supreme-v7.md
+    skill: brqosh-analysis/deep-cognition.md
+  L5_team:
+    archive: dream-team-supremacy-v8.md
+    skill: brqosh-agents/dream-team.md
+  L5_harness:
+    archive: agent-harness-elite-v7.md
+    skill: brqosh-agents/harness.md
+  L5_session:
+    archive: session-omnipotence-v8.md
+    skill: brqosh-agents/session-protocol.md
+  L6_integration:
+    archive: integration-v10.md
+    skill: brqosh-skills-hub/SKILL.md#engineering-roadmap
+  L6_hub_modules:
+    archive: integration-v6.md
+    skill: brqosh-skills-hub/integration.md
+  L6_closure_gaps:
+    archive: zero-gap-matrix-v8.md
+    skill: brqosh-closure/zero-gap-matrix.md
+  L0_fable_supremacy:
+    archive: ai-supremacy.md
+    skill: fable-omni-core/ai-supremacy.md
+  L6_elite_models:
+    archive: elite-models-v6.md
+    skill: brqosh-skills-hub/elite-models.md
+  L6_leak_synthesis:
+    archive: leak-synthesis-map.md
+    skill: brqosh-skills-hub/leak-synthesis.md
+  L6_leak_audits:
+    archive: leak-audit-v8.md
+    skill: brqosh-skills-hub/leak-audit-history.md
+
+archive_map:
+  always-on-protocol-v10.md: brqosh-agent-protocol/protocol.md
+  always-on-protocol-v9.md: brqosh-agent-protocol/protocol.md
+  council-supremacy-v10.md: brqosh-agent-protocol/routing.md
+  MASTER-CONSTITUTION.md: brqosh-agent-protocol/constitution.md
+  rapid-diagnosis-v10.md: brqosh-debug/reference.md
+  human-cognition-council-v10.md: brqosh-communication/human-cognition.md
+  human-parity.md: brqosh-communication/human-parity.md
+  creative-media-council-v10.md: brqosh-creative/reference.md
+  dream-team-supremacy-v8.md: brqosh-agents/dream-team.md
+  agent-harness-elite-v7.md: brqosh-agents/harness.md
+  session-omnipotence-v8.md: brqosh-agents/session-protocol.md
+  universal-supremacy-v9.md: universal-coding/reference.md
+  meta-cognition-supreme-v7.md: brqosh-analysis/deep-cognition.md
+  zero-gap-matrix-v8.md: brqosh-closure/zero-gap-matrix.md
+  ai-supremacy.md: fable-omni-core/ai-supremacy.md
+  elite-models-v6.md: brqosh-skills-hub/elite-models.md
+  leak-synthesis-map.md: brqosh-skills-hub/leak-synthesis.md
+  leak-audit-v5.md: brqosh-skills-hub/leak-audit-history.md
+  leak-audit-v6.md: brqosh-skills-hub/leak-audit-history.md
+  leak-audit-v7.md: brqosh-skills-hub/leak-audit-history.md
+  leak-audit-v8.md: brqosh-skills-hub/leak-audit-history.md
+  integration-v6.md: brqosh-skills-hub/integration.md
+  integration-v7.md: brqosh-skills-hub/integration.md
+  integration-v8.md: brqosh-skills-hub/integration.md
+  integration-v9.md: brqosh-skills-hub/integration.md
+  integration-v10.md: brqosh-skills-hub/SKILL.md#engineering-roadmap
+
+legacy_domain_modules:
+  deep-cognition: brqosh-analysis/deep-cognition.md
+  super-dev-foundation: brqosh-analysis/super-dev.md
+  requirements-human-mind: brqosh-analysis/requirements.md
+  programming-universe: brqosh-analysis/programming-universe.md
+
+rule: |
+  archive/ folder deleted (v14 final). Use domain skills only.
+  Single contract per skill: SKILL.md (+ reference modules).
+  supreme-intelligence-hub/ SKILL.md is redirect only.
+  Full merge index: this file.

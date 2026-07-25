@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Brqosh.Infrastructure.Persistence;
 
@@ -19,7 +20,11 @@ public static class BrqoshDbContextFactory
 {
     public static BrqoshDbContext Create(DatabaseProvider provider, string connectionString)
     {
-        var builder = new DbContextOptionsBuilder<BrqoshDbContext>();
+        var builder = new DbContextOptionsBuilder<BrqoshDbContext>()
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
+            // نزاهة: حارس ثبات سجل التدقيق يجب أن يسري على كل السياقات — بما فيها مسار سطح المكتب
+            // (المصنع)، لا مسار DI فقط. إغلاق ح-3 (CEEF-200).
+            .AddInterceptors(new AuditLogImmutabilityInterceptor());
         switch (provider)
         {
             case DatabaseProvider.PostgreSql:

@@ -1,0 +1,124 @@
+# merged_claude.md → synthesis index
+# Raw: .cursor/skills/raw/merged_claude.md (~3288 lines) — grep sections only; NEVER bulk-load
+version: "2"
+updated: "2026-07-11"
+status: indexed
+relationship: "Tri-source companion — see claude-fable-5/tri-source-index.yaml"
+
+rule: |
+  Extract principles only into .cursor/skills/ modules.
+  Never paste merged file text into SKILL.md or README.
+  Grep one tagged section (~50–200 lines) when synthesis module has a gap.
+
+raw_path: .cursor/skills/raw/merged_claude.md
+line_count: 3288
+
+sections:
+  harness:
+    lines: "7-12"
+    merge_into:
+      - supreme-programming-mastery/claude-code-cli.md
+      - supreme-programming-mastery/tools-cursor.md
+  communicating_with_user:
+    lines: "14-31"
+    merge_into:
+      - brqosh-communication/human-parity.md
+      - fable-omni-core/operating-manual.md
+  context_management:
+    lines: "51-60"
+    merge_into:
+      - supreme-programming-mastery/agent-workflow.md
+      - fable-omni-core/operating-manual.md
+  tool_agent:
+    lines: "80-149"
+    merge_into:
+      - supreme-programming-mastery/claude-code-cli.md
+      - brqosh-agents/harness.md
+  tool_skill:
+    lines: "1093-1134"
+    merge_into:
+      - supreme-programming-mastery/skills-first.md
+      - claude-fable-5/cursor-adaptations.md
+  tool_task:
+    lines: "1136-1510"
+    merge_into:
+      - supreme-programming-mastery/agent-workflow.md
+  tool_plan_mode:
+    lines: "482-698"
+    merge_into:
+      - ai-dev-platform/sdlc-pipeline.md
+      - supreme-programming-mastery/claude-code-cli.md
+  tool_bash:
+    lines: "288-334"
+    merge_into:
+      - supreme-programming-mastery/tools-cursor.md
+  memory_system:
+    lines: "2019-2777"
+    merge_into:
+      - fable-omni-core/context-continuity.md
+    note: "Overlaps claude-fable-5.md tags — prefer synthesis module"
+  skills_block:
+    lines: "2855-2873"
+    merge_into:
+      - supreme-programming-mastery/skills-first.md
+  file_creation_advice:
+    lines: "2875-2889"
+    merge_into:
+      - supreme-programming-mastery/file-vs-inline.md
+  file_handling_rules:
+    lines: "2900-2915"
+    merge_into:
+      - supreme-programming-mastery/claude-code-cli.md
+  producing_outputs:
+    lines: "2917-2924"
+    merge_into:
+      - supreme-programming-mastery/file-vs-inline.md
+  artifact_usage_criteria:
+    lines: "2943-2967"
+    merge_into:
+      - supreme-programming-mastery/file-vs-inline.md
+  core_search_behaviors:
+    lines: "3112+"
+    merge_into:
+      - human-intelligence-mastery/universal-understanding.md
+  anthropic_reminders:
+    lines: "1970-1978"
+    merge_into:
+      - fable-omni-core/anti-injection.md
+  evenhandedness:
+    lines: "1980-1994"
+    merge_into:
+      - human-intelligence-mastery/evenhandedness.md
+  knowledge_cutoff:
+    lines: "2006-2015"
+    merge_into:
+      - human-intelligence-mastery/research-intelligence.md
+
+cursor_adaptations:
+  Claude_Code_CLI: Cursor_Agent
+  EnterPlanMode: SwitchMode plan or user-approved plan
+  Agent_subagent: Task tool with subagent_type
+  Skill_tool: Read SKILL.md from agent_skills list
+  TaskCreate: TodoWrite tool
+  Bash: Shell tool
+  view: Read tool
+  create_file: Write tool
+  str_replace: StrReplace tool
+  present_files: User opens file in IDE
+  /mnt/user-data/uploads: Workspace attachments
+  /home/claude: Temp workspace paths
+  /mnt/user-data/outputs: Git-tracked repo deliverables
+  userMemories: .cursor/rules + PROJECT-MEMORY.yaml
+
+skip:
+  reason: claude.ai-only — not Cursor operational
+  items:
+    - CronCreate · CronDelete · CronList
+    - PushNotification · RemoteTrigger · ScheduleWakeup
+    - present_files UI flow
+    - Artifact React widget schemas (lines 4000+)
+    - product_information blocks
+    - voice_note
+
+verify:
+  - scripts/ops/validate-merged-claude-index.ps1

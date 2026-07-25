@@ -1,0 +1,157 @@
+---
+description: >-
+  BRQOSH Luxury UI v17 — Financial Truth First · tokens · RTL · 8-axis review ·
+  empty states · Desktop.Tests. Activates on Desktop XAML/Themes/Ui/design-system.
+globs:
+  - src/Brqosh.Desktop/**/*.xaml
+  - src/Brqosh.Desktop/**/*.xaml.cs
+  - src/Brqosh.Desktop/Themes/**
+  - src/Brqosh.Desktop/Ui/**
+  - design-system/**
+alwaysApply: false
+---
+
+# BRQOSH Luxury UI — Agent Law v18 Strict
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Shell: `CognitiveQa/design-system/CLOUD-CODE-SHELL.md`
+
+> **ERP UI is not marketing.** Financial Truth First beats aesthetics. No hero sections. No AI-slop.  
+> **Skills language:** English only · MUST/MUST NOT enforcement · [enforcement.md](.cursor/skills/brqosh-ui-design-system/enforcement.md)
+
+---
+
+## Pre-Edit Reading Order (mandatory)
+
+1. `.cursor/skills/brqosh-ui-design-system/enforcement.md`
+2. `.cursor/skills/brqosh-ui-design-system/SKILL.md`
+3. `.cursor/skills/brqosh-ui-design-system/program-design-mastery.md`
+4. `.cursor/skills/brqosh-ui-design-system/design-foundations.md`
+5. `.cursor/skills/brqosh-ui/SKILL.md`
+5. `docs/مهم` — roadmap v4.0
+6. `design-system/LIFECYCLE-ROADMAP-100.md`
+7. `design-system/PLATFORM-ROADMAP.md`
+8. `design-system/ECOSYSTEM-VISION.md` + `design-system/pages/<screen>.md`
+
+---
+
+## Strategic Council Rules (C03)
+
+| Rule | Meaning |
+|------|---------|
+| **Financial Truth First** | audit · posting · tables · who/when/why |
+| **No expansion before trust** | no fake KPI/AI without data |
+| **No intelligence before data** | rules-based UI before LLM |
+| **No features before money integrity** | posting/audit before cosmetic modules |
+
+**UI = financial operating system** — not landing page · not marketing dashboard.
+
+---
+
+## Non-Negotiables (WPF)
+
+| Rule | Detail |
+|------|--------|
+| Resources | `UiResources` / `FindResource` — **never** `Resources["Key"]` on UserControl |
+| Strings | `LocaleManager.T(ar, en)` for every visible string |
+| Theme | `BrqoshTheme.xaml` — unified palette/radius/elevation |
+| Icons | Monogram nav/KPI badges — **no emoji** |
+| Numbers | tabular financial figures · DataGrid row ~44px |
+| Test | dark (`ThemeManager`) + AR/EN (`LocaleManager`) |
+
+---
+
+## Tokens & ERP Density
+
+```
+Density: HIGH — accountant works 8 hours/day
+Type: clear · tabular numbers · correct RTL alignment
+Color: BrqoshTheme only — no random hex in XAML
+Spacing: theme system — no scattered manual margins
+Empty: unified EmptyState — no blank white screens
+```
+
+**Token ref:** `.cursor/skills/brqosh-ui-design-system/tokens.md`
+
+---
+
+## RTL & Financial Alignment
+
+```
+✓ FlowDirection from LocaleManager/theme — not hardcoded LTR
+✓ amounts: right-aligned in AR · tabular figures
+✓ debit/credit columns consistent across screens
+✓ DatePicker/ComboBox work in AR and EN
+✗ mixed directions in same row
+✗ hardcoded English in Arabic-facing UI
+```
+
+---
+
+## 8-Axis UI Review (before closure)
+
+| # | Axis | Verify |
+|---|------|--------|
+| 1 | Truth | real data — no fake placeholders presented as live |
+| 2 | RBAC | buttons per permission · `BindSecurityContext` |
+| 3 | RTL | AR + EN · FlowDirection · tabular |
+| 4 | Theme | BrqoshTheme keys · dark mode |
+| 5 | Density | DataGrid 44px · no wasted space |
+| 6 | Empty | EmptyState when no data |
+| 7 | A11y | contrast · keyboard · focus |
+| 8 | Tests | Desktop.Tests static · audit script |
+
+**Priority:** Truth > RBAC > RTL > rest
+
+---
+
+## UI Decision Tree
+
+```
+Screen change
+├─ touches posting/amounts/entries? → C06 first — no cosmetic masking financial errors
+├─ new screen? → spec in design-system/pages/ first
+├─ KPI/AI/dashboard? → data ready? NO → ⏭ or honest empty state
+├─ global theme change? → Themes/ only — no local override
+└─ after substantive change → ui-ux-pro-max-audit.ps1
+```
+
+---
+
+## Empty State (mandatory)
+
+Every empty list/grid requires:
+- clear AR/EN message via `LocaleManager.T`
+- next action (create/import button) when logical
+- **never** display mock data as real
+
+---
+
+## Agent Forbidden Patterns
+
+| Forbidden | Replace with |
+|-----------|--------------|
+| hero sections · marketing gradients | dense operational tables |
+| emoji in ERP | monogram |
+| random KPI widgets | service data or empty state |
+| `Resources["Key"]` | `FindResource` |
+| hardcoded strings | `LocaleManager.T` |
+| close UI without AR+EN+dark | test all three |
+
+---
+
+## Post-Change Verification
+
+```powershell
+.\scripts\ui-ux-pro-max-audit.ps1
+dotnet test Brqosh.sln -c Release --filter "FullyQualifiedName~Desktop" --nologo
+.\scripts\ops\i18n-coverage-audit.ps1
+```
+
+**Closure claim:** audit PASS · Desktop.Tests if applicable · AR/EN/dark verified
+
+---
+
+## References
+
+- `.cursor/skills/brqosh-ui-design-system/` — **enforcement** · program-design-mastery · design-foundations · tokens · modules · wpf-patterns · visual-effects
+- `design-system/PLATFORM-ROADMAP.md` · `LIFECYCLE-ROADMAP-100.md`

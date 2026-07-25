@@ -1,0 +1,60 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.BomDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="قائمة مواد جديدة"
+        Width="820" Height="560"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="قائمة مواد (BOM)" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="160"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                <TextBlock Text="الكود *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                <TextBlock Text="الاسم *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="المنتج النهائي *" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="ProductCombo" FontSize="14" Padding="10,8"
+                          DisplayMemberPath="Display" SelectedValuePath="Id"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridComboBoxColumn x:Name="ProductColumn" Header="المكوّن" Width="*" SelectedValueBinding="{Binding ProductId}"
+                                            DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                    <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N4}" Width="130"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <DockPanel Grid.Row="3" Margin="0,14,0,0">
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Visibility="Collapsed"/>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
+                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

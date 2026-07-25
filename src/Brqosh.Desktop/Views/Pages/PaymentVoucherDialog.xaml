@@ -1,0 +1,90 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.PaymentVoucherDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="سند صرف جديد"
+        Width="720" SizeToContent="Height" MaxHeight="720"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}"
+        ResizeMode="NoResize">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24">
+            <TextBlock Text="سند صرف" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
+
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="170"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
+                    <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="المورد *" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="SupplierCombo" FontSize="14" Padding="10,8"
+                              DisplayMemberPath="Display" SelectedValuePath="Id"
+                              SelectionChanged="OnSupplierSelected"/>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock x:Name="BalanceText" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14"/>
+
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="180"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="المبلغ *" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="AmountBox" Style="{StaticResource AppTextBox}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="طريقة الصرف *" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="MethodCombo" FontSize="14" Padding="10,8" SelectedIndex="0"
+                              SelectionChanged="OnMethodChanged">
+                        <ComboBoxItem Content="نقداً (الصندوق)"/>
+                        <ComboBoxItem Content="بنك (حوالة/شبكة)"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="DescriptionBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+            <TextBlock Text="المرجع (رقم حوالة/شيك — اختياري)" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="ReferenceBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+
+            <StackPanel x:Name="BankPanel" Margin="0,14,0,0" Visibility="Collapsed">
+                <TextBlock Text="الحساب البنكي" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="BankCombo" FontSize="14" Padding="10,8"
+                          DisplayMemberPath="Display" SelectedValuePath="Id"/>
+            </StackPanel>
+
+            <TextBlock Text="تخصيص على فواتير المشتريات (اختياري — إن وُجد يجب أن يساوي المبلغ)"
+                       Style="{StaticResource FormSectionTitle}"/>
+            <DataGrid x:Name="AllocGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+                      Height="160" HeadersVisibility="Column" FontSize="13" RowHeight="32">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="المستند" Binding="{Binding DocumentNumber}" Width="*" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N2}" Width="100" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="التخصيص" Binding="{Binding AllocateAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                <Button Content="توزيع تلقائي" Style="{StaticResource GhostButton}" Padding="12,6" Click="OnAutoAllocate"/>
+                <TextBlock x:Name="AllocSumText" Margin="16,6,0,0" FontSize="13"
+                           Foreground="{StaticResource TextSecondaryBrush}"/>
+            </StackPanel>
+
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+                       Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                <Button Content="ترحيل السند" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost" IsDefault="True"/>
+                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

@@ -4,7 +4,7 @@ namespace Brqosh.Domain.Accounting;
 /// حساب في دليل الحسابات (شجرة الحسابات).
 /// الحسابات الرئيسية (تجميعية) لا تقبل قيوداً مباشرة؛ الترحيل يتم على الحسابات الفرعية فقط.
 /// </summary>
-public class Account
+public class Account : ISoftDeletable
 {
     public long Id { get; private set; }
     public long CompanyId { get; private set; }
@@ -28,6 +28,7 @@ public class Account
     public bool IsSystem { get; private set; }
 
     public bool IsActive { get; private set; } = true;
+    public DateTime? DeletedAtUtc { get; private set; }
 
     // EF Core
     private Account()
@@ -78,6 +79,8 @@ public class Account
     {
         if (IsSystem)
             throw new AccountingException($"الحساب النظامي '{NameAr}' لا يمكن إيقافه.");
+        if (DeletedAtUtc is not null) return;
+        DeletedAtUtc = DateTime.UtcNow;
         IsActive = false;
     }
 

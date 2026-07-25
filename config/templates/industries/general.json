@@ -1,0 +1,9 @@
+{
+  "id": "general",
+  "businessProfile": "General",
+  "nameAr": "محاسبة عامة",
+  "nameEn": "General",
+  "modules": ["GeneralLedger", "Treasury", "Reports", "FixedAssets", "Payroll"],
+  "features": ["CoreAccounting", "Treasury", "FinancialReports"],
+  "defaults": { "costingMethod": "WeightedAverage", "defaultRetentionPercent": 0 }
+}

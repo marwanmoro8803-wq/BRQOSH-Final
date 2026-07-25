@@ -1,0 +1,136 @@
+---
+description: >-
+  BRQOSH continuous learning v1 — every session LEARNs into the right Cursor
+  artifact (rules · skills · plans · MEM). alwaysApply — extract principles not chat.
+alwaysApply: true
+---
+
+# BRQOSH — Continuous Learning Law v1
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Routes: `LEARNING-INDEX.yaml` · Fable: `R-FABLE-TRI`
+
+**Router:** `.cursor/LEARNING-INDEX.yaml` · **Workflow:** `brqosh-agent-protocol/knowledge-accumulation.md`  
+**Quick memory:** `docs/PROJECT-MEMORY.yaml` · **Skill distill:** `brqosh-skills-hub/skill-lessons.yaml`
+
+---
+
+## Core idea
+
+Cursor files are **not** a chat log. They are a **living knowledge base**:
+
+```
+Every substantive turn → LEARN phase → principle extracted → routed to ONE primary home
+```
+
+Substantive = fix · feature · analysis · decision · mistake · plan progress · new law · failed verify.
+
+**Inquiry-only** (explain with no mutation) → MEM `type: note` only if user asked to remember or new durable insight.
+
+---
+
+## The LEARN loop (every session)
+
+```
+REFLECT  — what happened? what failed? what surprised us?
+ROUTE    — LEARNING-INDEX.yaml → primary artifact
+EXTRACT  — ≤5 lines principle · anti-pattern · verify command
+WRITE    — append to target file(s) · never duplicate full text in 5 places
+INDEX    — MEM row + skill-lessons if domain lesson · update plan status if applicable
+```
+
+Runs **after** VERIFY (or after explicit ⏭ boundary). Same turn when feasible.
+
+---
+
+## Where knowledge goes (never guess)
+
+| Signal | Primary home | Also |
+|--------|--------------|------|
+| Bug/fix verified | `PROJECT-MEMORY.yaml` | `skill-lessons.yaml` if repeatable pattern |
+| Agent mistake / wrong approach | MEM `type: lesson` | `skill-lessons.yaml` + target skill reference |
+| New always-on law | `.cursor/rules/*.mdc` | MEM `type: rule` |
+| Domain how-to (posting, UI, debug) | `skill-lessons.yaml` → domain skill | MEM link |
+| Skill workflow gap | Edit relevant `SKILL.md` or reference module | leak-synthesis wave note |
+| Active plan progress | `.cursor/plans/*.plan.md` header status | — |
+| Plan completed | MEM + extract to skills/rules | mark plan `status: closed` |
+| Wave closed | `تقارير/CEEF-*` | MEM · leak-synthesis · STATUS.yaml |
+| Architecture fork | `docs/architecture/ADR-*.md` or `docs/memory/` | MEM |
+| External deferred | `docs/OPEN_ITEMS.md` | MEM `type: decision` |
+
+**Full routing table:** [LEARNING-INDEX.yaml](../LEARNING-INDEX.yaml)
+
+---
+
+## Per-artifact rules
+
+### Rules (`.cursor/rules/*.mdc`)
+
+- Durable laws only — not session chatter
+- One concern per rule file when possible
+- Every new rule → MEM + link in `links.rule`
+
+### Skills (`.cursor/skills/**`)
+
+- **SKILL.md** = router + roadmap — keep lean
+- **Lessons** → `skill-lessons.yaml` (not bulk append to SKILL.md)
+- **Deep patterns** → reference module (`engineering.md`, `reference.md`, …)
+- Max **one** synthesis edit per lesson — avoid editing 10 skills for one fix
+
+### Plans (`.cursor/plans/*.plan.md`)
+
+```yaml
+# Plan header (required)
+status: active | closed | superseded
+updated: YYYY-MM-DD
+mem: MEM-NNN          # when closed
+superseded_by: ...    # if replaced
+```
+
+- Update `status` + checkboxes during work
+- On **closed**: extract outcome to MEM — plan is history, not truth source
+
+### Memory (`docs/PROJECT-MEMORY.yaml`)
+
+- Every LEARN cycle → at least consider MEM row
+- Types: `fix` · `feature` · `removal` · `rule` · `decision` · `lesson` · `note`
+
+---
+
+## Learning from mistakes (mandatory)
+
+When verify **fails**, wrong approach, regression, or user correction:
+
+```
+1. Stop — do not hide the failure
+2. MEM type: lesson — mistake · root cause · correct approach · verify
+3. skill-lessons.yaml — anti_pattern + do_instead (≤3 lines each)
+4. If repeated 2+ times → promote to .mdc rule or reference module section
+```
+
+---
+
+## Anti-bloat (Fable memory_system)
+
+| DO | DON'T |
+|----|-------|
+| Extract principle | Paste conversation into skills |
+| One primary home + MEM index | Copy same paragraph into 8 files |
+| grep PROJECT-MEMORY + skill-lessons before work | "I remember from last chat" |
+| Close/supersede stale plans | Leave active plans forever |
+| ≤5 line lesson entries | 500-line SKILL append |
+
+---
+
+## Session bookends
+
+**Start:** grep `PROJECT-MEMORY.yaml` + `skill-lessons.yaml` for topic  
+**End:** LEARN loop if substantive · report MEM id to user when written
+
+**Validate:**
+
+```powershell
+.\scripts\ops\validate-project-memory.ps1
+.\scripts\ops\validate-learning-index.ps1
+```
+
+**Related:** `brqosh-deep-memory.mdc` · `impact-before-change.md` · `context-continuity.md`

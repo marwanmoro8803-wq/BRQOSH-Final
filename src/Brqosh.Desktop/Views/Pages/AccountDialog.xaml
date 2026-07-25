@@ -9,29 +9,28 @@
         Background="{StaticResource BackgroundBrush}"
         ResizeMode="NoResize">
     <StackPanel Margin="28,24">
-        <TextBlock Text="إضافة حساب إلى الدليل" FontSize="19" FontWeight="Bold"
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+        <TextBlock Text="إضافة حساب إلى الدليل" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
 
-        <TextBlock Text="الحساب الأب" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4"/>
-        <ComboBox x:Name="ParentCombo" FontSize="14" Padding="10,8"/>
+        <TextBlock Text="الحساب الأب" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="ParentCombo" FontSize="14" Padding="10,8" Margin="0,0,0,14"/>
 
-        <TextBlock Text="رقم الحساب *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,4"/>
-        <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}"/>
+        <TextBlock Text="رقم الحساب *" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <TextBlock Text="اسم الحساب (عربي) *" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,4"/>
-        <TextBox x:Name="NameArBox" Style="{StaticResource AppTextBox}"/>
+        <TextBlock Text="اسم الحساب (عربي) *" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="NameArBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <TextBlock Text="اسم الحساب (إنجليزي)" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,14,0,4"/>
-        <TextBox x:Name="NameEnBox" Style="{StaticResource AppTextBox}"/>
+        <TextBlock Text="اسم الحساب (إنجليزي)" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="NameEnBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <CheckBox x:Name="IsGroupCheck" Content="حساب تجميعي (لا يقبل قيوداً مباشرة)" FontSize="13" Margin="0,16,0,0"/>
+        <CheckBox x:Name="IsGroupCheck" Content="حساب تجميعي (لا يقبل قيوداً مباشرة)" FontSize="13" Margin="0,0,0,4"/>
 
-        <TextBlock x:Name="ErrorText" Foreground="#DC2626" FontSize="13" FontWeight="SemiBold"
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                    Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-            <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave"/>
-            <Button Content="إلغاء" Margin="10,0,0,0" Padding="24,9" Click="OnCancel"/>
+            <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
+            <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
         </StackPanel>
     </StackPanel>
 </Window>

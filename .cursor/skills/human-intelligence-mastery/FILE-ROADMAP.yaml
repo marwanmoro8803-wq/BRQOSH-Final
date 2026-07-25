@@ -1,0 +1,188 @@
+# FILE-ROADMAP — human-intelligence-mastery
+version: v12
+default_path: P-RESEARCH
+
+files:
+  SKILL.md:
+    id: human-intelligence:SKILL
+    layer: L0
+    step: 0/10
+    trigger: non_code_topic|teach|ethics|science
+    next: [universal-understanding.md]
+    exit_criteria: [load_order_known]
+    time_budget: 20s
+
+  universal-understanding.md:
+    id: human-intelligence:universal-understanding
+    layer: L1
+    step: 1/10
+    trigger: every_answer_before_speak
+    skip_when: never
+    fable_tag: core_search_behaviors
+    next: [epistemology.md, research-intelligence.md]
+    exit_criteria:
+      - type_classified_timeless|current|unknown|repo|harm
+      - depth_scaled_1_to_10_calls
+      - route_chosen
+    anti_patterns:
+      - answer_unknown_entity_without_search
+      - excuse_no_realtime_data
+    time_budget: 45s
+    verify: stated_classify_result
+
+  epistemology.md:
+    id: human-intelligence:epistemology
+    layer: L1
+    step: 2/10
+    trigger: claims|facts|opinions|legal_financial
+    fable_tag: legal_and_financial_advice
+    next: [research-intelligence.md, cognition.md]
+    exit_criteria: [fact_inference_opinion_separated]
+    anti_patterns: [psychoanalyze_user, invent_api_or_file]
+    time_budget: 30s
+
+  research-intelligence.md:
+    id: human-intelligence:research-intelligence
+    layer: L2
+    step: 3/10
+    trigger: current_facts|compare|url|elections|ceo|unknown_entity
+    skip_when: timeless_definition|pure_repo_code
+    fable_tag: search_instructions|knowledge_cutoff|harmful_content_safety
+    prereq: [universal-understanding.md]
+    next: [copyright-compliance.md]
+    exit_criteria:
+      - search_plan_sized
+      - repo_before_web_if_brqosh_fact
+    anti_patterns:
+      - repeat_identical_queries
+      - site_operator_in_query
+    time_budget: 60s
+
+  copyright-compliance.md:
+    id: human-intelligence:copyright
+    layer: L2
+    step: 3b/10
+    trigger: any_external_source_synthesis
+    skip_when: never_when_using_web
+    fable_tag: CRITICAL_COPYRIGHT_COMPLIANCE
+    exit_criteria:
+      - paraphrase_default
+      - max_one_quote_under_15_words_per_source
+    anti_patterns:
+      - mirror_article_structure
+      - reproduce_lyrics_poems
+    time_budget: 45s
+
+  cognition.md:
+    id: human-intelligence:cognition
+    layer: L2
+    step: 4/10
+    trigger: analyze|teach|problem_solving
+    next: [communication.md, sciences/*]
+    time_budget: 45s
+
+  human-mind.md:
+    id: human-intelligence:human-mind
+    layer: L2
+    step: 5/10
+    trigger: behavior|motivation|no_diagnosis
+    fable_tag: user_wellbeing_partial
+    time_budget: 30s
+
+  communication.md:
+    id: human-intelligence:communication
+    layer: L2
+    step: 5b/10
+    trigger: before_final_response
+    fable_tag: tone_and_formatting|lists_and_bullets
+    exit_criteria: [answer_first, prose_not_bullet_spam]
+    time_budget: 30s
+
+  evenhandedness.md:
+    id: human-intelligence:evenhandedness
+    layer: L2
+    step: 6/10
+    trigger: politics|ethics|argue_for|contested
+    fable_tag: evenhandedness
+    exit_criteria: [steelman_both_sides, no_one_word_on_complex]
+    time_budget: 60s
+
+  wellbeing-mastery.md:
+    id: human-intelligence:wellbeing
+    layer: L1-priority
+    step: 6b/10
+    trigger: crisis|self_harm|mental_health_signals
+    fable_tag: user_wellbeing
+    next: [safety-boundaries.md]
+    time_budget: 45s
+
+  safety-boundaries.md:
+    id: human-intelligence:safety
+    layer: L1-priority
+    step: 6c/10
+    trigger: harm|weapons|malware|child_safety
+    fable_tag: refusal_handling
+    time_budget: 30s
+
+  mistakes-accountability.md:
+    id: human-intelligence:mistakes
+    layer: L2
+    step: 7/10
+    trigger: agent_error|user_upset|verify_fail
+    fable_tag: responding_to_mistakes_and_criticism
+    time_budget: 30s
+
+  brqosh-bridge.md:
+    id: human-intelligence:brqosh-bridge
+    layer: L3
+    step: 10/10
+    trigger: science_question_touching_erp
+    next: [brqosh-engineering, brqosh-accounting]
+    time_budget: 20s
+
+  fable-source-index.md:
+    id: human-intelligence:fable-index
+    layer: L-ref
+    trigger: module_insufficient_need_raw_section
+    skip_when: synthesis_module_sufficient
+    time_budget: 30s
+
+  sciences/natural.md:
+    id: human-intelligence:sciences-natural
+    layer: L3
+    trigger: physics|chemistry|biology|earth
+    time_budget: 45s
+
+  sciences/formal.md:
+    id: human-intelligence:sciences-formal
+    layer: L3
+    trigger: math|logic|cs_theory
+    time_budget: 45s
+
+  sciences/life-health.md:
+    id: human-intelligence:sciences-life-health
+    layer: L3
+    trigger: medicine|neuro|health_not_diagnosis
+    prereq: [wellbeing-mastery.md]
+    time_budget: 45s
+
+  sciences/social.md:
+    id: human-intelligence:sciences-social
+    layer: L3
+    trigger: econ|psych_social|polisci_empirical
+    prereq: [evenhandedness.md]
+    time_budget: 45s
+
+  sciences/applied.md:
+    id: human-intelligence:sciences-applied
+    layer: L3
+    trigger: engineering|cs_practice
+    next: [supreme-programming-mastery]
+    time_budget: 30s
+
+  sciences/humanities.md:
+    id: human-intelligence:sciences-humanities
+    layer: L3
+    trigger: history|philosophy|ethics|arts
+    prereq: [copyright-compliance.md]
+    time_budget: 45s

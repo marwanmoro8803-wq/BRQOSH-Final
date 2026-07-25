@@ -1,0 +1,378 @@
+{
+  "version": "v1",
+  "authority": "F00",
+  "description": "Shura Dynamo — one pulse script per council seat; F00 dispatch decides when to run",
+  "priorityBands": {
+    "security": 100,
+    "quality": 90,
+    "platform": 80,
+    "superintelligence": 75,
+    "automation": 60,
+    "advisory": 40,
+    "discipline": 30,
+    "facilitator": 10
+  },
+  "members": {
+    "F00": {
+      "tier": "facilitator",
+      "roleAr": "الوسيط (Facilitator)",
+      "roleEn": "Facilitator F00",
+      "band": "facilitator",
+      "opsScript": "merge-council-chronicle.ps1",
+      "opsArgs": [],
+      "markerScan": [],
+      "description": "Synthesis pulse — merge chronicle after council"
+    },
+    "S01": {
+      "tier": "core",
+      "roleAr": "مهندس الأتمتة (QA Auto)",
+      "roleEn": "QA Automation",
+      "band": "automation",
+      "opsScript": "run-prompt-audit-engine.ps1",
+      "opsArgs": ["-SkipBuild"],
+      "markerScan": ["PromptAuditEngine", "CognitiveQa/src"]
+    },
+    "S02": {
+      "tier": "core",
+      "roleAr": "مستكشف يدوي (Manual QA)",
+      "roleEn": "Manual Exploratory QA",
+      "band": "quality",
+      "opsScript": "run-cognitive-audit.ps1",
+      "opsArgs": ["-TargetSource", "CognitiveQa", "-ScanScope", "src", "-MaxSteps", "8", "-SkipBuild"],
+      "markerScan": ["cognitive-qa/", "omni-qa-army/roles/role-exploratory.md"]
+    },
+    "S03": {
+      "tier": "core",
+      "roleAr": "مدقق UX/وصول",
+      "roleEn": "UX Accessibility",
+      "band": "quality",
+      "opsScript": "run-cognitive-perception.ps1",
+      "opsArgs": [],
+      "markerScan": ["MainWindow.xaml", "brqosh-ui", "RTL"]
+    },
+    "S04": {
+      "tier": "core",
+      "roleAr": "اختبار اختراق",
+      "roleEn": "Penetration Tester",
+      "band": "security",
+      "opsScript": "validate-prompt-governance.ps1",
+      "opsArgs": [],
+      "markerScan": ["brqosh-review/security.md", "SchemaSqlGuard"]
+    },
+    "S05": {
+      "tier": "core",
+      "roleAr": "مختبر بيتا",
+      "roleEn": "Beta Tester",
+      "band": "quality",
+      "opsScript": "run-cognitive-live-smoke.ps1",
+      "opsArgs": [],
+      "markerScan": ["FlaUI", "role-beta.md"]
+    },
+    "S06": {
+      "tier": "core",
+      "roleAr": "أداء وذاكرة",
+      "roleEn": "Performance",
+      "band": "quality",
+      "opsScript": null,
+      "opsArgs": [],
+      "dotnetCommand": "test CognitiveQa/CognitiveQa.sln -c Release --nologo -v q",
+      "markerScan": ["role-performance.md", "WorkflowLiveRoadmap"]
+    },
+    "S07": {
+      "tier": "core",
+      "roleAr": "تدويل وعربي",
+      "roleEn": "L10n Arabic RTL",
+      "band": "advisory",
+      "opsScript": null,
+      "opsArgs": [],
+      "markerScan": ["arabic-qa.md", "FlowDirection", "RTL", "البرومبيت.txt"]
+    },
+    "S08": {
+      "tier": "core",
+      "roleAr": "DevOps وتكامل",
+      "roleEn": "DevOps Integration",
+      "band": "platform",
+      "opsScript": "run-shura-council.ps1",
+      "opsArgs": [],
+      "markerScan": ["ShuraCouncil/", "scripts/ops/", "AiCouncil/"]
+    },
+    "S09": {
+      "tier": "core",
+      "roleAr": "توافق وأجهزة",
+      "roleEn": "Compatibility",
+      "band": "advisory",
+      "opsScript": "run-cognitive-multi-target.ps1",
+      "opsArgs": [],
+      "markerScan": ["role-compatibility.md", "vision-perception.md"]
+    },
+    "S10": {
+      "tier": "core",
+      "roleAr": "نسّاخ تقني",
+      "roleEn": "Tech Copywriter",
+      "band": "advisory",
+      "opsScript": "merge-council-chronicle.ps1",
+      "opsArgs": [],
+      "markerScan": ["report-excellence.md", "role-copy.md", "CEEF-"]
+    },
+    "S11": {
+      "tier": "core",
+      "roleAr": "المراقب الخارق",
+      "roleEn": "Superintelligence",
+      "band": "superintelligence",
+      "opsScript": "run-omni-qa-gates.ps1",
+      "opsArgs": ["-SkipBuild"],
+      "markerScan": ["superintelligence-core.md", "leak-corpus-index.yaml", "ShuraCouncil/"]
+    },
+    "S12": {
+      "tier": "core",
+      "roleAr": "مدقق التقارير",
+      "roleEn": "Report Auditor",
+      "band": "quality",
+      "opsScript": "sync-cognitive-status.ps1",
+      "opsArgs": [],
+      "markerScan": ["chronicle-protocol.md", "STATUS.yaml", "council-chronicle"]
+    },
+    "D01": {
+      "tier": "discipline",
+      "roleAr": "مهندس C# / .NET",
+      "roleEn": "C# / .NET",
+      "band": "discipline",
+      "category": "Languages",
+      "dotnetCommand": "test CognitiveQa/CognitiveQa.sln -c Release --nologo -v q",
+      "markerScan": ["*.cs", "CognitiveQa/", "net9"]
+    },
+    "D02": {
+      "tier": "discipline",
+      "roleAr": "مهندس Python",
+      "roleEn": "Python",
+      "band": "discipline",
+      "category": "Languages",
+      "opsScript": "bootstrap-cognitive-qa-venv.ps1",
+      "markerScan": ["cognitive-qa/", "*.py", "pytest"]
+    },
+    "D03": {
+      "tier": "discipline",
+      "roleAr": "مهندس TypeScript/JS",
+      "roleEn": "TypeScript / JS",
+      "band": "discipline",
+      "category": "Languages",
+      "opsScript": null,
+      "npmCommand": "run build",
+      "npmCwd": "cognitive-qa/launcher/frontend",
+      "markerScan": ["package.json", "launcher/frontend"]
+    },
+    "D04": {
+      "tier": "discipline",
+      "roleAr": "مهندس قواعد البيانات",
+      "roleEn": "Database SQL",
+      "band": "discipline",
+      "category": "Data",
+      "markerScan": ["Persistence", "PostgreSQL", "SQLite", "Migration"]
+    },
+    "D05": {
+      "tier": "discipline",
+      "roleAr": "مهندس Rust",
+      "roleEn": "Rust",
+      "band": "discipline",
+      "category": "Systems",
+      "markerScan": ["Cargo.toml", "*.rs"]
+    },
+    "D06": {
+      "tier": "discipline",
+      "roleAr": "مهندس Go",
+      "roleEn": "Go",
+      "band": "discipline",
+      "category": "Systems",
+      "markerScan": ["go.mod", "*.go"]
+    },
+    "D07": {
+      "tier": "discipline",
+      "roleAr": "مهندس Java/Kotlin",
+      "roleEn": "Java / Kotlin",
+      "band": "discipline",
+      "category": "Languages",
+      "markerScan": ["*.java", "*.kt", "build.gradle"]
+    },
+    "D08": {
+      "tier": "discipline",
+      "roleAr": "مهندس C/C++",
+      "roleEn": "C / C++",
+      "band": "discipline",
+      "category": "Systems",
+      "markerScan": ["CMakeLists.txt", "*.cpp", "*.h"]
+    },
+    "D09": {
+      "tier": "discipline",
+      "roleAr": "مهندس iOS/Swift",
+      "roleEn": "iOS Swift",
+      "band": "discipline",
+      "category": "Mobile",
+      "markerScan": ["*.swift", "xcodeproj"]
+    },
+    "D10": {
+      "tier": "discipline",
+      "roleAr": "مهندس Android",
+      "roleEn": "Android",
+      "band": "discipline",
+      "category": "Mobile",
+      "markerScan": ["AndroidManifest.xml", "build.gradle"]
+    },
+    "D11": {
+      "tier": "discipline",
+      "roleAr": "مهندس DevOps/CI",
+      "roleEn": "DevOps CI",
+      "band": "platform",
+      "category": "Ops",
+      "opsScript": "install-verify-toolchain.ps1",
+      "opsArgs": ["-SkipWinget", "-SkipNpmBuild"],
+      "markerScan": ["scripts/ops/", ".github/workflows"]
+    },
+    "D12": {
+      "tier": "discipline",
+      "roleAr": "مهندس Cloud",
+      "roleEn": "Cloud Azure",
+      "band": "discipline",
+      "category": "Ops",
+      "markerScan": ["azure.yaml", "*.bicep", "*.tf"]
+    },
+    "D13": {
+      "tier": "discipline",
+      "roleAr": "مهندس الأمن",
+      "roleEn": "Security",
+      "band": "security",
+      "category": "Security",
+      "opsScript": "validate-prompt-governance.ps1",
+      "markerScan": ["brqosh-review", "RBAC", "SchemaSqlGuard"]
+    },
+    "D14": {
+      "tier": "discipline",
+      "roleAr": "مهندس المعمارية",
+      "roleEn": "Architect",
+      "band": "discipline",
+      "category": "Architecture",
+      "opsScript": "run-cognitive-intelligence.ps1",
+      "markerScan": ["docs/architecture", "DOMAIN_MAP", "SmartWorkflow"]
+    },
+    "D15": {
+      "tier": "discipline",
+      "roleAr": "مهندس API",
+      "roleEn": "API OpenAPI",
+      "band": "discipline",
+      "category": "Integration",
+      "markerScan": ["OpenAPI", "CognitiveQa.Cli"]
+    },
+    "D16": {
+      "tier": "discipline",
+      "roleAr": "مهندس UI/UX",
+      "roleEn": "UI UX WPF",
+      "band": "discipline",
+      "category": "UI",
+      "dotnetCommand": "run --project CognitiveQa/src/CognitiveQa.Cli/CognitiveQa.Cli.csproj -c Release -- shell validate",
+      "markerScan": ["MainWindow.xaml", "brqosh-ui", "EmptyState"]
+    },
+    "D17": {
+      "tier": "discipline",
+      "roleAr": "مهندس الاختبار",
+      "roleEn": "QA Testing",
+      "band": "quality",
+      "category": "QA",
+      "opsScript": "run-aicouncil-pytest.ps1",
+      "dotnetCommand": "test CognitiveQa/CognitiveQa.sln -c Release --nologo -v q",
+      "markerScan": ["CognitiveQa.Tests", "tests/", "FlaUI"]
+    },
+    "D18": {
+      "tier": "discipline",
+      "roleAr": "مهندس البيانات",
+      "roleEn": "Data Engineering",
+      "band": "discipline",
+      "category": "Data",
+      "markerScan": ["data/", "analytics", "*.csv"]
+    },
+    "D19": {
+      "tier": "discipline",
+      "roleAr": "مهندس ML/AI",
+      "roleEn": "ML AI Agents",
+      "band": "superintelligence",
+      "category": "AI",
+      "opsScript": "run-aicouncil-bridge.ps1",
+      "markerScan": ["AiCouncil/", "PromptAudit", "leak-corpus"]
+    },
+    "D20": {
+      "tier": "discipline",
+      "roleAr": "مهندس Web Frontend",
+      "roleEn": "Web Frontend",
+      "band": "discipline",
+      "category": "Web",
+      "markerScan": ["launcher/static/", "launcher/frontend"]
+    },
+    "D21": {
+      "tier": "discipline",
+      "roleAr": "مهندس Web Backend",
+      "roleEn": "Web Backend",
+      "band": "discipline",
+      "category": "Web",
+      "markerScan": ["server.js", "api/"]
+    },
+    "D22": {
+      "tier": "discipline",
+      "roleAr": "مهندس البرمجة الوظيفية",
+      "roleEn": "Functional FP",
+      "band": "discipline",
+      "category": "Paradigms",
+      "markerScan": ["*.fs", "*.hs", "*.elm"]
+    },
+    "D23": {
+      "tier": "discipline",
+      "roleAr": "مهندس Shell/Scripts",
+      "roleEn": "PowerShell Ops",
+      "band": "platform",
+      "category": "Ops",
+      "opsScript": "install-verify-toolchain.ps1",
+      "opsArgs": ["-VerifyOnly"],
+      "markerScan": ["scripts/ops/", "bootstrap", "run-shura"]
+    },
+    "D24": {
+      "tier": "discipline",
+      "roleAr": "مهندس التوثيق",
+      "roleEn": "Documentation",
+      "band": "discipline",
+      "category": "Docs",
+      "opsScript": "validate-prompt-governance.ps1",
+      "markerScan": ["docs/", "CEEF-", "SKILL.md", "تقارير/"]
+    },
+    "D25": {
+      "tier": "discipline",
+      "roleAr": "مهندس الأداء",
+      "roleEn": "Performance",
+      "band": "quality",
+      "category": "Quality",
+      "dotnetCommand": "test CognitiveQa/CognitiveQa.sln -c Release --nologo -v q",
+      "markerScan": ["benchmark", "WorkflowProgress", "stress"]
+    },
+    "D26": {
+      "tier": "discipline",
+      "roleAr": "مهندس التزامن",
+      "roleEn": "Concurrency Async",
+      "band": "discipline",
+      "category": "Paradigms",
+      "markerScan": ["async", "SmartWorkflow", "Task<", "CancellationToken"]
+    },
+    "D27": {
+      "tier": "discipline",
+      "roleAr": "مهندس Git/Workflow",
+      "roleEn": "Version Control",
+      "band": "discipline",
+      "category": "Ops",
+      "markerScan": [".gitignore", ".gitattributes"]
+    },
+    "D28": {
+      "tier": "discipline",
+      "roleAr": "مهندس البرومبت/الوكلاء",
+      "roleEn": "Prompt Agents",
+      "band": "superintelligence",
+      "category": "AI",
+      "opsScript": "run-shura-council.ps1",
+      "markerScan": ["brqosh-supreme-cortex", "ShuraCouncil", "system_prompts_leaks"]
+    }
+  }
+}

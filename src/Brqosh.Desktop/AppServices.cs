@@ -1,47 +1,200 @@
+using Brqosh.Application.Setup;
 using System.IO;
 using System.Text.Json;
+using Brqosh.Infrastructure;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Domain.Security;
+using Brqosh.Infrastructure.Security;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Brqosh.Desktop;
 
 public record DatabaseConfig(string Provider, string ConnectionString);
 
 /// <summary>
-/// نقطة وصول الخدمات للواجهة. قاعدة البيانات: PostgreSQL إذا كان مُعدّاً في config.json،
-/// وإلا SQLite محلي حتى يعمل البرنامج فوراً بدون خادم (وفق ADR-001 الإنتاج على PostgreSQL).
+/// نقطة وصول الخدمات للواجهة.
+/// Development/Test: SQLite مسموح.
+/// Production: PostgreSQL فقط — فشل الاتصال يوقف التشغيل بأمان.
 /// </summary>
 public static class AppServices
 {
     public static long CompanyId { get; set; }
 
+    private static AppUser? _currentUser;
+    private static int _boundSessionVersion;
+    public static int BoundSessionVersion => _boundSessionVersion;
+
+    public static AppUser? CurrentUser
+    {
+        get => _currentUser;
+        set
+        {
+            _currentUser = value;
+            _boundSessionVersion = value?.SessionVersion ?? 0;
+            SecurityContext.CurrentRole = value?.Role;
+            SecurityContext.CurrentUsername = value?.Username;
+            if (value is not null)
+                SessionIdleTracker.MarkActivity();
+        }
+    }
+
+    /// <summary>مهلة الخمول قبل طلب إعادة تسجيل الدخول — 30 دقيقة.</summary>
+    public static TimeSpan SessionTimeout { get; set; } = TimeSpan.FromMinutes(30);
+
+    public static bool IsSessionExpired()
+    {
+        if (_currentUser is null) return true;
+        return SessionIdleTracker.IsIdle(SessionTimeout);
+    }
+
+    public static async Task<bool> IsSessionRevokedAsync()
+    {
+        if (_currentUser is null) return true;
+        await using var db = CreateDb();
+        var version = await db.AppUsers
+            .Where(u => u.Id == _currentUser.Id)
+            .Select(u => u.SessionVersion)
+            .SingleAsync();
+        return version != _boundSessionVersion;
+    }
+
+    public static void TouchSession() => SessionIdleTracker.MarkActivity();
+
+    public static long? CurrentShiftId { get; set; }
+
+    /// <summary>الفرع التشغيلي للجلسة — إن فُرغ يُستخدم HQ عند الترحيل.</summary>
+    private static long? _currentBranchId;
+    public static long? CurrentBranchId
+    {
+        get => _currentBranchId;
+        set
+        {
+            _currentBranchId = value;
+            Brqosh.Infrastructure.Companies.BranchSessionContext.PreferredBranchId = value;
+        }
+    }
+
+    public static string? CurrentBranchLabel { get; set; }
+
     private static DatabaseProvider _provider = DatabaseProvider.Sqlite;
     private static string _connectionString = $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}";
+    private static ServiceProvider? _infrastructureServices;
+
+    public static string ActiveProviderLabel => _provider == DatabaseProvider.PostgreSql ? "PostgreSQL" : "SQLite";
 
     public static void LoadDatabaseConfig()
+    {
+        _provider = DatabaseProvider.Sqlite;
+        _connectionString = $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}";
+
+        if (AppEnvironmentConfig.IsProduction)
+        {
+            var config = LoadDatabaseConfigFile();
+            if (config is null ||
+                !config.Provider.Equals("postgresql", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(config.ConnectionString))
+            {
+                throw new InvalidOperationException(
+                    "وضع الإنتاج يتطلب PostgreSQL — عيّن Provider=postgresql في %APPDATA%\\BRQOSH\\database.json");
+            }
+
+            _provider = DatabaseProvider.PostgreSql;
+            _connectionString = config.ConnectionString;
+            // كان يُتخطّى سابقاً عبر return — فيُبقى DomainEventHub في الذاكرة فقط بالإنتاج.
+            WireDomainEventPersistence();
+            return;
+        }
+
+        var devConfig = LoadDatabaseConfigFile();
+        if (devConfig is not null &&
+            devConfig.Provider.Equals("postgresql", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrWhiteSpace(devConfig.ConnectionString))
+        {
+            _provider = DatabaseProvider.PostgreSql;
+            _connectionString = devConfig.ConnectionString;
+        }
+
+        WireDomainEventPersistence();
+    }
+
+    /// <summary>يربط DomainEventHub بناشر يحفظ الأحداث في قاعدة البيانات.</summary>
+    public static void WireDomainEventPersistence()
+    {
+        _infrastructureServices?.Dispose();
+        var services = new ServiceCollection();
+        services.AddBrqoshInfrastructure(_connectionString, _provider == DatabaseProvider.PostgreSql);
+        _infrastructureServices = services.BuildServiceProvider();
+    }
+
+    public static async Task EnsureDatabaseReachableAsync()
+    {
+        try
+        {
+            await using var db = CreateDb();
+            await db.Database.OpenConnectionAsync();
+            await db.Database.CloseConnectionAsync();
+        }
+        catch (Exception ex)
+        {
+            if (AppEnvironmentConfig.IsProduction)
+            {
+                throw new InvalidOperationException(
+                    $"تعذر الاتصال بـ PostgreSQL في وضع الإنتاج — تم إيقاف التشغيل.\n{ex.Message}", ex);
+            }
+
+            if (_provider == DatabaseProvider.PostgreSql)
+            {
+                _provider = DatabaseProvider.Sqlite;
+                _connectionString = $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}";
+                // أعد ربط ناشر الأحداث على SQLite بعد التحويل الصامت
+                WireDomainEventPersistence();
+            }
+        }
+    }
+
+    public static BrqoshDbContext CreateDb()
+    {
+        // AsyncLocal لا يتدفق عبر كل نقاط دخول WPF — أعد ربط الجلسة قبل كل استدعاء خدمة.
+        BindSecurityContext();
+        return BrqoshDbContextFactory.Create(_provider, _connectionString);
+    }
+
+    public static WhatsAppOtpService CreateOtpService(BrqoshDbContext db) =>
+        new(db, WhatsAppNotificationChannelFactory.Resolve());
+
+    [Obsolete("استخدم CreateOtpService")]
+    public static WhatsAppOtpService CreateWhatsAppOtpService(BrqoshDbContext db) => CreateOtpService(db);
+
+    private static void BindSecurityContext()
+    {
+        SecurityContext.CurrentRole = _currentUser?.Role;
+        SecurityContext.CurrentUsername = _currentUser?.Username;
+    }
+
+    /// <summary>نطاق DI للـ Use Cases — N3 Desktop facade. يعيد ربط SecurityContext (AsyncLocal لا يتدفق عبر كل نقاط دخول WPF).</summary>
+    public static IServiceScope CreateInfrastructureScope()
+    {
+        BindSecurityContext();
+        if (_infrastructureServices is null)
+            WireDomainEventPersistence();
+        return _infrastructureServices!.CreateScope();
+    }
+
+    private static DatabaseConfig? LoadDatabaseConfigFile()
     {
         var configPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json");
         if (!File.Exists(configPath))
-            return;
+            return null;
 
         try
         {
-            var config = JsonSerializer.Deserialize<DatabaseConfig>(File.ReadAllText(configPath));
-            if (config is not null &&
-                config.Provider.Equals("postgresql", StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(config.ConnectionString))
-            {
-                _provider = DatabaseProvider.PostgreSql;
-                _connectionString = config.ConnectionString;
-            }
+            return JsonSerializer.Deserialize<DatabaseConfig>(File.ReadAllText(configPath));
         }
         catch (JsonException)
         {
-            // ملف إعداد تالف — نبقى على SQLite بدل إسقاط التطبيق
+            return null;
         }
     }
-
-    /// <summary>سياق جديد لكل عملية — لا سياق مشترك طويل العمر في تطبيق Desktop.</summary>
-    public static BrqoshDbContext CreateDb() =>
-        BrqoshDbContextFactory.Create(_provider, _connectionString);
 }

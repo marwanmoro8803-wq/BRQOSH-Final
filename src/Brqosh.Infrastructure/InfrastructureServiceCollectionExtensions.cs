@@ -1,0 +1,452 @@
+using Brqosh.Application;
+using Brqosh.Application.Accounting;
+using Brqosh.Application.Intelligence;
+using Brqosh.Application.MasterData;
+using Brqosh.Application.Reporting;
+using Brqosh.Application.Setup;
+using Brqosh.Infrastructure.Accounting;
+using Brqosh.Application.Platform;
+using Brqosh.Application.Treasury;
+using Brqosh.Domain.Platform;
+using Brqosh.Infrastructure.Assets;
+using Brqosh.Infrastructure.Construction;
+using Brqosh.Infrastructure.Crm;
+using Brqosh.Infrastructure.Intelligence;
+using Brqosh.Infrastructure.Inventory;
+using Brqosh.Infrastructure.MasterData;
+using Brqosh.Infrastructure.Manufacturing;
+using Brqosh.Infrastructure.Payroll;
+using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Platform;
+using Brqosh.Infrastructure.Reporting;
+using Brqosh.Infrastructure.Sales;
+using Brqosh.Infrastructure.Setup;
+using Brqosh.Infrastructure.Purchasing;
+using Brqosh.Infrastructure.Treasury;
+using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Webhooks;
+using Brqosh.Infrastructure.Zatca;
+using Brqosh.Infrastructure.Workflow;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Brqosh.Infrastructure;
+
+public static class InfrastructureServiceCollectionExtensions
+{
+    public static IServiceCollection AddBrqoshInfrastructure(
+        this IServiceCollection services, string connectionString, bool usePostgres = false)
+    {
+        services.AddBrqoshApplication();
+        services.AddSingleton<IConfigurationTemplateLoader, ConfigurationTemplateLoader>();
+        services.AddDbContext<BrqoshDbContext>(options =>
+        {
+            if (usePostgres)
+                options.UseNpgsql(connectionString);
+            else
+                options.UseSqlite(connectionString);
+            options.AddInterceptors(new AuditLogImmutabilityInterceptor());
+        });
+
+        services.AddScoped<IPostingPolicy, SaudiPostingPolicy>();
+        services.AddScoped<PostingOrchestrator>();
+
+        // CEEF-122: خدمات الترحيل المالي — scoped لحل DesktopServiceFacade من DI بدل new XxxService(db)
+        services.AddScoped<JournalPostingService>();
+        services.AddScoped<SalesInvoicePostingService>();
+        services.AddScoped<CreditNotePostingService>();
+        services.AddScoped<PurchaseInvoicePostingService>();
+        services.AddScoped<DebitNotePostingService>();
+        services.AddScoped<GoodsReceiptPostingService>();
+        services.AddScoped<PaymentVoucherPostingService>();
+        services.AddScoped<ReceiptVoucherPostingService>();
+        services.AddScoped<ChequePostingService>();
+        services.AddScoped<BankStatementDifferencePostingService>();
+        services.AddScoped<StockMovementPostingService>();
+        services.AddScoped<PayrollPostingService>();
+        services.AddScoped<FixedAssetAcquisitionPostingService>();
+        services.AddScoped<FixedAssetDisposalPostingService>();
+        services.AddScoped<ProgressBillingPostingService>();
+
+        // CEEF-123: إلغاء/عكس/فترات — Tier P0 هجرة Desktop
+        services.AddScoped<SalesInvoiceCancellationService>();
+        services.AddScoped<PurchaseInvoiceCancellationService>();
+        services.AddScoped<CreditNoteCancellationService>();
+        services.AddScoped<DebitNoteCancellationService>();
+        services.AddScoped<VoucherReversalService>();
+        services.AddScoped<PaymentAllocationService>();
+        services.AddScoped<YearEndCloseService>();
+        services.AddScoped<FiscalPeriodService>();
+
+        // CEEF-123 Tier P1: خزينة · POS · تدقيق
+        services.AddScoped<BankAccountService>();
+        services.AddScoped<BankTransferService>();
+        services.AddScoped<Retail.PosSaleService>();
+        services.AddScoped<Security.AuditService>();
+        services.AddScoped<DocumentPrintService>();
+
+        // CEEF-124: Tier P2/P3 — مخزون · مشاريع · تصنيع · مبيعات · أمن · ZATCA · bootstrap
+        services.AddScoped<GoodsReceiptCancellationService>();
+        services.AddScoped<JournalReversalService>();
+        services.AddScoped<StockMovementCancellationService>();
+        services.AddScoped<StockCountAdjustmentService>();
+        services.AddScoped<InventoryService>();
+        services.AddScoped<LandedCostAllocationService>();
+        services.AddScoped<PurchaseOrderService>();
+        services.AddScoped<PayrollReversalService>();
+        services.AddScoped<DepreciationService>();
+        services.AddScoped<ProgressBillingCancellationService>();
+        services.AddScoped<RetentionReleaseService>();
+        services.AddScoped<SubcontractRetentionWithholdService>();
+        services.AddScoped<ConstructionProjectService>();
+        services.AddScoped<ProjectCostService>();
+        services.AddScoped<WorkOrderService>();
+        services.AddScoped<SalesOrderService>();
+        services.AddScoped<SalesQuotationService>();
+        services.AddScoped<CrmService>();
+        services.AddScoped<ZatcaSubmissionService>();
+        services.AddScoped<ZatcaCsidOnboardingService>();
+        services.AddScoped<OrganizationProvisioningService>();
+        services.AddScoped<IOrganizationProvisioningService>(sp => sp.GetRequiredService<OrganizationProvisioningService>());
+        services.AddScoped<UserAuthService>();
+        services.AddScoped<UserManagementService>();
+        services.AddScoped<DatabaseBootstrapService>();
+
+        services.AddScoped<IWorkflowEngine, WorkflowEngine>();
+        services.AddScoped<PurchaseRequestWorkflowService>();
+        services.AddScoped<PurchaseOrderWorkflowService>();
+        services.AddScoped<PaymentVoucherWorkflowService>();
+        services.AddScoped<ManualJournalEntryWorkflowService>();
+        services.AddScoped<IMasterDataGovernanceService, MasterDataGovernanceService>();
+        services.AddScoped<ICashFlowForecastService, CashFlowForecastService>();
+        services.AddScoped<IPaymentRunService, PaymentRunService>();
+
+        services.AddScoped<ExchangeRateService>();
+        services.AddScoped<IExchangeRateService>(sp => sp.GetRequiredService<ExchangeRateService>());
+        services.AddSingleton<IFxRateProvider>(_ => new ChainedFxRateProvider(
+            SamaFxRateProvider.FromEnvironment(),
+            new FrankfurterFxRateProvider()));
+        services.AddScoped<FxRateSyncService>();
+        services.AddScoped<IFxRateSyncService>(sp => sp.GetRequiredService<FxRateSyncService>());
+        services.AddScoped<IBillingPlanCatalog, BillingPlanCatalog>();
+        services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+        services.AddScoped<FxRevaluationService>();
+        services.AddScoped<FxRevaluationBatchService>();
+        services.AddScoped<FxClosingTranslationService>();
+        services.AddScoped<ITrialBalanceQuery, TrialBalanceQueryAdapter>();
+        services.AddScoped<IGeneralLedgerQuery, GeneralLedgerQueryAdapter>();
+        services.AddScoped<IBalanceSheetQuery, BalanceSheetQueryAdapter>();
+        services.AddScoped<IIncomeStatementQuery, IncomeStatementQueryAdapter>();
+        services.AddScoped<ICashFlowStatementQuery, CashFlowStatementQueryAdapter>();
+        services.AddScoped<IVatReturnQuery, VatReturnQueryAdapter>();
+        services.AddScoped<ICustomerStatementQuery, CustomerStatementQueryAdapter>();
+        services.AddScoped<ISupplierStatementQuery, SupplierStatementQueryAdapter>();
+        services.AddScoped<IProjectProfitabilityQuery, ProjectProfitabilityQueryAdapter>();
+        services.AddScoped<IConsolidatedTrialBalanceQuery, ConsolidatedTrialBalanceQueryAdapter>();
+        services.AddScoped<IConsolidatedIncomeStatementQuery, ConsolidatedIncomeStatementQueryAdapter>();
+        services.AddScoped<IConsolidatedBalanceSheetQuery, ConsolidatedBalanceSheetQueryAdapter>();
+        services.AddScoped<IIntercompanyEliminationQuery, IntercompanyEliminationQueryAdapter>();
+        services.AddScoped<IDataQualityService, DataQualityService>();
+        services.AddScoped<IReportSnapshotService, ReportSnapshotService>();
+        services.AddScoped<IEventTrackingQuery, EventTrackingQuery>();
+        services.AddScoped<IFinancialIntelligenceService, FinancialIntelligenceService>();
+        services.AddScoped<IFinancialAssistantService, FinancialAssistantService>();
+        services.AddScoped<IProgramAssistantService, ProgramAssistantService>();
+        services.AddScoped<IMonthEndCloseUseCase, MonthEndCloseUseCaseAdapter>();
+        services.AddScoped<IBankStatementImportUseCase, BankStatementImportUseCaseAdapter>();
+        services.AddScoped<IBankStatementMatchUseCase, BankStatementMatchUseCaseAdapter>();
+        services.AddScoped<IBankStatementDifferencePostingUseCase, BankStatementDifferencePostingUseCaseAdapter>();
+        services.AddScoped<ICashMovementReportUseCase, CashMovementReportUseCaseAdapter>();
+        services.AddScoped<IDataMigrationService, CsvDataMigrationService>();
+
+        services.AddHttpClient<IWebhookDispatcher, WebhookDispatcher>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
+
+        services.AddSingleton<IDomainEventPublisher>(sp =>
+        {
+            var publisher = new PersistingDomainEventPublisher(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<IWebhookDispatcher>());
+            DomainEventHub.Current = publisher;
+            return publisher;
+        });
+        return services;
+    }
+}
+
+file sealed class TrialBalanceQueryAdapter(BrqoshDbContext db) : ITrialBalanceQuery
+{
+    public async Task<IReadOnlyList<TrialBalanceDto>> ExecuteAsync(
+        long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
+    {
+        var rows = await new TrialBalanceQuery(db).ExecuteAsync(companyId, fromDate, toDate);
+        return rows.Select(r => new TrialBalanceDto(
+            r.AccountCode, r.AccountNameAr, r.Type, r.TotalDebit, r.TotalCredit)).ToList();
+    }
+}
+
+file sealed class GeneralLedgerQueryAdapter(BrqoshDbContext db) : IGeneralLedgerQuery
+{
+    public async Task<IReadOnlyList<GeneralLedgerAccountDto>> ExecuteAsync(
+        long companyId, DateOnly fromDate, DateOnly toDate, string? accountCodeFilter = null,
+        CancellationToken ct = default)
+    {
+        var accounts = await new GeneralLedgerQuery(db).ExecuteAsync(
+            companyId, fromDate, toDate, accountCodeFilter);
+        return accounts.Select(a => new GeneralLedgerAccountDto(
+            a.AccountCode,
+            a.AccountNameAr,
+            a.Type,
+            a.Lines.Select(l => new GeneralLedgerLineDto(
+                l.EntryDate, l.EntryNumber, l.Description,
+                l.Debit, l.Credit, l.RunningBalance)).ToList(),
+            a.ClosingBalance)).ToList();
+    }
+}
+
+file sealed class BalanceSheetQueryAdapter(BrqoshDbContext db) : IBalanceSheetQuery
+{
+    public async Task<BalanceSheetResultDto> ExecuteAsync(
+        long companyId, DateOnly asOfDate, CancellationToken ct = default)
+    {
+        var result = await new BalanceSheetQuery(db).ExecuteAsync(companyId, asOfDate);
+        return new BalanceSheetResultDto(
+            result.AsOfDate,
+            result.Assets.Select(MapRow).ToList(),
+            result.Liabilities.Select(MapRow).ToList(),
+            result.Equity.Select(MapRow).ToList());
+
+        static BalanceSheetRowDto MapRow(BalanceSheetRow r) =>
+            new(r.AccountCode, r.AccountNameAr, r.Type, r.Amount);
+    }
+}
+
+file sealed class IncomeStatementQueryAdapter(BrqoshDbContext db) : IIncomeStatementQuery
+{
+    public async Task<IncomeStatementResultDto> ExecuteAsync(
+        long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
+    {
+        var result = await new IncomeStatementQuery(db).ExecuteAsync(companyId, fromDate, toDate);
+        return new IncomeStatementResultDto(
+            result.FromDate,
+            result.ToDate,
+            result.RevenueRows.Select(MapRow).ToList(),
+            result.ExpenseRows.Select(MapRow).ToList());
+
+        static IncomeStatementRowDto MapRow(IncomeStatementRow r) =>
+            new(r.AccountCode, r.AccountNameAr, r.Type, r.Amount);
+    }
+}
+
+file sealed class CashFlowStatementQueryAdapter(BrqoshDbContext db) : ICashFlowStatementQuery
+{
+    public async Task<CashFlowStatementResultDto> ExecuteAsync(
+        long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
+    {
+        var result = await new CashFlowStatementService(db).ExecuteAsync(companyId, fromDate, toDate);
+        return new CashFlowStatementResultDto(
+            result.FromDate,
+            result.ToDate,
+            MapSection(result.Operating),
+            MapSection(result.Investing),
+            MapSection(result.Financing),
+            result.NetCashChange,
+            result.OpeningCash,
+            result.ClosingCash);
+
+        static CashFlowSectionDto MapSection(CashFlowSection section) =>
+            new(section.NameAr, section.Lines.Select(l => new CashFlowLineDto(l.Label, l.Amount)).ToList());
+    }
+}
+
+file sealed class VatReturnQueryAdapter(BrqoshDbContext db) : IVatReturnQuery
+{
+    public async Task<VatReturnDto> ExecuteAsync(
+        long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
+    {
+        var r = await new VatReturnQuery(db).ExecuteAsync(companyId, fromDate, toDate);
+        return new VatReturnDto(
+            r.FromDate, r.ToDate,
+            r.SalesSubtotal, r.OutputVat,
+            r.ProgressBillingsSubtotal, r.ProgressBillingsVat,
+            r.CreditNotesSubtotal, r.CreditNotesVat,
+            r.PurchasesSubtotal, r.DeductibleInputVat,
+            r.DebitNotesSubtotal, r.DebitNotesVat, r.DebitNotesDeductibleVat,
+            r.GlVatNetPayableBalance);
+    }
+}
+
+file sealed class CustomerStatementQueryAdapter(BrqoshDbContext db) : ICustomerStatementQuery
+{
+    public async Task<CustomerStatementResultDto> ExecuteAsync(
+        long companyId, long customerId, CancellationToken ct = default)
+    {
+        var query = new CustomerBalanceQuery(db);
+        var lines = await query.StatementAsync(companyId, customerId);
+        var balance = await query.ForCustomerAsync(companyId, customerId);
+        return new CustomerStatementResultDto(
+            lines.Select(l => new CustomerStatementLineDto(
+                l.Date, l.DocumentNumber, l.DocumentType,
+                l.Debit, l.Credit, l.RunningBalance)).ToList(),
+            balance.Balance);
+    }
+}
+
+file sealed class SupplierStatementQueryAdapter(BrqoshDbContext db) : ISupplierStatementQuery
+{
+    public async Task<SupplierStatementResultDto> ExecuteAsync(
+        long companyId, long supplierId, CancellationToken ct = default)
+    {
+        var query = new SupplierBalanceQuery(db);
+        var lines = await query.StatementAsync(companyId, supplierId);
+        var balance = await query.ForSupplierAsync(companyId, supplierId);
+        return new SupplierStatementResultDto(
+            lines.Select(l => new SupplierStatementLineDto(
+                l.Date, l.DocumentNumber, l.DocumentType,
+                l.Debit, l.Credit, l.RunningBalance)).ToList(),
+            balance.Balance);
+    }
+}
+
+file sealed class ProjectProfitabilityQueryAdapter(BrqoshDbContext db) : IProjectProfitabilityQuery
+{
+    public async Task<IReadOnlyList<ProjectProfitabilityDto>> ExecuteAsync(long companyId, CancellationToken ct = default)
+    {
+        var rows = await new ProjectProfitabilityQuery(db).ExecuteAsync(companyId, ct);
+        return rows.Select(r => new ProjectProfitabilityDto(
+            r.ProjectId, r.Code, r.NameAr, r.ContractValue, r.EstimatedTotalCost,
+            r.IncurredCost, r.BilledWork, r.RecognizedRevenueEstimate, r.RetentionHeld,
+            r.GrossMarginEstimate, r.CompletionMethod)).ToList();
+    }
+}
+
+file sealed class ConsolidatedTrialBalanceQueryAdapter(
+    BrqoshDbContext db, ExchangeRateService rateService) : IConsolidatedTrialBalanceQuery
+{
+    public async Task<IReadOnlyList<ConsolidatedTrialBalanceDto>> ExecuteAsync(
+        long groupId, DateOnly fromDate, DateOnly toDate,
+        IReadOnlyDictionary<long, decimal>? fxRatesFromFunctionalToReporting = null,
+        CancellationToken ct = default)
+    {
+        var rows = await new ConsolidatedTrialBalanceQuery(db, rateService).ExecuteAsync(
+            groupId, fromDate, toDate, fxRatesFromFunctionalToReporting, ct);
+        return rows.Select(r => new ConsolidatedTrialBalanceDto(
+            r.AccountCode, r.AccountNameAr, r.Type, r.TotalDebit, r.TotalCredit, r.CompanyCount)).ToList();
+    }
+}
+
+file sealed class ConsolidatedIncomeStatementQueryAdapter(
+    BrqoshDbContext db, ExchangeRateService rateService) : IConsolidatedIncomeStatementQuery
+{
+    public async Task<ConsolidatedIncomeStatementResultDto> ExecuteAsync(
+        long groupId, DateOnly fromDate, DateOnly toDate,
+        IReadOnlyDictionary<long, decimal>? fxRatesFromFunctionalToReporting = null,
+        CancellationToken ct = default)
+    {
+        var result = await new ConsolidatedIncomeStatementQuery(db, rateService).ExecuteAsync(
+            groupId, fromDate, toDate, fxRatesFromFunctionalToReporting, ct);
+        return new ConsolidatedIncomeStatementResultDto(
+            result.GroupId,
+            result.ReportingCurrencyCode,
+            result.FromDate,
+            result.ToDate,
+            result.RevenueRows.Select(r => new ConsolidatedIncomeStatementDto(
+                r.AccountCode, r.AccountNameAr, r.Type, r.Amount, r.CompanyCount)).ToList(),
+            result.ExpenseRows.Select(r => new ConsolidatedIncomeStatementDto(
+                r.AccountCode, r.AccountNameAr, r.Type, r.Amount, r.CompanyCount)).ToList());
+    }
+}
+
+file sealed class ConsolidatedBalanceSheetQueryAdapter(
+    BrqoshDbContext db, ExchangeRateService rateService) : IConsolidatedBalanceSheetQuery
+{
+    public async Task<ConsolidatedBalanceSheetResultDto> ExecuteAsync(
+        long groupId, DateOnly asOfDate,
+        IReadOnlyDictionary<long, decimal>? fxRatesFromFunctionalToReporting = null,
+        CancellationToken ct = default)
+    {
+        var result = await new ConsolidatedBalanceSheetQuery(db, rateService).ExecuteAsync(
+            groupId, asOfDate, fxRatesFromFunctionalToReporting, ct);
+        return new ConsolidatedBalanceSheetResultDto(
+            result.GroupId,
+            result.ReportingCurrencyCode,
+            result.AsOfDate,
+            result.Assets.Select(r => new ConsolidatedBalanceSheetDto(
+                r.AccountCode, r.AccountNameAr, r.Type, r.Amount, r.CompanyCount)).ToList(),
+            result.Liabilities.Select(r => new ConsolidatedBalanceSheetDto(
+                r.AccountCode, r.AccountNameAr, r.Type, r.Amount, r.CompanyCount)).ToList(),
+            result.Equity.Select(r => new ConsolidatedBalanceSheetDto(
+                r.AccountCode, r.AccountNameAr, r.Type, r.Amount, r.CompanyCount)).ToList());
+    }
+}
+
+file sealed class IntercompanyEliminationQueryAdapter(
+    BrqoshDbContext db, ExchangeRateService rateService) : IIntercompanyEliminationQuery
+{
+    public async Task<IReadOnlyList<IntercompanyEliminationDto>> ExecuteAsync(
+        long groupId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
+    {
+        var rows = await new IntercompanyEliminationQuery(db, rateService).ExecuteAsync(
+            groupId, fromDate, toDate, ct: ct);
+        return rows.Select(r => new IntercompanyEliminationDto(
+            r.AccountCode, r.EliminatedDebit, r.EliminatedCredit)).ToList();
+    }
+}
+
+file sealed class MonthEndCloseUseCaseAdapter(BrqoshDbContext db, ITrialBalanceQuery trialBalance)
+    : IMonthEndCloseUseCase
+{
+    public Task<MonthEndCloseResult> ClosePeriodAsync(
+        long companyId, long periodId, string username, CancellationToken ct = default) =>
+        new MonthEndCloseOrchestrator(db, trialBalance).ClosePeriodAsync(companyId, periodId, username, ct);
+}
+
+file sealed class BankStatementImportUseCaseAdapter(BrqoshDbContext db) : IBankStatementImportUseCase
+{
+    public async Task<BankStatementImportResult> ImportCsvAsync(
+        long companyId, long bankAccountId, string sourceFileName, string csv, CancellationToken ct = default)
+    {
+        var statement = await new BankStatementImportService(db)
+            .ImportCsvAsync(companyId, bankAccountId, sourceFileName, csv, ct);
+        return new BankStatementImportResult(statement.Id, statement.Lines.Count);
+    }
+}
+
+file sealed class BankStatementMatchUseCaseAdapter(BrqoshDbContext db) : IBankStatementMatchUseCase
+{
+    public async Task<BankStatementMatchResultDto> AutoMatchAsync(
+        long companyId, long bankStatementId, CancellationToken ct = default)
+    {
+        var report = await new BankStatementMatcherService(db).AutoMatchAsync(companyId, bankStatementId, ct);
+        return new BankStatementMatchResultDto(report.MatchedCount, report.UnmatchedAfter);
+    }
+}
+
+file sealed class BankStatementDifferencePostingUseCaseAdapter(BrqoshDbContext db)
+    : IBankStatementDifferencePostingUseCase
+{
+    public async Task<BankDifferencePostingResultDto> PostUnmatchedLineAsync(
+        long companyId,
+        long bankStatementId,
+        int lineIndex,
+        string? offsetAccountCode = null,
+        CancellationToken ct = default)
+    {
+        var result = await new BankStatementDifferencePostingService(db)
+            .PostUnmatchedLineAsync(companyId, bankStatementId, lineIndex, offsetAccountCode, ct);
+        return new BankDifferencePostingResultDto(result.JournalEntryId, result.EntryNumber, result.LineIndex);
+    }
+}
+
+file sealed class CashMovementReportUseCaseAdapter(BrqoshDbContext db) : ICashMovementReportUseCase
+{
+    public async Task<CashMovementSummaryDto> GetBankMovementAsync(
+        long companyId, long bankAccountId, DateOnly from, DateOnly to, CancellationToken ct = default)
+    {
+        var summary = await new CashMovementReportService(db).GetBankMovementAsync(companyId, bankAccountId, from, to, ct);
+        return new CashMovementSummaryDto(
+            summary.TotalInflows, summary.TotalOutflows, summary.NetMovement, summary.TransactionCount);
+    }
+}

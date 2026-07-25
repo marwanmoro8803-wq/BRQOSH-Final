@@ -1,0 +1,9 @@
+{
+  "id": "manufacturing",
+  "businessProfile": "Manufacturing",
+  "nameAr": "مصنع / إنتاج",
+  "nameEn": "Manufacturing",
+  "modules": ["GeneralLedger", "Manufacturing", "Inventory", "Purchasing", "Treasury", "Reports", "Zatca", "FixedAssets", "Payroll"],
+  "features": ["BOM", "WorkOrders", "WIP", "IndustrialCosting"],
+  "defaults": { "costingMethod": "WeightedAverage", "defaultRetentionPercent": 0 }
+}

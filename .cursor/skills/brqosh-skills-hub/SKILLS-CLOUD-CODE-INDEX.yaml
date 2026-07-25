@@ -1,0 +1,164 @@
+# Skills Cloud Code Index — all 26 routers
+# Authority: SHURA-DECISION-FABLE-TRI-SOURCE-003.md · MEM-163/164
+# Agent guide: docs/CLOUD-CODE-AGENT-GUIDE.md
+version: "1"
+updated: "2026-07-11"
+
+attach_stack_default:
+  - claude-fable-5
+  - fable-omni-core
+  - human-intelligence-mastery
+  - supreme-programming-mastery
+  - ai-dev-platform
+
+skills:
+  claude-fable-5:
+    path: claude-fable-5/SKILL.md
+    tier: L0
+    trigger: "/claude-fable-5 · Fable discipline"
+    product_focus: tri-source router
+
+  fable-omni-core:
+    path: fable-omni-core/SKILL.md
+    tier: L1
+    trigger: every message · CLASSIFY
+    product_focus: 12 principles · anti-injection
+
+  human-intelligence-mastery:
+    path: human-intelligence-mastery/SKILL.md
+    tier: L1
+    trigger: research · copyright · wellbeing · teach
+    product_focus: epistemology · WebSearch
+
+  supreme-programming-mastery:
+    path: supreme-programming-mastery/SKILL.md
+    tier: L1
+    trigger: any code change
+    product_focus: skills-first · claude-code-cli · SDLC
+
+  ai-dev-platform:
+    path: ai-dev-platform/SKILL.md
+    tier: L2
+    trigger: Program Developer workspace default
+    product_focus: platform · Shura · orchestration
+
+  brqosh-skills-hub:
+    path: brqosh-skills-hub/SKILL.md
+    tier: L2
+    trigger: uncertain routing · STATUS
+    product_focus: catalog · leak index · read order
+
+  brqosh-agent-protocol:
+    path: brqosh-agent-protocol/SKILL.md
+    tier: L2
+    trigger: every BRQOSH session
+    product_focus: impact · MEM · verify
+
+  omni-qa-army:
+    path: omni-qa-army/SKILL.md
+    tier: L3
+    trigger: desktop QA · auditors · FlaUI
+    product_focus: CognitiveQa audit army
+
+  brqosh-debug:
+    path: brqosh-debug/SKILL.md
+    tier: L3
+    trigger: test/build failure
+    product_focus: evidence-first debug
+
+  brqosh-engineering:
+    path: brqosh-engineering/SKILL.md
+    tier: L3
+    trigger: .NET/C# engineering
+    product_focus: DI · tests · git
+
+  brqosh-ui:
+    path: brqosh-ui/SKILL.md
+    tier: L3
+    trigger: WPF · RTL · MainWindow
+    product_focus: Cloud Code shell UX
+
+  brqosh-ui-design-system:
+    path: brqosh-ui-design-system/SKILL.md
+    tier: L3
+    trigger: theme · tokens · XAML law
+    product_focus: CLOUD-CODE-SHELL tokens
+
+  brqosh-analysis:
+    path: brqosh-analysis/SKILL.md
+    tier: L3
+    trigger: architecture · Shura prep · comprehensive analysis
+    product_focus: shura-constitution · CEEF SAVE
+
+  brqosh-closure:
+    path: brqosh-closure/SKILL.md
+    tier: L3
+    trigger: CEEF · wave close
+    product_focus: 4 closure levels
+
+  brqosh-review:
+    path: brqosh-review/SKILL.md
+    tier: L3
+    trigger: code/security review
+    product_focus: 8-angle review
+
+  brqosh-agents:
+    path: brqosh-agents/SKILL.md
+    tier: L3
+    trigger: multi-agent · parallel
+    product_focus: Task subagents
+
+  brqosh-communication:
+    path: brqosh-communication/SKILL.md
+    tier: L3
+    trigger: teach · bilingual UX runtime
+    product_focus: Arabic accountant prose
+
+  brqosh-creative:
+    path: brqosh-creative/SKILL.md
+    tier: L3
+    trigger: mockups · creative briefs
+    product_focus: non-ERP creative
+
+  brqosh-accounting:
+    path: brqosh-accounting/SKILL.md
+    tier: L3
+    trigger: Saudi ERP posting (sibling BRQOSH)
+    product_focus: reference only in this repo
+
+  universal-coding:
+    path: universal-coding/SKILL.md
+    tier: L3
+    trigger: non-BRQOSH stack
+    product_focus: stack detection
+
+  al-aql-al-thaki:
+    path: العقل-الذكي/SKILL.md
+    tier: deprecated
+    trigger: redirect only
+    product_focus: use brqosh-skills-hub
+
+module_routers:
+  - claude-fable-5/modules/01-behavior/SKILL.md
+  - claude-fable-5/modules/02-memory/SKILL.md
+  - claude-fable-5/modules/03-search/SKILL.md
+  - claude-fable-5/modules/04-programming/SKILL.md
+  - claude-fable-5/modules/05-evaluation/SKILL.md
+
+raw_sources:
+  - path: raw/claude-fable-5.md
+    lines: 2930
+    index: claude-fable-5/CONVERSION-MAP.yaml
+  - path: raw/claude-code-2.1.172-fable-5.md
+    lines: 1497
+    index: claude-fable-5/claude-code-fable-index.md
+  - path: raw/merged_claude.md
+    lines: 3288
+    index: brqosh-skills-hub/merged-claude-index.yaml
+
+verify:
+  - scripts/ops/validate-fable-skills-stack.ps1
+
+shura:
+  decision: dist/evidence/prompt-governance/SHURA-DECISION-FABLE-TRI-SOURCE-003.md
+  wave_close: dist/evidence/prompt-governance/CEEF-FABLE-5-FINAL-005.md

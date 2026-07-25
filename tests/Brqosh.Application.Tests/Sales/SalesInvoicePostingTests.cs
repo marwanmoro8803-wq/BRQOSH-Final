@@ -1,6 +1,8 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
+using Brqosh.Domain.Retail;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Sales;
@@ -53,7 +55,7 @@ public class SalesInvoicePostingTests : IDisposable
 
         Assert.Equal(1200m, invoice.Subtotal);
         Assert.Equal(180m, invoice.VatAmount);         // 15%
-        Assert.Equal(1380m, invoice.GrandTotal);
+        Assert.Equal(1380m, invoice.GrandTotal());
 
         var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
 
@@ -135,5 +137,40 @@ public class SalesInvoicePostingTests : IDisposable
             var posted = await service.PostAsync(invoice);
             Assert.Equal($"INV-2026-{i:D6}", posted.InvoiceNumber);
         }
+    }
+
+    [Fact]
+    public async Task PosCashSale_DebitsCashNotReceivable()
+    {
+        await SetupAsync();
+
+        var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 5));
+        invoice.AddLine("بيع نقدي", 1m, 100m);
+        invoice.MarkPosSale(1, PosPaymentMethod.Cash);
+
+        var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
+        var entry = await _db.JournalEntries.SingleAsync(e => e.Id == posted.JournalEntryId);
+
+        Assert.Equal(115m, entry.Lines.Single(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.CashOnHand).Debit);
+        Assert.DoesNotContain(entry.Lines, l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.AccountsReceivable);
+    }
+
+    [Fact]
+    public async Task B2bInvoice_WithZatcaEnabled_AutoSubmitsInSimulation()
+    {
+        await SetupAsync();
+        await new BrqoshSchemaUpdater(_db).ApplyAsync();
+
+        var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == _companyId);
+        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        await _db.SaveChangesAsync();
+
+        var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 5));
+        invoice.AddLine("خدمة B2B", 1m, 1000m);
+        var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        var zatca = await _db.ZatcaEInvoiceDocuments.SingleAsync(d =>
+            d.CompanyId == _companyId && d.SourceDocumentId == posted.Id);
+        Assert.Equal(ZatcaComplianceStatus.Cleared, zatca.ComplianceStatus);
     }
 }

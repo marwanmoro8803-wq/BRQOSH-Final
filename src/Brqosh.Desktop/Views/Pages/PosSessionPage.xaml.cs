@@ -1,0 +1,237 @@
+﻿using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Retail;
+using Brqosh.Domain.Sales;
+using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Retail;
+using Brqosh.Infrastructure.Reporting;
+using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Views;
+using Brqosh.Desktop.Reporting;
+using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Automation;
+
+namespace Brqosh.Desktop.Views.Pages;
+
+public partial class PosSessionPage : UserControl
+{
+    public record ProductRow(long Id, string Code, string NameAr, string Barcode, decimal SalePrice);
+
+    public class CartRow
+    {
+        public long ProductId { get; init; }
+        public string NameAr { get; init; } = "";
+        public decimal Quantity { get; set; }
+        public decimal UnitPrice { get; init; }
+        public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private readonly ObservableCollection<CartRow> _cart = [];
+    private List<ProductRow> _products = [];
+
+    public PosSessionPage()
+    {
+        InitializeComponent();
+        CartGrid.ItemsSource = _cart;
+        UiTestAutomation.PublishGridCount(CartGrid, _cart.Count);
+        PaymentCombo.SelectedIndex = 0;
+        Loaded += async (_, _) =>
+        {
+            PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
+                (PayBtn, PermissionService.CanPost),
+                (ClearCartBtn, PermissionService.CanPost));
+            
+            await UiFeedback.RunSafeAsync(EnsureShiftAsync);
+            await UiFeedback.RunSafeAsync(LoadProductsAsync);
+            UpdateTotal();
+        };
+    }
+
+    private async Task EnsureShiftAsync()
+    {
+        if (AppServices.CurrentShiftId is long sid)
+        {
+            await using var db = AppServices.CreateDb();
+            var existing = await db.PosShifts.FirstOrDefaultAsync(s =>
+                s.Id == sid && s.CompanyId == AppServices.CompanyId && s.Status == PosShiftStatus.Open);
+            if (existing is not null)
+            {
+                ShiftText.Text = $"وردية مفتوحة — {existing.CashierName}";
+                return;
+            }
+        }
+
+        var cashier = AppServices.CurrentUser?.DisplayNameAr ?? AppServices.CurrentUser?.Username ?? "كاشير";
+        var shift = PosShift.Open(AppServices.CompanyId, cashier, 0m);
+        if (AppServices.CurrentBranchId is long branchId)
+            shift.AssignBranch(branchId);
+        await using var db2 = AppServices.CreateDb();
+        db2.PosShifts.Add(shift);
+        await db2.SaveChangesAsync();
+        AppServices.CurrentShiftId = shift.Id;
+        ShiftText.Text = $"وردية جديدة — {shift.CashierName}";
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        await using var db = AppServices.CreateDb();
+        _products = await db.Products
+            .Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive)
+            .OrderBy(p => p.Code)
+            .Select(p => new ProductRow(p.Id, p.Code, p.NameAr, p.Barcode, p.SalePrice))
+            .ToListAsync();
+        RenderProducts(SearchBox.Text.Trim());
+        UpdateTotal();
+    }
+
+    private void RenderProducts(string filter)
+    {
+        var visible = string.IsNullOrEmpty(filter)
+            ? _products
+            : _products.Where(p =>
+                p.NameAr.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                p.Code.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                p.Barcode.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+        ProductGrid.ItemsSource = visible.Take(50).ToList();
+        UiTestAutomation.PublishGridCount(ProductGrid, visible.Take(50).ToList().Count());
+    }
+
+    private void OnSearchChanged(object sender, TextChangedEventArgs e) => RenderProducts(SearchBox.Text.Trim());
+
+    private void OnSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+        var barcode = SearchBox.Text.Trim();
+        if (string.IsNullOrEmpty(barcode))
+            return;
+
+        var product = _products.FirstOrDefault(p =>
+            string.Equals(p.Barcode, barcode, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(p.Code, barcode, StringComparison.OrdinalIgnoreCase));
+
+        if (product is null)
+        {
+            UiFeedback.ShowWarning("لم يُعثر على صنف بهذا الباركود أو الكود.");
+            return;
+        }
+
+        AddToCart(product);
+        SearchBox.Clear();
+        RenderProducts("");
+    }
+
+    private void OnProductDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (ProductGrid.SelectedItem is ProductRow product)
+            AddToCart(product);
+    }
+
+    private void AddToCart(ProductRow product)
+    {
+        var existing = _cart.FirstOrDefault(c => c.ProductId == product.Id);
+        if (existing is not null)
+            existing.Quantity += 1m;
+        else
+            _cart.Add(new CartRow { ProductId = product.Id, NameAr = product.NameAr, Quantity = 1m, UnitPrice = product.SalePrice });
+
+        CartGrid.Items.Refresh();
+        UpdateTotal();
+    }
+
+    private void UpdateTotal()
+    {
+        var total = _cart.Sum(c => c.LineTotal);
+        TotalText.Text = $"الإجمالي: {total:N2} ر.س";
+        PosSessionSummaryText.Text =
+            $"أصناف متاحة: {_products.Count} · بنود السلة: {_cart.Count} · الإجمالي: {total:N2} ر.س";
+        UiTestAutomation.PublishGridCount(CartGrid, _cart.Count);
+    }
+
+    private void OnClearCart(object sender, RoutedEventArgs e)
+    {
+        _cart.Clear();
+        UpdateTotal();
+    }
+
+    private PosPaymentMethod SelectedPayment() => PaymentCombo.SelectedIndex switch
+    {
+        1 => PosPaymentMethod.Card,
+        2 => PosPaymentMethod.Mixed,
+        _ => PosPaymentMethod.Cash,
+    };
+
+    private async void OnPay(object sender, RoutedEventArgs e)
+    {
+        if (_cart.Count == 0)
+        {
+            MessageBox.Show("السلة فارغة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (AppServices.CurrentShiftId is not long shiftId)
+        {
+            await EnsureShiftAsync();
+            shiftId = AppServices.CurrentShiftId!.Value;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var db = facade.Db;
+            var company = await db.Companies.SingleAsync(c => c.Id == AppServices.CompanyId);
+            var username = SecurityContext.ResolveUsername();
+            var payment = SelectedPayment();
+
+            var lines = _cart.Select(c => (c.ProductId, c.Quantity)).ToList();
+            var result = await facade.GetService<PosSaleService>().SellAsync(
+                AppServices.CompanyId, shiftId, null, lines,
+                company.VatRegistrationNumber.Length == 15, payment, username);
+
+            var receipt = new PosReceiptWindow(
+                result.Invoice, result.ZatcaDocument, result.ZatcaMessage, company.NameAr)
+            { Owner = Window.GetWindow(this) };
+            receipt.ShowDialog();
+
+            _cart.Clear();
+            UpdateTotal();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private async void OnPrintLast(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var invoice = await db.SalesInvoices
+                .Where(i => i.CompanyId == AppServices.CompanyId && i.PosShiftId != null)
+                .OrderByDescending(i => i.Id)
+                .FirstOrDefaultAsync();
+            if (invoice is null)
+            {
+                MessageBox.Show("لا توجد فواتير POS.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var username = SecurityContext.ResolveUsername();
+            await DocumentPrintHelper.ExportAndDeliverAsync(
+                s => s.ExportSalesInvoiceAsync(AppServices.CompanyId, invoice.Id, username),
+                Window.GetWindow(this),
+                new DocumentDeliverOptions(Preview: true, OfferSaveAs: true));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+}

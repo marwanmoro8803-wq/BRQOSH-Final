@@ -1,43 +1,97 @@
+﻿using Brqosh.Application.Accounting;
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Platform;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Accounting;
+using Brqosh.Infrastructure.Companies;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Platform;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Treasury;
 
 /// <summary>
-/// ترحيل سند القبض: رقم RV-{سنة}-{تسلسل}، القيد: صندوق/بنك (مدين) ← عملاء (دائن).
+/// ترحيل سند القبض مع تخصيص اختياري على فواتير/مستخلصات.
 /// </summary>
 public class ReceiptVoucherPostingService(BrqoshDbContext db)
 {
-    public async Task<ReceiptVoucher> PostAsync(ReceiptVoucher voucher)
-    {
-        var posting = new JournalPostingService(db);
-        await posting.EnsurePeriodOpenAsync(voucher.CompanyId, voucher.VoucherDate);
+    public Task<ReceiptVoucher> PostAsync(ReceiptVoucher voucher) =>
+        PostAsync(voucher, Array.Empty<(PaymentAllocationDocumentType, long, string, decimal)>());
 
-        var cashCode = voucher.Method == ReceiptMethod.Cash
+    public async Task<ReceiptVoucher> PostAsync(
+        ReceiptVoucher voucher,
+        IReadOnlyList<(PaymentAllocationDocumentType Type, long DocumentId, string Number, decimal Amount)> allocations)
+    {
+        SecurityContext.EnsureCanPostAccounting();
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
+        {
+            if (voucher.BranchId is null)
+                voucher.AssignBranch(await new BranchAssignmentService(db)
+                .ResolveBranchIdAsync(voucher.CompanyId, BranchSessionContext.PreferredBranchId, ct));
+
+            await FinancialPostingSupport.ValidateAsync(
+                db, voucher.CompanyId, voucher.VoucherDate, PostingDocumentKind.ReceiptVoucher, ct: ct);
+
+            if (allocations.Count > 0)
+            {
+                var sum = allocations.Sum(a => a.Amount);
+                if (Math.Abs(sum - voucher.Amount) > 0.01m)
+                    throw new AccountingException(
+                        $"مجموع التخصيصات {sum:N2} يجب أن يساوي مبلغ السند {voucher.Amount:N2}.");
+            }
+
+            var cashOrBank = await ResolveCashOrBankAccountAsync(voucher.CompanyId, voucher.Method, voucher.BankAccountId);
+            var receivable = await db.Accounts.SingleAsync(a =>
+                a.CompanyId == voucher.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsReceivable, ct);
+
+            var voucherNumber = await DocumentNumberGenerator.NextAsync(
+                db.ReceiptVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
+                "RV", voucher.VoucherDate.Year);
+
+            var entry = voucher.Post(voucherNumber, cashOrBank, receivable);
+            var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);
+            entry.Post(entryNumber);
+
+            db.JournalEntries.Add(entry);
+            db.ReceiptVouchers.Add(voucher);
+            await db.SaveChangesAsync(ct);
+
+            voucher.LinkJournalEntry(entry.Id);
+            await db.SaveChangesAsync(ct);
+
+            if (allocations.Count > 0)
+            {
+                await new PaymentAllocationService(db).ApplyReceiptAllocationsAsync(
+                    voucher.CompanyId, voucher.Id, voucher.VoucherDate, allocations, ct);
+                await db.SaveChangesAsync(ct);
+            }
+
+            await DomainEventHub.PublishAsync(new DocumentPostedEvent(
+                voucher.CompanyId, "ReceiptVoucher", voucher.Id, voucher.VoucherNumber!), ct);
+            await DomainEventHub.PublishAsync(new JournalEntryPostedEvent(
+                voucher.CompanyId, entry.Id, entry.EntryNumber!, voucher.VoucherDate), ct);
+
+            await FinancialPostingSupport.AuditPostAsync(
+                db, voucher.CompanyId, "ReceiptVoucher", voucher.VoucherNumber!,
+                reason: "ترحيل سند قبض", ct: ct);
+
+            return voucher;
+        });
+    }
+
+    private async Task<Account> ResolveCashOrBankAccountAsync(long companyId, ReceiptMethod method, long? bankAccountId)
+    {
+        if (method == ReceiptMethod.Bank && bankAccountId is long bankId)
+        {
+            var bank = await db.BankAccounts.SingleAsync(b => b.CompanyId == companyId && b.Id == bankId && b.IsActive);
+            return await db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId);
+        }
+
+        var cashCode = method == ReceiptMethod.Cash
             ? SaudiChartOfAccounts.SystemCodes.CashOnHand
             : SaudiChartOfAccounts.SystemCodes.CashAtBanks;
 
-        var cashOrBank = await db.Accounts.SingleAsync(a => a.CompanyId == voucher.CompanyId && a.Code == cashCode);
-        var receivable = await db.Accounts.SingleAsync(a =>
-            a.CompanyId == voucher.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsReceivable);
-
-        var voucherNumber = await DocumentNumberGenerator.NextAsync(
-            db.ReceiptVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
-            "RV", voucher.VoucherDate.Year);
-
-        var entry = voucher.Post(voucherNumber, cashOrBank, receivable);
-        var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);
-        entry.Post(entryNumber);
-
-        db.JournalEntries.Add(entry);
-        db.ReceiptVouchers.Add(voucher);
-        await db.SaveChangesAsync();
-
-        voucher.LinkJournalEntry(entry.Id);
-        await db.SaveChangesAsync();
-        return voucher;
+        return await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == cashCode);
     }
 }

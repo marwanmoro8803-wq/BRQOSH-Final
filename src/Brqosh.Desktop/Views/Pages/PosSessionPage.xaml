@@ -1,0 +1,81 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PosSessionPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="جلسة نقطة البيع" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="بحث أصناف · سلة · دفع · طباعة"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,0,0,12">
+            <DockPanel>
+                <TextBlock x:Name="ShiftText" FontSize="14" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="360"
+                         DockPanel.Dock="Left" TextChanged="OnSearchChanged" KeyDown="OnSearchKeyDown"
+                         ToolTip="بحث بالاسم أو الكود أو الباركود — Enter لإضافة للسلة"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource AlertStrip}" Margin="0,0,0,12" Padding="16,10">
+            <TextBlock x:Name="PosSessionSummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}" Margin="0,0,0,12" MaxHeight="180">
+            <DataGrid x:Name="ProductGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34"
+                      MouseDoubleClick="OnProductDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="100"/>
+                    <DataGridTextColumn Header="الصنف" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="السعر" Binding="{Binding SalePrice, StringFormat=N2}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <Border Grid.Row="4" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="CartGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الصنف" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="90"/>
+                    <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice, StringFormat=N2}" Width="100"/>
+                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <Border Grid.Row="5" Style="{StaticResource ToolbarCard}" Margin="0,12,0,0">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button x:Name="PayBtn" Content="دفع" Style="{StaticResource PrimaryButton}" Padding="28,10" Click="OnPay"/>
+                    <Button Content="طباعة آخر فاتورة" Style="{StaticResource SecondaryButton}" Padding="18,10" Margin="12,0,0,0" Click="OnPrintLast"/>
+                    <Button x:Name="ClearCartBtn" Content="إفراغ السلة" Style="{StaticResource SoftDangerButton}" Padding="18,10" Margin="8,0,0,0" Click="OnClearCart"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="طريقة الدفع" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="PaymentCombo" Width="120" Padding="8,6">
+                        <ComboBoxItem Content="نقداً"/>
+                        <ComboBoxItem Content="بطاقة"/>
+                        <ComboBoxItem Content="مختلط"/>
+                    </ComboBox>
+                </StackPanel>
+                <TextBlock x:Name="TotalText" FontSize="22" FontWeight="Bold"
+                           DockPanel.Dock="Right" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

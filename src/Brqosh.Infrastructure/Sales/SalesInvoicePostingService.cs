@@ -1,57 +1,227 @@
+﻿using Brqosh.Application.Accounting;
 using Brqosh.Domain.Accounting;
+
+using Brqosh.Domain.Inventory;
+
+using Brqosh.Domain.Retail;
+
 using Brqosh.Domain.Sales;
+
+using Brqosh.Domain.Zatca;
+
 using Brqosh.Infrastructure.Accounting;
+
+using Brqosh.Infrastructure.Companies;
+
+using Brqosh.Infrastructure.Inventory;
+
+using Brqosh.Domain.Platform;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Platform;
+using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
+
 using Microsoft.EntityFrameworkCore;
+
+
 
 namespace Brqosh.Infrastructure.Sales;
 
+
+
 /// <summary>
-/// ترحيل فاتورة المبيعات: رقم تسلسلي INV-{سنة}-{تسلسل}، قيد آلي على الحسابات النظامية،
-/// وحفظ الفاتورة والقيد في معاملة واحدة.
+
+/// ترحيل فاتورة المبيعات: قيد إيراد + ضريبة، وتكلفة مبيعات + صرف مخزون للأصناف المخزنية.
+
 /// </summary>
+
 public class SalesInvoicePostingService(BrqoshDbContext db)
+
 {
+
     public async Task<SalesInvoice> PostAsync(SalesInvoice invoice)
     {
-        var posting = new JournalPostingService(db);
-        await posting.EnsurePeriodOpenAsync(invoice.CompanyId, invoice.InvoiceDate);
+        SecurityContext.EnsureCanPost();
+        await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
+        {
+            await PostCoreAsync(invoice, ct);
+            await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
+                db, invoice.CompanyId,
+                () => new ZatcaEInvoiceGenerator(db).TryGenerateForSalesInvoiceAsync(invoice.Id),
+                ct);
+            return invoice;
+        });
 
-        var receivable = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsReceivable);
+        await ZatcaPostingOrchestrator.SubmitAfterCommitAsync(
+            db, invoice.CompanyId, ZatcaDocumentType.SalesInvoice, invoice.Id);
+
+        return invoice;
+    }
+
+    internal async Task PostCoreAsync(SalesInvoice invoice, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanPost();
+
+        if (invoice.BranchId is null)
+            invoice.AssignBranch(await new BranchAssignmentService(db)
+                .ResolveBranchIdAsync(invoice.CompanyId, BranchSessionContext.PreferredBranchId, ct));
+
+        var posting = new JournalPostingService(db);
+        await FinancialPostingSupport.ValidateAsync(
+            db, invoice.CompanyId, invoice.InvoiceDate, PostingDocumentKind.SalesInvoice,
+            documentKey: invoice.InvoiceNumber);
+
+        var inv = new InventoryService(db);
+
+
+
+        var products = await inv.LoadProductsForLinesAsync(invoice.CompanyId, invoice.Lines.Select(l => l.ProductId));
+
+        var stockLines = invoice.Lines
+
+            .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
+
+            .Select(l => (l.ProductId!.Value, l.Quantity))
+
+            .ToList();
+
+
+
+        decimal cogsAmount = 0;
+        var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+        var costing = new InventoryCostingService(db);
+        var warehouse = await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
+
+        foreach (var (productId, qty) in stockLines)
+        {
+            var onHand = await inv.GetOnHandAsync(invoice.CompanyId, productId, warehouse.Id);
+            if (qty > onHand)
+            {
+                var p = products[productId];
+                throw new AccountingException(
+                    $"رصيد '{p.NameAr}' غير كافٍ للبيع — المتوفر {onHand:N2}.");
+            }
+
+            var (totalCost, unitCost) = await costing.ConsumeForIssueAsync(
+                invoice.CompanyId, productId, warehouse.Id, qty, ct);
+            cogsAmount += totalCost;
+            issueLines.Add((productId, qty, unitCost));
+        }
+
+        var receivable = await DebitAccountForSaleAsync(invoice);
         var revenue = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.SalesRevenue);
         var vatOutput = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.VatOutput);
+        Account? cogs = cogsAmount > 0
+            ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.CostOfGoodsSold)
+            : null;
+        Account? inventory = cogsAmount > 0
+            ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
+            : null;
 
         var invoiceNumber = await NextInvoiceNumberAsync(invoice.CompanyId, invoice.InvoiceDate);
-        var entry = invoice.Post(invoiceNumber, receivable, revenue, vatOutput);
+        var entry = invoice.Post(invoiceNumber, receivable, revenue, vatOutput, cogsAmount, cogs, inventory);
 
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
         entry.Post(entryNumber);
 
         db.JournalEntries.Add(entry);
         db.SalesInvoices.Add(invoice);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
 
         invoice.LinkJournalEntry(entry.Id);
-        await db.SaveChangesAsync();
-        return invoice;
+        await db.SaveChangesAsync(ct);
+
+        await DomainEventHub.PublishAsync(new DocumentPostedEvent(
+            invoice.CompanyId, "SalesInvoice", invoice.Id, invoice.InvoiceNumber!), ct);
+        await DomainEventHub.PublishAsync(new JournalEntryPostedEvent(
+            invoice.CompanyId, entry.Id, entry.EntryNumber!, invoice.InvoiceDate), ct);
+
+        await FinancialPostingSupport.AuditPostAsync(
+            db, invoice.CompanyId, "SalesInvoice", invoice.InvoiceNumber!,
+            reason: "ترحيل فاتورة مبيعات", ct: ct);
+
+        if (issueLines.Count > 0)
+        {
+            await inv.PostDocumentMovementAsync(invoice.CompanyId, warehouse.Id,
+                StockMovementType.Issue, invoice.InvoiceDate,
+                $"صرف من فاتورة مبيعات {invoiceNumber}",
+                $"SalesInvoice:{invoiceNumber}", issueLines);
+            await db.SaveChangesAsync(ct);
+        }
     }
+
+
+
+    private async Task<Account> DebitAccountForSaleAsync(SalesInvoice invoice)
+
+    {
+
+        // بيع POS نقدي/بطاقة — يُقيَّد على الصندوق/البنك مباشرة لا على ذمم العملاء
+
+        if (invoice.PosShiftId is not null && invoice.PosPaymentMethod is { } method)
+
+        {
+
+            var code = method switch
+
+            {
+
+                PosPaymentMethod.Card => SaudiChartOfAccounts.SystemCodes.CashAtBanks,
+
+                PosPaymentMethod.Mixed => SaudiChartOfAccounts.SystemCodes.CashOnHand,
+
+                _ => SaudiChartOfAccounts.SystemCodes.CashOnHand,
+
+            };
+
+            return await SystemAccountAsync(invoice.CompanyId, code);
+
+        }
+
+
+
+        return await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsReceivable);
+
+    }
+
+
 
     private async Task<Account> SystemAccountAsync(long companyId, string code) =>
+
         await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code)
-        ?? throw new AccountingException($"الحساب النظامي {code} غير موجود — دليل الحسابات غير مكتمل.");
+
+        ?? throw new AccountingException($"الحساب النظامي {code} غير موجود.");
+
+
 
     private async Task<string> NextInvoiceNumberAsync(long companyId, DateOnly date)
+
     {
+
         var prefix = $"INV-{date.Year}-";
+
         var last = await db.SalesInvoices
+
             .Where(i => i.CompanyId == companyId && i.InvoiceNumber != null && i.InvoiceNumber.StartsWith(prefix))
+
             .OrderByDescending(i => i.InvoiceNumber)
+
             .Select(i => i.InvoiceNumber)
+
             .FirstOrDefaultAsync();
 
+
+
         var next = 1;
+
         if (last is not null && int.TryParse(last[prefix.Length..], out var seq))
+
             next = seq + 1;
+
         return $"{prefix}{next:D6}";
+
     }
+
 }
+
+

@@ -1,0 +1,21 @@
+{
+  "id": "saudi-arabia",
+  "nameAr": "المملكة العربية السعودية",
+  "nameEn": "Saudi Arabia",
+  "isoCountryCode": "SA",
+  "currency": {
+    "base": "SAR",
+    "functional": "SAR"
+  },
+  "vat": {
+    "standardRate": 0.15,
+    "registrationDigits": 15
+  },
+  "compliance": ["VAT", "ZATCA", "SOCPA", "GOSI"],
+  "chartOfAccounts": "saudi",
+  "zatca": {
+    "enabled": true,
+    "defaultEnvironment": "Simulation",
+    "apiBaseUrl": "https://gw-fatoora.zatca.gov.sa/e-invoicing/developer-portal"
+  }
+}

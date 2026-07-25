@@ -1,0 +1,72 @@
+# BRQOSH — Analysis Closure & Shura Council Law v1
+
+**Cloud Code:** `docs/CLOUD-CODE-AGENT-GUIDE.md` · Fable: `claude-fable-5/tri-source-index.yaml`
+
+> **Protocol:** `.cursor/skills/brqosh-analysis/shura-council-protocol.md`  
+> **Memory:** `docs/PROJECT-MEMORY.yaml` · `type: decision`  
+> **Learning:** `R-DECISION` in `LEARNING-INDEX.yaml`
+
+---
+
+## When This Rule Activates
+
+User or agent completes **substantive analysis**: live UI audit · market gap · security review · launch readiness · «تحليل شامل» · «مجلس شورى».
+
+---
+
+## Mandatory Pipeline
+
+```
+ANALYZE (evidence) → SAVE (CEEF/MEM) → SHURA COUNCIL → CONSENSUS → ACTION PLAN → VERIFY → MEM
+```
+
+| Step | Required artifact |
+|------|-------------------|
+| SAVE | `تقارير/CEEF-*.md` + `dist/evidence/` |
+| SHURA | `dist/evidence/shura-council/council-*.md` + JSON (من `run-shura-council.ps1`) |
+| CONSENSUS | P0→P3 table with verify command per row |
+| MEM | `MEM-NNN` links to both CEEF files |
+
+**Forbidden:** present «final decision» to user without SAVE + **agent** runs `run-shura-council.ps1` exit 0 (user never runs it).
+
+**Law:** `.cursor/rules/brqosh-shura-auto.mdc` · **Intelligence:** `brqosh-agents/council-intelligence-matrix.md`
+
+---
+
+## Shura Council (12 seats)
+
+Use roles **S01–S12** from `shura-council-protocol.md`.  
+**Consensus bar:** ≥9 approve/conditional · ≤1 reject on any P0 item.
+
+**Tie-break:** Security > Financial > Verify > Architecture > Product > UX (same as `routing.md`).
+
+---
+
+## Closure Levels (repeat in consensus)
+
+| Level | Claim allowed |
+|-------|---------------|
+| ✅ Code | build PASS |
+| ✅ Test | dotnet test PASS |
+| ✅ Live | FlaUI / manual evidence path |
+| ⏭ External | `docs/OPEN_ITEMS.md` only |
+
+Never mix ⏭ into ✅.
+
+---
+
+## Agent Checklist (end of analysis session)
+
+- [ ] Source CEEF saved with evidence paths
+- [ ] `run-shura-council.ps1` exit 0 + evidence in `dist/evidence/shura-council/`
+- [ ] Consensus sentence + P0→P3 plan
+- [ ] MEM row appended
+- [ ] User sees decision + actions (not raw council theatre)
+
+---
+
+## References
+
+- `brqosh-analysis/shura-council-protocol.md`
+- `brqosh-agents/dream-team.md`
+- `brqosh-closure/SKILL.md`

@@ -1,8 +1,11 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using Brqosh.Domain.Accounting;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Security;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -13,7 +16,14 @@ public partial class ChartOfAccountsPage : UserControl
     public ChartOfAccountsPage()
     {
         InitializeComponent();
-        Loaded += async (_, _) => await ReloadAsync();
+        Loaded += async (_, _) =>
+        {
+            PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
+                (AddAccountBtn, PermissionService.CanPostAccounting),
+                (EditBtn, PermissionService.CanPostAccounting),
+                (DeactivateBtn, PermissionService.CanPostAccounting));
+            await ReloadAsync();
+        };
     }
 
     private async Task ReloadAsync()
@@ -24,6 +34,9 @@ public partial class ChartOfAccountsPage : UserControl
             .OrderBy(a => a.Code)
             .ToListAsync();
         RenderTree(SearchBox.Text.Trim());
+        var active = _accounts.Count(a => a.IsActive);
+        CoaSummaryText.Text =
+            $"حسابات: {_accounts.Count:N0} · نشطة: {active:N0} · معروض: {AccountsTree.Items.Count:N0}";
     }
 
     private void RenderTree(string filter)
@@ -34,7 +47,6 @@ public partial class ChartOfAccountsPage : UserControl
             ? _accounts
             : _accounts.Where(a => a.Code.Contains(filter) || a.NameAr.Contains(filter)).ToList();
 
-        // عند البحث تُعرض قائمة مسطحة؛ وبدونه تُعرض الشجرة الكاملة
         if (!string.IsNullOrEmpty(filter))
         {
             foreach (var account in visible)
@@ -90,13 +102,58 @@ public partial class ChartOfAccountsPage : UserControl
         },
     };
 
+    private Account? SelectedAccount =>
+        (AccountsTree.SelectedItem as TreeViewItem)?.Tag as Account;
+
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => RenderTree(SearchBox.Text.Trim());
 
     private async void OnAddAccount(object sender, RoutedEventArgs e)
     {
-        var parent = (AccountsTree.SelectedItem as TreeViewItem)?.Tag as Account;
+        var parent = SelectedAccount;
         var dialog = new AccountDialog(_accounts, parent) { Owner = Window.GetWindow(this) };
         if (dialog.ShowDialog() == true)
             await ReloadAsync();
+    }
+
+    private async void OnEdit(object sender, RoutedEventArgs e)
+    {
+        var account = SelectedAccount;
+        if (account is null)
+        {
+            MessageBox.Show("اختر حساباً من الشجرة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var dialog = AccountDialog.ForEdit(_accounts, account);
+        dialog.Owner = Window.GetWindow(this);
+        if (dialog.ShowDialog() == true)
+            await ReloadAsync();
+    }
+
+    private async void OnDeactivate(object sender, RoutedEventArgs e)
+    {
+        var account = SelectedAccount;
+        if (account is null)
+        {
+            MessageBox.Show("اختر حساباً من الشجرة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (MessageBox.Show($"إيقاف الحساب {account.Code} — {account.NameAr}؟", "BRQOSH",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var entity = await db.Accounts.SingleAsync(a => a.Id == account.Id);
+            entity.Deactivate();
+            await db.SaveChangesAsync();
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
     }
 }

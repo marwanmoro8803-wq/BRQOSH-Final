@@ -7,13 +7,22 @@ namespace Brqosh.Infrastructure.Persistence;
 /// </summary>
 public static class DocumentNumberGenerator
 {
-    public static async Task<string> NextAsync(IQueryable<string?> existingNumbers, string prefix, int year)
+    public static Task<string> NextAsync(IQueryable<string?> existingNumbers, string prefix, int year) =>
+        NextAsync(existingNumbers, prefix, year, []);
+
+    public static async Task<string> NextAsync(
+        IQueryable<string?> existingNumbers,
+        string prefix,
+        int year,
+        IEnumerable<string?> extraNumbers)
     {
         var fullPrefix = $"{prefix}-{year}-";
-        var last = await existingNumbers
-            .Where(n => n != null && n.StartsWith(fullPrefix))
+        var last = (await existingNumbers
+                .Where(n => n != null && n.StartsWith(fullPrefix))
+                .ToListAsync())
+            .Concat(extraNumbers.Where(n => n != null && n.StartsWith(fullPrefix)))
             .OrderByDescending(n => n)
-            .FirstOrDefaultAsync();
+            .FirstOrDefault();
 
         var next = 1;
         if (last is not null && int.TryParse(last[fullPrefix.Length..], out var seq))

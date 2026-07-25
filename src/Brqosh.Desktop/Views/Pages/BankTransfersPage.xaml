@@ -1,0 +1,55 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.BankTransfersPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft"
+             FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="التحويلات البنكية" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="تحويل بين حسابات بنكية · ترحيل قيد تلقائي"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="NewTransferBtn" Content="＋ تحويل بنكي" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnNewTransfer"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button Content="عرض القيد" Padding="16,9" DockPanel.Dock="Right" Click="OnViewJournal"/>
+                <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
+                        CornerRadius="20" Padding="12,5" VerticalAlignment="Center">
+                    <TextBlock x:Name="CountText" FontSize="12.5" FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                </Border>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="TransfersGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      BorderThickness="0" Background="Transparent"
+                      MouseDoubleClick="OnGridDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم القيد" Binding="{Binding EntryNumber}" Width="130"/>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding EntryDate}" Width="110"/>
+                    <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTextColumn Header="مدين" Binding="{Binding TotalDebit, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="دائن" Binding="{Binding TotalCredit, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="المرجع" Binding="{Binding SourceDocument}" Width="180"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,123 @@
+# BRQOSH Desktop Omni-Audit — configuration
+# Aligns with tools/UiAudit + NavigationCatalog
+
+repo_root: "../../"
+desktop_project: "src/Brqosh.Desktop/Brqosh.Desktop.csproj"
+desktop_source: "src/Brqosh.Desktop"
+full_scenario_audit: "tools/FullScenarioAudit/FullScenarioAudit.csproj"
+
+app:
+  process_name: "Brqosh.Desktop"
+  window_title_login: "تسجيل الدخول"
+  window_title_main: "BRQOSH ERP"
+  exe_candidates:
+    - "src/Brqosh.Desktop/bin/Release/net9.0-windows/Brqosh.Desktop.exe"
+    - "src/Brqosh.Desktop/bin/Debug/net9.0-windows/Brqosh.Desktop.exe"
+  env:
+    BRQOSH_UITEST: "1"
+    BRQOSH_TEST: "1"
+
+credentials:
+  username_env: "BRQOSH_TEST_USERNAME"
+  password_env: "BRQOSH_TEST_PASSWORD"
+  default_username: "marwan"
+  default_password: "UiAudit9!"
+
+audit:
+  profile: "Manufacturing"
+  profiles_all: false
+  seed_data: true
+  navigate_all_pages: true
+  payload_injection: true
+  payloads_per_field: 10
+  screenshot_every_step: true
+  max_nav_pages: 0  # 0 = unlimited (all from NavigationCatalog)
+  interaction_delay_ms: 800
+  login_timeout_sec: 120
+  page_timeout_sec: 45
+
+automation:
+  backend: "uia"  # pywinauto UIA — Windows WPF
+  ocr_enabled: true
+  ocr_lang: "ara+eng"
+
+output:
+  base_dir: "output"
+  screenshots_dir: "output/screenshots"
+  logs_dir: "output/logs"
+  ui_map_file: "output/ui_map.json"
+  audit_report: "output/AUDIT_REPORT.md"
+  crisis_log: "output/logs/crisis.jsonl"
+
+# Navigation pages (Arabic titles) — mirrors NavigationCatalog + PageAuditCatalog
+navigation_pages:
+  - "لوحة التحكم"
+  - "دليل الحسابات"
+  - "القيود اليومية"
+  - "مراكز التكلفة"
+  - "الفترات المالية"
+  - "المشاريع"
+  - "العقود"
+  - "جداول الكميات (BOQ)"
+  - "المستخلصات"
+  - "مقاولو الباطن"
+  - "المحتجزات"
+  - "ربحية المشاريع"
+  - "قوائم المواد (BOM)"
+  - "أوامر الإنتاج"
+  - "أعمال تحت التشغيل"
+  - "شاشة البيع"
+  - "الورديات"
+  - "تقارير نقاط البيع"
+  - "العملاء"
+  - "كشف حساب عميل"
+  - "عروض الأسعار"
+  - "أوامر البيع"
+  - "فواتير المبيعات"
+  - "مردودات المبيعات"
+  - "العملاء المحتملون"
+  - "فرص البيع"
+  - "أنشطة CRM"
+  - "الموردون"
+  - "كشف حساب مورد"
+  - "طلبات الشراء"
+  - "أوامر الشراء"
+  - "أذونات استلام البضاعة"
+  - "فواتير المشتريات"
+  - "إشعارات المدين (مشتريات)"
+  - "الأصناف والمنتجات"
+  - "المستودعات"
+  - "حركات المخزون"
+  - "الجرد"
+  - "التكلفة الإضافية"
+  - "سندات القبض"
+  - "سندات الصرف"
+  - "الحسابات البنكية"
+  - "التحويلات البنكية"
+  - "أسعار الصرف"
+  - "الشيكات"
+  - "التسوية البنكية"
+  - "سجل الفواتير الإلكترونية"
+  - "إعدادات هيئة الزكاة"
+  - "ميزان المراجعة"
+  - "قائمة الدخل"
+  - "قائمة المركز المالي"
+  - "قائمة التدفقات النقدية"
+  - "ميزان مراجعة موحّد"
+  - "قائمة دخل موحّدة"
+  - "مركز مالي موحّد"
+  - "إزالة المعاملات بين الشركات"
+  - "إقرار ضريبة القيمة المضافة"
+  - "دفتر الأستاذ العام"
+  - "سجل الأصول"
+  - "دورات الرواتب"
+  - "إعدادات المنشأة"
+  - "المنشآت"
+  - "مجموعات الشركات"
+  - "الفروع"
+  - "المستخدمون"
+  - "سجل التدقيق"
+  - "جودة البيانات"
+  - "أحداث المنصة"
+  - "دعم العملاء"
+  - "الباقات والتسعير"

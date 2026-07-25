@@ -1,0 +1,33 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.OrganizationsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <Button x:Name="ProvisionBtn" DockPanel.Dock="Right" Content="＋ منشأة جديدة"
+                        Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnProvision"/>
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="المنشآت" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}" Text="قائمة الشركات النشطة — G-69-C"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Margin="0,12,0,0">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      MouseDoubleClick="OnSwitch">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="المعرّف" Binding="{Binding Id}" Width="80"/>
+                    <DataGridTextColumn Header="الاسم" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="القطاع" Binding="{Binding ProfileLabel}" Width="140"/>
+                    <DataGridTextColumn Header="الرقم الضريبي" Binding="{Binding VatNumber}" Width="150"/>
+                    <DataGridTextColumn Header="الوضع" Binding="{Binding ModeLabel}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

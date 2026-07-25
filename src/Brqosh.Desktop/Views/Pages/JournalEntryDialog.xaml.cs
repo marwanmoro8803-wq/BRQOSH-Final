@@ -10,10 +10,13 @@ namespace Brqosh.Desktop.Views.Pages;
 public partial class JournalEntryDialog : Window
 {
     public record AccountOption(long Id, string Display);
+    public record CostCenterOption(long Id, string Display);
+    public record CompanyOption(long Id, string Display);
 
     public class LineRow
     {
         public long? AccountId { get; set; }
+        public long? CostCenterId { get; set; }
         public string? Description { get; set; }
         public decimal Debit { get; set; }
         public decimal Credit { get; set; }
@@ -21,13 +24,58 @@ public partial class JournalEntryDialog : Window
 
     private readonly ObservableCollection<LineRow> _rows = [];
     private List<Account> _postableAccounts = [];
+    private List<Domain.Accounting.CostCenter> _costCenters = [];
 
     public JournalEntryDialog()
     {
         InitializeComponent();
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
-        Loaded += async (_, _) => await LoadAccountsAsync();
+        Loaded += async (_, _) =>
+        {
+            await LoadAccountsAsync();
+            await LoadCostCentersAsync();
+            await LoadCounterpartyCompaniesAsync();
+        };
+    }
+
+    private async Task LoadCounterpartyCompaniesAsync()
+    {
+        await using var db = AppServices.CreateDb();
+        var company = await db.Companies.AsNoTracking()
+            .SingleAsync(c => c.Id == AppServices.CompanyId);
+        if (company.CompanyGroupId is null)
+            return;
+
+        var sisters = await db.Companies.AsNoTracking()
+            .Where(c => c.CompanyGroupId == company.CompanyGroupId && c.Id != AppServices.CompanyId)
+            .OrderBy(c => c.NameAr)
+            .Select(c => new CompanyOption(c.Id, c.NameAr))
+            .ToListAsync();
+        if (sisters.Count == 0)
+            return;
+
+        CounterpartyCombo.ItemsSource = sisters;
+        CounterpartyCombo.SelectedIndex = 0;
+        IntercompanyPanel.Visibility = Visibility.Visible;
+    }
+
+    private void OnIntercompanyToggled(object sender, RoutedEventArgs e)
+    {
+        CounterpartyCombo.IsEnabled = IntercompanyCheck.IsChecked == true;
+    }
+
+    private async Task LoadCostCentersAsync()
+    {
+        await using var db = AppServices.CreateDb();
+        _costCenters = await db.CostCenters
+            .Where(c => c.CompanyId == AppServices.CompanyId && c.IsActive)
+            .OrderBy(c => c.Code)
+            .ToListAsync();
+
+        CostCenterColumn.ItemsSource = _costCenters
+            .Select(c => new CostCenterOption(c.Id, $"{c.Code} — {c.NameAr}"))
+            .ToList();
     }
 
     private async Task LoadAccountsAsync()
@@ -85,17 +133,23 @@ public partial class JournalEntryDialog : Window
             {
                 if (row.AccountId is null || !accountById.TryGetValue(row.AccountId.Value, out var account))
                     throw new AccountingException("اختر الحساب لكل سطر في القيد.");
-                entry.AddLine(account, row.Debit, row.Credit, row.Description);
+                entry.AddLine(account, row.Debit, row.Credit, row.Description, row.CostCenterId);
             }
 
-            await using var db = AppServices.CreateDb();
-            // بوابة الترحيل الموحدة: تتحقق من الفترة المالية وتمنح الرقم التسلسلي
-            await new Brqosh.Infrastructure.Accounting.JournalPostingService(db).PostAsync(entry);
+            if (IntercompanyCheck.IsChecked == true)
+            {
+                if (CounterpartyCombo.SelectedValue is not long counterpartyId)
+                    throw new AccountingException("اختر الشركة المقابلة للمعاملة بين الشركات.");
+                entry.MarkIntercompany(counterpartyId);
+            }
+
+            using var facade = new DesktopAccountingFacade();
+            await facade.PostJournalEntryAsync(entry);
 
             DialogResult = true;
             Close();
         }
-        catch (AccountingException ex)
+        catch (Exception ex)
         {
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;
