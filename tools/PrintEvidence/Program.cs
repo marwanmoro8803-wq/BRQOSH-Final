@@ -173,7 +173,14 @@ await TryExport("04-journal-entry.pdf", "قيد يوميّة", async () =>
 // ── 2ب. عيّنة تخطيط بتاريخ لا يلتبس ─────────────────────────────────────
 // 2026-03-14: اليوم ≠ الشهر ≠ السنة، فأيّ إعادة ترتيب ثنائية الاتجاه تنكشف فوراً.
 // تُولَّد بلا قاعدة بيانات — غرضها فحص التخطيط لا البيانات.
-var sampleBranding = new PrintBranding("منشأة العيّنة", "310123456700003");
+// شعار العيّنة: علامة نصّية مولَّدة برمجياً بخلفية شفافة — لإثبات أن الترويسة
+// تعرض الشعار فعلاً. ليست هوية بصرية لأيّ منشأة.
+var sampleLogo = BuildSampleLogoPng();
+var sampleBranding = new PrintBranding(
+    "منشأة العيّنة", "310123456700003",
+    CompanyNameEn: "Sample Establishment",
+    AddressAr: "الرياض · حي الملقا · ص.ب 12345",
+    LogoImageBytes: sampleLogo);
 var samplePdf = SalesInvoicePdfGenerator.Generate(
     sampleBranding,
     "INV-SAMPLE-014",
@@ -308,4 +315,81 @@ static (DatabaseProvider, string) ResolveConnection()
     }
 
     return (DatabaseProvider.Sqlite, "Data Source=" + BrqoshDbContextFactory.DefaultSqlitePath());
+}
+
+/// <summary>يبني PNG صغيراً بخلفية شفافة — دائرة داكنة وحرف — لإثبات ظهور الشعار.</summary>
+static byte[] BuildSampleLogoPng()
+{
+    const int size = 128;
+    var px = new byte[size * size * 4];
+    var cx = size / 2.0; var cy = size / 2.0; var r = size * 0.46;
+
+    for (var y = 0; y < size; y++)
+    {
+        for (var x = 0; x < size; x++)
+        {
+            var i = (y * size + x) * 4;
+            var d = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+            var inRing = d <= r && d >= r * 0.72;
+            var inBar = Math.Abs(x - cx) < size * 0.06 && Math.Abs(y - cy) < r * 0.55;
+            if (inRing || inBar)
+            {
+                px[i] = 0x66; px[i + 1] = 0x48; px[i + 2] = 0x0D;  // BGRA — أخضر مزرقّ داكن
+                px[i + 3] = 255;
+            }
+        }
+    }
+    return EncodePng(px, size, size);
+}
+
+/// <summary>ترميز PNG بلا تبعية: رأس + IHDR + IDAT (Deflate) + IEND.</summary>
+static byte[] EncodePng(byte[] bgra, int w, int h)
+{
+    var raw = new byte[h * (1 + w * 4)];
+    for (var y = 0; y < h; y++)
+    {
+        raw[y * (1 + w * 4)] = 0;                     // مرشّح None
+        for (var x = 0; x < w; x++)
+        {
+            var s = (y * w + x) * 4;
+            var d = y * (1 + w * 4) + 1 + x * 4;
+            raw[d] = bgra[s + 2]; raw[d + 1] = bgra[s + 1]; raw[d + 2] = bgra[s]; raw[d + 3] = bgra[s + 3];
+        }
+    }
+
+    using var idat = new MemoryStream();
+    using (var z = new System.IO.Compression.ZLibStream(idat, System.IO.Compression.CompressionLevel.Optimal, true))
+        z.Write(raw, 0, raw.Length);
+
+    using var ms = new MemoryStream();
+    ms.Write([0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+
+    var ihdr = new byte[13];
+    BitConverter.GetBytes(System.Net.IPAddress.HostToNetworkOrder(w)).CopyTo(ihdr, 0);
+    BitConverter.GetBytes(System.Net.IPAddress.HostToNetworkOrder(h)).CopyTo(ihdr, 4);
+    ihdr[8] = 8; ihdr[9] = 6;   // 8 بت لكل قناة · RGBA
+    WriteChunk(ms, "IHDR", ihdr);
+    WriteChunk(ms, "IDAT", idat.ToArray());
+    WriteChunk(ms, "IEND", []);
+    return ms.ToArray();
+
+    static void WriteChunk(MemoryStream target, string type, byte[] data)
+    {
+        target.Write(BitConverter.GetBytes(System.Net.IPAddress.HostToNetworkOrder(data.Length)));
+        var body = Encoding.ASCII.GetBytes(type).Concat(data).ToArray();
+        target.Write(body);
+        target.Write(BitConverter.GetBytes(System.Net.IPAddress.HostToNetworkOrder((int)Crc32(body))));
+    }
+
+    static uint Crc32(byte[] bytes)
+    {
+        uint crc = 0xFFFFFFFF;
+        foreach (var b in bytes)
+        {
+            crc ^= b;
+            for (var i = 0; i < 8; i++)
+                crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320 : crc >> 1;
+        }
+        return crc ^ 0xFFFFFFFF;
+    }
 }

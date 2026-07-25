@@ -18,6 +18,7 @@ MergeGlossary(glossary, overridesPath);
 glossary.Remove("_comment");
 glossary.Remove("_comment2");
 glossary.Remove("_comment3");
+glossary.Remove("_comment4");
 
 var overrideKeys = LoadGlossary(overridesPath).Keys
     .Where(k => !k.StartsWith('_') && ContainsArabic(k))

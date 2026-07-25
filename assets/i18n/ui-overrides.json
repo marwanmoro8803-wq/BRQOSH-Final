@@ -223,5 +223,11 @@
   "قاعدة البيانات": "Database",
   "متصل": "Connected",
   "غير متصل": "Disconnected",
-  "خطأ اتصال": "Connection error"
+  "خطأ اتصال": "Connection error",
+  "_comment4": "(CEEF-227) نصوص ميزة شفافية الشعار.",
+  "تفريغ خلفية الشعار (شفافة)": "Remove logo background (transparent)",
+  "يزيل لون الخلفية المتّصل بحواف الصورة ويُبقي البياض داخل الشعار.": "Removes the background colour connected to the image edges, keeping any white enclosed inside the logo.",
+  "إشعار دائن جديد": "New credit note",
+  "＋ إشعار دائن جديد": "＋ New credit note",
+  "＋ إشعار مدين مشتريات": "＋ New purchase debit note"
 }

@@ -35,6 +35,9 @@
                                 Padding="16,8" Click="OnUploadLogo"/>
                         <Button x:Name="RemoveLogoBtn" Content="إزالة الشعار" Style="{StaticResource SecondaryButton}"
                                 Padding="16,8" Margin="12,0,0,0" Click="OnRemoveLogo"/>
+                        <CheckBox x:Name="TransparentLogoBox" Content="تفريغ خلفية الشعار (شفافة)"
+                                  IsChecked="True" VerticalAlignment="Center" Margin="16,0,0,0"
+                                  ToolTip="يزيل لون الخلفية المتّصل بحواف الصورة ويُبقي البياض داخل الشعار."/>
                     </StackPanel>
 
                     <TextBlock Text="اسم المنشأة (عربي) *" Style="{StaticResource FieldLabel}"/>

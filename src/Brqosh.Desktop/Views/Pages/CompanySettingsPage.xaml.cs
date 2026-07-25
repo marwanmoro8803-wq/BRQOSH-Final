@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using Brqosh.Application.Setup;
+using Brqosh.Desktop.Ui;
 using Brqosh.Desktop.Views;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
@@ -219,7 +220,15 @@ public partial class CompanySettingsPage : UserControl
             }
             else if (!string.IsNullOrWhiteSpace(_pendingLogoSourcePath))
             {
-                var savedPath = CompanyBrandingStorage.SaveLogoFromFile(company.Id, _pendingLogoSourcePath);
+                // (CEEF-227) التفريغ اختياريّ ويفشل بأمان: إن تعذّرت المعالجة يُحفظ
+                // الأصل كما هو بدل أن يضيع الشعار.
+                var processed = TransparentLogoBox.IsChecked == true
+                    ? LogoImageProcessor.MakeBackgroundTransparent(_pendingLogoSourcePath)
+                    : null;
+
+                var savedPath = processed is { Length: > 0 }
+                    ? CompanyBrandingStorage.SaveLogoPng(company.Id, processed)
+                    : CompanyBrandingStorage.SaveLogoFromFile(company.Id, _pendingLogoSourcePath);
                 company.SetLogoFilePath(savedPath);
             }
 

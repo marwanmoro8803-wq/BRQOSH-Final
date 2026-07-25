@@ -25,9 +25,12 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var lines = invoice.Lines.Select(l =>
             new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal)).ToList();
         var branding = PrintBranding.FromCompany(company);
+        var customer = await db.Customers.SingleAsync(c => c.Id == invoice.CustomerId, ct);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: customerName,
+            PartyVatNumber: customer.VatRegistrationNumber,
+            PartyAddress: customer.Address,
             QrTlvBase64: zatca?.QrTlvBase64
                          ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.GrandTotal(), invoice.VatAmount),
             Icv: zatca?.Icv,

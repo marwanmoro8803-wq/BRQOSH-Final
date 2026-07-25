@@ -40,6 +40,27 @@ public static class CompanyBrandingStorage
     return dest;
   }
 
+  /// <summary>
+  /// (CEEF-227) حفظ شعار مُعالَج (خلفية مفرّغة) — دائماً PNG لأن الشفافية لا تُحفَظ
+  /// في JPEG. تُحذف أي نسخة سابقة بأيّ امتداد فلا يبقى ملفّان يتنازعان.
+  /// </summary>
+  public static string SaveLogoPng(long companyId, byte[] pngBytes)
+  {
+    ArgumentNullException.ThrowIfNull(pngBytes);
+    if (pngBytes.Length == 0)
+      throw new InvalidOperationException("بايتات الشعار فارغة.");
+
+    var dir = Path.Combine(BrandingRoot, companyId.ToString());
+    Directory.CreateDirectory(dir);
+
+    foreach (var existing in Directory.EnumerateFiles(dir, "logo.*"))
+      File.Delete(existing);
+
+    var dest = Path.Combine(dir, "logo.png");
+    File.WriteAllBytes(dest, pngBytes);
+    return dest;
+  }
+
   public static void RemoveLogo(string? storedPath)
   {
     if (string.IsNullOrWhiteSpace(storedPath))
