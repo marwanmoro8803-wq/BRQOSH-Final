@@ -16,7 +16,12 @@ MergeGlossary(glossary, Path.Combine(repoRoot, "assets", "i18n", "erp-glossary-e
 var overridesPath = Path.Combine(repoRoot, "assets", "i18n", "ui-overrides.json");
 MergeGlossary(glossary, overridesPath);
 glossary.Remove("_comment");
- glossary.Remove("_comment2");
+glossary.Remove("_comment2");
+glossary.Remove("_comment3");
+
+var overrideKeys = LoadGlossary(overridesPath).Keys
+    .Where(k => !k.StartsWith('_') && ContainsArabic(k))
+    .ToList();
 var navMap = ParseNavMap(Path.Combine(desktopRoot, "Navigation", "NavigationCatalog.cs"));
 var emptyMap = ParseEmptyState(Path.Combine(desktopRoot, "Ui", "EmptyStateCatalog.cs"));
 
@@ -34,6 +39,13 @@ foreach (var xaml in Directory.EnumerateFiles(desktopRoot, "*.xaml", SearchOptio
             strings.Add(s);
     }
 }
+
+// (CEEF-225) نصوص تُضبط في **الكود** لا في XAML (زرّ الثيم، تسمية الدور، نمط العمل)
+// تدخل السجلّ أيضاً. السبب: `XamlUiLocalizer` يحفظ أوّل نصّ عربيّ رآه على العنصر
+// كـ«أصل»، ثم يعيد الحلّ منه في كل مرور — فيكتب فوق ما ضبطه الكود بالإنجليزية.
+// وجود مفتاح في السجلّ يجعل المترجم نفسه يُنتج الإنجليزية بدل أن يتصارع مع الكود.
+foreach (var key in overrideKeys)
+    strings.Add(key);
 
 var registry = new Dictionary<string, string>(StringComparer.Ordinal);
 var missing = new List<string>();

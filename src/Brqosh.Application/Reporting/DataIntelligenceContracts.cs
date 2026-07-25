@@ -1,6 +1,12 @@
 namespace Brqosh.Application.Reporting;
 
-public record DataQualityFinding(string Code, string Severity, string Message);
+/// <summary>
+/// نتيجة فحص جودة بيانات. (O-26) الرسالة **ثنائية إلزامياً**: كانت إنجليزية وحيدة
+/// فتظهر بالإنجليزية داخل واجهة عربية بالكامل — وهي ظاهرة في لوحة التحكم
+/// («جودة بيانات: BRANCH_HQ_MISSING · Company has no active headquarters branch»).
+/// بلا قيمة افتراضية: حقلٌ إلزاميّ لا يُنسى، والمترجم هو الحارس.
+/// </summary>
+public record DataQualityFinding(string Code, string Severity, string MessageAr, string MessageEn);
 
 public record DataQualityReport(long CompanyId, DateTime CheckedAtUtc, IReadOnlyList<DataQualityFinding> Findings);
 

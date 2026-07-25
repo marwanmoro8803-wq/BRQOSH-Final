@@ -82,42 +82,43 @@ public class FinancialAssistantService(
             .Where(i => i.Category.Contains("tax", StringComparison.OrdinalIgnoreCase)
                         || i.TitleAr.Contains("ضريبة", StringComparison.Ordinal))
             .Take(2)
-            .Select(i => i.DetailAr)
             .ToList();
-        var tail = extra.Count > 0 ? " " + string.Join(" ", extra) : "";
+        var tailAr = extra.Count > 0 ? " " + string.Join(" ", extra.Select(i => i.DetailAr)) : "";
+        var tailEn = extra.Count > 0 ? " " + string.Join(" ", extra.Select(i => i.DetailEn)) : "";
         return new FinancialAssistantReply(
-            $"صافي ضريبة الشهر التقريبي: {k.NetVatThisMonth:N2} ر.س.{tail}",
-            $"Estimated net VAT this month: SAR {k.NetVatThisMonth:N2}.{tail}",
+            $"صافي ضريبة الشهر التقريبي: {k.NetVatThisMonth:N2} ر.س.{tailAr}",
+            $"Estimated net VAT this month: SAR {k.NetVatThisMonth:N2}.{tailEn}",
             FinancialIntelligenceService.EngineId);
     }
 
     private static FinancialAssistantReply ReceivablesReply(DashboardKpis k, FinancialIntelligenceReport report)
     {
         var liq = report.Insights.FirstOrDefault(i => i.Code.StartsWith("LIQ_", StringComparison.Ordinal));
-        var detail = liq?.DetailAr ?? "راجع كشف أعمار الديون من تقارير العملاء.";
+        var detailAr = liq?.DetailAr ?? "راجع كشف أعمار الديون من تقارير العملاء.";
+        var detailEn = liq?.DetailEn ?? "Review the AR ageing report under customer reports.";
         return new FinancialAssistantReply(
-            $"ذمم العملاء التقريبية: {k.Receivables:N2} ر.س. {detail}",
-            $"Approximate AR: SAR {k.Receivables:N2}. {detail}",
+            $"ذمم العملاء التقريبية: {k.Receivables:N2} ر.س. {detailAr}",
+            $"Approximate AR: SAR {k.Receivables:N2}. {detailEn}",
             FinancialIntelligenceService.EngineId);
     }
 
     private static FinancialAssistantReply PayablesReply(DashboardKpis k, FinancialIntelligenceReport report)
     {
         var liq = report.Insights.FirstOrDefault(i => i.Code == "LIQ_TIGHT" || i.Code == "LIQ_CASH_PROXY");
-        var detail = liq?.DetailAr ?? "راجع استحقاقات الموردين قبل مواعيد السداد.";
+        var detailAr = liq?.DetailAr ?? "راجع استحقاقات الموردين قبل مواعيد السداد.";
+        var detailEn = liq?.DetailEn ?? "Review supplier obligations ahead of their due dates.";
         return new FinancialAssistantReply(
-            $"ذمم الموردين التقريبية: {k.Payables:N2} ر.س. {detail}",
-            $"Approximate AP: SAR {k.Payables:N2}. {detail}",
+            $"ذمم الموردين التقريبية: {k.Payables:N2} ر.س. {detailAr}",
+            $"Approximate AP: SAR {k.Payables:N2}. {detailEn}",
             FinancialIntelligenceService.EngineId);
     }
 
     private static FinancialAssistantReply SalesReply(DashboardKpis k, FinancialIntelligenceReport report)
     {
         var perf = report.Insights.FirstOrDefault(i => i.Code.StartsWith("PERF_SALES", StringComparison.Ordinal));
-        var detail = perf?.DetailAr ?? $"مبيعات الشهر المرحّلة: {k.SalesThisMonth:N2} ر.س.";
         return new FinancialAssistantReply(
-            detail,
-            detail,
+            perf?.DetailAr ?? $"مبيعات الشهر المرحّلة: {k.SalesThisMonth:N2} ر.س.",
+            perf?.DetailEn ?? $"Posted sales this month: SAR {k.SalesThisMonth:N2}.",
             FinancialIntelligenceService.EngineId);
     }
 
@@ -134,7 +135,6 @@ public class FinancialAssistantService(
             .Where(i => categories.Any(c => i.Category.Contains(c, StringComparison.OrdinalIgnoreCase))
                         || i.Severity is "Warning" or "Error")
             .Take(4)
-            .Select(i => $"{i.TitleAr}: {i.DetailAr}")
             .ToList();
         if (hits.Count == 0)
         {
@@ -144,23 +144,32 @@ public class FinancialAssistantService(
                 FinancialIntelligenceService.EngineId);
         }
 
-        var joined = string.Join(" · ", hits);
-        return new FinancialAssistantReply(joined, joined, FinancialIntelligenceService.EngineId);
+        return new FinancialAssistantReply(
+            string.Join(" · ", hits.Select(i => $"{i.TitleAr}: {i.DetailAr}")),
+            string.Join(" · ", hits.Select(i => $"{i.TitleEn}: {i.DetailEn}")),
+            FinancialIntelligenceService.EngineId);
     }
 
     private static FinancialAssistantReply SummaryReply(DashboardKpis k, FinancialIntelligenceReport report)
     {
-        var top = report.Insights.Take(3).Select(i => $"{i.TitleAr}: {i.DetailAr}").ToList();
-        var prefix = LocaleSummary(k);
-        var body = top.Count > 0 ? string.Join(" · ", top) : "لا رؤى إضافية.";
+        var top = report.Insights.Take(3).ToList();
+        var bodyAr = top.Count > 0
+            ? string.Join(" · ", top.Select(i => $"{i.TitleAr}: {i.DetailAr}"))
+            : "لا رؤى إضافية.";
+        var bodyEn = top.Count > 0
+            ? string.Join(" · ", top.Select(i => $"{i.TitleEn}: {i.DetailEn}"))
+            : "No further insights.";
         return new FinancialAssistantReply(
-            $"{prefix} {body}",
-            $"{prefix} {body}",
+            $"{SummaryPrefixAr(k)} {bodyAr}",
+            $"{SummaryPrefixEn(k)} {bodyEn}",
             FinancialIntelligenceService.EngineId);
     }
 
-    private static string LocaleSummary(DashboardKpis k) =>
+    private static string SummaryPrefixAr(DashboardKpis k) =>
         $"مبيعات {k.SalesThisMonth:N0} · صافي ضريبة {k.NetVatThisMonth:N0} · ذمم {k.Receivables:N0} ر.س.";
+
+    private static string SummaryPrefixEn(DashboardKpis k) =>
+        $"Sales {k.SalesThisMonth:N0} · net VAT {k.NetVatThisMonth:N0} · receivables {k.Receivables:N0} SAR.";
 
     private static FinancialAssistantReply HelpReply() =>
         new(

@@ -28,6 +28,7 @@ public class DataQualityService(BrqoshDbContext db) : IDataQualityService
             findings.Add(new DataQualityFinding(
                 "JE_UNBALANCED_POSTED",
                 "Error",
+                $"{unbalancedCount} قيد يوميّة مرحّل مجموع مدينه لا يساوي مجموع دائنه.",
                 $"{unbalancedCount} posted journal entr{(unbalancedCount == 1 ? "y" : "ies")} with TotalDebit != TotalCredit."));
         }
 
@@ -42,6 +43,7 @@ public class DataQualityService(BrqoshDbContext db) : IDataQualityService
             findings.Add(new DataQualityFinding(
                 "SI_POSTED_NO_JE",
                 "Warning",
+                $"{orphanInvoices} فاتورة مبيعات مرحّلة بلا قيد يوميّة مرتبط.",
                 $"{orphanInvoices} posted sales invoice(s) without JournalEntryId."));
         }
 
@@ -60,6 +62,7 @@ public class DataQualityService(BrqoshDbContext db) : IDataQualityService
             findings.Add(new DataQualityFinding(
                 "INV_NEGATIVE_ON_HAND",
                 "Warning",
+                $"{negativeStock} رصيد صنف مخزنيّ بكمية سالبة.",
                 $"{negativeStock} stockable product balance(s) with negative on-hand quantity."));
         }
 
@@ -71,6 +74,7 @@ public class DataQualityService(BrqoshDbContext db) : IDataQualityService
             findings.Add(new DataQualityFinding(
                 "BRANCH_HQ_MISSING",
                 "Error",
+                "لا يوجد فرع رئيسيّ (مقرّ) نشط للمنشأة.",
                 "Company has no active headquarters branch."));
         }
 
@@ -81,6 +85,7 @@ public class DataQualityService(BrqoshDbContext db) : IDataQualityService
         findings.Add(new DataQualityFinding(
             "DOMAIN_EVENTS_24H",
             "Info",
+            $"{eventCount} حدث نطاق مسجّل خلال آخر 24 ساعة.",
             $"{eventCount} domain event(s) recorded in the last 24 hours."));
 
         return new DataQualityReport(companyId, DateTime.UtcNow, findings);

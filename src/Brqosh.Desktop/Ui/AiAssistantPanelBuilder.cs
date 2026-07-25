@@ -108,21 +108,26 @@ public static class AiAssistantPanelBuilder
 
     public static Border BuildInsightCard(FrameworkElement host, FinancialInsight insight)
     {
+        // (O-26) البطاقة كانت تعرض `TitleAr`/`DetailAr` دائماً — عربيّ داخل واجهة
+        // إنجليزية على كل صفحة من الستّين.
+        var title = LocaleManager.T(insight.TitleAr, insight.TitleEn);
+        var detail = LocaleManager.T(insight.DetailAr, insight.DetailEn);
+
         var stack = new StackPanel();
         stack.Children.Add(new TextBlock
         {
-            Text = insight.TitleAr,
+            Text = title,
             FontWeight = FontWeights.SemiBold,
             FontSize = 13,
             Foreground = UiResources.BrushOf(host, "TextPrimaryBrush"),
             TextWrapping = TextWrapping.Wrap,
         });
 
-        if (!string.IsNullOrWhiteSpace(insight.DetailAr))
+        if (!string.IsNullOrWhiteSpace(detail))
         {
             stack.Children.Add(new TextBlock
             {
-                Text = insight.DetailAr,
+                Text = detail,
                 FontSize = 12,
                 Foreground = UiResources.BrushOf(host, "TextSecondaryBrush"),
                 TextWrapping = TextWrapping.Wrap,

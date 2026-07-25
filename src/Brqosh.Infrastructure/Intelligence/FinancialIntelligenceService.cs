@@ -38,7 +38,9 @@ public class FinancialIntelligenceService(
                 "Performance",
                 "Info",
                 "لا تنبيهات حرجة",
-                "لم يكتشف المحرك القاعدي مؤشرات تستدعي تدخلاً فورياً حتى تاريخ التحليل."));
+                "لم يكتشف المحرك القاعدي مؤشرات تستدعي تدخلاً فورياً حتى تاريخ التحليل.",
+                "No critical flags",
+                "The rules engine found nothing requiring immediate action as of the analysis date."));
         }
 
         return new FinancialIntelligenceReport(companyId, DateTime.UtcNow, EngineId, insights);
@@ -62,6 +64,8 @@ public class FinancialIntelligenceService(
             "Info",
             "مبيعات الشهر حتى التاريخ",
             $"إجمالي فواتير مبيعات مرحّلة من {monthStart:yyyy-MM-dd} إلى {day:yyyy-MM-dd}: {salesTotal:N2} · عدد الفواتير: {salesCount}.",
+            "Sales month to date",
+            $"Total posted sales invoices from {monthStart:yyyy-MM-dd} to {day:yyyy-MM-dd}: {salesTotal:N2} · invoice count: {salesCount}.",
             salesTotal));
 
         var prevMonthEnd = monthStart.AddDays(-1);
@@ -82,6 +86,8 @@ public class FinancialIntelligenceService(
                 sev,
                 "تغير المبيعات عن الشهر السابق",
                 $"النسبة التقريبية مقارنة بشهر {prevMonthStart:yyyy-MM}: {changePct:N1}% (الحالي {salesTotal:N2} ← السابق {prevTotal:N2}).",
+                "Sales change vs previous month",
+                $"Approximate change vs {prevMonthStart:yyyy-MM}: {changePct:N1}% (current {salesTotal:N2} ← previous {prevTotal:N2}).",
                 changePct));
         }
     }
@@ -144,6 +150,8 @@ public class FinancialIntelligenceService(
             cashApprox < 0 ? "Warning" : "Info",
             "تقدير السيولة النقدية (صندوق+بنوك)",
             $"رصيد تقريبي من دفتر الأستاذ حتى {day:yyyy-MM-dd}: {cashApprox:N2}. ذمم مدينة ≈ {ar:N2} · دائنة ≈ {ap:N2}.",
+            "Cash liquidity estimate (till + banks)",
+            $"Approximate ledger balance as of {day:yyyy-MM-dd}: {cashApprox:N2}. Receivables ≈ {ar:N2} · payables ≈ {ap:N2}.",
             cashApprox));
 
         if (ap > 0 && cashApprox < ap * 0.25m)
@@ -154,6 +162,8 @@ public class FinancialIntelligenceService(
                 "Warning",
                 "ضغط سيولة محتمل",
                 $"النقد التقديري أقل من 25% من الذمم الدائنة التقريبية ({cashApprox:N2} مقابل دائن {ap:N2}). راجع التحصيل والالتزامات.",
+                "Possible liquidity pressure",
+                $"Estimated cash is below 25% of approximate payables ({cashApprox:N2} against payables {ap:N2}). Review collections and obligations.",
                 cashApprox / ap));
         }
     }
@@ -185,6 +195,8 @@ public class FinancialIntelligenceService(
                 "Warning",
                 "قيد بحجم شاذ نسبياً",
                 $"القيد {o.EntryNumber} بتاريخ {o.EntryDate:yyyy-MM-dd} بمبلغ {o.TotalDebit:N2} (≥ 5× متوسط آخر 90 يوماً ≈ {avg:N2}). راجع المستند المصدر: {o.SourceDocument ?? "يدوي"}.",
+                "Relatively outsized journal entry",
+                $"Entry {o.EntryNumber} dated {o.EntryDate:yyyy-MM-dd} for {o.TotalDebit:N2} (≥ 5× the 90-day average ≈ {avg:N2}). Review the source document: {o.SourceDocument ?? "manual"}.",
                 o.TotalDebit));
         }
 
@@ -197,6 +209,8 @@ public class FinancialIntelligenceService(
                 "Info",
                 "كثافة مبالغ مستديرة",
                 $"{roundHeavy} من {entries.Count} قيود (≥1000) مبالغها من مضاعفات 1000 — قد يكون طبيعياً أو يستحق مراجعة عيّنة.",
+                "High density of round amounts",
+                $"{roundHeavy} of {entries.Count} entries (≥1000) are multiples of 1000 — may be normal, or worth sampling for review.",
                 roundHeavy));
         }
     }
@@ -224,6 +238,8 @@ public class FinancialIntelligenceService(
                     "Warning",
                     "نسبة إلغاء فواتير مرتفعة",
                     $"خلال 30 يوماً: ملغى {cancelled} من أصل {denom} ({rate:N1}%). راقب صلاحيات الإلغاء ومبررات العمليات.",
+                    "High invoice cancellation rate",
+                    $"Over 30 days: {cancelled} cancelled out of {denom} ({rate:N1}%). Monitor cancellation permissions and operation justifications.",
                     rate));
             }
         }
@@ -242,7 +258,9 @@ public class FinancialIntelligenceService(
                 "Risk",
                 f.Severity,
                 "جودة بيانات: " + f.Code,
-                f.Message));
+                f.MessageAr,
+                "Data quality: " + f.Code,
+                f.MessageEn));
         }
     }
 
@@ -269,6 +287,8 @@ public class FinancialIntelligenceService(
                 "Info",
                 "اقتراح تصنيف قيد يدوي",
                 $"القيد {e.EntryNumber}: «{e.Description}» — اقتراح قاعدي: حساب {hint}.",
+                "Manual entry classification hint",
+                $"Entry {e.EntryNumber}: «{e.Description}» — rule-based suggestion: account {hint}.",
                 null));
         }
     }

@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -38,8 +38,7 @@ public partial class MainWindow : Window
         _setup = setup;
         InitializeComponent();
         ThemeManager.Apply(true);
-        ThemeToggleBtn.Content = "فاتح";
-        ThemeToggleBtn.ToolTip = "التبديل إلى الوضع الفاتح";
+        RefreshThemeToggleText();
         KeyboardNavigationHelper.ApplyShellHeader(BranchCombo, ThemeToggleBtn);
         LocaleManager.Changed += OnLocaleChanged;
         ThemeManager.Changed += OnThemeChanged;
@@ -63,7 +62,7 @@ public partial class MainWindow : Window
         _ = BindCompaniesAsync();
         BuildNavigation();
         UiFeedback.AttachToastHost(ToastOverlay);
-        Navigate("dashboard", "لوحة التحكم");
+        Navigate("dashboard", NavTitleFor("dashboard"));
     }
 
     private async Task BindCompaniesAsync()
@@ -112,7 +111,7 @@ public partial class MainWindow : Window
         if (CompanyCombo.SelectedItem is not CompanyOption opt) return;
         await ApplyCompanyContextAsync(opt, reloadBranches: true);
         BuildNavigation();
-        Navigate(_activePageKey, PageTitle.Text);
+        Navigate(_activePageKey, NavTitleFor(_activePageKey));
     }
 
     internal async Task SwitchToCompanyAsync(long companyId)
@@ -137,7 +136,7 @@ public partial class MainWindow : Window
         _companyBinding = false;
         await ApplyCompanyContextAsync(target, reloadBranches: true);
         BuildNavigation();
-        Navigate("dashboard", "لوحة التحكم");
+        Navigate("dashboard", NavTitleFor("dashboard"));
     }
 
     private async Task ApplyCompanyContextAsync(CompanyOption company, bool reloadBranches)
@@ -373,6 +372,13 @@ public partial class MainWindow : Window
         UpdateSessionStatus();
         _ = RefreshDbHealthAsync();
 
+        // (O-26) لوحة المساعد: المقترحات والرؤى تُعاد باللغة الجديدة.
+        // **المحادثة لا تُمسح عمداً**: نصّ الردّ محفوظ بلغته وقت إنشائه، وسجلّ
+        // المحادثة لا يُعاد ترجمته بأثر رجعيّ — كما لا يفعل أيّ تطبيق محادثة.
+        RenderAiQuickPrompts();
+        if (AiColumn.Width.Value > 0)
+            _ = RefreshAiPanelAsync();
+
         var key = _activePageKey;
         Navigate(key, NavTitleFor(key));
     }
@@ -423,11 +429,19 @@ public partial class MainWindow : Window
         if (!_aiInputWired)
         {
             AiAssistantPanelBuilder.WireInput(this, AiInputBox, AiSendBtn, OnAiQuestionAsync);
-            AiAssistantPanelBuilder.RenderQuickPrompts(this, AiQuickPromptsHost, OnAiQuestionAsync);
             _aiInputWired = true;
         }
+        RenderAiQuickPrompts();
         RefreshChromeText();
     }
+
+    /// <summary>
+    /// (O-26) رسم المقترحات السريعة. كان داخل حارس التوصيل <c>_aiInputWired</c> فيُرسم
+    /// **مرّة واحدة** بلغة الإقلاع ويبقى — «كيف أرحّل؟» و«صلاحياتي» في واجهة إنجليزية
+    /// على الستّين صفحة كلّها. فُصل عن التوصيل ليُعاد عند كل تبديل لغة.
+    /// </summary>
+    private void RenderAiQuickPrompts() =>
+        AiAssistantPanelBuilder.RenderQuickPrompts(this, AiQuickPromptsHost, OnAiQuestionAsync);
 
     private async Task RefreshAiPanelAsync()
     {
@@ -490,25 +504,27 @@ public partial class MainWindow : Window
         }
     }
 
+    // (O-26) تسميتان مولَّدتان في الكود لا في XAML، فلم يمسّهما مسحُ التوطين —
+    // تبقيان عربيَّتين في الشريط الجانبي على كل صفحة بالوضع الإنجليزيّ.
     private static string RoleLabel(UserRole? role) => role switch
     {
-        UserRole.Administrator => "مدير النظام",
-        UserRole.Accountant => "محاسب",
-        UserRole.Cashier => "أمين صندوق",
-        UserRole.Viewer => "مشاهد",
-        _ => "مستخدم",
+        UserRole.Administrator => LocaleManager.T("مدير النظام", "System administrator"),
+        UserRole.Accountant => LocaleManager.T("محاسب", "Accountant"),
+        UserRole.Cashier => LocaleManager.T("أمين صندوق", "Cashier"),
+        UserRole.Viewer => LocaleManager.T("مشاهد", "Viewer"),
+        _ => LocaleManager.T("مستخدم", "User"),
     };
 
     private static string ProfileLabel(BusinessProfile profile) => profile switch
     {
-        BusinessProfile.Construction => "مقاولات عامة",
-        BusinessProfile.Manufacturing => "مصنع / إنتاج",
-        BusinessProfile.Retail => "محل / تسويق",
-        BusinessProfile.Healthcare => "قطاع صحي",
-        BusinessProfile.Logistics => "لوجستيات ونقل",
-        BusinessProfile.RealEstate => "عقارات وإيجارات",
-        BusinessProfile.Hospitality => "ضيافة ومطاعم",
-        _ => "محاسبة عامة",
+        BusinessProfile.Construction => LocaleManager.T("مقاولات عامة", "General contracting"),
+        BusinessProfile.Manufacturing => LocaleManager.T("مصنع / إنتاج", "Manufacturing / production"),
+        BusinessProfile.Retail => LocaleManager.T("محل / تسويق", "Retail / trading"),
+        BusinessProfile.Healthcare => LocaleManager.T("قطاع صحي", "Healthcare"),
+        BusinessProfile.Logistics => LocaleManager.T("لوجستيات ونقل", "Logistics and transport"),
+        BusinessProfile.RealEstate => LocaleManager.T("عقارات وإيجارات", "Real estate and leasing"),
+        BusinessProfile.Hospitality => LocaleManager.T("ضيافة ومطاعم", "Hospitality and restaurants"),
+        _ => LocaleManager.T("محاسبة عامة", "General accounting"),
     };
 
     private void BuildNavigation()

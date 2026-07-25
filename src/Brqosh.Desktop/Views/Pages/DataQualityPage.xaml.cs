@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Application.Reporting;
+using Brqosh.Desktop.Ui;
 using Brqosh.Desktop.Automation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,7 +26,7 @@ public partial class DataQualityPage : UserControl
         var report = await service.RunAsync(AppServices.CompanyId);
 
         var rows = report.Findings
-            .Select(f => new Row(f.Code, f.Severity, f.Message))
+            .Select(f => new Row(f.Code, f.Severity, LocaleManager.T(f.MessageAr, f.MessageEn)))
             .ToList();
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);
