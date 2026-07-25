@@ -40,11 +40,10 @@ public static class BrqoshDbContextFactory
         return new BrqoshDbContext(builder.Options);
     }
 
-    public static string DefaultSqlitePath()
-    {
-        var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH");
-        Directory.CreateDirectory(directory);
-        return Path.Combine(directory, "brqosh.db");
-    }
+    /// <summary>
+    /// مسار قاعدة SQLite الافتراضية داخل جذر البيانات الموحّد — يحترم BRQOSH_DATA_ROOT
+    /// فلا تكتب الاختبارات في قاعدة المستخدم الحقيقية (CEEF-203).
+    /// </summary>
+    public static string DefaultSqlitePath() =>
+        Path.Combine(BrqoshDataRoot.Directory(), "brqosh.db");
 }

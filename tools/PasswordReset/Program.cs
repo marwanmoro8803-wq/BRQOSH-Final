@@ -57,7 +57,7 @@ try
 {
     // أداة الطوارئ — تتجاوز EnsureAdministrator عبر Context اختبار مؤقت محلي؟ لا — نعيد التعيين مباشرة.
     Environment.SetEnvironmentVariable("BRQOSH_TEST", "1");
-    SecurityContext.CurrentRole = Domain.Security.UserRole.Administrator;
+    SecurityContext.CurrentRole = Brqosh.Domain.Security.UserRole.Administrator;
     SecurityContext.CurrentUsername = "password-reset-tool";
 
     await new UserManagementService(db).ResetPasswordAsync(companyId, username, newPassword);
@@ -73,7 +73,7 @@ catch (Exception ex)
 static (DatabaseProvider Provider, string ConnectionString) ResolveConnection()
 {
     var configPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json");
+        Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json");
     if (File.Exists(configPath))
     {
         try

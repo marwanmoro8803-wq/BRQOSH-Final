@@ -25,7 +25,7 @@ using Microsoft.EntityFrameworkCore;
 const string Tag = "QA-AUDIT";
 
 var configPath = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json");
+    Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json");
 if (!File.Exists(configPath))
 {
     Console.WriteLine("FAIL: database.json غير موجود — شغّل البرنامج أولاً.");

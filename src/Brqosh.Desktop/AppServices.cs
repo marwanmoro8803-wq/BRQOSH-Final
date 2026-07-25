@@ -198,7 +198,7 @@ public static class AppServices
     private static DatabaseConfig? LoadDatabaseConfigFile()
     {
         var configPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json");
+            Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json");
         if (!File.Exists(configPath))
             return null;
 

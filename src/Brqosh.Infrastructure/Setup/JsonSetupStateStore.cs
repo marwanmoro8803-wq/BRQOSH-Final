@@ -15,7 +15,7 @@ public class JsonSetupStateStore : ISetupStateStore
     public JsonSetupStateStore()
     {
         var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH");
+            Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path());
         Directory.CreateDirectory(directory);
         _filePath = Path.Combine(directory, "setup.json");
     }

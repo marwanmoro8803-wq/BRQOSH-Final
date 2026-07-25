@@ -276,22 +276,11 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return doc;
     }
 
-    /// <summary>
-    /// جذر تخزين ملفات ZATCA. الافتراضي %APPDATA%\BRQOSH؛ ويُوجَّه عبر BRQOSH_DATA_ROOT.
-    /// (CEEF-202): الاختبارات كانت تكتب في مجلد المستخدم الحقيقي فتتصادم على نفس المسار
-    /// (نفس رقم شركة ورقم فاتورة في قواعد معزولة) وتلوّث بياناته.
-    /// </summary>
-    internal static string DataRoot()
-    {
-        var overridden = Environment.GetEnvironmentVariable("BRQOSH_DATA_ROOT");
-        return !string.IsNullOrWhiteSpace(overridden)
-            ? overridden
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH");
-    }
-
     private static string SaveXml(long companyId, string invoiceNumber, byte[] bytes, bool signed)
     {
-        var dir = Path.Combine(DataRoot(), "zatca", companyId.ToString(), invoiceNumber);
+        // جذر البيانات الموحّد — يحترم BRQOSH_DATA_ROOT (CEEF-202/203).
+        var dir = Path.Combine(
+            Persistence.BrqoshDataRoot.Path(), "zatca", companyId.ToString(), invoiceNumber);
         Directory.CreateDirectory(dir);
         var file = signed ? $"{invoiceNumber}.signed.xml" : $"{invoiceNumber}.xml";
         var path = Path.Combine(dir, file);

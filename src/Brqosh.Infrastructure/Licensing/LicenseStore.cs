@@ -30,7 +30,7 @@ public record LicenseState(string CompanyName, string MachineId, string? SignedL
 public static class LicenseStore
 {
     private static string FilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "license.json");
+        Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "license.json");
 
     public static LicenseState? Load()
     {

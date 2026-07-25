@@ -17,8 +17,7 @@ public static class CompanyBrandingStorage
   };
 
   public static string BrandingRoot => Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-    "BRQOSH",
+    Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(),
     "branding");
 
   public static string SaveLogoFromFile(long companyId, string sourceFilePath)

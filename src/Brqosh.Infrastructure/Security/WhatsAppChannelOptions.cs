@@ -72,8 +72,7 @@ public sealed record WhatsAppChannelOptions
     }
 
     public static string ConfigFilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "BRQOSH", "whatsapp.json");
+        Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "whatsapp.json");
 
     public static void SaveToConfigFile(WhatsAppChannelOptions options)
     {

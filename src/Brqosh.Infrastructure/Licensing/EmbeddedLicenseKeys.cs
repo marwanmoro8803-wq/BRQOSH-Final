@@ -16,8 +16,7 @@ internal static class EmbeddedLicenseKeys
             return fromEnv;
 
         var path = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "BRQOSH", "license-public.pem");
+            Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "license-public.pem");
         if (File.Exists(path))
             return File.ReadAllText(path);
 

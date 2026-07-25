@@ -4,7 +4,7 @@ using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 var json = File.ReadAllText(Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json"));
+    Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json"));
 var cs = System.Text.Json.JsonDocument.Parse(json).RootElement.GetProperty("ConnectionString").GetString()!;
 
 Console.WriteLine("=== BRQOSH DB Startup Probe ===");
