@@ -37,17 +37,25 @@ public partial class TrialBalancePage : UserControl
             return;
         }
 
-        var bytes = ExcelExportHelper.ToCsv(
+        // (CEEF-215) xlsx حقيقي: أرقام بصيغة محاسبية، أعمدة بعرض مناسب، رأس مميّز
+        // مجمَّد، وورقة من اليمين. كان CSV بلا أي تنسيق.
+        var bytes = XlsxWriter.Build(
+            "ميزان المراجعة",
             ["رقم الحساب", "اسم الحساب", "مجموع مدين", "مجموع دائن", "رصيد مدين", "رصيد دائن"],
-            _lastRows.Select(r => new object?[]
-            {
-                r.AccountCode, r.AccountNameAr, r.TotalDebit, r.TotalCredit, r.BalanceDebit, r.BalanceCredit,
-            }));
+            _lastRows.Select(r => (IReadOnlyList<XlsxWriter.Cell>)
+            [
+                XlsxWriter.Cell.Text(r.AccountCode),
+                XlsxWriter.Cell.Text(r.AccountNameAr),
+                XlsxWriter.Cell.Number(r.TotalDebit),
+                XlsxWriter.Cell.Number(r.TotalCredit),
+                XlsxWriter.Cell.Number(r.BalanceDebit),
+                XlsxWriter.Cell.Number(r.BalanceCredit),
+            ]).ToList());
 
-        var path = Path.Combine(Path.GetTempPath(), $"brqosh-trial-{DateTime.Now:yyyyMMddHHmmss}.csv");
+        var path = Path.Combine(Path.GetTempPath(), $"brqosh-trial-{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         File.WriteAllBytes(path, bytes);
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
-        UiFeedback.ShowSuccess("تم تصدير Excel (CSV).");
+        UiFeedback.ShowSuccess("تم تصدير ملف Excel.");
     }
 
     private async Task ExportPdfAsync()

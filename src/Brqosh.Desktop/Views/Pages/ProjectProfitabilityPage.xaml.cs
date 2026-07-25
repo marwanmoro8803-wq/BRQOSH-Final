@@ -55,16 +55,26 @@ public partial class ProjectProfitabilityPage : UserControl
             return;
         }
 
-        var bytes = ExcelExportHelper.ToCsv(
-            ["Code", "Name", "Contract", "EstCost", "Incurred", "Billed", "Revenue", "Retention", "Margin"],
-            _rows.Select(r => new object?[]
-            {
-                r.Code, r.NameAr, r.ContractValue, r.EstimatedTotalCost, r.IncurredCost,
-                r.BilledWork, r.RecognizedRevenueEstimate, r.RetentionHeld, r.GrossMarginEstimate,
-            }));
+        // (CEEF-215) xlsx حقيقي بعناوين عربية وأرقام محاسبية بدل CSV بعناوين إنجليزية.
+        var bytes = XlsxWriter.Build(
+            "ربحية المشاريع",
+            ["الكود", "المشروع", "قيمة العقد", "التكلفة التقديرية", "التكلفة المنفقة",
+             "المُنجز المفوتر", "الإيراد المعترف به", "المحتجزات", "هامش الربح"],
+            _rows.Select(r => (IReadOnlyList<XlsxWriter.Cell>)
+            [
+                XlsxWriter.Cell.Text(r.Code),
+                XlsxWriter.Cell.Text(r.NameAr),
+                XlsxWriter.Cell.Number(r.ContractValue),
+                XlsxWriter.Cell.Number(r.EstimatedTotalCost),
+                XlsxWriter.Cell.Number(r.IncurredCost),
+                XlsxWriter.Cell.Number(r.BilledWork),
+                XlsxWriter.Cell.Number(r.RecognizedRevenueEstimate),
+                XlsxWriter.Cell.Number(r.RetentionHeld),
+                XlsxWriter.Cell.Number(r.GrossMarginEstimate),
+            ]).ToList());
 
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-            $"project-profitability-{DateTime.Now:yyyyMMdd-HHmm}.csv");
+            $"project-profitability-{DateTime.Now:yyyyMMdd-HHmm}.xlsx");
         File.WriteAllBytes(path, bytes);
         UiFeedback.ShowInfo($"تم الحفظ: {path}");
     }
