@@ -58,6 +58,12 @@ if (!string.IsNullOrWhiteSpace(profileName) &&
 }
 
 await EnsureUiAuditUserAsync(db, companyId);
+
+// (CEEF-203): SecurityContext كان يُضبط في منتصف السيناريو، فتفشل خطوات الترحيل السابقة له
+// بـ«لا يوجد مستخدم مسجّل» — الحارس fail-closed بحق. تُضبط هوية المدقق مرة واحدة عند البداية.
+SecurityContext.CurrentRole = UserRole.Administrator;
+SecurityContext.CurrentUsername = "fsa";
+
 var today = DateOnly.FromDateTime(DateTime.Today);
 var yearStart = new DateOnly(today.Year, 1, 1);
 

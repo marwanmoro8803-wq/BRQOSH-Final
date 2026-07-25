@@ -70,6 +70,37 @@ catch (Exception ex)
     return 3;
 }
 
+// الاختبار الحاسم الثاني (CEEF-203): ترحيل قيد فعلي على PostgreSQL.
+// كل الاختبارات تعمل على SQLite حيث يُتخطّى قفل pg_advisory_xact_lock — فعيب
+// ابتلاع CancellationToken كمعامل SQL كان يكسر **كل ترحيل محاسبي على PostgreSQL**
+// دون أن يكشفه أي اختبار. هذه الخطوة هي الحارس.
+try
+{
+    Brqosh.Infrastructure.Security.SecurityContext.CurrentRole =
+        Brqosh.Domain.Security.UserRole.Administrator;
+    Brqosh.Infrastructure.Security.SecurityContext.CurrentUsername = "migration-probe";
+
+    var companyId = (await db.Companies.OrderBy(c => c.Id)
+        .Select(c => c.Id).FirstAsync());
+
+    var cash = await db.Accounts.FirstAsync(a => a.CompanyId == companyId && a.Code == "1101" && !a.IsGroup);
+    var capital = await db.Accounts.FirstAsync(a => a.CompanyId == companyId && a.Code == "3101" && !a.IsGroup);
+
+    var entry = Brqosh.Domain.Accounting.JournalEntry.CreateDraft(
+        companyId, new DateOnly(2026, 7, 25), "قيد مسبار على PostgreSQL");
+    entry.AddLine(cash, 1000m, 0m);
+    entry.AddLine(capital, 0m, 1000m);
+
+    var posted = await new Brqosh.Infrastructure.Accounting.JournalPostingService(db).PostAsync(entry);
+    Console.WriteLine($"[OK] ترحيل قيد على PostgreSQL نجح — {posted.EntryNumber}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[FAIL] ترحيل قيد على PostgreSQL: {ex.GetType().Name}: {ex.Message}");
+    if (ex.InnerException is not null) Console.WriteLine($"       inner: {ex.InnerException.Message}");
+    return 4;
+}
+
 Console.WriteLine();
-Console.WriteLine("=== PASS: تثبيت PostgreSQL نظيف عبر الهجرات يعمل ===");
+Console.WriteLine("=== PASS: تثبيت PostgreSQL نظيف + ترحيل محاسبي يعملان ===");
 return 0;

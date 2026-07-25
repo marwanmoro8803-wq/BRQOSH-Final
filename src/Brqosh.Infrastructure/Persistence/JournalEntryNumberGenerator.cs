@@ -37,10 +37,19 @@ public class JournalEntryNumberGenerator(BrqoshDbContext db)
         if (!db.Database.IsNpgsql())
             return;
 
-        // قفل على مستوى المعاملة — يمنع race عند ترحيل متزامن
+        // قفل على مستوى المعاملة — يمنع race عند ترحيل متزامن.
+        //
+        // (CEEF-203) حرج: يجب تمرير المعاملات كمصفوفة صريحة. التحميل الزائد
+        // ExecuteSqlRawAsync(string, params object[]) كان يبتلع الـ CancellationToken
+        // كمعامل SQL ثالث، فيرمي EF: "no store type mapping for CancellationToken" —
+        // أي أن **كل ترحيل محاسبي على PostgreSQL كان يفشل**. لم تكشفه الاختبارات لأنها
+        // تعمل على SQLite حيث يعود هذا التابع مبكراً (السطر أعلاه).
+        // التوقيع الموجود في PostgreSQL هو pg_advisory_xact_lock(int4, int4) —
+        // تمرير companyId كـ bigint كان يرمي 42883: function does not exist.
+        // أي أن حماية ACC-006 لم تكن تعمل على PostgreSQL إطلاقاً. الصبّ صريح في SQL.
         await db.Database.ExecuteSqlRawAsync(
-            "SELECT pg_advisory_xact_lock({0}, {1})",
-            companyId, year,
+            "SELECT pg_advisory_xact_lock({0}::int, {1}::int)",
+            new object[] { companyId, year },
             ct);
     }
 }
