@@ -36,9 +36,15 @@ public static class ZatcaAutoSubmissionHelper
                 return await new ZatcaSubmissionService(db).SubmitAsync(doc.Id);
             }
         }
-        catch (AccountingException)
+        catch (Exception)
         {
-            // لا نُوقف ترحيل المستند المحاسبي بسبب فشل ZATCA
+            // لا نُوقف ترحيل المستند المحاسبي بسبب فشل ZATCA.
+            //
+            // (CEEF-210) كان الالتقاط مقصوراً على AccountingException، بينما SubmitAsync
+            // ينفّذ نداءً شبكياً يرمي HttpRequestException/TaskCanceledException عند الانقطاع
+            // أو المهلة — فتتسرب بعد نجاح الـcommit وتُظهر للمستخدم «فشل ترحيل الفاتورة»
+            // رغم أنها رُحّلت فعلاً، وإعادة المحاولة ترمي «الفاتورة مرحّلة».
+            // المستند يبقى بحالته (ReadyToReport/ReadyToClear) فيلتقطه إرسال لاحق.
         }
 
         return doc;

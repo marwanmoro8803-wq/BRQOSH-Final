@@ -90,6 +90,11 @@ app.Use(async (ctx, next) =>
     }
 });
 
+// (CEEF-210) حدّ المعدل **قبل** فحص المفتاح: كان بعده، فكل محاولة مفتاح خاطئ تُردّ 401
+// دون أن تمرّ على العدّاد إطلاقاً — تخمين المفاتيح بالقوة الغاشمة بلا أي حدّ، والعقوبة
+// تقع على أصحاب المفاتيح الصحيحة وحدهم.
+app.UseMiddleware<ApiRateLimitMiddleware>();
+
 // مفتاح API — إلزامي في Production · اختياري في Development للتجريب المحلي
 app.Use(async (ctx, next) =>
 {
@@ -113,7 +118,6 @@ app.Use(async (ctx, next) =>
 });
 
 app.UseMiddleware<ApiSecurityContextMiddleware>();
-app.UseMiddleware<ApiRateLimitMiddleware>();
 
 app.Use(async (ctx, next) =>
 {
@@ -150,7 +154,11 @@ app.Use(async (ctx, next) =>
         return;
     }
 
-    if (IdempotencyStore.TryGet(key, out var cached))
+    // (CEEF-210) مفتاح مركّب: المستأجر + المسار + الترويسة — لا تسريب عابر للمستأجرين.
+    var cacheKey = IdempotencyStore.ComposeKey(
+        TenantContext.CurrentTenantId, ctx.Request.Path.Value ?? "", key);
+
+    if (IdempotencyStore.TryGet(cacheKey, out var cached))
     {
         ctx.Response.StatusCode = cached.StatusCode;
         ctx.Response.ContentType = cached.ContentType;
@@ -169,7 +177,7 @@ app.Use(async (ctx, next) =>
     var contentType = ctx.Response.ContentType ?? "application/json";
 
     if (ctx.Response.StatusCode is >= 200 and < 300)
-        IdempotencyStore.Save(key, new IdempotentResponse(ctx.Response.StatusCode, contentType, bodyText));
+        IdempotencyStore.Save(cacheKey, new IdempotentResponse(ctx.Response.StatusCode, contentType, bodyText));
 
     buffer.Position = 0;
     ctx.Response.Body = originalBody;

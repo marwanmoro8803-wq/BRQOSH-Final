@@ -24,6 +24,8 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
 
         var settings = await db.ZatcaSettings.FirstOrDefaultAsync(s => s.CompanyId == companyId, ct);
 
+        Brqosh.Domain.Zatca.ZatcaEInvoiceDocument? pendingZatcaCancellation = null;
+
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var invoice = await db.SalesInvoices
@@ -78,20 +80,21 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
                 companyId, "SalesInvoice", invoice.Id, invoice.InvoiceNumber ?? invoice.Id.ToString(),
                 "إلغاء فاتورة مبيعات"), token);
 
+            // (CEEF-210) التوليد داخل المعاملة (يكتب سجلات يجب أن ترتدّ مع الإلغاء)،
+            // والإرسال بعدها. كان الإرسال هنا أيضاً — نداء شبكة داخل معاملة يطيل أقفال
+            // القاعدة، وفشلُه يُفشل الإلغاء المحاسبي كله، وقد يبلغ إشعارُ الإلغاء الهيئةَ
+            // ثم يرتدّ القيد محلياً فتتباعد سجلاتها عن الدفاتر. وهي سياسة المشروع نفسها
+            // الموثّقة في ZatcaPostingOrchestrator: «الإرسال بعد الـcommit فقط».
             if (settings?.IsEnabled == true)
             {
-                try
-                {
-                    var zatcaCancellation = await new ZatcaEInvoiceGenerator(db)
-                        .TryGenerateCancellationForSalesInvoiceAsync(invoiceId);
-                    if (zatcaCancellation is not null)
-                        await ZatcaAutoSubmissionHelper.TrySubmitDocumentAsync(db, companyId, zatcaCancellation, token);
-                }
-                catch (AccountingException)
-                {
-                    throw;
-                }
+                pendingZatcaCancellation = await new ZatcaEInvoiceGenerator(db)
+                    .TryGenerateCancellationForSalesInvoiceAsync(invoiceId);
             }
         }, ct);
+
+        // بعد الالتزام: الإلغاء المحاسبي محفوظ، وفشل الإرسال لا يعكسه.
+        if (pendingZatcaCancellation is not null)
+            await ZatcaAutoSubmissionHelper.TrySubmitDocumentAsync(
+                db, companyId, pendingZatcaCancellation, ct);
     }
 }
