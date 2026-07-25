@@ -1,3 +1,4 @@
+using Brqosh.Domain.Companies;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
@@ -27,7 +28,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: customerName,
-            QrTlvBase64: zatca?.QrTlvBase64,
+            QrTlvBase64: zatca?.QrTlvBase64
+                         ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.GrandTotal(), invoice.VatAmount),
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString());
 
@@ -93,7 +95,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.CreditNote,
             PartyName: customer.NameAr,
-            QrTlvBase64: zatca?.QrTlvBase64,
+            QrTlvBase64: zatca?.QrTlvBase64
+                         ?? Phase1QrFallback(company, note.NoteDate, note.GrandTotal(), note.VatAmount),
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString());
 
@@ -269,6 +272,31 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             d.SourceDocumentId == invoiceId &&
             d.DocumentType == ZatcaDocumentType.SalesInvoice, ct);
         return (company, invoice, customer.NameAr, zatca);
+    }
+
+    /// <summary>
+    /// (CEEF-226) رمز QR للمرحلة الأولى يُحسب عند الطباعة حين لا يوجد مستند ZATCA.
+    ///
+    /// كان توليد الرمز مشروطاً بـ<c>ZatcaSettings.IsEnabled</c> كلّه — فمنشأةٌ لم تُفعّل
+    /// تكامل المرحلة الثانية تطبع **فواتير ضريبية بلا باركود إطلاقاً**. وقد ثبت ذلك على
+    /// قاعدة المستخدم الحقيقية: الفاتورة المرحّلة الوحيدة بلا مستند ZATCA ولا رمز.
+    ///
+    /// لكن رمز المرحلة الأولى **إلزاميّ منذ 2021-12-04 على كل مسجَّل في ضريبة القيمة
+    /// المضافة**، ولا يحتاج شهادة ولا CSID ولا اتصالاً بالهيئة — خمسة حقول تُحسب محلياً
+    /// من بيانات الفاتورة نفسها. فربطه بتفعيل المرحلة الثانية خلطٌ بين مرحلتين مستقلّتين.
+    ///
+    /// الطابع الزمنيّ هو **نفس اصطلاح <c>ZatcaEInvoiceGenerator</c>** (ظهر يوم الإصدار
+    /// بتوقيت UTC) فلا يختلف الرمز المطبوع عن المخزَّن حين يُفعَّل التكامل لاحقاً.
+    /// وبلا رقم ضريبيّ لا رمز — لأنّ وسم 2 إلزاميّ ولا يجوز اختلاقه.
+    /// </summary>
+    private static string? Phase1QrFallback(Company company, DateOnly date, decimal total, decimal vat)
+    {
+        if (string.IsNullOrWhiteSpace(company.NameAr) || string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
+            return null;
+
+        var timestampUtc = date.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)), DateTimeKind.Utc);
+        return Zatca.ZatcaQrGenerator.GenerateTlvBase64Phase1(
+            company.NameAr, company.VatRegistrationNumber, timestampUtc, total, vat);
     }
 
     private static PrintDocumentKind ResolveSalesKind(SalesInvoice invoice, ZatcaEInvoiceDocument? zatca)

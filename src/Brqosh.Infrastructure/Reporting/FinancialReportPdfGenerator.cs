@@ -21,7 +21,7 @@ public static class FinancialReportPdfGenerator
 
         return BuildTableReport(
             branding, "قائمة الدخل",
-            $"من {result.FromDate:yyyy-MM-dd} إلى {result.ToDate:yyyy-MM-dd}",
+            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}",
             rows,
             $"إجمالي الإيرادات: {result.TotalRevenue:N2}  |  إجمالي المصروفات: {result.TotalExpenses:N2}  |  صافي الدخل: {result.NetIncome:N2}");
     }
@@ -41,7 +41,7 @@ public static class FinancialReportPdfGenerator
                      (result.IsBalanced ? "متوازنة ✓" : "غير متوازنة ✗");
 
         return BuildTableReport(branding, "قائمة المركز المالي",
-            $"حتى {result.AsOfDate:yyyy-MM-dd}", rows, footer);
+            $"حتى {PrintText.Date(result.AsOfDate)}", rows, footer);
     }
 
     public static byte[] VatReturn(string companyName, VatReturnResult result) =>
@@ -67,7 +67,7 @@ public static class FinancialReportPdfGenerator
 
         var label = result.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
         return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
-            $"من {result.FromDate:yyyy-MM-dd} إلى {result.ToDate:yyyy-MM-dd}", rows,
+            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", rows,
             $"صافي الضريبة ({label}): {result.NetVatPayable:N2} ر.س");
     }
 
@@ -85,7 +85,7 @@ public static class FinancialReportPdfGenerator
         };
 
         return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
-            $"من {from:yyyy-MM-dd} إلى {to:yyyy-MM-dd}", rows,
+            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", rows,
             $"صافي الضريبة المستحقة: {netPayable:N2} ر.س");
     }
 
@@ -109,7 +109,7 @@ public static class FinancialReportPdfGenerator
 
                 page.Header().Element(h => branding.RenderHeader(
                     h, "قائمة التدفقات النقدية",
-                    $"من {result.FromDate:yyyy-MM-dd} إلى {result.ToDate:yyyy-MM-dd}"));
+                    $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}"));
 
                 page.Content().PaddingVertical(10).Table(table =>
                 {
@@ -165,7 +165,7 @@ public static class FinancialReportPdfGenerator
                 page.DefaultTextStyle(x => branding.PageTextStyle( 9));
 
                 page.Header().Element(h => branding.RenderHeader(
-                    h, "دفتر الأستاذ العام", $"من {from:yyyy-MM-dd} إلى {to:yyyy-MM-dd}"));
+                    h, "دفتر الأستاذ العام", $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}"));
 
                 page.Content().PaddingVertical(8).Table(table =>
                 {

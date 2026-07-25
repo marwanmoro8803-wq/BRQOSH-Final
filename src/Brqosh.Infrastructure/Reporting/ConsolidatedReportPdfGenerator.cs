@@ -28,7 +28,7 @@ public static class ConsolidatedReportPdfGenerator
                 {
                     col.Item().AlignCenter().Text(groupName).Bold().FontSize(16);
                     col.Item().AlignCenter().Text("ميزان مراجعة موحّد").FontSize(14);
-                    col.Item().AlignCenter().Text($"من {from:yyyy-MM-dd} إلى {to:yyyy-MM-dd} · {reportingCurrency}").FontSize(10);
+                    col.Item().AlignCenter().Text($"من {PrintText.Date(from)} إلى {PrintText.Date(to)} · {reportingCurrency}").FontSize(10);
                 });
 
                 page.Content().PaddingVertical(10).Table(table =>
@@ -83,7 +83,7 @@ public static class ConsolidatedReportPdfGenerator
         return BuildSectionReport(
             groupName,
             "قائمة دخل موحّدة",
-            $"من {result.FromDate:yyyy-MM-dd} إلى {result.ToDate:yyyy-MM-dd} · {result.ReportingCurrencyCode}",
+            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)} · {result.ReportingCurrencyCode}",
             rows,
             $"الإيرادات: {result.TotalRevenue:N2} | المصروفات: {result.TotalExpenses:N2} | صافي الدخل: {result.NetIncome:N2}");
     }
@@ -100,7 +100,7 @@ public static class ConsolidatedReportPdfGenerator
         return BuildSectionReport(
             groupName,
             "مركز مالي موحّد",
-            $"كما في {result.AsOfDate:yyyy-MM-dd} · {result.ReportingCurrencyCode}",
+            $"كما في {PrintText.Date(result.AsOfDate)} · {result.ReportingCurrencyCode}",
             rows,
             $"الأصول: {result.TotalAssets:N2} | الالتزامات+الملكية: {result.TotalLiabilities + result.TotalEquity:N2}");
     }

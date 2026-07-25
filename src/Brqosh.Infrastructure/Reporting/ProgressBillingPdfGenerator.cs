@@ -44,8 +44,8 @@ public static class ProgressBillingPdfGenerator
                 {
                     col.Item().Row(row =>
                     {
-                        row.RelativeItem().Text($"رقم: {data.BillingNumber}");
-                        row.RelativeItem().AlignLeft().Text($"التاريخ: {data.BillingDate:yyyy-MM-dd}");
+                        row.RelativeItem().Text($"رقم: {PrintText.Code(data.BillingNumber)}");
+                        row.RelativeItem().AlignLeft().Text($"التاريخ: {PrintText.Date(data.BillingDate)}");
                     });
                     col.Item().PaddingTop(6).Text($"العميل: {data.CustomerName}");
                     col.Item().Text($"المشروع: {data.ProjectName}");

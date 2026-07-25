@@ -48,8 +48,8 @@ public static class VoucherPdfGenerator
 
                 page.Content().Column(col =>
                 {
-                    col.Item().Text($"رقم السند: {voucherNumber}");
-                    col.Item().Text($"التاريخ: {date:yyyy-MM-dd}");
+                    col.Item().Text($"رقم السند: {PrintText.Code(voucherNumber)}");
+                    col.Item().Text($"التاريخ: {PrintText.Date(date)}");
                     col.Item().PaddingTop(8).Text($"{partyLabel}: {partyName}");
                     col.Item().Text($"طريقة الدفع: {method}");
                     if (!string.IsNullOrWhiteSpace(reference))

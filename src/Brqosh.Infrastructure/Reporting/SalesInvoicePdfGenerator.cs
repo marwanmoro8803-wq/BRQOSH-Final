@@ -63,8 +63,8 @@ public static class SalesInvoicePdfGenerator
                 {
                     col.Item().Row(row =>
                     {
-                        row.RelativeItem().Text($"رقم: {documentNumber}");
-                        row.RelativeItem().AlignLeft().Text($"التاريخ: {date:yyyy-MM-dd}");
+                        row.RelativeItem().Text($"رقم: {PrintText.Code(documentNumber)}");
+                        row.RelativeItem().AlignLeft().Text($"التاريخ: {PrintText.Date(date)}");
                     });
                     if (!string.IsNullOrWhiteSpace(options.PartyName))
                         col.Item().PaddingTop(4).Text($"{partyLabel}: {options.PartyName}");

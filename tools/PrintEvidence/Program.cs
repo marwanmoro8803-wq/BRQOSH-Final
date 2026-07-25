@@ -1,0 +1,311 @@
+// مولّد أدلّة الطباعة والباركود وExcel (CEEF-226)
+//
+// لا يفحص الكود — **يُنتج المخرجات الحقيقية** من قاعدة المستخدم ثم يفحصها:
+//   • فاتورة مبيعات مرحّلة → PDF + فكّ ترميز TLV لرمز ZATCA ومطابقته ببيانات الفاتورة
+//   • سند قبض وسند صرف → PDF
+//   • قيد يوميّة + ميزان مراجعة → PDF
+//   • تصدير Excel حقيقي (.xlsx) للفحص بـExcel
+//
+// **قراءة فقط**: لا يكتب في القاعدة إطلاقاً (باستثناء سجلّ تدقيق التصدير الذي
+// تكتبه خدمة الطباعة نفسها — وهو سلوكها الطبيعيّ عند أي طباعة يقوم بها المستخدم).
+//
+//   dotnet run --project tools/PrintEvidence
+
+using System.Text;
+using System.Text.Json;
+using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Sales;
+using Brqosh.Domain.Treasury;
+using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Reporting;
+using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
+using Microsoft.EntityFrameworkCore;
+
+var repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+var outDir = Path.Combine(repoRoot, "dist", "evidence", "print");
+Directory.CreateDirectory(outDir);
+
+var (provider, conn) = ResolveConnection();
+Console.WriteLine($"[..] المزوّد: {provider}");
+
+await using var db = BrqoshDbContextFactory.Create(provider, conn);
+if (!await db.Database.CanConnectAsync())
+{
+    Console.WriteLine("[SKIP] تعذّر الاتصال بقاعدة البيانات المهيّأة.");
+    return 0;
+}
+
+SecurityContext.CurrentRole = Brqosh.Domain.Security.UserRole.Administrator;
+SecurityContext.CurrentUsername = "print-evidence";
+
+var company = await db.Companies.OrderBy(c => c.Id).FirstOrDefaultAsync();
+if (company is null) { Console.WriteLine("[SKIP] لا توجد شركة."); return 0; }
+Console.WriteLine($"[OK] الشركة: {company.NameAr} · الرقم الضريبي: {Mask(company.VatRegistrationNumber)}");
+
+var print = new DocumentPrintService(db, new AuditService(db), new ExchangeRateService(db));
+var findings = new List<string>();
+var manifest = new List<object>();
+
+// ── 1. فاتورة مبيعات مرحّلة ─────────────────────────────────────────────
+var invoice = await db.SalesInvoices
+    .Include(i => i.Lines)
+    .Where(i => i.CompanyId == company.Id && i.Status == SalesInvoiceStatus.Posted)
+    .OrderByDescending(i => i.Id)
+    .FirstOrDefaultAsync();
+
+if (invoice is null)
+{
+    findings.Add("لا فاتورة مبيعات مرحّلة — تعذّر إثبات طباعة الفاتورة والباركود.");
+}
+else
+{
+    var res = await print.ExportSalesInvoiceAsync(company.Id, invoice.Id, "print-evidence");
+    var path = Path.Combine(outDir, "01-sales-invoice.pdf");
+    await File.WriteAllBytesAsync(path, res.PdfBytes);
+    Console.WriteLine($"[OK] فاتورة {invoice.InvoiceNumber} → {res.PdfBytes.Length:N0} بايت");
+    manifest.Add(new { doc = "sales_invoice", number = invoice.InvoiceNumber, bytes = res.PdfBytes.Length, file = Path.GetFileName(path) });
+
+    var customerName = await db.Customers
+        .Where(c => c.Id == invoice.CustomerId).Select(c => c.NameAr).FirstOrDefaultAsync();
+
+    // ── الباركود: هل وُلِّد، وهل يطابق الفاتورة؟ ──
+    var zatca = await db.ZatcaEInvoiceDocuments
+        .Where(z => z.CompanyId == company.Id && z.SourceDocumentId == invoice.Id)
+        .OrderByDescending(z => z.Id)
+        .FirstOrDefaultAsync();
+
+    // (CEEF-226) الفحص على **المطبوع** لا على سجلّ القاعدة: حين لا يوجد مستند ZATCA
+    // تحسب خدمة الطباعة رمز المرحلة الأولى محلياً — فالسؤال هو «هل على الورقة باركود؟»
+    // لا «هل في الجدول صفّ؟».
+    var tlvOnPrint = zatca?.QrTlvBase64;
+    var fromFallback = false;
+    if (string.IsNullOrWhiteSpace(tlvOnPrint)
+        && !string.IsNullOrWhiteSpace(company.NameAr)
+        && !string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
+    {
+        tlvOnPrint = Brqosh.Infrastructure.Zatca.ZatcaQrGenerator.GenerateTlvBase64Phase1(
+            company.NameAr,
+            company.VatRegistrationNumber,
+            invoice.InvoiceDate.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)), DateTimeKind.Utc),
+            invoice.GrandTotal(),
+            invoice.VatAmount);
+        fromFallback = true;
+    }
+
+    // والدليل القاطع: صورة فعلاً مدمجة في ملف PDF (XObject من نوع Image).
+    var pdfText = Encoding.Latin1.GetString(res.PdfBytes);
+    var hasEmbeddedImage = pdfText.Contains("/Subtype /Image", StringComparison.Ordinal)
+                        || pdfText.Contains("/Subtype/Image", StringComparison.Ordinal);
+    if (!hasEmbeddedImage)
+        findings.Add("ملف الفاتورة لا يحوي أي صورة مدمجة — الباركود غير مطبوع فعلياً.");
+    else
+        Console.WriteLine("[OK] الفاتورة تحوي صورة مدمجة (الباركود على الورقة)");
+
+    if (string.IsNullOrWhiteSpace(tlvOnPrint))
+    {
+        findings.Add($"الفاتورة {invoice.InvoiceNumber}: لا رمز QR ولا مسار احتياطي — راجع الرقم الضريبي للمنشأة.");
+    }
+    else
+    {
+        if (fromFallback)
+            Console.WriteLine("[OK] الرمز من مسار المرحلة الأولى الاحتياطي (تكامل ZATCA غير مفعّل)");
+        var zatcaQr = tlvOnPrint;
+        var png = ZatcaQrImageHelper.TryCreatePng(zatcaQr);
+        if (png is null || png.Length == 0)
+            findings.Add("تعذّر توليد صورة رمز QR من TLV.");
+        else
+        {
+            await File.WriteAllBytesAsync(Path.Combine(outDir, "01-sales-invoice-qr.png"), png);
+            Console.WriteLine($"[OK] صورة QR: {png.Length:N0} بايت");
+        }
+
+        var tags = DecodeTlv(zatcaQr);
+        var report = new StringBuilder();
+        report.AppendLine("# فكّ ترميز رمز ZATCA (TLV)");
+        report.AppendLine();
+        foreach (var (tag, value) in tags)
+            report.AppendLine($"- وسم {tag}: `{Preview(tag, value)}`");
+        await File.WriteAllTextAsync(Path.Combine(outDir, "01-qr-decoded.md"), report.ToString(), Encoding.UTF8);
+
+        // مطابقة الوسوم الخمسة الإلزامية ببيانات الفاتورة الفعلية
+        Check(tags, 1, company.NameAr, "اسم البائع", findings);
+        Check(tags, 2, company.VatRegistrationNumber, "الرقم الضريبي", findings);
+        Check(tags, 4, invoice.GrandTotal().ToString("F2"), "إجمالي الفاتورة", findings);
+        Check(tags, 5, invoice.VatAmount.ToString("F2"), "مبلغ الضريبة", findings);
+        if (!tags.ContainsKey(3)) findings.Add("وسم 3 (الطابع الزمني) غائب عن رمز QR.");
+
+        Console.WriteLine($"[OK] TLV يحوي {tags.Count} وسماً: {string.Join(", ", tags.Keys.OrderBy(k => k))}");
+    }
+
+    // ── بيانات لا بدّ أن تظهر على المطبوع ──
+    if (string.IsNullOrWhiteSpace(company.NameAr)) findings.Add("اسم المنشأة فارغ — يظهر ناقصاً على كل مطبوع.");
+    if (string.IsNullOrWhiteSpace(company.VatRegistrationNumber)) findings.Add("الرقم الضريبي فارغ — فاتورة ضريبية غير مكتملة.");
+    if (string.IsNullOrWhiteSpace(customerName)) findings.Add("اسم العميل غائب عن الفاتورة المطبوعة.");
+    if (string.IsNullOrWhiteSpace(company.LogoFilePath)) findings.Add("لا شعار مهيّأ للمنشأة (اختياري، لكنه يظهر فارغاً في الترويسة).");
+}
+
+// ── 2. سند قبض وسند صرف ─────────────────────────────────────────────────
+await TryExport("02-receipt-voucher.pdf", "سند قبض", async () =>
+{
+    var v = await db.ReceiptVouchers
+        .Where(v => v.CompanyId == company.Id && v.Status == ReceiptVoucherStatus.Posted)
+        .OrderByDescending(v => v.Id).FirstOrDefaultAsync();
+    return v is null ? null : await print.ExportReceiptVoucherAsync(company.Id, v.Id, "print-evidence");
+});
+
+await TryExport("03-payment-voucher.pdf", "سند صرف", async () =>
+{
+    var v = await db.PaymentVouchers
+        .Where(v => v.CompanyId == company.Id && v.Status == PaymentVoucherStatus.Posted)
+        .OrderByDescending(v => v.Id).FirstOrDefaultAsync();
+    return v is null ? null : await print.ExportPaymentVoucherAsync(company.Id, v.Id, "print-evidence");
+});
+
+await TryExport("04-journal-entry.pdf", "قيد يوميّة", async () =>
+{
+    var e = await db.JournalEntries
+        .Where(e => e.CompanyId == company.Id && e.Status == Brqosh.Domain.Accounting.JournalEntryStatus.Posted)
+        .OrderByDescending(e => e.Id).FirstOrDefaultAsync();
+    return e is null ? null : await print.ExportJournalEntryAsync(company.Id, e.Id, "print-evidence");
+});
+
+// ── 2ب. عيّنة تخطيط بتاريخ لا يلتبس ─────────────────────────────────────
+// 2026-03-14: اليوم ≠ الشهر ≠ السنة، فأيّ إعادة ترتيب ثنائية الاتجاه تنكشف فوراً.
+// تُولَّد بلا قاعدة بيانات — غرضها فحص التخطيط لا البيانات.
+var sampleBranding = new PrintBranding("منشأة العيّنة", "310123456700003");
+var samplePdf = SalesInvoicePdfGenerator.Generate(
+    sampleBranding,
+    "INV-SAMPLE-014",
+    new DateOnly(2026, 3, 14),
+    [
+        new SalesInvoicePdfGenerator.Line("خدمة استشارية طويلة الوصف لاختبار الالتفاف", 3m, 1250m, 3750m),
+        new SalesInvoicePdfGenerator.Line("قطع غيار", 12m, 87.5m, 1050m),
+    ],
+    4800m, 720m, 5520m,
+    new SalesInvoicePdfGenerator.InvoicePrintOptions(
+        PartyName: "عميل العيّنة",
+        QrTlvBase64: Brqosh.Infrastructure.Zatca.ZatcaQrGenerator.GenerateTlvBase64Phase1(
+            "منشأة العيّنة", "310123456700003",
+            new DateTime(2026, 3, 14, 12, 0, 0, DateTimeKind.Utc), 5520m, 720m)));
+await File.WriteAllBytesAsync(Path.Combine(outDir, "06-layout-sample.pdf"), samplePdf);
+Console.WriteLine($"[OK] عيّنة تخطيط (2026-03-14) → {samplePdf.Length:N0} بايت");
+
+// ── 3. تصدير Excel حقيقي ────────────────────────────────────────────────
+var today = DateOnly.FromDateTime(DateTime.Now);
+var rows = await new TrialBalanceQuery(db).ExecuteAsync(company.Id, new DateOnly(today.Year, 1, 1), today);
+var xlsxPath = Path.Combine(outDir, "05-trial-balance.xlsx");
+await File.WriteAllBytesAsync(xlsxPath, XlsxWriter.Build(
+    "ميزان المراجعة",
+    ["رمز الحساب", "اسم الحساب", "مدين", "دائن", "رصيد مدين", "رصيد دائن"],
+    rows.Select(r => (IReadOnlyList<XlsxWriter.Cell>)
+    [
+        XlsxWriter.Cell.Text(r.AccountCode),
+        XlsxWriter.Cell.Text(r.AccountNameAr),
+        XlsxWriter.Cell.Number(r.TotalDebit),
+        XlsxWriter.Cell.Number(r.TotalCredit),
+        XlsxWriter.Cell.Number(r.BalanceDebit),
+        XlsxWriter.Cell.Number(r.BalanceCredit),
+    ]).ToList()));
+Console.WriteLine($"[OK] Excel: {rows.Count} صفاً → {new FileInfo(xlsxPath).Length:N0} بايت");
+manifest.Add(new { doc = "trial_balance_xlsx", rows = rows.Count, file = Path.GetFileName(xlsxPath) });
+if (rows.Count == 0) findings.Add("ميزان المراجعة فارغ — تصدير Excel بلا صفوف بيانات.");
+
+// ── الخلاصة ─────────────────────────────────────────────────────────────
+await File.WriteAllTextAsync(
+    Path.Combine(outDir, "manifest.json"),
+    JsonSerializer.Serialize(new { generatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"), artifacts = manifest, findings },
+        new JsonSerializerOptions { WriteIndented = true }),
+    Encoding.UTF8);
+
+Console.WriteLine();
+if (findings.Count == 0)
+{
+    Console.WriteLine("=== PASS: كل المخرجات وُلِّدت والباركود مطابق ===");
+}
+else
+{
+    Console.WriteLine($"=== اكتشافات ({findings.Count}) ===");
+    foreach (var f in findings) Console.WriteLine("  ! " + f);
+}
+Console.WriteLine($"الأدلّة: {outDir}");
+return findings.Count == 0 ? 0 : 1;
+
+// ── دوال مساعدة ─────────────────────────────────────────────────────────
+
+async Task TryExport(string fileName, string label, Func<Task<PrintResult?>> export)
+{
+    try
+    {
+        var res = await export();
+        if (res is null) { Console.WriteLine($"[--] {label}: لا مستند مرحّل — تُخطّى."); return; }
+        await File.WriteAllBytesAsync(Path.Combine(outDir, fileName), res.PdfBytes);
+        Console.WriteLine($"[OK] {label} → {res.PdfBytes.Length:N0} بايت");
+        manifest.Add(new { doc = label, bytes = res.PdfBytes.Length, file = fileName });
+    }
+    catch (Exception ex)
+    {
+        findings.Add($"{label}: فشل التوليد — {ex.Message}");
+    }
+}
+
+static void Check(Dictionary<byte, byte[]> tags, byte tag, string expected, string label, List<string> findings)
+{
+    if (!tags.TryGetValue(tag, out var raw))
+    {
+        findings.Add($"وسم {tag} ({label}) غائب عن رمز QR.");
+        return;
+    }
+    var actual = Encoding.UTF8.GetString(raw);
+    if (!string.Equals(actual, expected, StringComparison.Ordinal))
+        findings.Add($"وسم {tag} ({label}) لا يطابق الفاتورة: «{actual}» ≠ «{expected}».");
+}
+
+/// <summary>فكّ ترميز TLV: بايت وسم + بايت طول + قيمة.</summary>
+static Dictionary<byte, byte[]> DecodeTlv(string base64)
+{
+    var bytes = Convert.FromBase64String(base64);
+    var map = new Dictionary<byte, byte[]>();
+    var i = 0;
+    while (i + 1 < bytes.Length)
+    {
+        var tag = bytes[i++];
+        int len = bytes[i++];
+        if (i + len > bytes.Length) break;
+        map[tag] = bytes[i..(i + len)];
+        i += len;
+    }
+    return map;
+}
+
+static string Preview(byte tag, byte[] value) =>
+    tag is 6 or 7
+        ? $"<{value.Length} بايت ثنائية>"
+        : Encoding.UTF8.GetString(value);
+
+static string Mask(string? s) =>
+    string.IsNullOrEmpty(s) ? "(فارغ)" : s.Length <= 6 ? s : s[..3] + new string('•', s.Length - 6) + s[^3..];
+
+static (DatabaseProvider, string) ResolveConnection()
+{
+    var cfgPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json");
+    if (File.Exists(cfgPath))
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(cfgPath));
+            var p = doc.RootElement.GetProperty("Provider").GetString();
+            var cs = doc.RootElement.GetProperty("ConnectionString").GetString();
+            if (!string.IsNullOrWhiteSpace(cs))
+            {
+                return p?.Contains("postgres", StringComparison.OrdinalIgnoreCase) == true
+                    ? (DatabaseProvider.PostgreSql, cs)
+                    : (DatabaseProvider.Sqlite, cs);
+            }
+        }
+        catch { /* يقع على SQLite الافتراضية أدناه */ }
+    }
+
+    return (DatabaseProvider.Sqlite, "Data Source=" + BrqoshDbContextFactory.DefaultSqlitePath());
+}

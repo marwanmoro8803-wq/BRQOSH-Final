@@ -29,7 +29,7 @@ public static class TrialBalancePdfGenerator
                 page.DefaultTextStyle(x => branding.PageTextStyle( 10));
 
                 page.Header().Element(h => branding.RenderHeader(
-                    h, "ميزان المراجعة", $"من {from:yyyy-MM-dd} إلى {to:yyyy-MM-dd}"));
+                    h, "ميزان المراجعة", $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}"));
 
                 page.Content().PaddingVertical(10).Table(table =>
                 {

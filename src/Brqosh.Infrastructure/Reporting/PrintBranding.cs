@@ -45,7 +45,7 @@ public sealed record PrintBranding(
             if (!string.IsNullOrWhiteSpace(CompanyNameEn))
                 col.Item().AlignCenter().Text(CompanyNameEn).FontSize(9).FontFamily(EffectiveFontFamily);
             if (!string.IsNullOrWhiteSpace(VatRegistrationNumber))
-                col.Item().AlignCenter().Text($"الرقم الضريبي: {VatRegistrationNumber}").FontSize(10)
+                col.Item().AlignCenter().Text($"الرقم الضريبي: {PrintText.Code(VatRegistrationNumber)}").FontSize(10)
                     .FontFamily(EffectiveFontFamily);
             if (!string.IsNullOrWhiteSpace(AddressAr))
                 col.Item().AlignCenter().Text(AddressAr).FontSize(9).FontFamily(EffectiveFontFamily);
@@ -62,7 +62,7 @@ public sealed record PrintBranding(
         {
             if (!string.IsNullOrWhiteSpace(complianceLine))
                 col.Item().AlignCenter().Text(complianceLine).FontSize(8).FontFamily(EffectiveFontFamily);
-            col.Item().AlignCenter().Text($"BRQOSH · {DateTime.Now:yyyy-MM-dd HH:mm}").FontSize(7)
+            col.Item().AlignCenter().Text($"BRQOSH · {PrintText.Timestamp(DateTime.Now)}").FontSize(7)
                 .FontFamily(EffectiveFontFamily);
         });
     }

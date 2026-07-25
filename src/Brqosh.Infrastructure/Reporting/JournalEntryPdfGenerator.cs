@@ -34,7 +34,7 @@ public static class JournalEntryPdfGenerator
 
                 page.Content().PaddingVertical(10).Column(col =>
                 {
-                    col.Item().Text($"التاريخ: {entryDate:yyyy-MM-dd}  |  الحالة: {statusAr}");
+                    col.Item().Text($"التاريخ: {PrintText.Date(entryDate)}  |  الحالة: {statusAr}");
                     if (!string.IsNullOrWhiteSpace(headerDescription))
                         col.Item().Text($"البيان: {headerDescription}");
                     if (!string.IsNullOrWhiteSpace(sourceDocument))
