@@ -23,7 +23,12 @@ public record DashboardKpis(
     decimal NetVatThisMonth,
     decimal InventoryValue,
     int OpenPeriods,
-    int ClosedPeriods);
+    int ClosedPeriods,
+    // (CEEF-214) مؤشرات محاسبية حقيقية من قائمة الدخل — لا من إجماليات المستندات.
+    // المبيعات والمشتريات أعلاه شاملة الضريبة وتصلح لمؤشرات حجم النشاط فقط.
+    decimal RevenueThisMonth = 0m,
+    decimal ExpensesThisMonth = 0m,
+    decimal NetProfitThisMonth = 0m);
 
 public class DashboardQuery(BrqoshDbContext db)
 {
@@ -31,6 +36,10 @@ public class DashboardQuery(BrqoshDbContext db)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
         var monthStart = new DateOnly(today.Year, today.Month, 1);
+
+        // (CEEF-214) الإيراد والمصروف والربح تُقرأ من قائمة الدخل — المصدر المحاسبي
+        // الموثوق — فلا يمكن أن تتناقض لوحة التحكم معها كما كان يحدث.
+        var pnl = await new IncomeStatementQuery(db).ExecuteAsync(companyId, monthStart, today);
 
         // Subtotal/VatAmount مُخزَّنان — تجميع SQL مباشر
         var sales = await db.SalesInvoices
@@ -74,7 +83,8 @@ public class DashboardQuery(BrqoshDbContext db)
         var closed = periods.Count - open;
 
         return new DashboardKpis(sales, purchases, collected, paid, receivables, payables,
-            vat.NetVatPayable, inventoryValue, open, closed);
+            vat.NetVatPayable, inventoryValue, open, closed,
+            pnl.TotalRevenue, pnl.TotalExpenses, pnl.NetIncome);
     }
 }
 

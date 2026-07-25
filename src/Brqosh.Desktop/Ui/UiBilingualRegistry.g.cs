@@ -792,6 +792,19 @@ public static partial class UiBilingualRegistry
         ["＋ منشأة جديدة"] = "+ Company New",
         ["＋ مورد جديد"] = "+ New Supplier",
         ["＋ نشاط"] = "+ Activity",
+        // (CEEF-213) نصوص كانت بلا ترجمة — تبقى عربية عند التبديل للإنجليزية.
+        ["الفئة الضريبية"] = "VAT Category",
+        ["دعم العملاء"] = "Customer Support",
+        ["تذاكر الدعم"] = "Support Tickets",
+        ["مستويات الخدمة (SLA)"] = "Service Levels (SLA)",
+        ["زمن الاستجابة"] = "Response Time",
+        ["ساعات العمل"] = "Business Hours",
+        ["الأولوية"] = "Priority",
+        ["الباقات والتسعير"] = "Plans & Pricing",
+        ["الباقة"] = "Plan",
+        ["أقصى شركات"] = "Max Companies",
+        ["G-31 · SLA · قنوات التواصل · تذاكر الدعم (MVP)"] = "G-31 · SLA · Contact channels · Support tickets (MVP)",
+        ["G-32 · خطط الاشتراك · حدود الشركات"] = "G-32 · Subscription plans · Company limits",        ["البريد: support@brqosh.sa · الهاتف: 9200XXXXXX (MVP — يُحدَّث عند الإطلاق)"] = "Email: support@brqosh.sa · Phone: 9200XXXXXX (MVP — updated at launch)",
     };
 
     public static string Lookup(string arabic) =>

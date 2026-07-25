@@ -114,9 +114,15 @@ public partial class DashboardPage : UserControl
 
         var values = new[]
         {
-            k.SalesThisMonth,
-            k.PurchasesThisMonth + k.PaidThisMonth,
-            k.SalesThisMonth - k.PurchasesThisMonth,
+            // (CEEF-214) من قائمة الدخل لا من إجماليات المستندات. كان:
+            //   الإيرادات = مبيعات شاملة الضريبة (والضريبة أمانة للهيئة لا إيراد)
+            //   المصروفات = مشتريات + سدادات (شراء المخزون أصل لا مصروف، والسداد
+            //               حركة نقد — ومع ذلك يُحتسب الاثنان فيزدوج الرقم)
+            //   صافي الربح = مبيعات − مشتريات (ليس ربحاً بأي تعريف)
+            // فكانت اللوحة تعرض خسارة بينما قائمة الدخل تعرض ربحاً على نفس البيانات.
+            k.RevenueThisMonth,
+            k.ExpensesThisMonth,
+            k.NetProfitThisMonth,
             k.CollectedThisMonth - k.PaidThisMonth,
             k.Receivables, k.Payables, k.NetVatThisMonth, k.InventoryValue,
             k.OpenPeriods, k.ClosedPeriods,
@@ -136,7 +142,7 @@ public partial class DashboardPage : UserControl
         IntelColumn.Children.Clear();
 
         var cashSeries = new[] { k.CollectedThisMonth * 0.7m, k.CollectedThisMonth * 0.85m, k.CollectedThisMonth, k.PaidThisMonth, k.CollectedThisMonth - k.PaidThisMonth };
-        var revSeries = new[] { k.SalesThisMonth * 0.6m, k.SalesThisMonth * 0.8m, k.SalesThisMonth, k.PurchasesThisMonth, k.SalesThisMonth - k.PurchasesThisMonth };
+        var revSeries = new[] { k.RevenueThisMonth, k.ExpensesThisMonth, k.NetProfitThisMonth };
 
         ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildChartPanel(this, "اتجاه النقد", "Cash Trend", cashSeries, "شهري", "Monthly"));
         ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildChartPanel(this, "الإيرادات مقابل التكلفة", "Revenue vs Cost", revSeries, "مقارنة", "Comparison"));
