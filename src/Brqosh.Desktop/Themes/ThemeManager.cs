@@ -14,6 +14,7 @@ public static class ThemeManager
     {
         IsDark = dark;
         var r = System.Windows.Application.Current.Resources;
+        EnsureMutableBrushes(r);
         if (dark)
             ApplyLuxuryDark(r);
         else
@@ -98,4 +99,30 @@ public static class ThemeManager
 
     private static Color ParseColor(string hex) =>
         (Color)ColorConverter.ConvertFromString(hex)!;
+
+    /// <summary>
+    /// (CEEF-217) يضمن أن فُرش الثيم قابلة للتعديل في مكانها.
+    ///
+    /// فرشاة XAML في قاموس موارد تُجمَّد عادةً، فيضطر <see cref="SetColor"/> إلى
+    /// **استبدالها** بنسخة جديدة — وكل عنصر التقط النسخة القديمة (عبر FindResource)
+    /// يبقى بلونها إلى الأبد. أثره مقيس بلقطة شاشة: نصّ لوحة المساعد ظلّ بألوان
+    /// الثيم الداكن (#F8FAFC و#CBD5E1) فوق خلفية فاتحة، بتباين 1.05 و1.48 مقابل
+    /// 4.5 المطلوبة — نصّ يكاد لا يُرى، وهو مصدر انطباع «الواجهة مبهمة».
+    ///
+    /// بإذابة التجميد مرة واحدة قبل أول رسم، تصير كل التبديلات تعديلاً في المكان
+    /// فيتتبّعها كل عنصر تلقائياً — دون تعديل عشرات مواضع الاستخدام.
+    /// </summary>
+    private static void EnsureMutableBrushes(ResourceDictionary r)
+    {
+        if (_brushesUnfrozen) return;
+        _brushesUnfrozen = true;
+
+        foreach (var key in r.Keys.Cast<object>().ToList())
+        {
+            if (r[key] is SolidColorBrush { IsFrozen: true } frozen)
+                r[key] = new SolidColorBrush(frozen.Color);
+        }
+    }
+
+    private static bool _brushesUnfrozen;
 }
