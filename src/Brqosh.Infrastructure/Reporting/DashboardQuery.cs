@@ -13,6 +13,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Reporting;
 
+/// <summary>نقطة شهرية حقيقية في اتجاه النقد (CEEF-216).</summary>
+public record CashTrendPoint(int Year, int Month, decimal Collected, decimal Paid)
+{
+    public decimal Net => Collected - Paid;
+    public string Label => $"{Month:D2}/{Year % 100:D2}";
+}
+
 public record DashboardKpis(
     decimal SalesThisMonth,
     decimal PurchasesThisMonth,
@@ -28,7 +35,10 @@ public record DashboardKpis(
     // المبيعات والمشتريات أعلاه شاملة الضريبة وتصلح لمؤشرات حجم النشاط فقط.
     decimal RevenueThisMonth = 0m,
     decimal ExpensesThisMonth = 0m,
-    decimal NetProfitThisMonth = 0m);
+    decimal NetProfitThisMonth = 0m,
+    // (CEEF-216) اتجاه نقد حقيقي من القاعدة — كان يُصطنع بضرب رقم الشهر الجاري
+    // في معاملات ثابتة (0.7 و0.85) ويُعرض كأنه تاريخ فعلي.
+    IReadOnlyList<CashTrendPoint>? CashTrend = null);
 
 public class DashboardQuery(BrqoshDbContext db)
 {
@@ -70,6 +80,8 @@ public class DashboardQuery(BrqoshDbContext db)
                         && v.VoucherDate >= monthStart && v.VoucherDate <= today)
             .SumAsync(v => (decimal?)v.Amount) ?? 0m;
 
+        var cashTrend = await CashTrendAsync(companyId, today, months: 6);
+
         var receivables = (await new CustomerBalanceQuery(db).AllBalancesAsync(companyId)).Values.Sum();
         var payables = (await new SupplierBalanceQuery(db).AllBalancesAsync(companyId)).Values.Sum();
 
@@ -84,7 +96,43 @@ public class DashboardQuery(BrqoshDbContext db)
 
         return new DashboardKpis(sales, purchases, collected, paid, receivables, payables,
             vat.NetVatPayable, inventoryValue, open, closed,
-            pnl.TotalRevenue, pnl.TotalExpenses, pnl.NetIncome);
+            pnl.TotalRevenue, pnl.TotalExpenses, pnl.NetIncome, cashTrend);
+    }
+
+    /// <summary>
+    /// اتجاه النقد لآخر عدة أشهر — تحصيلات وسدادات فعلية من القاعدة.
+    /// تجميع واحد لكل جدول ثم تجميع في الذاكرة على عدد أشهر صغير — لا استعلام لكل شهر.
+    /// </summary>
+    private async Task<IReadOnlyList<CashTrendPoint>> CashTrendAsync(
+        long companyId, DateOnly today, int months)
+    {
+        var firstMonth = new DateOnly(today.Year, today.Month, 1).AddMonths(-(months - 1));
+
+        var receipts = await db.ReceiptVouchers
+            .Where(v => v.CompanyId == companyId && v.Status == ReceiptVoucherStatus.Posted
+                        && v.VoucherDate >= firstMonth && v.VoucherDate <= today)
+            .GroupBy(v => new { v.VoucherDate.Year, v.VoucherDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(v => v.Amount) })
+            .ToListAsync();
+
+        var payments = await db.PaymentVouchers
+            .Where(v => v.CompanyId == companyId && v.Status == PaymentVoucherStatus.Posted
+                        && v.VoucherDate >= firstMonth && v.VoucherDate <= today)
+            .GroupBy(v => new { v.VoucherDate.Year, v.VoucherDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(v => v.Amount) })
+            .ToListAsync();
+
+        var trend = new List<CashTrendPoint>(months);
+        for (var i = 0; i < months; i++)
+        {
+            var m = firstMonth.AddMonths(i);
+            // شهر بلا حركة يبقى نقطة بصفر — لا يُحذف، وإلا انكمش المحور وأوهم بنشاط متصل.
+            trend.Add(new CashTrendPoint(
+                m.Year, m.Month,
+                receipts.FirstOrDefault(r => r.Year == m.Year && r.Month == m.Month)?.Total ?? 0m,
+                payments.FirstOrDefault(p => p.Year == m.Year && p.Month == m.Month)?.Total ?? 0m));
+        }
+
+        return trend;
     }
 }
-

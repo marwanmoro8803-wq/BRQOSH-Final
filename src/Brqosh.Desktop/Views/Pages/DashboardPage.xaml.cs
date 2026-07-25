@@ -141,11 +141,26 @@ public partial class DashboardPage : UserControl
         ChartsColumn.Children.Clear();
         IntelColumn.Children.Clear();
 
-        var cashSeries = new[] { k.CollectedThisMonth * 0.7m, k.CollectedThisMonth * 0.85m, k.CollectedThisMonth, k.PaidThisMonth, k.CollectedThisMonth - k.PaidThisMonth };
-        var revSeries = new[] { k.RevenueThisMonth, k.ExpensesThisMonth, k.NetProfitThisMonth };
+        // (CEEF-216) اتجاه نقد **حقيقي** من القاعدة. كان يُصطنع بضرب رقم الشهر الجاري
+        // في 0.7 و0.85 ويُعرض كأنه تاريخ شهريّ فعليّ — بيانات مالية ملفّقة على لوحة قرار.
+        var cashSeries = (k.CashTrend ?? [])
+            .Select(p => new ChartPoint(p.Label, p.Net))
+            .ToList();
 
-        ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildChartPanel(this, "اتجاه النقد", "Cash Trend", cashSeries, "شهري", "Monthly"));
-        ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildChartPanel(this, "الإيرادات مقابل التكلفة", "Revenue vs Cost", revSeries, "مقارنة", "Comparison"));
+        // مقارنة بين فئات لا اتجاه زمنيّ — أعمدة لا خط.
+        var revSeries = new List<ChartPoint>
+        {
+            new(LocaleManager.T("إيراد", "Revenue"), k.RevenueThisMonth),
+            new(LocaleManager.T("مصروف", "Expenses"), k.ExpensesThisMonth),
+            new(LocaleManager.T("ربح", "Profit"), k.NetProfitThisMonth),
+        };
+
+        if (cashSeries.Count > 0)
+            ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildChartPanel(
+                this, "اتجاه النقد", "Cash Trend", cashSeries, "صافي شهري", "Monthly net"));
+
+        ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildChartPanel(
+            this, "الإيرادات مقابل التكلفة", "Revenue vs Cost", revSeries, "مقارنة", "Comparison", asBars: true));
         ChartsColumn.Children.Add(ExecutiveDashboardBuilder.BuildPerformanceSummary(this, k));
 
         if (intel is not null)

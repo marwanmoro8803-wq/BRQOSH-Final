@@ -42,8 +42,12 @@ public static class ExecutiveDashboardBuilder
         return new Border { Style = UiResources.StyleOf(host, "AlertStrip"), Child = panel };
     }
 
+    /// <summary>
+    /// (CEEF-216) لوحة رسم بمحاور وقيم. <paramref name="asBars"/> للمقارنة بين فئات:
+    /// الخط يوحي بتدرّج زمنيّ، فرسمُ إيراد/مصروف/ربح كخطّ متصل مضلِّل.
+    /// </summary>
     public static UIElement BuildChartPanel(FrameworkElement host, string titleAr, string titleEn,
-        IReadOnlyList<decimal> series, string legendAr, string legendEn)
+        IReadOnlyList<ChartPoint> series, string legendAr, string legendEn, bool asBars = false)
     {
         var header = new Grid { Margin = new Thickness(0, 0, 0, 12) };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -76,14 +80,23 @@ public static class ExecutiveDashboardBuilder
 
         var chartHost = new Border
         {
-            Height = 128,
+            Height = 152,
             Background = UiResources.BrushOf(host, "BackgroundBrush"),
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(8),
-            Child = SparklineBuilder.Create(
-                series, 480, 112,
-                UiResources.BrushOf(host, "ElectricCyanBrush"),
-                UiResources.BrushOf(host, "PrimarySoftBrush")),
+            Child = asBars
+                ? ChartBuilder.CreateBars(
+                    series, 520, 132,
+                    UiResources.BrushOf(host, "ElectricCyanBrush"),
+                    UiResources.BrushOf(host, "PrimarySoftBrush"),
+                    UiResources.BrushOf(host, "TextPrimaryBrush"),
+                    UiResources.BrushOf(host, "TextMutedBrush"))
+                : ChartBuilder.CreateLine(
+                    series, 520, 132,
+                    UiResources.BrushOf(host, "ElectricCyanBrush"),
+                    UiResources.BrushOf(host, "PrimarySoftBrush"),
+                    UiResources.BrushOf(host, "TextPrimaryBrush"),
+                    UiResources.BrushOf(host, "TextMutedBrush")),
         };
 
         var body = new StackPanel();
