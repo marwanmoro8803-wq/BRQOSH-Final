@@ -12,8 +12,8 @@
 |---|---|
 | اللغة | C# / .NET 9 |
 | الواجهة | WPF + Fluent Design (RTL عربي كامل) |
-| قاعدة البيانات | PostgreSQL 17 |
-| الوصول للبيانات | EF Core + Dapper (للتقارير الثقيلة) |
+| قاعدة البيانات | PostgreSQL (الإنتاج) · SQLite (تطوير/اختبار فقط) |
+| الوصول للبيانات | EF Core (التقارير الثقيلة تُجمَّع في SQL عبر LINQ) |
 | التقارير | QuestPDF |
 | الفوترة الإلكترونية | ZATCA Phase 2 (UBL XML + توقيع EC P-256) |
 
@@ -27,14 +27,13 @@ src/
   Brqosh.Application/     حالات الاستخدام والخدمات
   Brqosh.Infrastructure/  قاعدة البيانات، ZATCA، التقارير
   Brqosh.Desktop/         واجهة WPF (MVVM)
-  Modules/
-    Brqosh.Modules.Construction/   المقاولات (مشاريع، BOQ، مستخلصات)
-    Brqosh.Modules.Manufacturing/  الإنتاج (BOM، أوامر إنتاج)
-    Brqosh.Modules.Retail/         التسويق (POS، باركود)
+  Modules/                 (أصداف مشاريع — الوحدات مطبَّقة فعلياً كأعلام ميزات
+                            عبر Domain/Modules/ModuleCatalog، وكودها داخل Infrastructure)
 tests/
   Brqosh.Domain.Tests/
   Brqosh.Application.Tests/
-  Brqosh.Integration.Tests/
+  Brqosh.Api.Tests/
+  Brqosh.Desktop.Tests/
 docs/
   architecture/           قرارات المعمارية (ADRs)
 ```
@@ -45,7 +44,7 @@ docs/
 2. **لا حذف فعلي للقيود** — Soft delete + Audit trail على كل عملية.
 3. **الأداء هدف تصميمي**: إقلاع < 3 ثوانٍ، بحث في 5 مليون سجل < 1 ثانية.
 4. **عربي RTL أولاً** — الإنجليزية لغة ثانية.
-5. **Partitioning حسب السنة المالية** لجداول الحركات.
+5. **الهجرات مسار الإنتاج حصراً** — تُولَّد على Npgsql؛ وSQLite يُهيَّأ من النموذج مباشرة.
 
 ## المتطلبات
 
@@ -59,3 +58,14 @@ docs/
 dotnet build Brqosh.sln
 dotnet run --project src/Brqosh.Desktop
 ```
+
+## التحقق
+
+```powershell
+dotnet build Brqosh.sln
+dotnet test Brqosh.sln                       # 561 اختباراً
+dotnet run --project tools/MigrationProbe    # حارس PostgreSQL: هجرات + ترحيل + تزامن + أرصدة
+pwsh -File scripts/ops/verify-ui-live.ps1 -Nav "فواتير المبيعات" -Dialog "فاتورة مبيعات جديدة"
+```
+
+آخر تدقيق شامل: [`تقارير/CEEF-211_تقرير_الإغلاق_النهائي_2026-07-25.md`](تقارير/CEEF-211_تقرير_الإغلاق_النهائي_2026-07-25.md) · البنود المفتوحة: [`docs/OPEN_ITEMS.md`](docs/OPEN_ITEMS.md)
