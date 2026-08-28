@@ -6,6 +6,7 @@ using Brqosh.Domain.Retail;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -71,7 +72,7 @@ public partial class PosShiftsPage : UserControl
         if (cashDialog.ShowDialog() != true)
             return;
 
-        if (!decimal.TryParse(cashDialog.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var cash) || cash < 0)
+        if (!NumericInput.TryParse(cashDialog.Value, out var cash) || cash < 0)
         {
             UiFeedback.ShowWarning("مبلغ النقد غير صالح.");
             return;
@@ -118,7 +119,7 @@ public partial class PosShiftsPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
-        if (!decimal.TryParse(dialog.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var closing))
+        if (!NumericInput.TryParse(dialog.Value, out var closing))
         {
             UiFeedback.ShowWarning("المبلغ غير صالح.");
             return;

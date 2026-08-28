@@ -1,4 +1,4 @@
-using Brqosh.Domain.Companies;
+﻿using Brqosh.Domain.Companies;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 
@@ -22,11 +22,21 @@ public sealed record PrintBranding(
     public static PrintBranding FromCompany(Company company)
     {
         var logo = CompanyBrandingStorage.TryReadLogo(company.LogoFilePath);
+
+        // (CEEF-229 · Z-10) الترويسة تُفضّل العنوان الوطنيّ على النصّ الحرّ متى اكتمل.
+        //
+        // الفاتورة الضريبية تلزمها بيانات عنوان البائع، والنصّ الحرّ لا يفي بها. ومتى أدخل
+        // المالك العنوان الوطنيّ صار هو المصدر — فلا يُطالَب بإدخاله مرّتين، ولا تختلف
+        // الورقة عن XML المرسَل إلى الهيئة.
+        var address = company.NationalAddress.IsComplete
+            ? company.NationalAddress.ToPrintLine()
+            : company.AddressAr;
+
         return new(
             company.NameAr,
             company.VatRegistrationNumber,
             company.NameEn,
-            company.AddressAr,
+            address,
             logo,
             CompanyBrandingStorage.NormalizePrintFont(company.PrintFontFamily));
     }

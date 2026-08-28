@@ -34,6 +34,10 @@ internal static class SchemaSqlGuard
         "character varying(128) NULL",
         "character varying(256) NULL",
         "character varying(64) NOT NULL DEFAULT 'Tahoma'",
+        // (CEEF-229 · Z-10) هوية المنشأة النظامية — نصوص غير قابلة للعدم، فارغُها يعني «لم يُدخَل».
+        "character varying(16) NOT NULL DEFAULT ''",
+        "character varying(128) NOT NULL DEFAULT ''",
+        "character varying(256) NOT NULL DEFAULT ''",
         "INTEGER NOT NULL DEFAULT 0",
         "BOOLEAN NOT NULL DEFAULT false",
         "NUMERIC(18,2) NOT NULL DEFAULT 0",

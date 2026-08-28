@@ -2,6 +2,7 @@ using System.Windows;
 using Brqosh.Domain.Construction;
 using Brqosh.Infrastructure.Construction;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -77,11 +78,11 @@ public partial class ProjectDialog : Window
     {
         try
         {
-            if (!decimal.TryParse(ValueBox.Text, out var value))
+            if (!NumericInput.TryParse(ValueBox.Text, out var value))
                 throw new InvalidOperationException("قيمة العقد غير صالحة.");
-            if (!decimal.TryParse(EstimatedCostBox.Text, out var estimatedCost))
+            if (!NumericInput.TryParse(EstimatedCostBox.Text, out var estimatedCost))
                 throw new InvalidOperationException("التكلفة المقدّرة غير صالحة.");
-            if (!decimal.TryParse(RetentionBox.Text, out var retention))
+            if (!NumericInput.TryParse(RetentionBox.Text, out var retention))
                 throw new InvalidOperationException("نسبة المحتجز غير صالحة.");
 
             long? customerId = null;

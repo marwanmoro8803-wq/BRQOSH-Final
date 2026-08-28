@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Brqosh.Application.Setup;
 
 namespace Brqosh.Infrastructure.Licensing;
@@ -53,7 +53,9 @@ public static class LicenseStore
 
     public static bool ValidateForCompany(string companyName, DateTime? setupCompletedUtc = null)
     {
-        if (string.Equals(Environment.GetEnvironmentVariable("BRQOSH_UITEST"), "1", StringComparison.Ordinal))
+        // (CEEF-228) تجاوز الترخيص للتدقيق الآلي - معطّل قسرياً في الإنتاج.
+        if (!AppEnvironmentConfig.IsProduction &&
+            string.Equals(Environment.GetEnvironmentVariable("BRQOSH_UITEST"), "1", StringComparison.Ordinal))
             return true;
 
         var machineId = LicenseService.MachineId();

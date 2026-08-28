@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Platform;
 using Brqosh.Infrastructure.Accounting;
@@ -50,20 +50,13 @@ public class StockMovementCancellationService(BrqoshDbContext db)
             }
 
             movement.MarkCancelled();
-            await new InventoryService(db).ReverseMovementBalancesAsync(movement);
-            await db.SaveChangesAsync(token);
 
-            var inv = new InventoryService(db);
-            foreach (var line in movement.Lines)
-            {
-                var onHand = await inv.GetCompanyOnHandAsync(companyId, line.ProductId);
-                if (onHand == 0)
-                {
-                    var product = await db.Products.SingleAsync(p => p.Id == line.ProductId, token);
-                    product.SetWeightedAverageCost(0);
-                }
-            }
-
+            // (CEEF-229 · م0-١) عكسٌ كامل عبر المسار الموحّد — كمية وتكلفة.
+            //
+            // كان هنا عكسُ الكمية وحدها، ثم تصفيرُ المتوسط في حالةٍ منحلّة واحدة: أن يصير
+            // الرصيد الكليّ صفراً. فإلغاء حركةٍ واردة مع بقاء رصيد كان يترك المتوسط مسموماً
+            // بتكلفة حركةٍ أُلغيت، فيفترق الدفتر المساعد عن الأستاذ فرقاً دائماً.
+            await new InventoryService(db).ReverseDocumentMovementAsync(movement);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء حركة مخزون",

@@ -147,6 +147,12 @@ public partial class App : System.Windows.Application
     /// <summary>دخول آلي للتدقيق FlaUI فقط — BRQOSH_UITEST=1 (لا يُفعَّل في التشغيل العادي).</summary>
     private async Task<bool> TryEnterWithUiTestAuthAsync(SetupState setup)
     {
+        // (CEEF-228) معطّل قسرياً في الإنتاج - نفس نمط SecurityContext.AutomatedTestBypass.
+        // بدون هذه البوابة كان متغيّر بيئة على مستوى المستخدم (لا يحتاج صلاحية مسؤول)
+        // يفتح البرنامج بحساب Administrator بلا كلمة مرور ولا ترخيص.
+        if (AppEnvironmentConfig.IsProduction)
+            return false;
+
         if (!string.Equals(Environment.GetEnvironmentVariable("BRQOSH_UITEST"), "1", StringComparison.Ordinal))
             return false;
 

@@ -1,3 +1,5 @@
+﻿using Brqosh.Domain.Tax;
+using Brqosh.Domain.Zatca;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -9,7 +11,17 @@ public static class SalesInvoicePdfGenerator
 {
     static SalesInvoicePdfGenerator() => QuestPDF.Settings.License = LicenseType.Community;
 
-    public record Line(string Description, decimal Qty, decimal Price, decimal Total);
+    /// <summary>
+    /// سطر مطبوعة. <paramref name="Category"/> إلزاميّ دلالياً وإن كانت له قيمة افتراضية:
+    /// بدونه كانت المطبوعة توزّع ضريبة المستند تناسبياً على كل السطور، فيظهر على سطر
+    /// صادرات صفريّ مبلغُ ضريبةٍ لم يُحصَّل قط — والمطبوعة هي المستند المسلَّم للعميل.
+    /// </summary>
+    public record Line(
+        string Description,
+        decimal Qty,
+        decimal Price,
+        decimal Total,
+        VatCategory Category = VatCategory.Standard);
 
     public record InvoicePrintOptions(
         PrintDocumentKind Kind = PrintDocumentKind.SimplifiedSalesInvoice,
@@ -54,9 +66,17 @@ public static class SalesInvoicePdfGenerator
         var compliance = BuildComplianceLine(options);
         // النسبة محسوبة من الأرقام لا مثبّتة بـ«15%»: فاتورة صفرية أو معفاة أو بنسبة
         // خليجية مختلفة كانت تُطبع بنسبة كاذبة.
-        var vatRateLabel = PrintText.Ltr(subtotal == 0m
+        //
+        // وتُحسب من **الوعاء الخاضع وحده** لا من إجمالي المستند: فاتورة فيها 1,000
+        // أساسيّ و500 صفريّ بضريبة 150.00 كانت تُخرِج 150/1500 = «10%» — نسبةٌ لا وجود
+        // لها في أي نظام ضريبيّ، تُطبع في رأس عمود الضريبة على مستند يراه المدقّق.
+        var mixed = lines.Select(l => l.Category).Distinct().Count() > 1;
+        var standardBase = lines.Where(l => l.Category == VatCategory.Standard).Sum(l => l.Total);
+        var vatRateLabel = PrintText.Ltr(standardBase == 0m
             ? "%"
-            : (Math.Round(vat / subtotal * 100m, 2, MidpointRounding.AwayFromZero)).ToString("0.##") + "%");
+            : (Math.Round(vat / standardBase * 100m, 2, MidpointRounding.AwayFromZero)).ToString("0.##") + "%");
+        // مستند مختلط الفئات: لا نسبةَ واحدة تصفه، فتُعلن الفئة على كل سطر بدلاً من الرأس.
+        var vatColumnHeader = mixed ? "الضريبة" : $"ضريبة {vatRateLabel}";
 
         return Document.Create(container =>
         {
@@ -116,7 +136,7 @@ public static class SalesInvoicePdfGenerator
                             HeaderCell(h.Cell(), "الكمية");
                             HeaderCell(h.Cell(), "السعر");
                             HeaderCell(h.Cell(), "الخاضع للضريبة");
-                            HeaderCell(h.Cell(), $"ضريبة {vatRateLabel}");
+                            HeaderCell(h.Cell(), vatColumnHeader);
                             HeaderCell(h.Cell(), "الإجمالي");
                         });
 
@@ -127,13 +147,19 @@ public static class SalesInvoicePdfGenerator
                             var lineVat = lineVats[index];
                             index++;
                             var shade = index % 2 == 0;
+                            // على مستند مختلط الفئات تُعلَن فئة كل سطر بجوار مبلغ ضريبته —
+                            // الفاتورة الضريبية تلزمها فئة ونسبة لكل بند، وسطرٌ بـ«0.00» بلا
+                            // بيان سببه يقرؤه المدقّق سهواً لا إعفاءً.
+                            var vatCell = mixed
+                                ? $"{lineVat:N2} · {line.Category.NameAr()}"
+                                : $"{lineVat:N2}";
 
                             BodyCell(table.Cell(), index.ToString(), shade, center: true);
                             BodyCell(table.Cell(), line.Description, shade);
                             BodyCell(table.Cell(), $"{line.Qty:N2}", shade, center: true);
                             BodyCell(table.Cell(), $"{line.Price:N2}", shade, center: true);
                             BodyCell(table.Cell(), $"{line.Total:N2}", shade, center: true);
-                            BodyCell(table.Cell(), $"{lineVat:N2}", shade, center: true);
+                            BodyCell(table.Cell(), vatCell, shade, center: true);
                             BodyCell(table.Cell(), $"{line.Total + lineVat:N2}", shade, center: true);
                         }
                     });
@@ -201,17 +227,40 @@ public static class SalesInvoicePdfGenerator
         IReadOnlyList<Line> lines, decimal subtotal, decimal vat)
     {
         var allocated = new decimal[lines.Count];
-        if (lines.Count == 0 || subtotal == 0m)
+        if (lines.Count == 0)
             return allocated;
 
+        // التوزيع يقع على **الوعاء الخاضع** لا على إجمالي المستند: البند الصفريّ أو
+        // المعفى أو الخارج عن النطاق ضريبتُه صفر بحكم الفئة، لا حصةٌ نسبية من ضريبةٍ
+        // حُسبت على بنود أخرى. التوزيع التناسبي الأعمى كان يطبع على سطر صادرات صفريّ
+        // مبلغَ ضريبةٍ لم يُحصَّل قط — على المستند المسلَّم للعميل.
+        var bearers = new List<int>();
         for (var i = 0; i < lines.Count; i++)
-            allocated[i] = Math.Round(vat * (lines[i].Total / subtotal), 2, MidpointRounding.AwayFromZero);
+            if (lines[i].Category == VatCategory.Standard)
+                bearers.Add(i);
 
+        // احتياطٌ لا يُسقِط ريالاً: مستندٌ بضريبة موجبة وبلا سطر خاضع واحد يعني تعارضاً
+        // بين البيانات والفئات. يُوزَّع حينها على كل السطور حتى يبقى العمود مطابقاً
+        // للذيل — فعمودٌ لا يجمع إلى الإجمالي أسوأ من عمودٍ موزَّع بتحفّظ.
+        var baseAmount = bearers.Sum(i => lines[i].Total);
+        if (bearers.Count == 0 || baseAmount == 0m)
+        {
+            if (vat == 0m || subtotal == 0m)
+                return allocated;
+            bearers = [.. Enumerable.Range(0, lines.Count)];
+            baseAmount = subtotal;
+        }
+
+        foreach (var i in bearers)
+            allocated[i] = Math.Round(vat * (lines[i].Total / baseAmount), 2, MidpointRounding.AwayFromZero);
+
+        // الفرق يُحمَّل على أكبر بند **خاضع** (أقلّ أثر نسبيّ) — لا على أكبر بند مطلقاً،
+        // وإلا عاد الكسرُ إلى سطرٍ معفى فانتقض الإصلاح من حيث أُريد له أن يُحكم.
         var residual = vat - allocated.Sum();
         if (residual != 0m)
         {
-            var largest = 0;
-            for (var i = 1; i < lines.Count; i++)
+            var largest = bearers[0];
+            foreach (var i in bearers)
                 if (Math.Abs(lines[i].Total) > Math.Abs(lines[largest].Total))
                     largest = i;
             allocated[largest] += residual;
@@ -322,8 +371,19 @@ public static class SalesInvoicePdfGenerator
         var parts = new List<string>();
         if (options.Icv is int icv)
             parts.Add($"ICV: {icv}");
+
+        // (CEEF-229 · م0-١٠) الحالة تُطبع بالعربية، والمحاكاة تُعلَن صراحةً.
+        //
+        // كان يُطبع اسم الحالة البرمجيّ («Cleared») على فاتورة عربية — والأسوأ أن المحاكاة
+        // كانت تُعلَّم Cleared، فيقرأ المدقّق على الورقة أن الهيئة اعتمدت مستنداً لم ترَه.
         if (!string.IsNullOrWhiteSpace(options.ComplianceStatus))
-            parts.Add(options.ComplianceStatus);
+        {
+            parts.Add(Enum.TryParse<Brqosh.Domain.Zatca.ZatcaComplianceStatus>(
+                options.ComplianceStatus, out var parsed)
+                ? parsed.NameAr()
+                : options.ComplianceStatus);
+        }
+
         return parts.Count == 0 ? null : string.Join(" · ", parts);
     }
 }

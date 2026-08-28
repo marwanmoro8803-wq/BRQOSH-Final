@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace Brqosh.Infrastructure.Zatca;
@@ -21,7 +21,8 @@ public static class ZatcaQrGenerator
         decimal invoiceTotal,
         decimal vatTotal,
         string invoiceHashBase64,
-        string ecdsaSignatureBase64)
+        string ecdsaSignatureBase64,
+        string? publicKeyDerBase64 = null)
     {
         var ts = timestampUtc.ToString(
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
@@ -37,6 +38,16 @@ public static class ZatcaQrGenerator
             (6, Convert.FromBase64String(invoiceHashBase64)),   // Phase 2: هاش الفاتورة (bytes خام)
             (7, Convert.FromBase64String(ecdsaSignatureBase64)), // Phase 2: توقيع ECDSA (bytes خام)
         };
+
+        // (CEEF-229 · Z-9) الوسم 8 — المفتاح العام لختم التشفير.
+        //
+        // كانت المصفوفة تنتهي عند 7: توقيعٌ ECDSA بلا مفتاحٍ يتحقّق به. فماسحُ «فاتورة» يفكّ
+        // سبعة وسوم ولا يستطيع إثبات صحّة الختم، وفحصُ الامتثال على الفاتورة المبسّطة يفشل.
+        // والمفتاح يُستخرج من الشهادة محلياً — لا ينتظر شيئاً من الهيئة.
+        //
+        // (الوسم 9 — توقيع الهيئة على المفتاح العام — يأتي مع CSID الإنتاجيّ في م4.)
+        if (!string.IsNullOrWhiteSpace(publicKeyDerBase64))
+            items = [.. items, ((byte)8, Convert.FromBase64String(publicKeyDerBase64))];
 
         return EncodeTlv(items);
     }

@@ -229,5 +229,17 @@
   "يزيل لون الخلفية المتّصل بحواف الصورة ويُبقي البياض داخل الشعار.": "Removes the background colour connected to the image edges, keeping any white enclosed inside the logo.",
   "إشعار دائن جديد": "New credit note",
   "＋ إشعار دائن جديد": "＋ New credit note",
-  "＋ إشعار مدين مشتريات": "＋ New purchase debit note"
+  "＋ إشعار مدين مشتريات": "＋ New purchase debit note",
+  "بيانات الفاتورة الإلكترونية": "E-invoicing registration details",
+  "الاسم المسجَّل في السجل التجاري": "Registered legal name",
+  "رقم السجل التجاري": "Commercial registration number",
+  "العنوان الوطني": "National address",
+  "رقم المبنى (4 خانات)": "Building number (4 digits)",
+  "الرقم الإضافي (اختياري)": "Additional number (optional)",
+  "اسم الشارع": "Street name",
+  "الحي": "District",
+  "المدينة": "City",
+  "الرمز البريدي (5 خانات)": "Postal code (5 digits)",
+  "المنطقة": "Region",
+  "رمز الدولة": "Country code"
 }

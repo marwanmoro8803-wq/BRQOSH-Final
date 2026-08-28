@@ -1,6 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -36,14 +37,17 @@ public partial class BankTransferDialog : Window
 
     private async void OnSave(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         ErrorText.Visibility = Visibility.Collapsed;
         try
         {
             if (FromBankCombo.SelectedValue is not long fromId || ToBankCombo.SelectedValue is not long toId)
                 throw new InvalidOperationException("اختر حسابي البنك.");
 
-            if (!decimal.TryParse(AmountBox.Text.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
-                && !decimal.TryParse(AmountBox.Text.Trim(), out amount))
+            if (!NumericInput.TryParse(AmountBox.Text.Trim(), out var amount))
                 throw new InvalidOperationException("أدخل مبلغاً صحيحاً.");
 
             var date = DatePickerBox.SelectedDate is DateTime dt

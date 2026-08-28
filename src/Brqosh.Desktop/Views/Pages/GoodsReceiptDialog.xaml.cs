@@ -1,8 +1,9 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -57,6 +58,10 @@ public partial class GoodsReceiptDialog : Window
 
     private async void OnPost(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             if (OrderBox.SelectedItem is not OrderOption order)

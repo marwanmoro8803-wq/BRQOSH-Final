@@ -1,9 +1,10 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -62,6 +63,10 @@ public partial class ChequeDialog : Window
 
     private async void OnSave(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             if (DateBox.SelectedDate is null)
@@ -70,7 +75,7 @@ public partial class ChequeDialog : Window
                 throw new AccountingException("اختر الطرف.");
             if (BankCombo.SelectedValue is not long bankId)
                 throw new AccountingException("اختر الحساب البنكي.");
-            if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
+            if (!NumericInput.TryParse(AmountBox.Text, out var amount))
                 throw new AccountingException("أدخل مبلغاً صحيحاً.");
 
             var date = DateOnly.FromDateTime(DateBox.SelectedDate.Value);

@@ -22,4 +22,9 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- (CEEF-229 · م0-١٦) دلالة إعادة الدخول في UiBusyGuard تُقاس مباشرةً. -->
+    <InternalsVisibleTo Include="Brqosh.Desktop.Tests" />
+  </ItemGroup>
+
 </Project>

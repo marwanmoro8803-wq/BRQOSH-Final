@@ -24,6 +24,16 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             if (saleProceeds < 0)
                 throw new AccountingException("عائد البيع لا يكون سالباً.");
 
+            // (CEEF-229 · م0-١٥) العائد يُقرَّب إلى منزلتين قبل أيّ استعمال.
+            //
+            // كان `gainLoss` وحده مُقرَّباً وسطرُ النقدية يأخذ الرقم خاماً، و`NumericInput` يقبل
+            // أيّ عدد منازل. فعائد 4,000.005 على أصلٍ تكلفته 5,000 بلا إهلاك يُنتج فرقاً بـ0.005
+            // فيرفضه `Post` برسالة **تلوم القيد لا المُدخَل** — ويعجز المستخدم عن فهم السبب.
+            //
+            // ولم يظهر هذا قبل اليوم لأن الاستبعاد كان محصوراً بالأصل المستهلَك بالكامل، وعائدُ
+            // الخردة رقمٌ مستدير. أمّا البيع المبكّر — الذي فتحناه للتوّ — فثمنُه تفاوضيّ.
+            saleProceeds = Math.Round(saleProceeds, 2, MidpointRounding.AwayFromZero);
+
             await FinancialPostingSupport.ValidateAsync(
                 db, asset.CompanyId, disposalDate, PostingDocumentKind.FixedAssetDisposal,
                 accountIds: [asset.GlAssetAccountId, asset.GlDepreciationAccountId], ct: token);

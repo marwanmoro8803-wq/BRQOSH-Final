@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Treasury;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -26,12 +27,10 @@ public partial class FxRevaluationDialog : Window
             if (DatePicker.SelectedDate is not DateTime dt)
                 throw new AccountingException("اختر تاريخاً صالحاً.");
 
-            if (!decimal.TryParse(RateBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var rate)
-                && !decimal.TryParse(RateBox.Text, out rate))
+            if (!NumericInput.TryParse(RateBox.Text, out var rate))
                 throw new AccountingException("سعر الصرف غير صالح.");
 
-            if (!decimal.TryParse(ForeignBalanceBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var foreignBalance)
-                && !decimal.TryParse(ForeignBalanceBox.Text, out foreignBalance))
+            if (!NumericInput.TryParse(ForeignBalanceBox.Text, out var foreignBalance))
                 throw new AccountingException("رصيد العملة الأجنبية غير صالح.");
 
             var asOfDate = DateOnly.FromDateTime(dt);

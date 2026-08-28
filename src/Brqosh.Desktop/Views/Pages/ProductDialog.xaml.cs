@@ -3,6 +3,7 @@ using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -29,7 +30,7 @@ public partial class ProductDialog : Window
     {
         try
         {
-            if (!decimal.TryParse(PriceBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var price))
+            if (!NumericInput.TryParse(PriceBox.Text, out var price))
                 throw new AccountingException("سعر البيع غير صالح.");
 
             var type = TypeCombo.SelectedIndex == 0 ? ProductType.Stockable : ProductType.Service;

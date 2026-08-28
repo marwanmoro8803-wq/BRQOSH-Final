@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -9,6 +9,7 @@ using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -115,8 +116,7 @@ public partial class ReceiptVoucherDialog : Window
 
     private void OnAutoAllocate(object sender, RoutedEventArgs e)
     {
-        if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
-            && !decimal.TryParse(AmountBox.Text, out amount))
+        if (!NumericInput.TryParse(AmountBox.Text, out var amount))
             return;
 
         var remaining = amount;
@@ -137,14 +137,17 @@ public partial class ReceiptVoucherDialog : Window
 
     private async void OnPost(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             if (DatePickerBox.SelectedDate is null)
                 throw new AccountingException("تاريخ السند مطلوب.");
             if (CustomerCombo.SelectedValue is not long customerId)
                 throw new AccountingException("اختر العميل.");
-            if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
-                && !decimal.TryParse(AmountBox.Text, out amount))
+            if (!NumericInput.TryParse(AmountBox.Text, out var amount))
                 throw new AccountingException("أدخل مبلغاً صحيحاً.");
 
             var method = MethodCombo.SelectedIndex == 0 ? ReceiptMethod.Cash : ReceiptMethod.Bank;

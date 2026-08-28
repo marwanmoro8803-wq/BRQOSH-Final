@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
 using Brqosh.Domain.Manufacturing;
 using Brqosh.Domain.Treasury;
@@ -29,11 +29,22 @@ public class EntityLifecycleTests
         Assert.False(asset.IsActive);
     }
 
+    /// <summary>
+    /// (CEEF-229 · م0-١٥) كان هذا الاختبار يُثبّت العطل: يؤكّد أن استبعاد أصلٍ لم يُستهلَك
+    /// **يرمي**. وهو يمنع أكثر حالات الاستبعاد وقوعاً — بيع أصلٍ في منتصف عمره — بلا مبرّر
+    /// محاسبيّ، إذ يوازن قيدُ الاستبعاد بالبناء والفرقُ يقع على الربح أو الخسارة.
+    /// صار يقيس السلوك الصحيح: الاستبعاد مسموح، والمنعُ محصورٌ بالأصل المستبعَد سلفاً.
+    /// </summary>
     [Fact]
-    public void FixedAsset_EnsureReadyForDisposal_Throws_WhenBookValueRemains()
+    public void FixedAsset_EnsureReadyForDisposal_AllowsDisposalMidLife()
     {
         var asset = FixedAsset.Create(1, "FA02", "معدات", new DateOnly(2024, 1, 1),
             10000m, 0m, 60, 100, 101);
+
+        asset.EnsureReadyForDisposal();          // لا يرمي
+        Assert.Equal(10000m, asset.BookValue);
+
+        asset.MarkDisposed();
         Assert.Throws<AccountingException>(() => asset.EnsureReadyForDisposal());
     }
 

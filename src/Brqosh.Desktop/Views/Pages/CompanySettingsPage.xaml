@@ -1,4 +1,4 @@
-<UserControl x:Class="Brqosh.Desktop.Views.Pages.CompanySettingsPage"
+﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.CompanySettingsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -49,6 +49,55 @@
                     <TextBlock Text="عنوان المنشأة" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" TextWrapping="Wrap"
                              AcceptsReturn="True" MinHeight="56" Margin="0,0,0,16"/>
+
+                    <!-- (CEEF-229 · Z-10) بيانات البائع النظامية للفوترة الإلكترونية.
+                         العنوان أعلاه نصّ حرّ للترويسة؛ والفاتورة الإلكترونية تلزم حقولاً مفكَّكة. -->
+                    <TextBlock Text="بيانات الفاتورة الإلكترونية" Style="{StaticResource FieldLabel}"
+                               FontSize="15" FontWeight="Bold" Margin="0,8,0,4"/>
+                    <TextBlock x:Name="EInvoiceReadinessText" Style="{StaticResource FieldLabel}"
+                               TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                    <TextBlock Text="الاسم المسجَّل في السجل التجاري" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="RegistrationNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="رقم السجل التجاري" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="CrnBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="العنوان الوطني" Style="{StaticResource FieldLabel}" Margin="0,0,0,8"/>
+                    <UniformGrid Columns="2" Margin="0,0,0,16">
+                        <StackPanel Margin="0,0,8,8">
+                            <TextBlock Text="رقم المبنى (4 خانات)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="BuildingNumberBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="الرقم الإضافي (اختياري)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="AdditionalNumberBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,8">
+                            <TextBlock Text="اسم الشارع" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="StreetNameBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="الحي" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="DistrictNameBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,8">
+                            <TextBlock Text="المدينة" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="CityNameBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="الرمز البريدي (5 خانات)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="PostalZoneBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="المنطقة" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="CountrySubentityBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="رمز الدولة" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="CountryCodeBox" Style="{StaticResource AppTextBox}"/>
+                        </StackPanel>
+                    </UniformGrid>
 
                     <TextBlock Text="خط الطباعة العربي" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="PrintFontBox" FontSize="14" Padding="10,8" Margin="0,0,0,24"/>

@@ -1,9 +1,10 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -43,17 +44,19 @@ public partial class DebitNoteDialog : Window
 
     private async void OnPost(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             if (InvoiceBox.SelectedItem is not InvoiceOption inv)
                 throw new InvalidOperationException("اختر فاتورة.");
             if (DateBox.SelectedDate is null)
                 throw new InvalidOperationException("التاريخ مطلوب.");
-            if (!decimal.TryParse(QtyBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var qty)
-                && !decimal.TryParse(QtyBox.Text, out qty))
+            if (!NumericInput.TryParse(QtyBox.Text, out var qty))
                 throw new InvalidOperationException("كمية غير صالحة.");
-            if (!decimal.TryParse(PriceBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var price)
-                && !decimal.TryParse(PriceBox.Text, out price))
+            if (!NumericInput.TryParse(PriceBox.Text, out var price))
                 price = inv.UnitPrice;
 
             var note = DebitNote.CreateDraft(

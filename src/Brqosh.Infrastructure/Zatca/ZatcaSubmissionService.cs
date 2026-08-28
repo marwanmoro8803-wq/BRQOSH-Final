@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Brqosh.Domain.Accounting;
@@ -37,11 +37,16 @@ public class ZatcaConfigurationValidator(BrqoshDbContext db)
         if (!keyOk) warnings.Add("ملف المفتاح الخاص غير موجود.");
         if (!apiOk) warnings.Add("عنوان API أو رمز المصادقة غير مضبوط.");
 
+        // (CEEF-229 · Z-10) بيانات البائع النظامية — لا الرقم الضريبيّ وحده.
+        //
+        // كان الفحص يقتصر على الرقم الضريبيّ، فتظهر المنشأة «جاهزة للإرسال» بينما ينقصها
+        // السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ — وهي حقولٌ إلزامية يُرفض المستند
+        // بدونها في تصديق المخطّط. والرسائل عربية صريحة تقول **ما** ينقص لا «غير جاهز».
         var company = await db.Companies.SingleAsync(c => c.Id == companyId);
-        if (string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
-            warnings.Add("الرقم الضريبي للمنشأة مطلوب.");
+        var sellerGaps = company.RegulatoryGaps();
+        warnings.AddRange(sellerGaps);
 
-        var ready = certOk && keyOk && apiOk && !string.IsNullOrWhiteSpace(company.VatRegistrationNumber);
+        var ready = certOk && keyOk && apiOk && sellerGaps.Count == 0;
         return new ZatcaConfigurationStatus(settings.IsEnabled, certOk, keyOk, apiOk, ready, warnings);
     }
 }
@@ -67,11 +72,20 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 
         if (settings.Environment == ZatcaEnvironment.Simulation)
         {
+            // (CEEF-229 · م0-١٠) لا تُعلَّم مقبولةً — لم يرها أحد خارج هذا الجهاز.
+            //
+            // والتجربة الجافّة تبقى متاحة قبل اكتمال الإعداد — منعُها يُغلق حالة استخدام مشروعة —
+            // لكنّ النواقص تُسجَّل في جسم الردّ بدل أن تُبتلع، فيعرف المالك ما يفصله عن الإرسال.
+            var gaps = status.ReadyForSubmission ? [] : status.Warnings;
             doc.MarkSubmitted(
-                doc.TransmissionMode == ZatcaTransmissionMode.Reporting
-                    ? ZatcaComplianceStatus.Reported
-                    : ZatcaComplianceStatus.Cleared,
-                """{"simulation":true,"message":"مقبول في بيئة المحاكاة"}""");
+                ZatcaComplianceStatus.SimulatedLocally,
+                JsonSerializer.Serialize(new
+                {
+                    simulation = true,
+                    message = "مُحاكى محلياً — لم يُرسل إلى هيئة الزكاة والضريبة والجمارك",
+                    readyForSubmission = status.ReadyForSubmission,
+                    gaps,
+                }));
             await db.SaveChangesAsync();
             return doc;
         }

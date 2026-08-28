@@ -6,6 +6,7 @@ using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -77,8 +78,7 @@ public partial class LandedCostPage : UserControl
   {
     if (DateBox.SelectedDate is null)
       throw new InvalidOperationException("التاريخ مطلوب.");
-    if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
-        && !decimal.TryParse(AmountBox.Text, out amount))
+    if (!NumericInput.TryParse(AmountBox.Text, out var amount))
       throw new InvalidOperationException("مبلغ التكلفة غير صالح.");
     if (string.IsNullOrWhiteSpace(DescBox.Text))
       throw new InvalidOperationException("البيان مطلوب.");

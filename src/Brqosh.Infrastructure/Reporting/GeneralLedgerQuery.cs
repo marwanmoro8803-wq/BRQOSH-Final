@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,7 +48,10 @@ public class GeneralLedgerQuery(BrqoshDbContext db)
         var accountIds = entries.SelectMany(e => e.Lines).Select(l => l.AccountId)
             .Concat(priorTotals.Select(t => t.AccountId))
             .Distinct().ToList();
+        // كما في TrialBalanceQuery: الحساب المعطَّل ما زال له سطور مرحّلة تاريخياً.
         var accounts = await db.Accounts
+            .IgnoreQueryFilters()
+            .AsNoTracking()
             .Where(a => accountIds.Contains(a.Id))
             .ToDictionaryAsync(a => a.Id);
 
@@ -76,14 +79,25 @@ public class GeneralLedgerQuery(BrqoshDbContext db)
 
             if (opening != 0)
             {
+                // (CEEF-228) `opening` موجبٌ إذا كان على الجانب الطبيعيّ للحساب، وسالبٌ إذا
+                // كان على الجانب المقابل. التعبير السابق غطّى ثلاث حالات وأخطأ الرابعة:
+                // حسابٌ دائن الطبيعة برصيدٍ افتتاحيٍّ **مدين** (مورد دُفع له مقدماً) كان يُطبع
+                // في عمود الدائن — فأعمدة الحساب تصير 0/8,000 والحقيقة 5,000/3,000، ويفترق
+                // مجموع الأستاذ عن ميزان المراجعة بضعف المبلغ.
+                //  الحالات الأربع:  مدين الطبيعة/موجب -> مدين  ·  مدين الطبيعة/سالب -> دائن
+                //                    دائن الطبيعة/موجب -> دائن  ·  دائن الطبيعة/سالب -> مدين
+                var isDebitNature = account.Type.IsDebitNature();
+                var onNaturalSide = opening > 0;
+                var goesToDebitColumn = isDebitNature == onNaturalSide;
+                var openingDebit = goesToDebitColumn ? Math.Abs(opening) : 0m;
+                var openingCredit = goesToDebitColumn ? 0m : Math.Abs(opening);
+
                 lines.Add(new GeneralLedgerLine(
                     from,
                     "",
                     "رصيد افتتاحي",
-                    account.Type.IsDebitNature() && opening > 0 ? opening : 0m,
-                    account.Type.IsDebitNature() && opening < 0 ? -opening :
-                    !account.Type.IsDebitNature() && opening > 0 ? opening :
-                    !account.Type.IsDebitNature() && opening < 0 ? -opening : 0m,
+                    openingDebit,
+                    openingCredit,
                     opening));
             }
 

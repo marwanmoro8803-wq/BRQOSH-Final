@@ -1,4 +1,4 @@
-using Brqosh.Domain.Companies;
+﻿using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +26,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ينشئها EnsureCreated من النموذج (فالعمود فيها أصلاً).
         await EnsureCancelledAtColumnsAsync(isPg, ct);
 
+        // (CEEF-229 · Z-10) هوية المنشأة النظامية — هنا للسبب نفسه المشروح أعلاه.
+        await EnsureRegulatoryIdentityColumnsAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -39,6 +42,23 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (O-19، CEEF-212) أعمدة سلسلة تجزئة سجل التدقيق على القواعد القائمة.
         // Sequence=0 يعني «ما قبل تفعيل السلسلة» — يتخطاه المدقّق ولا يعدّه كسراً.
         await EnsureAuditChainColumnsAsync(isPg, ct);
+
+        // (CEEF-228) المبيعات النقدية وحدها في ورديات نقطة البيع.
+        // القيمة الافتراضية صفر على الورديات القديمة تعني «غير مُصنَّف» — ولا تُصلَح
+        // بأثر رجعيّ عمداً: تصنيف مبيعات وردية مغلقة يحتاج بيانات لم تُحفظ حينها،
+        // والافتراض الكاذب أسوأ من الصفر الصريح.
+        await EnsurePosCashSalesColumnAsync(isPg, ct);
+    }
+
+    private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("pos_shifts", isPg, ct))
+            return;
+
+        if (isPg)
+            await EnsurePgColumnAsync("pos_shifts", "CashSales", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+        else
+            await EnsureSqliteColumnAsync("pos_shifts", "CashSales", "REAL NOT NULL DEFAULT 0", ct);
     }
 
     /// <summary>جداول المستندات الضريبية التي تدخل الإقرار (CEEF-219).</summary>
@@ -184,6 +204,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await SafePgIndexAsync("""
             CREATE UNIQUE INDEX IF NOT EXISTS ix_subcontract_agreements_company_number
                 ON subcontract_agreements ("CompanyId", "AgreementNumber");
+            """, ct);
+
+        // (CEEF-229 · Z-4) الفهرس الفريد على عدّاد ZATCA — للقواعد القائمة كذلك.
+        await SafePgIndexAsync("""
+            CREATE UNIQUE INDEX IF NOT EXISTS ix_zatca_documents_company_icv
+                ON zatca_einvoice_documents ("CompanyId", "Icv");
             """, ct);
 
         await SafePgIndexAsync("""
@@ -538,6 +564,110 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await db.Database.ExecuteSqlRawAsync(SchemaSqlGuard.BuildSqliteAddColumnSql(table, column, type), ct);
     }
 
+    /// <summary>
+    /// (CEEF-229 · Z-10) أعمدة هوية المنشأة النظامية — تُضاف للقواعد القائمة بنفس أسماء
+    /// النموذج، وإلا خرج المولّد بحقولٍ فارغة على كل تركيبٍ سابق.
+    /// </summary>
+    /// <para><b>قابلية العدم ليست تفصيلاً — إنها تتبع النموذج حرفاً بحرف.</b>
+    /// <c>RegistrationName</c> و<c>CommercialRegistrationNumber</c> نوعهما <c>string?</c>،
+    /// والعدم فيهما يعني «لم يُدخَل»، فعمودهما يجب أن يقبل العدم. أمّا حقول العنوان فنوعها
+    /// <c>string</c> غير قابل للعدم داخل كائن القيمة، ففارغُها هو «لم يُدخَل» وعمودها لا يقبل
+    /// العدم. عكسُ أيٍّ منهما يُسقط النظام: <c>NOT NULL</c> على الأولَين يمنع إنشاء أيّ منشأة،
+    /// و<c>NULL</c> على الأخيرة يُسقط تجسيد أيّ منشأة قائمة.</para>
+    internal static readonly (string Column, string PgType, bool Nullable)[] RegulatoryIdentityColumns =
+    [
+        ("RegistrationName", "character varying(256) NULL", true),
+        ("CommercialRegistrationNumber", "character varying(64) NULL", true),
+        ("AddrBuildingNumber", "character varying(16) NOT NULL DEFAULT ''", false),
+        ("AddrAdditionalNumber", "character varying(16) NOT NULL DEFAULT ''", false),
+        ("AddrStreetName", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrDistrictName", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrCityName", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrPostalZone", "character varying(16) NOT NULL DEFAULT ''", false),
+        ("AddrCountrySubentity", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrCountryCode", "character varying(16) NOT NULL DEFAULT ''", false),
+    ];
+
+    /// <summary>
+    /// (CEEF-229 · Z-10) أعمدة هوية المنشأة النظامية على القواعد القائمة.
+    ///
+    /// <para><b>موضع الاستدعاء حاسم — في المرحلة المبكّرة قبل ترقيعات المزوّد،</b> للسبب نفسه
+    /// المشروح عند <see cref="EnsureCancelledAtColumnsAsync"/>: تلك الترقيعات تُجري استعلامات EF
+    /// على <c>Companies</c>، و EF يبني <c>SELECT</c> بكل أعمدة النموذج — فعمودٌ مفقود يُسقط
+    /// الإقلاع كلّه بـ <c>42703: column c.CommercialRegistrationNumber does not exist</c>.
+    /// وضعتُها أوّل مرّة داخل ترقيعات المزوّد فوقع هذا بالضبط على قاعدة PostgreSQL حيّة.</para>
+    ///
+    /// <para>وأنواع الأعمدة تُكتب بإملاء <c>character varying(N)</c> لا <c>VARCHAR(N)</c> —
+    /// فقائمة <see cref="SchemaSqlGuard"/> البيضاء حرفية، ترفض ما لا تعرفه بدل أن تمرّره.</para>
+    /// </summary>
+    private async Task EnsureRegulatoryIdentityColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("companies", isPg, ct))
+            return;
+
+        foreach (var (column, pgType, nullable) in RegulatoryIdentityColumns)
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("companies", column, pgType, ct);
+            else
+                await EnsureSqliteColumnAsync(
+                    "companies", column, nullable ? "TEXT NULL" : "TEXT NOT NULL DEFAULT ''", ct);
+
+            await AlignRegulatoryColumnNullabilityAsync(column, nullable, isPg, ct);
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-229 · Z-10) مطابقة قابلية العدم على قاعدةٍ قائمة — <b>وإصلاح ما أفسدته نسخةٌ
+    /// سابقة من هذا الترقيع نفسه</b>.
+    ///
+    /// <para><c>ADD COLUMN IF NOT EXISTS</c> لا يمسّ عموداً موجوداً، فتغييرُ نوعٍ في مصفوفة
+    /// الأعمدة لا يصل إلى قاعدةٍ رُقِّعت من قبل. ولذلك تُطابَق القابلية صراحةً وفي كل تشغيل:
+    /// العملية عديمة الأثر إن كانت القاعدة مطابقة أصلاً، ومُصلِحة إن لم تكن.</para>
+    ///
+    /// <para>الحالتان وقعتا فعلاً في هذا البند: عمودُ عنوانٍ قابل للعدم أسقط تجسيد المنشآت بـ
+    /// <c>InvalidCastException: Column 'AddrBuildingNumber' is null</c> على قاعدة حيّة، ثم
+    /// <c>NOT NULL</c> على <c>RegistrationName</c> منع إدراج أيّ منشأة بـ
+    /// <c>23502: null value in column "RegistrationName"</c> على قاعدةٍ نظيفة — والثاني لم
+    /// يكشفه إلا مسبار الهجرات، فاختباراتُ القاعدة الحيّة تقرأ ولا تُدرج.</para>
+    ///
+    /// <para>على SQLite تُعبَّأ القيم العادمة فقط: المحرّك لا يدعم <c>ALTER COLUMN</c>، وما
+    /// يُسقط التجسيد هو القيمة العادمة لا وسمُ العمود.</para>
+    /// </summary>
+    private async Task AlignRegulatoryColumnNullabilityAsync(
+        string column, bool nullable, bool isPg, CancellationToken ct)
+    {
+        // المعرّف يمرّ بحارس النمط قبل أي تركيب — وهو الشرط الذي يسمح بـ ExecuteSqlRawAsync هنا:
+        // اسم عمودٍ لا يمكن أن يكون معاملاً مرتبطاً، فالحماية بالتحقق لا بالربط.
+        SchemaSqlGuard.ValidateColumn(column);
+
+        if (!isPg)
+        {
+            if (!nullable)
+            {
+                var fill = $"UPDATE companies SET {column} = '' WHERE {column} IS NULL;";
+                await db.Database.ExecuteSqlRawAsync(fill, ct);
+            }
+            return;
+        }
+
+        if (nullable)
+        {
+            var dropNotNull = $"""ALTER TABLE companies ALTER COLUMN "{column}" DROP NOT NULL;""";
+            var dropDefault = $"""ALTER TABLE companies ALTER COLUMN "{column}" DROP DEFAULT;""";
+            await db.Database.ExecuteSqlRawAsync(dropNotNull, ct);
+            await db.Database.ExecuteSqlRawAsync(dropDefault, ct);
+            return;
+        }
+
+        var fillNulls = $"""UPDATE companies SET "{column}" = '' WHERE "{column}" IS NULL;""";
+        var setDefault = $"""ALTER TABLE companies ALTER COLUMN "{column}" SET DEFAULT '';""";
+        var setNotNull = $"""ALTER TABLE companies ALTER COLUMN "{column}" SET NOT NULL;""";
+        await db.Database.ExecuteSqlRawAsync(fillNulls, ct);
+        await db.Database.ExecuteSqlRawAsync(setDefault, ct);
+        await db.Database.ExecuteSqlRawAsync(setNotNull, ct);
+    }
+
     private static readonly string[] SoftDeleteTables =
     [
         "customers", "suppliers", "products", "warehouses", "cost_centers",
@@ -553,7 +683,15 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else
                 await EnsureSqliteColumnAsync(table, "DeletedAtUtc", "TEXT NULL", ct);
 
-            await BackfillSoftDeleteAsync(table, isPg, ct);
+            // (CEEF-229 · م0-١٣) التعبئة أُوقفت — كانت خاملةً ثم صارت خطراً.
+            //
+            // كانت تُنفّذ في **كل إقلاع**: UPDATE … SET DeletedAtUtc = NOW() WHERE IsActive = false.
+            // وقد بقيت بلا أثر لأن كل دوال Deactivate() كانت تضبط الحقلين معاً. ولحظةَ فصلنا
+            // «الإيقاف» عن «الحذف» في Account، انقلبت إلى ما يُبطل الإصلاح: كل حساب يوقفه
+            // المحاسب يعود محذوفاً ناعماً عند الإقلاع التالي، ويستحيل الإقفال السنويّ من جديد.
+            //
+            // وهي ترقيعُ هجرةٍ لمرّة واحدة لا حارسُ سلامة: أُنجزت على كل قاعدة قائمة منذ إضافتها،
+            // فإسقاطها لا يترك صفّاً غير مُرحَّل. أمّا إضافة العمود نفسه فتبقى.
         }
     }
 

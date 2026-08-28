@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
@@ -57,7 +57,13 @@ public class CashFlowStatementTests : IDisposable
             _companyId, new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 30));
 
         Assert.Contains(result.Operating.Lines, l => l.Label.Contains("صافي الدخل"));
-        Assert.True(result.Operating.Subtotal != 0m);
-        Assert.True(result.ClosingCash >= result.OpeningCash);
+
+        // (CEEF-228) كان هنا `Assert.True(result.Operating.Subtotal != 0m)` — وهو تأكيدٌ
+        // يُثبّت العطل: في فاتورة **آجلة** لم يُقبض شيء، فالتدفق التشغيليّ الصحيح **صفر**.
+        // كان الاختبار يمرّ لأن القيمة كانت -300 (ضريبة المخرجات محسوبة بإشارة معكوسة
+        // وخارج رأس المال العامل). القيمة تُقاس الآن ولا يُكتفى بكونها غير صفرية.
+        Assert.Equal(1000m, result.Operating.Lines.Single(l => l.Label.Contains("صافي الدخل")).Amount);
+        Assert.Equal(0m, result.Operating.Subtotal);
+        Assert.Equal(result.OpeningCash, result.ClosingCash);
     }
 }

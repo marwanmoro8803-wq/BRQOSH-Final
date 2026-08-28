@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -57,17 +57,29 @@ public class InventoryService(BrqoshDbContext db)
         var product = await db.Products.SingleAsync(p => p.Id == productId && p.CompanyId == companyId);
         if (!product.IsStockable() || qtyOut <= 0) return;
 
-        var oldQty = await GetCompanyOnHandAsync(companyId, productId);
-        var newQty = oldQty;
-        if (newQty <= 0)
+        // (CEEF-228) المستدعيان (إلغاء فاتورة مشتريات وإلغاء إذن استلام) يخصمان الرصيد
+        // بحركة Issue *قبل* هذا النداء - فالمقروء هنا هو الرصيد المتبقّي بعد السحب.
+        //
+        // كانت المعادلة تطرح qtyOut من البسط ولا تطرحه من المقام، وتفترض أن المقروء رصيدٌ
+        // *سابق*. المثال: شراء 100@10 ثم 100@20 (WAC=15، رصيد 200). بإلغاء الثاني:
+        //   الخطأ:  (100*15 - 100*20) / 100 = -5  ->  يُقصّ إلى صفر
+        //   الصواب: ((100+100)*15 - 100*20) / 100 = 10
+        // وتكلفة صفر تعني أن SalesInvoicePostingService يُسقط سطرَي COGS والمخزون كلياً،
+        // فيبقى حساب المخزون في الأستاذ بلا سند كمّي ويُضخَّم مجمل الربح.
+        var remainingQty = await GetCompanyOnHandAsync(companyId, productId);
+        if (remainingQty <= 0)
         {
             product.SetWeightedAverageCost(0m);
             return;
         }
 
         var oldCost = product.WeightedAverageCost;
+        var quantityBeforeReversal = remainingQty + qtyOut;
+        var valueBeforeReversal = quantityBeforeReversal * oldCost;
+        var valueRemoved = qtyOut * unitCost;
+
         var wac = Math.Round(
-            (oldQty * oldCost - qtyOut * unitCost) / newQty, 4, MidpointRounding.AwayFromZero);
+            (valueBeforeReversal - valueRemoved) / remainingQty, 4, MidpointRounding.AwayFromZero);
         if (wac < 0) wac = 0;
         product.SetWeightedAverageCost(wac);
     }
@@ -244,6 +256,41 @@ public class InventoryService(BrqoshDbContext db)
                     await ApplyBalanceDeltaAsync(movement.CompanyId, toWh, line.ProductId, line.Quantity);
             }
         }
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م0-١) عكسٌ كاملٌ لحركة مخزنية: الكمية <b>والتكلفة</b> معاً.
+    ///
+    /// <para><b>لماذا مسارٌ واحد:</b> كان كلُّ مستدعٍ يعكس بطريقته. إلغاء فاتورة المشتريات
+    /// وإذن الاستلام يعكسان التكلفة عبر <see cref="ReverseReceiptCostAsync"/>، بينما
+    /// <c>StockMovementCancellationService</c> يعكس الكمية وحدها ويصفّر المتوسط في حالةٍ
+    /// منحلّة واحدة (أن يصير الرصيد الكليّ صفراً). فإلغاء حركةٍ واردة مع بقاء رصيد يترك
+    /// المتوسط <b>مسموماً بتكلفة حركةٍ أُلغيت</b>.</para>
+    ///
+    /// <para><b>الأثر بالأرقام:</b> رصيد 100 حبة بتكلفة 10 (قيمة 1,000)، ثم حركة «رصيد
+    /// افتتاحيّ» 100 حبة بتكلفة 50 ⟵ المتوسط 30. يُكتشف الخطأ فتُلغى الحركة: الكمية تعود 100
+    /// و<b>المتوسط يبقى 30</b>. الدفتر المساعد يقول 3,000 والأستاذ 1,000 بعد عكس القيد،
+    /// وأوّل بيع يجعل حساب المخزون <b>دائناً</b> في الميزانية. وتصحيحُ الرصيد الافتتاحيّ هو
+    /// أكثر إلغاءٍ يقع في حياة النظام — أسبوع العميل الأول.</para>
+    ///
+    /// <para><b>الترتيب مقصود:</b> الكمية تُعكس أولاً، ثم تُعكس التكلفة — لأن
+    /// <see cref="ReverseReceiptCostAsync"/> يقرأ الرصيد <b>بعد</b> السحب بحكم عقده
+    /// الموثَّق في CEEF-228. عكسُ الترتيب يُنتج متوسطاً خاطئاً بصمت.</para>
+    ///
+    /// <para><b>نطاق مُصرَّح به:</b> يعالج المتوسط المرجّح. طبقات FIFO لا تُرمَّم هنا —
+    /// <c>InventoryCostLayer.Restore()</c> ما زال بصفر مستدعٍ (I-2)، وهو بندٌ مفتوح يلزم
+    /// قبل البيع لقطاعَي التجزئة والضيافة (قالباهما يضبطان FIFO). ومنشأةٌ على المتوسط
+    /// المرجّح لا تُنشئ طبقات أصلاً، فلا أثر لذلك عليها.</para>
+    /// </summary>
+    public async Task ReverseDocumentMovementAsync(StockMovement movement)
+    {
+        await ReverseMovementBalancesAsync(movement);
+
+        if (!movement.IsInbound)
+            return;
+
+        foreach (var line in movement.Lines)
+            await ReverseReceiptCostAsync(movement.CompanyId, line.ProductId, line.Quantity, line.UnitCost);
     }
 
     public async Task ReverseMovementBalancesAsync(StockMovement movement)

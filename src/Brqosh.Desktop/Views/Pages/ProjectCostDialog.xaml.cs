@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Construction;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -27,8 +28,7 @@ public partial class ProjectCostDialog : Window
                 throw new AccountingException("التاريخ مطلوب.");
             if (string.IsNullOrWhiteSpace(DescriptionBox.Text))
                 throw new AccountingException("الوصف مطلوب.");
-            if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
-                && !decimal.TryParse(AmountBox.Text, out amount))
+            if (!NumericInput.TryParse(AmountBox.Text, out var amount))
                 throw new AccountingException("أدخل مبلغاً صحيحاً.");
 
             using var facade = new DesktopAccountingFacade();

@@ -1,4 +1,4 @@
-using Brqosh.Domain.Modules;
+﻿using Brqosh.Domain.Modules;
 using Brqosh.Domain.Retail;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
@@ -45,7 +45,10 @@ public class PosZatcaTests
 
             Assert.NotNull(result.Invoice.InvoiceNumber);
             Assert.NotNull(result.ZatcaDocument);
-            Assert.Equal(ZatcaComplianceStatus.Reported, result.ZatcaDocument!.ComplianceStatus);
+            // (CEEF-229 · م0-١٠) كان يؤكّد Reported — أي «مُبلَّغ للهيئة» — على مستند لم يغادر الجهاز.
+            // الاختبار كان يُثبّت العطل: أيّ إصلاح يقول الحقيقة كان سيُسقطه.
+            Assert.Equal(ZatcaComplianceStatus.SimulatedLocally, result.ZatcaDocument!.ComplianceStatus);
+            Assert.False(result.ZatcaDocument.ComplianceStatus.IsAcknowledgedByAuthority());
             Assert.False(string.IsNullOrEmpty(result.ZatcaDocument.QrTlvBase64));
         }
         finally

@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -51,6 +51,19 @@ public partial class CompanySettingsPage : UserControl
         };
     }
 
+    /// <summary>
+    /// (CEEF-229 · Z-10) يقول للمستخدم **ما** ينقصه لا «غير جاهز». وهذه هي الشاشة الوحيدة
+    /// التي يستطيع فيها إصلاحه — فإخفاء السبب هنا يعني اكتشافه عند رفض الهيئة.
+    /// </summary>
+    private void RenderEInvoiceReadiness(Brqosh.Domain.Companies.Company company)
+    {
+        var gaps = company.RegulatoryGaps();
+        EInvoiceReadinessText.Text = gaps.Count == 0
+            ? "✓ بيانات المنشأة مكتملة للفوترة الإلكترونية."
+            : "ينقص للفوترة الإلكترونية:" + Environment.NewLine
+              + "• " + string.Join(Environment.NewLine + "• ", gaps);
+    }
+
     private async Task LoadAsync()
     {
         CostingMethodBox.Items.Clear();
@@ -66,6 +79,20 @@ public partial class CompanySettingsPage : UserControl
         NameBox.Text = company.NameAr;
         NameEnBox.Text = company.NameEn ?? "";
         AddressBox.Text = company.AddressAr ?? "";
+
+        // (CEEF-229 · Z-10) بيانات البائع النظامية
+        RegistrationNameBox.Text = company.RegistrationName ?? "";
+        CrnBox.Text = company.CommercialRegistrationNumber ?? "";
+        var addr = company.NationalAddress;
+        BuildingNumberBox.Text = addr.BuildingNumber;
+        AdditionalNumberBox.Text = addr.AdditionalNumber;
+        StreetNameBox.Text = addr.StreetName;
+        DistrictNameBox.Text = addr.DistrictName;
+        CityNameBox.Text = addr.CityName;
+        PostalZoneBox.Text = addr.PostalZone;
+        CountrySubentityBox.Text = addr.CountrySubentity;
+        CountryCodeBox.Text = string.IsNullOrWhiteSpace(addr.CountryCode) ? "SA" : addr.CountryCode;
+        RenderEInvoiceReadiness(company);
         VatBox.Text = company.VatRegistrationNumber;
         ProfileText.Text = ProfileLabel(company.Profile);
         ActiveModulesText.Text = ActiveModulesLabel(company.Profile);
@@ -208,6 +235,16 @@ public partial class CompanySettingsPage : UserControl
             await using var db = AppServices.CreateDb();
             var company = await db.Companies.SingleAsync(c => c.Id == AppServices.CompanyId);
             company.Update(NameBox.Text, VatBox.Text);
+            // (CEEF-229 · Z-10) تُحفَظ كما أُدخلت — الاكتمال يُفحَص عند التفعيل لا عند الحفظ،
+            // فالمستخدم يملأ على دفعات ومنعُ الحفظ الجزئيّ يعني إعادة الإدخال من الصفر.
+            company.UpdateRegulatoryIdentity(
+                RegistrationNameBox.Text,
+                CrnBox.Text,
+                Brqosh.Domain.Companies.NationalAddress.Create(
+                    BuildingNumberBox.Text, StreetNameBox.Text, DistrictNameBox.Text,
+                    CityNameBox.Text, PostalZoneBox.Text, CountrySubentityBox.Text,
+                    AdditionalNumberBox.Text, CountryCodeBox.Text));
+
             company.UpdateBranding(
                 NameEnBox.Text,
                 AddressBox.Text,

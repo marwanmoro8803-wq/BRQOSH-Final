@@ -1,4 +1,4 @@
-using Brqosh.Domain.Modules;
+﻿using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
@@ -67,7 +67,7 @@ public class ZatcaTests : IDisposable
     }
 
     [Fact]
-    public async Task AutoSubmit_AfterB2bInvoicePost_MarksCleared()
+    public async Task AutoSubmit_AfterB2bInvoicePost_MarksSimulatedNotCleared()
     {
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة", "310123456700003", BusinessProfile.Retail);
@@ -83,7 +83,9 @@ public class ZatcaTests : IDisposable
         await new SalesInvoicePostingService(_db).PostAsync(invoice);
 
         var doc = await _db.ZatcaEInvoiceDocuments.SingleAsync();
-        Assert.Equal(ZatcaComplianceStatus.Cleared, doc.ComplianceStatus);
+        // (CEEF-229 · م0-١٠) المحاكاة ليست اعتماداً.
+        Assert.Equal(ZatcaComplianceStatus.SimulatedLocally, doc.ComplianceStatus);
+        Assert.False(doc.ComplianceStatus.IsAcknowledgedByAuthority());
     }
 
     [Fact]
@@ -112,7 +114,9 @@ public class ZatcaTests : IDisposable
             .ToListAsync();
         Assert.Equal(2, docs.Count);
         Assert.Equal(ZatcaDocumentType.SalesInvoice, docs[0].DocumentType);
-        Assert.Equal(ZatcaDocumentType.CreditNote, docs[1].DocumentType);
+        // (CEEF-229 · Z-3) نوعٌ مستقلّ: مصدر هذا المستند **فاتورة** لا إشعار، وحشرُ المعرّفين
+        // في عمود واحد داخل فهرسٍ فريد كان يجعل ترحيل الإشعار الدائن بالمعرّف نفسه مستحيلاً.
+        Assert.Equal(ZatcaDocumentType.InvoiceCancel, docs[1].DocumentType);
         Assert.Equal(invoice.Id, docs[1].SourceDocumentId);
         Assert.StartsWith("CN-CANCEL-", docs[1].InvoiceNumber);
     }

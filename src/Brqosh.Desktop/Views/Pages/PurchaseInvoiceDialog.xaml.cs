@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
@@ -6,6 +6,7 @@ using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -71,6 +72,10 @@ public partial class PurchaseInvoiceDialog : Window
 
     private async void OnPost(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             LinesGrid.CommitEdit(DataGridEditingUnit.Row, true);

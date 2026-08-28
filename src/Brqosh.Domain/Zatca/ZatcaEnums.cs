@@ -1,4 +1,4 @@
-namespace Brqosh.Domain.Zatca;
+﻿namespace Brqosh.Domain.Zatca;
 
 public enum ZatcaEnvironment
 {
@@ -25,6 +25,20 @@ public enum ZatcaDocumentType
     ProgressBilling = 3,
     /// <summary>إشعار مدين — لإلغاء إشعار دائن (UBL 383).</summary>
     DebitNote = 4,
+
+    /// <summary>
+    /// (CEEF-229 · Z-3) إشعار دائن ناتج عن <b>إلغاء فاتورة مبيعات</b> — مصدره فاتورة لا إشعار.
+    ///
+    /// كان يُسجَّل بالنوع <c>CreditNote</c>، فيُحشر معرّف الفاتورة في العمود نفسه الذي يحمل
+    /// معرّف الإشعار الحقيقيّ. وثلاثة فضاءات معرّفات مستقلّة — تبدأ كلّها من واحد — داخل فهرسٍ
+    /// فريد واحد <c>(CompanyId, DocumentType, SourceDocumentId)</c>. فالتصادم شبه مؤكّد:
+    /// بعد إلغاء الفاتورة رقم 12 يستحيل ترحيل الإشعار الدائن رقم 12، ويُنسب مرجع الفاتورة
+    /// الأصلية إلى مستندٍ آخر. الاسم قصير عمداً — العمود <c>varchar(16)</c>.
+    /// </summary>
+    InvoiceCancel = 5,
+
+    /// <summary>إشعار دائن ناتج عن إلغاء مستخلص أعمال — فضاء معرّفات ثالث، انظر <see cref="InvoiceCancel"/>.</summary>
+    BillingCancel = 6,
 }
 
 /// <summary>حالة مستند الفاتورة الإلكترونية في دورة ZATCA.</summary>
@@ -37,4 +51,37 @@ public enum ZatcaComplianceStatus
     Cleared = 4,
     Accepted = 5,
     Rejected = 6,
+
+    /// <summary>
+    /// (CEEF-229 · م0-١٠) مُولَّد ومُحاكى محلياً — <b>لم يصل الهيئة</b>.
+    ///
+    /// كانت المحاكاة تُعلَّم <c>Cleared</c>/<c>Reported</c>، وهما حالتا القبول الفعليّ لدى الهيئة.
+    /// فمنشأةٌ فعّلت التكامل من القالب (وهو يفرض المحاكاة) ترى كل فواتيرها «معتمدة» ولم تصل
+    /// الهيئةَ فاتورةٌ واحدة — وتكتشفه عند الفحص الضريبيّ بعد شهور. الضرر تضليليّ لا تقنيّ،
+    /// ولذلك الحالة منفصلة ولا تُعرَض قَبولاً بحال.
+    /// </summary>
+    SimulatedLocally = 7,
+}
+
+public static class ZatcaComplianceStatusExtensions
+{
+    /// <summary>تسمية عربية للعرض والطباعة — الاسم البرمجيّ لا يُعرض للمستخدم.</summary>
+    public static string NameAr(this ZatcaComplianceStatus status) => status switch
+    {
+        ZatcaComplianceStatus.Generated => "مُولَّد",
+        ZatcaComplianceStatus.ReadyToReport => "جاهز للإبلاغ",
+        ZatcaComplianceStatus.ReadyToClear => "جاهز للاعتماد",
+        ZatcaComplianceStatus.Reported => "مُبلَّغ للهيئة",
+        ZatcaComplianceStatus.Cleared => "معتمَد من الهيئة",
+        ZatcaComplianceStatus.Accepted => "مقبول",
+        ZatcaComplianceStatus.Rejected => "مرفوض",
+        ZatcaComplianceStatus.SimulatedLocally => "محاكاة محلية — لم يُرسل للهيئة",
+        _ => status.ToString(),
+    };
+
+    /// <summary>هل تعني هذه الحالة أن الهيئة استلمت المستند فعلاً؟</summary>
+    public static bool IsAcknowledgedByAuthority(this ZatcaComplianceStatus status) =>
+        status is ZatcaComplianceStatus.Reported
+               or ZatcaComplianceStatus.Cleared
+               or ZatcaComplianceStatus.Accepted;
 }

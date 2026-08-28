@@ -4,6 +4,7 @@ using Brqosh.Domain.Crm;
 using Brqosh.Infrastructure.Crm;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -27,7 +28,7 @@ public partial class CrmOpportunityDialog : Window
         ErrorText.Visibility = Visibility.Collapsed;
         try
         {
-            if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var amount))
+            if (!NumericInput.TryParse(AmountBox.Text, out var amount))
                 amount = 0m;
             long? customerId = CustomerBox.SelectedValue is long id ? id : null;
             var opp = CrmOpportunity.Create(AppServices.CompanyId, TitleBox.Text, amount, customerId);

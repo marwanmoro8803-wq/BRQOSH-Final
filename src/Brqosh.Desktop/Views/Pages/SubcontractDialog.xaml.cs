@@ -1,6 +1,7 @@
 using System.Windows;
 using Brqosh.Domain.Construction;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -40,9 +41,9 @@ public partial class SubcontractDialog : Window
                 throw new InvalidOperationException("اختر المشروع.");
             if (SupplierBox.SelectedItem is not SupplierOption supplier)
                 throw new InvalidOperationException("اختر مقاول الباطن.");
-            if (!decimal.TryParse(ValueBox.Text, out var value) || value <= 0)
+            if (!NumericInput.TryParse(ValueBox.Text, out var value) || value <= 0)
                 throw new InvalidOperationException("قيمة العقد غير صالحة.");
-            if (!decimal.TryParse(RetentionBox.Text, out var retention))
+            if (!NumericInput.TryParse(RetentionBox.Text, out var retention))
                 throw new InvalidOperationException("نسبة المحتجز غير صالحة.");
 
             var date = DatePicker.SelectedDate is DateTime dt

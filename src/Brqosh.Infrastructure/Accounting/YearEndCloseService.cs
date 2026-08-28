@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Security;
@@ -32,13 +32,17 @@ public class YearEndCloseService(BrqoshDbContext db)
             if (existingClose)
                 throw new AccountingException($"السنة {year} مقفلة مسبقاً.");
 
-            var openOutside = await db.JournalEntries.AnyAsync(e =>
-                e.CompanyId == companyId
-                && e.Status == JournalEntryStatus.Posted
-                && e.EntryDate > yearEnd, token);
-            if (openOutside)
-                throw new AccountingException(
-                    $"توجد قيود مرحّلة بعد {yearEnd:yyyy-MM-dd} — أغلق الفترات اللاحقة أو انقل القيود قبل الإقفال.");
+            // (CEEF-229 · م0-١٤) حُذف حارس «قيود بعد نهاية السنة».
+            //
+            // كان يرفض الإقفال متى وُجد أيّ قيد مرحّل بعد 31 ديسمبر — وهي الحالة الطبيعية لكل
+            // منشأة تُقفل ديسمبر في مارس. فزرّ «إقفال سنوي» **لا ينجح أبداً** بعد أوّل قيد في
+            // يناير، و3103/3104 يبقيان صفراً إلى الأبد. ورسالتُه كانت تقترح علاجاً غير موجود:
+            // الحارس يفحص **القيود** لا الفترات، ولا يُحذف قيدٌ مرحّل ولا يُنقل تاريخه.
+            //
+            // وهو بلا مبرّر حسابيّ: قيد الإقفال مؤرَّخ 31 ديسمبر ويجمع صفوف السنة وحدها
+            // (IncomeStatementQuery محصورة بـ yearStart..yearEnd)، فحركةُ السنة التالية لا تدخله.
+            // الحارس الصحيح باقٍ أدناه: EnsurePeriodOpenAsync يرفض الترحيل في فترة مقفلة،
+            // وفحص existingClose يمنع الإقفال المزدوج.
 
             var pnl = await new IncomeStatementQuery(db).ExecuteAsync(companyId, yearStart, yearEnd);
             var closingDate = yearEnd;
@@ -53,18 +57,40 @@ public class YearEndCloseService(BrqoshDbContext db)
                 $"إقفال السنة المالية {year}",
                 $"YearEndClose:{year}");
 
+            // الحسابات المقابلة (contra) — 4102 مردودات المبيعات و4103 خصم مسموح به مصنّفة Revenue
+            // لكن رصيدها الصافي مدين (سالب)، و5103 مردودات المشتريات و5214 خصم مكتسب مصنّفة Expense
+            // ورصيدها دائن (سالب). تمرير مبلغ سالب إلى AddLine يرمي استثناءً ويُبطل الإقفال كلياً،
+            // فتُوجَّه الأطراف حسب إشارة الرصيد لا حسب تصنيف الحساب.
             foreach (var row in pnl.RevenueRows)
             {
                 var account = await AccountAsync(companyId, row.AccountCode, token);
-                entry.AddLine(account, row.Amount, 0m, $"إقفال إيراد {row.AccountCode}");
-                entry.AddLine(currentYear, 0m, row.Amount, $"تحويل إيراد {row.AccountCode}");
+                if (row.Amount > 0)
+                {
+                    entry.AddClosingLine(account, row.Amount, 0m, $"إقفال إيراد {row.AccountCode}");
+                    entry.AddLine(currentYear, 0m, row.Amount, $"تحويل إيراد {row.AccountCode}");
+                }
+                else
+                {
+                    var amount = -row.Amount;
+                    entry.AddClosingLine(account, 0m, amount, $"إقفال إيراد {row.AccountCode}");
+                    entry.AddLine(currentYear, amount, 0m, $"تحويل إيراد {row.AccountCode}");
+                }
             }
 
             foreach (var row in pnl.ExpenseRows)
             {
                 var account = await AccountAsync(companyId, row.AccountCode, token);
-                entry.AddLine(currentYear, row.Amount, 0m, $"تحويل مصروف {row.AccountCode}");
-                entry.AddLine(account, 0m, row.Amount, $"إقفال مصروف {row.AccountCode}");
+                if (row.Amount > 0)
+                {
+                    entry.AddLine(currentYear, row.Amount, 0m, $"تحويل مصروف {row.AccountCode}");
+                    entry.AddClosingLine(account, 0m, row.Amount, $"إقفال مصروف {row.AccountCode}");
+                }
+                else
+                {
+                    var amount = -row.Amount;
+                    entry.AddLine(currentYear, 0m, amount, $"تحويل مصروف {row.AccountCode}");
+                    entry.AddClosingLine(account, amount, 0m, $"إقفال مصروف {row.AccountCode}");
+                }
             }
 
             // ترحيل صافي الدخل إلى الأرباح المبقاة
@@ -125,6 +151,14 @@ public class YearEndCloseService(BrqoshDbContext db)
         await db.SaveChangesAsync(token);
     }
 
+    /// <summary>
+    /// (CEEF-229 · م0-١٣) يتجاوز فلتر الحذف الناعم عمداً.
+    ///
+    /// الإقفال يشمل كل حساب له رصيدٌ في قائمة الدخل — بما فيه ما أُوقف خلال السنة. وقواعد
+    /// العملاء القائمة تحمل حسابات أُوقفت قبل هذا الإصلاح فصارت محذوفةً ناعماً، ولولا التجاوز
+    /// لبقي إقفالها مستحيلاً حتى بعد إصلاح <c>Account.Deactivate</c>.
+    /// </summary>
     private async Task<Account> AccountAsync(long companyId, string code, CancellationToken ct) =>
-        await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code, ct);
+        await db.Accounts.IgnoreQueryFilters()
+            .SingleAsync(a => a.CompanyId == companyId && a.Code == code, ct);
 }

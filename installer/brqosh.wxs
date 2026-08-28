@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!--
   BRQOSH ERP — MSI Installer (WiX v4)
   Build: installer\build-msi.ps1
@@ -37,6 +37,23 @@
         <File Id="BrqoshExe" Source="$(var.PublishDir)\Brqosh.Desktop.exe" KeyPath="yes" />
       </Component>
       <Files Include="$(var.PublishDir)\**" />
+
+      <!--
+        (CEEF-228) وضع التشغيل يُصرَّح به عند التثبيت.
+        الافتراض في الكود صار الإنتاج، وهذا العنصر تعزيز صريح: قبله لم يكن المثبِّت
+        يضبط BRQOSH_ENV إطلاقاً، والاختصاران يشغّلان exe مباشرةً لا BRQOSH-Production.bat.
+      -->
+      <Component Id="ProductionEnvironment" Guid="E4F5A6B7-C8D9-0123-EF01-345678901234">
+        <Environment Id="BrqoshEnvProduction"
+                     Name="BRQOSH_ENV"
+                     Value="production"
+                     Action="set"
+                     Part="all"
+                     System="yes"
+                     Permanent="no" />
+        <RegistryValue Root="HKLM" Key="Software\BRQOSH" Name="environment"
+                       Type="string" Value="production" KeyPath="yes" />
+      </Component>
     </ComponentGroup>
 
     <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="C2D3E4F5-A6B7-8901-CDEF-123456789012">

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
@@ -6,6 +6,7 @@ using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -48,14 +49,54 @@ public partial class CreditNoteDialog : Window
             return;
 
         await using var db = AppServices.CreateDb();
-        var credited = (await db.CreditNotes
+        var postedNotes = await db.CreditNotes
             .Where(n => n.CompanyId == AppServices.CompanyId
                         && n.OriginalInvoiceId == option.Id
                         && n.Status == CreditNoteStatus.Posted)
-            .ToListAsync())
-            .SumGrandTotal();
+            .ToListAsync();
 
-        RemainingText.Text = (option.GrandTotal - credited).ToString("N2");
+        RemainingText.Text = (option.GrandTotal - postedNotes.SumGrandTotal()).ToString("N2");
+
+        // (CEEF-229 · م0-٦) السطور تُبنى من الفاتورة الأصلية لا يكتبها المستخدم نصّاً حرّاً.
+        //
+        // كان الحوار يترك المستخدم يكتب وصف الصنف بيده، فيخرج السطر بلا ProductId — و
+        // CreditNotePostingService يشترطه لإرجاع البضاعة وعكس تكلفتها. النتيجة أن **كل مرتجع
+        // مبيعات كان يُرجع صفر بضاعة ويعكس صفر تكلفة**: الإيراد والذمم ينقصان والبضاعة لا تعود،
+        // فيفترق المخزون عن الأستاذ فرقاً دائماً لا يكشفه إلا جرد بعد شهور.
+        //
+        // والبناء من الفاتورة يُغلق العطل من جذره: لا سطر بلا صنف، ولا صنف ليس على الفاتورة،
+        // والكمية الافتراضية هي المتاح للإرجاع فعلاً.
+        var invoice = await db.SalesInvoices
+            .FirstOrDefaultAsync(i => i.Id == option.Id && i.CompanyId == AppServices.CompanyId);
+        if (invoice is null)
+            return;
+
+        var alreadyReturned = postedNotes
+            .SelectMany(n => n.Lines)
+            .Where(l => l.ProductId is not null)
+            .GroupBy(l => l.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+        _rows.Clear();
+        foreach (var line in invoice.Lines)
+        {
+            var returnable = line.Quantity
+                - (line.ProductId is long pid ? alreadyReturned.GetValueOrDefault(pid) : 0m);
+            if (returnable <= 0m)
+                continue;
+
+            _rows.Add(new SalesInvoiceDialog.LineRow
+            {
+                ProductId = line.ProductId,
+                Description = line.Description,
+                Quantity = returnable,
+                UnitPrice = line.UnitPrice,
+                VatCategory = line.VatCategory,
+            });
+        }
+
+        LinesGrid.Items.Refresh();
+        UpdateTotals();
     }
 
     private void OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) =>
@@ -72,6 +113,10 @@ public partial class CreditNoteDialog : Window
 
     private async void OnPost(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             LinesGrid.CommitEdit(DataGridEditingUnit.Row, true);
@@ -88,7 +133,7 @@ public partial class CreditNoteDialog : Window
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
                 note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice,
-                    vatCategory: row.VatCategory);
+                    row.ProductId, row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<CreditNotePostingService>().PostAsync(note);

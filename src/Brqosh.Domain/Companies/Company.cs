@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
 
@@ -13,8 +13,23 @@ public class Company
     /// <summary>اسم المنشأة بالإنجليزية — يظهر في رأس المطبوعات.</summary>
     public string? NameEn { get; private set; }
 
-    /// <summary>عنوان المنشأة — يظهر في رأس المطبوعات.</summary>
+    /// <summary>عنوان المنشأة — يظهر في رأس المطبوعات (نصّ حرّ، لا يصلح للفوترة الإلكترونية).</summary>
     public string? AddressAr { get; private set; }
+
+    /// <summary>
+    /// (CEEF-229 · Z-10) الاسم المسجَّل في السجل التجاريّ — <c>cbc:RegistrationName</c>.
+    /// قد يختلف عن الاسم التجاريّ المعروض، والفاتورة الإلكترونية تلزم المسجَّل.
+    /// </summary>
+    public string? RegistrationName { get; private set; }
+
+    /// <summary>رقم السجل التجاريّ — <c>cac:PartyIdentification/cbc:ID schemeID="CRN"</c>.</summary>
+    public string? CommercialRegistrationNumber { get; private set; }
+
+    /// <summary>
+    /// (CEEF-229 · Z-10) العنوان الوطنيّ بحقوله المفكَّكة — <c>cac:PostalAddress</c>.
+    /// كان غائباً من النموذج كلياً، فيستحيل توليد الفاتورة الإلكترونية مهما صحّ المولّد.
+    /// </summary>
+    public NationalAddress NationalAddress { get; private set; } = NationalAddress.Empty;
 
     /// <summary>مسار ملف الشعار المحلي (AppData) — يُطبَّق على كل المخرجات.</summary>
     public string? LogoFilePath { get; private set; }
@@ -116,6 +131,42 @@ public class Company
         var font = (printFontFamily ?? string.Empty).Trim();
         PrintFontFamily = font.Length > 0 ? font : "Tahoma";
     }
+
+    /// <summary>
+    /// (CEEF-229 · Z-10) بيانات المنشأة النظامية للفوترة الإلكترونية.
+    /// تُحفَظ كما هي؛ اكتمالُها يُفحَص عند تفعيل التكامل لا عند الإدخال — فالمستخدم يملأ
+    /// على دفعات، ومنعُ الحفظ الجزئيّ يعني إعادة الإدخال من الصفر في كل مرّة.
+    /// </summary>
+    public void UpdateRegulatoryIdentity(
+        string? registrationName, string? commercialRegistrationNumber, NationalAddress address)
+    {
+        RegistrationName = string.IsNullOrWhiteSpace(registrationName) ? null : registrationName.Trim();
+        CommercialRegistrationNumber = string.IsNullOrWhiteSpace(commercialRegistrationNumber)
+            ? null : commercialRegistrationNumber.Trim();
+        NationalAddress = address;
+    }
+
+    /// <summary>
+    /// ما ينقص المنشأة لتُصدر فاتورة إلكترونية مقبولة — رسائل عربية تُعرض كما هي.
+    /// فارغةٌ تعني جاهزيةً من ناحية بيانات البائع.
+    /// </summary>
+    public IReadOnlyList<string> RegulatoryGaps()
+    {
+        var gaps = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(VatRegistrationNumber))
+            gaps.Add("الرقم الضريبي مطلوب للفاتورة الإلكترونية.");
+        if (string.IsNullOrWhiteSpace(RegistrationName))
+            gaps.Add("الاسم المسجَّل في السجل التجاري مطلوب للفاتورة الإلكترونية.");
+        if (string.IsNullOrWhiteSpace(CommercialRegistrationNumber))
+            gaps.Add("رقم السجل التجاري مطلوب للفاتورة الإلكترونية.");
+
+        gaps.AddRange(NationalAddress.Problems);
+        return gaps;
+    }
+
+    /// <summary>هل بيانات البائع مكتملة للفوترة الإلكترونية؟</summary>
+    public bool IsReadyForEInvoicing => RegulatoryGaps().Count == 0;
 
     public void SetLogoFilePath(string? path) =>
         LogoFilePath = TrimOrNull(path);

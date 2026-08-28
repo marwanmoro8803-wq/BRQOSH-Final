@@ -3,6 +3,7 @@ using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Manufacturing;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -37,7 +38,7 @@ public partial class WorkOrderDialog : Window
                 throw new AccountingException("اختر قائمة مواد.");
             if (DateBox.SelectedDate is null)
                 throw new AccountingException("التاريخ مطلوب.");
-            if (!decimal.TryParse(QtyBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var qty) || qty <= 0)
+            if (!NumericInput.TryParse(QtyBox.Text, out var qty) || qty <= 0)
                 throw new AccountingException("الكمية المخططة غير صالحة.");
 
             var order = WorkOrder.CreateDraft(AppServices.CompanyId, bomId,

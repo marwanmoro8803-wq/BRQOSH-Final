@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Construction;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -90,7 +91,7 @@ public partial class SubcontractorsPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
-        if (!decimal.TryParse(dialog.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) || amount <= 0)
+        if (!NumericInput.TryParse(dialog.Value, out var amount) || amount <= 0)
         {
             MessageBox.Show("أدخل مبلغاً صحيحاً أكبر من صفر.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;

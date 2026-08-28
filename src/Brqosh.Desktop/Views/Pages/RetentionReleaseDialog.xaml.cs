@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Windows;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -16,7 +17,7 @@ public partial class RetentionReleaseDialog : Window
 
     private void OnOk(object sender, RoutedEventArgs e)
     {
-        if (!decimal.TryParse(AmountBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) || amount <= 0)
+        if (!NumericInput.TryParse(AmountBox.Text, out var amount) || amount <= 0)
         {
             MessageBox.Show("أدخل مبلغاً صحيحاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;

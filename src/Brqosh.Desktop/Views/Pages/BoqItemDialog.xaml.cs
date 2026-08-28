@@ -1,5 +1,6 @@
 using System.Windows;
 using Brqosh.Domain.Construction;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -31,9 +32,9 @@ public partial class BoqItemDialog : Window
     {
         try
         {
-            if (!decimal.TryParse(QtyBox.Text, out var qty) || qty <= 0)
+            if (!NumericInput.TryParse(QtyBox.Text, out var qty) || qty <= 0)
                 throw new InvalidOperationException("الكمية غير صالحة.");
-            if (!decimal.TryParse(PriceBox.Text, out var price) || price < 0)
+            if (!NumericInput.TryParse(PriceBox.Text, out var price) || price < 0)
                 throw new InvalidOperationException("سعر الوحدة غير صالح.");
 
             var project = ConstructionProject.Create(AppServices.CompanyId, "TMP", "TMP");

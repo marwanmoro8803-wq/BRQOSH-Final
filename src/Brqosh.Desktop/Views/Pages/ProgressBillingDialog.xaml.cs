@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using Brqosh.Domain.Construction;
 using Brqosh.Infrastructure.Construction;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -61,9 +62,9 @@ public partial class ProgressBillingDialog : Window
                 throw new InvalidOperationException("اختر المشروع.");
             if (CustomerBox.SelectedItem is not CustomerOption customer)
                 throw new InvalidOperationException("اختر العميل.");
-            if (!decimal.TryParse(AmountBox.Text, out var amount) || amount <= 0)
+            if (!NumericInput.TryParse(AmountBox.Text, out var amount) || amount <= 0)
                 throw new InvalidOperationException("قيمة الأعمال غير صالحة.");
-            if (!decimal.TryParse(RetentionBox.Text, out var retention))
+            if (!NumericInput.TryParse(RetentionBox.Text, out var retention))
                 throw new InvalidOperationException("نسبة المحتجز غير صالحة.");
 
             var date = DatePicker.SelectedDate is DateTime dt

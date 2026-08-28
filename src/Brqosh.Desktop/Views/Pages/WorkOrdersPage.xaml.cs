@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Manufacturing;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -95,7 +96,7 @@ public partial class WorkOrdersPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
-        if (!decimal.TryParse(dialog.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var qty) || qty <= 0)
+        if (!NumericInput.TryParse(dialog.Value, out var qty) || qty <= 0)
         {
             MessageBox.Show("الكمية غير صالحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;

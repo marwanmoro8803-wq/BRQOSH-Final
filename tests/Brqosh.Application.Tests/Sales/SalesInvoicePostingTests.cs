@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Retail;
 using Brqosh.Domain.Sales;
@@ -171,6 +171,8 @@ public class SalesInvoicePostingTests : IDisposable
 
         var zatca = await _db.ZatcaEInvoiceDocuments.SingleAsync(d =>
             d.CompanyId == _companyId && d.SourceDocumentId == posted.Id);
-        Assert.Equal(ZatcaComplianceStatus.Cleared, zatca.ComplianceStatus);
+        // (CEEF-229 · م0-١٠) المحاكاة ليست اعتماداً.
+        Assert.Equal(ZatcaComplianceStatus.SimulatedLocally, zatca.ComplianceStatus);
+        Assert.False(zatca.ComplianceStatus.IsAcknowledgedByAuthority());
     }
 }

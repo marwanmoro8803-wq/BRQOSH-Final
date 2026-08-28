@@ -13,7 +13,7 @@ namespace Brqosh.Desktop.Views.Pages;
 
 public partial class StockCountPage : UserControl
 {
-    public class CountRow
+    public class CountRow : Brqosh.Desktop.Ui.NotifyingRow
     {
         public long ProductId { get; init; }
         public long WarehouseId { get; init; }
@@ -22,7 +22,18 @@ public partial class StockCountPage : UserControl
         public string WarehouseName { get; init; } = "";
         public string Unit { get; init; } = "";
         public decimal SystemQty { get; init; }
-        public decimal CountedQty { get; set; }
+        private decimal _countedQty;
+
+        /// <summary>
+        /// (CEEF-229 · م0-١٧) بدون الإشعار كان عمود «الفرق» يبقى أصفاراً بينما الأرقام مُدخَلة
+        /// فعلاً — ثم تظهر رسالة «ترحيل 47 فرقاً» على شاشةٍ تقول إن الجرد مطابق.
+        /// </summary>
+        public decimal CountedQty
+        {
+            get => _countedQty;
+            set => Set(ref _countedQty, value, [nameof(Variance)]);
+        }
+
         public decimal Variance => CountedQty - SystemQty;
         public decimal UnitCost { get; init; }
         public decimal TotalValue => Math.Round(SystemQty * UnitCost, 2, MidpointRounding.AwayFromZero);

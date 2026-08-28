@@ -1,4 +1,4 @@
-using Brqosh.Domain.Crm;
+﻿using Brqosh.Domain.Crm;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using Brqosh.Domain.Reporting;
@@ -95,6 +95,26 @@ public class BrqoshDbContext : DbContext
             entity.Property(c => c.LogoFilePath).HasMaxLength(512);
             entity.Property(c => c.PrintFontFamily).HasMaxLength(64).HasDefaultValue("Tahoma");
             entity.Property(c => c.VatRegistrationNumber).HasMaxLength(15);
+
+            // (CEEF-229 · Z-10) بيانات البائع النظامية — كائنٌ مملوك يُسطَّح في نفس الجدول
+            // فلا جدول جديد ولا انضمام: العنوان جزءٌ من هوية المنشأة لا كيانٌ مستقلّ بحياته.
+            entity.Property(c => c.RegistrationName).HasMaxLength(256);
+            entity.Property(c => c.CommercialRegistrationNumber).HasMaxLength(64);
+            // العروض هنا تطابق أعمدة BrqoshSchemaUpdater حرفاً بحرف، فلا يختلف تركيبٌ جديد
+            // (EnsureCreated من النموذج) عن تركيبٍ مُرقَّع. والتحقق الدلاليّ — رمز دولة بحرفين
+            // مثلاً — موضعه النطاق (NationalAddress.Create) لا عرضُ العمود.
+            entity.OwnsOne(c => c.NationalAddress, address =>
+            {
+                address.Property(a => a.BuildingNumber).HasColumnName("AddrBuildingNumber").HasMaxLength(16);
+                address.Property(a => a.AdditionalNumber).HasColumnName("AddrAdditionalNumber").HasMaxLength(16);
+                address.Property(a => a.StreetName).HasColumnName("AddrStreetName").HasMaxLength(128);
+                address.Property(a => a.DistrictName).HasColumnName("AddrDistrictName").HasMaxLength(128);
+                address.Property(a => a.CityName).HasColumnName("AddrCityName").HasMaxLength(128);
+                address.Property(a => a.PostalZone).HasColumnName("AddrPostalZone").HasMaxLength(16);
+                address.Property(a => a.CountrySubentity).HasColumnName("AddrCountrySubentity").HasMaxLength(128);
+                address.Property(a => a.CountryCode).HasColumnName("AddrCountryCode").HasMaxLength(16);
+            });
+            entity.Navigation(c => c.NationalAddress).IsRequired();
             entity.Property(c => c.Profile).HasConversion<string>().HasMaxLength(32);
             entity.Property(c => c.CostingMethod).HasConversion<string>().HasMaxLength(32);
             entity.Property(c => c.BaseCurrencyCode).HasMaxLength(3).IsRequired();
@@ -471,6 +491,13 @@ public class BrqoshDbContext : DbContext
             entity.Property(d => d.ComplianceStatus).HasConversion<string>().HasMaxLength(24);
             entity.HasIndex(d => new { d.CompanyId, d.DocumentType, d.SourceDocumentId }).IsUnique();
             entity.HasIndex(d => new { d.CompanyId, d.InvoiceNumber });
+
+            // (CEEF-229 · Z-4) شبكة الأمان في القاعدة لسلسلة العدّاد التسلسليّ.
+            //
+            // القفل الاستشاريّ يمنع السباق على PostgreSQL، والفهرس يمنعه على أيّ مسار آخر —
+            // كتابةٌ من أداة، أو مسارٌ ينسى القفل مستقبلاً. سلسلة سجلّ التدقيق أخذت الاثنين
+            // منذ البداية؛ سلسلة ZATCA لم تأخذ أياً منهما، وتفرّعُها لا يُصلَح بأثر رجعيّ.
+            entity.HasIndex(d => new { d.CompanyId, d.Icv }).IsUnique();
         });
 
         modelBuilder.Entity<BankAccount>(entity =>
@@ -784,6 +811,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(s => s.OpeningCash).HasPrecision(18, 2);
             entity.Property(s => s.ClosingCash).HasPrecision(18, 2);
             entity.Property(s => s.TotalSales).HasPrecision(18, 2);
+            entity.Property(s => s.CashSales).HasPrecision(18, 2);
             entity.Property(s => s.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(s => new { s.CompanyId, s.Status });
         });

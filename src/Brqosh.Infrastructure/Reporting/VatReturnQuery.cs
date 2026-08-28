@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
@@ -21,6 +21,11 @@ namespace Brqosh.Infrastructure.Reporting;
 /// الصواب محاسبياً: إقرار فترة الإصدار يبقى كما قُدِّم، وأثر الإلغاء يظهر في فترة
 /// الإلغاء كتسوية سالبة — تماماً كما يفعل إشعار الدائن.
 /// </summary>
+/// <summary>
+/// (CEEF-229 · A-15) وعاءٌ ضريبيّ واحد في الإقرار: فئةٌ ومبلغٌ خاضع وضريبة.
+/// </summary>
+public record VatReturnBucket(Brqosh.Domain.Tax.VatCategory Category, decimal TaxableAmount, decimal VatAmount);
+
 public record VatReturnResult(
     DateOnly FromDate,
     DateOnly ToDate,
@@ -38,8 +43,31 @@ public record VatReturnResult(
     decimal GlVatNetPayableBalance = 0m,
     // تسويات إلغاء مستندات صدرت في فترات سابقة وأُلغيت داخل هذه الفترة (CEEF-219).
     decimal CancelledOutputVat = 0m,
-    decimal CancelledInputVat = 0m)
+    decimal CancelledInputVat = 0m,
+    IReadOnlyList<VatReturnBucket>? SalesByCategory = null,
+    IReadOnlyList<VatReturnBucket>? PurchasesByCategory = null)
 {
+    /// <summary>
+    /// (CEEF-229 · A-15) المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
+    ///
+    /// <para><b>لماذا:</b> نموذج الإقرار السعوديّ يفصل المبيعات الخاضعة بالنسبة الأساسية عن
+    /// الصادرات الصفرية عن المبيعات المعفاة. وكان الإقرار يُخرج مجاميع كلّية فقط، رغم أن الفئة
+    /// <b>موجودة على مستوى السطر</b> ويحسبها <c>LineDocumentTotalsCalculator.ComputeSubtotals</c>
+    /// أصلاً في مولّد ZATCA — فالبيانات متوفّرة والتقرير يهدرها.</para>
+    ///
+    /// <para><b>الأثر بالأرقام:</b> ربعٌ فيه مبيعات محلية 1,000,000 (ضريبة 150,000) وصادرات صفرية
+    /// 400,000 وإيجار معفى 100,000. المجموع الكلّي يقول وعاءً 1,500,000 مقابل ضريبة 150,000 — أي
+    /// <b>10%</b>، نسبةٌ لا وجود لها في أيّ نظام ضريبيّ، فيقع تعارضٌ آليّ فوريّ على بوابة الهيئة.
+    /// وتختفي 500,000 ريال من الإفصاح.</para>
+    ///
+    /// <para><b>حدٌّ مُصرَّح به:</b> التفكيك بالفئة <b>فقط</b> — ولا تُسنَد أرقام صناديق النموذج
+    /// الرسميّ هنا، فأرقامها تحتاج مراجعة النموذج نصّاً (م4-٤). إسنادُ رقم صندوقٍ بالتخمين أسوأ
+    /// من عدم إسناده.</para>
+    /// </summary>
+    public IReadOnlyList<VatReturnBucket> Sales => SalesByCategory ?? [];
+
+    /// <summary>المشتريات مفكَّكة حسب الفئة — صافيةً من الإشعارات المدينة. انظر <see cref="Sales"/>.</summary>
+    public IReadOnlyList<VatReturnBucket> Purchases => PurchasesByCategory ?? [];
     public decimal NetOutputVat => OutputVat + ProgressBillingsVat - CreditNotesVat - CancelledOutputVat;
     public decimal NetDeductibleInputVat => DeductibleInputVat - DebitNotesDeductibleVat - CancelledInputVat;
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
@@ -124,6 +152,15 @@ public class VatReturnQuery(BrqoshDbContext db)
 
         var glBalance = await ReadVatNetPayableGlAsync(companyId, to);
 
+        // (CEEF-229 · A-15) التفكيك بالفئة — من السطور المحمَّلة أصلاً، بلا استعلام إضافيّ.
+        // الإشعارات تُطرح بإشارة سالبة فيصير كل وعاء **صافياً** كما يُقدَّم في الإقرار.
+        var salesByCategory = Aggregate(
+            [.. sales.SelectMany(i => i.Lines), .. creditNotes.SelectMany(n => n.Lines.Select(Negate))]);
+        var purchasesByCategory = Aggregate(
+            [.. purchases.Where(p => p.VatDeductible).SelectMany(p => p.Lines),
+             .. debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
+                          .SelectMany(n => n.Lines.Select(Negate))]);
+
         return new VatReturnResult(
             from, to,
             SalesSubtotal: sales.Sum(i => i.Subtotal),
@@ -141,8 +178,24 @@ public class VatReturnQuery(BrqoshDbContext db)
                 .Sum(n => n.VatAmount),
             GlVatNetPayableBalance: glBalance,
             CancelledOutputVat: cancelledOutputVat,
-            CancelledInputVat: cancelledInputVat);
+            CancelledInputVat: cancelledInputVat,
+            SalesByCategory: salesByCategory,
+            PurchasesByCategory: purchasesByCategory);
     }
+
+    /// <summary>سطرٌ بإشارة معكوسة — الإشعارات تُطرح من وعائها لا تُفرَد في وعاءٍ خاصّ.</summary>
+    private static SalesInvoiceLine Negate(SalesInvoiceLine line) =>
+        line with { Quantity = -line.Quantity };
+
+    /// <summary>
+    /// تجميع السطور في أوعية بالفئة، بنفس تقريب <c>ComputeSubtotals</c> — على مستوى **الوعاء**
+    /// لا السطر ولا المستند، وهو ما تفرضه دلالة <c>cac:TaxSubtotal</c> لدى الهيئة.
+    /// </summary>
+    private static IReadOnlyList<VatReturnBucket> Aggregate(IReadOnlyList<SalesInvoiceLine> lines) =>
+        lines.Count == 0
+            ? []
+            : [.. LineDocumentTotalsCalculator.ComputeSubtotals(lines)
+                   .Select(s => new VatReturnBucket(s.Category, s.TaxableAmount, s.VatAmount))];
 
     private async Task<decimal> ReadVatNetPayableGlAsync(long companyId, DateOnly asOf)
     {

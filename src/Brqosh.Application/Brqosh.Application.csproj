@@ -14,4 +14,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- (CEEF-229 · م0-١٢) قرار البيئة دالة نقيّة داخلية — تُختبر مباشرةً بدل الكتابة في
+         سجلّ النظام أو مجلد التثبيت، وكلاهما يحتاج صلاحية مسؤول ويُلوّث جهاز المطوّر. -->
+    <InternalsVisibleTo Include="Brqosh.Application.Tests" />
+  </ItemGroup>
+
 </Project>

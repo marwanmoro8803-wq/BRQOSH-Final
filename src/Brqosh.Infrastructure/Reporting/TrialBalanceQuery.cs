@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,7 +50,11 @@ public class TrialBalanceQuery(BrqoshDbContext db)
             return [];
 
         var accountIds = totals.Select(t => t.AccountId).ToList();
+        // التقارير التاريخية يجب أن ترى الحسابات المعطَّلة (حذف ناعم) وإلا سقط الميزان
+        // بـ KeyNotFoundException عند أول حساب يُوقَف وعليه حركة مرحّلة.
         var accounts = await db.Accounts
+            .IgnoreQueryFilters()
+            .AsNoTracking()
             .Where(a => accountIds.Contains(a.Id))
             .ToDictionaryAsync(a => a.Id);
 

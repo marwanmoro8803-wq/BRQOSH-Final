@@ -1,4 +1,4 @@
-using Brqosh.Domain.Companies;
+﻿using Brqosh.Domain.Companies;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
@@ -23,7 +23,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         PrintPostedGuard.EnsureSalesInvoicePosted(invoice);
         var kind = ResolveSalesKind(invoice, zatca);
         var lines = invoice.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal)).ToList();
+            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
         var customer = await db.Customers.SingleAsync(c => c.Id == invoice.CustomerId, ct);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
@@ -59,7 +59,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         PrintPostedGuard.EnsurePurchaseInvoicePosted(invoice);
         var supplier = await db.Suppliers.SingleAsync(s => s.Id == invoice.SupplierId, ct);
         var lines = invoice.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal)).ToList();
+            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.PurchaseInvoice,
@@ -93,7 +93,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             d.DocumentType == ZatcaDocumentType.CreditNote, ct);
 
         var lines = note.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal)).ToList();
+            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.CreditNote,
@@ -126,7 +126,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         PrintPostedGuard.EnsureDebitNotePosted(note);
         var supplier = await db.Suppliers.SingleAsync(s => s.Id == note.SupplierId, ct);
         var lines = note.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal)).ToList();
+            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.PurchaseDebitNote,

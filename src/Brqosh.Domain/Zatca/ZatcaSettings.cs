@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 
 namespace Brqosh.Domain.Zatca;
 
@@ -80,8 +80,9 @@ public class ZatcaSettings
     {
         if (!string.IsNullOrWhiteSpace(apiBaseUrl))
             ApiBaseUrl = apiBaseUrl.Trim().TrimEnd('/');
-        if (enabled)
-            Environment = ZatcaEnvironment.Simulation;
+        // (CEEF-229 · م0-١٠) لا يُفرض وضع المحاكاة عند التفعيل.
+        // كان كلّ تفعيلٍ من القالب يُرجِع البيئة إلى المحاكاة — حتى لو ضبطها المالك إنتاجاً —
+        // فتُعلَّم الفواتير مقبولةً بلا إرسال. البيئة قرارُ المنشأة لا أثرٌ جانبيّ للتفعيل.
         UpdatedAtUtc = DateTime.UtcNow;
     }
 }

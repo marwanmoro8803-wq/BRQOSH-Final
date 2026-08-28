@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace Brqosh.Infrastructure.Security;
 
@@ -36,4 +36,22 @@ public sealed class LocalWhatsAppNotificationChannel : IWhatsAppNotificationChan
 {
     public WhatsAppSendResult SendOtp(string phoneE164, string messageAr) =>
         new InAppOtpNotificationChannel().SendOtp(phoneE164, messageAr);
+}
+
+/// <summary>
+/// (CEEF-229 · م0-١١) لا قناة تسليم مهيّأة في الإنتاج — تفشل <b>صراحةً</b>.
+///
+/// <para>كان <see cref="InAppOtpNotificationChannel"/> يعيد في الإنتاج <c>Success: true</c> مع
+/// <c>DevHint: null</c>: الرمز يُولَّد ويُحفَظ في القاعدة و<b>لا يُسلَّم لأحد</b>، والمستخدم يقرأ
+/// «تم إرسال الرمز». فمسار «نسيت كلمة المرور» ميتٌ في كل تركيب حقيقيّ، ورسالةُ النجاح تُخفي
+/// السبب فيظنّ المستخدم أن الرسالة تأخّرت — ويبقى مقفولاً خارج دفاتره.</para>
+///
+/// <para>الفشل الصريح لا يفتح الحساب لأحد، لكنه يقول الحقيقة ويوجّه إلى المخرج الفعليّ:
+/// إعادة تعيين بيد مدير النظام، أو تهيئة قناة إرسال.</para>
+/// </summary>
+public sealed class UnavailableOtpNotificationChannel : IWhatsAppNotificationChannel
+{
+    public WhatsAppSendResult SendOtp(string phoneE164, string messageAr) =>
+        new(false, null,
+            "لا توجد قناة لإرسال رمز التحقق في هذا التركيب — راجع مدير النظام لإعادة تعيين كلمة المرور.");
 }

@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Ui;
@@ -14,12 +14,30 @@ public partial class SalesInvoiceDialog : Window
 {
     public record CustomerOption(long Id, string Display);
 
-    public class LineRow
+    /// <summary>
+    /// (CEEF-229 · م0-١٧) صفٌّ مُشعِر — يُستعمل في فواتير البيع والشراء وإشعارَي الدائن والمدين.
+    /// بدون الإشعار كان عمود «الإجمالي» يبقى 0.00 بينما ملخّص الفاتورة صحيح، فيظنّ المستخدم
+    /// أن إدخاله لم يُحفَظ.
+    /// </summary>
+    public class LineRow : Brqosh.Desktop.Ui.NotifyingRow
     {
+        private decimal _quantity;
+        private decimal _unitPrice;
+
         public long? ProductId { get; set; }
         public string? Description { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
+
+        public decimal Quantity
+        {
+            get => _quantity;
+            set => Set(ref _quantity, value, [nameof(LineTotal)]);
+        }
+
+        public decimal UnitPrice
+        {
+            get => _unitPrice;
+            set => Set(ref _unitPrice, value, [nameof(LineTotal)]);
+        }
 
         /// <summary>الفئة الضريبية للسطر — الافتراضي أساسية 15% (CEEF-208).</summary>
         public Brqosh.Domain.Tax.VatCategory VatCategory { get; set; }
@@ -106,6 +124,10 @@ public partial class SalesInvoiceDialog : Window
 
     private async void OnPost(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         try
         {
             LinesGrid.CommitEdit(DataGridEditingUnit.Row, true);

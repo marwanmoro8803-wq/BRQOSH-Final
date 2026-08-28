@@ -1,4 +1,4 @@
-using Brqosh.Domain.Companies;
+﻿using Brqosh.Domain.Companies;
 namespace Brqosh.Domain.Accounting;
 
 /// <summary>حالة القيد في دورة حياته المحاسبية.</summary>
@@ -127,6 +127,32 @@ public class JournalEntry : IBranchScoped
             throw new AccountingException("سطر القيد يجب أن يحمل مبلغاً مديناً أو دائناً.");
 
         _lines.Add(new JournalLine(account.Id, account.Code, debit, credit, lineDescription?.Trim(), costCenterId));
+    }
+
+    /// <summary>
+    /// سطرٌ في قيدٍ نظاميّ (إقفال سنويّ) — يقبل الحساب <b>الموقوف</b>.
+    ///
+    /// <para>(CEEF-229 · م0-١٣) الإقفال إجراءٌ نظاميّ لا ترحيلٌ تشغيليّ: حسابٌ أُوقف وعليه رصيد
+    /// <b>يجب</b> أن يُصفَّر في قيد الإقفال، وإلا بقي رصيده معلّقاً واستحال الإقفال إلى الأبد.
+    /// ومنعُ الترحيل التشغيليّ عليه يبقى قائماً في <see cref="AddLine"/>.</para>
+    ///
+    /// <para>ويبقى الحساب <b>التجميعيّ</b> مرفوضاً هنا أيضاً: الإيقاف حالةٌ عارضة، أمّا التجميع
+    /// فبنيةٌ في الدليل لا تقبل رصيداً بحال.</para>
+    /// </summary>
+    public void AddClosingLine(Account account, decimal debit, decimal credit, string? lineDescription = null)
+    {
+        EnsureDraft("إضافة سطر إقفال");
+
+        if (account.IsGroup)
+            throw new AccountingException($"الحساب '{account.NameAr}' تجميعي — لا يقبل رصيداً.");
+        if (debit < 0 || credit < 0)
+            throw new AccountingException("لا يجوز إدخال مبالغ سالبة — استخدم الطرف المقابل (مدين/دائن).");
+        if (debit > 0 && credit > 0)
+            throw new AccountingException("لا يجوز أن يكون السطر مديناً ودائناً في آنٍ واحد.");
+        if (debit == 0 && credit == 0)
+            throw new AccountingException("سطر القيد يجب أن يحمل مبلغاً مديناً أو دائناً.");
+
+        _lines.Add(new JournalLine(account.Id, account.Code, debit, credit, lineDescription?.Trim(), null));
     }
 
     /// <summary>

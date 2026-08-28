@@ -114,14 +114,32 @@ public partial class FixedAssetsPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
-        if (!decimal.TryParse(dialog.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var proceeds) || proceeds < 0)
+        if (!NumericInput.TryParse(dialog.Value, out var proceeds) || proceeds < 0)
         {
             MessageBox.Show("أدخل مبلغاً صحيحاً (صفر أو أكثر).", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"استبعاد الأصل {row.NameAr} بعائد {proceeds:N2}؟", "BRQOSH",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        // (CEEF-229 · م0-١٥) التأكيد يعرض ناتج العملية لا مُدخَلها وحده.
+        //
+        // كان الاستبعاد محصوراً بالأصل المستهلَك بالكامل، فالربح/الخسارة صفرٌ دائماً ولا شيء
+        // يُعرَض. وبعد فتح البيع المبكّر صار **الفرق هو ناتج العملية** — ويُرحَّل إلى قائمة الدخل
+        // بلا أن يراه المستخدم. وهنا تحديداً يظهر الحدّ المسجَّل: القيمة الدفترية محسوبة على آخر
+        // إهلاك مُرحَّل، فإن كان الإهلاك متأخّراً بدت الخسارة أكبر — ورؤيتُها قبل الترحيل هي ما
+        // يجعل العطل الصامت رقماً على الشاشة.
+        var gainLoss = proceeds - row.BookValue;
+        var verdict = gainLoss >= 0
+            ? $"ربح متوقّع {gainLoss:N2}"
+            : $"خسارة متوقّعة {-gainLoss:N2}";
+
+        if (MessageBox.Show(
+                $"استبعاد الأصل {row.NameAr}؟\n\n" +
+                $"التكلفة: {row.AcquisitionCost:N2}\n" +
+                $"مجمّع الإهلاك: {row.AccumulatedDepreciation:N2}\n" +
+                $"القيمة الدفترية: {row.BookValue:N2}\n" +
+                $"عائد البيع: {proceeds:N2}\n" +
+                $"⟵ {verdict}",
+                "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         try

@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Retail;
@@ -21,6 +21,14 @@ public class PosShift : IBranchScoped
     public decimal OpeningCash { get; private set; }
     public decimal ClosingCash { get; private set; }
     public decimal TotalSales { get; private set; }
+
+    /// <summary>
+    /// (CEEF-228) المبيعات النقدية وحدها — وهي ما يُتوقَّع وجوده في الدرج.
+    /// كانت `ExpectedCash` تُحسب من `TotalSales` الذي يضمّ الشبكة والدفع المختلط،
+    /// فوردية بمبيعات شبكة 10,000 تُظهر عجزاً وهمياً 10,000 عند كل إغلاق.
+    /// </summary>
+    public decimal CashSales { get; private set; }
+
     public int TransactionCount { get; private set; }
     public PosShiftStatus Status { get; private set; } = PosShiftStatus.Open;
 
@@ -48,11 +56,19 @@ public class PosShift : IBranchScoped
             Math.Round(openingCash, 2, MidpointRounding.AwayFromZero));
     }
 
-    public void RecordSale(decimal amount)
+    /// <summary>
+    /// طريقة الدفع **إلزامية بلا قيمة افتراضية** عمداً — فالمترجم هو الحارس الذي يمنع
+    /// إضافة مسار بيع جديد ينسى تصنيف النقد، وهو أقوى من أيّ مراجعة.
+    /// </summary>
+    public void RecordSale(decimal amount, PosPaymentMethod paymentMethod)
     {
         if (Status != PosShiftStatus.Open)
             throw new AccountingException("الوردية مغلقة.");
-        TotalSales += Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+
+        var rounded = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+        TotalSales += rounded;
+        if (paymentMethod == PosPaymentMethod.Cash)
+            CashSales += rounded;
         TransactionCount++;
     }
 
@@ -65,7 +81,7 @@ public class PosShift : IBranchScoped
         Status = PosShiftStatus.Closed;
     }
 
-    public decimal ExpectedCash => OpeningCash + TotalSales;
+    public decimal ExpectedCash => OpeningCash + CashSales;
     public decimal CashDifference => ClosingCash - ExpectedCash;
     public void AssignBranch(long branchId)
     {

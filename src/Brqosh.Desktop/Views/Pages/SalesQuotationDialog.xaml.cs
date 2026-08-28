@@ -4,6 +4,7 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -31,10 +32,10 @@ public partial class SalesQuotationDialog : Window
             if (CustomerCombo.SelectedItem is not Customer customer)
                 throw new AccountingException("اختر عميلاً.");
 
-            if (!decimal.TryParse(QuantityBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var qty) || qty <= 0)
+            if (!NumericInput.TryParse(QuantityBox.Text, out var qty) || qty <= 0)
                 throw new AccountingException("الكمية غير صالحة.");
 
-            if (!decimal.TryParse(UnitPriceBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var price) || price < 0)
+            if (!NumericInput.TryParse(UnitPriceBox.Text, out var price) || price < 0)
                 throw new AccountingException("السعر غير صالح.");
 
             var description = DescriptionBox.Text.Trim();

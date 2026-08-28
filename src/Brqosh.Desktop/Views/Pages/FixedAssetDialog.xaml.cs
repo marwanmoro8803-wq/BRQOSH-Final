@@ -4,6 +4,7 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
 using Brqosh.Infrastructure.Assets;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -89,9 +90,9 @@ public partial class FixedAssetDialog : Window
                 throw new AccountingException("اختر حساب الأصل.");
             if (DepAccountCombo.SelectedValue is not long depAcctId)
                 throw new AccountingException("اختر حساب مجمع الإهلاك.");
-            if (!decimal.TryParse(CostBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var cost) || cost <= 0)
+            if (!NumericInput.TryParse(CostBox.Text, out var cost) || cost <= 0)
                 throw new AccountingException("تكلفة الاقتناء غير صالحة.");
-            if (!decimal.TryParse(SalvageBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var salvage) || salvage < 0)
+            if (!NumericInput.TryParse(SalvageBox.Text, out var salvage) || salvage < 0)
                 throw new AccountingException("القيمة المتبقية غير صالحة.");
             if (!int.TryParse(LifeBox.Text, out var life) || life <= 0)
                 throw new AccountingException("العمر الإنتاجي غير صالح.");

@@ -36,9 +36,23 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
             .Where(i => i.CompanyId == companyId && i.SupplierId == supplierId && i.Status == PurchaseInvoiceStatus.Posted)
             .SumGrandTotalAsync();
 
+        // (CEEF-229 · م0-٨) إشعارات المدين تخفّض المستحقّ للمورد.
+        // كانت غائبة عن هذا الاستعلام كلياً بينما DebitNotePostingService يُمدِّن 2101 فعلاً،
+        // فيفترق الدفتر المساعد عن الأستاذ بقيمة كل مرتجع مشتريات — ويُدفع للمورد زائداً.
+        // والنمط كان قائماً على الجهة المقابلة: CustomerBalanceQuery يطرح الإشعارات الدائنة.
+        var debited = await DebitNotesForSupplierAsync(companyId, supplierId);
+
         var paid = await PaymentsForSupplierAsync(companyId, supplierId);
-        return new SupplierBalance(supplierId, invoiced, paid);
+        return new SupplierBalance(supplierId, invoiced - debited, paid);
     }
+
+    private async Task<decimal> DebitNotesForSupplierAsync(long companyId, long supplierId) =>
+        (await db.DebitNotes
+            .Where(n => n.CompanyId == companyId && n.SupplierId == supplierId
+                        && n.Status == DebitNoteStatus.Posted)
+            .Select(n => new { n.Subtotal, n.VatAmount })
+            .ToListAsync())
+        .Sum(n => n.Subtotal + n.VatAmount);
 
     public async Task<IReadOnlyDictionary<long, decimal>> AllBalancesAsync(long companyId)
     {
@@ -64,14 +78,24 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
 
         var retentionPaid = await new SubcontractSupplierRetentionQuery(db).AllWithheldBySupplierAsync(companyId);
 
+        // (CEEF-229 · م0-٨) إشعارات المدين — انظر التعليق في ForSupplierAsync.
+        var debited = (await db.DebitNotes
+                .Where(n => n.CompanyId == companyId && n.Status == DebitNoteStatus.Posted)
+                .Select(n => new { n.SupplierId, n.Subtotal, n.VatAmount })
+                .ToListAsync())
+            .GroupBy(n => n.SupplierId)
+            .ToDictionary(g => g.Key, g => g.Sum(n => n.Subtotal + n.VatAmount));
+
         var all = invoiced.Keys
             .Union(paidVouchers.Keys)
             .Union(chequePaid.Keys)
-            .Union(retentionPaid.Keys);
+            .Union(retentionPaid.Keys)
+            .Union(debited.Keys);
 
         return all.ToDictionary(id =>
             id,
             id => invoiced.GetValueOrDefault(id)
+                  - debited.GetValueOrDefault(id)
                   - paidVouchers.GetValueOrDefault(id)
                   - chequePaid.GetValueOrDefault(id)
                   - retentionPaid.GetValueOrDefault(id));

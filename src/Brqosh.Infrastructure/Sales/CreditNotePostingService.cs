@@ -67,6 +67,8 @@ public class CreditNotePostingService(BrqoshDbContext db)
             throw new AccountingException(
                 $"قيمة الإشعار {note.GrandTotal():N2} تتجاوز المتبقي من الفاتورة {remaining:N2}.");
 
+        EnsureReturnedQuantitiesWithinInvoice(note, invoice, previousCredits);
+
         var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
         var originalCosts = await ResolveOriginalSaleUnitCostsAsync(invoice, ct);
         decimal cogsReversal = 0;
@@ -127,6 +129,50 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 $"إرجاع من إشعار دائن {noteNumber}",
                 $"CreditNote:{noteNumber}", returnLines);
             await db.SaveChangesAsync(ct);
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م0-٦) التحقق الكمّي لكل صنف مقابل الفاتورة الأصلية.
+    ///
+    /// <para>فحص <b>القيمة</b> وحده لا يكفي: فاتورة فيها حبةٌ من صنفٍ بـ1,000 ومئةُ حبةٍ من صنفٍ
+    /// بريال واحد إجماليها 1,100 — وإشعارٌ بمئة حبة من الصنف الغالي إجماليه 1,100 أيضاً، فيمرّ
+    /// فحص القيمة ويُدخل إلى المخزون <b>مئة حبة لم تُبَع قط</b> بتكلفتها الأصلية.</para>
+    ///
+    /// <para>ولهذا يُلازم هذا الفحصُ تمريرَ <c>ProductId</c> من الشاشة في التزام واحد: قبل التمرير
+    /// كان الخطر منزوع الصاعق لأن لا سطر يحمل صنفاً أصلاً — وتمريرُ الصنف وحده يُفجّره.</para>
+    /// </summary>
+    private static void EnsureReturnedQuantitiesWithinInvoice(
+        CreditNote note, SalesInvoice invoice, IReadOnlyList<CreditNote> previousCredits)
+    {
+        var invoiced = invoice.Lines
+            .Where(l => l.ProductId is not null)
+            .GroupBy(l => l.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+        var alreadyReturned = previousCredits
+            .SelectMany(n => n.Lines)
+            .Where(l => l.ProductId is not null)
+            .GroupBy(l => l.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+        // تُجمع سطور الإشعار بالصنف أولاً: صنفٌ مكرّر على سطرين يجب أن يُحاسَب مجموعُه،
+        // وإلا مرّ التجاوز بتقسيمه على سطرين.
+        var requested = note.Lines
+            .Where(l => l.ProductId is not null)
+            .GroupBy(l => l.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+        foreach (var (productId, quantity) in requested)
+        {
+            if (!invoiced.TryGetValue(productId, out var soldQuantity))
+                throw new AccountingException(
+                    "لا يمكن إرجاع صنف لم يرد في الفاتورة الأصلية.");
+
+            var returnable = soldQuantity - alreadyReturned.GetValueOrDefault(productId);
+            if (quantity > returnable)
+                throw new AccountingException(
+                    $"الكمية المرتجعة {quantity:N2} تتجاوز المتاح للإرجاع {returnable:N2} من هذا الصنف.");
         }
     }
 

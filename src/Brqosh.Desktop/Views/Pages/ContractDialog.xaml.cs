@@ -1,6 +1,7 @@
 using System.Windows;
 using Brqosh.Domain.Construction;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -31,7 +32,7 @@ public partial class ContractDialog : Window
         {
             if (ProjectBox.SelectedItem is not ProjectOption project)
                 throw new InvalidOperationException("اختر المشروع.");
-            if (!decimal.TryParse(ValueBox.Text, out var value) || value <= 0)
+            if (!NumericInput.TryParse(ValueBox.Text, out var value) || value <= 0)
                 throw new InvalidOperationException("قيمة العقد غير صالحة.");
 
             var date = DatePicker.SelectedDate is DateTime dt

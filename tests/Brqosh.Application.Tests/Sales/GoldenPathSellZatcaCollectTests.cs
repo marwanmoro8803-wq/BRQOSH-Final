@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
@@ -69,7 +69,9 @@ public class GoldenPathSellZatcaCollectTests : IDisposable
 
         var zatca = await _db.ZatcaEInvoiceDocuments.SingleAsync(d =>
             d.CompanyId == _companyId && d.SourceDocumentId == posted.Id);
-        Assert.Equal(ZatcaComplianceStatus.Cleared, zatca.ComplianceStatus);
+        // (CEEF-229 · م0-١٠) المحاكاة ليست اعتماداً — انظر PosZatcaTests.
+        Assert.Equal(ZatcaComplianceStatus.SimulatedLocally, zatca.ComplianceStatus);
+        Assert.False(zatca.ComplianceStatus.IsAcknowledgedByAuthority());
         Assert.False(string.IsNullOrWhiteSpace(zatca.InvoiceUuid.ToString()));
 
         var arBefore = await _db.JournalEntries
@@ -113,7 +115,9 @@ public class GoldenPathSellZatcaCollectTests : IDisposable
                 () => new ZatcaEInvoiceGenerator(_db).TryGenerateForSalesInvoiceAsync(invoice.Id));
 
             var zatca = await _db.ZatcaEInvoiceDocuments.SingleAsync(d => d.SourceDocumentId == invoice.Id);
-            Assert.Equal(ZatcaComplianceStatus.Cleared, zatca.ComplianceStatus);
+            // (CEEF-229 · م0-١٠) المحاكاة ليست اعتماداً — انظر PosZatcaTests.
+        Assert.Equal(ZatcaComplianceStatus.SimulatedLocally, zatca.ComplianceStatus);
+        Assert.False(zatca.ComplianceStatus.IsAcknowledgedByAuthority());
 
             await _db.Database.CommitTransactionAsync();
         }

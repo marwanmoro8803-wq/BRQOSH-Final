@@ -1,4 +1,4 @@
-using Brqosh.Infrastructure.Accounting;
+﻿using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
@@ -41,6 +41,31 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         return customerId is long cid ? q.Where(i => i.CustomerId == cid) : q;
     }
 
+    /// <summary>
+    /// (CEEF-229 · م0-٩) إشعارات الدائن التي تمسّ <b>الذمم</b> — دون إشعارات نقاط البيع.
+    ///
+    /// <para>الفواتير كانت تستثني نقاط البيع (<c>PosShiftId == null</c>) والإشعاراتُ لا تستثنيها،
+    /// فيُطرح من الذمم ما لم يُضَف إليها قط. و<c>CreditNotePostingService</c> يوجّه إشعار فاتورة
+    /// نقطة البيع إلى <b>الصندوق</b> لا إلى حساب العملاء — بحقّ، فالبيع كان نقدياً.</para>
+    ///
+    /// <para><b>الأثر:</b> عميل مسجَّل يشتري من الكاشير بـ1,150 نقداً ثم يُرجع البضاعة ⟵ الأستاذ
+    /// يقول ذمم العميل صفر، والدفتر المساعد يقول <b>سالب 1,150</b>. رصيدٌ دائنٌ وهميّ يظهر في
+    /// كشف الحساب وتقرير الأعمار، ومؤشّر «المدينون» أقلّ من الحقيقة عن كل حالة مماثلة. ويصيب
+    /// قطاع التجزئة تحديداً — الشريحة المستهدفة الأولى.</para>
+    /// </summary>
+    private static IQueryable<CreditNote> ArCreditNotes(BrqoshDbContext db, long companyId, long? customerId = null)
+    {
+        var posInvoiceIds = db.SalesInvoices
+            .Where(i => i.CompanyId == companyId && i.PosShiftId != null)
+            .Select(i => i.Id);
+
+        var q = db.CreditNotes.Where(n =>
+            n.CompanyId == companyId
+            && n.Status == CreditNoteStatus.Posted
+            && !posInvoiceIds.Contains(n.OriginalInvoiceId));
+        return customerId is long cid ? q.Where(n => n.CustomerId == cid) : q;
+    }
+
     public async Task<CustomerBalance> ForCustomerAsync(long companyId, long customerId)
     {
         var invoiced = await ArSalesInvoices(db, companyId, customerId).SumGrandTotalAsync();
@@ -50,9 +75,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
             .ToListAsync())
             .Sum(b => b.GrandTotal);
 
-        var credited = await db.CreditNotes
-            .Where(n => n.CompanyId == companyId && n.CustomerId == customerId && n.Status == CreditNoteStatus.Posted)
-            .SumGrandTotalAsync();
+        var credited = await ArCreditNotes(db, companyId, customerId).SumGrandTotalAsync();
 
         var received = await db.ReceiptVouchers
             .Where(v => v.CompanyId == companyId && v.CustomerId == customerId && v.Status == ReceiptVoucherStatus.Posted)
@@ -83,8 +106,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
             .GroupBy(b => b.CustomerId)
             .ToDictionary(g => g.Key, g => g.Sum(b => b.GrandTotal));
 
-        var credited = await db.CreditNotes
-            .Where(n => n.CompanyId == companyId && n.Status == CreditNoteStatus.Posted)
+        var credited = await ArCreditNotes(db, companyId)
             .GroupBy(n => n.CustomerId)
             .Select(g => new { CustomerId = g.Key, Total = g.Sum(n => n.Subtotal + n.VatAmount) })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
@@ -146,13 +168,19 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                 b.GrandTotal, 0m, b.JournalEntryId);
         }
 
-        foreach (var n in await db.CreditNotes
-            .Where(n => n.CompanyId == companyId && n.CustomerId == customerId && n.Status == CreditNoteStatus.Posted)
-            .ToListAsync())
+        // (CEEF-229 · م0-٩) كشف الحساب يتبع الرصيد: إشعار نقطة البيع لا يمسّ الذمم فلا يظهر فيه.
+        // وإلا اختلف الرصيد الجاري في الكشف عن الرصيد في رأسه — وهو أوّل ما يفحصه العميل.
+        foreach (var n in await ArCreditNotes(db, companyId, customerId).ToListAsync())
             rows.Add((n.NoteDate, n.NoteNumber ?? "", "إشعار دائن", 0m, n.GrandTotal()));
 
+        var posInvoiceIdsForStatement = db.SalesInvoices
+            .Where(i => i.CompanyId == companyId && i.PosShiftId != null)
+            .Select(i => i.Id);
+
         foreach (var n in await db.CreditNotes
-            .Where(n => n.CompanyId == companyId && n.CustomerId == customerId && n.Status == CreditNoteStatus.Cancelled)
+            .Where(n => n.CompanyId == companyId && n.CustomerId == customerId
+                        && n.Status == CreditNoteStatus.Cancelled
+                        && !posInvoiceIdsForStatement.Contains(n.OriginalInvoiceId))
             .ToListAsync())
         {
             await AppendCancellationRowAsync(rows, n.NoteDate, n.NoteNumber ?? "", "إشعار دائن",

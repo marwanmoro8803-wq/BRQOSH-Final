@@ -14,6 +14,7 @@ using Brqosh.Desktop.Views;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -21,11 +22,18 @@ public partial class PosSessionPage : UserControl
 {
     public record ProductRow(long Id, string Code, string NameAr, string Barcode, decimal SalePrice);
 
-    public class CartRow
+    public class CartRow : Brqosh.Desktop.Ui.NotifyingRow
     {
         public long ProductId { get; init; }
         public string NameAr { get; init; } = "";
-        public decimal Quantity { get; set; }
+        private decimal _quantity;
+
+        public decimal Quantity
+        {
+            get => _quantity;
+            set => Set(ref _quantity, value, [nameof(LineTotal)]);
+        }
+
         public decimal UnitPrice { get; init; }
         public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
     }
@@ -169,6 +177,10 @@ public partial class PosSessionPage : UserControl
 
     private async void OnPay(object sender, RoutedEventArgs e)
     {
+        // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
         if (_cart.Count == 0)
         {
             MessageBox.Show("السلة فارغة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);

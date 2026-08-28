@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Persistence;
 
 namespace Brqosh.Infrastructure.Reporting;
@@ -37,7 +37,12 @@ public class CashFlowStatementService(BrqoshDbContext db)
             new("صافي الدخل", pnl.NetIncome),
         };
 
-        var depreciation = DeltaForCodes(startBalances, endBalances, "1207", AccountType.Asset, invert: true);
+        // (CEEF-228) كان `invert: true` يقلب الإشارة مرّة ثانية.
+        // 1207 «مجمع الإهلاك» مصنّف Asset ورصيده دائن، فـSignedBalance سالب:
+        //   إهلاك 1,000 -> endBal = -1000 -> delta = -1000 -> cashEffect = -delta = +1000
+        // وهو الردّ الصحيح لمصروف غير نقديّ. ثم كان invert يجعله -1000، فيُطرح الإهلاك
+        // مرّتين: مرّةً داخل صافي الدخل ومرّةً هنا.
+        var depreciation = DeltaForCodes(startBalances, endBalances, "1207", AccountType.Asset);
         if (depreciation != 0m)
             operating.Add(new("إهلاك الأصول (تعديل غير نقدي)", depreciation));
 
@@ -49,6 +54,15 @@ public class CashFlowStatementService(BrqoshDbContext db)
             ("2101", "تغيّر ذمم الموردين"),
             ("2104", "تغيّر مصروفات مستحقة"),
             ("2105", "تغيّر دفعات مقدمة من العملاء"),
+            // (CEEF-228) هذه الخمسة كانت غائبة، وكلّها تتحرّك في كلّ عملية بيع أو شراء
+            // أو مستخلص — فكانت القائمة لا تتوازن بنيوياً. مثال: فاتورة آجلة 1,000 + ضريبة 150
+            // تُنتج صافي دخل +1,000 وتغيّر ذمم -1,150 وضريبةً لا تظهر = تدفق تشغيليّ -150
+            // لم يحدث قطّ (الصحيح صفر: لم يُقبض شيء).
+            (SaudiChartOfAccounts.SystemCodes.VatInput, "تغيّر ضريبة القيمة المضافة — مدخلات"),
+            (SaudiChartOfAccounts.SystemCodes.VatOutput, "تغيّر ضريبة القيمة المضافة — مخرجات"),
+            (SaudiChartOfAccounts.SystemCodes.WorkInProgress, "تغيّر أعمال تحت التنفيذ"),
+            (SaudiChartOfAccounts.SystemCodes.RetentionReceivable, "تغيّر محتجزات لدى العملاء"),
+            (SaudiChartOfAccounts.SystemCodes.RetentionPayableSubcontractors, "تغيّر محتجزات مقاولي الباطن"),
         })
         {
             var delta = DeltaForCodes(startBalances, endBalances, code, null);
@@ -66,7 +80,17 @@ public class CashFlowStatementService(BrqoshDbContext db)
         if (loanDelta != 0m)
             financing.Add(new("قروض طويلة الأجل (صافي)", loanDelta));
 
-        var equityDelta = DeltaForPrefix(startBalances, endBalances, "31", AccountType.Equity, exclude: ["3104"]);
+        // (CEEF-228) 3103 «الأرباح المبقاة» كانت مشمولةً، وقيدُ الإقفال السنويّ يُدخل فيها
+        // صافي الدخل كاملاً — فيُحتسب مرّتين: في التشغيل كـ«صافي الدخل» وفي التمويل كحركة
+        // حقوق ملكية. شركة بصافي دخل 200,000 كانت تُظهر مجموع أقسام 400,000 مقابل
+        // NetCashChange حقيقيّ 200,000. و3106 «احتياطي ترجمة العملات» تسويةٌ غير نقدية.
+        // توزيعات الشركاء وسحوباتهم تُقيَّد على 3105 «جاري الشركاء» فتبقى ظاهرة في التمويل.
+        var equityDelta = DeltaForPrefix(startBalances, endBalances, "31", AccountType.Equity,
+            exclude: [
+                SaudiChartOfAccounts.SystemCodes.RetainedEarnings,
+                SaudiChartOfAccounts.SystemCodes.CurrentYearProfit,
+                SaudiChartOfAccounts.SystemCodes.TranslationReserve,
+            ]);
         if (equityDelta != 0m)
             financing.Add(new("حقوق ملكية / رأس مال (صافي)", equityDelta));
 
@@ -114,7 +138,17 @@ public class CashFlowStatementService(BrqoshDbContext db)
         var startBal = start.GetValueOrDefault(code).SignedBalance;
         var endBal = end.GetValueOrDefault(code).SignedBalance;
         var delta = endBal - startBal;
-        var accountType = type ?? start.GetValueOrDefault(code).Type;
+
+        // (CEEF-228) كان النوع يُستنتج من أرصدة **بداية** المدة وحدها. وحسابٌ لا رصيد
+        // افتتاحيّ له غائبٌ عن القاموس، فتعيد GetValueOrDefault صفراً — وهو ليس عضواً
+        // صالحاً في AccountType (Asset = 1) فيسقط على الفرع الافتراضي: معاملةُ أصل.
+        // النتيجة: كل التزامٍ نشأ داخل المدة (ذمم موردين، ضريبة مخرجات، مستحقات) يُحسب
+        // بإشارة معكوسة. مثال مُقاس: فاتورة آجلة 1,000 + ضريبة 150 كانت تُنتج تدفقاً
+        // تشغيلياً -300 بدل صفر.
+        var accountType = type
+            ?? (start.TryGetValue(code, out var startEntry) ? startEntry.Type
+                : end.TryGetValue(code, out var endEntry) ? endEntry.Type
+                : AccountType.Asset);
         var cashEffect = accountType switch
         {
             AccountType.Asset => -delta,

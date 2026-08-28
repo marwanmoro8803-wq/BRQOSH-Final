@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 using Brqosh.Domain.Accounting;
@@ -33,7 +33,19 @@ public static class ZatcaUblInvoiceBuilder
         bool IsDebitNote = false,
         bool IsSimplified = true,
         string? BillingReferenceInvoiceNumber = null,
-        Guid? BillingReferenceUuid = null);
+        Guid? BillingReferenceUuid = null,
+        string? IssueReason = null,
+        SellerIdentity? Seller = null);
+
+/// <summary>
+/// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
+/// كانت غائبة عن العقد كلياً، فيخرج طرف البائع باسمٍ ورقمٍ ضريبيّ فقط: مستندٌ يسقط في
+/// تصديق المخطّط قبل أن تُقرأ أرقامه.
+/// </summary>
+public sealed record SellerIdentity(
+    string? RegistrationName,
+    string? CommercialRegistrationNumber,
+    Brqosh.Domain.Companies.NationalAddress Address);
 
     public static byte[] BuildXml(InvoiceData data)
     {
@@ -53,17 +65,27 @@ public static class ZatcaUblInvoiceBuilder
             El(Cbc, "DocumentCurrencyCode", "SAR"),
             El(Cbc, "TaxCurrencyCode", "SAR"));
 
-        AddDocRef(root, "ICV", data.Icv);
-        AddDocRef(root, "PIH", data.PreviousInvoiceHash);
-        AddDocRef(root, "QR", data.QrTlvBase64);
-
+        // (CEEF-229 · Z-6) ترتيب `xsd:sequence` في مخطّط UBL 2.1 مُلزِم — لا اصطلاح.
+        //
+        // متتالية Invoice تضع `cac:BillingReference` **قبل** `cac:AdditionalDocumentReference`،
+        // ثم `cac:Signature` بعدهما وقبل طرفَي البائع والمشتري. وكان الترتيب معكوساً والتوقيع
+        // غائباً — فيُرفض المستند في **تصديق المخطّط**، أي قبل أن تُقرأ أرقامه أو يُفحص توقيعه.
+        // لا حيلة تشغيلية تُنجّي منه.
         if ((data.IsCreditNote || data.IsDebitNote) &&
             !string.IsNullOrWhiteSpace(data.BillingReferenceInvoiceNumber))
             AddBillingReference(root, data.BillingReferenceInvoiceNumber!, data.BillingReferenceUuid);
 
-        AddSupplier(root, data.SellerName, data.SellerVat);
+        AddIcvRef(root, data.Icv);
+        AddDocRef(root, "PIH", data.PreviousInvoiceHash);
+        AddDocRef(root, "QR", data.QrTlvBase64);
+
+        AddUblSignature(root);
+
+        AddSupplier(root, data.SellerName, data.SellerVat, data.Seller);
         if (!string.IsNullOrWhiteSpace(data.CustomerName) || !string.IsNullOrWhiteSpace(data.CustomerVat))
             AddCustomer(root, data.CustomerName, data.CustomerVat);
+
+        AddIssueReason(root, data);
 
         // cac:TaxSubtotal إلزاميّ لدى الهيئة (BR-CO-18/KSA): وعاء الضريبة + فئتها + نسبتها.
         // كان غائباً تماماً فتُرفض الفاتورة في الفحص رغم صحة التوقيع (ع-Z2، CEEF-202).
@@ -137,6 +159,57 @@ public static class ZatcaUblInvoiceBuilder
         return el;
     }
 
+    /// <summary>
+    /// (CEEF-229 · Z-5) سبب إصدار الإشعار الدائن/المدين.
+    ///
+    /// <para>النطاق يفرض السبب ويحفظه: <c>CreditNote.Reason</c> إلزاميّ و<c>CreateDraft</c> يرفض
+    /// الفارغ، والعمود <c>varchar(512) NOT NULL</c>. ثم لا يصل XML إطلاقاً — لا العقد يحمله ولا
+    /// المولّد يمرّره. فمعلومةٌ إلزامية <b>موجودة في قاعدة البيانات</b> تضيع في التوليد؛ الإصلاح
+    /// تمريرُ حقلٍ لا استحداثُ بيانات.</para>
+    ///
+    /// <para><b>حدُّ ثقة مُصرَّح به:</b> إلزام بيان السبب مؤكَّد. أمّا كتابته في
+    /// <c>cac:PaymentMeans/cbc:InstructionNote</c> فهو الموضع الشائع في أمثلة الهيئة و
+    /// SDK — <b>ولم أتحقّق منه في نصّ المواصفة</b>. يُراجَع نصّاً قبل الإرسال الحقيقيّ (م4-٤).
+    /// وموضعه في المتتالية بعد طرفَي البائع والمشتري وقبل <c>cac:TaxTotal</c> — يحرسه ح-٣.</para>
+    /// </summary>
+    private static void AddIssueReason(XElement root, InvoiceData data)
+    {
+        if (!data.IsCreditNote && !data.IsDebitNote)
+            return;
+        if (string.IsNullOrWhiteSpace(data.IssueReason))
+            return;
+
+        root.Add(new XElement(Cac + "PaymentMeans",
+            El(Cbc, "PaymentMeansCode", "10"),
+            El(Cbc, "InstructionNote", data.IssueReason.Trim())));
+    }
+
+    /// <summary>
+    /// (CEEF-229 · Z-6) العدّاد التسلسليّ يُكتب <c>cbc:UUID</c> مباشرةً تحت المرجع الإضافيّ.
+    ///
+    /// كان يُكتب مرفقاً ثنائياً (<c>EmbeddedDocumentBinaryObject</c> بـ<c>filename="icv.txt"</c>)
+    /// كما يُكتب PIH وQR — لكنّ المرفق مخصَّص لهذين وحدهما، والعدّاد قيمةٌ نصّية لا مستند مرفق.
+    /// </summary>
+    private static void AddIcvRef(XElement root, string icv)
+    {
+        root.Add(new XElement(Cac + "AdditionalDocumentReference",
+            El(Cbc, "ID", "ICV"),
+            El(Cbc, "UUID", icv)));
+    }
+
+    /// <summary>
+    /// (CEEF-229 · Z-6) <c>cac:Signature</c> في جسد الفاتورة — كان غائباً تماماً.
+    ///
+    /// المخطّط يفرض إعلان التوقيع داخل المستند، مستقلاً عن كتلة <c>ds:Signature</c> التي
+    /// تُغرَس في <c>ext:UBLExtensions</c>. غيابُه يُسقط المستند في تصديق المخطّط.
+    /// </summary>
+    private static void AddUblSignature(XElement root)
+    {
+        root.Add(new XElement(Cac + "Signature",
+            El(Cbc, "ID", "urn:oasis:names:specification:ubl:signature:Invoice"),
+            El(Cbc, "SignatureMethod", "urn:oasis:names:specification:ubl:dsig:enveloped:xades")));
+    }
+
     private static void AddDocRef(XElement root, string id, string value)
     {
         var reference = new XElement(Cac + "AdditionalDocumentReference", El(Cbc, "ID", id));
@@ -161,13 +234,59 @@ public static class ZatcaUblInvoiceBuilder
         root.Add(docRef);
     }
 
-    private static void AddSupplier(XElement root, string name, string vat)
+    /// <summary>
+    /// (CEEF-229 · Z-10) طرف البائع كاملاً: السجل التجاريّ ثم الاسم ثم العنوان الوطنيّ ثم
+    /// الرقم الضريبيّ ثم الاسم المسجَّل — <b>بهذا الترتيب</b>، فمتتالية <c>cac:Party</c> تفرضه.
+    ///
+    /// كان يخرج باسمٍ ورقمٍ ضريبيّ فقط. والحقول الناقصة تُتخطّى بدل أن تُكتب فارغة: عنصرٌ
+    /// إلزاميّ بقيمة فارغة يُرفض كما يُرفض غيابه، والغيابُ يقوله المُصدِّق بوضوح.
+    /// </summary>
+    private static void AddSupplier(XElement root, string name, string vat, SellerIdentity? seller)
     {
-        var party = new XElement(Cac + "AccountingSupplierParty",
-            new XElement(Cac + "Party",
-                new XElement(Cac + "PartyName", El(Cbc, "Name", name)),
-                PartyTax(vat)));
-        root.Add(party);
+        var party = new XElement(Cac + "Party");
+
+        if (!string.IsNullOrWhiteSpace(seller?.CommercialRegistrationNumber))
+        {
+            party.Add(new XElement(Cac + "PartyIdentification",
+                new XElement(Cbc + "ID",
+                    new XAttribute("schemeID", "CRN"),
+                    seller.CommercialRegistrationNumber)));
+        }
+
+        party.Add(new XElement(Cac + "PartyName", El(Cbc, "Name", name)));
+
+        if (seller?.Address is { IsComplete: true } address)
+            party.Add(PostalAddress(address));
+
+        party.Add(PartyTax(vat));
+
+        if (!string.IsNullOrWhiteSpace(seller?.RegistrationName))
+        {
+            party.Add(new XElement(Cac + "PartyLegalEntity",
+                El(Cbc, "RegistrationName", seller.RegistrationName)));
+        }
+
+        root.Add(new XElement(Cac + "AccountingSupplierParty", party));
+    }
+
+    /// <summary>العنوان الوطنيّ بترتيب متتالية <c>cac:PostalAddress</c>.</summary>
+    private static XElement PostalAddress(Brqosh.Domain.Companies.NationalAddress a)
+    {
+        var address = new XElement(Cac + "PostalAddress",
+            El(Cbc, "StreetName", a.StreetName),
+            El(Cbc, "BuildingNumber", a.BuildingNumber));
+
+        if (!string.IsNullOrWhiteSpace(a.AdditionalNumber))
+            address.Add(El(Cbc, "PlotIdentification", a.AdditionalNumber));
+
+        address.Add(
+            El(Cbc, "CitySubdivisionName", a.DistrictName),
+            El(Cbc, "CityName", a.CityName),
+            El(Cbc, "PostalZone", a.PostalZone),
+            El(Cbc, "CountrySubentity", a.CountrySubentity),
+            new XElement(Cac + "Country", El(Cbc, "IdentificationCode", a.CountryCode)));
+
+        return address;
     }
 
     private static void AddCustomer(XElement root, string? name, string? vat)

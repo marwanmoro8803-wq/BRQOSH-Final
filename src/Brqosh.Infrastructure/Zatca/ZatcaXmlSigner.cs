@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
@@ -63,7 +63,7 @@ public static class ZatcaXmlSigner
 
         // 4. بناء عنصر SignedProperties وحساب digest منه بعد Canonicalization
         var signedPropsElement = BuildSignedPropertiesElement(signingTime, certDigestB64, issuerName, serialNumber);
-        var signedPropsDigestB64 = ComputeElementDigest(signedPropsElement);
+        var signedPropsDigestB64 = ComputeSignedPropertiesDigest(signedPropsElement);
 
         // 5. بناء SignedInfo وحساب digest منه بعد Canonicalization للتوقيع
         var signedInfoElement = BuildSignedInfoElement(invoiceHashB64, signedPropsDigestB64);
@@ -77,7 +77,12 @@ public static class ZatcaXmlSigner
         var certB64 = Convert.ToBase64String(cert.RawData);
         var signed = EmbedSignature(xmlBytes, invoiceHashB64, signatureB64, certB64,
             signingTime, certDigestB64, issuerName, serialNumber, signedPropsDigestB64);
-        return new ZatcaSignResult(signed, invoiceHashB64, signatureB64);
+
+        // (CEEF-229 · Z-9) المفتاح العام يُستخرج من الشهادة نفسها — لا من مصدرٍ آخر.
+        var publicKeyDer = cert.PublicKey.ExportSubjectPublicKeyInfo();
+
+        return new ZatcaSignResult(
+            signed, invoiceHashB64, signatureB64, Convert.ToBase64String(publicKeyDer));
     }
 
     public static ZatcaSignResult? TrySignWithResult(byte[] xmlBytes, ZatcaSettings? settings)
@@ -130,32 +135,49 @@ public static class ZatcaXmlSigner
     /// هاش الفاتورة = SHA-256(C14N(Invoice بدون UBLExtensions)).
     /// هذا هو المتطلب الصريح في ZATCA SDK — الهاش يُحسب قبل إضافة التوقيع.
     /// </summary>
+    /// <summary>
+    /// (CEEF-229 · Z-1) الهاش يستثني <b>ثلاثة</b> عقد لا واحدة.
+    ///
+    /// <para>كان يُزيل <c>ext:UBLExtensions</c> وحدها، بينما معيار الهيئة يستثني ثلاثاً:
+    /// كتلة الامتدادات، و<c>cac:Signature</c> في جسد الفاتورة، و<b>المرجع الإضافيّ الذي معرّفه
+    /// QR</b>.</para>
+    ///
+    /// <para><b>وغياب الثالث هو ما أبطل التوقيع:</b> <c>ReplaceQrInSignedXml</c> يستبدل رمز
+    /// المرحلة الثانية <b>بعد</b> التوقيع — وهو سلوكٌ مشروع في المعيار <b>لأن الوسم مستثنى من
+    /// الهاش</b>. لكن الاستثناء لم يكن مطبَّقاً، فالعقدة المُجزَّأة كانت تُغيَّر بعد تجزئتها،
+    /// ويصير الملفُّ المحفوظ غيرَ المستند الذي وُقِّع عليه. الاستبعاد يجعل الاستبدال مشروعاً
+    /// كما في المعيار، بلا تغيير ترتيب النداءات.</para>
+    /// </summary>
     private static string ComputeInvoiceHash(byte[] xmlBytes)
     {
         var xmlDoc = LoadXmlDocument(xmlBytes);
-
-        // إزالة UBLExtensions مؤقتاً إن وُجدت (لضمان الهاش النظيف)
         var nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
         nsManager.AddNamespace("ext", ExtNs.NamespaceName);
-        var extNode = xmlDoc.SelectSingleNode("//ext:UBLExtensions", nsManager);
-        XmlNode? removedNode = null;
-        XmlNode? refNode = null;
-        if (extNode is not null)
+        nsManager.AddNamespace("cac", Cac.NamespaceName);
+        nsManager.AddNamespace("cbc", Cbc.NamespaceName);
+
+        var removed = new List<(XmlNode Node, XmlNode Parent, XmlNode? Next)>();
+
+        void Detach(XmlNode? node)
         {
-            refNode = extNode.NextSibling;
-            removedNode = extNode.ParentNode!.RemoveChild(extNode);
+            if (node?.ParentNode is null) return;
+            removed.Add((node, node.ParentNode, node.NextSibling));
+            node.ParentNode.RemoveChild(node);
         }
 
-        var canonical = CanonicalizeDocument(xmlDoc);
-        var hash = SHA256.HashData(canonical);
+        Detach(xmlDoc.SelectSingleNode("//ext:UBLExtensions", nsManager));
+        Detach(xmlDoc.SelectSingleNode("//cac:Signature", nsManager));
+        Detach(xmlDoc.SelectSingleNode(
+            "//cac:AdditionalDocumentReference[cbc:ID='QR']", nsManager));
 
-        // إعادة العنصر إن أُزيل
-        if (removedNode is not null && xmlDoc.DocumentElement is not null)
+        var hash = SHA256.HashData(CanonicalizeDocument(xmlDoc));
+
+        // تُعاد العقد إلى مواضعها بالترتيب المعكوس حتى لا يتأثّر المستند الأصليّ.
+        for (var i = removed.Count - 1; i >= 0; i--)
         {
-            if (refNode is not null)
-                xmlDoc.DocumentElement.InsertBefore(removedNode, refNode);
-            else
-                xmlDoc.DocumentElement.PrependChild(removedNode);
+            var (node, parent, next) = removed[i];
+            if (next is not null) parent.InsertBefore(node, next);
+            else parent.AppendChild(node);
         }
 
         return Convert.ToBase64String(hash);
@@ -191,7 +213,13 @@ public static class ZatcaXmlSigner
             new XElement(DsNs + "Reference",
                 new XAttribute("Id", "invoiceSignedData"),
                 new XAttribute("URI", ""),
+                // (CEEF-229 · Z-1) الاستثناءات الثلاثة تُعلَن صراحةً — وإلا لم يستطع أيّ متحقّق
+                // إعادةَ إنتاج الهاش الذي حسبناه، فيُرفض التوقيع مهما صحّت الشهادة.
                 new XElement(DsNs + "Transforms",
+                    XPathTransform("not(//ancestor-or-self::ext:UBLExtensions)"),
+                    XPathTransform("not(//ancestor-or-self::cac:Signature)"),
+                    XPathTransform(
+                        "not(//ancestor-or-self::cac:AdditionalDocumentReference[cbc:ID='QR'])"),
                     new XElement(DsNs + "Transform",
                         new XAttribute("Algorithm", C14NAlgorithm))),
                 new XElement(DsNs + "DigestMethod",
@@ -204,6 +232,19 @@ public static class ZatcaXmlSigner
                     new XAttribute("Algorithm", Sha256Algorithm)),
                 new XElement(DsNs + "DigestValue", signedPropsDigestB64)));
     }
+
+    /// <summary>
+    /// تحويل XPath واحد من تحويلات الاستبعاد. فضاءات الأسماء تُعلَن على العنصر نفسه لأن
+    /// المتحقّق يقرأ التعبير في سياقه لا في سياق المستند.
+    /// </summary>
+    private static XElement XPathTransform(string expression) =>
+        new(DsNs + "Transform",
+            new XAttribute("Algorithm", "http://www.w3.org/TR/1999/REC-xpath-19991116"),
+            new XElement(DsNs + "XPath",
+                new XAttribute(XNamespace.Xmlns + "ext", ExtNs.NamespaceName),
+                new XAttribute(XNamespace.Xmlns + "cac", Cac.NamespaceName),
+                new XAttribute(XNamespace.Xmlns + "cbc", Cbc.NamespaceName),
+                expression));
 
     private static XElement BuildFullSignatureElement(
         string invoiceHashB64, string signatureB64, string certB64,
@@ -233,7 +274,18 @@ public static class ZatcaXmlSigner
         string signingTime, string certDigestB64, string issuerName,
         string serialNumber, string signedPropsDigestB64)
     {
-        var doc = XDocument.Parse(Encoding.UTF8.GetString(xmlBytes), LoadOptions.PreserveWhitespace);
+        // (CEEF-229 · Z-NEW) يُقرأ من البايتات لا من نصٍّ مُفكَّك.
+        //
+        // كان: XDocument.Parse(Encoding.UTF8.GetString(xmlBytes)) — و`GetString` على بايتات
+        // تبدأ بعلامة ترتيب البايتات (BOM) يُنتج نصّاً يبدأ بـU+FEFF، فيرمي المحلّل
+        // «Data at the root level is invalid» عند أوّل محرف. ومخرَج `ZatcaUblInvoiceBuilder`
+        // يحمل BOM دائماً.
+        //
+        // **الأثر:** التوقيع كان يرمي على مخرَج المولّد نفسه — أي أنه **لم يعمل قطّ**.
+        // و`TrySignWithResult` لا يبتلع بل يُعيد الرمي `ZatcaSigningException`، فلحظةَ تُهيَّأ
+        // شهادة CSID يفشل **ترحيل كل فاتورة**. ولم يظهر لأن لا اختبار كان يوقّع (لا شهادة)،
+        // ولا تركيب إنتاجيّ بلغ مرحلة الشهادة. كشفه أوّل تشغيلٍ لمتحقّق ح-٤.
+        var doc = XDocument.Load(new MemoryStream(xmlBytes), LoadOptions.PreserveWhitespace);
         var invoice = doc.Root ?? throw new ZatcaSigningException("XML بدون جذر Invoice.");
 
         var signatureElement = BuildFullSignatureElement(
@@ -280,6 +332,49 @@ public static class ZatcaXmlSigner
         return ms.ToArray();
     }
 
+    /// <summary>
+    /// (CEEF-229 · Z-2) بصمة <c>SignedProperties</c> تُحسب على صورته <b>داخل المستند</b>.
+    ///
+    /// <para>كانت تُحسب على العنصر مُقنَّناً <b>منفرداً</b>، فتخرج صورتُه:</para>
+    /// <code>&lt;SignedProperties xmlns="http://uri.etsi.org/01903/v1.3.2#" Id="…"&gt;</code>
+    /// <para>بينما هو داخل المستند تحت <c>xades:QualifyingProperties</c> التي تُعلن البادئة،
+    /// وتحت <c>ds:Signature</c> ذات الفضاء الافتراضي <c>xmldsig#</c>، فصورتُه المقنَّنة:</para>
+    /// <code>&lt;xades:SignedProperties xmlns="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="…" Id="…"&gt;</code>
+    /// <para>بايتاتٌ مختلفة ⟵ بصمةٌ مختلفة. والقيمتان لا تشتركان في بايت واحد، فيفشل المتحقّق
+    /// عند المرجع الثاني <b>حتماً لا احتمالاً</b>، في كل فاتورة، مهما صحّت الشهادة.</para>
+    ///
+    /// <para>العلاج: يُبنى هيكلٌ مطابقٌ لسياق المستند النهائيّ، ثم تُقنَّن العقدة <b>من داخله</b>
+    /// كمجموعة عقد — فترث إعلانات الفضاءات كما سترثها عند التحقق.</para>
+    /// </summary>
+    private static string ComputeSignedPropertiesDigest(XElement signedProperties)
+    {
+        var context = new XElement(DsNs + "Signature",
+            new XAttribute("Id", "signature"),
+            new XElement(XadesNs + "QualifyingProperties",
+                new XAttribute(XNamespace.Xmlns + "xades", XadesNs.NamespaceName),
+                new XAttribute("Target", "#signature"),
+                new XElement(signedProperties)));
+
+        var xmlDoc = new XmlDocument { PreserveWhitespace = true };
+        using (var reader = context.CreateReader())
+            xmlDoc.Load(reader);
+
+        var ns = new XmlNamespaceManager(xmlDoc.NameTable);
+        ns.AddNamespace("xades", XadesNs.NamespaceName);
+
+        var nodes = xmlDoc.SelectNodes(
+            "(//. | //@* | //namespace::*)[ancestor-or-self::xades:SignedProperties]", ns)
+            ?? throw new ZatcaSigningException("تعذّر عزل SignedProperties للتقنين.");
+
+        var transform = new XmlDsigC14NTransform();
+        transform.LoadInput(nodes);
+        using var stream = (Stream)transform.GetOutput(typeof(Stream));
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+
+        return Convert.ToBase64String(SHA256.HashData(ms.ToArray()));
+    }
+
     /// <summary>حساب SHA-256 digest لعنصر XElement بعد Canonicalization.</summary>
     private static string ComputeElementDigest(XElement element)
     {
@@ -296,7 +391,13 @@ public static class ZatcaXmlSigner
     }
 }
 
-public record ZatcaSignResult(byte[] SignedXml, string InvoiceHashBase64, string SignatureBase64);
+/// <param name="PublicKeyDerBase64">
+/// (CEEF-229 · Z-9) المفتاح العام بترميز DER (SubjectPublicKeyInfo) — الوسم 8 في رمز
+/// المرحلة الثانية. كان غائباً، فيخرج الرمز بسبعة وسوم: توقيعٌ بلا مفتاحٍ يتحقّق به،
+/// وتطبيق «فاتورة» لا يستطيع إثبات صحّة الختم.
+/// </param>
+public record ZatcaSignResult(
+    byte[] SignedXml, string InvoiceHashBase64, string SignatureBase64, string PublicKeyDerBase64);
 
 /// <summary>استثناء توقيع ZATCA — يُميّز أخطاء التوقيع عن باقي الأخطاء.</summary>
 public class ZatcaSigningException(string message, Exception? inner = null)

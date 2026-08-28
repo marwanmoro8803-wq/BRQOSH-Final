@@ -75,14 +75,30 @@ public class Account : ISoftDeletable
     /// <summary>هل يقبل هذا الحساب ترحيل قيود مباشرة؟</summary>
     public bool IsPostable => !IsGroup && IsActive;
 
+    /// <summary>
+    /// إيقاف الحساب عن الترحيل الجديد — <b>وليس حذفه</b>.
+    ///
+    /// <para>(CEEF-229 · م0-١٣) كانت هذه الدالة تضبط <c>DeletedAtUtc</c> أيضاً، أي أن «إيقاف حساب»
+    /// كان <b>حذفاً</b>. والأثر لم يكن اختفاءه من القوائم فحسب: الحساب يسقط خلف فلتر الحذف العام،
+    /// فيرمي <c>YearEndCloseService.AccountAsync</c> استثناءً خاماً عند أوّل إقفالٍ سنويّ يشمله —
+    /// و<b>لا مخرج</b>، إذ لم يكن للحساب دالة تُعيد تفعيله أصلاً (بخلاف <c>AppUser</c>). فمنشأةٌ
+    /// أوقفت حساباً عليه حركة كانت تفقد الإقفال السنويّ إلى الأبد إلا بتعديل قاعدة الإنتاج يدوياً.</para>
+    ///
+    /// <para>الفصل الآن صريح: الإيقاف يمنع الترحيل الجديد ويُبقي الحساب مرئياً وقابلاً للإقفال،
+    /// والحذف الناعم شيءٌ آخر لا تفعله هذه الدالة.</para>
+    /// </summary>
     public void Deactivate()
     {
         if (IsSystem)
             throw new AccountingException($"الحساب النظامي '{NameAr}' لا يمكن إيقافه.");
-        if (DeletedAtUtc is not null) return;
-        DeletedAtUtc = DateTime.UtcNow;
         IsActive = false;
     }
+
+    /// <summary>
+    /// إعادة تفعيل حساب موقوف. غيابُها كان يجعل الإيقاف قراراً بلا رجعة — ولا مبرّر لذلك:
+    /// الإيقاف حالةٌ تشغيلية لا واقعةٌ محاسبية.
+    /// </summary>
+    public void Reactivate() => IsActive = true;
 
     public void Rename(string nameAr, string nameEn)
     {

@@ -1,7 +1,8 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
 using Brqosh.Domain.Retail;
+using Brqosh.Domain.Tax;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Zatca;
@@ -47,17 +48,22 @@ public class PosSaleService(BrqoshDbContext db)
                 effectiveCustomerId = walkIn.Id;
             }
 
+            // (CEEF-228) كان الوسيط `isVatRegistered` يُستقبَل ولا يُستعمل ولو مرّة في جسم الدالة،
+            // فتُحصَّل 15% من منشأةٍ بلا رقم ضريبيّ ويُقيَّد التزامٌ مُختلَق تجاه الهيئة.
+            // منشأةٌ غير مسجَّلة في ضريبة القيمة المضافة لا تُصدر ضريبةً أصلاً: الفئة «خارج النطاق».
+            var posVatCategory = isVatRegistered ? VatCategory.Standard : VatCategory.OutOfScope;
+
             invoice = SalesInvoice.CreateDraft(companyId, effectiveCustomerId, DateOnly.FromDateTime(DateTime.Today));
             foreach (var (productId, qty) in lines)
             {
                 var product = await db.Products.SingleAsync(p => p.Id == productId, token);
-                invoice.AddLine(product.NameAr, qty, product.SalePrice, productId);
+                invoice.AddLine(product.NameAr, qty, product.SalePrice, productId, posVatCategory);
             }
 
             invoice.MarkPosSale(shiftId, paymentMethod);
 
             await new Sales.SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
-            shift.RecordSale(invoice.GrandTotal());
+            shift.RecordSale(invoice.GrandTotal(), paymentMethod);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "بيع POS",

@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
@@ -61,7 +61,8 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.CreditNote, creditNoteId,
             note.NoteNumber, note.NoteDate, company, customer.NameAr, customer.VatRegistrationNumber,
-            note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode, isCreditNote: true);
+            note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode, isCreditNote: true,
+            issueReason: note.Reason);
     }
 
     public async Task<ZatcaEInvoiceDocument?> TryGenerateForProgressBillingAsync(long progressBillingId)
@@ -112,7 +113,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
                 d.CompanyId == billing.CompanyId &&
-                d.DocumentType == ZatcaDocumentType.CreditNote &&
+                d.DocumentType == ZatcaDocumentType.BillingCancel &&
                 d.SourceDocumentId == progressBillingId))
             return null;
 
@@ -132,7 +133,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         var cnNumber = $"CN-CANCEL-PB-{billing.BillingNumber}";
         return await GenerateAsync(
-            billing.CompanyId, ZatcaDocumentType.CreditNote, progressBillingId,
+            billing.CompanyId, ZatcaDocumentType.BillingCancel, progressBillingId,
             cnNumber, billing.BillingDate, company, customer.NameAr, customer.VatRegistrationNumber,
             billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode, isCreditNote: true);
     }
@@ -170,7 +171,8 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             note.CompanyId, ZatcaDocumentType.DebitNote, creditNoteId,
             dnNumber, note.NoteDate, company, customer.NameAr, customer.VatRegistrationNumber,
             note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode,
-            isCreditNote: false, isDebitNote: true);
+            isCreditNote: false, isDebitNote: true,
+            issueReason: $"إلغاء إشعار دائن {note.NoteNumber}");
     }
 
     /// <summary>إشعار دائن ZATCA عند إلغاء فاتورة — دون قيد محاسبي منفصل (العكس يتم بعكس القيد).</summary>
@@ -189,7 +191,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
                 d.CompanyId == invoice.CompanyId &&
-                d.DocumentType == ZatcaDocumentType.CreditNote &&
+                d.DocumentType == ZatcaDocumentType.InvoiceCancel &&
                 d.SourceDocumentId == salesInvoiceId))
             return null;
 
@@ -204,9 +206,10 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         var cnNumber = $"CN-CANCEL-{invoice.InvoiceNumber}";
         return await GenerateAsync(
-            invoice.CompanyId, ZatcaDocumentType.CreditNote, salesInvoiceId,
+            invoice.CompanyId, ZatcaDocumentType.InvoiceCancel, salesInvoiceId,
             cnNumber, invoice.InvoiceDate, company, customer.NameAr, customer.VatRegistrationNumber,
-            invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: true);
+            invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: true,
+            issueReason: $"إلغاء فاتورة مبيعات {invoice.InvoiceNumber}");
     }
 
     private async Task<ZatcaEInvoiceDocument> GenerateAsync(
@@ -214,8 +217,19 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         string number, DateOnly date, Company company,
         string customerName, string customerVat,
         decimal subtotal, decimal vat, decimal total,
-        IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote, bool isDebitNote = false)
+        IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote,
+        bool isDebitNote = false, string? issueReason = null)
     {
+        // (CEEF-229 · Z-4) قفل استشاريّ قبل قراءة العدّاد — النمط نفسه في JournalEntryNumberGenerator.
+        //
+        // كان `MaxAsync + 1` بلا قفل وبلا فهرس فريد على `(CompanyId, Icv)`. فصندوقان في فرعين
+        // يرحّلان في اللحظة نفسها والعدّاد عند 417: كلاهما يقرأ 417 ويكتب 418 **بنفس PIH**،
+        // وتُقبل الكتابتان. السلسلة تتفرّع، ولا يُصلَح ذلك بأثر رجعيّ: الهيئة ترفض الثانية،
+        // وإصلاحها يقتضي إعادة إصدار كل ما بعدها.
+        //
+        // سلسلة سجلّ التدقيق أخذت قفلاً **وفهرساً فريداً**؛ سلسلة ZATCA لم تأخذ أياً منهما.
+        await AcquireIcvLockAsync(companyId, CancellationToken.None);
+
         var icv = (await db.ZatcaEInvoiceDocuments
             .Where(d => d.CompanyId == companyId)
             .MaxAsync(d => (int?)d.Icv) ?? 0) + 1;
@@ -239,7 +253,10 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             subtotal, vat, total, lines, icv.ToString(), previousHash, qrPhase1, isCreditNote, isDebitNote,
             IsSimplified: string.IsNullOrWhiteSpace(customerVat),
             BillingReferenceInvoiceNumber: billingRefNumber,
-            BillingReferenceUuid: billingRefUuid);
+            BillingReferenceUuid: billingRefUuid,
+            IssueReason: issueReason,
+            Seller: new ZatcaUblInvoiceBuilder.SellerIdentity(
+                company.RegistrationName, company.CommercialRegistrationNumber, company.NationalAddress));
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);
@@ -254,7 +271,8 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             invoiceHash = signResult.InvoiceHashBase64;
             qr = ZatcaQrGenerator.GenerateTlvBase64Phase2(
                 company.NameAr, company.VatRegistrationNumber, ts, total, vat,
-                signResult.InvoiceHashBase64, signResult.SignatureBase64);
+                signResult.InvoiceHashBase64, signResult.SignatureBase64,
+                signResult.PublicKeyDerBase64);
             signedBytes = ZatcaXmlSigner.ReplaceQrInSignedXml(signResult.SignedXml, qr);
         }
         else
@@ -288,51 +306,86 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return path;
     }
 
+    /// <summary>
+    /// منفذ اختبار لحلّ المرجع الأصليّ. مكشوفٌ عمداً: حلُّ المرجع كان يخمّن الجدول من معرّفٍ
+    /// خام، وهو عطلٌ **صامت** لا يُنتج استثناءً ولا رقماً ظاهراً — فلا يُختبَر إلا مباشرةً.
+    /// </summary>
+    internal Task<(string? Number, Guid? Uuid)> ResolveBillingReferenceForTestsAsync(
+        long companyId, ZatcaDocumentType docType, long sourceId) =>
+        ResolveBillingReferenceAsync(companyId, docType, sourceId, isCreditNote: true, isDebitNote: false);
+
     private async Task<(string? Number, Guid? Uuid)> ResolveBillingReferenceAsync(
         long companyId, ZatcaDocumentType docType, long sourceId, bool isCreditNote, bool isDebitNote)
     {
         if (!isCreditNote && !isDebitNote)
             return (null, null);
 
-        if (docType == ZatcaDocumentType.CreditNote && !isDebitNote)
+        // (CEEF-229 · Z-3) الإرسال حسب **نوع المستند** لا بالتخمين، وبتصفية الشركة دائماً.
+        //
+        // كان الفرع الأول يبحث في `db.CreditNotes` بمعرّفٍ قد يكون معرّف **فاتورة** (مسار إلغاء
+        // الفاتورة كان يُسجَّل بالنوع CreditNote نفسه). والتسلسلان مستقلّان ويبدآن من واحد،
+        // فالتصادم شبه مؤكّد: إشعارٌ بقيمة فاتورةٍ يُنسب إلى فاتورةٍ أخرى لعميل آخر — ويُقبل
+        // لدى الهيئة شكلاً ويُفسد الدفاتر جوهراً. ولا تصفية `CompanyId` في أيّ من الاستعلامين.
+        switch (docType)
         {
-            var note = await db.CreditNotes.SingleOrDefaultAsync(n => n.Id == sourceId);
-            if (note?.OriginalInvoiceId is long invoiceId)
+            // إشعار دائن حقيقيّ — مصدره إشعار، ومرجعه فاتورته الأصلية.
+            case ZatcaDocumentType.CreditNote when !isDebitNote:
             {
-                var invoice = await db.SalesInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId);
-                var originalZatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
-                    d.CompanyId == companyId &&
-                    d.DocumentType == ZatcaDocumentType.SalesInvoice &&
-                    d.SourceDocumentId == invoiceId);
-                if (invoice?.InvoiceNumber is not null)
-                    return (invoice.InvoiceNumber, originalZatca?.InvoiceUuid);
+                var note = await db.CreditNotes.SingleOrDefaultAsync(
+                    n => n.Id == sourceId && n.CompanyId == companyId);
+                if (note is null) break;
+                return await SalesInvoiceReferenceAsync(companyId, note.OriginalInvoiceId);
             }
-        }
 
-        if (docType == ZatcaDocumentType.CreditNote && sourceId > 0)
-        {
-            var salesInvoice = await db.SalesInvoices.SingleOrDefaultAsync(i => i.Id == sourceId);
-            if (salesInvoice?.InvoiceNumber is not null)
+            // إشعار ناتج عن إلغاء فاتورة — مصدره الفاتورة نفسها.
+            case ZatcaDocumentType.InvoiceCancel:
+                return await SalesInvoiceReferenceAsync(companyId, sourceId);
+
+            // إشعار مدين — مرجعه الإشعار الدائن الذي يُلغيه.
+            case ZatcaDocumentType.DebitNote:
             {
-                var originalZatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+                var originalCn = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
                     d.CompanyId == companyId &&
-                    d.DocumentType == ZatcaDocumentType.SalesInvoice &&
+                    d.DocumentType == ZatcaDocumentType.CreditNote &&
                     d.SourceDocumentId == sourceId);
-                return (salesInvoice.InvoiceNumber, originalZatca?.InvoiceUuid);
+                if (originalCn is not null)
+                    return (originalCn.InvoiceNumber, originalCn.InvoiceUuid);
+                break;
             }
-        }
-
-        if (docType == ZatcaDocumentType.DebitNote)
-        {
-            var originalCn = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
-                d.CompanyId == companyId &&
-                d.DocumentType == ZatcaDocumentType.CreditNote &&
-                d.SourceDocumentId == sourceId);
-            if (originalCn is not null)
-                return (originalCn.InvoiceNumber, originalCn.InvoiceUuid);
         }
 
         return (null, null);
+    }
+
+    /// <summary>
+    /// قفل معاملاتيّ على عدّاد ZATCA للشركة. المفتاح الثاني <c>7301</c> ثابتٌ مميّز حتى لا
+    /// يتصادم مع قفل ترقيم القيود (الذي يستعمل السنة) ولا مع قفل سجلّ التدقيق (991).
+    /// </summary>
+    private async Task AcquireIcvLockAsync(long companyId, CancellationToken ct)
+    {
+        if (!db.Database.IsNpgsql())
+            return;
+
+        await db.Database.ExecuteSqlRawAsync(
+            "SELECT pg_advisory_xact_lock({0}::int, {1}::int)",
+            new object[] { companyId, 7301 },
+            ct);
+    }
+
+    /// <summary>مرجع فاتورة مبيعات برقمها ومعرّفها لدى الهيئة — بتصفية الشركة.</summary>
+    private async Task<(string? Number, Guid? Uuid)> SalesInvoiceReferenceAsync(long companyId, long invoiceId)
+    {
+        var invoice = await db.SalesInvoices.SingleOrDefaultAsync(
+            i => i.Id == invoiceId && i.CompanyId == companyId);
+        if (invoice?.InvoiceNumber is null)
+            return (null, null);
+
+        var originalZatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+            d.CompanyId == companyId &&
+            d.DocumentType == ZatcaDocumentType.SalesInvoice &&
+            d.SourceDocumentId == invoiceId);
+
+        return (invoice.InvoiceNumber, originalZatca?.InvoiceUuid);
     }
 
     private async Task<ZatcaSettings?> GetSettingsAsync(long companyId) =>
