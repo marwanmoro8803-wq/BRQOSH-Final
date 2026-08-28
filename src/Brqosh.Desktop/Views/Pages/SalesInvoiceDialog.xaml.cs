@@ -95,6 +95,7 @@ public partial class SalesInvoiceDialog : Window
             .OrderBy(p => p.Code)
             .Select(p => new ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
             .ToListAsync();
+        ProductColumn.ItemsSource = _products;   // (م2-٢٠) بلا هذا يبقى العمود فارغاً
     }
 
     private async Task LoadCustomersAsync()

@@ -1,4 +1,4 @@
-<Window x:Class="Brqosh.Desktop.Views.Pages.SalesInvoiceDialog"
+﻿<Window x:Class="Brqosh.Desktop.Views.Pages.SalesInvoiceDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:Brqosh.Desktop.Ui"
@@ -53,6 +53,13 @@
                           FontSize="14" RowHeight="36" Background="Transparent"
                           CellEditEnding="OnCellEditEnding">
                     <DataGrid.Columns>
+                        <!-- (CEEF-229 · م2-٢٠) عمود اختيار الصنف — كان غائباً تماماً.
+                             LineRow.ProductId يُقرأ في ثلاثة مواضع ولا يُكتب في موضعٍ واحد،
+                             فتُرحَّل كل فاتورةٍ بـ ProductId = null: لا حركة مخزون ولا تكلفة
+                             بضاعة مباعة. -->
+                        <DataGridComboBoxColumn x:Name="ProductColumn" Header="الصنف" Width="220"
+                                                SelectedValueBinding="{Binding ProductId}"
+                                                DisplayMemberPath="Display" SelectedValuePath="Id"/>
                         <DataGridTextColumn Header="الوصف / الصنف" Binding="{Binding Description}" Width="*"/>
                         <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="110"/>
                         <DataGridTextColumn Header="سعر الوحدة" Binding="{Binding UnitPrice, StringFormat=N2}" Width="130"/>

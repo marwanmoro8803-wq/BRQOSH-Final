@@ -32,6 +32,7 @@ public partial class PurchaseInvoiceDialog : Window
             .OrderBy(p => p.Code)
             .Select(p => new SalesInvoiceDialog.ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
             .ToListAsync();
+        ProductColumn.ItemsSource = _products;   // (م2-٢٠) بلا هذا يبقى العمود فارغاً
     }
 
     private async Task LoadSuppliersAsync()

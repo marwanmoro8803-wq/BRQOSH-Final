@@ -1,4 +1,4 @@
-namespace Brqosh.Domain.Modules;
+﻿namespace Brqosh.Domain.Modules;
 
 /// <summary>
 /// السجل المركزي للوحدات: التبعيات ومصفوفة أنظمة العمل.
@@ -33,8 +33,14 @@ public static class ModuleCatalog
                 [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Manufacturing] =
                 [ModuleKey.GeneralLedger, ModuleKey.Manufacturing, ModuleKey.Inventory, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+            // (CEEF-229 · م2-١٩) أُضيفت Purchasing — كانت غائبة عن التجزئة والضيافة وحدهما
+            // من بين كل الأنظمة التي تملك مخزوناً. ومتجرٌ يشتري بضاعته كما يشتريها مصنع:
+            // بغيابها تختفي شاشات الموردين وأوامر الشراء وفواتير المشتريات من القائمة، فلا
+            // تدخل بضاعةٌ إلى المستودع أصلاً (فيرفض أوّلُ بيعٍ بحارس «الرصيد غير كافٍ»)،
+            // ويُقدَّم الإقرار الضريبيّ بلا مدخلاتٍ قابلة للخصم فتُسدَّد للهيئة زيادة.
+            // وهو عطلٌ تأسيسيّ لا رجعة فيه: UpdateBusinessProfile بلا مستدعٍ في المستودع.
             [BusinessProfile.Retail] =
-                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Healthcare] =
                 [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Logistics] =
@@ -42,7 +48,7 @@ public static class ModuleCatalog
             [BusinessProfile.RealEstate] =
                 [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Hospitality] =
-                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+                [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
         };
 
     /// <summary>

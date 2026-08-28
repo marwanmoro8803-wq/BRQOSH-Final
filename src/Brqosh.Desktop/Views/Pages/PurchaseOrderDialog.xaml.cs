@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
@@ -19,7 +19,7 @@ public partial class PurchaseOrderDialog : Window
         InitializeComponent();
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
-        Loaded += async (_, _) => await LoadSuppliersAsync();
+        Loaded += async (_, _) => { await LoadSuppliersAsync(); await LoadProductsAsync(); };
     }
 
     private async Task LoadSuppliersAsync()
@@ -32,6 +32,18 @@ public partial class PurchaseOrderDialog : Window
             .ToListAsync();
         if (SupplierCombo.Items.Count > 0)
             SupplierCombo.SelectedIndex = 0;
+    }
+
+    /// <summary>(CEEF-229 · م2-٢٠) أصنافُ عمود الاختيار — لم يكن للحوار قائمة أصناف أصلاً.</summary>
+    private async Task LoadProductsAsync()
+    {
+        await using var db = AppServices.CreateDb();
+        var products = await db.Products
+            .Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive)
+            .OrderBy(p => p.Code)
+            .Select(p => new SalesInvoiceDialog.ProductOption(p.Id, p.Code + " — " + p.NameAr, p.SalePrice, p.NameAr))
+            .ToListAsync();
+        ProductColumn.ItemsSource = products;
     }
 
     private void OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) =>
