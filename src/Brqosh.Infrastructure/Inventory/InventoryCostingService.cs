@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Persistence;
@@ -23,7 +23,7 @@ public class InventoryCostingService(BrqoshDbContext db)
         long companyId, long productId, long warehouseId, DateOnly date,
         decimal qty, decimal unitCost, string sourceDocument, CancellationToken ct = default)
     {
-        var product = await db.Products.SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
+        var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
         if (!product.IsStockable()) return;
 
         var method = await GetMethodAsync(companyId, ct);
@@ -43,7 +43,7 @@ public class InventoryCostingService(BrqoshDbContext db)
     public async Task<(decimal TotalCost, decimal UnitCost)> ConsumeForIssueAsync(
         long companyId, long productId, long warehouseId, decimal qty, CancellationToken ct = default)
     {
-        var product = await db.Products.SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
+        var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
         if (!product.IsStockable())
             return (0m, 0m);
 
@@ -69,7 +69,7 @@ public class InventoryCostingService(BrqoshDbContext db)
     /// <summary>يعيد بناء متوسط التكلفة من الطبقات المتبقية (بعد عكس FIFO).</summary>
     public async Task RecalculateWacFromLayersAsync(long companyId, long productId, CancellationToken ct = default)
     {
-        var product = await db.Products.SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
+        var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
         if (!product.IsStockable()) return;
 
         var layers = await db.InventoryCostLayers
@@ -117,7 +117,7 @@ public class InventoryCostingService(BrqoshDbContext db)
         var available = layers.Sum(l => l.RemainingQuantity);
         if (available + 0.0001m < qty)
         {
-            var p = await db.Products.SingleAsync(x => x.Id == productId, ct);
+            var p = await db.Products.IgnoreQueryFilters().SingleAsync(x => x.Id == productId, ct);
             throw new AccountingException(
                 $"طبقات FIFO للصنف '{p.NameAr}' غير كافية — المتبقي {available:N4}، المطلوب {qty:N4}.");
         }

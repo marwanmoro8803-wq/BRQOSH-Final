@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Inventory;
@@ -43,12 +43,21 @@ public class Warehouse : IBranchScoped, ISoftDeletable
     public void Update(string nameAr) => NameAr = nameAr.Trim();
     public void SetAsDefault() => IsDefault = true;
     public void ClearDefault() => IsDefault = false;
-    public void Deactivate()
-    {
-        if (DeletedAtUtc is not null) return;
-        DeletedAtUtc = DateTime.UtcNow;
-        IsActive = false;
-    }
+    /// <summary>
+    /// إيقاف المستودع — <b>حالةٌ تشغيلية لا واقعةُ حذف</b>.
+    ///
+    /// <para>(CEEF-229 · م2-١٧) كان يضبط <c>DeletedAtUtc</c> أيضاً، ومرشّح الاستعلام العامّ
+    /// يُخفي كلَّ ما له تاريخ حذف — <b>فيختفي من قوائمه تماماً</b> لا يظهر موقوفاً. وزرُّ
+    /// الشاشة مكتوبٌ عليه «إيقاف» ورسالةُ التأكيد تسأل «إيقاف …؟»، فكان الوعد إيقافاً
+    /// والفعلُ حذفاً. ولا رجعة: لا <c>Reactivate</c> في الكيان أصلاً.</para>
+    ///
+    /// <para>أُصلح هذا في <see cref="Brqosh.Domain.Accounting.Account"/> ضمن م0-١٣، وبقيت
+    /// سبعةُ كياناتٍ أخرى بالجسم القديم حرفاً بحرف — فالإصلاح طُبِّق على كيانٍ واحد ولم يُعمَّم.</para>
+    /// </summary>
+    public void Deactivate() => IsActive = false;
+
+    /// <summary>إعادة تفعيل المستودع الموقوف.</summary>
+    public void Reactivate() => IsActive = true;
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

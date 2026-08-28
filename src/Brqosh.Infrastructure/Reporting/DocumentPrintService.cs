@@ -25,7 +25,12 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var lines = invoice.Lines.Select(l =>
             new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
-        var customer = await db.Customers.SingleAsync(c => c.Id == invoice.CustomerId, ct);
+        // (CEEF-229 · م2-١٨) قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
+        // الطرف كان موجوداً يوم صدور المستند، وحذفُه لاحقاً لا يُلغي المستند. وقراءةُ
+        // المرشَّح كانت ترمي «Sequence contains no elements» بالإنجليزية داخل واجهةٍ
+        // عربية، فتصير فاتورةٌ ضريبية سعودية **غير قابلة للطباعة أبداً** — وهي وثيقةٌ
+        // يُلزم النظام السعوديّ بالاحتفاظ بها وإصدار نسخٍ منها.
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == invoice.CustomerId, ct);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: customerName,
@@ -57,7 +62,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var invoice = await db.PurchaseInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == invoiceId, ct);
         PrintPostedGuard.EnsurePurchaseInvoicePosted(invoice);
-        var supplier = await db.Suppliers.SingleAsync(s => s.Id == invoice.SupplierId, ct);
+        var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == invoice.SupplierId, ct);
         var lines = invoice.Lines.Select(l =>
             new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
@@ -86,7 +91,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var note = await db.CreditNotes.SingleAsync(n => n.CompanyId == companyId && n.Id == noteId, ct);
         PrintPostedGuard.EnsureCreditNotePosted(note);
-        var customer = await db.Customers.SingleAsync(c => c.Id == note.CustomerId, ct);
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == note.CustomerId, ct);
         var zatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
             d.CompanyId == companyId &&
             d.SourceDocumentId == noteId &&
@@ -124,7 +129,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var note = await db.DebitNotes.SingleAsync(n => n.CompanyId == companyId && n.Id == noteId, ct);
         PrintPostedGuard.EnsureDebitNotePosted(note);
-        var supplier = await db.Suppliers.SingleAsync(s => s.Id == note.SupplierId, ct);
+        var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == note.SupplierId, ct);
         var lines = note.Lines.Select(l =>
             new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
         var branding = PrintBranding.FromCompany(company);
@@ -154,7 +159,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var branding = PrintBranding.FromCompany(company);
         var voucher = await db.ReceiptVouchers.SingleAsync(v => v.CompanyId == companyId && v.Id == voucherId, ct);
         PrintPostedGuard.EnsureReceiptVoucherPosted(voucher);
-        var customer = await db.Customers.SingleAsync(c => c.Id == voucher.CustomerId, ct);
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == voucher.CustomerId, ct);
         var pdf = VoucherPdfGenerator.ReceiptVoucher(
             branding,
             voucher.VoucherNumber ?? voucher.Id.ToString(),
@@ -177,7 +182,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var branding = PrintBranding.FromCompany(company);
         var voucher = await db.PaymentVouchers.SingleAsync(v => v.CompanyId == companyId && v.Id == voucherId, ct);
         PrintPostedGuard.EnsurePaymentVoucherPosted(voucher);
-        var supplier = await db.Suppliers.SingleAsync(s => s.Id == voucher.SupplierId, ct);
+        var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == voucher.SupplierId, ct);
         var pdf = VoucherPdfGenerator.PaymentVoucher(
             branding,
             voucher.VoucherNumber ?? voucher.Id.ToString(),
@@ -269,7 +274,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var invoice = await db.SalesInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == invoiceId, ct);
-        var customer = await db.Customers.SingleAsync(c => c.Id == invoice.CustomerId, ct);
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == invoice.CustomerId, ct);
         var zatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
             d.CompanyId == companyId &&
             d.SourceDocumentId == invoiceId &&

@@ -8,6 +8,18 @@ namespace Brqosh.Infrastructure.Inventory;
 /// <summary>
 /// محرك المخزون: أرصدة مجمّعة، متوسط مرجح، وحركات — يُحدَّث الرصيد داخل معاملة الترحيل.
 /// </summary>
+/// <summary>
+/// حركة المخزون وتكلفته.
+///
+/// <para>(CEEF-229 · م2-١٨) <b>قراءات الأصناف هنا تتجاوز مرشّح الحذف الناعم عمداً.</b>
+/// كلُّها تُحمِّل صنفاً <b>يشير إليه مستندٌ أو رصيدٌ قائم</b> — لا صنفاً يختاره المستخدم
+/// من قائمة. وحذفُ الصنف لاحقاً لا يُلغي مستنداً مرحَّلاً ولا رصيداً في مستودع.</para>
+///
+/// <para>وقراءةُ المرشَّح كانت تُنتج عطلَين مختلفَين: <b>رمياً</b> يُسقط إلغاء الفاتورة
+/// («Sequence contains no elements» بالإنجليزية في واجهةٍ عربية، فتبقى الفاتورة مرحّلة
+/// إلى الأبد ولا مخرج)، و<b>تخطّياً صامتاً</b> في الإشعار الدائن يُعكس المال ولا يُرجع
+/// البضاعة ولا يعكس تكلفتها — ولا يُكشف إلا بجردٍ بعد شهور.</para>
+/// </summary>
 public class InventoryService(BrqoshDbContext db)
 {
     public async Task<Warehouse> GetDefaultWarehouseAsync(long companyId)
@@ -54,7 +66,7 @@ public class InventoryService(BrqoshDbContext db)
     /// <summary>عكس أثر إدخال مخزون على متوسط التكلفة المرجح عند الإلغاء أو الصرف العكسي.</summary>
     public async Task ReverseReceiptCostAsync(long companyId, long productId, decimal qtyOut, decimal unitCost)
     {
-        var product = await db.Products.SingleAsync(p => p.Id == productId && p.CompanyId == companyId);
+        var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId);
         if (!product.IsStockable() || qtyOut <= 0) return;
 
         // (CEEF-228) المستدعيان (إلغاء فاتورة مشتريات وإلغاء إذن استلام) يخصمان الرصيد
@@ -110,7 +122,7 @@ public class InventoryService(BrqoshDbContext db)
                 var onHand = await GetOnHandAsync(companyId, line.ProductId, warehouseId);
                 if (line.Quantity > onHand)
                 {
-                    var p = await db.Products.SingleAsync(x => x.Id == line.ProductId);
+                    var p = await db.Products.IgnoreQueryFilters().SingleAsync(x => x.Id == line.ProductId);
                     throw new AccountingException($"رصيد '{p.NameAr}' غير كافٍ — المتوفر {onHand:N2}.");
                 }
                 // التحقق من كفاية الطبقات FIFO (إن وُجدت) — التكلفة تُستهلك من المستدعي عبر CostingService
@@ -138,11 +150,11 @@ public class InventoryService(BrqoshDbContext db)
             var onHand = await GetOnHandAsync(companyId, productId, fromWarehouseId);
             if (qty > onHand)
             {
-                var product = await db.Products.SingleAsync(p => p.Id == productId);
+                var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId);
                 throw new AccountingException(
                     $"رصيد '{product.NameAr}' غير كافٍ للتحويل — المتوفر {onHand:N2}.");
             }
-            var productEntity = await db.Products.SingleAsync(p => p.Id == productId);
+            var productEntity = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId);
             movement.AddLine(productId, qty, productEntity.WeightedAverageCost);
             await ApplyBalanceDeltaAsync(companyId, fromWarehouseId, productId, -qty);
             await ApplyBalanceDeltaAsync(companyId, toWarehouseId, productId, qty);
@@ -162,7 +174,7 @@ public class InventoryService(BrqoshDbContext db)
         decimal total = 0;
         foreach (var (productId, qty) in lines)
         {
-            var product = await db.Products.SingleAsync(p => p.Id == productId);
+            var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId);
             if (!product.IsStockable()) continue;
             total += Math.Round(qty * product.WeightedAverageCost, 2, MidpointRounding.AwayFromZero);
         }
@@ -174,14 +186,17 @@ public class InventoryService(BrqoshDbContext db)
     {
         var ids = productIds.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
         if (ids.Count == 0) return new Dictionary<long, Product>();
+        // تتجاوز المرشّح كبقيّة قراءات هذا الصنف — انظر الشرح على رأس الصنف. وهنا تحديداً
+        // كان الأثر **تخطّياً صامتاً**: الصنف الغائب عن القاموس يُهمله المستدعي بلا كلمة.
         return await db.Products
+            .IgnoreQueryFilters()
             .Where(p => p.CompanyId == companyId && ids.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id);
     }
 
     public async Task ApplyReceiptCostAsync(long companyId, long productId, decimal qtyIn, decimal unitCost)
     {
-        var product = await db.Products.SingleAsync(p => p.Id == productId && p.CompanyId == companyId);
+        var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId);
         if (!product.IsStockable()) return;
 
         var oldQty = await GetCompanyOnHandAsync(companyId, productId);
@@ -318,7 +333,7 @@ public class InventoryService(BrqoshDbContext db)
         {
             if (delta < 0)
             {
-                var p = await db.Products.SingleAsync(x => x.Id == productId);
+                var p = await db.Products.IgnoreQueryFilters().SingleAsync(x => x.Id == productId);
                 throw new AccountingException($"رصيد '{p.NameAr}' غير كافٍ.");
             }
             balance = InventoryBalance.Create(companyId, warehouseId, productId, 0);
@@ -327,7 +342,7 @@ public class InventoryService(BrqoshDbContext db)
 
         if (balance.QuantityOnHand + delta < 0)
         {
-            var p = await db.Products.SingleAsync(x => x.Id == productId);
+            var p = await db.Products.IgnoreQueryFilters().SingleAsync(x => x.Id == productId);
             throw new AccountingException(
                 $"رصيد '{p.NameAr}' غير كافٍ — المتوفر {balance.QuantityOnHand:N2}.");
         }

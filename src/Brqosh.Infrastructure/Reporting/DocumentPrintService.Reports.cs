@@ -1,4 +1,4 @@
-using Brqosh.Domain.Companies;
+﻿using Brqosh.Domain.Companies;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Purchasing;
@@ -77,7 +77,12 @@ public partial class DocumentPrintService
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var branding = PrintBranding.FromCompany(company);
-        var customer = await db.Customers.SingleAsync(c => c.Id == customerId, ct);
+        // (CEEF-229 · م2-١٨) قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
+        // الطرف كان موجوداً يوم صدور المستند، وحذفُه لاحقاً لا يُلغي المستند. وقراءةُ
+        // المرشَّح كانت ترمي «Sequence contains no elements» بالإنجليزية داخل واجهةٍ
+        // عربية، فتصير فاتورةٌ ضريبية سعودية **غير قابلة للطباعة أبداً** — وهي وثيقةٌ
+        // يُلزم النظام بالاحتفاظ بها وإصدار نسخٍ منها.
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == customerId, ct);
         var lines = await new CustomerBalanceQuery(db).StatementAsync(companyId, customerId);
         var balance = await new CustomerBalanceQuery(db).ForCustomerAsync(companyId, customerId);
         var pdf = StatementPdfGenerator.CustomerStatement(branding, customer.NameAr, balance.Balance, lines);
@@ -91,7 +96,7 @@ public partial class DocumentPrintService
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var branding = PrintBranding.FromCompany(company);
-        var supplier = await db.Suppliers.SingleAsync(s => s.Id == supplierId, ct);
+        var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == supplierId, ct);
         var lines = await new SupplierBalanceQuery(db).StatementAsync(companyId, supplierId);
         var balance = await new SupplierBalanceQuery(db).ForSupplierAsync(companyId, supplierId);
         var pdf = StatementPdfGenerator.SupplierStatement(branding, supplier.NameAr, balance.Balance, lines);
@@ -145,7 +150,7 @@ public partial class DocumentPrintService
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var billing = await db.ProgressBillings.SingleAsync(b => b.CompanyId == companyId && b.Id == billingId, ct);
-        var customer = await db.Customers.SingleAsync(c => c.Id == billing.CustomerId, ct);
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == billing.CustomerId, ct);
         var project = await db.ConstructionProjects.SingleAsync(p => p.Id == billing.ProjectId, ct);
         var zatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
             d.CompanyId == companyId &&

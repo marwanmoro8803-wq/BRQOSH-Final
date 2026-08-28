@@ -1,4 +1,4 @@
-namespace Brqosh.Domain.Sales;
+﻿namespace Brqosh.Domain.Sales;
 
 /// <summary>عميل — طرف الذمم المدينة؛ الرقم الضريبي مطلوب للفاتورة الضريبية (B2B).</summary>
 public class Customer : ISoftDeletable
@@ -65,10 +65,19 @@ public class Customer : ISoftDeletable
         ModifiedBy = string.IsNullOrWhiteSpace(modifiedBy) ? null : modifiedBy.Trim();
     }
 
-    public void Deactivate()
-    {
-        if (DeletedAtUtc is not null) return;
-        DeletedAtUtc = DateTime.UtcNow;
-        IsActive = false;
-    }
+    /// <summary>
+    /// إيقاف العميل — <b>حالةٌ تشغيلية لا واقعةُ حذف</b>.
+    ///
+    /// <para>(CEEF-229 · م2-١٧) كان يضبط <c>DeletedAtUtc</c> أيضاً، ومرشّح الاستعلام العامّ
+    /// يُخفي كلَّ ما له تاريخ حذف — <b>فيختفي من قوائمه تماماً</b> لا يظهر موقوفاً. وزرُّ
+    /// الشاشة مكتوبٌ عليه «إيقاف» ورسالةُ التأكيد تسأل «إيقاف …؟»، فكان الوعد إيقافاً
+    /// والفعلُ حذفاً. ولا رجعة: لا <c>Reactivate</c> في الكيان أصلاً.</para>
+    ///
+    /// <para>أُصلح هذا في <see cref="Brqosh.Domain.Accounting.Account"/> ضمن م0-١٣، وبقيت
+    /// سبعةُ كياناتٍ أخرى بالجسم القديم حرفاً بحرف — فالإصلاح طُبِّق على كيانٍ واحد ولم يُعمَّم.</para>
+    /// </summary>
+    public void Deactivate() => IsActive = false;
+
+    /// <summary>إعادة تفعيل العميل الموقوف.</summary>
+    public void Reactivate() => IsActive = true;
 }
