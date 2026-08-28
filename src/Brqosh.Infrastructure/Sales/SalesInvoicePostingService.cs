@@ -17,6 +17,7 @@ using Brqosh.Infrastructure.Inventory;
 
 using Brqosh.Domain.Platform;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Treasury;
 using Brqosh.Infrastructure.Platform;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Zatca;
@@ -171,17 +172,18 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
                     "الدفع المختلط غير مدعوم في الترحيل بعد — لا يمكن تحديد حصة النقد من حصة الشبكة. " +
                     "أصدر فاتورتين منفصلتين (نقد وبطاقة) حتى يُضاف تفصيل المبلغين.");
 
-            var code = method switch
+            // (CEEF-229 · م2-١٥) بيعُ البطاقة يذهب إلى **حساب البنك نفسه** لا إلى الأب 1102.
+            //
+            // كان يحلّ الكود الحرفيّ 1102، وكلُّ مسارٍ آخر يحلّ `bank.GlAccountId` أي الابن
+            // (110201). و1102 قابلٌ للترحيل في القالب، فالأب وابنُه يتقاسمان نقد البنوك:
+            // إيرادُ الشبكة يتراكم على الأب ولا ينزل، والمدفوعات تُخصم من الابن حتى يصير
+            // رصيدُه سالباً؛ والتسويةُ البنكية تقرأ الابن وحده فتُقارَن بكشفٍ يحوي تحصيلات
+            // الشبكة، فيظهر فرقٌ دائم لا يُغلق. ولا تكشفه هوية قائمة التدفقات لأن المجاميع
+            // تحت البادئة "1102" تبقى سليمة — الخلل في التوزيع لا في الإجمالي.
+            if (method == PosPaymentMethod.Card)
+                return await BankGlAccountResolver.ResolveAsync(db, invoice.CompanyId);
 
-            {
-
-                PosPaymentMethod.Card => SaudiChartOfAccounts.SystemCodes.CashAtBanks,
-
-                _ => SaudiChartOfAccounts.SystemCodes.CashOnHand,
-
-            };
-
-            return await SystemAccountAsync(invoice.CompanyId, code);
+            return await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.CashOnHand);
 
         }
 

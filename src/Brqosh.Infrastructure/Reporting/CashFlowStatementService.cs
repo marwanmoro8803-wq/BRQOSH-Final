@@ -25,6 +25,9 @@ public class CashFlowStatementService(BrqoshDbContext db)
 {
     private static readonly string[] CashCodes = ["1101", "1102", "1103"];
 
+    /// <summary>مجمّع الإهلاك وأبناؤه — بند تعديلٍ غير نقديّ، لا استثمار.</summary>
+    private const string DepreciationPrefix = "1207";
+
     public async Task<CashFlowStatementResult> ExecuteAsync(long companyId, DateOnly fromDate, DateOnly toDate)
     {
         var dayBefore = fromDate.AddDays(-1);
@@ -42,9 +45,15 @@ public class CashFlowStatementService(BrqoshDbContext db)
         //   إهلاك 1,000 -> endBal = -1000 -> delta = -1000 -> cashEffect = -delta = +1000
         // وهو الردّ الصحيح لمصروف غير نقديّ. ثم كان invert يجعله -1000، فيُطرح الإهلاك
         // مرّتين: مرّةً داخل صافي الدخل ومرّةً هنا.
-        var depreciation = DeltaForCodes(startBalances, endBalances, "1207", AccountType.Asset);
+        // (CEEF-229 · م2-١٤) بالبادئة لا بالمساواة — عرفٌ محاسبيّ شائع أن يكون لكل فئة
+        // أصلٍ مجمّعُ إهلاكٍ خاصّ (120701، 120702). وبالمساواة التامّة كان ردُّ الإهلاك
+        // يساوي صفراً عندئذٍ، فيُطرح الإهلاك كأنه نقدٌ خرج — وهو عين عطل SumCash.
+        var depreciation = WorkingCapitalEffect(
+            startBalances, endBalances, DepreciationPrefix, _ => false);
         if (depreciation != 0m)
             operating.Add(new("إهلاك الأصول (تعديل غير نقدي)", depreciation));
+
+        var namedWorkingCapital = new List<string>();
 
         foreach (var (code, label) in new (string, string)[]
         {
@@ -66,17 +75,40 @@ public class CashFlowStatementService(BrqoshDbContext db)
         })
         {
             var delta = DeltaForCodes(startBalances, endBalances, code, null);
+            namedWorkingCapital.Add(code);
             if (delta != 0m)
                 operating.Add(new(label, delta));
         }
 
+        // (CEEF-229 · م2-١٤) **البقيّة — وهي ما كان يسقط صامتاً.**
+        //
+        // القائمة أعلاه معدودةٌ يدوياً، ودفعة CEEF-228 اضطرّت لإضافة خمسة أكواد غائبة، ثم
+        // تبيّن أن «شيكات برسم الدفع» (2103) و«رواتب مستحقة» (2108) غائبان كذلك. فالعطل نمطٌ
+        // لا حادثة: **كلّ حسابٍ جديد يُضاف إلى الدليل يسقط من القائمة بلا خطأ ولا تحذير**.
+        //
+        // والتعريف المحاسبيّ لا يحتاج تعداداً: رأس المال العامل هو **كل أصلٍ متداول غير نقديّ
+        // وكل التزامٍ متداول** — بادئة "11" (منها النقدية مستثناة لأنها المقياس نفسه لا بندٌ
+        // يفسّره) وبادئة "21". والاستثمار يأخذ "12" والتمويل "22" و"31"، فلا تقاطع.
+        //
+        // فتبقى الأسماء المعروفة سطوراً مقروءة، ويُجمع ما عداها في سطرٍ واحد. والنتيجة أن
+        // الهوية «مجموع الأقسام == صافي التغيّر النقديّ» تصدق **مهما أُضيف من حسابات**.
+        var workingCapitalTotal =
+            WorkingCapitalEffect(startBalances, endBalances, "11", IsCashCode)
+            + WorkingCapitalEffect(startBalances, endBalances, "21", _ => false);
+        var residual = workingCapitalTotal
+            - namedWorkingCapital.Sum(c => DeltaForCodes(startBalances, endBalances, c, null));
+        if (residual != 0m)
+            operating.Add(new("تغيّرات رأس مال عامل أخرى", residual));
+
         var investing = new List<CashFlowLine>();
-        var investingDelta = DeltaForPrefix(startBalances, endBalances, "12", AccountType.Asset, exclude: ["1207"]);
+        // الاستثناء بالبادئة كذلك — وإلا دخل ابنُ مجمّع الإهلاك الاستثمارَ والتشغيلَ معاً.
+        var investingDelta = DeltaForPrefix(startBalances, endBalances, "12",
+            excludePrefixes: [DepreciationPrefix]);
         if (investingDelta != 0m)
             investing.Add(new("شراء/بيع أصول ثابتة (صافي)", -investingDelta));
 
         var financing = new List<CashFlowLine>();
-        var loanDelta = DeltaForPrefix(startBalances, endBalances, "22", AccountType.Liability);
+        var loanDelta = DeltaForPrefix(startBalances, endBalances, "22");
         if (loanDelta != 0m)
             financing.Add(new("قروض طويلة الأجل (صافي)", loanDelta));
 
@@ -85,8 +117,8 @@ public class CashFlowStatementService(BrqoshDbContext db)
         // حقوق ملكية. شركة بصافي دخل 200,000 كانت تُظهر مجموع أقسام 400,000 مقابل
         // NetCashChange حقيقيّ 200,000. و3106 «احتياطي ترجمة العملات» تسويةٌ غير نقدية.
         // توزيعات الشركاء وسحوباتهم تُقيَّد على 3105 «جاري الشركاء» فتبقى ظاهرة في التمويل.
-        var equityDelta = DeltaForPrefix(startBalances, endBalances, "31", AccountType.Equity,
-            exclude: [
+        var equityDelta = DeltaForPrefix(startBalances, endBalances, "31",
+            excludePrefixes: [
                 SaudiChartOfAccounts.SystemCodes.RetainedEarnings,
                 SaudiChartOfAccounts.SystemCodes.CurrentYearProfit,
                 SaudiChartOfAccounts.SystemCodes.TranslationReserve,
@@ -128,6 +160,23 @@ public class CashFlowStatementService(BrqoshDbContext db)
         _ => row.BalanceDebit - row.BalanceCredit,
     };
 
+    /// <summary>
+    /// (CEEF-229 · م2-١٤) أثرُ رأس المال العامل النقديّ لكل حسابٍ تحت بادئةٍ ما.
+    /// يستعمل اصطلاح الإشارة نفسه في <see cref="DeltaForCodes"/> — نوعُ الحساب يُقرأ من
+    /// الأرصدة لا يُفترض — فيصلح لخليطٍ من الأصول والالتزامات تحت البادئة الواحدة.
+    /// </summary>
+    private static decimal WorkingCapitalEffect(
+        Dictionary<string, (AccountType Type, decimal SignedBalance)> start,
+        Dictionary<string, (AccountType Type, decimal SignedBalance)> end,
+        string prefix,
+        Func<string, bool> skip)
+    {
+        var codes = start.Keys.Concat(end.Keys)
+            .Where(c => c.StartsWith(prefix, StringComparison.Ordinal) && !skip(c))
+            .Distinct();
+        return codes.Sum(c => DeltaForCodes(start, end, c, null));
+    }
+
     private static decimal DeltaForCodes(
         Dictionary<string, (AccountType Type, decimal SignedBalance)> start,
         Dictionary<string, (AccountType Type, decimal SignedBalance)> end,
@@ -158,16 +207,24 @@ public class CashFlowStatementService(BrqoshDbContext db)
         return invert ? -cashEffect : cashEffect;
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-١٤) الاستثناء صار <b>بالبادئة</b>، والمعامل الميت حُذف.
+    ///
+    /// <para>كان الاستثناء بمساواةٍ تامّة، فابنُ حسابٍ مستثنى يدخل القسم رغم استثناء أبيه —
+    /// وهو نمط عطل <c>SumCash</c> نفسه في موضعٍ آخر. وكان المعامل <c>type</c> مُعلَناً
+    /// <b>ولا يُستعمل قطّ</b>: الترشيح على البادئة وحدها وإشارةُ النقد تُدار عند النداء.
+    /// ومعاملٌ يوحي بفحصٍ لا يجري أسوأ من غيابه — فحُذف.</para>
+    /// </summary>
     private static decimal DeltaForPrefix(
         Dictionary<string, (AccountType Type, decimal SignedBalance)> start,
         Dictionary<string, (AccountType Type, decimal SignedBalance)> end,
         string prefix,
-        AccountType type,
-        string[]? exclude = null)
+        string[]? excludePrefixes = null)
     {
-        exclude ??= [];
+        var excluded = excludePrefixes ?? [];
         var codes = start.Keys.Concat(end.Keys)
-            .Where(c => c.StartsWith(prefix, StringComparison.Ordinal) && !exclude.Contains(c))
+            .Where(c => c.StartsWith(prefix, StringComparison.Ordinal)
+                        && !excluded.Any(e => c.StartsWith(e, StringComparison.Ordinal)))
             .Distinct();
         return codes.Sum(c =>
         {
@@ -177,6 +234,28 @@ public class CashFlowStatementService(BrqoshDbContext db)
         });
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-١٤) النقدية <b>بالبادئة لا بالمساواة التامّة</b>.
+    ///
+    /// <para>كانت المطابقة مساواةً تامّة على <c>1101</c> و<c>1102</c> و<c>1103</c>. وكلُّ حسابٍ
+    /// بنكيّ يُنشأ <b>ابناً</b> تحت <c>1102</c> بكودٍ مثل <c>110201</c>
+    /// (<c>BankAccountService.NextChildCode</c>)، والمال يذهب إلى الابن لا إلى الأب: سندُ القبض
+    /// البنكيّ وسندُ الصرف وإيداعُ الشيك وفروقُ كشف الحساب كلُّها تُقيَّد على
+    /// <c>bank.GlAccountId</c>. والأب حسابٌ تجميعيّ لا يُرحَّل عليه فلا يظهر في ميزان المراجعة
+    /// أصلاً — فكان <b>كلُّ نقد البنوك خارج الرصيدين الافتتاحيّ والختاميّ</b>.</para>
+    ///
+    /// <para>الأثر مقيس: منشأةٌ تبيع بـ10,000 وتُحصّل 11,500 في حسابها البنكيّ تُخرج رصيداً
+    /// ختامياً <b>صفراً</b>. ولم يكشفه اختبار لأن اختبارات القائمة تؤكّد مجاميع الأقسام
+    /// منفردةً ولا تربطها بالنقد.</para>
+    ///
+    /// <para>والمطابقة بالبادئة آمنة من الازدواج: الترحيل لا يقع إلا على حساباتٍ ورقية، فلا
+    /// يظهر الأب وابنُه معاً في ميزان المراجعة. وهي المطابقة نفسها التي يستعملها
+    /// <see cref="DeltaForPrefix"/> للاستثمار والتمويل — فالعطل كان في <b>عدم اطّرادها</b>.</para>
+    /// </summary>
     private static decimal SumCash(Dictionary<string, (AccountType Type, decimal SignedBalance)> balances) =>
-        CashCodes.Sum(c => balances.GetValueOrDefault(c).SignedBalance);
+        balances.Where(kv => IsCashCode(kv.Key)).Sum(kv => kv.Value.SignedBalance);
+
+    /// <summary>هل الكود نقديّ — أو ابنٌ لحسابٍ نقديّ؟</summary>
+    private static bool IsCashCode(string code) =>
+        CashCodes.Any(c => code.StartsWith(c, StringComparison.Ordinal));
 }

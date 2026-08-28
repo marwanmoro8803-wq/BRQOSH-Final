@@ -82,16 +82,12 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db)
 
     private async Task<Account> ResolveCashOrBankAccountAsync(long companyId, ReceiptMethod method, long? bankAccountId)
     {
-        if (method == ReceiptMethod.Bank && bankAccountId is long bankId)
-        {
-            var bank = await db.BankAccounts.SingleAsync(b => b.CompanyId == companyId && b.Id == bankId && b.IsActive);
-            return await db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId);
-        }
+        // (CEEF-229 · م2-١٥) الحلّ من مكانٍ واحد — وكان السقوط هنا يُقيّد على الأب 1102
+        // بينما البنوك تُقيَّد على أبنائه، فينشقّ نقد البنوك. انظر BankGlAccountResolver.
+        if (method == ReceiptMethod.Cash)
+            return await db.Accounts.SingleAsync(
+                a => a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashOnHand);
 
-        var cashCode = method == ReceiptMethod.Cash
-            ? SaudiChartOfAccounts.SystemCodes.CashOnHand
-            : SaudiChartOfAccounts.SystemCodes.CashAtBanks;
-
-        return await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == cashCode);
+        return await BankGlAccountResolver.ResolveAsync(db, companyId, bankAccountId);
     }
 }
