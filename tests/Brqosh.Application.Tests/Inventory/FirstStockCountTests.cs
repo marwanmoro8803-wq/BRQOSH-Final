@@ -1,4 +1,4 @@
-using Brqosh.Application.Tests.TestSupport;
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
@@ -81,9 +81,20 @@ public class FirstStockCountTests : IDisposable
     private async Task<int> CountAsync(params (long ProductId, decimal Counted)[] rows)
     {
         var inv = new InventoryService(_db);
-        var lines = new List<(long ProductId, decimal SystemQty, decimal CountedQty)>();
+        var lines = new List<(long ProductId, decimal SystemQty, decimal CountedQty, decimal? OpeningUnitCost)>();
         foreach (var (id, counted) in rows)
-            lines.Add((id, await inv.GetOnHandAsync(_companyId, id, _warehouseId), counted));
+            lines.Add((id, await inv.GetOnHandAsync(_companyId, id, _warehouseId), counted, null));
+
+        return await new StockCountAdjustmentService(_db).PostVariancesAsync(
+            _companyId, _warehouseId, new DateOnly(2026, 1, 10), lines, "admin");
+    }
+
+    private async Task<int> CountWithCostAsync(params (long ProductId, decimal Counted, decimal? Cost)[] rows)
+    {
+        var inv = new InventoryService(_db);
+        var lines = new List<(long ProductId, decimal SystemQty, decimal CountedQty, decimal? OpeningUnitCost)>();
+        foreach (var (id, counted, cost) in rows)
+            lines.Add((id, await inv.GetOnHandAsync(_companyId, id, _warehouseId), counted, cost));
 
         return await new StockCountAdjustmentService(_db).PostVariancesAsync(
             _companyId, _warehouseId, new DateOnly(2026, 1, 10), lines, "admin");
@@ -151,6 +162,65 @@ public class FirstStockCountTests : IDisposable
         Assert.Equal(22m, await inv.GetOnHandAsync(_companyId, priced, _warehouseId));
         Assert.Equal(7m, await inv.GetOnHandAsync(_companyId, _productIds[1], _warehouseId));
         Assert.Equal(ledgerBefore + 60m, await InventoryLedgerBalanceAsync());   // 2 × 30 فقط
+        Assert.Equal(await StockValueAsync(), await InventoryLedgerBalanceAsync());
+    }
+
+
+    /// <summary>
+    /// (م2-٢٤) <b>تكلفةٌ افتتاحية يُدخلها المالك لصنفٍ لا تكلفة له.</b>
+    ///
+    /// <para>الجردُ صار يمرّ بعد م2-٢١، لكنه كان يمرّ <b>بقيمة صفر</b>: تدخل البضاعة بكميّةٍ
+    /// بلا قيمة، فيُقيَّد أوّلُ بيعٍ لها تكلفةً صفراً <b>ويُضخَّم مجمل الربح بكامل الثمن</b>.
+    /// وعمودُ التكلفة كان للقراءة فقط فلا مخرج للمالك.</para>
+    /// </summary>
+    [Fact]
+    public async Task AnOpeningCost_IsAcceptedForAProductThatHasNone()
+    {
+        var product = _productIds[0];
+
+        await CountWithCostAsync((product, 10m, 25m));
+
+        var stored = await _db.Products.SingleAsync(p => p.Id == product);
+        Assert.Equal(25m, stored.WeightedAverageCost);
+        Assert.Equal(250m, await InventoryLedgerBalanceAsync());
+        Assert.Equal(await StockValueAsync(), await InventoryLedgerBalanceAsync());
+    }
+
+    /// <summary>
+    /// <b>وهذا هو الحدّ الذي لا يُخترق:</b> صنفٌ له تكلفةٌ محسوبة من مشترياته <b>لا تُمسّ</b>
+    /// بإدخالٍ يدويّ. فالجردُ ليس باباً خلفياً لإعادة كتابة تقييم المخزون — ولولا هذا الحارس
+    /// لصار عمودُ التكلفة أداةً لتغيير الأرباح بلا مستند.
+    /// </summary>
+    [Fact]
+    public async Task AnOpeningCost_NeverOverwritesAComputedCost()
+    {
+        var product = _productIds[0];
+        var opening = StockMovement.CreateDraft(
+            _companyId, new DateOnly(2026, 1, 5), StockMovementType.Opening, _warehouseId, "افتتاحيّ");
+        opening.AddLine(product, 20m, 30m);
+        await new StockMovementPostingService(_db).PostAsync(opening);
+
+        var ledgerBefore = await InventoryLedgerBalanceAsync();
+
+        // محاولةُ فرض تكلفة 5 على صنفٍ متوسطُه 30 — تُتجاهَل.
+        await CountWithCostAsync((product, 25m, 5m));
+
+        Assert.Equal(ledgerBefore + 150m, await InventoryLedgerBalanceAsync());   // 5 × 30 لا 5 × 5
+        Assert.Equal(await StockValueAsync(), await InventoryLedgerBalanceAsync());
+    }
+
+    /// <summary>وتكلفةٌ صفرية أو سالبة تُهمَل ولا تُفسد الحساب — فالفراغ ليس قيمة.</summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public async Task AnInvalidOpeningCost_IsIgnored(decimal cost)
+    {
+        var product = _productIds[0];
+
+        await CountWithCostAsync((product, 10m, cost));
+
+        var stored = await _db.Products.SingleAsync(p => p.Id == product);
+        Assert.Equal(0m, stored.WeightedAverageCost);
         Assert.Equal(await StockValueAsync(), await InventoryLedgerBalanceAsync());
     }
 

@@ -1,4 +1,4 @@
-<UserControl x:Class="Brqosh.Desktop.Views.Pages.StockCountPage"
+﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.StockCountPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -51,7 +51,10 @@
                     <DataGridTextColumn Header="رصيد النظام" Binding="{Binding SystemQty, StringFormat=N2}" Width="100" IsReadOnly="True"/>
                     <DataGridTextColumn Header="العد الفعلي" Binding="{Binding CountedQty, StringFormat=N2}" Width="100"/>
                     <DataGridTextColumn Header="الفرق" Binding="{Binding Variance, StringFormat=N2}" Width="90" IsReadOnly="True"/>
-                    <DataGridTextColumn Header="تكلفة الوحدة" Binding="{Binding UnitCost, StringFormat=N4}" Width="110" IsReadOnly="True"/>
+                    <!-- (CEEF-229 · م2-٢٤) صار قابلاً للتحرير: بلا تكلفةٍ افتتاحية يدخل المخزون
+                         بكميّةٍ بلا قيمة، فيُقيَّد أوّلُ بيعٍ تكلفةً صفراً ويُضخَّم مجمل الربح.
+                         والقيمة تُقبل فقط لصنفٍ لا تكلفة له — لا تُعاد كتابة تقييمٍ محسوب. -->
+                    <DataGridTextColumn Header="تكلفة الوحدة" Binding="{Binding UnitCost, StringFormat=N4}" Width="110"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

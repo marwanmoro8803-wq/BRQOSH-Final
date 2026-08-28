@@ -35,7 +35,7 @@ public partial class StockCountPage : UserControl
         }
 
         public decimal Variance => CountedQty - SystemQty;
-        public decimal UnitCost { get; init; }
+        public decimal UnitCost { get; set; }
         public decimal TotalValue => Math.Round(SystemQty * UnitCost, 2, MidpointRounding.AwayFromZero);
     }
 
@@ -114,7 +114,10 @@ public partial class StockCountPage : UserControl
         {
             using var facade = new DesktopAccountingFacade();
             var username = SecurityContext.ResolveUsername();
-            var lines = _rows.Select(r => (r.ProductId, r.SystemQty, r.CountedQty)).ToList();
+            // (م2-٢٤) التكلفة المُدخَلة تُمرَّر، والخدمةُ تقبلها فقط لصنفٍ لا تكلفة له.
+            var lines = _rows
+                .Select(r => (r.ProductId, r.SystemQty, r.CountedQty, (decimal?)r.UnitCost))
+                .ToList();
             var posted = await facade.GetService<StockCountAdjustmentService>().PostVariancesAsync(
                 AppServices.CompanyId, whId, DateOnly.FromDateTime(DateTime.Today), lines, username);
 

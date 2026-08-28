@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
@@ -9,9 +9,20 @@ namespace Brqosh.Infrastructure.Inventory;
 /// <summary>ترحيل فروقات الجرد — تسوية زيادة/نقص مخزون.</summary>
 public class StockCountAdjustmentService(BrqoshDbContext db)
 {
+    /// <summary>
+    /// ترحيل فروقات الجرد.
+    ///
+    /// <para>(CEEF-229 · م2-٢٤) <c>OpeningUnitCost</c> تكلفةٌ يُدخلها المالك لصنفٍ <b>لا تكلفة
+    /// له بعد</b> — وهو حال كل صنفٍ في أوّل جردٍ تُجريه المنشأة. وبدونها يدخل المخزون بكميّةٍ
+    /// بلا قيمة، فيُقيَّد أوّلُ بيعٍ له تكلفةً صفراً <b>ويُضخَّم مجمل الربح</b>.</para>
+    ///
+    /// <para><b>وقاعدةٌ لا تُخترق:</b> تُستعمل <b>فقط</b> حين يكون متوسط تكلفة الصنف صفراً.
+    /// فالجردُ لا يجوز أن يكون باباً خلفياً لإعادة كتابة تقييم المخزون: من له تكلفةٌ محسوبة
+    /// من مشترياته لا تُمسّ بإدخالٍ يدويّ.</para>
+    /// </summary>
     public async Task<int> PostVariancesAsync(
         long companyId, long warehouseId, DateOnly countDate,
-        IReadOnlyList<(long ProductId, decimal SystemQty, decimal CountedQty)> lines,
+        IReadOnlyList<(long ProductId, decimal SystemQty, decimal CountedQty, decimal? OpeningUnitCost)> lines,
         string username, CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPost();
@@ -37,7 +48,13 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
                 {
                     var product = await db.Products.SingleAsync(p => p.Id == v.ProductId, token);
                     var qty = v.CountedQty - v.SystemQty;
-                    movement.AddLine(v.ProductId, qty, product.WeightedAverageCost);
+
+                    // التكلفة المُدخَلة تُقبل **فقط** حين لا تكلفة للصنف — انظر الشرح على الدالّة.
+                    var unitCost = product.WeightedAverageCost;
+                    if (unitCost == 0m && v.OpeningUnitCost is decimal supplied && supplied > 0m)
+                        unitCost = supplied;
+
+                    movement.AddLine(v.ProductId, qty, unitCost);
                 }
                 await posting.PostAsync(movement);
                 movementsPosted++;
