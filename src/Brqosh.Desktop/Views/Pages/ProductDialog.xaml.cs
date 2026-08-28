@@ -1,4 +1,5 @@
-using System.Globalization;
+﻿using System.Globalization;
+using Brqosh.Infrastructure.Inventory;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
@@ -43,6 +44,14 @@ public partial class ProductDialog : Window
             }
             else
             {
+                // (CEEF-229 · م2-٢٧) فحصُ الكود قبل الحفظ — وإلا تحدّثت قاعدة البيانات بلغتها:
+                // انتهاكُ تفرّدٍ يُعرض نصُّه الإنجليزيّ في حوارٍ عربيّ، والمالك لا يرى الصنف
+                // الحاجز في أيّ قائمة (قد يكون محذوفاً) ولا يفهم لماذا رُفض كوده.
+                var availability = await new ProductCodeAvailabilityQuery(db)
+                    .CheckAsync(AppServices.CompanyId, CodeBox.Text);
+                if (ProductCodeAvailabilityQuery.Explain(availability, CodeBox.Text.Trim()) is string reason)
+                    throw new AccountingException(reason);
+
                 var product = Product.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text, UnitBox.Text,
                     type, price, BarcodeBox.Text);
                 db.Products.Add(product);

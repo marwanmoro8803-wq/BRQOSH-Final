@@ -86,14 +86,11 @@ public partial class PurchaseInvoiceDialog : Window
             if (SupplierCombo.SelectedValue is not long supplierId)
                 throw new AccountingException("اختر المورد.");
 
-            var invoice = PurchaseInvoice.CreateDraft(
+            var invoice = BuildInvoiceFromRows(
                 AppServices.CompanyId, supplierId,
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value),
                 ReferenceBox.Text,
                 DeductibleCheck.IsChecked == true);
-
-            foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
-                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.PostPurchaseInvoiceAsync(invoice);
@@ -107,6 +104,30 @@ public partial class PurchaseInvoiceDialog : Window
             ErrorText.Visibility = Visibility.Visible;
         }
     }
+
+
+    /// <summary>
+    /// (CEEF-229 · م2-٢٦) الوصلة بين شبكة الشراء والنطاق — مُستخرَجةٌ كي تُقاس، كما في
+    /// فاتورة المبيعات. وهذا الجانب أثقل: الشراء هو ما <b>يُدخل</b> البضاعة المستودعَ، فبضياع
+    /// <c>ProductId</c> هنا لا يدخل شيء، ويصطدم أوّلُ بيعٍ بحارس «الرصيد غير كافٍ».
+    /// </summary>
+    internal PurchaseInvoice BuildInvoiceFromRows(
+        long companyId, long supplierId, DateOnly invoiceDate, string reference, bool vatDeductible)
+    {
+        var invoice = PurchaseInvoice.CreateDraft(
+            companyId, supplierId, invoiceDate, reference, vatDeductible);
+
+        foreach (var row in _rows.Where(r =>
+                     !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
+        {
+            invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
+        }
+
+        return invoice;
+    }
+
+    /// <summary>صفوفُ الشبكة — للاختبار وحده.</summary>
+    internal System.Collections.ObjectModel.ObservableCollection<SalesInvoiceDialog.LineRow> RowsForTests => _rows;
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {
