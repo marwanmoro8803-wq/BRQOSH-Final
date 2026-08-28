@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Automation;
@@ -32,12 +32,16 @@ public partial class ProductsPage : UserControl
     {
         var filter = SearchBox.Text.Trim();
         await using var db = AppServices.CreateDb();
-        var query = db.Products.Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive);
+        // (CEEF-229 · م2-٢٣) الموقوف يظهر عند طلبه — لا يختفي إلى الأبد.
+        var showInactive = ShowInactiveCheck.IsChecked == true;
+        var query = db.Products.Where(p =>
+            p.CompanyId == AppServices.CompanyId && (p.IsActive || showInactive));
         if (!string.IsNullOrEmpty(filter))
             query = query.Where(p => p.Code.Contains(filter) || p.NameAr.Contains(filter));
 
         _items = await query.OrderBy(p => p.Code).Take(PageSize).ToListAsync();
-        var total = await db.Products.CountAsync(p => p.CompanyId == AppServices.CompanyId && p.IsActive);
+        var total = await db.Products.CountAsync(p =>
+            p.CompanyId == AppServices.CompanyId && (p.IsActive || showInactive));
         Render(filter);
         var stockable = _items.Count(p => p.Type == ProductType.Stockable);
         InventorySummaryText.Text =
@@ -82,6 +86,35 @@ public partial class ProductsPage : UserControl
             await using var db = AppServices.CreateDb();
             var product = await db.Products.SingleAsync(p => p.Id == row.Id);
             product.Deactivate();
+            await db.SaveChangesAsync();
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>(م2-٢٣) تبديل إظهار الموقوف — وزرُّ إعادة التفعيل يظهر معه.</summary>
+    private async void OnToggleInactive(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        ReactivateBtn.Visibility = ShowInactiveCheck.IsChecked == true
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        await ReloadAsync();
+    }
+
+    /// <summary>(م2-٢٣) إعادة تفعيل صنفٍ موقوف — الطريق الذي لم يكن موجوداً.</summary>
+    private async void OnReactivate(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row) return;
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var product = await db.Products.SingleAsync(p => p.Id == row.Id);
+            product.Reactivate();
             await db.SaveChangesAsync();
             await ReloadAsync();
         }

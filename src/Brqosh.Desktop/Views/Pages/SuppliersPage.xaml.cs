@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Automation;
@@ -34,15 +34,17 @@ public partial class SuppliersPage : UserControl
 
     private async Task ReloadAsync()
     {
+        // (م2-٢٣) الموقوف يظهر عند طلبه.
+        var showInactive = ShowInactiveCheck.IsChecked == true;
         var filter = SearchBox.Text.Trim();
         await using var db = AppServices.CreateDb();
         var query = db.Suppliers
-            .Where(s => s.CompanyId == AppServices.CompanyId && s.IsActive);
+            .Where(s => s.CompanyId == AppServices.CompanyId && (s.IsActive || showInactive));
         if (!string.IsNullOrEmpty(filter))
             query = query.Where(s => s.NameAr.Contains(filter) || s.VatRegistrationNumber.Contains(filter));
 
         _suppliers = await query.OrderBy(s => s.NameAr).Take(PageSize).ToListAsync();
-        var total = await db.Suppliers.CountAsync(s => s.CompanyId == AppServices.CompanyId && s.IsActive);
+        var total = await db.Suppliers.CountAsync(s => s.CompanyId == AppServices.CompanyId && (s.IsActive || showInactive));
         _balances = await new SupplierBalanceQuery(db).AllBalancesAsync(AppServices.CompanyId);
         Render(filter);
         var totalAp = _balances.Values.Sum();
@@ -88,6 +90,35 @@ public partial class SuppliersPage : UserControl
             await using var db = AppServices.CreateDb();
             var supplier = await db.Suppliers.SingleAsync(s => s.Id == row.Id);
             supplier.Deactivate();
+            await db.SaveChangesAsync();
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>(م2-٢٣) تبديل إظهار الموقوف.</summary>
+    private async void OnToggleInactive(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        ReactivateBtn.Visibility = ShowInactiveCheck.IsChecked == true
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        await ReloadAsync();
+    }
+
+    /// <summary>(م2-٢٣) إعادة التفعيل — الطريق الذي لم يكن موجوداً.</summary>
+    private async void OnReactivate(object sender, RoutedEventArgs e)
+    {
+        if (SuppliersGrid.SelectedItem is not SupplierRow row) return;
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var entity = await db.Suppliers.SingleAsync(x => x.Id == row.Id);
+            entity.Reactivate();
             await db.SaveChangesAsync();
             await ReloadAsync();
         }

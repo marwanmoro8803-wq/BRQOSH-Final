@@ -53,11 +53,13 @@ public partial class ReceiptVoucherDialog : Window
     private async Task LoadCustomersAsync()
     {
         await using var db = AppServices.CreateDb();
-        var customers = await db.Customers
-            .Where(c => c.CompanyId == AppServices.CompanyId && c.IsActive)
-            .OrderBy(c => c.NameAr)
-            .Select(c => new CustomerOption(c.Id, c.NameAr))
-            .ToListAsync();
+        // (CEEF-229 · م2-٢٢) «من عليه رصيدٌ يُحصَّل منه» لا «النشط يُحصَّل منه».
+        // كان الترشيح بـ IsActive وحده، فيصير العميل الموقوف غير قابلٍ للتحصيل بينما ذمّتُه
+        // باقيةٌ في الأستاذ — مالٌ مسجَّل بلا طريقٍ لإقفاله. والقاعدة في استعلامٍ مستقلّ
+        // كي تُقاس بهوية «مجموع أرصدة القابلين للاختيار == رصيد المدينين».
+        var customers = (await new CollectableCustomersQuery(db).ExecuteAsync(AppServices.CompanyId))
+            .Select(c => new CustomerOption(c.Id, c.IsActive ? c.NameAr : $"{c.NameAr} (موقوف)"))
+            .ToList();
         CustomerCombo.ItemsSource = customers;
         if (customers.Count > 0)
             CustomerCombo.SelectedIndex = 0;

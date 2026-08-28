@@ -94,6 +94,19 @@ public class StockMovementPostingService(BrqoshDbContext db)
 
     private async Task<JournalEntry?> BuildJournalEntryAsync(StockMovement movement, Account inventory, InventoryService inv)
     {
+        // (CEEF-229 · م2-٢١) حركةٌ قيمتُها صفر **لا قيدَ لها** — لا قيدٌ بأصفار.
+        //
+        // كان القيد يُبنى دائماً، فيمرّ على `AddLine(inventory, 0m, 0m)` ويرمي «سطر القيد يجب
+        // أن يحمل مبلغاً مديناً أو دائناً». وذلك يقع في **اليوم الأول** من حياة كل منشأة:
+        // تُدخل دليل أصنافها ثم تجري جرداً لإثبات الأرصدة الافتتاحية، وكلُّ صنفٍ لم يُشترَ بعدُ
+        // متوسطُ تكلفته صفر — فيرتدّ الجرد **بأكمله** برسالةٍ لا علاقة لها بما فعل المستخدم،
+        // وعمودُ تكلفة الوحدة في الشاشة للقراءة فقط فلا يستطيع تصحيحه.
+        //
+        // والامتناع عن القيد ليس التفافاً بل الصواب المحاسبيّ: حركةٌ بلا قيمة لا أثر لها في
+        // الأستاذ. والكمية تُسجَّل، وهوية المخزون (رصيد الحساب == Σ الكمية × المتوسط) تبقى
+        // صادقة لأن الطرفين صفر. ويظلّ الجردُ المختلط يُرحَّل قيدَ ما له تكلفة وحده.
+        // الحارس داخل كل بانٍ لا هنا: `AdjustmentOut` يستهلك طبقات التكلفة قبل أن يعرف
+        // مجموعه، فالخروج المبكر هنا كان سيتخطّى الاستهلاك ويترك طبقاتٍ معلّقة.
         return movement.Type switch
         {
             StockMovementType.Opening => await OpeningEntryAsync(movement, inventory),
@@ -104,9 +117,12 @@ public class StockMovementPostingService(BrqoshDbContext db)
         };
     }
 
-    private async Task<JournalEntry> OpeningEntryAsync(StockMovement movement, Account inventory)
+    private async Task<JournalEntry?> OpeningEntryAsync(StockMovement movement, Account inventory)
     {
+        if (movement.TotalValue == 0m) return null;
+
         var retained = await AccountAsync(movement.CompanyId, SaudiChartOfAccounts.SystemCodes.RetainedEarnings);
+
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockOpening");
         entry.AddLine(inventory, movement.TotalValue, 0m, "رصيد افتتاحي للمخزون");
@@ -114,9 +130,12 @@ public class StockMovementPostingService(BrqoshDbContext db)
         return entry;
     }
 
-    private async Task<JournalEntry> AdjustmentInEntryAsync(StockMovement movement, Account inventory)
+    private async Task<JournalEntry?> AdjustmentInEntryAsync(StockMovement movement, Account inventory)
     {
+        if (movement.TotalValue == 0m) return null;
+
         var equity = await AccountAsync(movement.CompanyId, SaudiChartOfAccounts.SystemCodes.RetainedEarnings);
+
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockAdjustmentIn");
         entry.AddLine(inventory, movement.TotalValue, 0m, "زيادة مخزون — جرد");
@@ -124,7 +143,7 @@ public class StockMovementPostingService(BrqoshDbContext db)
         return entry;
     }
 
-    private async Task<JournalEntry> AdjustmentOutEntryAsync(StockMovement movement, Account inventory, InventoryService inv)
+    private async Task<JournalEntry?> AdjustmentOutEntryAsync(StockMovement movement, Account inventory, InventoryService inv)
     {
         var costing = new InventoryCostingService(db);
         decimal total = 0;
@@ -134,6 +153,8 @@ public class StockMovementPostingService(BrqoshDbContext db)
                 movement.CompanyId, line.ProductId, movement.WarehouseId, line.Quantity);
             total += lineCost;
         }
+        if (total == 0m) return null;
+
         var misc = await AccountAsync(movement.CompanyId, "5215");
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockAdjustmentOut");

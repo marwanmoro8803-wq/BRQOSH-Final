@@ -241,5 +241,8 @@
   "المدينة": "City",
   "الرمز البريدي (5 خانات)": "Postal code (5 digits)",
   "المنطقة": "Region",
-  "رمز الدولة": "Country code"
+  "رمز الدولة": "Country code",
+  "إظهار الموقوف": "Show inactive",
+  "إعادة تفعيل": "Reactivate",
+  "الصنف": "Item"
 }

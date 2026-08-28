@@ -1,4 +1,4 @@
-<UserControl x:Class="Brqosh.Desktop.Views.Pages.ProductsPage"
+﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.ProductsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -16,6 +16,14 @@
                             Padding="18,9" Click="OnAdd"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <!-- (CEEF-229 · م2-٢٣) مفتاح «إظهار الموقوف» وزرّ «إعادة تفعيل» — كان
+                     الإيقاف قراراً بلا رجعة من الواجهة: الصنف يختفي من القائمة ولا زرّ يُعيده. -->
+                <Button x:Name="ReactivateBtn" DockPanel.Dock="Right" Content="إعادة تفعيل"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9"
+                        Click="OnReactivate" Visibility="Collapsed"/>
+                <CheckBox x:Name="ShowInactiveCheck" DockPanel.Dock="Right" Content="إظهار الموقوف"
+                          VerticalAlignment="Center" Margin="12,0"
+                          Checked="OnToggleInactive" Unchecked="OnToggleInactive"/>
                 <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9"
                         Click="OnDeactivate"/>
