@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Application.Intelligence;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Modules;
@@ -30,6 +31,7 @@ public class AssistantBilingualTests : IDisposable
 
     public AssistantBilingualTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()

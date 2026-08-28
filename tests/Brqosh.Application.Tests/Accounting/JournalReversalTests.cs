@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Accounting;
@@ -8,6 +9,8 @@ namespace Brqosh.Application.Tests.Accounting;
 
 public class JournalReversalTests
 {
+    public JournalReversalTests() => TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
+
     [Fact]
     public async Task Manual_journal_entry_can_be_reversed()
     {

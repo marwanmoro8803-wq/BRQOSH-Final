@@ -11,6 +11,23 @@ namespace Brqosh.Infrastructure.Platform;
 
 public class TenantProvisioningService(BrqoshDbContext db) : ITenantProvisioningService
 {
+    /// <summary>
+    /// (CEEF-229 · م2-١) <b>غياب <c>EnsureAdministrator</c> هنا مقصود — والتوثيق هو الإصلاح.</b>
+    ///
+    /// <para>رُفعت هذه الدالّة بوصفها «عمليةً حسّاسة بلا حارس»، ونظيرُها
+    /// <c>OrganizationProvisioningService.ProvisionAsync</c> يفتتح فعلاً بـ
+    /// <c>EnsureAdministrator</c> — فالتناظر ظاهرُه مقنع. لكنّ التحقّق أظهر أن الطرفين ليسا
+    /// نظيرَين: هذه تُبلَغ من <c>POST /api/v1/tenants/provision</c> وحده، وهو محروسٌ بمفتاح
+    /// <c>X-Provisioning-Key</c> منفصلٍ عن مفتاح API العامّ ومطلوبٍ في الإنتاج. أي أن التفويض
+    /// قائم، لكن بآليةٍ أخرى: <b>سرٌّ بين آلتين، لا دورُ مستخدم</b>.</para>
+    ///
+    /// <para>ولا يصحّ إضافة الحارس: مُهيِّئ المستأجرين خدمةٌ تُنشئ المنشأة <b>قبل أن يوجد فيها
+    /// مستخدمٌ أصلاً</b>، فلا دور لتفحصه. وقد صار دور مستدعي API يفشل إلى <c>Viewer</c> في
+    /// الإنتاج (انظر <c>ApiSecuritySettings.ResolveApiRole</c>)، فحارسٌ هنا كان يُعطّل تهيئة
+    /// المستأجرين كلَّها.</para>
+    ///
+    /// <para>يبقى الشرح مكتوباً كي لا يُعاد هذا التحليل، ولا يُضاف الحارس ظنّاً أن غيابه سهو.</para>
+    /// </summary>
     public async Task<TenantProvisionResult> ProvisionAsync(TenantProvisionRequest request, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.CompanyNameAr))

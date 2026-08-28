@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Inventory;
@@ -16,6 +17,7 @@ public class StockTransferTests : IDisposable
 
     public StockTransferTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _db = BrqoshDbContextFactory.Create(DatabaseProvider.Sqlite, "Data Source=:memory:");
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();

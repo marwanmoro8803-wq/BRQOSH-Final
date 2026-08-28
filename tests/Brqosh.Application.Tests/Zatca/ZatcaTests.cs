@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Modules;
+﻿using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
@@ -16,6 +17,7 @@ public class ZatcaTests : IDisposable
 
     public ZatcaTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>().UseSqlite(_connection).Options);

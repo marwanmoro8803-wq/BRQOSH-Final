@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Application.Setup;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Security;
@@ -16,6 +17,7 @@ public class OrganizationProvisioningTests : IDisposable
 
     public OrganizationProvisioningTests()
     {
+        TestActor.Administrator();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()

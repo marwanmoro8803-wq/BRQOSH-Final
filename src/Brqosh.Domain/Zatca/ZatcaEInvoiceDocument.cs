@@ -93,6 +93,24 @@ public class ZatcaEInvoiceDocument : IBranchScoped
         ZatcaResponseJson = responseJson;
         LastStatusAtUtc = DateTime.UtcNow;
     }
+
+    /// <summary>
+    /// (CEEF-229 · م2-١) تسجيل سببِ فشلِ إرسالٍ تلقائيّ — <b>بلا تغيير الحالة</b>.
+    ///
+    /// <para>الحالة تبقى كما هي (<c>ReadyToReport</c> أو <c>ReadyToClear</c>) عمداً: الفشل قد
+    /// يكون انقطاعاً عابراً، والمستند يجب أن يظلّ مؤهَّلاً لإرسالٍ لاحق. المتغيّر الوحيد أن
+    /// السبب صار <b>مكتوباً</b> بدل أن يُبتلع في <c>catch</c> صامت — إذ كان الفرق بين «الشبكة
+    /// مقطوعة الآن» و«هذا المستخدم لا يملك صلاحية الإرسال أصلاً» يختفي تماماً، فتبدو البيعة
+    /// ناجحة وفاتورتها لن تصل الهيئة أبداً.</para>
+    ///
+    /// <para>ولا يُعدّ هذا رفضاً من الهيئة — <see cref="MarkRejected"/> وحده لذلك، وهو يعني
+    /// أن المستند وصلها ورُدّ.</para>
+    /// </summary>
+    public void RecordSubmissionFailure(string reason)
+    {
+        ZatcaResponseJson = $"{{\"autoSubmitFailed\":true,\"reason\":{System.Text.Json.JsonSerializer.Serialize(reason)}}}";
+        LastStatusAtUtc = DateTime.UtcNow;
+    }
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

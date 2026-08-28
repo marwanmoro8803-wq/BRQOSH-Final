@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  (CEEF-229 · م2-٣) إعداد التغطية المشترك لكل مشاريع الاختبار.
+
+  كان الاستثناء معرَّفاً في `Brqosh.Application.Tests/test.runsettings` وحده، فكان كل مشروع
+  اختبارٍ آخر يقيس **ملفات ترحيل EF المولَّدة آلياً** ضمن حسابه. والأثر ليس تجميلياً: تجميعة
+  Infrastructure تُقاس بـ38,652 سطراً حين تُضمّ الترحيلات مقابل 18,964 حين تُستثنى — أي أن
+  الرقم المنشور يتغيّر من 73% إلى 29% تبعاً لأيّ مشروعٍ اختبارٍ أنهى أخيراً، لا لأيّ تغيّرٍ
+  في الكود. فمقارنة رقمين قيسا بمقياسين مختلفين لا تعني شيئاً.
+
+  ولأن الترحيلات كودٌ مولَّد لا يُكتب له اختبار، فاستثناؤها هو السياسة الصحيحة — والعطل كان
+  في **عدم اطّرادها**، لا في وجودها.
+
+  ملاحظة: `BRQOSH_TEST` كان هنا ويُطفئ طبقة الصلاحيات كاملةً (م2-١) — حُذف، ولم يعد له أثرٌ
+  على الصلاحيات أصلاً بعد نزع التجاوز من `SecurityContext`.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <BRQOSH_SKIP_STRESS>1</BRQOSH_SKIP_STRESS>
+    </EnvironmentVariables>
+  </RunConfiguration>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>[*]*Persistence.Migrations.*,[*]*Designer*</Exclude>
+          <ExcludeByFile>**/Migrations/**</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

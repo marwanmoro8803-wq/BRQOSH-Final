@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
 using Brqosh.Domain.Modules;
@@ -18,6 +19,7 @@ public class FixedAssetAcquisitionTests : IDisposable
 
     public FixedAssetAcquisitionTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()

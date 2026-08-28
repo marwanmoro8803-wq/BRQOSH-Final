@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Modules;
@@ -14,6 +15,7 @@ public class Ifrs15CostToCostTests : IDisposable
 
     public Ifrs15CostToCostTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _db = BrqoshDbContextFactory.Create(DatabaseProvider.Sqlite, "Data Source=:memory:");
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();

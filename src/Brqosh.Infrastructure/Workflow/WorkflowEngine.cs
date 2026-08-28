@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 
 using Brqosh.Domain.Security;
 
@@ -150,7 +150,20 @@ public sealed class WorkflowEngine(BrqoshDbContext db) : IWorkflowEngine
 
     {
 
-        var instance = await db.WorkflowInstances.SingleAsync(w => w.Id == workflowInstanceId, ct);
+        // (CEEF-229 · م2-١) الرفض يتطلّب ما تتطلّبه الموافقة — وكان سائباً تماماً.
+        //
+        // الموافقة محروسة بـ EnsureCanApprove والرفض بلا فحصٍ إطلاقاً، **في الملف نفسه**.
+        // والاثنان يحسمان مصير المستند بالقدر ذاته: أيّ دور — بما فيه «مُطّلع» — كان يستطيع
+        // رفض أمر شراءٍ أو سند صرفٍ أو قيد يوميّة نهائياً. وهو حرمانُ خدمةٍ ماليّ: تعطيل دورة
+        // الشراء والصرف كلّها بيد مستخدمٍ لا يملك إلا القراءة. والأثر كان يتدفّق إلى أربع
+        // خدماتٍ فوقها، ولا حارس في أيٍّ منها.
+        var instance = await db.WorkflowInstances
+            .Include(w => w.Approvals)
+            .SingleAsync(w => w.Id == workflowInstanceId, ct);
+        var chain = GetChain(instance.DocumentKind);
+        var slot = instance.CurrentRequiredSlot(chain)
+            ?? throw new AccountingException("لا توجد خطوة موافقة معلّقة.");
+        EnsureCanApprove(instance.DocumentKind, slot);
 
         instance.Reject(rejectedBy, reason);
 

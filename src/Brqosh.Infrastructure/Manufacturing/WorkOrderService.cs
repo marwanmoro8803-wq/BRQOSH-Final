@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Manufacturing;
 using Brqosh.Infrastructure.Accounting;
@@ -14,6 +14,11 @@ public class WorkOrderService(BrqoshDbContext db)
     public async Task<WorkOrder> ReleaseAsync(long companyId, long workOrderId, CancellationToken ct = default) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
+            // (CEEF-229 · م2-١) جارتاها في هذا الملف محروستان (CompleteAsync بـ EnsureCanPost
+            // و CancelAsync بـ EnsureCanCancelOrReverse) وهي وحدها سائبة — رغم أنها **تستهلك
+            // رقماً من متسلسلة المستندات**، وفجوةُ الترقيم أثرٌ لا يُردم.
+            SecurityContext.EnsureCanPost();
+
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
             var number = await DocumentNumberGenerator.NextAsync(
                 db.WorkOrders.Where(w => w.CompanyId == companyId).Select(w => w.OrderNumber),

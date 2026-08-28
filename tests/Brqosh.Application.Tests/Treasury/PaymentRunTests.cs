@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Persistence;
@@ -15,6 +16,7 @@ public class PaymentRunTests : IDisposable
 
     public PaymentRunTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()

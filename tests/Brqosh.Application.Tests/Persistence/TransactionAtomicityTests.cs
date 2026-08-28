@@ -1,4 +1,4 @@
-using Brqosh.Application.Tests.TestSupport;
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
@@ -17,6 +17,7 @@ public class TransactionAtomicityTests : IDisposable
 
     public TransactionAtomicityTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _db = BrqoshDbContextFactory.Create(DatabaseProvider.Sqlite, "Data Source=:memory:");
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();

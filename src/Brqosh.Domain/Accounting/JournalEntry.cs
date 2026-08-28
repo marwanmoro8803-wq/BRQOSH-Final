@@ -113,6 +113,33 @@ public class JournalEntry : IBranchScoped
         CounterpartyCompanyId = counterpartyCompanyId;
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-٨) سُلَّم الهللة — <b>ثابتةٌ صحيحةٌ بالبناء لا مفحوصةٌ بعد الوقوع</b>.
+    ///
+    /// <para><b>العطل المقيس:</b> <c>IsBalanced</c> يقارن قيمتَين في الذاكرة، وعمودا المبلغ
+    /// <c>numeric(18,2)</c>. فقيدٌ سطراه مدينان بـ10.005 وسطرُه الدائن 20.01 <b>متوازنٌ في
+    /// الذاكرة</b> — إذ تتجاهل مساواةُ <c>decimal</c> فرقَ السُّلَّم فـ<c>20.010m == 20.01m</c> —
+    /// ثم يُقرِّب PostgreSQL <b>كل سطرٍ على حدة</b> فيُخزَّن 10.01 + 10.01 = 20.02 مقابل 20.01.
+    /// أي أن الأستاذ يفقد توازنه بهللة، والقيدُ مرحَّلٌ نظاميّاً.</para>
+    ///
+    /// <para>القياس أُجري على PostgreSQL حيّة لا استنتاجاً:
+    /// <c>SELECT 10.005::numeric(18,2) + 10.005::numeric(18,2)</c> ⟵ <c>20.02</c>.</para>
+    ///
+    /// <para><b>ولماذا لم يكشفه اختبار:</b> الاختبارات كلُّها على SQLite، وهو يخزّن
+    /// <c>decimal</c> بدقّته الكاملة ويتجاهل <c>HasPrecision</c> — فالتقريب الذي يقع في
+    /// الإنتاج لا يقع في الاختبار أبداً. ومدخلُه متاحٌ اليوم من شاشة القيد اليدويّ: الحقل
+    /// يعرض بـ<c>N2</c> ويقبل ما يُكتب، والشاشة تُظهر «✓ متوازن» بالأخضر لقيدٍ سيُخزَّن مختلاً.</para>
+    ///
+    /// <para>المقارنة بالقيمة لا بالسُّلَّم عمداً: <c>10.0000m</c> مقبولة لأنها تساوي
+    /// <c>10.00m</c> بعد التقريب — المرفوض هو ما <b>يتغيّر</b> بالتقريب.</para>
+    /// </summary>
+    private static void EnsureHalalaScale(decimal debit, decimal credit)
+    {
+        if (debit != decimal.Round(debit, 2) || credit != decimal.Round(credit, 2))
+            throw new AccountingException(
+                "مبلغ السطر يتجاوز خانتَي الهللة — قرِّب المبلغ قبل الترحيل.");
+    }
+
     public void AddLine(Account account, decimal debit, decimal credit, string? lineDescription = null, long? costCenterId = null)
     {
         EnsureDraft("إضافة سطر");
@@ -125,6 +152,7 @@ public class JournalEntry : IBranchScoped
             throw new AccountingException("لا يجوز أن يكون السطر مديناً ودائناً في آنٍ واحد.");
         if (debit == 0 && credit == 0)
             throw new AccountingException("سطر القيد يجب أن يحمل مبلغاً مديناً أو دائناً.");
+        EnsureHalalaScale(debit, credit);
 
         _lines.Add(new JournalLine(account.Id, account.Code, debit, credit, lineDescription?.Trim(), costCenterId));
     }
@@ -151,6 +179,7 @@ public class JournalEntry : IBranchScoped
             throw new AccountingException("لا يجوز أن يكون السطر مديناً ودائناً في آنٍ واحد.");
         if (debit == 0 && credit == 0)
             throw new AccountingException("سطر القيد يجب أن يحمل مبلغاً مديناً أو دائناً.");
+        EnsureHalalaScale(debit, credit);
 
         _lines.Add(new JournalLine(account.Id, account.Code, debit, credit, lineDescription?.Trim(), null));
     }

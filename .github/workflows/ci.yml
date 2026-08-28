@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -42,15 +42,14 @@ jobs:
           --results-directory TestResults
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
-      # 75% line-rate on collected cobertura (Application.Tests dominate; not full-solution LOC).
-      - name: Enforce coverage gate (75% line-rate)
+      # (CEEF-229 · م2-٣) بوابة واحدة مُلزِمة، تدمج تقارير cobertura كلَّها اتّحاداً وتحكم
+      # لكل تجميعة بعتبتها. حُذفت الخطوة «المعلوماتية» الثانية: كانت هي **الصادقة الوحيدة**
+      # (حكمٌ لكل تجميعة) و`continue-on-error: true` يبتلع عضّتها — بينما البوابة المُلزِمة
+      # تقرأ ملفاً واحداً تختاره بترتيب انتهاء العمليات. أي أن المُلزِم كان لا يقيس، والذي
+      # يقيس كان غير مُلزِم. صارت واحدة تقيس وتُلزم.
+      - name: Enforce coverage gate (merged, per-assembly floors)
         shell: pwsh
-        run: ./scripts/check-coverage.ps1 -MinimumLineRate 0.75
-
-      - name: Report per-assembly coverage (informational)
-        shell: pwsh
-        continue-on-error: true
-        run: ./scripts/check-coverage-by-assembly.ps1 -MinimumLineRate 0.75
+        run: ./scripts/check-coverage.ps1
 
       - name: Upload coverage artifact
         if: always()

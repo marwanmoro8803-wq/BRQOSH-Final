@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Modules;
+﻿using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Domain.Modules;
 using Brqosh.Domain.Retail;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
@@ -10,6 +11,8 @@ namespace Brqosh.Application.Tests.Retail;
 
 public class PosZatcaTests
 {
+    public PosZatcaTests() => TestActor.Cashier();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
+
     [Fact]
     public async Task Pos_sale_generates_and_submits_zatca_in_simulation()
     {

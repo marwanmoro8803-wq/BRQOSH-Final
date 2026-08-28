@@ -1,4 +1,4 @@
-using Brqosh.Application.Setup;
+﻿using Brqosh.Application.Setup;
 using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Security;
 
@@ -76,27 +76,8 @@ public class ProductionBypassGuardTests : IDisposable
             $"شركة-غير-مرخّصة-{Guid.NewGuid():N}", DateTime.UtcNow));
     }
 
-    /// <summary>
-    /// تجاوز RBAC بـ<c>BRQOSH_TEST</c> يجب أن يبقى ميتاً في الإنتاج مهما تسرّب المتغيّر.
-    /// (يحرس <c>SecurityContext.AutomatedTestBypass</c> — CEEF-125.)
-    /// </summary>
-    [Fact]
-    public void RbacTestBypass_IsDead_InProduction()
-    {
-        var priorTest = Environment.GetEnvironmentVariable("BRQOSH_TEST");
-        try
-        {
-            Environment.SetEnvironmentVariable("BRQOSH_TEST", "1");
-            AppEnvironmentConfig.ForceForTests(AppEnvironment.Production);
-            SecurityContext.CurrentRole = null;
-
-            Assert.Throws<Brqosh.Domain.Accounting.AccountingException>(() => SecurityContext.EnsureCanPost());
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("BRQOSH_TEST", priorTest);
-            SecurityContext.CurrentRole = null;
-            AppEnvironmentConfig.ResetForTests();
-        }
-    }
+    /// (CEEF-229 · م2-١) <b>حُذف تجاوز RBAC من أصله</b> — فلم يعد الادعاء «ميتٌ في الإنتاج»
+    /// بل «غير موجود في أيّ بيئة». جدول الحقيقة الكامل في
+    /// <see cref="SecurityContextProductionGuardTests"/>: الحرّاس الأربعة تحت خمس حالات فاعل
+    /// وثلاث بيئات. أُبقيت هذه الإشارة كي لا يُعاد التجاوز ظنّاً أن حذفه سهو.
 }

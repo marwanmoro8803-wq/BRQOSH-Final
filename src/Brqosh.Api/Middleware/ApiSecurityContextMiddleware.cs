@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Setup;
 using Brqosh.Domain.Security;
 using Brqosh.Infrastructure.Security;
 
@@ -15,10 +16,13 @@ public sealed class ApiSecurityContextMiddleware(RequestDelegate next)
                 ? userHeader.ToString().Trim()
                 : "api-integration";
 
-            var role = UserRole.Administrator;
-            if (ctx.Request.Headers.TryGetValue("X-Api-Role", out var roleHeader)
-                && Enum.TryParse<UserRole>(roleHeader.ToString(), ignoreCase: true, out var parsed))
-                role = parsed;
+            // (CEEF-229 · م2-١) الدور يُضبط خادمياً، والترويسة تُضيّقه ولا تُوسّعه.
+            // كان يبدأ من `Administrator` ثم تُغيّره ترويسةٌ يرسلها المستدعي — فإغفالها يمنح
+            // أعلى امتياز، وتُصبح مواضع فرض الصلاحيات السبعون بلا أثرٍ على سطح API كلّه.
+            var configured = ApiSecuritySettings.ResolveApiRole(AppEnvironmentConfig.IsProduction);
+            var role = ctx.Request.Headers.TryGetValue("X-Api-Role", out var roleHeader)
+                ? ApiSecuritySettings.NarrowByRequest(configured, roleHeader.ToString())
+                : configured;
 
             SecurityContext.CurrentUsername = username;
             SecurityContext.CurrentRole = role;

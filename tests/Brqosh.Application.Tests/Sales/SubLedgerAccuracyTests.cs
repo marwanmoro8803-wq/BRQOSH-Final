@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Purchasing;
@@ -26,6 +27,7 @@ public class SubLedgerAccuracyTests : IDisposable
 
     public SubLedgerAccuracyTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()

@@ -56,9 +56,40 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
+    /// <summary>
+    /// إرسالٌ <b>بطلب المستخدم</b> — من شاشة ZATCA أو إعادة محاولةٍ يدوية. يتطلّب صلاحية
+    /// العمليات المحاسبية، فهو قرارُ مستخدمٍ مستقلٌّ عن أيّ ترحيل.
+    /// </summary>
     public async Task<ZatcaEInvoiceDocument> SubmitAsync(long documentId)
     {
         SecurityContext.EnsureCanPostAccounting();
+        return await SubmitCoreAsync(documentId);
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م2-١) إرسالٌ <b>كأثرٍ تابعٍ لترحيلٍ مأذونٍ به</b> — لا يُعيد فحص الدور، عمداً.
+    ///
+    /// <para><b>العطل الذي أوجب هذا الفصل، وكيف ظهر:</b> كان المسار التلقائيّ يستدعي
+    /// <see cref="SubmitAsync"/> بحارسه، وذاك يرفض <c>Cashier</c>. وأمين الصندوق هو <b>مُشغّل
+    /// نقطة البيع فعلاً</b>. فكانت كل بيعةٍ يُجريها تُنتج مستنداً يُرفض إرساله، ويبتلع
+    /// <see cref="ZatcaAutoSubmissionHelper"/> الرفضَ مع أخطاء الشبكة، فيبقى المستند
+    /// <c>ReadyToReport</c> بلا أن يعلم أحد: البيعة تنجح، والإيصال يُطبع، والفاتورة لا تصل
+    /// الهيئة أبداً.</para>
+    ///
+    /// <para><b>ولم يكشفه اختبارٌ قطّ</b> لأن اختبارات نقطة البيع كانت تعمل بلا فاعل أصلاً
+    /// (<c>BRQOSH_TEST=1</c> يُطفئ الطبقة)، فلم تُشغَّل نقطةُ البيع بدور أمين صندوق ولا مرّة.
+    /// ظهر في اللحظة التي أُعطي فيها اختبارُ نقطة البيع فاعلَه الحقيقيّ.</para>
+    ///
+    /// <para><b>ولماذا لا يُخفَّض حارس <see cref="SubmitAsync"/> بدل ذلك:</b> لأن الإذن
+    /// مُنح عند <b>البيعة</b> لا عند الإرسال. أمين الصندوق مأذونٌ له بالبيع، والإبلاغ عن البيع
+    /// واجبٌ نظاميّ يتبعه لا عمليةٌ منفصلة يقرّرها. أمّا الإرسال اليدويّ لمستندٍ بعينه فقرارٌ
+    /// مستقلّ، ويبقى حارسه. والاسم الصريح يجعل غياب الفحص هنا <b>مقروءاً ومقصوداً</b> لا ثغرة.</para>
+    /// </summary>
+    internal async Task<ZatcaEInvoiceDocument> SubmitAsFollowUpToPostingAsync(long documentId)
+        => await SubmitCoreAsync(documentId);
+
+    private async Task<ZatcaEInvoiceDocument> SubmitCoreAsync(long documentId)
+    {
         var doc = await db.ZatcaEInvoiceDocuments.SingleAsync(d => d.Id == documentId);
         var settings = await db.ZatcaSettings.SingleAsync(s => s.CompanyId == doc.CompanyId);
 

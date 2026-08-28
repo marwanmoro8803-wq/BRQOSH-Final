@@ -1,4 +1,4 @@
-using Brqosh.Application.Tests.TestSupport;
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
@@ -17,6 +17,7 @@ public class ProgressBillingVatTests : IDisposable
 
     public ProgressBillingVatTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _db = BrqoshDbContextFactory.Create(DatabaseProvider.Sqlite, "Data Source=:memory:");
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();

@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Accounting;
+﻿using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Purchasing;
@@ -30,6 +31,7 @@ public class WacReversalWithRemainingStockTests : IDisposable
 
     public WacReversalWithRemainingStockTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>().UseSqlite(_connection).Options);

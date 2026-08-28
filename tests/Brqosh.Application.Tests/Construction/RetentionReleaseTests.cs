@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Modules;
@@ -10,6 +11,8 @@ namespace Brqosh.Application.Tests.Construction;
 
 public class RetentionReleaseTests
 {
+    public RetentionReleaseTests() => TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
+
     [Fact]
     public async Task Customer_retention_release_posts_balanced_entry()
     {

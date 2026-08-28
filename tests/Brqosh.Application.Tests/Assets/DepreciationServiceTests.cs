@@ -1,3 +1,4 @@
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Assets;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Assets;
@@ -17,6 +18,7 @@ public class DepreciationServiceTests : IDisposable
 
     public DepreciationServiceTests()
     {
+        TestActor.Accountant();   // (م2-١) الفاعل مُصرَّح به — لا تجاوز
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()

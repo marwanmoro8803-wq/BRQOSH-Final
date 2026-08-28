@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Security;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +80,15 @@ public class UserManagementService(BrqoshDbContext db)
     public async Task ResetPasswordAsync(
         long companyId, string username, string newPassword, CancellationToken ct = default)
     {
+        // (CEEF-229 · م2-١، S-7) كانت الدالّة العامّة **الوحيدة في هذا الصنف** بلا حارس،
+        // وأخواتها الثلاث (List · Create · Update) تفتتح بـ EnsureAdministrator. وهي تُعيد
+        // تعيين كلمة مرور **أيّ** مستخدم بمن فيهم مدير النظام، بلا كلمة مرورٍ حالية ولا رمز —
+        // أي بدائيّةُ تصعيد امتيازٍ صافية لمن بلغها. ولم يكن لها مستدعٍ في المستودع (شاشة
+        // نسيان كلمة المرور تذهب إلى مسار OTP المحروس)، فكانت خطراً كامناً لا مستغَلّاً؛
+        // والتعليق فوقها «للمدير أو أداة الطوارئ بعد التحقق» يُقرّ بأن الحماية مُوكَلةٌ إلى
+        // انضباط المستدعي — وحارسٌ يعتمد على انضباط كل مستدعٍ ليس حارساً.
+        SecurityContext.EnsureAdministrator();
+
         if (!PasswordPolicy.IsValid(newPassword, out var pwdError))
             throw new AccountingException(pwdError!);
 
