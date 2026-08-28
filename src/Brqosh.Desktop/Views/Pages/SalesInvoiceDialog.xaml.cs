@@ -155,12 +155,9 @@ public partial class SalesInvoiceDialog : Window
                     "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;
 
-            var invoice = SalesInvoice.CreateDraft(
+            var invoice = BuildInvoiceFromRows(
                 AppServices.CompanyId, customerId,
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value));
-
-            foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
-                invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
 
             using var facade = new DesktopAccountingFacade();
             await facade.PostSalesInvoiceAsync(invoice);
@@ -174,6 +171,35 @@ public partial class SalesInvoiceDialog : Window
             ErrorText.Visibility = Visibility.Visible;
         }
     }
+
+
+    /// <summary>
+    /// (CEEF-229 · م2-٢٥) <b>الوصلة بين الشبكة والنطاق — مُستخرَجةٌ كي تُقاس.</b>
+    ///
+    /// <para>كان بناءُ المستند مبثوثاً داخل <c>OnPost</c>، وهو <c>async void</c> يفتح صناديق
+    /// رسائل ويُغلق النافذة — فلا يُستدعى من اختبار. ولذلك بقيت أخطرُ حلقةٍ في السلسلة بلا
+    /// قياس: <b>هل ما تحمله صفوف الشبكة يصل إلى الكيان؟</b> وهي بالضبط الحلقة التي انكسرت
+    /// في م2-٢٠ — <c>ProductId</c> يُقرأ هنا ولم يكن أيُّ عمودٍ يكتبه، فمرّ <c>null</c> دائماً
+    /// ولم يلحظه أحد.</para>
+    ///
+    /// <para>الاستخراج لا يغيّر سلوكاً: المنطق نفسه حرفاً بحرف، لكنه صار قابلاً للاستدعاء
+    /// من اختبارٍ يُنشئ الحوار ويملأ صفوفه ويقيس ما وصل.</para>
+    /// </summary>
+    internal SalesInvoice BuildInvoiceFromRows(long companyId, long customerId, DateOnly invoiceDate)
+    {
+        var invoice = SalesInvoice.CreateDraft(companyId, customerId, invoiceDate);
+
+        foreach (var row in _rows.Where(r =>
+                     !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
+        {
+            invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
+        }
+
+        return invoice;
+    }
+
+    /// <summary>صفوفُ الشبكة — للاختبار وحده، كي يملأها كما يملؤها المستخدم.</summary>
+    internal System.Collections.ObjectModel.ObservableCollection<LineRow> RowsForTests => _rows;
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {
