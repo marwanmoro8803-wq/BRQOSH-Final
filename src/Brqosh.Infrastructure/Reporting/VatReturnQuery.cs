@@ -40,7 +40,7 @@ public record VatReturnResult(
     decimal DebitNotesSubtotal,
     decimal DebitNotesVat,
     decimal DebitNotesDeductibleVat,
-    decimal GlVatNetPayableBalance = 0m,
+    decimal? GlVatNetPayableBalance = null,
     // تسويات إلغاء مستندات صدرت في فترات سابقة وأُلغيت داخل هذه الفترة (CEEF-219).
     decimal CancelledOutputVat = 0m,
     decimal CancelledInputVat = 0m,
@@ -72,8 +72,27 @@ public record VatReturnResult(
     public decimal NetDeductibleInputVat => DeductibleInputVat - DebitNotesDeductibleVat - CancelledInputVat;
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
 
-    /// <summary>فرق بين صافي الإقرار ورصيد GL 2107 — إن كان كبيراً يحتاج تسوية.</summary>
-    public decimal GlVariance => NetVatPayable - GlVatNetPayableBalance;
+    /// <summary>
+    /// (CEEF-229 · م2-١٦) <b>غيابُ البيان ليس صفراً.</b>
+    ///
+    /// <para>كان الرصيد <c>decimal</c> يسقط إلى صفر حين لا يوجد الحساب أو لا حركة عليه،
+    /// فيصير الفرقُ مساوياً <b>لصافي الإقرار كاملاً دائماً</b>. ولا كاتب لحساب «صافي ضريبة
+    /// القيمة المضافة المستحقة» (2107) في المستودع كلّه — لا خدمة تسويةٍ ضريبية تُقفل
+    /// المدخلات والمخرجات فيه — فالرصيد صفرٌ عند كل منشأة، والمؤشّر يقول أبداً إن الإقرار
+    /// كلَّه لا يطابق الأستاذ.</para>
+    ///
+    /// <para>المؤشّر لا يُعرض اليوم في شاشةٍ ولا PDF، لكنه في عقد التطبيق — فأيّ شاشةٍ
+    /// تُضاف غداً ستعرض تحذيراً يصرخ دائماً، <b>وتحذيرٌ يصرخ دائماً أسوأ من غيابه</b>: يتعلّم
+    /// المستخدم تجاهله فيفوته التحذير الحقيقيّ.</para>
+    ///
+    /// <para>فصار <c>null</c> يعني «لا مطابقة ممكنة — لا حركة على الحساب»، وهو غير الصفر
+    /// الذي يعني «طابق تماماً». والتسوية الضريبية نفسها بندٌ مؤجَّل مسجَّل في الخطة.</para>
+    /// </summary>
+    public decimal? GlVariance =>
+        GlVatNetPayableBalance is decimal gl ? NetVatPayable - gl : null;
+
+    /// <summary>هل يمكن مطابقة الإقرار بالأستاذ أصلاً؟</summary>
+    public bool IsGlReconciliationAvailable => GlVatNetPayableBalance is not null;
 }
 
 public class VatReturnQuery(BrqoshDbContext db)
@@ -197,18 +216,19 @@ public class VatReturnQuery(BrqoshDbContext db)
             : [.. LineDocumentTotalsCalculator.ComputeSubtotals(lines)
                    .Select(s => new VatReturnBucket(s.Category, s.TaxableAmount, s.VatAmount))];
 
-    private async Task<decimal> ReadVatNetPayableGlAsync(long companyId, DateOnly asOf)
+    /// <summary>رصيد حساب صافي الضريبة — <c>null</c> إذا لم يوجد الحساب أو لا حركة عليه.</summary>
+    private async Task<decimal?> ReadVatNetPayableGlAsync(long companyId, DateOnly asOf)
     {
         var account = await db.Accounts.FirstOrDefaultAsync(a =>
             a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.VatNetPayable);
         if (account is null)
-            return 0m;
+            return null;
 
         var rows = await new TrialBalanceQuery(db).ExecuteAsync(
             companyId, new DateOnly(1900, 1, 1), asOf);
         var row = rows.FirstOrDefault(r => r.AccountCode == account.Code);
         if (row is null)
-            return 0m;
+            return null;
 
         // التزام — رصيد دائن موجب
         return row.BalanceCredit - row.BalanceDebit;

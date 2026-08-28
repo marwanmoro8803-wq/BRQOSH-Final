@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 
 namespace Brqosh.Application.Reporting;
 
@@ -137,12 +137,14 @@ public record VatReturnDto(
     decimal DebitNotesSubtotal,
     decimal DebitNotesVat,
     decimal DebitNotesDeductibleVat,
-    decimal GlVatNetPayableBalance = 0m)
+    decimal? GlVatNetPayableBalance = null)
 {
     public decimal NetOutputVat => OutputVat + ProgressBillingsVat - CreditNotesVat;
     public decimal NetDeductibleInputVat => DeductibleInputVat - DebitNotesDeductibleVat;
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
-    public decimal GlVariance => NetVatPayable - GlVatNetPayableBalance;
+    // (CEEF-229 · م2-١٦) null = «لا مطابقة ممكنة» وهو غير الصفر = «طابق تماماً».
+    public decimal? GlVariance =>
+        GlVatNetPayableBalance is decimal gl ? NetVatPayable - gl : null;
 }
 
 public interface IVatReturnQuery
