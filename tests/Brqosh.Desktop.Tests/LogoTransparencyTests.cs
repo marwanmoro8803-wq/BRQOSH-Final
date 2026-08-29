@@ -19,24 +19,12 @@ public class LogoTransparencyTests
 {
     private static readonly Dispatcher UiDispatcher = StartUiThread();
 
-    private static Dispatcher StartUiThread()
-    {
-        Dispatcher? dispatcher = null;
-        using var ready = new ManualResetEventSlim();
-        var thread = new Thread(() =>
-        {
-            if (System.Windows.Application.Current is null)
-                _ = new System.Windows.Application();
-            dispatcher = Dispatcher.CurrentDispatcher;
-            ready.Set();
-            Dispatcher.Run();
-        })
-        { IsBackground = true };
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        Assert.True(ready.Wait(TimeSpan.FromSeconds(30)), "خيط الواجهة لم يبدأ.");
-        return dispatcher!;
-    }
+    /// <summary>
+    /// (CEEF-229 · م2-٦) خيطُ الواجهة مشتركٌ الآن — انظر <see cref="WpfTestHost"/>.
+    /// وكان كلُّ صنفٍ يُنشئ خيطاً وتطبيقاً، وWPF لا يسمح إلا بتطبيقٍ واحدٍ في العملية،
+    /// فمن سبق ملكه — وضبطُ خصائصه من خيطٍ آخر يُسقط مُضيفَ الاختبارات كلَّه.
+    /// </summary>
+    private static Dispatcher StartUiThread() => WpfTestHost.Dispatcher;
 
     private static void OnUiThread(Action body) => UiDispatcher.Invoke(body);
 

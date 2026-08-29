@@ -1,4 +1,27 @@
 # Static security scan for BRQOSH — fails CI on critical findings in src/.
+#
+# (CEEF-229 . م2-6) WHAT THIS SCRIPT CAN AND CANNOT PROVE — read before adding a check here.
+#
+# This is a TEXT scanner. It proves a string is present or absent in a file. That is the right
+# tool for one job only: finding secrets, because a secret IS text. It is the WRONG tool for
+# proving that a guard runs, and it used to claim exactly that:
+#
+#   * It searched each *PostingService.cs for the substring "EnsureCanPost" and reported PASS.
+#     A call commented out, unreachable, or placed AFTER the database write all pass that check.
+#     Measured: commenting out the guard in SalesInvoicePostingService.PostAsync left this scan
+#     reporting "Posting EnsureCanPost* (soft) | PASS" while an unauthorised caller went through.
+#
+#   * Its strictest check searches for the literal "admin123". A back door under any other name
+#     passes untouched.
+#
+# Guard ENFORCEMENT is now measured by execution, not by text:
+#   tests/Brqosh.Application.Tests/Security/EveryPostingServiceRefusesAViewerTests.cs
+#       - reflects over every *PostingService, invokes every public operation as a Viewer,
+#         and asserts the refusal is an AUTHORISATION refusal rather than an incidental crash.
+#   tests/Brqosh.Api.Tests/{ApiKeyGuardTests,ApiRoleEscalationTests,ProductionApiSecurityStartupTests}.cs
+#       - send real requests with and without headers.
+#
+# So: add SECRET patterns here. Add GUARD checks to those test files instead.
 param(
     [string]$SourceRoot = "src",
     [string]$ApiProgram = "src/Brqosh.Api/Program.cs"
@@ -55,19 +78,24 @@ foreach ($pattern in $passwordPatterns) {
     }
 }
 
-# 3) Soft: posting services should call EnsureCanPost*
+# 3) Posting guards: NOT checked here — see the header. A text search cannot tell a live guard
+#    from a commented-out one. EveryPostingServiceRefusesAViewerTests invokes every operation as a
+#    Viewer and asserts an authorisation refusal; that test is the gate. What remains useful here is
+#    the far weaker signal that a posting service does not even MENTION a guard, which is worth a
+#    warning line because it is cheap — but it is reported as what it is, not as a PASS.
 $postingServices = @(
     Get-ChildItem -Path (Join-Path $SourceRoot "Brqosh.Infrastructure") -Recurse -Filter "*PostingService.cs" -File
 )
-$missingGuard = @()
+$noGuardMention = @()
 foreach ($file in $postingServices) {
     $text = Get-Content -LiteralPath $file.FullName -Raw
     if ($text -notmatch "EnsureCanPost") {
-        $missingGuard += $file.Name
+        $noGuardMention += $file.Name
     }
 }
-if ($missingGuard.Count -gt 0) {
-    Add-Warning ("Posting services without EnsureCanPost*: " + ($missingGuard -join ", "))
+if ($noGuardMention.Count -gt 0) {
+    $guardNote = "Posting services that never mention a guard (text only; enforcement is proven by EveryPostingServiceRefusesAViewerTests): "
+    Add-Warning ($guardNote + ($noGuardMention -join ", "))
 }
 
 # 4) API key middleware must exist when BRQOSH_API_KEY is configured
@@ -110,12 +138,15 @@ $apiKeyPass = -not ($failures | Where-Object { $_ -match "Program\.cs" })
 $summary = @"
 ## Security static scan
 
-| Check | Result |
-|-------|--------|
-| admin123 in src/ | $(if ($adminHits.Count -eq 0 -and $adminPairHits.Count -eq 0) { 'PASS' } else { 'FAIL' }) |
-| API key guard (Program.cs) | $(if ($apiKeyPass) { 'PASS' } else { 'FAIL' }) |
-| Posting EnsureCanPost* (soft) | $(if ($missingGuard.Count -eq 0) { 'PASS' } else { "$($missingGuard.Count) service(s) flagged" }) |
-| Possible hardcoded secrets | $($findings.Count) match(es) listed below |
+This scan proves the presence or absence of TEXT. Guard ENFORCEMENT is proven by execution in
+EveryPostingServiceRefusesAViewerTests and the Brqosh.Api.Tests security suite - see the header.
+
+| Check | What it proves | Result |
+|-------|----------------|--------|
+| admin123 in src/ | that one literal is absent | $(if ($adminHits.Count -eq 0 -and $adminPairHits.Count -eq 0) { 'PASS' } else { 'FAIL' }) |
+| Program.cs security wiring | the strings are present, not that middleware runs | $(if ($apiKeyPass) { 'present' } else { 'MISSING' }) |
+| Posting guard mentioned | text only, not that the guard executes | $(if ($noGuardMention.Count -eq 0) { 'all mention one' } else { "$($noGuardMention.Count) service(s) flagged" }) |
+| Possible hardcoded secrets | pattern matches to review | $($findings.Count) match(es) listed below |
 
 ### Failures ($($failures.Count))
 $(if ($failures.Count -eq 0) { '- none' } else { ($failures | ForEach-Object { "- $_" }) -join "`n" })

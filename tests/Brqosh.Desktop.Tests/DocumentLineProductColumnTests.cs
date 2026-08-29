@@ -34,37 +34,12 @@ public class DocumentLineProductColumnTests
 {
     private static readonly Dispatcher UiDispatcher = StartUiThread();
 
-    private static Dispatcher StartUiThread()
-    {
-        Dispatcher? dispatcher = null;
-        using var ready = new ManualResetEventSlim();
-
-        var thread = new Thread(() =>
-        {
-            var app = System.Windows.Application.Current ?? new System.Windows.Application();
-
-            // الحوارات تستعمل موارد الثيم (AppFont وأنماط البطاقات)، وهي تُدمج في
-            // موارد التطبيق عند الإقلاع الحقيقيّ — فتُدمج هنا كي يُنشأ الحوار كما يُنشأ فعلاً.
-            var theme = new System.Windows.ResourceDictionary
-            {
-                Source = new Uri(
-                    "pack://application:,,,/Brqosh.Desktop;component/Themes/BrqoshTheme.xaml",
-                    UriKind.Absolute),
-            };
-            if (!app.Resources.MergedDictionaries.Contains(theme))
-                app.Resources.MergedDictionaries.Add(theme);
-
-            dispatcher = Dispatcher.CurrentDispatcher;
-            ready.Set();
-            Dispatcher.Run();
-        })
-        { IsBackground = true };
-
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        Assert.True(ready.Wait(TimeSpan.FromSeconds(30)), "خيط الواجهة لم يبدأ.");
-        return dispatcher!;
-    }
+    /// <summary>
+    /// (CEEF-229 · م2-٦) خيطُ الواجهة مشتركٌ الآن — انظر <see cref="WpfTestHost"/>.
+    /// وكان كلُّ صنفٍ يُنشئ خيطاً وتطبيقاً، وWPF لا يسمح إلا بتطبيقٍ واحدٍ في العملية،
+    /// فمن سبق ملكه — وضبطُ خصائصه من خيطٍ آخر يُسقط مُضيفَ الاختبارات كلَّه.
+    /// </summary>
+    private static Dispatcher StartUiThread() => WpfTestHost.Dispatcher;
 
     /// <summary>
     /// يُنشئ الحوار ويعيد أعمدة شبكة سطوره. البانية لا تلمس قاعدة البيانات — تحميلُ البيانات

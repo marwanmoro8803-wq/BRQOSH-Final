@@ -59,8 +59,7 @@ public class PageConstructionTests
             {
                 try
                 {
-                    var instance = Activator.CreateInstance(type);
-                    if (instance is Window window) window.Close();
+                    WpfTestHost.Release(Activator.CreateInstance(type));
                     return null as string;
                 }
                 catch (Exception ex)
@@ -124,8 +123,7 @@ public class PageConstructionTests
             {
                 try
                 {
-                    var instance = Activator.CreateInstance(type);
-                    if (instance is Window window) window.Close();
+                    WpfTestHost.Release(Activator.CreateInstance(type));
                     return false;
                 }
                 catch

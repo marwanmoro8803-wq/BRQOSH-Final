@@ -47,8 +47,22 @@ public class JournalPostingService(BrqoshDbContext db)
             return entry;
         });
 
+    /// <summary>
+    /// (CEEF-229 · م2-٦) <b>اسمُها «تحقُّق» وفعلُها كتابة.</b>
+    ///
+    /// <para>حين لا توجد الفترة المالية تُنشئها الدالّة <b>وتحفظها</b> (السطور أدناه) — فهي
+    /// ليست قراءةً كما يوحي اسمُها. وكانت الوحيدة بين عمليات خدمات الترحيل التي <b>لا ترفض
+    /// «المُطّلِع»</b>، فكشفتها البوّابةُ السلوكية حين استدعت كلّ عملية بدورٍ لا يملك الترحيل.</para>
+    ///
+    /// <para><b>ولم تكن ثغرةً حيّة:</b> مستدعوها الخمسة والعشرون كلُّهم داخل خدمات ترحيلٍ
+    /// وإلغاءٍ تفرض حارسَها قبلها، فلا يبلغها مُطّلِعٌ من أيّ مسارٍ في الواجهة. والحارسُ هنا
+    /// عمقٌ دفاعيّ: الدالّة عامّةٌ وتكتب، وكلُّ مستدعٍ شرعيّ يملك حقَّ الترحيل أصلاً فلا يتغيّر
+    /// عليه شيء.</para>
+    /// </summary>
     public async Task EnsurePeriodOpenAsync(long companyId, DateOnly date)
     {
+        SecurityContext.EnsureCanPost();
+
         var code = FiscalPeriod.CodeFor(date);
         var period = await db.FiscalPeriods
             .FirstOrDefaultAsync(p => p.CompanyId == companyId && p.Code == code);

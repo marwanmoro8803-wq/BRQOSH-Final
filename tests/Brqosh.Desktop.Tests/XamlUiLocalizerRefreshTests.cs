@@ -18,22 +18,15 @@ namespace Brqosh.Desktop.Tests;
 /// </summary>
 public class XamlUiLocalizerRefreshTests
 {
-    /// <summary>WPF يشترط STA لإنشاء أي عنصر واجهة — xUnit يشغّل على MTA.</summary>
-    private static void OnUiThread(Action body)
-    {
-        Exception? failure = null;
-        var thread = new Thread(() =>
-        {
-            try { body(); }
-            catch (Exception ex) { failure = ex; }
-            finally { Dispatcher.CurrentDispatcher.InvokeShutdown(); }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        Assert.True(thread.Join(TimeSpan.FromSeconds(30)), "خيط الواجهة لم ينتهِ.");
-        if (failure is not null)
-            throw failure;
-    }
+    /// <summary>
+    /// WPF يشترط STA لإنشاء أي عنصر واجهة — xUnit يشغّل على MTA.
+    ///
+    /// <para>(CEEF-229 · م2-٦) وكان هذا يُنشئ خيطاً <b>جديداً لكل استدعاء</b>. وWPF لا يسمح
+    /// إلا بتطبيقٍ واحدٍ في العملية كلّها، ومن أنشأه أوّلاً ملكه — فصار العنصرُ المُنشأ على
+    /// خيطٍ يقرأ موارد تطبيقٍ يملكه خيطٌ آخر، ويرمي «The calling thread cannot access this
+    /// object». والخيطُ المشترك يُزيل السباق من أصله.</para>
+    /// </summary>
+    private static void OnUiThread(Action body) => WpfTestHost.Invoke(body);
 
     /// <summary>يبدأ بالعربية ويعيدها مهما فعل الاختبار — الحالة ساكنة عامة.</summary>
     private static void WithArabicStart(Action body)

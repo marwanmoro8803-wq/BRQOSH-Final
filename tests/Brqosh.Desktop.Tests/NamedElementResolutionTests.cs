@@ -72,7 +72,7 @@ public class NamedElementResolutionTests
                     .Select(f => $"{screen.Name}.{f.Name}")
                     .ToList();
 
-                if (instance is Window window) window.Close();
+                WpfTestHost.Release(instance);
                 return missing;
             });
 
