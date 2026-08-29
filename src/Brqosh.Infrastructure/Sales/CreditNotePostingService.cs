@@ -10,6 +10,7 @@ using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Platform;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
 using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
@@ -205,12 +206,22 @@ public class CreditNotePostingService(BrqoshDbContext db)
     {
         if (invoice.PosShiftId is not null && invoice.PosPaymentMethod is { } method)
         {
-            var code = method switch
-            {
-                Domain.Retail.PosPaymentMethod.Card => SaudiChartOfAccounts.SystemCodes.CashAtBanks,
-                _ => SaudiChartOfAccounts.SystemCodes.CashOnHand,
-            };
-            return await SystemAccountAsync(note.CompanyId, code);
+            // (CEEF-229 · م2-١٥أ) المرتجع يخرج من **الحساب الذي دخلت فيه البيعة**.
+            //
+            // كان يُعيد 1102 (الأب) بينما البيعة تنزل على ابن البنك (110201) عبر
+            // BankGlAccountResolver — فبيعةُ مدى ومرتجعُها لا يُلغي أحدهما الآخر: يبقى
+            // الابنُ منتفخاً والأبُ سالباً بالمقدار نفسه إلى الأبد. والتسويةُ البنكية تقرأ
+            // الابن وحده فتُقارَن بكشفٍ لا يحوي المرتجع، فيظهر فرقٌ دائم لا يُغلق.
+            //
+            // ولا تكشفه هوية التدفقات النقدية لأنها تُطابق النقد بالبادئة "1102" فتضمّ
+            // الأب وابنه معاً: المجموع صفرٌ سليماً كان أو منشقّاً — والخلل في التوزيع.
+            //
+            // وهذا نصفُ إصلاحٍ من م2-١٥: هُوجر الأبُ في المبيعات وسندَي القبض والصرف
+            // ونُسي المرتجع، والتعليقُ في SalesInvoicePostingService يصف هذا العطل بعينه.
+            if (method == Domain.Retail.PosPaymentMethod.Card)
+                return await BankGlAccountResolver.ResolveAsync(db, note.CompanyId, ct: ct);
+
+            return await SystemAccountAsync(note.CompanyId, SaudiChartOfAccounts.SystemCodes.CashOnHand);
         }
 
         return await SystemAccountAsync(note.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsReceivable);
