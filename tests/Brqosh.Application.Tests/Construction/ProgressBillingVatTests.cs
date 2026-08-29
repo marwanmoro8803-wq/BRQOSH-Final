@@ -29,6 +29,8 @@ public class ProgressBillingVatTests : IDisposable
         var company = await new DatabaseInitializer(_db).InitializeAsync(
             "شركة مقاولات", "300000000000001", BusinessProfile.Construction);
 
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
         settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         await _db.SaveChangesAsync();

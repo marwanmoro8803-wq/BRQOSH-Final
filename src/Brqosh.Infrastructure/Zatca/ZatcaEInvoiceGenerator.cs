@@ -220,6 +220,28 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote,
         bool isDebitNote = false, string? issueReason = null)
     {
+        // (CEEF-229 · م2-١٣أ) **هويةُ البائع تُفحص قبل استهلاك أيّ عدّاد.**
+        //
+        // كان الفحصُ الوحيد هنا هو الرقم الضريبيّ. و`Company.RegulatoryGaps()` يعرف تماماً ما
+        // ينقص وبرسائل عربية جاهزة — لكنّه لم يكن يُقرأ إلا في شاشة الإعدادات **عرضاً**، وفي
+        // خدمة الإرسال **وفي وضع الإنتاج وحده**. و`DatabaseInitializer` لا يملأ تلك الحقول
+        // أصلاً، فالمنشأةُ الجديدة ناقصةٌ بالتعريف.
+        //
+        // فمنشأةٌ تُفعّل الفوترة قبل إكمال بياناتها كانت تُصدر مستندات ينقصها طرفُ البائع
+        // كاملاً (PartyIdentification و PostalAddress و PartyLegalEntity) — ترفضها الهيئة
+        // عند التحقّق البنيويّ قبل أن تقرأ أرقامها.
+        //
+        // **ولا يُصلحه ضبطُ الإعدادات لاحقاً:** كلُّ مستندٍ خاطئ استهلك عدّاداً تسلسلياً (ICV)
+        // وصارت بصمتُه PreviousHash لما بعده — فالسلسلة تتلوّث بأثرٍ رجعيّ ويُطلب إعادةُ
+        // إصدار ما بعدها. والرفضُ عند الباب أرحمُ.
+        //
+        // والموضعُ مقصود: **قبل** AcquireIcvLockAsync وقبل قراءة العدّاد، فلا يُستهلك رقمٌ
+        // لمستندٍ لن يُقبل.
+        var gaps = company.RegulatoryGaps();
+        if (gaps.Count > 0)
+            throw new AccountingException(
+                "لا يمكن إصدار فاتورة إلكترونية قبل إكمال بيانات المنشأة:\n- " + string.Join("\n- ", gaps));
+
         // (CEEF-229 · Z-4) قفل استشاريّ قبل قراءة العدّاد — النمط نفسه في JournalEntryNumberGenerator.
         //
         // كان `MaxAsync + 1` بلا قفل وبلا فهرس فريد على `(CompanyId, Icv)`. فصندوقان في فرعين

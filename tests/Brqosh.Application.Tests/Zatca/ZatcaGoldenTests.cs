@@ -31,6 +31,8 @@ public class ZatcaGoldenTests : IDisposable
     {
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة", "310123456700003", BusinessProfile.Retail);
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
         settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         await _db.SaveChangesAsync();
@@ -62,6 +64,8 @@ public class ZatcaGoldenTests : IDisposable
     {
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة", "310123456700004", BusinessProfile.Retail);
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
         settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         await _db.SaveChangesAsync();
@@ -106,6 +110,8 @@ public class ZatcaGoldenTests : IDisposable
     {
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة", "310123456700005", BusinessProfile.Retail);
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
         settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         await _db.SaveChangesAsync();
@@ -150,6 +156,8 @@ public class ZatcaGoldenTests : IDisposable
     {
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة", "310123456700003", BusinessProfile.Retail);
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
         settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         await _db.SaveChangesAsync();

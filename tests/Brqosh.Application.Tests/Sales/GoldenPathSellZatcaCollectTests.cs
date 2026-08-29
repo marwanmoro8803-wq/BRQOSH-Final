@@ -1,3 +1,4 @@
+using Brqosh.Application.Tests.TestSupport;
 ﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
@@ -50,6 +51,8 @@ public class GoldenPathSellZatcaCollectTests : IDisposable
         await _db.SaveChangesAsync();
         _customerId = customer.Id;
 
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        await ZatcaReadySeller.CompleteAsync(_db, _companyId);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == _companyId);
         settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         await _db.SaveChangesAsync();

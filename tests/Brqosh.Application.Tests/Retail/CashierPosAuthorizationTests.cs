@@ -45,6 +45,10 @@ public class CashierPosAuthorizationTests : IDisposable
             .GetAwaiter().GetResult().Id;
         new BrqoshSchemaUpdater(_db).ApplyAsync().GetAwaiter().GetResult();
 
+        // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
+        ZatcaReadySeller.Complete(_db.Companies.Single(c => c.Id == _companyId));
+        _db.SaveChanges();
+
         var zatca = _db.ZatcaSettings.Single(s => s.CompanyId == _companyId);
         zatca.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
         _db.SaveChanges();
