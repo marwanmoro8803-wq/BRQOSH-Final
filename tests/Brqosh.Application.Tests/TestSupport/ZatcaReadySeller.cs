@@ -21,6 +21,24 @@ namespace Brqosh.Application.Tests.TestSupport;
 /// </summary>
 public static class ZatcaReadySeller
 {
+    /// <summary>
+    /// (CEEF-229 · م2-١٣ب) <b>شهادةُ توقيعٍ حقيقية — تُولَّد مرّةً لكلّ تشغيل.</b>
+    ///
+    /// <para><b>لماذا:</b> كانت الاختباراتُ الستةَ عشرَ نفسُها تُفعّل الفوترة بمسارَي شهادةٍ
+    /// <b>فارغَين</b>. فكان <c>TrySignWithResult</c> يُعيد <c>null</c> صامتاً، وتخرج
+    /// المستنداتُ <b>بلا توقيع</b> وبرمز QR من الطور الأوّل وببصمةٍ محسوبةٍ بخوارزميةٍ أخرى.
+    /// أي أنّ <b>كلَّ اختبارات ZATCA كانت تقيس المسارَ المنحدر</b>، لا المسارَ الذي يُشحن.</para>
+    ///
+    /// <para>وشهادةٌ موقَّعةٌ ذاتياً بمنحنى EC P-256 تكفي: الغرضُ أن يجري التوقيعُ فعلاً
+    /// ويُتحقَّق منه محلياً — لا أن تُقبل من الهيئة.</para>
+    /// </summary>
+    public static (string CertPath, string KeyPath) Certificate => LazyCertificate.Value;
+
+    private static readonly Lazy<(string CertPath, string KeyPath)> LazyCertificate = new(() =>
+        ZatcaSignatureVerifier.CreateSigningCertificate(
+            Path.Combine(Path.GetTempPath(), "brqosh-zatca-signer", Guid.NewGuid().ToString("N"))),
+        isThreadSafe: true);
+
     /// <summary>يُكمل هوية المنشأة النظامية في مكانها — بلا حفظ.</summary>
     public static void Complete(Company company) =>
         company.UpdateRegulatoryIdentity(

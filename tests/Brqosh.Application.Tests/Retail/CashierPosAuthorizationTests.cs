@@ -50,7 +50,8 @@ public class CashierPosAuthorizationTests : IDisposable
         _db.SaveChanges();
 
         var zatca = _db.ZatcaSettings.Single(s => s.CompanyId == _companyId);
-        zatca.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        zatca.Update(true, ZatcaEnvironment.Simulation, "",
+            ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         _db.SaveChanges();
 
         var product = Product.Create(_companyId, "P1", "منتج", "قطعة", ProductType.Stockable, 100m);

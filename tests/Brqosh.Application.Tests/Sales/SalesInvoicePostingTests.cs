@@ -166,7 +166,8 @@ public class SalesInvoicePostingTests : IDisposable
         // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
         await ZatcaReadySeller.CompleteAsync(_db, _companyId);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == _companyId);
-        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        settings.Update(true, ZatcaEnvironment.Simulation, "",
+            ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
         var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 5));

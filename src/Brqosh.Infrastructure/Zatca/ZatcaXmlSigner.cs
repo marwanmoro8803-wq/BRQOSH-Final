@@ -85,14 +85,24 @@ public static class ZatcaXmlSigner
             signed, invoiceHashB64, signatureB64, Convert.ToBase64String(publicKeyDer));
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-١٣ب) هل تكفي الإعدادات للتوقيع فعلاً؟
+    ///
+    /// <para>الشرطُ نفسه الذي يستعمله <see cref="TrySignWithResult"/> ليقرّر، مُستخرَجاً كي
+    /// <b>يُسأل قبل استهلاك عدّاد</b>. فالفرقُ بين «لا شهادة» و«وُقّع» يجب أن يُعرف عند
+    /// الباب، لا أن يُكتشف من غياب كتلة التوقيع في ملفٍّ صار جزءاً من السلسلة.</para>
+    /// </summary>
+    public static bool CanSign(
+        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] ZatcaSettings? settings) =>
+        settings is not null
+        && !string.IsNullOrWhiteSpace(settings.CertificateFilePath)
+        && !string.IsNullOrWhiteSpace(settings.PrivateKeyFilePath)
+        && File.Exists(settings.CertificateFilePath)
+        && File.Exists(settings.PrivateKeyFilePath);
+
     public static ZatcaSignResult? TrySignWithResult(byte[] xmlBytes, ZatcaSettings? settings)
     {
-        if (settings is null) return null;
-        if (string.IsNullOrWhiteSpace(settings.CertificateFilePath) ||
-            string.IsNullOrWhiteSpace(settings.PrivateKeyFilePath))
-            return null;
-        if (!File.Exists(settings.CertificateFilePath) || !File.Exists(settings.PrivateKeyFilePath))
-            return null;
+        if (!CanSign(settings)) return null;
 
         try
         {

@@ -336,6 +336,52 @@ public class GeneratedDocumentsConformTests : IDisposable
     }
 
     /// <summary>
+    /// (CEEF-229 · م2-١٣ب) <b>بلا شهادةٍ لا يُصدَر مستند — لا «يُصدَر غيرَ موقَّع بصمت».</b>
+    ///
+    /// <para><b>العطل:</b> <c>ZatcaXmlSigner.TrySignWithResult</c> يُعيد <c>null</c> بلا شكوى
+    /// حين لا يجد ملفَّ شهادةٍ أو مفتاح. وعندها يسلك المولّد فرعاً بديلاً <b>صامتاً</b>:</para>
+    ///
+    /// <list type="number">
+    /// <item>المستند يخرج <b>بلا توقيع</b>، ورمزُه QR من الطور الأوّل — بلا ختمٍ تشفيريّ.</item>
+    /// <item>و<c>InvoiceHash</c> يُحسب بـ <b>خوارزميةٍ أخرى</b>: <c>Sha256Base64</c> على البايتات
+    /// الخام، بدل <c>ComputeInvoiceHash</c> الذي يُقَنّن المستند <b>بعد نزع</b>
+    /// <c>UBLExtensions</c> و<c>Signature</c> ومرجع QR. ولا يمكن أن يتّفق الرقمان.</item>
+    /// <item>وتلك البصمةُ تصير <c>PreviousInvoiceHash</c> للمستند التالي — <b>فتنكسر السلسلة
+    /// عند ذلك المفصل</b> انكساراً لا تستطيع الهيئة مطابقته.</item>
+    /// <item>ثمّ ترفع خدمةُ الإرسال <c>SignedXmlFilePath ?? XmlFilePath</c> — أي <b>ترفع
+    /// الملفَّ غيرَ الموقَّع</b>.</item>
+    /// </list>
+    ///
+    /// <para><b>ولا يوجد في النظام مفهومُ «طورٍ أوّل» أصلاً</b> — لا إعدادَ ولا حقل. فالمسارُ
+    /// غيرُ الموقَّع ليس وضعاً مشروعاً بل انحداراً صامتاً، ولا يملك المالكُ ما يخبره أيَّهما هو فيه.</para>
+    /// </summary>
+    [Fact]
+    public async Task WithoutACertificate_NothingIsIssued_RatherThanIssuedUnsigned()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("منشأة بلا شهادة", "310123456700003", BusinessProfile.Retail);
+        _companyId = company.Id;
+        await new BrqoshSchemaUpdater(_db).ApplyAsync();
+        ZatcaReadySeller.Complete(company);
+
+        var customer = Customer.Create(_companyId, "عميل", "311111111100003");
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+        _customerId = customer.Id;
+
+        // ‏الفوترة مُفعَّلة والهويةُ مكتملة — والشهادةُ وحدها غائبة.
+        var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == _companyId);
+        settings.Update(isEnabled: true, ZatcaEnvironment.Simulation, "", "", "", "");
+        await _db.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(
+            () => PostInvoiceAsync());
+
+        Assert.Contains("شهادة", ex.Message, StringComparison.Ordinal);
+        Assert.Equal(0, await _db.ZatcaEInvoiceDocuments.CountAsync(d => d.CompanyId == _companyId));
+    }
+
+    /// <summary>
     /// <b>وكلُّ مسارِ توليدٍ إمّا مقيسٌ هنا وإمّا مُقَرٌّ بأنّه خارج متناول هذا العميل.</b>
     /// فلو أُضيف مسارٌ سابعٌ غداً لسقط هذا الاختبار حتى يُقاس أو يُقَرّ به بسبب.
     /// </summary>

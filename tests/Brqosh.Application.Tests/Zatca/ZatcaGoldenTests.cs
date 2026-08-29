@@ -34,7 +34,8 @@ public class ZatcaGoldenTests : IDisposable
         // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
         await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
-        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        settings.Update(true, ZatcaEnvironment.Simulation, "",
+            ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
         var customer = Customer.Create(company.Id, "عميل", "311111111100003");
@@ -67,7 +68,8 @@ public class ZatcaGoldenTests : IDisposable
         // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
         await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
-        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        settings.Update(true, ZatcaEnvironment.Simulation, "",
+            ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
         var customer = Customer.Create(company.Id, "عميل", "311111111100003");
@@ -113,7 +115,8 @@ public class ZatcaGoldenTests : IDisposable
         // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
         await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
-        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        settings.Update(true, ZatcaEnvironment.Simulation, "",
+            ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
         var customer = Customer.Create(company.Id, "عميل", "311111111100003");
@@ -159,7 +162,8 @@ public class ZatcaGoldenTests : IDisposable
         // (CEEF-229 · م2-١٣أ) هويةُ بائعٍ مكتملة — بلا هذا تُصدر منشأةٌ ناقصةٌ مستنداتٍ ترفضها الهيئة.
         await ZatcaReadySeller.CompleteAsync(_db, company.Id);
         var settings = await _db.ZatcaSettings.SingleAsync(s => s.CompanyId == company.Id);
-        settings.Update(true, ZatcaEnvironment.Simulation, "", "", "", "");
+        settings.Update(true, ZatcaEnvironment.Simulation, "",
+            ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
         var customer = Customer.Create(company.Id, "عميل", "311111111100003");
