@@ -40,7 +40,7 @@ public class SalesInvoicePostingTests : IDisposable
             .InitializeAsync("شركة", "310123456700003", BusinessProfile.Retail);
         _companyId = company.Id;
 
-        var customer = Customer.Create(_companyId, "عميل تجريبي", "311111111100003");
+        var customer = Customer.Create(_companyId, "عميل تجريبي", "311111111100003").WithStandardIdentity();
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
         _customerId = customer.Id;

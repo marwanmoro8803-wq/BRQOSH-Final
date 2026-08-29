@@ -46,7 +46,7 @@ public class GoldenPathSellZatcaCollectTests : IDisposable
         _companyId = company.Id;
         await new BrqoshSchemaUpdater(_db).ApplyAsync();
 
-        var customer = Customer.Create(_companyId, "عميل GP", "311111111100003");
+        var customer = Customer.Create(_companyId, "عميل GP", "311111111100003").WithStandardIdentity();
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
         _customerId = customer.Id;

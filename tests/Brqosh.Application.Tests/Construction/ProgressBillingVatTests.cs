@@ -36,7 +36,7 @@ public class ProgressBillingVatTests : IDisposable
             ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
-        var customer = Customer.Create(company.Id, "عميل مشروع", "300000000000002");
+        var customer = Customer.Create(company.Id, "عميل مشروع", "300000000000002").WithStandardIdentity();
         _db.Customers.Add(customer);
 
         var project = ConstructionProject.Create(company.Id, "PRJ-VAT", "برج", customer.Id,

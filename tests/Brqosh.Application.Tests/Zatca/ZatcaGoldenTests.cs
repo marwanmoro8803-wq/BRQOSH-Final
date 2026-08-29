@@ -38,7 +38,7 @@ public class ZatcaGoldenTests : IDisposable
             ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
-        var customer = Customer.Create(company.Id, "عميل", "311111111100003");
+        var customer = Customer.Create(company.Id, "عميل", "311111111100003").WithStandardIdentity();
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
 
@@ -72,7 +72,7 @@ public class ZatcaGoldenTests : IDisposable
             ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
-        var customer = Customer.Create(company.Id, "عميل", "311111111100003");
+        var customer = Customer.Create(company.Id, "عميل", "311111111100003").WithStandardIdentity();
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
 
@@ -119,7 +119,7 @@ public class ZatcaGoldenTests : IDisposable
             ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
-        var customer = Customer.Create(company.Id, "عميل", "311111111100003");
+        var customer = Customer.Create(company.Id, "عميل", "311111111100003").WithStandardIdentity();
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
 
@@ -166,7 +166,7 @@ public class ZatcaGoldenTests : IDisposable
             ZatcaReadySeller.Certificate.CertPath, ZatcaReadySeller.Certificate.KeyPath, "");
         await _db.SaveChangesAsync();
 
-        var customer = Customer.Create(company.Id, "عميل", "311111111100003");
+        var customer = Customer.Create(company.Id, "عميل", "311111111100003").WithStandardIdentity();
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
 

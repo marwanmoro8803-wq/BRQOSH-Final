@@ -389,6 +389,53 @@ public class GeneratedDocumentsConformTests : IDisposable
     }
 
     /// <summary>
+    /// (CEEF-229 · م1-١ب) <b>ومشترٍ ناقصُ الهوية لا تُصدَر له فاتورةٌ قياسية.</b>
+    ///
+    /// <para><b>وهذه ثغرةٌ فتحها إصلاحي نفسه:</b> أُضيفت حقولُ هوية المشتري في م1-١ب،
+    /// <b>والعملاءُ القائمون أعمدتُهم فارغة</b> — فلا يُطالبون بها إلا إن فتح المالكُ شاشتَهم
+    /// وعدّلهم. فبقيت فواتيرُهم القياسية تخرج ناقصةَ الطرف المشتري كما كانت.</para>
+    ///
+    /// <para>والحارسُ هنا نظيرُ حارس المنشأة الناقصة (م2-١٣أ) وللسبب نفسه: المستندُ الخاطئ
+    /// <b>يستهلك عدّاداً تسلسلياً</b> وتصير بصمتُه أساسَ ما بعده. فالرفضُ عند الباب أرحمُ من
+    /// سلسلةٍ ملوَّثة — والرسالةُ تسمّي الحقلَ الناقص فيعرف المالكُ ما يملأ.</para>
+    ///
+    /// <para><b>والمبسّطة لا تُمَسّ:</b> عميلٌ بلا رقمٍ ضريبيّ يبيع له الكاشيرُ كما كان.</para>
+    /// </summary>
+    [Fact]
+    public async Task AnIncompleteBuyer_IsRefused_ForAStandardInvoiceOnly()
+    {
+        await SetupAsync();
+
+        // ‏عميلٌ ذو رقمٍ ضريبيّ بلا هويةٍ نظامية — وهو حالُ كلّ عميلٍ قائمٍ قبل هذا الإصلاح.
+        var bare = Customer.Create(_companyId, "عميل قديم", "311222333400003");
+        _db.Customers.Add(bare);
+        await _db.SaveChangesAsync();
+
+        var standard = SalesInvoice.CreateDraft(_companyId, bare.Id, new DateOnly(2026, 7, 9));
+        standard.AddLine("خدمة", 1m, 500m);
+
+        var ex = await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(
+            () => new SalesInvoicePostingService(_db).PostAsync(standard));
+        Assert.Contains("عميل قديم", ex.Message, StringComparison.Ordinal);
+
+        // ‏الترحيلُ الفاشل يترك في مُتتبِّع هذا السياق كياناتٍ أُضيفت داخل معاملةٍ تراجعت
+        // ‏(فترةٌ ماليةٌ مثلاً) — والتطبيقُ يفتح سياقاً جديداً لكلّ عملية فلا يراها. وهذا
+        // ‏الاختبار وحده يُعيد استعمال السياق، فيُنظَّف المُتتبِّع كما يفعل الإغلاقُ هناك.
+        _db.ChangeTracker.Clear();
+
+        // ‏والمبسّطة تمرّ: عميلٌ نقديّ بلا رقمٍ ضريبيّ.
+        var walkIn = Customer.Create(_companyId, "عميل نقدي");
+        _db.Customers.Add(walkIn);
+        await _db.SaveChangesAsync();
+
+        var simplified = SalesInvoice.CreateDraft(_companyId, walkIn.Id, new DateOnly(2026, 7, 9));
+        simplified.AddLine("خدمة", 1m, 500m);
+        await new SalesInvoicePostingService(_db).PostAsync(simplified);
+
+        Assert.NotNull(await DocumentFromPostingAsync(simplified.Id, ZatcaDocumentType.SalesInvoice));
+    }
+
+    /// <summary>
     /// <b>وكلُّ مسارِ توليدٍ إمّا مقيسٌ هنا وإمّا مُقَرٌّ بأنّه خارج متناول هذا العميل.</b>
     /// فلو أُضيف مسارٌ سابعٌ غداً لسقط هذا الاختبار حتى يُقاس أو يُقَرّ به بسبب.
     /// </summary>
