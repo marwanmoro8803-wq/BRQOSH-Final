@@ -79,8 +79,20 @@ public partial class ReceiptVoucherDialog : Window
             BankCombo.SelectedIndex = 0;
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-٥) <b>الحارسُ الأوّل ليس احتياطاً — بدونه لا يُفتح هذا الحوار إطلاقاً.</b>
+    ///
+    /// <para><c>MethodCombo</c> يُعلَن في XAML بـ <c>SelectedIndex="0"</c>، وضبطُ القيمة أثناء
+    /// <c>InitializeComponent</c> <b>يُطلق SelectionChanged فوراً</b>. و<c>BankPanel</c> مُعلَنٌ
+    /// بعده في الشجرة، فيكون <c>null</c> حين يجري هذا المعالج — فيرمي
+    /// <c>NullReferenceException</c> من داخل الباني، ولا يُفتح «سند القبض» أبداً.</para>
+    ///
+    /// <para>ولم يكشفه شيء: تسعةٌ وستون اختباراً في <c>GoldenPathUiMarkupTests</c> تقرأ XAML
+    /// <b>نصّاً</b> وتتحقّق أنّ الاسم مكتوب — وهو مكتوبٌ فعلاً. والذي كشفه هو <b>بناءُ الحوار</b>.</para>
+    /// </summary>
     private void OnMethodChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (BankPanel is null) return;
         BankPanel.Visibility = MethodCombo.SelectedIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
     }
 

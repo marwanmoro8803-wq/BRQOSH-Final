@@ -76,8 +76,15 @@ public partial class PaymentVoucherDialog : Window
             BankCombo.SelectedIndex = 0;
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-٥) الحارسُ الأوّل شرطُ فتح الحوار لا احتياط — انظر الشرح المفصّل في
+    /// <see cref="ReceiptVoucherDialog"/>: <c>SelectedIndex="0"</c> في XAML يُطلق هذا المعالج
+    /// أثناء <c>InitializeComponent</c> بينما <c>BankPanel</c> بعده في الشجرة فيكون <c>null</c>،
+    /// فيرمي الباني ولا يُفتح «سند الصرف» أبداً.
+    /// </summary>
     private void OnMethodChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (BankPanel is null) return;
         BankPanel.Visibility = MethodCombo.SelectedIndex == 1 ? Visibility.Visible : Visibility.Collapsed;
     }
 
