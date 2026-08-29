@@ -33,7 +33,9 @@ jobs:
 
       - name: Test Release + Coverage
         env:
-          BRQOSH_SKIP_STRESS: "1"
+          # (CEEF-229 · م2-٤) حُذف BRQOSH_SKIP_STRESS: بوّابتا الأداء تعملان الآن فعلاً
+          # (نحو أربعٍ وأربعين ثانية). وكان المتغيّر مضبوطاً هنا **وفي**
+          # tests/coverage.runsettings معاً، فإزالته من هنا وحدها لم تكن تكفي.
           BRQOSH_TEST: "1"
         run: >
           dotnet test Brqosh.sln -c Release --no-build --verbosity normal

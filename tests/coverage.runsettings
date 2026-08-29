@@ -13,13 +13,18 @@
 
   ملاحظة: `BRQOSH_TEST` كان هنا ويُطفئ طبقة الصلاحيات كاملةً (م2-١) — حُذف، ولم يعد له أثرٌ
   على الصلاحيات أصلاً بعد نزع التجاوز من `SecurityContext`.
+
+  (CEEF-229 · م2-٤) وحُذف معه `BRQOSH_SKIP_STRESS=1`.
+
+  كان هنا — أي في الإعداد المشترك لمشاريع الاختبار **الأربعة** — فبوّابتا الأداء لم تعملا في
+  أيّ تشغيل: لا محلّيّ ولا في CI. وكانتا تُحسبان **ناجحتَين** لأنّ جسمهما يبدأ بـ`return`
+  صامتة. و`ci.yml` كان يضبط المتغيّر أيضاً، فبدا أنّ إزالته من هناك تكفي — ولا تكفي:
+  هذا الملفّ يُعيد ضبطه لكلّ مشروع. والقياس هو الذي كشف ذلك، لا القراءة.
+
+  وثمنُ تشغيلهما مقيس: **نحو أربعٍ وأربعين ثانية** (٢٠٠ قيداً في ٠٫٩s و٢٠٠٠ في ٤٢٫٨s). والتخطّي بعد اليوم يبقى ممكناً
+  بضبط المتغيّر يدوياً، ويظهر عندئذٍ `Skipped` مُعلَناً (StressFactAttribute) لا `Passed` كاذبة.
 -->
 <RunSettings>
-  <RunConfiguration>
-    <EnvironmentVariables>
-      <BRQOSH_SKIP_STRESS>1</BRQOSH_SKIP_STRESS>
-    </EnvironmentVariables>
-  </RunConfiguration>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">

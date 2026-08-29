@@ -1,3 +1,4 @@
+using Brqosh.Application.Tests.TestSupport;
 using System.Diagnostics;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
@@ -17,8 +18,16 @@ public class JournalLoadTests : IDisposable
     private readonly SqliteConnection _connection;
     private readonly BrqoshDbContext _db;
 
-    public JournalLoadTests()
+    private readonly Xunit.Abstractions.ITestOutputHelper _output;
+
+    public JournalLoadTests(Xunit.Abstractions.ITestOutputHelper output)
     {
+        _output = output;
+
+        // (CEEF-229 · م2-٤) فاعلٌ مُصرَّح — وغيابُه هو ما كانت البوّابةُ المعطَّلة تُخفيه.
+        // نزعُ AutomatedTestBypass في م2-١ أسقط ٧٣ اختباراً فأُصلحت كلُّها إلا هذين،
+        // لأنّهما لم يعملا: BRQOSH_SKIP_STRESS=1 كان يُعيدهما صامتَين فيُحسبان ناجحَين.
+        TestActor.Administrator();
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()
@@ -32,12 +41,9 @@ public class JournalLoadTests : IDisposable
         _connection.Dispose();
     }
 
-    [Fact]
+    [StressFact]
     public async Task Posts_journal_batch_under_budget()
     {
-        if (string.Equals(Environment.GetEnvironmentVariable("BRQOSH_SKIP_STRESS"), "1", StringComparison.Ordinal))
-            return; // تخطّي في CI/harness — الحمل المشدّد في JournalStressLoadTests عند الحاجة
-
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة حمل", "310123456700003", BusinessProfile.Retail);
 
@@ -66,6 +72,8 @@ public class JournalLoadTests : IDisposable
         var avgMs = sw.Elapsed.TotalMilliseconds / count;
         // بوابة انحدار وليست معيار أجهزة؛ تحت suite متوازٍ قد يرتفع المتوسط.
         // الحمل المشدّد: JournalStressLoadTests (مع BRQOSH_SKIP_STRESS).
+        _output.WriteLine($"[أداء · الحمل الأساسيّ] {count} قيداً · متوسط {avgMs:N2}ms · إجمالي {sw.Elapsed.TotalSeconds:N1}s");
+
         Assert.True(avgMs < 150,
             $"متوسط ترحيل القيد {avgMs:N1}ms لـ {count} قيود — المتوقع أقل من 150ms");
     }

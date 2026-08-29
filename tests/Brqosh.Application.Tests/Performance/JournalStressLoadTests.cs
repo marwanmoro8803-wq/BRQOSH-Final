@@ -1,3 +1,4 @@
+using Brqosh.Application.Tests.TestSupport;
 using System.Diagnostics;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
@@ -18,8 +19,16 @@ public class JournalStressLoadTests : IDisposable
     private readonly SqliteConnection _connection;
     private readonly BrqoshDbContext _db;
 
-    public JournalStressLoadTests()
+    private readonly Xunit.Abstractions.ITestOutputHelper _output;
+
+    public JournalStressLoadTests(Xunit.Abstractions.ITestOutputHelper output)
     {
+        _output = output;
+
+        // (CEEF-229 · م2-٤) فاعلٌ مُصرَّح — وغيابُه هو ما كانت البوّابةُ المعطَّلة تُخفيه.
+        // نزعُ AutomatedTestBypass في م2-١ أسقط ٧٣ اختباراً فأُصلحت كلُّها إلا هذين،
+        // لأنّهما لم يعملا: BRQOSH_SKIP_STRESS=1 كان يُعيدهما صامتَين فيُحسبان ناجحَين.
+        TestActor.Administrator();
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()
@@ -33,12 +42,9 @@ public class JournalStressLoadTests : IDisposable
         _connection.Dispose();
     }
 
-    [Fact]
+    [StressFact]
     public async Task Posts_large_journal_batch_under_extended_budget()
     {
-        if (string.Equals(Environment.GetEnvironmentVariable("BRQOSH_SKIP_STRESS"), "1", StringComparison.Ordinal))
-            return;
-
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة ضغط", "310123456700003", BusinessProfile.Retail);
 
@@ -66,6 +72,8 @@ public class JournalStressLoadTests : IDisposable
 
         var avgMs = sw.Elapsed.TotalMilliseconds / count;
         // ميزانية متسامحة مع أجهزة أبطأ / تحميل متوازي
+        _output.WriteLine($"[أداء · الحمل المشدّد] {count} قيداً · متوسط {avgMs:N2}ms · إجمالي {sw.Elapsed.TotalSeconds:N1}s");
+
         Assert.True(avgMs < 100,
             $"متوسط ترحيل {avgMs:N2}ms لـ {count} قيود — الإجمالي {sw.Elapsed.TotalSeconds:N1}s");
     }
