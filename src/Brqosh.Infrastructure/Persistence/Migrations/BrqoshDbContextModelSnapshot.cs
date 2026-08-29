@@ -334,6 +334,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
+                    b.Property<string>("CommercialRegistrationNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<long?>("CompanyGroupId")
                         .HasColumnType("bigint");
 
@@ -379,6 +383,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
+
+                    b.Property<string>("RegistrationName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");
@@ -1880,6 +1888,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("CashSales")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("CashierName")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -2994,6 +3006,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CompanyId", "BranchId");
 
+                    b.HasIndex("CompanyId", "Icv")
+                        .IsUnique();
+
                     b.HasIndex("CompanyId", "InvoiceNumber");
 
                     b.HasIndex("CompanyId", "DocumentType", "SourceDocumentId")
@@ -3117,6 +3132,73 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Companies.Company", b =>
+                {
+                    b.OwnsOne("Brqosh.Domain.Companies.NationalAddress", "NationalAddress", b1 =>
+                        {
+                            b1.Property<long>("CompanyId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<string>("AdditionalNumber")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("AddrAdditionalNumber");
+
+                            b1.Property<string>("BuildingNumber")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("AddrBuildingNumber");
+
+                            b1.Property<string>("CityName")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)")
+                                .HasColumnName("AddrCityName");
+
+                            b1.Property<string>("CountryCode")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("AddrCountryCode");
+
+                            b1.Property<string>("CountrySubentity")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)")
+                                .HasColumnName("AddrCountrySubentity");
+
+                            b1.Property<string>("DistrictName")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)")
+                                .HasColumnName("AddrDistrictName");
+
+                            b1.Property<string>("PostalZone")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("AddrPostalZone");
+
+                            b1.Property<string>("StreetName")
+                                .IsRequired()
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)")
+                                .HasColumnName("AddrStreetName");
+
+                            b1.HasKey("CompanyId");
+
+                            b1.ToTable("companies");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CompanyId");
+                        });
+
+                    b.Navigation("NationalAddress")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Construction.ConstructionProject", b =>

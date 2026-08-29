@@ -6,6 +6,15 @@
 //
 // آمن: يعمل على قاعدة باسم مستقل (brqosh_migprobe) ولا يمسّ قاعدة المستخدم إطلاقاً.
 // التشغيل:  dotnet run --project tools/MigrationProbe
+//
+// ‏‏‏‏‏‏‏‏‏‏‏حدُّ هذا المسبار — مسجَّلٌ صراحةً (CEEF-229 · م2-٩):
+//   ‏هو **لا يقيس اكتمال سلسلة الهجرات**، خلافاً لما يوحي به اسمه. فـ MigrateAsync أدناه
+//   ‏يتلوه فوراً DatabaseInitializer.InitializeAsync، وهذا يستدعي في سطره الأول
+//   ‏DatabaseSchemaService.EnsureSchemaAsync (DatabaseInitializer.cs:27) — فيُشغَّل
+//   ‏BrqoshSchemaUpdater ويرقّع بيده كلّ عمودٍ نسيته الهجرات **قبل** أن يصل الإدراج.
+//   ‏فبقي هذا المسبار يقول PASS أربعةً وثلاثين يوماً بينما كانت السلسلة تنقص ١١ عموداً.
+//   ‏والذي يقيس ذلك هو tools/SchemaCoverageProbe: يقابل النموذج بالمخطط عموداً عموداً،
+//   ‏ويُثبت أنّ الهجرة الجديدة تُطبَّق فعلاً على قاعدةٍ رقّعها المُرقِّع سلفاً.
 
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

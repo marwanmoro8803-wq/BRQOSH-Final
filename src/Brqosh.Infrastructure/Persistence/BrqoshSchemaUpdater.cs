@@ -1385,6 +1385,22 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     ON sales_quotations ("CompanyId", "QuotationNumber");
                 """, ct);
 
+            // (CEEF-229 · م2-٩) سطورُ عرض السعر — كان الأبُ يُنشأ وحده والابنُ منسيّاً.
+            // ‏وVatCategory هنا INTEGER لا نصّاً: النموذج لا يُعلن HasConversion<string>()
+            // ‏على هذا الجدول (خلافاً لسطور أمر البيع) — والتفاوت مسجَّلٌ بنداً مفتوحاً،
+            // ‏لكنّ المُرقِّع يتبع النموذجَ كما هو لا كما ينبغي أن يكون.
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS sales_quotation_lines (
+                    "id" BIGSERIAL PRIMARY KEY,
+                    "sales_quotation_id" BIGINT NOT NULL,
+                    "Description" character varying(512) NOT NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL,
+                    "UnitPrice" NUMERIC(18,2) NOT NULL,
+                    "ProductId" BIGINT NULL,
+                    "VatCategory" INTEGER NOT NULL DEFAULT 0
+                );
+                """, ct);
+
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_orders (
                     "Id" BIGSERIAL PRIMARY KEY,
@@ -1400,6 +1416,20 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS ix_sales_orders_company_number
                     ON sales_orders ("CompanyId", "OrderNumber");
+                """, ct);
+
+            // (CEEF-229 · م2-٩) سطورُ أمر البيع — الابنُ المنسيّ الثاني. وVatCategory نصٌّ هنا
+            // ‏لأنّ النموذج يُعلن HasConversion<string>() عليه (CEEF-207).
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS sales_order_lines (
+                    "id" BIGSERIAL PRIMARY KEY,
+                    "sales_order_id" BIGINT NOT NULL,
+                    "Description" character varying(512) NOT NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL,
+                    "UnitPrice" NUMERIC(18,2) NOT NULL,
+                    "ProductId" BIGINT NULL,
+                    "VatCategory" character varying(16) NOT NULL DEFAULT 'Standard'
+                );
                 """, ct);
         }
         else
@@ -1464,6 +1494,19 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     ON sales_quotations (CompanyId, QuotationNumber);
                 """, ct);
 
+            // (CEEF-229 · م2-٩) الابنُ المنسيّ — انظر تعليق فرع PostgreSQL.
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS sales_quotation_lines (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sales_quotation_id INTEGER NOT NULL,
+                    Description TEXT NOT NULL,
+                    Quantity REAL NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    ProductId INTEGER NULL,
+                    VatCategory INTEGER NOT NULL DEFAULT 0
+                );
+                """, ct);
+
             await SafeSqliteIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_orders (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1479,6 +1522,19 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS ix_sales_orders_company_number
                     ON sales_orders (CompanyId, OrderNumber);
+                """, ct);
+
+            // (CEEF-229 · م2-٩) الابنُ المنسيّ — انظر تعليق فرع PostgreSQL.
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS sales_order_lines (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sales_order_id INTEGER NOT NULL,
+                    Description TEXT NOT NULL,
+                    Quantity REAL NOT NULL,
+                    UnitPrice REAL NOT NULL,
+                    ProductId INTEGER NULL,
+                    VatCategory TEXT NOT NULL DEFAULT 'Standard'
+                );
                 """, ct);
         }
     }
