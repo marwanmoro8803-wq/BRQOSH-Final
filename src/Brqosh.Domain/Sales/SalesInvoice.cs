@@ -85,6 +85,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
             throw new AccountingException("الكمية يجب أن تكون أكبر من صفر.");
         if (unitPrice < 0)
             throw new AccountingException("سعر الوحدة لا يكون سالباً.");
+        DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
 
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory));
         RecalculateTotals();

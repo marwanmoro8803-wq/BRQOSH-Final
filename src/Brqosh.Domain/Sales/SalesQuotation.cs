@@ -48,6 +48,7 @@ public class SalesQuotation : ILineDocumentTotals
     {
         if (Status != SalesQuotationStatus.Draft)
             throw new AccountingException("لا تُعدَّل عروض الأسعار بعد الإرسال.");
+        DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
         var line = new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId);
         _lines.Add(line);
         RecalculateTotals();

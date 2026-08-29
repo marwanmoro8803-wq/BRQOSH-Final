@@ -67,6 +67,7 @@ public class PurchaseOrder : IBranchScoped, ILineDocumentTotals
             throw new AccountingException("وصف الصنف مطلوب.");
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
+        DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory));
         RecalculateTotals();
     }
