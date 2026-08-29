@@ -116,6 +116,14 @@ public sealed record BuyerIdentity(
                 new XElement(Cac + "TaxCategory",
                     El(Cbc, "ID", sub.Category.UblCode()),
                     El(Cbc, "Percent", (sub.Rate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
+                    // (CEEF-229 · م1-١ب) BR-KSA-CL-06: فئةٌ غير أساسية بلا سبب إعفاء تُرفض.
+                    // والترتيبُ مُلزِم: ID ثمّ Percent ثمّ الرمز ثمّ النصّ ثمّ TaxScheme.
+                    sub.Category == VatCategory.Standard || sub.ExemptionReasonCode is null
+                        ? null
+                        : El(Cbc, "TaxExemptionReasonCode", sub.ExemptionReasonCode),
+                    sub.Category == VatCategory.Standard || sub.ExemptionReasonText is null
+                        ? null
+                        : El(Cbc, "TaxExemptionReason", sub.ExemptionReasonText),
                     new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
         }
 

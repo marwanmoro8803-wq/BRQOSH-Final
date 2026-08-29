@@ -53,11 +53,23 @@ public class PosSaleService(BrqoshDbContext db)
             // منشأةٌ غير مسجَّلة في ضريبة القيمة المضافة لا تُصدر ضريبةً أصلاً: الفئة «خارج النطاق».
             var posVatCategory = isVatRegistered ? VatCategory.Standard : VatCategory.OutOfScope;
 
+            // (CEEF-229 · م1-١ب الشقّ الثاني) والفئةُ «خارج النطاق» تقول سببَها: رمزٌ نظاميّ
+            // ونصٌّ يكتبه المكلَّف — والنصُّ هنا معلومٌ يقيناً، فلا يُسأل عنه الكاشير.
+            //
+            // وهذه المنشأةُ خارج تفويض الفوترة الإلكترونية أصلاً (لا رقمَ ضريبيّ لها، فحارسُ
+            // هوية البائع يمنع توليدَ مستندٍ لها). لكنّ السببَ يبقى مكتوباً في السطر — فلو
+            // سُجّلت لاحقاً بقيت مستنداتُها القديمة صادقةً عن نفسها.
+            var posReasonCode = isVatRegistered ? null : VatExemptionReason.OutOfScopeCode;
+            var posReasonText = isVatRegistered
+                ? null
+                : "المنشأة غير مسجَّلة في ضريبة القيمة المضافة.";
+
             invoice = SalesInvoice.CreateDraft(companyId, effectiveCustomerId, DateOnly.FromDateTime(DateTime.Today));
             foreach (var (productId, qty) in lines)
             {
                 var product = await db.Products.SingleAsync(p => p.Id == productId, token);
-                invoice.AddLine(product.NameAr, qty, product.SalePrice, productId, posVatCategory);
+                invoice.AddLine(product.NameAr, qty, product.SalePrice, productId, posVatCategory,
+                    posReasonCode, posReasonText);
             }
 
             invoice.MarkPosSale(shiftId, paymentMethod);

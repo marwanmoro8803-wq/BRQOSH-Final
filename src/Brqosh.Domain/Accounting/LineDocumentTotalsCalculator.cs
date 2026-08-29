@@ -4,7 +4,8 @@ using Brqosh.Domain.Tax;
 namespace Brqosh.Domain.Accounting;
 
 /// <summary>وعاء ضريبيّ واحد: أسطر تشترك في الفئة والنسبة (cac:TaxSubtotal في UBL).</summary>
-public record VatSubtotal(VatCategory Category, decimal Rate, decimal TaxableAmount, decimal VatAmount);
+public record VatSubtotal(VatCategory Category, decimal Rate, decimal TaxableAmount, decimal VatAmount,
+    string? ExemptionReasonCode = null, string? ExemptionReasonText = null);
 
 /// <summary>
 /// حساب إجماليات مستندات السطور — Subtotal و VatAmount مُخزَّنان في DB.
@@ -34,7 +35,16 @@ public static class LineDocumentTotalsCalculator
                     g.Key,
                     rate,
                     taxable,
-                    Math.Round(taxable * rate, 2, MidpointRounding.AwayFromZero));
+                    Math.Round(taxable * rate, 2, MidpointRounding.AwayFromZero),
+                    g.Select(l => l.TaxExemptionReasonCode)
+                     .FirstOrDefault(c => !string.IsNullOrWhiteSpace(c)),
+                    // ‏والنصُّ دالّةٌ في الرمز: سطرٌ قديمٌ خُزّن قبل هذه الدفعة يحمل رمزاً بلا
+                    // ‏نصّ، فيُستكمل من القائمة بدل أن يخرج المستندُ ناقصاً وترفضه الهيئة.
+                    g.Select(l => l.TaxExemptionReason)
+                     .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t))
+                    ?? VatExemptionReason.Find(
+                           g.Select(l => l.TaxExemptionReasonCode)
+                            .FirstOrDefault(c => !string.IsNullOrWhiteSpace(c)))?.EnglishText);
             })
             .ToList();
 

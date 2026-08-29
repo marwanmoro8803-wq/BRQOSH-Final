@@ -92,6 +92,10 @@ public partial class CreditNoteDialog : Window
                 Quantity = returnable,
                 UnitPrice = line.UnitPrice,
                 VatCategory = line.VatCategory,
+                // ‏(م1-١ب/الشقّ الثاني) السببُ يُورَّث من الفاتورة الأصلية — فالمرتجعُ يحمل
+                // ‏فئتَها، ولو تُرك فارغاً لَرفض النطاقُ إشعاراً دائناً لبيعةٍ صفريةٍ صحيحة.
+                TaxExemptionReasonCode = line.TaxExemptionReasonCode,
+                TaxExemptionReason = line.TaxExemptionReason,
             });
         }
 
@@ -133,7 +137,7 @@ public partial class CreditNoteDialog : Window
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
                 note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice,
-                    row.ProductId, row.VatCategory);
+                    row.ProductId, row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason);
 
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<CreditNotePostingService>().PostAsync(note);

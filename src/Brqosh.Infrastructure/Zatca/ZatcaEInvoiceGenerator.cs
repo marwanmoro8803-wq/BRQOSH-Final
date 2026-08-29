@@ -2,6 +2,7 @@
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -280,6 +281,22 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 $"لا يمكن إصدار فاتورة قياسية للعميل «{customer.NameAr}» قبل إكمال بياناته:\n- "
                 + string.Join("\n- ", buyerGaps)
                 + "\n\nأكمِلها من: العملاء ← تعديل العميل.");
+
+        // (CEEF-229 · م1-١ب/الشقّ الثاني) **وسطرٌ غيرُ خاضعٍ للنسبة الأساسية يقول سببَه.**
+        //
+        // `BR-KSA-CL-06`: فئةٌ `Z` أو `E` أو `O` بلا رمز سبب إعفاء (BT-121) من قائمة السعودية
+        // ترفضها الهيئة. وشاشةُ المبيعات تعرض الفئات الأربع منذ اليوم الأول، ولم يكن في
+        // المستودع كلِّه ذكرٌ لـ`TaxExemption` — فمن باع سلعةً مصدَّرةً أو خدمةً معفاة أنتج
+        // مستنداً مرفوضاً، وقد استهلك عدّاداً تسلسلياً وبنى بصمةَ ما بعده عليه.
+        //
+        // ويُفحص هنا آخِراً: العطلُ المستنديّ الأخصّ بعد المنشأة والشهادة والمشتري.
+        var exemptionGaps = VatExemptionGaps.For(lines);
+        if (exemptionGaps.Count > 0)
+            throw new AccountingException(
+                $"لا يمكن إصدار المستند «{number}» — أسبابُ الإعفاء ناقصة:\n- "
+                + string.Join("\n- ", exemptionGaps)
+                + "\n\nأكمِلها من سطور المستند قبل الترحيل.");
+
 
         // (CEEF-229 · Z-4) قفل استشاريّ قبل قراءة العدّاد — النمط نفسه في JournalEntryNumberGenerator.
         //

@@ -129,7 +129,7 @@ public class UblStructureConformanceTests
         var lines = new List<SalesInvoiceLine>
         {
             new("صنف أساسيّ", 1m, 1000m),
-            new("صادرات", 1m, 500m, null, VatCategory.ZeroRated),
+            new("صادرات", 1m, 500m, null, VatCategory.ZeroRated, "VATEX-SA-32", "Export of goods"),
         };
 
         var violations = UblStructureValidator.Validate(Build(Data(lines: lines)));

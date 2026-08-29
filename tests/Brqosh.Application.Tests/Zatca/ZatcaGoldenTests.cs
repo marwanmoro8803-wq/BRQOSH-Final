@@ -125,7 +125,8 @@ public class ZatcaGoldenTests : IDisposable
 
         var invoice = SalesInvoice.CreateDraft(company.Id, customer.Id, new DateOnly(2026, 7, 8));
         invoice.AddLine("بيع محلي", 1m, 1000m);
-        invoice.AddLine("تصدير", 1m, 500m, vatCategory: Brqosh.Domain.Tax.VatCategory.ZeroRated);
+        invoice.AddLine("تصدير", 1m, 500m, vatCategory: Brqosh.Domain.Tax.VatCategory.ZeroRated,
+            taxExemptionReasonCode: "VATEX-SA-32");
         await new SalesInvoicePostingService(_db).PostAsync(invoice);
 
         var doc = await _db.ZatcaEInvoiceDocuments.SingleAsync();

@@ -29,6 +29,14 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (CEEF-229 · Z-10) هوية المنشأة النظامية — هنا للسبب نفسه المشروح أعلاه.
         await EnsureRegulatoryIdentityColumnsAsync(isPg, ct);
 
+        // (CEEF-229 · م1-١ب الشقّ الثاني) سببُ الإعفاء — **قبل ترقيعات المزوّد للسبب نفسه
+        // المشروح أعلاه**، لا بعدها مع الفئة الضريبية. وهو ما كشفه `SchemaCoverageProbe`:
+        // وُضع أوّلاً مع `EnsureVatCategoryColumnsAsync` فسقط مسارُ الترقية بـ
+        // `42703: column s1.TaxExemptionReason does not exist` — لأنّ ترقيعات المزوّد
+        // تُجري استعلامات EF على المستندات، و EF يبني SELECT بكل أعمدة النموذج،
+        // وأسطرُ المستندات مملوكةٌ فتُحمَّل معها دائماً.
+        await EnsureExemptionReasonColumnsAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -98,6 +106,30 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("audit_log", "Sequence", "INTEGER NOT NULL DEFAULT 0", ct);
             await EnsureSqliteColumnAsync("audit_log", "PreviousHash", "TEXT NOT NULL DEFAULT ''", ct);
             await EnsureSqliteColumnAsync("audit_log", "EntryHash", "TEXT NOT NULL DEFAULT ''", ct);
+        }
+    }
+
+    /// <summary>
+    /// رمزُ سبب الإعفاء ونصُّه على جداول أسطر المستندات — نصّان قابلان للعدم، وفارغُهما
+    /// يعني «لم يُختَر». ولا قيمةَ افتراضية: سطرٌ قديمٌ بفئةٍ أساسية لا يحتاج سبباً أصلاً.
+    /// </summary>
+    private async Task EnsureExemptionReasonColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        foreach (var table in VatCategoryLineTables)
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+            {
+                await EnsurePgColumnAsync(table, "TaxExemptionReasonCode", "text NULL", ct);
+                await EnsurePgColumnAsync(table, "TaxExemptionReason", "text NULL", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync(table, "TaxExemptionReasonCode", "TEXT NULL", ct);
+                await EnsureSqliteColumnAsync(table, "TaxExemptionReason", "TEXT NULL", ct);
+            }
         }
     }
 
@@ -1425,7 +1457,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Quantity" NUMERIC(18,4) NOT NULL,
                     "UnitPrice" NUMERIC(18,2) NOT NULL,
                     "ProductId" BIGINT NULL,
-                    "VatCategory" INTEGER NOT NULL DEFAULT 0
+                    "VatCategory" INTEGER NOT NULL DEFAULT 0,
+                    -- (CEEF-229 · م1-١ب/الشقّ الثاني) سببُ الإعفاء يُنشأ مع الجدول.
+                    -- ‏والفرعُ القديم لا هجرةَ تُنقذه: ما لا يُكتب هنا لا يوجد أبداً.
+                    "TaxExemptionReasonCode" text NULL,
+                    "TaxExemptionReason" text NULL
                 );
                 """, ct);
 
@@ -1456,7 +1492,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Quantity" NUMERIC(18,4) NOT NULL,
                     "UnitPrice" NUMERIC(18,2) NOT NULL,
                     "ProductId" BIGINT NULL,
-                    "VatCategory" character varying(16) NOT NULL DEFAULT 'Standard'
+                    "VatCategory" character varying(16) NOT NULL DEFAULT 'Standard',
+                    "TaxExemptionReasonCode" text NULL,
+                    "TaxExemptionReason" text NULL
                 );
                 """, ct);
         }
@@ -1531,7 +1569,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Quantity REAL NOT NULL,
                     UnitPrice REAL NOT NULL,
                     ProductId INTEGER NULL,
-                    VatCategory INTEGER NOT NULL DEFAULT 0
+                    VatCategory INTEGER NOT NULL DEFAULT 0,
+                    TaxExemptionReasonCode TEXT NULL,
+                    TaxExemptionReason TEXT NULL
                 );
                 """, ct);
 
@@ -1561,7 +1601,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Quantity REAL NOT NULL,
                     UnitPrice REAL NOT NULL,
                     ProductId INTEGER NULL,
-                    VatCategory TEXT NOT NULL DEFAULT 'Standard'
+                    VatCategory TEXT NOT NULL DEFAULT 'Standard',
+                    TaxExemptionReasonCode TEXT NULL,
+                    TaxExemptionReason TEXT NULL
                 );
                 """, ct);
         }

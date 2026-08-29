@@ -68,6 +68,16 @@
                                                 SelectedValuePath="Value"
                                                 DisplayMemberPath="Display"
                                                 ItemsSource="{Binding Source={x:Static ui:VatCategoryOptions.All}}"/>
+                        <!-- (CEEF-229 · م1-١ب/الشقّ الثاني) سببُ الإعفاء — BR-KSA-CL-06.
+                             وبلا هذين العمودين يصير الحارسُ في النطاق بابَاً مغلقاً بلا مفتاح:
+                             يمنع البيعَ الصفريَّ والمعفى ولا يهدي المستخدمَ إلى حلّ. -->
+                        <DataGridComboBoxColumn Header="سبب الإعفاء" Width="240"
+                                                SelectedValueBinding="{Binding TaxExemptionReasonCode}"
+                                                SelectedValuePath="Code"
+                                                DisplayMemberPath="Display"
+                                                ItemsSource="{Binding Source={x:Static ui:VatExemptionReasonOptions.All}}"/>
+                        <DataGridTextColumn Header="نصّ السبب (خارج النطاق)" Width="200"
+                                            Binding="{Binding TaxExemptionReason}"/>
                         <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="130" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>

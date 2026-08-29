@@ -40,6 +40,10 @@ internal static class SchemaSqlGuard
         "character varying(256) NOT NULL DEFAULT ''",
         "INTEGER NOT NULL DEFAULT 0",
         "BOOLEAN NOT NULL DEFAULT false",
+        // (CEEF-229 · م1-١ب الشقّ الثاني) سببُ الإعفاء — نصٌّ غيرُ محدود الطول كما يُعلنه
+        // النموذج (‏string?‎ بلا HasMaxLength ⟵ text). ولو حُدَّ هنا وحده لاختلف عن النموذج
+        // ولأسقط مسبارَ تغطية المخطّط بفارق نوع.
+        "text NULL",
         "NUMERIC(18,2) NOT NULL DEFAULT 0",
     };
 

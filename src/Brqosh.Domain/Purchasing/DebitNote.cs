@@ -63,7 +63,8 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
     }
 
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
-        Tax.VatCategory vatCategory = Tax.VatCategory.Standard)
+        Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -71,7 +72,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
         RecalculateTotals();
     }
 

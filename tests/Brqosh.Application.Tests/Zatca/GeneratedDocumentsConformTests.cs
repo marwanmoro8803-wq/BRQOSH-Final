@@ -436,6 +436,78 @@ public class GeneratedDocumentsConformTests : IDisposable
     }
 
     /// <summary>
+    /// (CEEF-229 · م1-١ب/الشقّ الثاني) <b>فاتورةٌ صفريةٌ مرحّلةٌ فعلاً تحمل سببَ إعفائها.</b>
+    ///
+    /// <para>وهذا هو القياسُ الذي يصل الطرفين: النطاقُ يقبل السطر، والمولّدُ يترجمه، والملفُّ
+    /// على القرص يحمل <c>TaxExemptionReasonCode</c> — لا اختبارُ بانٍ من مُدخلٍ مُعَدّ.</para>
+    /// </summary>
+    [Fact]
+    public async Task AZeroRatedSale_CarriesItsExemptionReason_AllTheWayToDisk()
+    {
+        await SetupAsync();
+
+        var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 9));
+        invoice.AddLine("تصدير سلع", 1m, 1_000m, null,
+            Brqosh.Domain.Tax.VatCategory.ZeroRated, "VATEX-SA-32");
+        var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        var document = await DocumentFromPostingAsync(posted.Id, ZatcaDocumentType.SalesInvoice);
+        var xml = ReadGenerated(document);
+        AssertConforms("فاتورة صفرية", xml);
+
+        var text = System.Text.Encoding.UTF8.GetString(xml);
+        Assert.Contains("VATEX-SA-32", text, StringComparison.Ordinal);
+        Assert.Contains("Export of goods", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// <b>والعكسُ يُقاس أيضاً:</b> سطرٌ صفريّ بلا سبب لا يُبنى أصلاً — فالرفضُ عند بناء
+    /// السطر، أبكرُ موضعٍ ممكن، قبل استهلاك أيّ عدّاد.
+    /// </summary>
+    [Fact]
+    public void AZeroRatedLine_WithoutAReason_NeverBecomesADocument()
+    {
+        var invoice = SalesInvoice.CreateDraft(1, 1, new DateOnly(2026, 7, 9));
+
+        Assert.Throws<Brqosh.Domain.Accounting.AccountingException>(
+            () => invoice.AddLine("تصدير", 1m, 1_000m, null, Brqosh.Domain.Tax.VatCategory.ZeroRated));
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م1-١ب/الشقّ الثاني) <b>وحارسُ المولّد ليس زائداً على حارس السطر — فهو
+    /// وحده ما يحمي البياناتِ التي سبقت هذه الدفعة.</b>
+    ///
+    /// <para>حارسُ <c>AddLine</c> يمنع بناءَ سطرٍ ناقص من اليوم فصاعداً، لكنّ قاعدةَ منشأةٍ
+    /// قائمة تحوي أسطراً صفريةً ومعفاةً <b>خُزّنت بلا رمزٍ أصلاً</b> — ولا تمرّ تلك الأسطر
+    /// بـ<c>AddLine</c> ثانيةً: تُقرأ من القرص كما هي. فتُحاكى الحالةُ هنا بتفريغ العمود
+    /// مباشرةً بـ SQL، ثمّ يُطلب مستندُ إلغاءٍ يقرأ الأسطرَ المخزَّنة.</para>
+    ///
+    /// <para>ولولا هذا الاختبار لبقي حارسُ المولّد <b>ادّعاءً غيرَ مقيس</b>: كلُّ المسارات
+    /// الأخرى تمرّ بحارس السطر فلا تبلغه.</para>
+    /// </summary>
+    [Fact]
+    public async Task ALegacyLine_StoredWithoutAReason_IsCaughtByTheGenerator()
+    {
+        await SetupAsync();
+
+        var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 9));
+        invoice.AddLine("تصدير سلع", 1m, 1_000m, null,
+            Brqosh.Domain.Tax.VatCategory.ZeroRated, "VATEX-SA-32");
+        var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        // ‏تفريغُ العمود = سطرٌ خُزّن قبل هذه الدفعة. ولا سبيلَ إلى بنائه عبر النطاق.
+        await _db.Database.ExecuteSqlRawAsync(
+            """UPDATE sales_invoice_lines SET "TaxExemptionReasonCode" = NULL, "TaxExemptionReason" = NULL;""");
+        _db.ChangeTracker.Clear();
+
+        var ex = await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(
+            () => new ZatcaEInvoiceGenerator(_db).TryGenerateCancellationForSalesInvoiceAsync(posted.Id));
+
+        Assert.Contains("سبب إعفاء", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("تصدير سلع", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// <b>وكلُّ مسارِ توليدٍ إمّا مقيسٌ هنا وإمّا مُقَرٌّ بأنّه خارج متناول هذا العميل.</b>
     /// فلو أُضيف مسارٌ سابعٌ غداً لسقط هذا الاختبار حتى يُقاس أو يُقَرّ به بسبب.
     /// </summary>

@@ -3397,6 +3397,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
 
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3496,6 +3502,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
 
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3542,6 +3554,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("Quantity")
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
+
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
 
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
@@ -3590,6 +3608,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
 
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3634,6 +3658,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("Quantity")
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
+
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
 
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
@@ -3755,6 +3785,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
 
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3802,6 +3838,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
 
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3848,6 +3890,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("Quantity")
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
+
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasColumnType("text");
 
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)

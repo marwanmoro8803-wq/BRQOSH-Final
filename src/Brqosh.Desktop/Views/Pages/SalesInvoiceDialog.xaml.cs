@@ -42,6 +42,15 @@ public partial class SalesInvoiceDialog : Window
         /// <summary>الفئة الضريبية للسطر — الافتراضي أساسية 15% (CEEF-208).</summary>
         public Brqosh.Domain.Tax.VatCategory VatCategory { get; set; }
             = Brqosh.Domain.Tax.VatCategory.Standard;
+        /// <summary>
+        /// (CEEF-229 · م1-١ب/الشقّ الثاني) رمزُ سبب الإعفاء ونصُّه — BR-KSA-CL-06.
+        ///
+        /// <para>فارغٌ يعني «لم يُختَر»، والنطاق يرفض فئةً غير أساسية بلا سبب. والنصُّ
+        /// لفئة «خارج النطاق» وحدها: المعيار يقول إنّه حرٌّ يكتبه المكلَّف حالةً بحالة.</para>
+        /// </summary>
+        public string? TaxExemptionReasonCode { get; set; }
+        public string? TaxExemptionReason { get; set; }
+
         public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
     }
 
@@ -192,7 +201,8 @@ public partial class SalesInvoiceDialog : Window
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
         {
-            invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
+            invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId,
+                row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason);
         }
 
         return invoice;

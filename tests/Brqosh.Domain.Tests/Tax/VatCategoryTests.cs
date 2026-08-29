@@ -37,7 +37,7 @@ public class VatCategoryTests
     public void ZeroRatedLine_IsNotTaxed()
     {
         var invoice = Invoice();
-        invoice.AddLine("تصدير", 1m, 1000m, vatCategory: VatCategory.ZeroRated);
+        invoice.AddLine("تصدير", 1m, 1000m, vatCategory: VatCategory.ZeroRated, taxExemptionReasonCode: "VATEX-SA-32");
 
         Assert.Equal(1000m, invoice.Subtotal);
         Assert.Equal(0m, invoice.VatAmount);
@@ -63,8 +63,8 @@ public class VatCategoryTests
     {
         var invoice = Invoice();
         invoice.AddLine("بيع محلي", 1m, 1000m);                                        // أساسي
-        invoice.AddLine("تصدير", 1m, 500m, vatCategory: VatCategory.ZeroRated);        // صفري
-        invoice.AddLine("إيجار سكني", 1m, 200m, vatCategory: VatCategory.Exempt);      // معفى
+        invoice.AddLine("تصدير", 1m, 500m, vatCategory: VatCategory.ZeroRated, taxExemptionReasonCode: "VATEX-SA-32");        // صفري
+        invoice.AddLine("إيجار سكني", 1m, 200m, vatCategory: VatCategory.Exempt, taxExemptionReasonCode: "VATEX-SA-30");      // معفى
 
         var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(invoice.Lines);
         Assert.Equal(3, subtotals.Count);
@@ -90,7 +90,7 @@ public class VatCategoryTests
     {
         var invoice = Invoice();
         invoice.AddLine("أ", 3m, 0.10m);                                               // 0.30 أساسي
-        invoice.AddLine("ب", 3m, 0.10m, vatCategory: VatCategory.ZeroRated);           // 0.30 صفري
+        invoice.AddLine("ب", 3m, 0.10m, vatCategory: VatCategory.ZeroRated, taxExemptionReasonCode: "VATEX-SA-32");           // 0.30 صفري
 
         var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(invoice.Lines);
 

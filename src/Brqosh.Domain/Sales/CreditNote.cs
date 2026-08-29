@@ -70,7 +70,8 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     }
 
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
-        Tax.VatCategory vatCategory = Tax.VatCategory.Standard)
+        Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -78,7 +79,28 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory));
+
+        // (CEEF-229 · م1-١ب الشقّ الثاني) الرفضُ عند بناء السطر — أبكرُ موضعٍ ممكن.
+        // فالفئةُ غيرُ الأساسية بلا سببٍ نظاميّ تُنتج مستنداً ترفضه الهيئة (BR-KSA-CL-06)،
+        // ولا يُصلحه ملءُ البيانات بعد الترحيل: العدّادُ استُهلك والبصمةُ بُنيت عليه.
+        if (Tax.VatExemptionReason.IsRequiredFor(vatCategory))
+        {
+            var reason = Tax.VatExemptionReason.Find(taxExemptionReasonCode)
+                ?? throw new AccountingException(
+                    $"سطر «{description}» بفئة «{Tax.VatCategoryExtensions.UblCode(vatCategory)}» يتطلّب سبب إعفاء نظاميّاً.");
+
+            if (reason.Category != vatCategory)
+                throw new AccountingException(
+                    $"رمز «{reason.Code}» يخصّ فئة «{Tax.VatCategoryExtensions.UblCode(reason.Category)}» "
+                    + $"لا فئة «{Tax.VatCategoryExtensions.UblCode(vatCategory)}».");
+
+            // ‏ونصُّ السبب من القائمة لا من المستخدم — إلا «خارج النطاق»، فالمعيار يقول
+            // ‏صراحةً إنّ نصَّها حرٌّ يكتبه المكلَّف حالةً بحالة. وبهذا لا ينحرف النصُّ عن رمزه.
+            if (reason.Code != Tax.VatExemptionReason.OutOfScopeCode)
+                taxExemptionReason = reason.EnglishText;
+        }
+
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
         RecalculateTotals();
     }
 

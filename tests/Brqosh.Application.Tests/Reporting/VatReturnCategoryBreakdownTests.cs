@@ -68,7 +68,16 @@ public class VatReturnCategoryBreakdownTests : IDisposable
     {
         var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 2, 1));
         foreach (var (amount, category) in lines)
-            invoice.AddLine("بند", 1m, amount, _productId, category);
+            // ‏(م1-١ب/الشقّ الثاني) الفئةُ غيرُ الأساسية تحمل سببها — وإلا رفضها بناءُ السطر.
+            invoice.AddLine("بند", 1m, amount, _productId, category,
+                category switch
+                {
+                    VatCategory.ZeroRated => "VATEX-SA-32",
+                    VatCategory.Exempt => "VATEX-SA-30",
+                    VatCategory.OutOfScope => VatExemptionReason.OutOfScopeCode,
+                    _ => null,
+                },
+                category == VatCategory.OutOfScope ? "سبب اختباريّ" : null);
         await new SalesInvoicePostingService(_db).PostAsync(invoice);
     }
 
@@ -136,7 +145,7 @@ public class VatReturnCategoryBreakdownTests : IDisposable
     {
         var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 2, 1));
         invoice.AddLine("بند أساسيّ", 1m, 1_000m, _productId);
-        invoice.AddLine("صادرات", 1m, 500m, _productId, VatCategory.ZeroRated);
+        invoice.AddLine("صادرات", 1m, 500m, _productId, VatCategory.ZeroRated, "VATEX-SA-32");
         await new SalesInvoicePostingService(_db).PostAsync(invoice);
 
         var note = CreditNote.CreateDraft(_companyId, _customerId, invoice.Id,

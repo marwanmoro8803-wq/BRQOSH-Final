@@ -281,7 +281,52 @@ public static class UblStructureValidator
                 violations.Add("TaxCategory بلا Percent");
             if (category.Element(Cac + "TaxScheme")?.Element(Cbc + "ID")?.Value != "VAT")
                 violations.Add("TaxScheme يجب أن يكون VAT");
+
+            CheckExemptionReason(category, code, violations);
         }
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م1-١ب الشقّ الثاني) <b>BR-KSA-CL-06</b>: فئةٌ <c>Z</c> أو <c>E</c> أو
+    /// <c>O</c> بلا رمز سبب إعفاء (BT-121) من قائمة السعودية ⟵ ترفضها الهيئة.
+    ///
+    /// <para>ويُفحص <b>الرمزُ نفسُه</b> لا وجودُ العنصر: رمزٌ مخترَع أو رمزُ فئةٍ أخرى
+    /// (<c>VATEX-SA-32</c> على وعاءٍ معفى مثلاً) يمرّ على فحص الوجود ويسقط عند الهيئة.</para>
+    ///
+    /// <para>وترتيبُ الأبناء في <c>cac:TaxCategory</c> مُلزِم أيضاً:
+    /// <c>ID → Percent → TaxExemptionReasonCode → TaxExemptionReason → TaxScheme</c>.</para>
+    /// </summary>
+    private static void CheckExemptionReason(XElement category, string? code, List<string> violations)
+    {
+        if (code is not ("Z" or "E" or "O"))
+            return;
+
+        var reasonCode = category.Element(Cbc + "TaxExemptionReasonCode")?.Value;
+        var reasonText = category.Element(Cbc + "TaxExemptionReason")?.Value;
+
+        if (string.IsNullOrWhiteSpace(reasonCode))
+        {
+            violations.Add($"فئة «{code}» بلا TaxExemptionReasonCode — BR-KSA-CL-06");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(reasonText))
+            violations.Add($"فئة «{code}» بلا TaxExemptionReason");
+
+        var known = Brqosh.Domain.Tax.VatExemptionReason.Find(reasonCode);
+        if (known is null)
+            violations.Add($"رمز سبب إعفاء خارج قائمة الهيئة: {reasonCode}");
+        else if (Brqosh.Domain.Tax.VatCategoryExtensions.UblCode(known.Category) != code)
+            violations.Add($"رمز «{reasonCode}» يخصّ فئة «{Brqosh.Domain.Tax.VatCategoryExtensions.UblCode(known.Category)}» لا فئة «{code}»");
+
+        string[] sequence = ["ID", "Percent", "TaxExemptionReasonCode", "TaxExemptionReason", "TaxScheme"];
+        var present = category.Elements()
+            .Select(e => e.Name.LocalName)
+            .Where(n => sequence.Contains(n, StringComparer.Ordinal))
+            .ToList();
+        var sorted = present.OrderBy(n => Array.IndexOf(sequence, n)).ToList();
+        if (!present.SequenceEqual(sorted, StringComparer.Ordinal))
+            violations.Add("ترتيب أبناء TaxCategory مخالف للتسلسل المُلزِم: " + string.Join(" -> ", present));
     }
 
     private static void CheckLines(XElement root, List<string> violations)
