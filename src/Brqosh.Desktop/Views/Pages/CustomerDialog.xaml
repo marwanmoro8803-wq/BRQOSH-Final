@@ -15,13 +15,46 @@
         <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <TextBlock Text="الرقم الضريبي (15 خانة — يلزم للفاتورة الضريبية B2B)" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="VatBox" Style="{StaticResource AppTextBox}" MaxLength="15" Margin="0,0,0,14"/>
+        <TextBox x:Name="VatBox" Style="{StaticResource AppTextBox}" MaxLength="15" Margin="0,0,0,14"
+                 TextChanged="OnVatChanged"/>
 
         <TextBlock Text="الهاتف" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="PhoneBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <TextBlock Text="العنوان" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+        <!-- (CEEF-229 · م1-١ب) هوية المشتري النظامية — تلزم الفاتورة القياسية (B2B) وحدها،
+             فتظهر عند إدخال رقم ضريبيّ من خمس عشرة خانة وتُخفى دونه. والعميلُ النقديّ لا
+             يُسأل عن حيّه. -->
+        <StackPanel x:Name="RegulatoryPanel" Visibility="Collapsed">
+            <TextBlock Text="بيانات الفاتورة القياسية (B2B)" Style="{StaticResource FieldLabel}"
+                       FontWeight="Bold" Margin="0,6,0,10"/>
+
+            <TextBlock Text="الاسم المسجَّل في السجل التجاري *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="RegistrationNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+            <TextBlock Text="رقم المبنى *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="BuildingNumberBox" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
+
+            <TextBlock Text="الرقم الإضافي" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="AdditionalNumberBox" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
+
+            <TextBlock Text="اسم الشارع *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="StreetNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+            <TextBlock Text="الحي *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="DistrictNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+            <TextBlock Text="المدينة *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="CityNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+            <TextBlock Text="الرمز البريدي *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="PostalZoneBox" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
+
+            <TextBlock Text="المنطقة *" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="CountrySubentityBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+        </StackPanel>
 
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                    Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>

@@ -49,9 +49,22 @@ public class UblStructureConformanceTests
             BillingReferenceInvoiceNumber: billingReference,
             BillingReferenceUuid: billingReference is null ? null : Guid.NewGuid(),
             IssueReason: issueReason,
-            Seller: seller ?? CompleteSeller);
+            Seller: seller ?? CompleteSeller,
+            // ‏(م1-١ب) المشتري يُملأ للقياسية وحدها — والمبسّطة بلا مشترٍ معرَّف.
+            Buyer: isSimplified ? null : CompleteBuyer);
 
     /// <summary>بائعٌ مكتمل البيانات — الحدّ الأدنى الذي تقبله الهيئة.</summary>
+    /// <summary>
+    /// (CEEF-229 · م1-١ب) مشترٍ مكتمل — تقابله <see cref="CompleteSeller"/>.
+    /// وغيابُه كان يمرّ لأنّ المُصدِّق لم يكن يفحص طرفَ المشتري إطلاقاً.
+    /// </summary>
+    private static readonly ZatcaUblInvoiceBuilder.BuyerIdentity CompleteBuyer = new(
+        RegistrationName: "مؤسسة العميل التجارية",
+        Address: Brqosh.Domain.Companies.NationalAddress.Create(
+            buildingNumber: "4321", streetName: "طريق العليا", districtName: "الملز",
+            cityName: "الرياض", postalZone: "54321", countrySubentity: "منطقة الرياض",
+            additionalNumber: "8765"));
+
     private static readonly ZatcaUblInvoiceBuilder.SellerIdentity CompleteSeller = new(
         RegistrationName: "منشأة الاختبار للتجارة",
         CommercialRegistrationNumber: "1010123456",

@@ -35,7 +35,8 @@ public static class ZatcaUblInvoiceBuilder
         string? BillingReferenceInvoiceNumber = null,
         Guid? BillingReferenceUuid = null,
         string? IssueReason = null,
-        SellerIdentity? Seller = null);
+        SellerIdentity? Seller = null,
+        BuyerIdentity? Buyer = null);
 
 /// <summary>
 /// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
@@ -45,6 +46,16 @@ public static class ZatcaUblInvoiceBuilder
 public sealed record SellerIdentity(
     string? RegistrationName,
     string? CommercialRegistrationNumber,
+    Brqosh.Domain.Companies.NationalAddress Address);
+
+/// <summary>
+/// (CEEF-229 · م1-١ب) هويةُ المشتري النظامية — للفاتورة <b>القياسية</b> وحدها.
+///
+/// <para>ولا رقمَ سجلٍّ تجاريّ فيها: معرّفُ المشتري هو رقمُه الضريبيّ. أمّا المبسّطة (B2C)
+/// فلا مشتريَ معرَّفاً فيها أصلاً — والكاشيرُ لا يسأل الزبونَ عن حيّه.</para>
+/// </summary>
+public sealed record BuyerIdentity(
+    string? RegistrationName,
     Brqosh.Domain.Companies.NationalAddress Address);
 
     public static byte[] BuildXml(InvoiceData data)
@@ -83,7 +94,7 @@ public sealed record SellerIdentity(
 
         AddSupplier(root, data.SellerName, data.SellerVat, data.Seller);
         if (!string.IsNullOrWhiteSpace(data.CustomerName) || !string.IsNullOrWhiteSpace(data.CustomerVat))
-            AddCustomer(root, data.CustomerName, data.CustomerVat);
+            AddCustomer(root, data.CustomerName, data.CustomerVat, data.Buyer);
 
         AddIssueReason(root, data);
 
@@ -289,13 +300,35 @@ public sealed record SellerIdentity(
         return address;
     }
 
-    private static void AddCustomer(XElement root, string? name, string? vat)
+    /// <summary>
+    /// (CEEF-229 · م1-١ب) طرفُ المشتري — وترتيبُ عناصره يتبع المتتالية كما في طرف البائع.
+    ///
+    /// <para>كان يخرج باسمٍ ورقمٍ ضريبيّ فقط، بينما طرفُ البائع أخذ سجلَّه واسمَه المسجَّل
+    /// وعنوانَه الوطنيّ في Z-10. <b>ولم يكشف اللاتماثلَ شيء</b> لأنّ المُصدِّق نفسه كان يفحص
+    /// البائعَ فحصاً كاملاً ولا يفحص المشتري إطلاقاً.</para>
+    ///
+    /// <para>والحقولُ الناقصة تُتخطّى بدل أن تُكتب فارغة: عنصرٌ إلزاميّ بقيمة فارغة يُرفض كما
+    /// يُرفض غيابه، والغيابُ يقوله المُصدِّق بوضوح.</para>
+    /// </summary>
+    private static void AddCustomer(XElement root, string? name, string? vat, BuyerIdentity? buyer)
     {
         var partyEl = new XElement(Cac + "Party");
+
         if (!string.IsNullOrWhiteSpace(name))
             partyEl.Add(new XElement(Cac + "PartyName", El(Cbc, "Name", name)));
+
+        if (buyer?.Address is { IsComplete: true } address)
+            partyEl.Add(PostalAddress(address));
+
         if (!string.IsNullOrWhiteSpace(vat))
             partyEl.Add(PartyTax(vat));
+
+        if (!string.IsNullOrWhiteSpace(buyer?.RegistrationName))
+        {
+            partyEl.Add(new XElement(Cac + "PartyLegalEntity",
+                El(Cbc, "RegistrationName", buyer.RegistrationName)));
+        }
+
         root.Add(new XElement(Cac + "AccountingCustomerParty", partyEl));
     }
 

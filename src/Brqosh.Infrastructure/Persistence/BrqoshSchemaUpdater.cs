@@ -602,18 +602,46 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// </summary>
     private async Task EnsureRegulatoryIdentityColumnsAsync(bool isPg, CancellationToken ct)
     {
-        if (!await TableExistsAsync("companies", isPg, ct))
+        await EnsureRegulatoryColumnsOnAsync("companies", RegulatoryIdentityColumns, isPg, ct);
+
+        // (CEEF-229 · م1-١ب) وطرفُ المشتري يأخذ الشكلَ نفسه — الاسمُ المسجَّل والعنوانُ الوطنيّ.
+        // ورقمُ السجل التجاريّ لا يُطلب من المشتري: رقمُه الضريبيّ هو معرّفه.
+        await EnsureRegulatoryColumnsOnAsync("customers", BuyerIdentityColumns, isPg, ct);
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م1-١ب) أعمدةُ هوية المشتري — الشكلُ نفسه بلا رقم سجلٍّ تجاريّ.
+    /// وقابليةُ العدم تتبع القاعدة نفسها المشروحة عند <see cref="RegulatoryIdentityColumns"/>.
+    /// </summary>
+    internal static readonly (string Column, string PgType, bool Nullable)[] BuyerIdentityColumns =
+    [
+        ("RegistrationName", "character varying(256) NULL", true),
+        ("AddrBuildingNumber", "character varying(16) NOT NULL DEFAULT ''", false),
+        ("AddrAdditionalNumber", "character varying(16) NOT NULL DEFAULT ''", false),
+        ("AddrStreetName", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrDistrictName", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrCityName", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrPostalZone", "character varying(16) NOT NULL DEFAULT ''", false),
+        ("AddrCountrySubentity", "character varying(128) NOT NULL DEFAULT ''", false),
+        ("AddrCountryCode", "character varying(16) NOT NULL DEFAULT ''", false),
+    ];
+
+    /// <summary>يُنشئ أعمدةَ هويةٍ نظامية على جدولٍ ما ويُطابق قابليةَ عدمها.</summary>
+    private async Task EnsureRegulatoryColumnsOnAsync(
+        string table, (string Column, string PgType, bool Nullable)[] columns, bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync(table, isPg, ct))
             return;
 
-        foreach (var (column, pgType, nullable) in RegulatoryIdentityColumns)
+        foreach (var (column, pgType, nullable) in columns)
         {
             if (isPg)
-                await EnsurePgColumnAsync("companies", column, pgType, ct);
+                await EnsurePgColumnAsync(table, column, pgType, ct);
             else
                 await EnsureSqliteColumnAsync(
-                    "companies", column, nullable ? "TEXT NULL" : "TEXT NOT NULL DEFAULT ''", ct);
+                    table, column, nullable ? "TEXT NULL" : "TEXT NOT NULL DEFAULT ''", ct);
 
-            await AlignRegulatoryColumnNullabilityAsync(column, nullable, isPg, ct);
+            await AlignRegulatoryColumnNullabilityAsync(table, column, nullable, isPg, ct);
         }
     }
 
@@ -635,7 +663,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// يُسقط التجسيد هو القيمة العادمة لا وسمُ العمود.</para>
     /// </summary>
     private async Task AlignRegulatoryColumnNullabilityAsync(
-        string column, bool nullable, bool isPg, CancellationToken ct)
+        string table, string column, bool nullable, bool isPg, CancellationToken ct)
     {
         // المعرّف يمرّ بحارس النمط قبل أي تركيب — وهو الشرط الذي يسمح بـ ExecuteSqlRawAsync هنا:
         // اسم عمودٍ لا يمكن أن يكون معاملاً مرتبطاً، فالحماية بالتحقق لا بالربط.
@@ -645,7 +673,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         {
             if (!nullable)
             {
-                var fill = $"UPDATE companies SET {column} = '' WHERE {column} IS NULL;";
+                var fill = $"UPDATE {table} SET {column} = '' WHERE {column} IS NULL;";
                 await db.Database.ExecuteSqlRawAsync(fill, ct);
             }
             return;
@@ -653,16 +681,16 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
 
         if (nullable)
         {
-            var dropNotNull = $"""ALTER TABLE companies ALTER COLUMN "{column}" DROP NOT NULL;""";
-            var dropDefault = $"""ALTER TABLE companies ALTER COLUMN "{column}" DROP DEFAULT;""";
+            var dropNotNull = $"""ALTER TABLE {table} ALTER COLUMN "{column}" DROP NOT NULL;""";
+            var dropDefault = $"""ALTER TABLE {table} ALTER COLUMN "{column}" DROP DEFAULT;""";
             await db.Database.ExecuteSqlRawAsync(dropNotNull, ct);
             await db.Database.ExecuteSqlRawAsync(dropDefault, ct);
             return;
         }
 
-        var fillNulls = $"""UPDATE companies SET "{column}" = '' WHERE "{column}" IS NULL;""";
-        var setDefault = $"""ALTER TABLE companies ALTER COLUMN "{column}" SET DEFAULT '';""";
-        var setNotNull = $"""ALTER TABLE companies ALTER COLUMN "{column}" SET NOT NULL;""";
+        var fillNulls = $"""UPDATE {table} SET "{column}" = '' WHERE "{column}" IS NULL;""";
+        var setDefault = $"""ALTER TABLE {table} ALTER COLUMN "{column}" SET DEFAULT '';""";
+        var setNotNull = $"""ALTER TABLE {table} ALTER COLUMN "{column}" SET NOT NULL;""";
         await db.Database.ExecuteSqlRawAsync(fillNulls, ct);
         await db.Database.ExecuteSqlRawAsync(setDefault, ct);
         await db.Database.ExecuteSqlRawAsync(setNotNull, ct);

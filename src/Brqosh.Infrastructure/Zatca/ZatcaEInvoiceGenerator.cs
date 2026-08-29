@@ -35,7 +35,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.SalesInvoice, salesInvoiceId,
-            invoice.InvoiceNumber, invoice.InvoiceDate, company, customer.NameAr, customer.VatRegistrationNumber,
+            invoice.InvoiceNumber, invoice.InvoiceDate, company, customer,
             invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: false);
     }
 
@@ -60,7 +60,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.CreditNote, creditNoteId,
-            note.NoteNumber, note.NoteDate, company, customer.NameAr, customer.VatRegistrationNumber,
+            note.NoteNumber, note.NoteDate, company, customer,
             note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode, isCreditNote: true,
             issueReason: note.Reason);
     }
@@ -94,7 +94,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         return await GenerateAsync(
             billing.CompanyId, ZatcaDocumentType.ProgressBilling, progressBillingId,
-            billing.BillingNumber, billing.BillingDate, company, customer.NameAr, customer.VatRegistrationNumber,
+            billing.BillingNumber, billing.BillingDate, company, customer,
             billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode, isCreditNote: false);
     }
 
@@ -134,7 +134,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var cnNumber = $"CN-CANCEL-PB-{billing.BillingNumber}";
         return await GenerateAsync(
             billing.CompanyId, ZatcaDocumentType.BillingCancel, progressBillingId,
-            cnNumber, billing.BillingDate, company, customer.NameAr, customer.VatRegistrationNumber,
+            cnNumber, billing.BillingDate, company, customer,
             billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode, isCreditNote: true);
     }
 
@@ -169,7 +169,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var dnNumber = $"DN-CANCEL-{note.NoteNumber}";
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.DebitNote, creditNoteId,
-            dnNumber, note.NoteDate, company, customer.NameAr, customer.VatRegistrationNumber,
+            dnNumber, note.NoteDate, company, customer,
             note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode,
             isCreditNote: false, isDebitNote: true,
             issueReason: $"إلغاء إشعار دائن {note.NoteNumber}");
@@ -207,7 +207,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var cnNumber = $"CN-CANCEL-{invoice.InvoiceNumber}";
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.InvoiceCancel, salesInvoiceId,
-            cnNumber, invoice.InvoiceDate, company, customer.NameAr, customer.VatRegistrationNumber,
+            cnNumber, invoice.InvoiceDate, company, customer,
             invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: true,
             issueReason: $"إلغاء فاتورة مبيعات {invoice.InvoiceNumber}");
     }
@@ -215,7 +215,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     private async Task<ZatcaEInvoiceDocument> GenerateAsync(
         long companyId, ZatcaDocumentType docType, long sourceId,
         string number, DateOnly date, Company company,
-        string customerName, string customerVat,
+        Customer customer,
         decimal subtotal, decimal vat, decimal total,
         IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote,
         bool isDebitNote = false, string? issueReason = null)
@@ -292,14 +292,20 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         var ublData = new ZatcaUblInvoiceBuilder.InvoiceData(
             number, uuid, date, company.NameAr, company.VatRegistrationNumber,
-            customerName, string.IsNullOrWhiteSpace(customerVat) ? null : customerVat,
+            customer.NameAr, string.IsNullOrWhiteSpace(customer.VatRegistrationNumber)
+                ? null : customer.VatRegistrationNumber,
             subtotal, vat, total, lines, icv.ToString(), previousHash, qrPhase1, isCreditNote, isDebitNote,
-            IsSimplified: string.IsNullOrWhiteSpace(customerVat),
+            IsSimplified: !customer.SupportsStandardTaxInvoice,
             BillingReferenceInvoiceNumber: billingRefNumber,
             BillingReferenceUuid: billingRefUuid,
             IssueReason: issueReason,
             Seller: new ZatcaUblInvoiceBuilder.SellerIdentity(
-                company.RegistrationName, company.CommercialRegistrationNumber, company.NationalAddress));
+                company.RegistrationName, company.CommercialRegistrationNumber, company.NationalAddress),
+
+            // (CEEF-229 · م1-١ب) هويةُ المشتري للقياسية وحدها — والمبسّطة بلا مشترٍ معرَّف.
+            Buyer: customer.SupportsStandardTaxInvoice
+                ? new ZatcaUblInvoiceBuilder.BuyerIdentity(customer.RegistrationName, customer.NationalAddress)
+                : null);
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);

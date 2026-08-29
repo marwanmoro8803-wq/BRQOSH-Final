@@ -86,6 +86,13 @@ public class GeneratedDocumentsConformTests : IDisposable
                 additionalNumber: "5678"));
 
         var customer = Customer.Create(_companyId, "عميل", "311111111100003");
+        // ‏(م1-١ب) مشترٍ مكتمل — الفاتورة القياسية تذهب إلى المقاصّة وطرفُ مشتريها معرَّف.
+        customer.UpdateRegulatoryIdentity(
+            "مؤسسة العميل التجارية",
+            Brqosh.Domain.Companies.NationalAddress.Create(
+                buildingNumber: "4321", streetName: "طريق العليا", districtName: "الملز",
+                cityName: "الرياض", postalZone: "54321", countrySubentity: "منطقة الرياض",
+                additionalNumber: "8765"));
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();
         _customerId = customer.Id;

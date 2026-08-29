@@ -9,6 +9,18 @@ public class Customer : ISoftDeletable
     public string VatRegistrationNumber { get; private set; }
     public string Phone { get; private set; }
     public string Address { get; private set; }
+
+    /// <summary>
+    /// (CEEF-229 · م1-١ب) الاسم المسجَّل للمشتري — <c>cbc:RegistrationName</c> في الفاتورة القياسية.
+    ///
+    /// <para>طرفُ البائع أخذ هذه الحقول في Z-10، وطرفُ المشتري بقي اسماً ورقماً ضريبياً وحدهما.
+    /// والفاتورةُ القياسية تذهب إلى <b>المقاصّة قبل التسليم</b> وطرفُ مشتريها معرَّف.</para>
+    /// </summary>
+    public string? RegistrationName { get; private set; }
+
+    /// <summary>العنوان الوطنيّ للمشتري — كائنُ قيمةٍ مسطَّح في الجدول نفسه، كما في المنشأة.</summary>
+    public Companies.NationalAddress NationalAddress { get; private set; } = Companies.NationalAddress.Empty;
+
     public bool IsActive { get; private set; } = true;
     public DateTime? DeletedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
@@ -48,6 +60,31 @@ public class Customer : ISoftDeletable
 
     /// <summary>فاتورة ضريبية (B2B) تتطلب رقماً ضريبياً؛ بدونه تكون الفاتورة مبسطة (B2C).</summary>
     public bool SupportsStandardTaxInvoice => VatRegistrationNumber.Length == 15;
+
+    /// <summary>
+    /// (CEEF-229 · م1-١ب) ما ينقص هذا العميل لتصحّ له فاتورةٌ <b>قياسية</b> — رسائل عربية تُعرض كما هي.
+    ///
+    /// <para>وتُقاس على من يحمل رقماً ضريبياً وحده: من لا رقمَ له تُصدَر له فاتورةٌ مبسّطة لا
+    /// تحتاج عنواناً — فالكاشيرُ لا يسأل الزبونَ عن حيّه.</para>
+    /// </summary>
+    public IReadOnlyList<string> StandardInvoiceGaps()
+    {
+        if (!SupportsStandardTaxInvoice)
+            return [];
+
+        var gaps = new List<string>();
+        if (string.IsNullOrWhiteSpace(RegistrationName))
+            gaps.Add("الاسم المسجَّل للعميل مطلوب للفاتورة القياسية.");
+        gaps.AddRange(NationalAddress.Problems);
+        return gaps;
+    }
+
+    /// <summary>تحديث هوية المشتري النظامية — الاسم المسجَّل والعنوان الوطنيّ.</summary>
+    public void UpdateRegulatoryIdentity(string? registrationName, Companies.NationalAddress address)
+    {
+        RegistrationName = string.IsNullOrWhiteSpace(registrationName) ? null : registrationName.Trim();
+        NationalAddress = address;
+    }
 
     public void Update(string nameAr, string vatNumber, string phone, string address, string? modifiedBy = null)
     {

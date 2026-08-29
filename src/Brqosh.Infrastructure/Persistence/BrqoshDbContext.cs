@@ -238,6 +238,24 @@ public class BrqoshDbContext : DbContext
             entity.Property(c => c.Phone).HasMaxLength(32);
             entity.Property(c => c.Address).HasMaxLength(512);
             entity.Property(c => c.ModifiedBy).HasMaxLength(128);
+
+            // (CEEF-229 · م1-١ب) هوية المشتري النظامية — العروضُ تطابق أعمدة BrqoshSchemaUpdater
+            // حرفاً بحرف، فلا يختلف تركيبٌ جديد (EnsureCreated من النموذج) عن تركيبٍ مُرقَّع.
+            // والنمطُ نفسه المُتَّبع في Company (Z-10): كائنٌ مملوك يُسطَّح في الجدول نفسه.
+            entity.Property(c => c.RegistrationName).HasMaxLength(256);
+            entity.OwnsOne(c => c.NationalAddress, address =>
+            {
+                address.Property(a => a.BuildingNumber).HasColumnName("AddrBuildingNumber").HasMaxLength(16);
+                address.Property(a => a.AdditionalNumber).HasColumnName("AddrAdditionalNumber").HasMaxLength(16);
+                address.Property(a => a.StreetName).HasColumnName("AddrStreetName").HasMaxLength(128);
+                address.Property(a => a.DistrictName).HasColumnName("AddrDistrictName").HasMaxLength(128);
+                address.Property(a => a.CityName).HasColumnName("AddrCityName").HasMaxLength(128);
+                address.Property(a => a.PostalZone).HasColumnName("AddrPostalZone").HasMaxLength(16);
+                address.Property(a => a.CountrySubentity).HasColumnName("AddrCountrySubentity").HasMaxLength(128);
+                address.Property(a => a.CountryCode).HasColumnName("AddrCountryCode").HasMaxLength(16);
+            });
+            entity.Navigation(c => c.NationalAddress).IsRequired();
+
             entity.HasIndex(c => new { c.CompanyId, c.NameAr });
             entity.HasIndex(c => new { c.CompanyId, c.VatRegistrationNumber })
                 .IsUnique()

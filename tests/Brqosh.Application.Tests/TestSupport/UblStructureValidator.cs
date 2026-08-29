@@ -85,8 +85,60 @@ public static class UblStructureValidator
         CheckBillingReference(root, violations);
         CheckIssueReason(root, violations);
         CheckSupplierParty(root, violations);
+        CheckCustomerParty(root, violations);
 
         return violations;
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م1-١ب) <b>طرفُ المشتري — للفاتورة القياسية وحدها.</b>
+    ///
+    /// <para><b>لماذا لم يكن مفحوصاً:</b> المُصدِّق كان يفحص طرفَ البائع فحصاً كاملاً
+    /// (سجلٌّ تجاريّ، اسمٌ مسجَّل، عنوانٌ وطنيّ بستّة حقول) <b>ولا يفحص طرفَ المشتري إطلاقاً</b>.
+    /// وهذا اللاتماثلُ هو الذي أخفى العطل: <c>AddCustomer</c> يكتب اسماً ورقماً ضريبياً
+    /// وحدهما — بلا عنوان ولا سجلٍّ تجاريّ — و<c>Customer.Address</c> نصٌّ حرٌّ واحد لا يبلغ
+    /// الباني أصلاً.</para>
+    ///
+    /// <para><b>ولماذا القياسية وحدها:</b> المبسّطة (B2C) تُرفع تقريراً بعد البيع ولا تحمل
+    /// مشترياً معرَّفاً — فالكاشيرُ لا يسأل الزبونَ عن عنوانه. أمّا القياسية فتذهب إلى
+    /// <b>المقاصّة قبل التسليم</b>، وطرفُ المشتري فيها معرَّف. والتمييزُ من سمة <c>name</c>
+    /// على <c>InvoiceTypeCode</c>: تبدأ بـ<c>01</c> للقياسية و<c>02</c> للمبسّطة.</para>
+    /// </summary>
+    private static void CheckCustomerParty(XElement root, List<string> violations)
+    {
+        var typeName = root.Element(Cbc + "InvoiceTypeCode")?.Attribute("name")?.Value;
+        if (typeName is null || !typeName.StartsWith("01", StringComparison.Ordinal))
+            return;   // مبسّطة أو غير محدَّدة — لا يُحكَم على مشتريها
+
+        var party = root.Element(Cac + "AccountingCustomerParty")?.Element(Cac + "Party");
+        if (party is null)
+        {
+            violations.Add("طرف المشتري غائب في فاتورة قياسية (cac:AccountingCustomerParty/cac:Party)");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                party.Element(Cac + "PartyTaxScheme")?.Element(Cbc + "CompanyID")?.Value))
+            violations.Add("الرقم الضريبي للمشتري غائب في فاتورة قياسية (PartyTaxScheme/CompanyID)");
+
+        if (string.IsNullOrWhiteSpace(
+                party.Element(Cac + "PartyLegalEntity")?.Element(Cbc + "RegistrationName")?.Value))
+            violations.Add("الاسم المسجَّل للمشتري غائب (PartyLegalEntity/RegistrationName)");
+
+        var address = party.Element(Cac + "PostalAddress");
+        if (address is null)
+        {
+            violations.Add("العنوان الوطني للمشتري غائب في فاتورة قياسية (cac:PostalAddress)");
+            return;
+        }
+
+        foreach (var required in new[]
+                 { "StreetName", "BuildingNumber", "CitySubdivisionName", "CityName",
+                   "PostalZone", "CountrySubentity" })
+        {
+            if (string.IsNullOrWhiteSpace(address.Element(Cbc + required)?.Value))
+                violations.Add($"حقل «{required}» غائب من عنوان المشتري");
+        }
     }
 
     // ── الترتيب ─────────────────────────────────────────────────────────────
