@@ -584,6 +584,77 @@ public class GeneratedDocumentsConformTests : IDisposable
     }
 
     /// <summary>
+    /// (CEEF-229 · م2-٢٢) <b>بذرةُ السلسلة — أوّلُ مستندٍ في حياة المنشأة.</b>
+    ///
+    /// <para>معيارُ الهيئة ينصّ حرفياً: «For the first invoice, the previous invoice hash is
+    /// <c>NWZlY2ViNjZ…</c>». <b>وعبارتُه التالية هي الفخّ</b>: «the equivalent for base64
+    /// encoded SHA256 of "0"» — فمن قرأها وصفاً للحساب كتب <c>Base64(SHA256("0"))</c> على
+    /// البايتات الخام. والثابتُ المنصوصُ عليه يفكّ إلى <b>السلسلة السداسية عشرية</b> لتلك
+    /// البصمة، لا إلى بايتاتها. فالقيمتان مختلفتان تماماً.</para>
+    ///
+    /// <para><b>وأثرُه لا يظهر محلياً:</b> البيئةُ الافتراضية «محاكاة» تَسِم المستندَ
+    /// <c>SimulatedLocally</c> بلا أيّ فحصٍ للقيمة. فيُرفض أوّلُ مستندٍ عند التحوّل إلى
+    /// الإنتاج، وبصمتُه أساسُ ما بعده — فلا يُصلحه تعديلُ سطر بل إعادةُ إصدار السلسلة كلّها.</para>
+    /// </summary>
+    [Fact]
+    public async Task TheFirstDocument_CarriesTheAuthorityGenesisHash()
+    {
+        await SetupAsync();
+        var posted = await PostInvoiceAsync();
+
+        var document = await DocumentFromPostingAsync(posted.Id, ZatcaDocumentType.SalesInvoice);
+
+        // ‏**منقولٌ حرفياً عن معيار الهيئة** (الإصدار 1.2، قاعدة بصمة الفاتورة السابقة)، لا
+        // ‏مقروءاً من ثابتٍ في الشيفرة — وإلا كان القياسُ دائرياً يشهد للكود بنفسه.
+        const string genesis =
+            "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==";
+
+        Assert.Equal(genesis, document.PreviousInvoiceHash);
+        Assert.Equal(genesis, ReadPih(ReadGenerated(document)));
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م2-٢٢) <b>والوصلةُ الثانية: بصمةُ سابقها بعينها.</b>
+    ///
+    /// <para>السلسلةُ مبنيّةٌ في الشيفرة، <b>ولم يكن يقيسها اختبارٌ واحد</b>. فأيّ تعديلٍ على
+    /// <c>ComputeInvoiceHash</c> — أو على استثناءاته الثلاثة — يكسر السلسلةَ عند مفصلٍ لا
+    /// تستطيع الهيئةُ مطابقتَه، <b>ولا يحمرّ اختبار</b>. وهذا القياسُ هو ما يمنع ذلك.</para>
+    /// </summary>
+    [Fact]
+    public async Task TheSecondDocument_ChainsToTheFirstsHash()
+    {
+        await SetupAsync();
+        var first = await PostInvoiceAsync(1_000m);
+        var second = await PostInvoiceAsync(2_000m);
+
+        var a = await DocumentFromPostingAsync(first.Id, ZatcaDocumentType.SalesInvoice);
+        var bDoc = await DocumentFromPostingAsync(second.Id, ZatcaDocumentType.SalesInvoice);
+
+        Assert.NotEqual(a.Id, bDoc.Id);
+        Assert.Equal(2, bDoc.Icv);
+        Assert.Equal(a.InvoiceHash, bDoc.PreviousInvoiceHash);
+
+        // ‏والملفُّ على القرص يقولها أيضاً — لا الحقلُ المخزَّن وحده.
+        Assert.Equal(a.InvoiceHash, ReadPih(ReadGenerated(bDoc)));
+    }
+
+    /// <summary>يقرأ وسمَ PIH من المستند نفسه — لا من الحقل الذي بُني منه.</summary>
+    private static string? ReadPih(byte[] xml)
+    {
+        var doc = System.Xml.Linq.XDocument.Load(new MemoryStream(xml));
+        var cac = System.Xml.Linq.XNamespace.Get(
+            "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2");
+        var cbc = System.Xml.Linq.XNamespace.Get(
+            "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2");
+
+        return doc.Root!
+            .Elements(cac + "AdditionalDocumentReference")
+            .FirstOrDefault(r => r.Element(cbc + "ID")?.Value == "PIH")?
+            .Element(cac + "Attachment")?
+            .Element(cbc + "EmbeddedDocumentBinaryObject")?.Value;
+    }
+
+    /// <summary>
     /// <b>وكلُّ مسارِ توليدٍ إمّا مقيسٌ هنا وإمّا مُقَرٌّ بأنّه خارج متناول هذا العميل.</b>
     /// فلو أُضيف مسارٌ سابعٌ غداً لسقط هذا الاختبار حتى يُقاس أو يُقَرّ به بسبب.
     /// </summary>

@@ -38,9 +38,18 @@ public class ZatcaTests : IDisposable
         Assert.Equal(1, bytes[0]); // tag 1 seller
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-٢٢) <b>بصمةُ البذرة تساوي ما تنصّ عليه الهيئة — لا «تساوي نفسها».</b>
+    ///
+    /// <para>كان هنا <c>Assert.Equal(ZeroHash(), ZeroHash())</c> — حشوٌ يمرّ مع <b>أيّ</b>
+    /// قيمةٍ كانت، وقد مرّ فعلاً على قيمةٍ خاطئة طوالَ عمر المستودع. والقيمةُ أدناه منقولةٌ
+    /// حرفياً عن معيار الهيئة، فصار الاختبارُ شاهداً مستقلّاً لا مرآة.</para>
+    /// </summary>
     [Fact]
-    public void ZeroHash_IsDeterministic() =>
-        Assert.Equal(ZatcaHashHelper.ZeroHash(), ZatcaHashHelper.ZeroHash());
+    public void TheGenesisHash_IsTheOneTheAuthorityMandates() =>
+        Assert.Equal(
+            "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==",
+            ZatcaHashHelper.GenesisPreviousInvoiceHash());
 
     [Fact]
     public async Task GenerateFromPostedInvoice_CreatesDocumentWithXml()

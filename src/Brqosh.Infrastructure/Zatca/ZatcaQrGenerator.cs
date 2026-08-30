@@ -133,8 +133,26 @@ public static class ZatcaHashHelper
         Sha256Base64(Encoding.UTF8.GetBytes(text));
 
     /// <summary>
-    /// هاش الصفر للفاتورة الأولى — وفق ZATCA: SHA-256("0") مُشفَّر Base64.
+    /// (CEEF-229 · م2-٢٢) <b>بصمةُ السابق لأوّل مستندٍ في حياة المنشأة — ثابتٌ تنصّ عليه الهيئة.</b>
+    ///
+    /// <para>المعيار يقول حرفياً: «For the first invoice, the previous invoice hash is
+    /// <c>NWZlY2ViNjZ…</c>»، ثمّ يصفه بأنّه «the equivalent for base64 encoded SHA256 of "0"».
+    /// <b>وهذا الوصفُ هو الفخّ</b>: من قرأه تعليماتِ حسابٍ كتب <c>Base64(SHA256("0"))</c> على
+    /// البايتات الخام — وكان ذلك ما تفعله هذه الدالّة، فتُنتج
+    /// <c>X+zrZv/IbzjZUnhsbWlsecLbwjndTpG0ZynXOif7V+k=</c>.</para>
+    ///
+    /// <para>والثابتُ المنصوصُ عليه يفكّ إلى <b>السلسلة السداسية عشرية النصّية</b> لتلك البصمة
+    /// (<c>5feceb66ffc8…</c>) لا إلى بايتاتها. فالقيمتان مختلفتان تماماً، والاشتقاقُ الصحيح
+    /// أدناه يُعيد المنصوصَ عليه حرفاً بحرف.</para>
+    ///
+    /// <para><b>ولماذا لم يُكتشف:</b> البيئةُ الافتراضية «محاكاة» تَسِم المستندَ مقبولاً محلياً
+    /// بلا فحصِ قيمة. فالعطلُ يظهر عند أوّل مستندٍ حقيقيّ في الإنتاج — وبصمتُه أساسُ ما بعده،
+    /// فلا يُصلحه تعديلُ سطر بل إعادةُ إصدار السلسلة كلّها.</para>
+    ///
+    /// <para>ويُحسب لا يُنسخ، ليبقى الاشتقاقُ مقروءاً؛ والقيمةُ نفسُها مثبَّتةٌ باللفظ في
+    /// <c>GeneratedDocumentsConformTests</c> منقولةً عن المعيار — فالطرفان مستقلّان.</para>
     /// </summary>
-    public static string ZeroHash() =>
-        Sha256Base64("0"u8.ToArray());
+    public static string GenesisPreviousInvoiceHash() =>
+        Convert.ToBase64String(Encoding.UTF8.GetBytes(
+            Convert.ToHexString(SHA256.HashData("0"u8.ToArray())).ToLowerInvariant()));
 }

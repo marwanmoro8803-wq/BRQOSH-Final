@@ -318,7 +318,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             .Where(d => d.CompanyId == companyId)
             .OrderByDescending(d => d.Icv)
             .Select(d => d.InvoiceHash)
-            .FirstOrDefaultAsync() ?? ZatcaHashHelper.ZeroHash();
+            .FirstOrDefaultAsync() ?? ZatcaHashHelper.GenesisPreviousInvoiceHash();
 
         var uuid = Guid.NewGuid();
         // (CEEF-229 · م2-٢١) **لحظةُ الإصدار حقيقيةٌ، والمستندُ ورمزُه يقولانها معاً.**
