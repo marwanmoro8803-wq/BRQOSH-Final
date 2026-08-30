@@ -80,6 +80,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         // CEEF-123 Tier P1: خزينة · POS · تدقيق
         services.AddScoped<BankAccountService>();
+        services.AddScoped<Operations.BackupService>();
         services.AddScoped<BankTransferService>();
         services.AddScoped<Retail.PosSaleService>();
         services.AddScoped<Security.AuditService>();

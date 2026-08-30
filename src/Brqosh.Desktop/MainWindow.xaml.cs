@@ -795,6 +795,9 @@ public partial class MainWindow : Window
             case "pricing_plans":
                 PageHost.Content = new Views.Pages.PricingPlansPage();
                 return;
+            case "backup":
+                PageHost.Content = new Views.Pages.BackupPage();
+                return;
             case "company_settings":
                 PageHost.Content = new Views.Pages.CompanySettingsPage(_setup, this);
                 return;

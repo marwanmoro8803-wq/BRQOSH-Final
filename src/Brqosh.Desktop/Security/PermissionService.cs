@@ -77,6 +77,8 @@ public static class PermissionService
         ["vat_return"] = [UserRole.Administrator, UserRole.Accountant],
         ["general_ledger_report"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["company_settings"] = [UserRole.Administrator],
+        // ‏(م3-٢) الاستعادةُ تمحو الدفاتر — للمدير وحده.
+        ["backup"] = [UserRole.Administrator],
         ["organizations"] = [UserRole.Administrator],
         ["branches"] = [UserRole.Administrator, UserRole.Accountant],
     };

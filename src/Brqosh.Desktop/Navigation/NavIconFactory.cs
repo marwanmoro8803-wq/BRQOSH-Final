@@ -64,6 +64,7 @@ public static class NavIconGlyphs
         ["fixed_assets"] = "FA",
         ["payroll"] = "PY",
         ["company_settings"] = "CO",
+        ["backup"] = "BK",
         ["company_groups"] = "GRP",
         ["branches"] = "BR",
         ["users"] = "US",
