@@ -20,6 +20,25 @@ public class I18nCoverageTests
         @"(?:Header|Content|Text|Title|ToolTip|Watermark|PlaceholderText)=""([^""]*[؀-ۿ][^""]*)""",
         RegexOptions.Compiled);
 
+    /// <summary>
+    /// (CEEF-229 · م2-٢٣) إسنادُ نصٍّ عربيّ إلى خاصيّة عنصرٍ من <b>الشيفرة الخلفية</b>.
+    ///
+    /// <para><b>كانت البوّابةُ عمياء عنه.</b> تمسح الوسومَ وحدها، فنصٌّ يُضبط في
+    /// <c>.xaml.cs</c> يبقى عربياً عند التبديل بلا شكوى. وكشفه أنّي وسمتُ صنفاً موقوفاً
+    /// بكلمة «موقوف» هناك فمرّت البوّابةُ صامتة، ونقلُها إلى XAML أسقطها فوراً.</para>
+    ///
+    /// <para><b>والمسحُ محدودٌ بخصائص العناصر عمداً:</b> <c>MessageBox.Show</c> نافذةُ Win32
+    /// لا عنصرٌ في شجرة الواجهة، ولا يبلغها <c>XamlUiLocalizer</c> مهما وُضع في السجلّ.
+    /// فإدخالُ نصوصها هنا يُخضِّر البوّابةَ والنصُّ عربيٌّ كما هو — أي يجعل الحارسَ يكذب.
+    /// وعددُها مقيسٌ (‏144‎) ومسجَّلٌ بنداً مفتوحاً، وعلاجُها آليّةٌ أخرى.</para>
+    ///
+    /// <para>ويُقابله مسحٌ نظيرٌ في <c>tools/I18nRegistryGen</c> — فالمولّدُ يملأ السجلّ
+    /// وهذه البوّابةُ تقيسه، وهما ماسحان مستقلّان يجب أن يريا الشيءَ نفسه.</para>
+    /// </summary>
+    private static readonly Regex CodeBehindAssignment = new(
+        @"\.(?:Text|Content|Header|Title|ToolTip|PlaceholderText)\s*=\s*""([^""]*[؀-ۿ][^""]*)""",
+        RegexOptions.Compiled);
+
     private static string DesktopRoot()
     {
         var root = Path.GetFullPath(Path.Combine(
@@ -46,6 +65,22 @@ public class I18nCoverageTests
             }
         }
 
+        foreach (var file in Directory.EnumerateFiles(DesktopRoot(), "*.cs", SearchOption.AllDirectories))
+        {
+            if (file.EndsWith(".g.cs", StringComparison.Ordinal) ||
+                file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") ||
+                file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+                continue;
+
+            foreach (Match m in CodeBehindAssignment.Matches(File.ReadAllText(file)))
+            {
+                var text = m.Groups[1].Value.Trim();
+                // ‏المُستكمَلات (‏$"…{x}…"‎) لا تصلح مفتاحاً ثابتاً، فتُستبعد كما يستبعدها المولّد.
+                if (text.Length > 0 && !text.Contains('{') && !text.Contains('\\'))
+                    literals.Add(text);
+            }
+        }
+
         return literals.ToList();
     }
 
@@ -55,6 +90,13 @@ public class I18nCoverageTests
     {
         var literals = ArabicDisplayLiterals();
         Assert.NotEmpty(literals);   // حارس للحارس: لو انكسر الاستخراج لا يمرّ الاختبار صامتاً
+
+        // (CEEF-229 · م2-٢٣) **وحارسٌ للثقب الذي أُغلق للتوّ.**
+        //
+        // «تم الحفظ.» نصٌّ لا يرد في أيّ وسم XAML — مصدرُه الشيفرة الخلفية وحدها. فوجودُه
+        // هنا دليلٌ حيّ على أنّ المسحَ ما زال يبلغها. ولولاه لكفى حذفُ حلقة `*.cs` أعلاه
+        // ليعود الثقبُ صامتاً والبوّابةُ خضراء — وهو بالضبط ما كان عليه الحال قبل هذه الدفعة.
+        Assert.Contains("تم الحفظ.", literals);
 
         var untranslated = literals
             .Where(l => ReferenceEquals(UiBilingualRegistry.Lookup(l), l) ||

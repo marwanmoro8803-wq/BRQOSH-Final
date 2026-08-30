@@ -41,6 +41,32 @@ foreach (var xaml in Directory.EnumerateFiles(desktopRoot, "*.xaml", SearchOptio
     }
 }
 
+// (CEEF-229 · م2-٢٣) **ونصوصُ الشيفرة الخلفية تُمسَح أيضاً — كانت البوّابةُ عمياء عنها.**
+//
+// كان المسحُ يقتصر على وسوم XAML، فأيّ نصٍّ عربيّ يُسنَد إلى `.Text` أو `.Header` من
+// الشيفرة الخلفية يبقى عربياً عند التبديل **بلا أن تشتكي البوّابة**. وكشفه أنّي وسمتُ
+// صنفاً موقوفاً بكلمة «موقوف» في code-behind فمرّت صامتة، ونقلُها إلى XAML أسقطها فوراً.
+//
+// **والمسحُ هنا محدودٌ بإسنادات خصائص العناصر عمداً.** فـ`MessageBox.Show` نافذةُ Win32
+// لا عنصرٌ في شجرة الواجهة، ولا يبلغها `XamlUiLocalizer` مهما وُضع في السجلّ. وإدخالُ
+// نصوصها هنا كان يُخضِّر البوّابةَ والنصُّ عربيٌّ كما هو — أي يجعل الأداةَ تكذب. وعددُها
+// مقيسٌ ومسجَّلٌ بنداً مفتوحاً، وعلاجُها آليّةٌ أخرى لا هذا السجلّ.
+foreach (var cs in Directory.EnumerateFiles(desktopRoot, "*.cs", SearchOption.AllDirectories))
+{
+    if (cs.EndsWith(".g.cs", StringComparison.Ordinal)
+        || cs.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+        || cs.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+        continue;
+
+    foreach (Match m in Regex.Matches(File.ReadAllText(cs),
+                 @"\.(?:Text|Content|Header|ToolTip|Title|PlaceholderText)\s*=\s*""([^""]*[؀-ۿ][^""]*)"""))
+    {
+        var s = m.Groups[1].Value;
+        if (IsValidUiString(s))
+            strings.Add(s);
+    }
+}
+
 // (CEEF-225) نصوص تُضبط في **الكود** لا في XAML (زرّ الثيم، تسمية الدور، نمط العمل)
 // تدخل السجلّ أيضاً. السبب: `XamlUiLocalizer` يحفظ أوّل نصّ عربيّ رآه على العنصر
 // كـ«أصل»، ثم يعيد الحلّ منه في كل مرور — فيكتب فوق ما ضبطه الكود بالإنجليزية.
