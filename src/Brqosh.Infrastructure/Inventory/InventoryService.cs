@@ -359,6 +359,15 @@ public class InventoryService(BrqoshDbContext db)
             return;
         }
 
+        // (CEEF-229 · م0-٣ب) وللداخل: تُزال الطبقةُ التي أنشأها هذا المستند بعينها.
+        // ‏وإن لم توجد طبقاتٌ (منشأةٌ على المتوسط المرجّح) فالعكسُ بحساب المتوسط وحده.
+        var layersRemoved = !string.IsNullOrWhiteSpace(movement.SourceDocument)
+            && await new InventoryCostingService(db)
+                .ReverseReceiptLayersAsync(movement.CompanyId, movement.SourceDocument);
+
+        if (layersRemoved)
+            return;
+
         foreach (var line in movement.Lines)
             await ReverseReceiptCostAsync(movement.CompanyId, line.ProductId, line.Quantity, line.UnitCost);
     }

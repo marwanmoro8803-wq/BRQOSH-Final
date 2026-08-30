@@ -46,19 +46,19 @@ public class CreditNoteCancellationService(BrqoshDbContext db)
                 .Where(m => m.CompanyId == companyId && m.SourceDocument == sourceDoc && m.Status == StockMovementStatus.Posted)
                 .ToListAsync(token);
 
-            if (returnMovements.Count > 0)
+            // (CEEF-229 · م0-٣ب) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.** مرآةُ م0-٣.
+            //
+            // كان يُرحَّل `Issue` جديدٌ بتاريخ الإلغاء، **وهو يستهلك من رأس طابور FIFO**
+            // — أقدمَ طبقةٍ وأرخصَها — ويترك طبقةَ المرتجع قائمة. فتُقلَب تكلفةُ البيعة
+            // التالية، وقيمةُ المخزون الإجمالية **لا تكشف ذلك لأنّها متطابقة**.
+            //
+            // وأظهر القياسُ ما هو أسوأ: `PostDocumentMovementAsync` لا يستهلك طبقاتٍ
+            // إطلاقاً، فبقيت الطبقاتُ 200 والرصيدُ 100 — **انشقاقٌ بين الطبقات والأرصدة**.
+            var inv = new InventoryService(db);
+            foreach (var movement in returnMovements)
             {
-                var inv = new InventoryService(db);
-                foreach (var movement in returnMovements)
-                {
-                    var issueLines = movement.Lines
-                        .Select(l => (l.ProductId, l.Quantity, l.UnitCost))
-                        .ToList();
-                    await inv.PostDocumentMovementAsync(companyId, movement.WarehouseId,
-                        StockMovementType.Issue, cancellationDate,
-                        $"عكس مخزون — إلغاء إشعار دائن {note.NoteNumber}",
-                        sourceDoc, issueLines);
-                }
+                await inv.ReverseDocumentMovementAsync(movement);
+                movement.MarkCancelled();
             }
 
             note.MarkCancelled(cancellationDate);

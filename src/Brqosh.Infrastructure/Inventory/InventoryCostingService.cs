@@ -136,6 +136,47 @@ public class InventoryCostingService(BrqoshDbContext db)
         return true;
     }
 
+    /// <summary>
+    /// (CEEF-229 · م0-٣ب) <b>يُزيل الطبقةَ التي أنشأها مستندٌ داخل — مرآةُ الترميم.</b>
+    ///
+    /// <para>إلغاءُ الإشعار الدائن كان يُرحّل حركةَ <c>Issue</c> جديدة، <b>وهي تستهلك من
+    /// رأس طابور FIFO</b> — أقدمَ طبقةٍ وأرخصَها — وتترك طبقةَ المرتجع قائمة. فتُقلَب
+    /// تكلفةُ البيعة التالية، <b>وقيمةُ المخزون الإجمالية لا تكشف ذلك لأنّها متطابقة</b>.</para>
+    ///
+    /// <para><b>وإن استُهلك من الطبقة شيءٌ بعد إنشائها فلا إلغاء:</b> لا يُمكن سحبُ بضاعةٍ
+    /// بيعت. والرفضُ الصريح أصدقُ من ترقيعٍ يُنتج تكلفةً مخترَعة.</para>
+    /// </summary>
+    public async Task<bool> ReverseReceiptLayersAsync(
+        long companyId, string sourceDocument, CancellationToken ct = default)
+    {
+        var layers = await db.InventoryCostLayers
+            .Where(l => l.CompanyId == companyId && l.SourceDocument == sourceDocument)
+            .ToListAsync(ct);
+
+        if (layers.Count == 0)
+            return false;
+
+        var consumed = layers.Where(l => l.RemainingQuantity < l.OriginalQuantity).ToList();
+        if (consumed.Count > 0)
+        {
+            var names = await db.Products.IgnoreQueryFilters()
+                .Where(p => consumed.Select(l => l.ProductId).Contains(p.Id))
+                .Select(p => p.NameAr).ToListAsync(ct);
+
+            throw new AccountingException(
+                "لا يمكن إلغاء هذا المستند: بضاعتُه الداخلة استُهلكت في حركةٍ لاحقة — "
+                + string.Join("، ", names)
+                + ". اعكس الحركاتِ اللاحقة أوّلاً.");
+        }
+
+        db.InventoryCostLayers.RemoveRange(layers);
+
+        foreach (var productId in layers.Select(l => l.ProductId).Distinct())
+            await RecalculateWacFromLayersAsync(companyId, productId, ct);
+
+        return true;
+    }
+
     private async Task<(decimal TotalCost, decimal UnitCost)> ConsumeFifoAsync(
         long companyId, long productId, long warehouseId, decimal qty,
         string sourceDocument, CancellationToken ct)

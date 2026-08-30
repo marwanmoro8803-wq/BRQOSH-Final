@@ -106,6 +106,47 @@ public class CancellationRestoresCostLayersTests : IDisposable
         Assert.Equal(10m, layers[0].UnitCost);
     }
 
+    /// <summary>
+    /// (CEEF-229 · م0-٣ب) <b>المرآة: إلغاءُ الإشعار الدائن يُزيل الطبقةَ التي أنشأها —
+    /// لا يأكل أقدمَ طبقةٍ في الطابور.</b>
+    ///
+    /// <para>الإشعارُ الدائن <b>يُدخل</b> بضاعةً فيخلق طبقة. وإلغاؤه كان يُرحّل حركةَ
+    /// <c>Issue</c> جديدة، <b>وهي تستهلك من رأس طابور FIFO</b> — أي أقدمَ طبقةٍ وأرخصَها —
+    /// وتترك طبقةَ المرتجع قائمةً في المخزون.</para>
+    ///
+    /// <para><b>وقيمةُ المخزون الإجمالية لا تكشفه:</b> المجموعُ متطابقٌ في الحالتين. الفرقُ
+    /// في <b>أيّ طبقةٍ بقيت</b>، ولا يظهر إلا في تكلفة البيعة التالية.</para>
+    /// </summary>
+    [Fact]
+    public async Task CancellingACreditNote_RemovesItsOwnLayer_NotTheOldestOne()
+    {
+        var (companyId, warehouseId, productId, customerId) = await SeedTwoLayersAsync();
+
+        // ‏تُباع 100 فتُستهلك الطبقةُ الرخيصة كاملةً، ثمّ تُردّ بإشعارٍ دائن فتعود طبقةً
+        // ‏جديدة بتاريخه. والباقي: الغالية 100@20 ومرتجعُ 100@10.
+        var invoice = await SellAsync(companyId, customerId, productId, quantity: 100m);
+        Assert.Equal(1_000m, await CogsOfAsync(invoice));
+
+        var note = CreditNote.CreateDraft(companyId, customerId, invoice.Id, new DateOnly(2026, 2, 15), "مرتجع");
+        note.AddLine("صنف", 100m, 30m, productId);
+        var postedNote = await new CreditNotePostingService(_db).PostAsync(note);
+
+        await new CreditNoteCancellationService(_db)
+            .CancelAsync(companyId, postedNote.Id, new DateOnly(2026, 3, 1), "مدير");
+
+        // ‏بعد الإلغاء يجب أن يبقى ما كان قبل الإشعار: الغالية وحدها.
+        var layers = await _db.InventoryCostLayers
+            .Where(l => l.ProductId == productId && l.RemainingQuantity > 0)
+            .OrderBy(l => l.ReceivedDate).ToListAsync();
+
+        Assert.True(layers.Count == 1,
+            "بقيت طبقاتٌ لا ينبغي بقاؤها بعد إلغاء الإشعار الدائن: "
+            + string.Join(" · ", layers.Select(l => $"{l.ReceivedDate:yyyy-MM-dd} ×{l.RemainingQuantity}@{l.UnitCost}")));
+
+        Assert.Equal(20m, layers[0].UnitCost);
+        Assert.Equal(100m, await OnHandAsync(productId, warehouseId));
+    }
+
     // ── التهيئة ──────────────────────────────────────────────────────────────
 
     private async Task<(long CompanyId, long WarehouseId, long ProductId, long CustomerId)> SeedTwoLayersAsync()
