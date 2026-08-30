@@ -59,24 +59,49 @@ public class JournalPostingService(BrqoshDbContext db)
     /// عمقٌ دفاعيّ: الدالّة عامّةٌ وتكتب، وكلُّ مستدعٍ شرعيّ يملك حقَّ الترحيل أصلاً فلا يتغيّر
     /// عليه شيء.</para>
     /// </summary>
+    /// <summary>
+    /// (CEEF-229) <b>الفترةُ تُنشأ مرّةً واحدة — وكانت تُنشأ بعدد المرحّلين.</b>
+    ///
+    /// <para><b>العطل:</b> قراءةٌ ثمّ إنشاءٌ بلا قفل. فستّةُ مرحّلين في أوّل يومٍ من شهرٍ
+    /// جديد يقرأون «لا فترة» ويُنشئونها ستّاً — <b>فيربح واحدٌ ويموت خمسة</b> على
+    /// <c>IX_fiscal_periods_CompanyId_Code</c> برسالةِ قاعدة بيانات إنجليزية خامّة.
+    /// ويقع في اليوم الأوّل من كلّ شهر في متجرٍ فيه صندوقان.</para>
+    ///
+    /// <para><b>ووُجد مرّتين بالمصادفة ولم يُقصد في أيّهما:</b> حجب أوّلاً قياسَ ترقيم
+    /// المستندات (م1-١٤)، ثمّ <b>ستر سباقَ الإقفال السنويّ</b> (م1-١٥) فجعل اختباراً معطوباً
+    /// يمرّ أخضر. <b>وعطلٌ يستر غيرَه أخطرُ من عطلٍ يُرى.</b></para>
+    ///
+    /// <para><b>والمعاملةُ شرطٌ لا زينة:</b> القفلُ الاستشاريّ مربوطٌ بها، وخارجَها يُحرَّر
+    /// بانتهاء العبارة فلا يحمي شيئاً. ويُستدعى هذا التابعُ من داخل معاملاتِ الترحيل ومن
+    /// خارجها معاً، فتُفتح واحدةٌ حين لا توجد — و<c>ExecuteInTransactionAsync</c> يعمل
+    /// داخلياً حين توجد فلا تتداخل معاملتان.</para>
+    /// </summary>
     public async Task EnsurePeriodOpenAsync(long companyId, DateOnly date)
     {
         SecurityContext.EnsureCanPost();
 
         var code = FiscalPeriod.CodeFor(date);
-        var period = await db.FiscalPeriods
-            .FirstOrDefaultAsync(p => p.CompanyId == companyId && p.Code == code);
 
-        if (period is null)
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            period = FiscalPeriod.Create(companyId, date.Year, date.Month);
-            db.FiscalPeriods.Add(period);
-            await db.SaveChangesAsync();
-            return;
-        }
+            await DocumentSequenceLock.AcquireAsync(
+                db.Database, companyId, $"PERIOD{date.Month:D2}", date.Year, token);
 
-        if (period.Status == FiscalPeriodStatus.Closed)
-            throw new AccountingException(
-                $"الفترة المالية {code} مقفلة — لا يمكن الترحيل فيها. أعد فتح الفترة أولاً إن كنت مخوّلاً.");
+            var period = await db.FiscalPeriods
+                .FirstOrDefaultAsync(p => p.CompanyId == companyId && p.Code == code, token);
+
+            if (period is null)
+            {
+                db.FiscalPeriods.Add(FiscalPeriod.Create(companyId, date.Year, date.Month));
+                await db.SaveChangesAsync(token);
+                return true;
+            }
+
+            if (period.Status == FiscalPeriodStatus.Closed)
+                throw new AccountingException(
+                    $"الفترة المالية {code} مقفلة — لا يمكن الترحيل فيها. أعد فتح الفترة أولاً إن كنت مخوّلاً.");
+
+            return true;
+        });
     }
 }
