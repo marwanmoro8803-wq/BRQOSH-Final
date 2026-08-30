@@ -49,7 +49,8 @@ public class WorkOrderService(BrqoshDbContext db)
             {
                 var qty = Math.Round(line.Quantity * scale, 4, MidpointRounding.AwayFromZero);
                 var (totalCost, componentUnitCost) = await costing.ConsumeForIssueAsync(
-                    companyId, line.ComponentProductId, warehouse.Id, qty, token);
+                    companyId, line.ComponentProductId, warehouse.Id, qty,
+                    $"WorkOrder:{order.OrderNumber}", token);
                 materialCost += totalCost;
                 issueLines.Add((line.ComponentProductId, qty, componentUnitCost));
             }

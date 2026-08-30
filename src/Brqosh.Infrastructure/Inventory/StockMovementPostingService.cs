@@ -150,7 +150,8 @@ public class StockMovementPostingService(BrqoshDbContext db)
         foreach (var line in movement.Lines)
         {
             var (lineCost, _) = await costing.ConsumeForIssueAsync(
-                movement.CompanyId, line.ProductId, movement.WarehouseId, line.Quantity);
+                movement.CompanyId, line.ProductId, movement.WarehouseId, line.Quantity,
+                movement.SourceDocument ?? movement.Description ?? "StockMovement");
             total += lineCost;
         }
         if (total == 0m) return null;

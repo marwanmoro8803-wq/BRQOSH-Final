@@ -55,19 +55,19 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
                 .Where(m => m.CompanyId == companyId && m.SourceDocument == sourceDoc && m.Status == StockMovementStatus.Posted)
                 .ToListAsync(token);
 
-            if (issueMovements.Count > 0)
+            // (CEEF-229 · م0-٣ / I-2) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+            //
+            // كان يُرحَّل `SalesReturn` جديدٌ **بتاريخ الإلغاء**، فتُنشأ طبقةُ تكلفةٍ في
+            // **آخر طابور FIFO** وتبقى الطبقةُ الأصلية عند صفر. والكميةُ تعود صحيحةً
+            // فيمرّ كلُّ فحص — **والتكلفةُ تنقلب**: قيس أنّ البيعةَ نفسَها بعد الإلغاء
+            // تكلّف **2,000 بدل 1,000**، فمجملُ الربح ينهار إلى النصف.
+            //
+            // والمسارُ الموحّد يعكس الرصيد ويُرمّم الطبقاتِ المستهلَكة بعينها.
+            var inv = new InventoryService(db);
+            foreach (var movement in issueMovements)
             {
-                var inv = new InventoryService(db);
-                foreach (var movement in issueMovements)
-                {
-                    var returnLines = movement.Lines
-                        .Select(l => (l.ProductId, l.Quantity, l.UnitCost))
-                        .ToList();
-                    await inv.PostDocumentMovementAsync(companyId, movement.WarehouseId,
-                        StockMovementType.SalesReturn, cancellationDate,
-                        $"إرجاع مخزون — إلغاء فاتورة {invoice.InvoiceNumber}",
-                        sourceDoc, returnLines);
-                }
+                await inv.ReverseDocumentMovementAsync(movement);
+                movement.MarkCancelled();
             }
 
             invoice.MarkCancelled(cancellationDate);

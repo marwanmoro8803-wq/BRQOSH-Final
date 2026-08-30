@@ -72,6 +72,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
+    public DbSet<InventoryCostConsumption> InventoryCostConsumptions => Set<InventoryCostConsumption>();
     public DbSet<PaymentAllocationLine> PaymentAllocationLines => Set<PaymentAllocationLine>();
     public DbSet<ProjectCostEntry> ProjectCostEntries => Set<ProjectCostEntry>();
     public DbSet<StoredDomainEvent> StoredDomainEvents => Set<StoredDomainEvent>();
@@ -1013,6 +1014,17 @@ public class BrqoshDbContext : DbContext
             entity.Property(l => l.SourceDocument).HasMaxLength(128).IsRequired();
             entity.HasIndex(l => new { l.CompanyId, l.ProductId, l.WarehouseId, l.ReceivedDate });
             entity.HasIndex(l => new { l.CompanyId, l.ProductId, l.RemainingQuantity });
+        });
+
+        // (CEEF-229 · م0-٣) سجلُّ الاستهلاك — مفتاحُه المستند، فالترميمُ يبدأ منه.
+        modelBuilder.Entity<InventoryCostConsumption>(entity =>
+        {
+            entity.ToTable("inventory_cost_consumptions");
+            entity.Property(c => c.Quantity).HasPrecision(18, 4);
+            entity.Property(c => c.UnitCost).HasPrecision(18, 4);
+            entity.Property(c => c.SourceDocument).HasMaxLength(128).IsRequired();
+            entity.HasIndex(c => new { c.CompanyId, c.SourceDocument });
+            entity.HasIndex(c => c.CostLayerId);
         });
 
         modelBuilder.Entity<PaymentAllocationLine>(entity =>

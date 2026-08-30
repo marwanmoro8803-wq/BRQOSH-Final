@@ -89,6 +89,11 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
 
 
+        // (CEEF-229 · م0-٣) **الرقمُ يُخصَّص قبل استهلاك الطبقات** — فهو مفتاحُ سجلّ
+        // الاستهلاك الذي يُرمَّم منه عند الإلغاء. ولو خُصّص بعده لَسُجّل الاستهلاكُ
+        // باسمٍ فارغ، فلا يجده الإلغاءُ ولا تعود الطبقات — عطلٌ صامتٌ تماماً.
+        var invoiceNumber = await NextInvoiceNumberAsync(invoice.CompanyId, invoice.InvoiceDate);
+
         decimal cogsAmount = 0;
         var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
         var costing = new InventoryCostingService(db);
@@ -105,7 +110,8 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             }
 
             var (totalCost, unitCost) = await costing.ConsumeForIssueAsync(
-                invoice.CompanyId, productId, warehouse.Id, qty, ct);
+                invoice.CompanyId, productId, warehouse.Id, qty,
+                $"SalesInvoice:{invoiceNumber}", ct);
             cogsAmount += totalCost;
             issueLines.Add((productId, qty, unitCost));
         }
@@ -120,7 +126,6 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
             : null;
 
-        var invoiceNumber = await NextInvoiceNumberAsync(invoice.CompanyId, invoice.InvoiceDate);
         var entry = invoice.Post(invoiceNumber, receivable, revenue, vatOutput, cogsAmount, cogs, inventory);
 
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);

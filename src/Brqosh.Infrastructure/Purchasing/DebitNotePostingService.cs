@@ -55,7 +55,8 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 if (line.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
                 {
                     var (total, unit) = await costing.ConsumeForIssueAsync(
-                        note.CompanyId, pid, warehouse.Id, line.Quantity, token);
+                        note.CompanyId, pid, warehouse.Id, line.Quantity,
+                        $"DebitNote:{note.NoteNumber}", token);
                     inventoryReduction += total;
                     issueLines.Add((pid, line.Quantity, unit));
                 }

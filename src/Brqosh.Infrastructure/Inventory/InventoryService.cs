@@ -335,17 +335,29 @@ public class InventoryService(BrqoshDbContext db)
     /// <see cref="ReverseReceiptCostAsync"/> يقرأ الرصيد <b>بعد</b> السحب بحكم عقده
     /// الموثَّق في CEEF-228. عكسُ الترتيب يُنتج متوسطاً خاطئاً بصمت.</para>
     ///
-    /// <para><b>نطاق مُصرَّح به:</b> يعالج المتوسط المرجّح. طبقات FIFO لا تُرمَّم هنا —
-    /// <c>InventoryCostLayer.Restore()</c> ما زال بصفر مستدعٍ (I-2)، وهو بندٌ مفتوح يلزم
-    /// قبل البيع لقطاعَي التجزئة والضيافة (قالباهما يضبطان FIFO). ومنشأةٌ على المتوسط
-    /// المرجّح لا تُنشئ طبقات أصلاً، فلا أثر لذلك عليها.</para>
+    /// <para><b>ويُعالج الطريقتين معاً (م0-٣، أُغلق):</b> المتوسطُ المرجّح بعكس التكلفة
+    /// أعلاه، و<b>FIFO بترميم الطبقات المستهلَكة بعينها</b> من سجلّ
+    /// <c>InventoryCostConsumption</c>. وكان هذا التعليقُ يُقرّ بأنّ
+    /// <c>InventoryCostLayer.Restore()</c> بصفر مستدعٍ وأنّ البند مفتوح — وقد صار له
+    /// مستدعٍ واحدٌ هو الترميم.</para>
     /// </summary>
     public async Task ReverseDocumentMovementAsync(StockMovement movement)
     {
         await ReverseMovementBalancesAsync(movement);
 
         if (!movement.IsInbound)
+        {
+            // (CEEF-229 · م0-٣) **الصادرُ يُرمّم طبقاتِه المستهلَكة — لا يُنشئ طبقةً جديدة.**
+            //
+            // كان التعليقُ هنا يُقرّ بأنّ `InventoryCostLayer.Restore()` بصفر مستدعٍ وأنّ
+            // البند مفتوح. وقد أُغلق: `ConsumeForIssueAsync` يُسجّل ما أُخذ من كلّ طبقة
+            // مربوطاً بالمستند، فيُعاد بعينه.
+            if (!string.IsNullOrWhiteSpace(movement.SourceDocument))
+                await new InventoryCostingService(db)
+                    .RestoreConsumedLayersAsync(movement.CompanyId, movement.SourceDocument);
+
             return;
+        }
 
         foreach (var line in movement.Lines)
             await ReverseReceiptCostAsync(movement.CompanyId, line.ProductId, line.Quantity, line.UnitCost);

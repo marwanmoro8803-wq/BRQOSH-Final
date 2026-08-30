@@ -951,6 +951,51 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("inventory_balances", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Inventory.InventoryCostConsumption", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("ConsumedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("CostLayerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("SourceDocument")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<long>("WarehouseId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CostLayerId");
+
+                    b.HasIndex("CompanyId", "SourceDocument");
+
+                    b.ToTable("inventory_cost_consumptions", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Inventory.InventoryCostLayer", b =>
                 {
                     b.Property<long>("Id")

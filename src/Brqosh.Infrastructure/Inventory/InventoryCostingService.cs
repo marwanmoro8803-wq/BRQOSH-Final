@@ -40,8 +40,14 @@ public class InventoryCostingService(BrqoshDbContext db)
     /// يستهلك تكلفة كمية صادرة ويعيد التكلفة الفعلية للوحدة المستخدمة في القيد.
     /// في FIFO يحدّث الطبقات؛ في WAC يقرأ المتوسط الحالي فقط.
     /// </summary>
+    /// <summary>
+    /// (CEEF-229 · م0-٣) <paramref name="sourceDocument"/> إلزاميّ — وهو مفتاحُ ترميم
+    /// الطبقات عند الإلغاء. وبلا تسجيلِ ما أُخذ من كلّ طبقة لا يمكن عكسُ استهلاك FIFO،
+    /// لأنّه يوزّع الكميةَ على طبقاتٍ عدّة بنسبٍ لا تُخمَّن.
+    /// </summary>
     public async Task<(decimal TotalCost, decimal UnitCost)> ConsumeForIssueAsync(
-        long companyId, long productId, long warehouseId, decimal qty, CancellationToken ct = default)
+        long companyId, long productId, long warehouseId, decimal qty,
+        string sourceDocument, CancellationToken ct = default)
     {
         var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
         if (!product.IsStockable())
@@ -55,7 +61,7 @@ public class InventoryCostingService(BrqoshDbContext db)
             return (total, product.WeightedAverageCost);
         }
 
-        return await ConsumeFifoAsync(companyId, productId, warehouseId, qty, ct);
+        return await ConsumeFifoAsync(companyId, productId, warehouseId, qty, sourceDocument, ct);
     }
 
     public async Task OnSalesReturnAsync(
@@ -90,8 +96,49 @@ public class InventoryCostingService(BrqoshDbContext db)
         product.SetWeightedAverageCost(wac);
     }
 
+    /// <summary>
+    /// (CEEF-229 · م0-٣) <b>يُعيد إلى كلّ طبقةٍ ما أُخذ منها بعينه</b> — لا يُنشئ طبقةً جديدة.
+    ///
+    /// <para>والفرقُ ليس تجميلياً: الطبقةُ الجديدة تحمل تاريخَ الإلغاء فتقع في <b>آخر طابور
+    /// FIFO</b>، فتأكل البيعةُ التالية طبقةً أغلى. وقيس الأثر: التكلفةُ نفسُها تخرج
+    /// <b>ضِعفَ</b> ما ينبغي.</para>
+    ///
+    /// <para>ويعيد <c>false</c> حين لا سجلَّ — وهو حالُ المستندات التي رُحّلت قبل هذه الدفعة.
+    /// فيُقرّر المستدعي ماذا يفعل، ولا يُبتلع الأمرُ صامتاً.</para>
+    /// </summary>
+    public async Task<bool> RestoreConsumedLayersAsync(
+        long companyId, string sourceDocument, CancellationToken ct = default)
+    {
+        var consumptions = await db.InventoryCostConsumptions
+            .Where(c => c.CompanyId == companyId && c.SourceDocument == sourceDocument)
+            .ToListAsync(ct);
+
+        if (consumptions.Count == 0)
+            return false;
+
+        var layerIds = consumptions.Select(c => c.CostLayerId).Distinct().ToList();
+        var layers = await db.InventoryCostLayers
+            .Where(l => layerIds.Contains(l.Id))
+            .ToDictionaryAsync(l => l.Id, ct);
+
+        foreach (var consumption in consumptions)
+        {
+            if (layers.TryGetValue(consumption.CostLayerId, out var layer))
+                layer.Restore(consumption.Quantity);
+        }
+
+        // ‏يُمحى السجلّ بعد الترميم — فلا يُرمَّم مرّتين لو أُعيد الإلغاء.
+        db.InventoryCostConsumptions.RemoveRange(consumptions);
+
+        foreach (var productId in consumptions.Select(c => c.ProductId).Distinct())
+            await RecalculateWacFromLayersAsync(companyId, productId, ct);
+
+        return true;
+    }
+
     private async Task<(decimal TotalCost, decimal UnitCost)> ConsumeFifoAsync(
-        long companyId, long productId, long warehouseId, decimal qty, CancellationToken ct)
+        long companyId, long productId, long warehouseId, decimal qty,
+        string sourceDocument, CancellationToken ct)
     {
         var layers = await db.InventoryCostLayers
             .Where(l => l.CompanyId == companyId
@@ -129,6 +176,12 @@ public class InventoryCostingService(BrqoshDbContext db)
             if (remaining <= 0) break;
             var take = Math.Min(remaining, layer.RemainingQuantity);
             totalCost += layer.Consume(take);
+
+            // ‏يُسجَّل ما أُخذ من هذه الطبقة بعينها — وهو كلُّ ما يجعل الإلغاء عكساً حقيقياً.
+            db.InventoryCostConsumptions.Add(InventoryCostConsumption.Record(
+                companyId, layer.Id, productId, layer.WarehouseId,
+                sourceDocument, take, layer.UnitCost, DateTime.UtcNow));
+
             remaining = Math.Round(remaining - take, 4, MidpointRounding.AwayFromZero);
         }
 
