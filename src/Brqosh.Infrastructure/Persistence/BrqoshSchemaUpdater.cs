@@ -49,6 +49,16 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (CEEF-207) فئة الضريبة لأسطر المستندات — بعد اكتمال إنشاء الجداول أعلاه،
         // فإضافة عمود إلى جدول لم يُنشأ بعد تفشل صراحةً (وهو الصواب: لا ابتلاع أخطاء).
         // الافتراضي Standard يحفظ سلوك كل المستندات القائمة.
+        // (CEEF-229 · م1-١٩) قيدُ استحقاق الاستلام — **قبل ترقيعات المزوّد**، فتلك تُجري
+        // ‏استعلامات EF على المستندات و EF يبني SELECT بكلّ أعمدة النموذج.
+        if (await TableExistsAsync("goods_receipts", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("goods_receipts", "JournalEntryId", "BIGINT NULL", ct);
+            else
+                await EnsureSqliteColumnAsync("goods_receipts", "JournalEntryId", "INTEGER NULL", ct);
+        }
+
         await EnsureVatCategoryColumnsAsync(isPg, ct);
 
         // (O-19، CEEF-212) أعمدة سلسلة تجزئة سجل التدقيق على القواعد القائمة.

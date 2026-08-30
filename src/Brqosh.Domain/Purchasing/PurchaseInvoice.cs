@@ -105,7 +105,9 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
     /// الأصناف المخزنية تُقيَّد على حساب المخزون؛ غير المخزنية على حساب المشتريات.
     /// </summary>
     public JournalEntry Post(string invoiceNumber, Account purchasesAccount, Account vatInputAccount,
-        Account payableAccount, decimal inventorySubtotal = 0m, Account? inventoryAccount = null)
+        Account payableAccount, decimal inventorySubtotal = 0m, Account? inventoryAccount = null,
+        decimal grniRelief = 0m, Account? grniAccount = null,
+        decimal priceVariance = 0m, Account? varianceAccount = null)
     {
         EnsureDraft();
         if (_lines.Count == 0)
@@ -124,7 +126,7 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
 
         if (VatDeductible)
         {
-            var expenseSubtotal = Subtotal - inventorySubtotal;
+            var expenseSubtotal = Subtotal - inventorySubtotal - grniRelief - priceVariance;
             if (expenseSubtotal > 0)
                 entry.AddLine(purchasesAccount, expenseSubtotal, 0m, "مشتريات غير مخزنية");
             if (inventorySubtotal > 0)
@@ -133,6 +135,7 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
                     throw new AccountingException("حساب المخزون مطلوب للأصناف المخزنية.");
                 entry.AddLine(inventoryAccount, inventorySubtotal, 0m, "إدخال مخزون");
             }
+            AddAccrualRelief(entry, grniRelief, grniAccount, priceVariance, varianceAccount);
             if (VatAmount > 0)
                 entry.AddLine(vatInputAccount, VatAmount, 0m, "ضريبة مدخلات قابلة للخصم 15%");
         }
@@ -141,7 +144,7 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
             // مورد غير مسجل: الضريبة غير قابلة للخصم وتُرسمل ضمن التكلفة
             if (inventorySubtotal > 0 && inventoryAccount is not null)
             {
-                var expensePart = this.GrandTotal() - inventorySubtotal;
+                var expensePart = this.GrandTotal() - inventorySubtotal - grniRelief - priceVariance;
                 entry.AddLine(inventoryAccount, inventorySubtotal, 0m, "إدخال مخزون");
                 if (expensePart > 0)
                     entry.AddLine(purchasesAccount, expensePart, 0m, "مشتريات غير مخزنية");
@@ -186,4 +189,34 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         if (Status != PurchaseInvoiceStatus.Draft)
             throw new AccountingException("الفاتورة مرحّلة — لا تُعدَّل.");
     }
+    /// <summary>
+    /// (CEEF-229 · م1-١٩) إقفالُ استحقاق الاستلام، وفرقُ السعر إن اختلف عن سعر الاستلام.
+    ///
+    /// <para><b>ولا يُمدَّن المخزونُ مرّةً ثانية:</b> وجودُ إذنِ استلامٍ يمنع حركةً مخزنيةً
+    /// جديدة، فمتوسطُ التكلفة لا يُعاد حسابه — وأيُّ ريالٍ يُضاف إلى 1107 هنا لا يقابله شيءٌ
+    /// في الدفتر المساعد، <b>فيكسر الهوية هـ-٣ كسراً دائماً</b>. فالفرقُ يذهب مصروفاً.</para>
+    /// </summary>
+    private static void AddAccrualRelief(
+        JournalEntry entry, decimal grniRelief, Account? grniAccount,
+        decimal priceVariance, Account? varianceAccount)
+    {
+        if (grniRelief > 0)
+        {
+            if (grniAccount is null)
+                throw new AccountingException("حساب البضاعة المستلمة غير المفوترة مطلوب لإقفال الاستحقاق.");
+            entry.AddLine(grniAccount, grniRelief, 0m, "إقفال بضاعة مستلمة غير مفوترة");
+        }
+
+        if (priceVariance == 0m)
+            return;
+
+        if (varianceAccount is null)
+            throw new AccountingException("حساب فروق أسعار المشتريات مطلوب عند اختلاف سعر الفاتورة عن الاستلام.");
+
+        if (priceVariance > 0)
+            entry.AddLine(varianceAccount, priceVariance, 0m, "فرق سعر مشتريات");
+        else
+            entry.AddLine(varianceAccount, 0m, -priceVariance, "فرق سعر مشتريات");
+    }
+
 }

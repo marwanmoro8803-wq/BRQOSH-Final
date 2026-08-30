@@ -63,6 +63,9 @@ public static class SaudiChartOfAccounts
         new("2109", "التأمينات الاجتماعية المستحقة", "GOSI Payable", AccountType.Liability, "21", IsGroup: false),
         new("2110", "محتجزات مستحقة لمقاولي الباطن", "Retention Payable - Subcontractors", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2111", "الزكاة وضريبة الدخل المستحقة", "Zakat & Income Tax Payable", AccountType.Liability, "21", IsGroup: false),
+        // (CEEF-229 · م1-١٩ / I-5) بضاعةٌ استُلمت ولم تُفوتَر — التزامٌ قائمٌ بين الاستلام
+        // ‏والفاتورة. وبدونه تغيب البضاعةُ عن الميزانية أصلاً والتزاماً في تلك المدّة كلِّها.
+        new("2112", "بضاعة مستلمة غير مفوترة", "Goods Received Not Invoiced", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
@@ -98,6 +101,10 @@ public static class SaudiChartOfAccounts
         new("5105", "مواد ومهمات المشاريع", "Project Materials & Supplies", AccountType.Expense, "51", IsGroup: false),
         new("5106", "أجور عمالة مباشرة", "Direct Labor", AccountType.Expense, "51", IsGroup: false),
         new("5107", "تكاليف صناعية غير مباشرة", "Manufacturing Overhead", AccountType.Expense, "51", IsGroup: false),
+        // (CEEF-229 · م1-١٩) فرقُ سعر الفاتورة عن سعر الاستلام. **غيرُ نظاميّ عمداً:**
+        // ‏الدورةُ العريضة تستلم وتُفوتر بالسعر نفسه فلا تُنتج فرقاً، وحارسُ تغطية الحسابات
+        // ‏النظامية يشترط أن يستقبل كلُّ نظاميٍّ قيداً — فوسمُه نظامياً يُسقطه من أوّل يوم.
+        new("5108", "فروق أسعار المشتريات", "Purchase Price Variance", AccountType.Expense, "51", IsGroup: false),
 
         new("52", "المصروفات التشغيلية والإدارية", "Operating & Administrative Expenses", AccountType.Expense, "5", IsGroup: true),
         new("5201", "الرواتب والأجور", "Salaries & Wages", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
@@ -129,6 +136,7 @@ public static class SaudiChartOfAccounts
         public const string Inventory = "1107";
         public const string VatInput = "1111";
         public const string AccountsPayable = "2101";
+        public const string GoodsReceivedNotInvoiced = "2112";
         public const string ChequesPayable = "2103";
         public const string VatOutput = "2106";
         public const string VatNetPayable = "2107";

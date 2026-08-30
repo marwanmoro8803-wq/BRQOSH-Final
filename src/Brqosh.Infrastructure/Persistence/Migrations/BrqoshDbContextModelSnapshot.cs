@@ -1594,6 +1594,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("JournalEntryId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasMaxLength(1024)

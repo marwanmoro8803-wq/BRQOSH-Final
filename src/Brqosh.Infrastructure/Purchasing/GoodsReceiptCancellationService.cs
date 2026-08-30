@@ -39,6 +39,22 @@ public class GoodsReceiptCancellationService(BrqoshDbContext db)
 
             await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, cancellationDate);
 
+            // (CEEF-229 · م1-١٩) **يُعكَس قيدُ الاستحقاق** — وإلا بقي التزامُ «بضاعة مستلمة
+            // غير مفوترة» خالداً على الميزانية عن بضاعةٍ أُعيدت إلى المورد.
+            //
+            // **ويُرسى بالمعرّف لا بالمصدر:** عكسُ القيد ينسخ `SourceDocument` نفسَه، وهذه
+            // الخدمةُ تستعمل السلسلةَ عينَها لحركتها المخزنية — فالبحثُ بالمصدر ملتبسٌ ببنائه.
+            if (receipt.JournalEntryId is long accrualEntryId)
+            {
+                if (cancellationDate < receipt.ReceiptDate)
+                    throw new AccountingException(
+                        $"تاريخ الإلغاء ({cancellationDate:yyyy-MM-dd}) قبل تاريخ الاستلام "
+                        + $"({receipt.ReceiptDate:yyyy-MM-dd}) — ولا يُعكَس قيدٌ بتاريخٍ يسبقه.");
+
+                await new JournalReversalService(db).ReverseAsync(
+                    companyId, accrualEntryId, cancellationDate, username, fromSourceDocument: true, token);
+            }
+
             var sourceDoc = $"GoodsReceipt:{receipt.ReceiptNumber}";
             var movements = await db.StockMovements
                 .Include(m => m.Lines)

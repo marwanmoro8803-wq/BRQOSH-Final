@@ -60,6 +60,16 @@ public class GoodsReceipt : IBranchScoped
     public GoodsReceiptStatus Status { get; private set; } = GoodsReceiptStatus.Draft;
     public long? StockMovementId { get; private set; }
 
+    /// <summary>
+    /// (CEEF-229 · م1-١٩) قيدُ الاستحقاق — <b>ومرساةُ عكسه عند الإلغاء</b>.
+    ///
+    /// <para>ولا يُبحث عنه بـ<c>SourceDocument</c>: عكسُ القيد ينسخ المصدرَ نفسَه، وخدمةُ
+    /// الإلغاء تستعمل السلسلةَ عينَها لحركتها المخزنية — فيصير المفتاحُ ملتبساً ببنائه.</para>
+    /// </summary>
+    public long? JournalEntryId { get; private set; }
+
+    public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
+
     public IReadOnlyList<GoodsReceiptLine> Lines => _lines.AsReadOnly();
 
     private GoodsReceipt() { Notes = null!; }

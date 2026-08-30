@@ -68,7 +68,13 @@ public class Phase4AdvancedPurchasingTests : IDisposable
 
         var onHand = await new InventoryService(_db).GetCompanyOnHandAsync(companyId, productId);
         Assert.Equal(10m, onHand);
-        Assert.Equal(0, await _db.JournalEntries.CountAsync());
+        // (CEEF-229 · م1-١٩) كان هنا `Assert.Equal(0, JournalEntries.Count)` — أي أنّ هذا
+        // ‏الاختبار كان **يحرس العطل**: يُثبّت أنّ الاستلام لا يكتب قيداً، وهو بالضبط سببُ
+        // ‏غياب البضاعة المستلمة عن الميزانية. فصار يقيس القيدَ الصحيح بدل أن يمنعه.
+        var entry = await _db.JournalEntries.Include(e => e.Lines).SingleAsync();
+        Assert.Equal(500m, entry.Lines.Single(l => l.AccountCode == "1107").Debit);
+        Assert.Equal(500m, entry.Lines.Single(l => l.AccountCode == "2112").Credit);
+        Assert.Equal(0m, entry.Lines.Where(l => l.AccountCode == "2101").Sum(l => l.Credit));
     }
 
     [Fact]

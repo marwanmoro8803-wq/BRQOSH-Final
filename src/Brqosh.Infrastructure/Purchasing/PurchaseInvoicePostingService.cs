@@ -54,14 +54,36 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             decimal inventorySubtotal = 0;
             var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
 
+            // (CEEF-229 · م1-١٩) **مع إذنِ استلامٍ لا يُمَسّ 1107 إطلاقاً.**
+            //
+            // وجودُ الإذن يمنع الحركةَ المخزنية، فمتوسطُ التكلفة لا يُعاد حسابه — وأيُّ ريالٍ
+            // يُضاف إلى 1107 هنا بلا مقابلٍ في الدفتر المساعد **يكسر الهوية هـ-٣ كسراً دائماً**.
+            // فالاستحقاقُ يُقفَل بمقدار ما استُلم، والفرقُ يذهب مصروفاً.
+            decimal grniRelief = 0m;
+            decimal priceVariance = 0m;
+            var openAccrual = hasPostedGrn
+                ? await OpenAccrualByProductAsync(invoice, ct)
+                : new Dictionary<long, decimal>();
+
             foreach (var line in invoice.Lines)
             {
-                if (line.ProductId is long pid && products.TryGetValue(pid, out var product) && product.IsStockable())
+                if (line.ProductId is not long pid
+                    || !products.TryGetValue(pid, out var product) || !product.IsStockable())
+                    continue;
+
+                if (!hasPostedGrn)
                 {
                     inventorySubtotal += line.LineTotal;
-                    if (!hasPostedGrn)
-                        receiptLines.Add((pid, line.Quantity, line.UnitPrice));
+                    receiptLines.Add((pid, line.Quantity, line.UnitPrice));
+                    continue;
                 }
+
+                var available = openAccrual.TryGetValue(pid, out var open) ? open : 0m;
+                var relief = Math.Min(line.LineTotal, available);
+                openAccrual[pid] = available - relief;
+
+                grniRelief += relief;
+                priceVariance += line.LineTotal - relief;
             }
 
             var purchases = await SystemAccountAsync(invoice.CompanyId, "5102");
@@ -75,8 +97,15 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 db.PurchaseInvoices.Where(i => i.CompanyId == invoice.CompanyId).Select(i => i.InvoiceNumber),
                 "PI", invoice.InvoiceDate.Year, invoice.CompanyId);
 
-            // عند وجود GRN: القيد المالي على المخزون بنفس الإجمالي دون حركة مزدوجة
-            var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable, inventorySubtotal, inventoryAccount);
+            var grniAccount = grniRelief > 0
+                ? await PurchaseAccountProvisioning.GoodsReceivedNotInvoicedAsync(db, invoice.CompanyId, ct)
+                : null;
+            var varianceAccount = priceVariance != 0m
+                ? await PurchaseAccountProvisioning.PriceVarianceAsync(db, invoice.CompanyId, ct)
+                : null;
+
+            var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable,
+                inventorySubtotal, inventoryAccount, grniRelief, grniAccount, priceVariance, varianceAccount);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
             entry.Post(entryNumber);
 
@@ -108,6 +137,54 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             return invoice;
         });
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م1-١٩) الاستحقاقُ المفتوح لكلّ صنف: ما استُلم <b>ناقصَ ما أقفلته فواتيرُ
+    /// سابقة على أمر الشراء نفسه</b>.
+    ///
+    /// <para>وبلا الطرح تُقفل فاتورتان الاستحقاقَ نفسَه، فيصير 2112 مديناً سالباً والذمّةُ
+    /// مضخَّمة. <b>والفوترةُ الجزئية غير مغطّاةٍ بحارسٍ اليوم</b> — بندٌ مسجَّل.</para>
+    /// </summary>
+    private async Task<Dictionary<long, decimal>> OpenAccrualByProductAsync(
+        PurchaseInvoice invoice, CancellationToken ct)
+    {
+        var poId = invoice.PurchaseOrderId!.Value;
+
+        var received = await db.GoodsReceipts
+            .Where(g => g.CompanyId == invoice.CompanyId
+                        && g.PurchaseOrderId == poId
+                        && g.Status == GoodsReceiptStatus.Posted)
+            .SelectMany(g => g.Lines)
+            .Where(l => l.ProductId != null)
+            .Select(l => new { ProductId = l.ProductId!.Value, l.ReceivedQuantity, l.UnitCost })
+            .ToListAsync(ct);
+
+        var open = received
+            .GroupBy(l => l.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(l => Math.Round(l.ReceivedQuantity * l.UnitCost, 2, MidpointRounding.AwayFromZero)));
+
+        var relievedAlready = await db.PurchaseInvoices
+            .Where(i => i.CompanyId == invoice.CompanyId
+                        && i.PurchaseOrderId == poId
+                        && i.Status == PurchaseInvoiceStatus.Posted)
+            .SelectMany(i => i.Lines)
+            .Where(l => l.ProductId != null)
+            .Select(l => new { ProductId = l.ProductId!.Value, l.Quantity, l.UnitPrice })
+            .ToListAsync(ct);
+
+        foreach (var group in relievedAlready.GroupBy(l => l.ProductId))
+        {
+            if (!open.TryGetValue(group.Key, out var remaining))
+                continue;
+
+            var used = group.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2, MidpointRounding.AwayFromZero));
+            open[group.Key] = Math.Max(0m, remaining - used);
+        }
+
+        return open;
     }
 
     private async Task<Account> SystemAccountAsync(long companyId, string code) =>
