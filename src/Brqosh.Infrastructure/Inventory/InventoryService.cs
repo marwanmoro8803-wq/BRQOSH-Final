@@ -194,6 +194,28 @@ public class InventoryService(BrqoshDbContext db)
             .ToDictionaryAsync(p => p.Id);
     }
 
+    /// <summary>
+    /// (CEEF-229 · م2-١٧ب) <b>الإيقافُ يمنع تجارةً جديدة — لا يمنع ردَّ ما بيع.</b>
+    ///
+    /// <para>زرُّ «إيقاف» في شاشة الأصناف كان تسميةً بلا أثر: يضبط <c>IsActive = false</c>
+    /// ولا يفحصه مسارُ ترحيلٍ واحد، فيُباع الصنفُ الموقوف ويُشترى كأنّ شيئاً لم يكن.</para>
+    ///
+    /// <para><b>ولا يُوضع هذا الحارسُ في <see cref="LoadProductsForLinesAsync"/> رغم أنّ
+    /// المسارات الأربعة تمرّ به</b>: الإشعارُ الدائن ردٌّ لبضاعةٍ بيعت، والمدينُ ردٌّ لبضاعةٍ
+    /// اشتُريت. ومنعُهما يحبس البضاعةَ عند الزبون أو عند المورّد بلا مخرج — ويجعل الإيقافَ
+    /// عقوبةً على التاجر لا أداةً بيده. فالردُّ يبقى مفتوحاً، والتجارةُ الجديدة تُمنع.</para>
+    /// </summary>
+    public static void EnsureTradable(IReadOnlyDictionary<long, Product> products, string action)
+    {
+        var stopped = products.Values.Where(p => !p.IsActive).Select(p => p.NameAr).ToList();
+        if (stopped.Count == 0)
+            return;
+
+        throw new AccountingException(
+            $"لا يمكن {action} أصنافٍ موقوفة: {string.Join("، ", stopped)}."
+            + "\n\nأعِد تفعيلها من: الأصناف ← تعديل الصنف، أو احذفها من المستند.");
+    }
+
     public async Task ApplyReceiptCostAsync(long companyId, long productId, decimal qtyIn, decimal unitCost)
     {
         var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId);

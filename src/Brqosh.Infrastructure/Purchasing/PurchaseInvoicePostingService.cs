@@ -50,6 +50,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 && g.Status == GoodsReceiptStatus.Posted, ct);
 
             var products = await inv.LoadProductsForLinesAsync(invoice.CompanyId, invoice.Lines.Select(l => l.ProductId));
+            InventoryService.EnsureTradable(products, "شراء");
             decimal inventorySubtotal = 0;
             var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
 

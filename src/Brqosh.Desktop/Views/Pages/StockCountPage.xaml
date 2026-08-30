@@ -48,6 +48,26 @@
                     <DataGridTextColumn Header="اسم الصنف" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
                     <DataGridTextColumn Header="المستودع" Binding="{Binding WarehouseName}" Width="120" IsReadOnly="True"/>
                     <DataGridTextColumn Header="الوحدة" Binding="{Binding Unit}" Width="70" IsReadOnly="True"/>
+                    <!-- (CEEF-229 · م2-١٧ب) الموقوفُ يظهر ببضاعته ويُوسَم — لا يختفي ولا يُظنّ متاحاً. -->
+                    <DataGridTemplateColumn Header="الحالة" Width="80" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="موقوف" Foreground="{DynamicResource DangerBrush}"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsStopped}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="رصيد النظام" Binding="{Binding SystemQty, StringFormat=N2}" Width="100" IsReadOnly="True"/>
                     <DataGridTextColumn Header="العد الفعلي" Binding="{Binding CountedQty, StringFormat=N2}" Width="100"/>
                     <DataGridTextColumn Header="الفرق" Binding="{Binding Variance, StringFormat=N2}" Width="90" IsReadOnly="True"/>

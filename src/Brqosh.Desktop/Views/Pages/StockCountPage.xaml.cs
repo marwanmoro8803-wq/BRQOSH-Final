@@ -22,6 +22,13 @@ public partial class StockCountPage : UserControl
         public string WarehouseName { get; init; } = "";
         public string Unit { get; init; } = "";
         public decimal SystemQty { get; init; }
+
+        /// <summary>
+        /// (CEEF-229 · م2-١٧ب) صنفٌ موقوفٌ ما زالت بضاعتُه قائمة — يظهر في الورقة ليُعَدّ
+        /// ويُصفَّى، ويُوسَم كي لا يُظنّ متاحاً للبيع. وقبل هذه الدفعة كان يختفي كلّياً،
+        /// فتبقى بضاعتُه محبوسةً لا تُعَدّ ولا تُسوّى.
+        /// </summary>
+        public bool IsStopped { get; init; }
         private decimal _countedQty;
 
         /// <summary>
@@ -82,6 +89,7 @@ public partial class StockCountPage : UserControl
                 SystemQty = b.Quantity,
                 CountedQty = b.Quantity,
                 UnitCost = b.UnitCost,
+                IsStopped = b.IsStopped,
             });
         }
         var totalValue = balances.Sum(r => r.TotalValue);

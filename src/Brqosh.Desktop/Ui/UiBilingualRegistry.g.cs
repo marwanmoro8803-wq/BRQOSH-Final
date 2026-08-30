@@ -772,6 +772,7 @@ public static partial class UiBilingualRegistry
         ["منتج"] = "Product",
         ["مواقع تخزين · افتراضي · جرد"] = "Storage locations · Default · Stock count",
         ["مورد جديد"] = "New supplier",
+        ["موقوف"] = "Stopped",
         ["ميزان المراجعة"] = "Trial Balance",
         ["ميزان مراجعة موحّد"] = "Consolidated Trial Balance",
         ["مُرسَل"] = "Sent",

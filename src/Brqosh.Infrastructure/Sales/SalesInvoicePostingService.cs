@@ -77,6 +77,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
 
         var products = await inv.LoadProductsForLinesAsync(invoice.CompanyId, invoice.Lines.Select(l => l.ProductId));
+        InventoryService.EnsureTradable(products, "بيع");
 
         var stockLines = invoice.Lines
 
