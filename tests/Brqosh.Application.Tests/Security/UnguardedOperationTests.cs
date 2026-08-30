@@ -55,7 +55,7 @@ public class UnguardedOperationTests : IDisposable
 
         TestActor.Accountant();
         await new PurchaseRequestWorkflowService(_db, new WorkflowEngine(_db))
-            .SubmitAsync(request, "PR-2026-001");
+            .SubmitAsync(request);
 
         return await _db.WorkflowInstances
             .Where(w => w.CompanyId == _companyId)

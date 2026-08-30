@@ -68,9 +68,11 @@ public class PurchaseOrderWorkflowTests : IDisposable
 
         SecurityContext.CurrentUsername = "finance";
         SecurityContext.CurrentRole = UserRole.Administrator;
-        await Svc().ApproveAsync(order.Id, "PO-2026-010");
+        await Svc().ApproveAsync(order.Id);
         Assert.Equal(PurchaseOrderStatus.Approved, order.Status);
-        Assert.Equal("PO-2026-010", order.OrderNumber);
+        // ‏(م1-١٤) الرقمُ لم يعد يُحقَن من الاختبار — تُخصّصه الخدمةُ داخل معاملتها.
+        // ‏فيُقاس شكلُه لا قيمةٌ مُملاة: رقمٌ مُخصَّصٌ فعلاً بالبادئة والسنة الصحيحتين.
+        Assert.StartsWith("PO-2026-", order.OrderNumber, StringComparison.Ordinal);
     }
 
     [Fact]

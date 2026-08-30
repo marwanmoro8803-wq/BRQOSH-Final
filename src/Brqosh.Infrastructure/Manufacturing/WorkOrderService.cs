@@ -20,9 +20,9 @@ public class WorkOrderService(BrqoshDbContext db)
             SecurityContext.EnsureCanPost();
 
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
-            var number = await DocumentNumberGenerator.NextAsync(
+            var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.WorkOrders.Where(w => w.CompanyId == companyId).Select(w => w.OrderNumber),
-                "WO", order.OrderDate.Year);
+                "WO", order.OrderDate.Year, companyId);
             order.Release(number);
             await db.SaveChangesAsync(token);
             return order;

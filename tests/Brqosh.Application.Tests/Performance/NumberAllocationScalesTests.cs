@@ -141,8 +141,8 @@ public class NumberAllocationScalesTests : IDisposable
 
         _capture.Commands.Clear();
         var number = await DocumentNumberGenerator.NextAsync(
-            _db.SalesInvoices.Where(i => i.CompanyId == companyId).Select(i => i.InvoiceNumber),
-            "INV", 2026);
+            _db, _db.SalesInvoices.Where(i => i.CompanyId == companyId).Select(i => i.InvoiceNumber),
+            "INV", 2026, companyId);
 
         Assert.Equal("INV-2026-000001", number);
 

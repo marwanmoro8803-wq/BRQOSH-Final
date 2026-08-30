@@ -7,15 +7,29 @@ namespace Brqosh.Infrastructure.Persistence;
 /// </summary>
 public static class DocumentNumberGenerator
 {
-    public static Task<string> NextAsync(IQueryable<string?> existingNumbers, string prefix, int year) =>
-        NextAsync(existingNumbers, prefix, year, []);
+    public static Task<string> NextAsync(
+        BrqoshDbContext db, IQueryable<string?> existingNumbers, string prefix, int year, long companyId) =>
+        NextAsync(db, existingNumbers, prefix, year, companyId, []);
 
+    /// <summary>
+    /// (CEEF-229 · م1-١٤) <b>السياقُ معاملٌ إلزاميّ — لأنّ القفلَ لا يجوز أن يُنسى.</b>
+    ///
+    /// <para>كان التوقيعُ يأخذ <c>IQueryable</c> وحدَه، فلا يملك المولّدُ سبيلاً إلى قفلٍ
+    /// أصلاً — وهذا هو السببُ البنيويّ لغياب الحماية عن سبعةَ عشرَ موضعَ ترقيم. وبإلزام
+    /// السياق يصير القفلُ <b>مفروضاً بالمترجِم</b>: لا يُمكن استدعاءُ المولّد بلا تمريره،
+    /// فلا يوجد «موضعٌ نُسي».</para>
+    /// </summary>
     public static async Task<string> NextAsync(
+        BrqoshDbContext db,
         IQueryable<string?> existingNumbers,
         string prefix,
         int year,
+        long companyId,
         IEnumerable<string?> extraNumbers)
     {
+        // ‏قبل القراءة لا بعدها — وإلا قرأ المتزاحمان القيمةَ نفسَها ثمّ تسلسلا بلا فائدة.
+        await DocumentSequenceLock.AcquireAsync(db.Database, companyId, prefix, year);
+
         var fullPrefix = $"{prefix}-{year}-";
 
         // (CEEF-229 · م2-٤أ) **الأكبرُ تأخذه القاعدة** — انظر الشرح المفصّل في

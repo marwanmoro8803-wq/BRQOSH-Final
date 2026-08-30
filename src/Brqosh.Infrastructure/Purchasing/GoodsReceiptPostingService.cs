@@ -43,9 +43,9 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
                     stockLines.Add((pid, line.ReceivedQuantity, line.UnitCost));
             }
 
-            var number = await DocumentNumberGenerator.NextAsync(
+            var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.GoodsReceipts.Where(g => g.CompanyId == receipt.CompanyId).Select(g => g.ReceiptNumber),
-                "GRN", receipt.ReceiptDate.Year);
+                "GRN", receipt.ReceiptDate.Year, receipt.CompanyId);
 
             long? movementId = null;
             if (stockLines.Count > 0)

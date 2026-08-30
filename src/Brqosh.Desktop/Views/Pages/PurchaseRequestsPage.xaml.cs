@@ -150,14 +150,11 @@ public partial class PurchaseRequestsPage : UserControl
 
         await using var db = AppServices.CreateDb();
         var request = await db.PurchaseRequests.SingleAsync(r => r.Id == row.Id);
-        var number = await DocumentNumberGenerator.NextAsync(
-            db.PurchaseRequests.Where(r => r.CompanyId == AppServices.CompanyId).Select(r => r.RequestNumber),
-            "PR", request.RequestDate.Year);
-
+        // (CEEF-229 · م1-١٤) الرقمُ من الخدمة داخل معاملتها — لا من الشاشة بلا معاملة.
         using var scope = AppServices.CreateInfrastructureScope();
         var svc = scope.ServiceProvider.GetRequiredService<PurchaseRequestWorkflowService>();
-        await svc.SubmitAsync(request, number);
-        UiFeedback.ShowInfo(LocaleManager.T($"تم إرسال {number} للموافقة.", $"Submitted {number}."));
+        var submitted = await svc.SubmitAsync(request);
+        UiFeedback.ShowInfo(LocaleManager.T($"تم إرسال {submitted.RequestNumber} للموافقة.", $"Submitted {submitted.RequestNumber}."));
         await ReloadAsync();
     }
 
@@ -211,13 +208,9 @@ public partial class PurchaseRequestsPage : UserControl
 
         await using var db = AppServices.CreateDb();
         var request = await db.PurchaseRequests.SingleAsync(r => r.Id == row.Id);
-        var orderNumber = await DocumentNumberGenerator.NextAsync(
-            db.PurchaseOrders.Where(o => o.CompanyId == AppServices.CompanyId).Select(o => o.OrderNumber),
-            "PO", request.RequestDate.Year);
-
         using var scope = AppServices.CreateInfrastructureScope();
         var svc = scope.ServiceProvider.GetRequiredService<PurchaseRequestWorkflowService>();
-        var po = await svc.ConvertToPurchaseOrderAsync(row.Id, orderNumber);
+        var po = await svc.ConvertToPurchaseOrderAsync(row.Id);
         UiFeedback.ShowInfo(LocaleManager.T(
             $"تم إنشاء أمر الشراء {po.OrderNumber}.",
             $"Purchase order {po.OrderNumber} created."));

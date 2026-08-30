@@ -247,15 +247,12 @@ public partial class PurchaseOrdersPage : UserControl
             return;
         }
 
-        await using var db = AppServices.CreateDb();
-        var order = await db.PurchaseOrders.SingleAsync(o => o.Id == row.Id);
-        var orderNumber = await DocumentNumberGenerator.NextAsync(
-            db.PurchaseOrders.Where(o => o.CompanyId == AppServices.CompanyId).Select(o => o.OrderNumber),
-            "PO", order.OrderDate.Year);
-
+        // (CEEF-229 · م1-١٤) الرقمُ لم يعد يُحسب هنا: كان يُخصَّص على سياق الشاشة **بلا
+        // معاملة** ثمّ يُمرَّر إلى خدمةٍ تكتب في معاملةٍ أخرى — فيقرأ مستخدمان الرقمَ نفسَه.
+        // والخدمةُ تُخصّصه الآن داخل معاملتها حيث يحيا القفل.
         using var scope = AppServices.CreateInfrastructureScope();
         await scope.ServiceProvider.GetRequiredService<PurchaseOrderWorkflowService>()
-            .ApproveAsync(row.Id, orderNumber);
+            .ApproveAsync(row.Id);
         await UiFeedback.RunSafeAsync(ReloadAsync);
     }
 

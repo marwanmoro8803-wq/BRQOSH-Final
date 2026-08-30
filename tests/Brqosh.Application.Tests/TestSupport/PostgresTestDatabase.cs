@@ -131,6 +131,16 @@ public static class PostgresTestDatabase
     {
         public BrqoshDbContext Db { get; } = db;
 
+        /// <summary>
+        /// (CEEF-229 · م1-١٤ · ح-٢) <b>سياقٌ مستقلٌّ لكلّ كاتب — واتصالٌ مستقلّ معه.</b>
+        ///
+        /// <para>وهذا شرطُ صدقِ أيّ قياسِ تزامن: سياقان يتشاركان اتصالاً واحداً <b>يتسلسلان</b>،
+        /// فلا يقع السباقُ أصلاً ويمرّ الاختبارُ على نظامٍ مكسور. والقفلُ الاستشاريّ نفسُه
+        /// مربوطٌ بالمعاملة، فلا معنى له بلا معاملاتٍ متمايزة.</para>
+        /// </summary>
+        public BrqoshDbContext OpenIndependentContext() =>
+            BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, ConnectionStringFor(database));
+
         public async ValueTask DisposeAsync()
         {
             await Db.DisposeAsync();

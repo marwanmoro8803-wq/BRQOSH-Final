@@ -49,9 +49,9 @@ public class PaymentVoucherPostingService(BrqoshDbContext db)
                 a.CompanyId == voucher.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsPayable, ct);
             var cashOrBank = await ResolveCashOrBankAccountAsync(voucher.CompanyId, voucher.Method, voucher.BankAccountId);
 
-            var voucherNumber = await DocumentNumberGenerator.NextAsync(
+            var voucherNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.PaymentVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
-                "PV", voucher.VoucherDate.Year);
+                "PV", voucher.VoucherDate.Year, voucher.CompanyId);
 
             var entry = voucher.Post(voucherNumber, payable, cashOrBank);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);

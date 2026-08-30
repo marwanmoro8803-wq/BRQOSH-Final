@@ -71,9 +71,9 @@ public class DebitNotePostingService(BrqoshDbContext db)
                     a.CompanyId == note.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.Inventory, token)
                 : null;
 
-            var noteNumber = await DocumentNumberGenerator.NextAsync(
+            var noteNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.DebitNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
-                "DN", note.NoteDate.Year);
+                "DN", note.NoteDate.Year, note.CompanyId);
 
             var entry = note.Post(noteNumber, purchases, vatInput, payable, inventoryReduction, inventory, purchases);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(note.CompanyId, note.NoteDate, token);

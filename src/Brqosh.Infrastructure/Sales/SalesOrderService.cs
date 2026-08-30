@@ -14,9 +14,9 @@ public class SalesOrderService(BrqoshDbContext db)
         if (order.Lines.Count == 0)
             throw new Domain.Accounting.AccountingException("أضف سطراً واحداً على الأقل.");
 
-        var number = await DocumentNumberGenerator.NextAsync(
+        var number = await DocumentNumberGenerator.NextAsync(db, 
             db.SalesOrders.Where(o => o.CompanyId == order.CompanyId).Select(o => o.OrderNumber),
-            "SO", order.OrderDate.Year);
+            "SO", order.OrderDate.Year, order.CompanyId);
 
         order.Confirm(number);
         db.SalesOrders.Add(order);

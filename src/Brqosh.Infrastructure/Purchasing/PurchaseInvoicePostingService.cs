@@ -71,9 +71,9 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             var vatInput = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.VatInput);
             var payable = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsPayable);
 
-            var invoiceNumber = await DocumentNumberGenerator.NextAsync(
+            var invoiceNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.PurchaseInvoices.Where(i => i.CompanyId == invoice.CompanyId).Select(i => i.InvoiceNumber),
-                "PI", invoice.InvoiceDate.Year);
+                "PI", invoice.InvoiceDate.Year, invoice.CompanyId);
 
             // عند وجود GRN: القيد المالي على المخزون بنفس الإجمالي دون حركة مزدوجة
             var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable, inventorySubtotal, inventoryAccount);

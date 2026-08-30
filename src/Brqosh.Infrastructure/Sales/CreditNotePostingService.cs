@@ -98,9 +98,9 @@ public class CreditNotePostingService(BrqoshDbContext db)
             ? await SystemAccountAsync(note.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
             : null;
 
-        var noteNumber = await DocumentNumberGenerator.NextAsync(
+        var noteNumber = await DocumentNumberGenerator.NextAsync(db, 
             db.CreditNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
-            "CN", note.NoteDate.Year);
+            "CN", note.NoteDate.Year, note.CompanyId);
 
         var entry = note.Post(noteNumber, salesReturns, vatOutput, receivable, cogsReversal, cogs, inventory);
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(note.CompanyId, note.NoteDate);

@@ -8,17 +8,24 @@ namespace Brqosh.Infrastructure.Purchasing;
 
 public class PurchaseOrderService(BrqoshDbContext db)
 {
-    public async Task<PurchaseOrder> ApproveAsync(PurchaseOrder order)
+    /// <summary>
+    /// (CEEF-229 · م1-١٤) داخل معاملة — فقفلُ التسلسل مربوطٌ بها، وخارجَها يُحرَّر فوراً
+    /// فيقرأ متزاحمان الرقمَ نفسَه. وكانت القراءةُ والكتابة هنا بلا معاملةٍ إطلاقاً.
+    /// </summary>
+    public Task<PurchaseOrder> ApproveAsync(PurchaseOrder order)
     {
         SecurityContext.EnsureCanPost();
-        var orderNumber = await DocumentNumberGenerator.NextAsync(
-            db.PurchaseOrders.Where(o => o.CompanyId == order.CompanyId).Select(o => o.OrderNumber),
-            "PO", order.OrderDate.Year);
+        return UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
+        {
+            var orderNumber = await DocumentNumberGenerator.NextAsync(
+                db, db.PurchaseOrders.Where(o => o.CompanyId == order.CompanyId).Select(o => o.OrderNumber),
+                "PO", order.OrderDate.Year, order.CompanyId);
 
-        order.Approve(orderNumber);
-        db.PurchaseOrders.Add(order);
-        await db.SaveChangesAsync();
-        return order;
+            order.Approve(orderNumber);
+            db.PurchaseOrders.Add(order);
+            await db.SaveChangesAsync(ct);
+            return order;
+        });
     }
 
     public async Task<PurchaseInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId,

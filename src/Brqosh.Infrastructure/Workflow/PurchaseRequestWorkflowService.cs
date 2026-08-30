@@ -9,18 +9,28 @@ namespace Brqosh.Infrastructure.Workflow;
 
 public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflowEngine workflow)
 {
-    public async Task<PurchaseRequest> SubmitAsync(PurchaseRequest request, string requestNumber, CancellationToken ct = default)
+    /// <summary>
+    /// (CEEF-229 · م1-١٤) الرقمُ يُخصَّص داخل معاملة الكتابة لا في الشاشة — فقفلُ
+    /// التسلسل مربوطٌ بالمعاملة، وخارجَها يُحرَّر فوراً فلا يحمي شيئاً.
+    /// </summary>
+    public async Task<PurchaseRequest> SubmitAsync(PurchaseRequest request, CancellationToken ct = default)
     {
         if (request.Status != PurchaseRequestStatus.Draft)
             throw new AccountingException("يُرسَل الطلب من مسودة فقط.");
 
+        return await Persistence.UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
         var submitter = SecurityContext.ResolveUsername();
         var instance = await workflow.SubmitAsync(
             request.CompanyId, WorkflowDocumentKind.PurchaseRequest, request.Id, submitter, ct);
 
+        var requestNumber = await Persistence.DocumentNumberGenerator.NextAsync(
+            db, db.PurchaseRequests.Where(r => r.CompanyId == request.CompanyId).Select(r => r.RequestNumber),
+            "PR", request.RequestDate.Year, request.CompanyId);
         request.MarkSubmitted(requestNumber, instance.Id);
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(token);
         return request;
+        }, ct);
     }
 
     public async Task<PurchaseRequest> ApproveAsync(long purchaseRequestId, string? comment = null, CancellationToken ct = default)
@@ -51,12 +61,13 @@ public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflow
 
     public async Task<PurchaseOrder> ConvertToPurchaseOrderAsync(
         long purchaseRequestId,
-        string orderNumber,
         CancellationToken ct = default)
     {
+        return await Persistence.UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
         var request = await db.PurchaseRequests
             .Include(r => r.Lines)
-            .SingleAsync(r => r.Id == purchaseRequestId, ct);
+            .SingleAsync(r => r.Id == purchaseRequestId, token);
 
         if (request.Status != PurchaseRequestStatus.Approved)
             throw new AccountingException("يُحوَّل الطلب المعتمد فقط.");
@@ -71,9 +82,13 @@ public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflow
         db.PurchaseOrders.Add(po);
         await db.SaveChangesAsync(ct);
 
+        var orderNumber = await Persistence.DocumentNumberGenerator.NextAsync(
+            db, db.PurchaseOrders.Where(o => o.CompanyId == po.CompanyId).Select(o => o.OrderNumber),
+            "PO", po.OrderDate.Year, po.CompanyId);
         po.Approve(orderNumber);
         request.MarkConvertedToPo(po.Id);
         await db.SaveChangesAsync(ct);
         return po;
+        }, ct);
     }
 }

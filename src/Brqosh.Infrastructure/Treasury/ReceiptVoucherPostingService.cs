@@ -45,9 +45,9 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db)
             var receivable = await db.Accounts.SingleAsync(a =>
                 a.CompanyId == voucher.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsReceivable, ct);
 
-            var voucherNumber = await DocumentNumberGenerator.NextAsync(
+            var voucherNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.ReceiptVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
-                "RV", voucher.VoucherDate.Year);
+                "RV", voucher.VoucherDate.Year, voucher.CompanyId);
 
             var entry = voucher.Post(voucherNumber, cashOrBank, receivable);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);

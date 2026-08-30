@@ -59,7 +59,7 @@ public class PurchaseRequestWorkflowTests : IDisposable
 
         SecurityContext.CurrentUsername = "employee";
         SecurityContext.CurrentRole = UserRole.Accountant;
-        await Svc().SubmitAsync(request, "PR-2026-001");
+        await Svc().SubmitAsync(request);
 
         Assert.Equal(PurchaseRequestStatus.Submitted, request.Status);
 
@@ -75,7 +75,7 @@ public class PurchaseRequestWorkflowTests : IDisposable
 
         Assert.Equal(PurchaseRequestStatus.Approved, request.Status);
 
-        var po = await Svc().ConvertToPurchaseOrderAsync(request.Id, "PO-2026-001");
+        var po = await Svc().ConvertToPurchaseOrderAsync(request.Id);
         Assert.Equal(PurchaseOrderStatus.Approved, po.Status);
         Assert.Equal(PurchaseRequestStatus.ConvertedToPo, request.Status);
         Assert.Equal(po.Id, request.PurchaseOrderId);
@@ -93,7 +93,7 @@ public class PurchaseRequestWorkflowTests : IDisposable
 
         SecurityContext.CurrentUsername = "employee";
         SecurityContext.CurrentRole = UserRole.Accountant;
-        await Svc().SubmitAsync(request, "PR-REJ-01");
+        await Svc().SubmitAsync(request);
 
         SecurityContext.CurrentUsername = "manager";
         await Svc().RejectAsync(request.Id, "غير معتمد");
@@ -113,7 +113,7 @@ public class PurchaseRequestWorkflowTests : IDisposable
 
         SecurityContext.CurrentUsername = "same-user";
         SecurityContext.CurrentRole = UserRole.Accountant;
-        await Svc().SubmitAsync(request, "PR-SELF-01");
+        await Svc().SubmitAsync(request);
 
         await Assert.ThrowsAsync<Domain.Accounting.AccountingException>(
             () => Svc().ApproveAsync(request.Id));

@@ -57,9 +57,9 @@ public class StockMovementPostingService(BrqoshDbContext db)
 
             await inv.ApplyMovementBalancesAsync(movement);
 
-            var number = await DocumentNumberGenerator.NextAsync(
+            var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.StockMovements.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber),
-                "SM", movement.MovementDate.Year,
+                "SM", movement.MovementDate.Year, movement.CompanyId,
                 db.StockMovements.Local.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber));
             movement.MarkPosted(number);
 

@@ -12,9 +12,9 @@ public class SalesQuotationService(BrqoshDbContext db)
         if (quotation.Lines.Count == 0)
             throw new Domain.Accounting.AccountingException("أضف سطراً واحداً على الأقل.");
 
-        var number = await DocumentNumberGenerator.NextAsync(
+        var number = await DocumentNumberGenerator.NextAsync(db, 
             db.SalesQuotations.Where(q => q.CompanyId == quotation.CompanyId).Select(q => q.QuotationNumber),
-            "QT", quotation.QuotationDate.Year);
+            "QT", quotation.QuotationDate.Year, quotation.CompanyId);
 
         quotation.MarkSent(number);
         db.SalesQuotations.Add(quotation);

@@ -151,9 +151,9 @@ public class InventoryService(BrqoshDbContext db)
             }
         }
 
-        var number = await DocumentNumberGenerator.NextAsync(
+        var number = await DocumentNumberGenerator.NextAsync(db, 
             db.StockMovements.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber),
-            "SM", date.Year,
+            "SM", date.Year, companyId,
             db.StockMovements.Local.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber));
         movement.MarkPosted(number);
         db.StockMovements.Add(movement);
@@ -181,9 +181,9 @@ public class InventoryService(BrqoshDbContext db)
             await ApplyBalanceDeltaAsync(companyId, toWarehouseId, productId, qty);
         }
 
-        var number = await DocumentNumberGenerator.NextAsync(
+        var number = await DocumentNumberGenerator.NextAsync(db, 
             db.StockMovements.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber),
-            "SM", date.Year,
+            "SM", date.Year, companyId,
             db.StockMovements.Local.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber));
         movement.MarkPosted(number);
         db.StockMovements.Add(movement);
