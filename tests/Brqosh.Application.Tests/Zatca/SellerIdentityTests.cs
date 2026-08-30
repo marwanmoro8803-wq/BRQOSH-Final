@@ -193,7 +193,7 @@ public class SellerIdentityTests : IDisposable
     private static XDocument BuildInvoice(ZatcaUblInvoiceBuilder.SellerIdentity? seller)
     {
         var bytes = ZatcaUblInvoiceBuilder.BuildXml(new ZatcaUblInvoiceBuilder.InvoiceData(
-            InvoiceNumber: "INV-1", Uuid: Guid.NewGuid(), InvoiceDate: new DateOnly(2026, 3, 14),
+            InvoiceNumber: "INV-1", Uuid: Guid.NewGuid(), InvoiceDate: new DateOnly(2026, 3, 14), IssueTime: new TimeOnly(12, 0, 0),
             SellerName: "شركة تجارية", SellerVat: "310123456700099",
             CustomerName: "", CustomerVat: null,
             Subtotal: 1000m, VatAmount: 150m, GrandTotal: 1150m,

@@ -177,4 +177,32 @@ public static class ZatcaSignatureVerifier
         return ecdsa.VerifyData(
             ms.ToArray(), Convert.FromBase64String(signatureValue), HashAlgorithmName.SHA256);
     }
+
+    /// <summary>
+    /// (CEEF-229 · م2-٢١) اللحظةُ التي يعلنها رمزُ QR (الوسم ٣) — تُقرأ من الرمز نفسه لا
+    /// من المُدخَل الذي بُني منه، فيصير المستندُ ورمزُه طرفين مستقلّين قابلين للمقابلة.
+    /// </summary>
+    public static DateTime ReadQrTimestamp(string qrTlvBase64)
+    {
+        var bytes = Convert.FromBase64String(qrTlvBase64);
+        var i = 0;
+        while (i < bytes.Length)
+        {
+            var tag = bytes[i++];
+            int length = bytes[i++];
+            if (length == 0x81) length = bytes[i++];
+            else if (length == 0x82) { length = (bytes[i] << 8) | bytes[i + 1]; i += 2; }
+
+            if (tag == 3)
+                return DateTime.Parse(
+                    System.Text.Encoding.UTF8.GetString(bytes[i..(i + length)]),
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal
+                        | System.Globalization.DateTimeStyles.AssumeUniversal);
+
+            i += length;
+        }
+
+        throw new InvalidOperationException("رمز QR بلا وسم زمنيّ (الوسم ٣).");
+    }
 }

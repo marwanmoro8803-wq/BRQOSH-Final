@@ -1,3 +1,4 @@
+using System.Globalization;
 using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
@@ -505,6 +506,81 @@ public class GeneratedDocumentsConformTests : IDisposable
 
         Assert.Contains("سبب إعفاء", ex.Message, StringComparison.Ordinal);
         Assert.Contains("تصدير سلع", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م2-٢١) <b>مستندُ الإلغاء يحمل تاريخَ الإلغاء — لا تاريخَ ما أُلغي.</b>
+    ///
+    /// <para><b>وأثرُه انشقاقُ الفترة الضريبية:</b> خدمةُ الإلغاء تتحقّق أنّ فترةَ <i>الإلغاء</i>
+    /// مفتوحة وتعكس القيدَ بتاريخ <i>الإلغاء</i> — وهو الصواب. ثمّ يُولَّد إشعارُ الإلغاء
+    /// بتاريخ <i>الفاتورة الأصلية</i>. فإذا عبر الإلغاءُ حدَّ شهرٍ قيّدت الهيئةُ الخصمَ في
+    /// الشهر الأوّل وقيّدته الدفاترُ في الثاني، ولا يُصلَح بأثرٍ رجعيّ: المستندُ بعد قبوله
+    /// لدى الهيئة غيرُ قابلٍ للتعديل.</para>
+    ///
+    /// <para>و<c>CancelledAt</c> موجودٌ على المستندات الثلاثة ومملوءٌ لحظتَها — ولا يقرؤه
+    /// المولّد. وإلغاءُ فاتورةِ آخرِ يومٍ في الشهر هو أشيعُ ما يقع في متجر.</para>
+    /// </summary>
+    [Fact]
+    public async Task ACancellation_CarriesTheCancellationDate_NotTheOriginalDate()
+    {
+        await SetupAsync();
+
+        var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 31));
+        invoice.AddLine("خدمة", 1m, 1_000m);
+        var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        await new SalesInvoiceCancellationService(_db)
+            .CancelAsync(_companyId, posted.Id, new DateOnly(2026, 8, 3), "مدقّق");
+
+        var document = await DocumentFromPostingAsync(posted.Id, ZatcaDocumentType.InvoiceCancel);
+        var xml = System.Xml.Linq.XDocument.Load(
+            new MemoryStream(ReadGenerated(document)));
+        var cbc = System.Xml.Linq.XNamespace.Get(
+            "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2");
+
+        Assert.Equal("2026-08-03", xml.Root!.Element(cbc + "IssueDate")!.Value);
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م2-٢١) <b>والمستندُ لا يكذب على نفسه:</b> وقتُه المعلن هو لحظةُ توليده
+    /// المسجَّلة، ورمزُ QR يقول اللحظةَ نفسها.
+    ///
+    /// <para>كان <c>IssueTime</c> ثابتاً <c>"12:00:00"</c> بلا إزاحة — تقرؤه الهيئةُ توقيتاً
+    /// محلياً — بينما وسمُ QR الثالث يُبنى من ظهرٍ <b>بتوقيت UTC</b> فيقول <c>12:00:00Z</c>،
+    /// أي الثالثةَ عصراً بالرياض. <b>فالمستندُ الواحد يعلن لحظتين تفصلهما ثلاث ساعات.</b></para>
+    ///
+    /// <para>والقياسُ لا يحتاج ساعةً محقونة: اللحظةُ الحقيقية <b>مسجَّلةٌ سلفاً</b> في
+    /// <c>GeneratedAtUtc</c>. فيكفي أن يُطابَق المعلَنُ بالمسجَّل — وهو قياسٌ حتميّ.</para>
+    /// </summary>
+    [Fact]
+    public async Task TheDeclaredInstant_MatchesTheRecordedOne_AndTheQrAgrees()
+    {
+        await SetupAsync();
+        var posted = await PostInvoiceAsync();
+
+        var document = await DocumentFromPostingAsync(posted.Id, ZatcaDocumentType.SalesInvoice);
+        var xml = System.Xml.Linq.XDocument.Load(
+            new MemoryStream(ReadGenerated(document)));
+        var cbc = System.Xml.Linq.XNamespace.Get(
+            "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2");
+
+        // ‏(أ) الوقتُ المعلن هو لحظةُ التوليد المسجَّلة، بتوقيت الرياض (‏+03:00 بلا توقيتٍ صيفيّ).
+        var declared = TimeOnly.Parse(
+            xml.Root!.Element(cbc + "IssueTime")!.Value, CultureInfo.InvariantCulture);
+        var recorded = TimeOnly.FromDateTime(
+            document.GeneratedAtUtc + TimeSpan.FromHours(3));
+
+        Assert.True(Math.Abs((declared.ToTimeSpan() - recorded.ToTimeSpan()).TotalSeconds) <= 1,
+            $"الوقتُ المعلن {declared:HH:mm:ss} لا يطابق لحظةَ التوليد المسجَّلة {recorded:HH:mm:ss}.");
+
+        // ‏(ب) ورمزُ QR يقول اللحظةَ نفسها — لا لحظةً أخرى تفصلها ساعات.
+        var qrStamp = ZatcaSignatureVerifier.ReadQrTimestamp(document.QrTlvBase64!);
+        var declaredUtc = DateOnly.Parse(
+            xml.Root.Element(cbc + "IssueDate")!.Value, CultureInfo.InvariantCulture)
+            .ToDateTime(declared) - TimeSpan.FromHours(3);
+
+        Assert.True(Math.Abs((qrStamp - declaredUtc).TotalSeconds) <= 1,
+            $"رمزُ QR يقول {qrStamp:O} والمستندُ يقول {declaredUtc:O} — لحظتان مختلفتان في مستندٍ واحد.");
     }
 
     /// <summary>

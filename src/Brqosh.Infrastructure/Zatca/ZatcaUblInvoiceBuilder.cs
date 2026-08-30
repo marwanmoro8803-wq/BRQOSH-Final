@@ -18,6 +18,7 @@ public static class ZatcaUblInvoiceBuilder
         string InvoiceNumber,
         Guid Uuid,
         DateOnly InvoiceDate,
+        TimeOnly IssueTime,
         string SellerName,
         string SellerVat,
         string? CustomerName,
@@ -60,7 +61,6 @@ public sealed record BuyerIdentity(
 
     public static byte[] BuildXml(InvoiceData data)
     {
-        var issueTime = "12:00:00";
         var typeCode = data.IsDebitNote ? "383" : data.IsCreditNote ? "381" : "388";
         var typeName = data.IsSimplified ? "0200000" : "0100000";
 
@@ -71,7 +71,7 @@ public sealed record BuyerIdentity(
             El(Cbc, "ID", data.InvoiceNumber),
             El(Cbc, "UUID", data.Uuid.ToString()),
             El(Cbc, "IssueDate", data.InvoiceDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
-            El(Cbc, "IssueTime", issueTime),
+            El(Cbc, "IssueTime", data.IssueTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture)),
             InvoiceTypeCodeEl(typeCode, typeName),
             El(Cbc, "DocumentCurrencyCode", "SAR"),
             El(Cbc, "TaxCurrencyCode", "SAR"));

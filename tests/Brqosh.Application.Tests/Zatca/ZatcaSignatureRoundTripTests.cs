@@ -41,7 +41,7 @@ public class ZatcaSignatureRoundTripTests : IDisposable
         ZatcaUblInvoiceBuilder.BuildXml(new ZatcaUblInvoiceBuilder.InvoiceData(
             InvoiceNumber: "INV-2026-000001",
             Uuid: Guid.NewGuid(),
-            InvoiceDate: new DateOnly(2026, 3, 14),
+            InvoiceDate: new DateOnly(2026, 3, 14), IssueTime: new TimeOnly(12, 0, 0),
             SellerName: "منشأة الاختبار",
             SellerVat: "310123456700003",
             CustomerName: "",

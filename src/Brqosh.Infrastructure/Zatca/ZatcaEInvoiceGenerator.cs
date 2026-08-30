@@ -135,7 +135,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var cnNumber = $"CN-CANCEL-PB-{billing.BillingNumber}";
         return await GenerateAsync(
             billing.CompanyId, ZatcaDocumentType.BillingCancel, progressBillingId,
-            cnNumber, billing.BillingDate, company, customer,
+            cnNumber, billing.CancelledAt ?? billing.BillingDate, company, customer,
             billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode, isCreditNote: true);
     }
 
@@ -170,7 +170,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var dnNumber = $"DN-CANCEL-{note.NoteNumber}";
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.DebitNote, creditNoteId,
-            dnNumber, note.NoteDate, company, customer,
+            dnNumber, note.CancelledAt ?? note.NoteDate, company, customer,
             note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode,
             isCreditNote: false, isDebitNote: true,
             issueReason: $"إلغاء إشعار دائن {note.NoteNumber}");
@@ -208,10 +208,13 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var cnNumber = $"CN-CANCEL-{invoice.InvoiceNumber}";
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.InvoiceCancel, salesInvoiceId,
-            cnNumber, invoice.InvoiceDate, company, customer,
+            cnNumber, invoice.CancelledAt ?? invoice.InvoiceDate, company, customer,
             invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: true,
             issueReason: $"إلغاء فاتورة مبيعات {invoice.InvoiceNumber}");
     }
+
+    /// <summary>الرياض ‏+03:00‎ ثابتةً — لا توقيتَ صيفيّ في السعودية.</summary>
+    private static readonly TimeSpan RiyadhOffset = TimeSpan.FromHours(3);
 
     private async Task<ZatcaEInvoiceDocument> GenerateAsync(
         long companyId, ZatcaDocumentType docType, long sourceId,
@@ -318,7 +321,20 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             .FirstOrDefaultAsync() ?? ZatcaHashHelper.ZeroHash();
 
         var uuid = Guid.NewGuid();
-        var ts = date.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)), DateTimeKind.Utc);
+        // (CEEF-229 · م2-٢١) **لحظةُ الإصدار حقيقيةٌ، والمستندُ ورمزُه يقولانها معاً.**
+        //
+        // كان `IssueTime` ثابتاً `"12:00:00"` بلا إزاحة — تقرؤه الهيئةُ توقيتاً محلياً —
+        // بينما يُبنى وسمُ QR الثالث من ظهرٍ **بتوقيت UTC** فيقول `12:00:00Z`، أي الثالثةَ
+        // عصراً بالرياض. **فالمستندُ الواحد كان يعلن لحظتين تفصلهما ثلاث ساعات.**
+        //
+        // ولم تكن اللحظةُ الحقيقية مفقودة: `GeneratedAtUtc` يسجّلها على المستند منذ البداية،
+        // والمولّدُ وحده لا يقولها. فتُؤخذ مرّةً واحدة ويُشتقّ منها الطرفان — فيستحيل
+        // اختلافُهما بناءً، لا بحارسٍ يتذكّره أحد.
+        //
+        // والرياض `+03:00` بلا توقيتٍ صيفيّ، فالإزاحة ثابتةٌ ولا تحتاج قاعدةَ مناطق.
+        var generatedAtUtc = DateTime.UtcNow;
+        var issueTime = TimeOnly.FromDateTime(generatedAtUtc + RiyadhOffset);
+        var ts = DateTime.SpecifyKind(date.ToDateTime(issueTime) - RiyadhOffset, DateTimeKind.Utc);
         var (billingRefNumber, billingRefUuid) = await ResolveBillingReferenceAsync(
             companyId, docType, sourceId, isCreditNote, isDebitNote);
 
@@ -326,7 +342,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             company.NameAr, company.VatRegistrationNumber, ts, total, vat);
 
         var ublData = new ZatcaUblInvoiceBuilder.InvoiceData(
-            number, uuid, date, company.NameAr, company.VatRegistrationNumber,
+            number, uuid, date, issueTime, company.NameAr, company.VatRegistrationNumber,
             customer.NameAr, string.IsNullOrWhiteSpace(customer.VatRegistrationNumber)
                 ? null : customer.VatRegistrationNumber,
             subtotal, vat, total, lines, icv.ToString(), previousHash, qrPhase1, isCreditNote, isDebitNote,
