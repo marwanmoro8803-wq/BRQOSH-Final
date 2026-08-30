@@ -28,6 +28,27 @@ public class InventoryService(BrqoshDbContext db)
             .FirstOrDefaultAsync(w => w.CompanyId == companyId && w.IsDefault && w.IsActive);
         warehouse ??= await db.Warehouses
             .FirstOrDefaultAsync(w => w.CompanyId == companyId && w.IsActive);
+
+        // (CEEF-229 · م2-١٧د) **الاختراعُ لمن لا مستودعَ له، لا لمن أوقف مستودعاته.**
+        //
+        // كان الإنشاءُ أدناه يقع في الحالتين. وُضع لأوّل تشغيلٍ في منشأةٍ فارغة — وهو صواب.
+        // لكنّ منشأةً أوقفت مستودعاتها كلَّها كانت تحصل على مستودعٍ **لم يطلبه أحد**، فتنقسم
+        // بضاعتُها بين اثنين: القديمُ فيه ما اشترته، والجديدُ فيه ما بعده.
+        //
+        // وهذا حالُ العميل التجريبيّ بعينه — متجرٌ بمستودعٍ واحد.
+        //
+        // ولم يكن العطلُ يظهر رسالةً بل انفجاراً: الاختراعُ يستعمل الكود `WH-001` فيصطدم
+        // بالمستودع الموقوف نفسِه، فيخرج `UNIQUE constraint failed` — نصٌّ إنجليزيّ من قاعدة
+        // البيانات في تطبيقٍ عربيّ، لا يقول للمالك ما وقع ولا ما يفعل. ولو كان كودُ مستودعه
+        // مختلفاً لنجح الاختراعُ صامتاً، وهو أسوأ.
+        if (warehouse is null
+            && await db.Warehouses.AnyAsync(w => w.CompanyId == companyId))
+        {
+            throw new Brqosh.Domain.Accounting.AccountingException(
+                "كلُّ المستودعات موقوفة — لا يمكن ترحيل حركةٍ مخزنية."
+                + "\n\nفعِّل مستودعاً من: المستودعات ← تعديل المستودع.");
+        }
+
         if (warehouse is null)
         {
             warehouse = Warehouse.Create(companyId, "WH-001", "المستودع الرئيسي", isDefault: true);

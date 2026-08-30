@@ -199,4 +199,86 @@ public class StoppedItemsKeepTheirStockTests : IDisposable
 
         Assert.True(posted.Id > 0);
     }
+
+    /// <summary>
+    /// (CEEF-229 · م2-١٧ج) <b>والمستودعُ الموقوف يُخفي بضاعتَه كما كان الصنف — والأثرُ أكبر.</b>
+    ///
+    /// <para>الاستعلامُ نفسُه يُرشّح <c>w.IsActive</c> على المستودعات. وإيقافُ مستودعٍ يُخفي
+    /// <b>كلَّ</b> ما فيه دفعةً واحدة — لا صنفاً واحداً. ومتجرٌ يوقف مستودعَ الموسم يفقد
+    /// من دفتره المساعد كلَّ بضاعته بينما يبقى ثمنُها في 1107.</para>
+    ///
+    /// <para>وهذا هو نمطُ «نصف الإصلاح» الذي تكرّر في هذا المستودع مراراً: يُصلَح الكيانُ
+    /// الذي أُمسك، ويُترك نظيرُه في السطر المجاور.</para>
+    /// </summary>
+    [Fact]
+    public async Task StoppingAWarehouse_DoesNotHideItsStock()
+    {
+        await SetupWithStockAsync();
+
+        var warehouse = await new InventoryService(_db).GetDefaultWarehouseAsync(_companyId);
+        var stored = await _db.Warehouses.SingleAsync(w => w.Id == warehouse.Id);
+        stored.Deactivate();
+        await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
+
+        LedgerIdentities.Assert(await LedgerIdentities.InventoryAsync(_db, _companyId));
+
+        var rows = await new StockBalanceQuery(_db).ExecuteAsync(_companyId);
+        Assert.Contains(rows, r => r.ProductCode == "P-1" && r.Quantity == 200m);
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م2-١٧د) <b>ولا يُخترَع مستودعٌ في الخفاء.</b>
+    ///
+    /// <para><c>GetDefaultWarehouseAsync</c> يبحث عن مستودعٍ افتراضيّ نشط، ثمّ عن أيّ نشط،
+    /// <b>ثمّ يُنشئ واحداً</b>. والإنشاءُ وُضع لأوّل تشغيلٍ في منشأةٍ لا مستودعَ لها — وهو
+    /// صواب. لكنّه يقع أيضاً حين <b>توجد</b> مستودعاتٌ وكلُّها موقوفة.</para>
+    ///
+    /// <para><b>وهذا حالُ العميل التجريبيّ بعينه:</b> متجرٌ بمستودعٍ واحد يوقفه صاحبُه لسببٍ ما،
+    /// فتذهب كلُّ حركةٍ تالية إلى مستودعٍ <b>لم يطلبه أحد</b>، وتنقسم بضاعتُه بين اثنين: القديمُ
+    /// فيه ما اشتراه، والجديدُ فيه ما بعده. ولا رسالةَ ولا سؤال.</para>
+    ///
+    /// <para>والصواب: الاختراعُ لمن لا مستودعَ له، والرفضُ لمن أوقف مستودعاته — فالإيقافُ
+    /// قرارٌ صريح، وتجاوزُه بالاختراع إبطالٌ له.</para>
+    /// </summary>
+    [Fact]
+    public async Task WithEveryWarehouseStopped_NoWarehouseIsInvented()
+    {
+        await SetupWithStockAsync();
+
+        foreach (var w in await _db.Warehouses.Where(w => w.CompanyId == _companyId).ToListAsync())
+            w.Deactivate();
+        await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
+
+        var before = await _db.Warehouses.CountAsync(w => w.CompanyId == _companyId);
+
+        var purchase = PurchaseInvoice.CreateDraft(
+            _companyId, _supplierId, new DateOnly(2026, 6, 1), "INV-SUP-3", true);
+        purchase.AddLine("مظلات", 5m, 40m, _productId);
+
+        await Assert.ThrowsAsync<AccountingException>(
+            () => new PurchaseInvoicePostingService(_db).PostAsync(purchase));
+
+        Assert.Equal(before, await _db.Warehouses.CountAsync(w => w.CompanyId == _companyId));
+    }
+
+    /// <summary>
+    /// <b>والاختراعُ يبقى لمن يستحقّه</b> — منشأةٌ جديدة لا مستودعَ لها إطلاقاً تحصل على
+    /// مستودعها الأوّل بلا أن يُسأل المالكُ عن شيءٍ في أوّل يوم.
+    /// </summary>
+    [Fact]
+    public async Task ACompanyWithNoWarehouseAtAll_StillGetsItsFirstOne()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("منشأة جديدة", "310123456700088", BusinessProfile.Retail);
+        foreach (var w in await _db.Warehouses.Where(w => w.CompanyId == company.Id).ToListAsync())
+            _db.Warehouses.Remove(w);
+        await _db.SaveChangesAsync();
+
+        var warehouse = await new InventoryService(_db).GetDefaultWarehouseAsync(company.Id);
+
+        Assert.NotNull(warehouse);
+        Assert.True(warehouse.IsActive);
+    }
 }

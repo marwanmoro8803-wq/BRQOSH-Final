@@ -15,8 +15,8 @@ public record StockBalanceRow(
     decimal UnitCost,
     decimal TotalValue,
     /// <summary>
-    /// (CEEF-229 · م2-١٧ب) صنفٌ موقوفٌ ما زالت بضاعتُه قائمة — يظهر ليُجرَد ويُصفَّى،
-    /// وتَسِمه الشاشةُ «موقوف» فلا يُظنّ متاحاً للبيع.
+    /// (CEEF-229 · م2-١٧ب/ج) صنفٌ موقوفٌ — <b>أو مستودعٌ موقوف</b> — ما زالت بضاعتُه قائمة:
+    /// يظهر ليُجرَد ويُصفَّى، وتَسِمه الشاشةُ «موقوف» فلا يُظنّ متاحاً للبيع.
     /// </summary>
     bool IsStopped = false);
 
@@ -43,8 +43,11 @@ public class StockBalanceQuery(BrqoshDbContext db)
             .OrderBy(p => p.Code)
             .ToListAsync();
 
+        // ‏(م2-١٧ج) والمستودعُ الموقوف مثلُ الصنف الموقوف — بل أشدّ: إخفاؤه يُخفي **كلَّ**
+        // ‏ما فيه دفعةً واحدة لا صنفاً واحداً. وهو نمطُ «نصف الإصلاح»: أُصلح الكيانُ الذي
+        // ‏أُمسك وتُرك نظيرُه في السطر المجاور.
         var warehouses = await db.Warehouses
-            .Where(w => w.CompanyId == companyId && w.IsActive)
+            .Where(w => w.CompanyId == companyId)
             .Where(w => warehouseId == null || w.Id == warehouseId)
             .ToListAsync();
 
@@ -56,16 +59,18 @@ public class StockBalanceQuery(BrqoshDbContext db)
                 var qty = await inv.GetOnHandAsync(companyId, product.Id, wh.Id);
                 if (qty == 0 && !includeZeroBalances) continue;
 
-                // ‏الموقوفُ يظهر لبضاعته لا لاسمه: صفرُ رصيدٍ يعني أنّه أُنجز، فيُخفى ولو
-                // ‏طُلبت الأصفار — وإلا امتلأت ورقةُ الجرد بأصنافٍ ماتت منذ مواسم.
-                if (!product.IsActive && qty == 0) continue;
+                // ‏الموقوفُ — صنفاً كان أو مستودعاً — يظهر لبضاعته لا لاسمه: صفرُ رصيدٍ
+                // ‏يعني أنّه أُنجز، فيُخفى ولو طُلبت الأصفار، وإلا امتلأت ورقةُ الجرد
+                // ‏بأصنافٍ ومستودعاتٍ ماتت منذ مواسم.
+                var stopped = !product.IsActive || !wh.IsActive;
+                if (stopped && qty == 0) continue;
 
                 rows.Add(new StockBalanceRow(
                     product.Id, wh.Id,
                     product.Code, product.NameAr, wh.NameAr, product.Unit,
                     qty, product.WeightedAverageCost,
                     Math.Round(qty * product.WeightedAverageCost, 2, MidpointRounding.AwayFromZero),
-                    IsStopped: !product.IsActive));
+                    IsStopped: stopped));
             }
         }
         return rows;
