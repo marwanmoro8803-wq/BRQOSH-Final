@@ -127,12 +127,21 @@ public static class ZatcaSignatureVerifier
         if (string.IsNullOrWhiteSpace(written))
             return false;
 
-        var xmlDoc = new XmlDocument { PreserveWhitespace = true };
-        using (var reader = signature.CreateReader())
-            xmlDoc.Load(reader);
-
-        var ns = new XmlNamespaceManager(xmlDoc.NameTable);
-        ns.AddNamespace("xades", Xades.NamespaceName);
+        // (CEEF-229 · Z-2) **يُقنَّن من داخل المستند الكامل — لا من شجرة التوقيع منتزعةً.**
+        //
+        // كان: `signature.CreateReader()` — فيُحمَّل عنصرُ التوقيع وحدَه، **فتسقط إعلاناتُ
+        // الفضاءات التي يرثها من جذر `Invoice`** (`xmlns:cac` و`xmlns:cbc` و`xmlns:ext`).
+        // والتقنينُ الشامل (inclusive C14N) يُظهر **كلَّ** الفضاءات السارية عند القمّة، فالشكلُ
+        // المُقنَّن داخل المستند يحوي الإعلاناتِ الثلاثة والمنتزعُ لا يحويها.
+        //
+        // **وهذا هو موضعُ العطل الحقيقيّ:** المُوقِّع كان يرتكب الغلطةَ نفسَها، فاتّفق الطرفان
+        // **بالبناء لا بالصواب** — وشهد المتحقّقُ لتوقيعٍ ترفضه الهيئة. أداةُ القياس شريكةٌ في
+        // العطل لا كاشفةٌ له، وهو أخطرُ ما يقع لأداة.
+        //
+        // و`ds:Reference URI="#xadesSignedProperties"` بلا `Transforms`، فالمتحقّقُ المطابقُ
+        // يُلغي المرجعَ داخل المستند ويُقنّنه شاملاً. فهذا ما يُحاكى هنا بالضبط.
+        var xmlDoc = LoadWholeDocument(signature);
+        var ns = Namespaces(xmlDoc);
 
         var nodes = xmlDoc.SelectNodes(
             "(//. | //@* | //namespace::*)[ancestor-or-self::xades:SignedProperties]", ns);
@@ -159,12 +168,20 @@ public static class ZatcaSignatureVerifier
         if (string.IsNullOrWhiteSpace(signatureValue) || string.IsNullOrWhiteSpace(certB64))
             return false;
 
-        var xmlDoc = new XmlDocument { PreserveWhitespace = true };
-        using (var reader = signedInfo.CreateReader())
-            xmlDoc.Load(reader);
+        // (CEEF-229 · Z-2) والسببُ نفسه ينطبق على `SignedInfo`: **قيمةُ التوقيع نفسِها**
+        // تُحسب على شكلٍ مُقنَّن، وهو داخل المستند يرث إعلاناتِ الجذر. فلو قُنّن منتزعاً
+        // لكان التوقيعُ صحيحاً عندنا وباطلاً عند الهيئة — وهو المرجعُ الثاني للعطل نفسه.
+        var xmlDoc = LoadWholeDocument(signature);
+        var ns = Namespaces(xmlDoc);
+        _ = signedInfo;
+
+        var nodes = xmlDoc.SelectNodes(
+            "(//. | //@* | //namespace::*)[ancestor-or-self::ds:SignedInfo]", ns);
+        if (nodes is null || nodes.Count == 0)
+            return false;
 
         var transform = new XmlDsigC14NTransform();
-        transform.LoadInput(xmlDoc);
+        transform.LoadInput(nodes);
         using var stream = (Stream)transform.GetOutput(typeof(Stream));
         using var ms = new MemoryStream();
         stream.CopyTo(ms);
@@ -176,6 +193,35 @@ public static class ZatcaSignatureVerifier
 
         return ecdsa.VerifyData(
             ms.ToArray(), Convert.FromBase64String(signatureValue), HashAlgorithmName.SHA256);
+    }
+
+    // ── تحميلُ المستند الكامل ────────────────────────────────────────────────
+
+    /// <summary>
+    /// (CEEF-229 · Z-2) المستندُ **كاملاً** — لا شجرةُ التوقيع منتزعةً.
+    ///
+    /// <para>التقنينُ الشاملُ يُظهر كلَّ الفضاءات السارية عند قمّة المجموعة المُقنَّنة. فعنصرٌ
+    /// داخل `Invoice` يرث `xmlns:cac` و`xmlns:cbc` و`xmlns:ext`، وانتزاعُه يُسقطها — فيختلف
+    /// الشكلُ المُقنَّن عمّا يراه المتحقّقُ المطابق. ولا سبيل إلى محاكاته إلا بالمستند نفسِه.</para>
+    /// </summary>
+    private static XmlDocument LoadWholeDocument(XElement anyNodeInside)
+    {
+        var document = anyNodeInside.Document
+            ?? throw new InvalidOperationException(
+                "العنصر غير متّصل بمستند — لا يمكن التقنين في سياقه، وهو جوهر هذا الفحص.");
+
+        var xmlDoc = new XmlDocument { PreserveWhitespace = true };
+        using var reader = document.CreateReader();
+        xmlDoc.Load(reader);
+        return xmlDoc;
+    }
+
+    private static XmlNamespaceManager Namespaces(XmlDocument xmlDoc)
+    {
+        var ns = new XmlNamespaceManager(xmlDoc.NameTable);
+        ns.AddNamespace("ds", Ds.NamespaceName);
+        ns.AddNamespace("xades", Xades.NamespaceName);
+        return ns;
     }
 
     /// <summary>

@@ -189,6 +189,69 @@ public class ZatcaSignatureRoundTripTests : IDisposable
         Assert.Contains("لا كتلة توقيع", result.Detail ?? "");
     }
 
+    /// <summary>
+    /// (CEEF-229 · Z-2) <b>حارسٌ يمنع الطرفين من الاتّفاق على الخطأ مرّةً أخرى.</b>
+    ///
+    /// <para>العطلُ الأصليّ لم يكن أنّ التوقيع فشل — بل أنّه <b>نجح عندنا</b>: المُوقِّع يُقنّن
+    /// <c>SignedProperties</c> منتزعةً، والمتحقّقُ ينتزعها كذلك، فيتّفقان بالبناء وتشهد الأداةُ
+    /// لتوقيعٍ ترفضه الهيئة. <b>فاختبارٌ يسأل «هل يقول المتحقّق نعم؟» لا يمسك عودةَ العطل</b> —
+    /// لأنّ الجوابَ كان «نعم» طوالَ الوقت.</para>
+    ///
+    /// <para>فيُقاس هنا شيءٌ لا يعتمد على أيٍّ منهما: <b>يُحسب الشكلان المُقنَّنان معاً</b> —
+    /// الشكلُ داخل المستند والشكلُ منتزعاً — ويُثبَت أنّهما <b>مختلفان</b>، وأنّ <b>المكتوب هو
+    /// الأوّل لا الثاني</b>. فلو رجع أحدُ الطرفين إلى الانتزاع سقط هذا الاختبار بعينه.</para>
+    /// </summary>
+    [Fact]
+    public void TheWrittenDigest_IsTheInDocumentForm_NotTheDetachedOne()
+    {
+        var signed = ZatcaXmlSigner.SignWithResult(Invoice(), _certPath, _keyPath);
+        var doc = XDocument.Load(new MemoryStream(signed.SignedXml), LoadOptions.PreserveWhitespace);
+
+        XNamespace ds = "http://www.w3.org/2000/09/xmldsig#";
+        XNamespace xades = "http://uri.etsi.org/01903/v1.3.2#";
+
+        var written = doc.Descendants(ds + "Reference")
+            .Single(r => (string?)r.Attribute("URI") == "#xadesSignedProperties")
+            .Element(ds + "DigestValue")!.Value;
+
+        var signedProperties = doc.Descendants(xades + "SignedProperties").Single();
+
+        var inDocument = CanonicalDigest(signedProperties.Document!, keepContext: true);
+        var detached = CanonicalDigest(new XDocument(new XElement(signedProperties)), keepContext: false);
+
+        // ‏لو تطابقا لصار الاختبارُ بلا معنى — والفرقُ هو إعلاناتُ الجذر الموروثة.
+        Assert.True(inDocument != detached,
+            "الشكلان المُقنَّنان متطابقان — فالفحص لا يقيس شيئاً. راجع تهيئة الفاتورة: "
+            + "يجب أن يُعلن جذرُها فضاءاتٍ يرثها SignedProperties.");
+
+        Assert.Equal(inDocument, written);
+        Assert.NotEqual(detached, written);
+    }
+
+    /// <summary>بصمةُ <c>SignedProperties</c> من مستندٍ مُعطى — بسياقه أو بدونه.</summary>
+    private static string CanonicalDigest(XDocument document, bool keepContext)
+    {
+        var xmlDoc = new System.Xml.XmlDocument { PreserveWhitespace = true };
+        using (var reader = document.CreateReader())
+            xmlDoc.Load(reader);
+
+        var ns = new System.Xml.XmlNamespaceManager(xmlDoc.NameTable);
+        ns.AddNamespace("xades", "http://uri.etsi.org/01903/v1.3.2#");
+
+        var nodes = xmlDoc.SelectNodes(
+            "(//. | //@* | //namespace::*)[ancestor-or-self::xades:SignedProperties]", ns)!;
+
+        var transform = new System.Security.Cryptography.Xml.XmlDsigC14NTransform();
+        transform.LoadInput(nodes);
+        using var stream = (Stream)transform.GetOutput(typeof(Stream));
+        using var ms = new MemoryStream();
+        stream.CopyTo(ms);
+
+        _ = keepContext;
+        return Convert.ToBase64String(
+            System.Security.Cryptography.SHA256.HashData(ms.ToArray()));
+    }
+
     public void Dispose()
     {
         try { Directory.Delete(_dir, recursive: true); } catch { /* مجلد مؤقّت */ }
