@@ -171,6 +171,12 @@ public class InventoryCostingService(BrqoshDbContext db)
 
         db.InventoryCostLayers.RemoveRange(layers);
 
+        // (CEEF-229 · م0-٣ج) **يُحفَظ قبل إعادة الحساب.** `RemoveRange` تُعلّم الصفوفَ للحذف
+        // ولا تُنفّذه، وإعادةُ الحساب تستعلم **من القاعدة** فترى الطبقاتِ المحذوفةَ قائمةً
+        // وتُعيد بناء المتوسط منها. وأثرُه مقيس: إلغاءُ الشراء الوحيد كان يُبقي المتوسطَ
+        // عند 100 بدل صفر — أمسكه `CancelPurchaseInvoice_ReversesWac` القائم.
+        await db.SaveChangesAsync(ct);
+
         foreach (var productId in layers.Select(l => l.ProductId).Distinct())
             await RecalculateWacFromLayersAsync(companyId, productId, ct);
 

@@ -3,9 +3,11 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 
 using Brqosh.Domain.Modules;
+using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Purchasing;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -145,6 +147,55 @@ public class CancellationRestoresCostLayersTests : IDisposable
 
         Assert.Equal(20m, layers[0].UnitCost);
         Assert.Equal(100m, await OnHandAsync(productId, warehouseId));
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م0-٣ج) <b>وجانبُ الشراء كذلك — إلغاءُ فاتورةِ مشترياتٍ يُزيل طبقتَها.</b>
+    ///
+    /// <para>خدمتا إلغاء الشراء (فاتورةٌ وإذنُ استلام) ما زالتا تُرحّلان حركةَ <c>Issue</c>
+    /// مضادّة بتاريخ الإلغاء بدل عكس الأصل. والحركةُ الصادرة عبر
+    /// <c>PostDocumentMovementAsync</c> <b>تُنقص الرصيدَ ولا تمسّ طبقةً</b> — فالتكلفةُ
+    /// مسؤوليةُ المستدعي بالتصميم، وهاتان لا تستدعيان شيئاً يستهلك الطبقات.</para>
+    ///
+    /// <para><b>فتبقى الطبقةُ كاملةً بعد إلغاء شرائها</b>، وينشقّ مجموعُ الطبقات عن الرصيد.
+    /// وهو النمطُ الذي أُغلق في المبيعات (م0-٣) وفي الإشعار الدائن (م0-٣ب)، وبقي هنا.</para>
+    /// </summary>
+    [Fact]
+    public async Task CancellingAPurchaseInvoice_RemovesItsLayer()
+    {
+        var (companyId, warehouseId, productId, _) = await SeedTwoLayersAsync();
+
+        var invoice = PurchaseInvoice.CreateDraft(
+            companyId, await SupplierIdAsync(companyId), new DateOnly(2026, 3, 1), "SUP-9", vatDeductible: true);
+        invoice.AddLine("توريد", 50m, 40m, productId);
+        var posted = await new PurchaseInvoicePostingService(_db).PostAsync(invoice);
+
+        await new PurchaseInvoiceCancellationService(_db)
+            .CancelAsync(companyId, posted.Id, new DateOnly(2026, 3, 5), "مدير");
+
+        var layers = await _db.InventoryCostLayers
+            .Where(l => l.ProductId == productId && l.RemainingQuantity > 0)
+            .OrderBy(l => l.ReceivedDate).ToListAsync();
+
+        var layerTotal = layers.Sum(l => l.RemainingQuantity);
+        var onHand = await OnHandAsync(productId, warehouseId);
+
+        Assert.True(layerTotal == onHand,
+            $"انشقّت الطبقاتُ عن الرصيد: مجموعُ الطبقات {layerTotal} والرصيد {onHand} — "
+            + string.Join(" · ", layers.Select(l => $"{l.ReceivedDate:yyyy-MM-dd}×{l.RemainingQuantity}@{l.UnitCost}")));
+
+        Assert.DoesNotContain(layers, l => l.UnitCost == 40m);
+    }
+
+    private async Task<long> SupplierIdAsync(long companyId)
+    {
+        var supplier = await _db.Suppliers.FirstOrDefaultAsync(s => s.CompanyId == companyId);
+        if (supplier is not null) return supplier.Id;
+
+        supplier = Brqosh.Domain.Purchasing.Supplier.Create(companyId, "مورد", "312222222200003");
+        _db.Suppliers.Add(supplier);
+        await _db.SaveChangesAsync();
+        return supplier.Id;
     }
 
     // ── التهيئة ──────────────────────────────────────────────────────────────

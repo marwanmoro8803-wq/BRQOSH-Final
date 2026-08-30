@@ -76,15 +76,16 @@ public class GoodsReceiptCancellationService(BrqoshDbContext db)
                 var inv = new InventoryService(db);
                 foreach (var movement in movements)
                 {
-                    var outLines = movement.Lines
-                        .Select(l => (l.ProductId, l.Quantity, l.UnitCost))
-                        .ToList();
-                    await inv.PostDocumentMovementAsync(companyId, movement.WarehouseId,
-                        StockMovementType.Issue, cancellationDate,
-                        $"عكس مخزون — إلغاء استلام {receipt.ReceiptNumber}",
-                        sourceDoc, outLines);
-                    foreach (var line in outLines)
-                        await inv.ReverseReceiptCostAsync(companyId, line.ProductId, line.Quantity, line.UnitCost);
+                    // (CEEF-229 · م0-٣ج) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+                    //
+                    // الحركةُ الصادرة عبر `PostDocumentMovementAsync` **تُنقص الرصيدَ ولا
+                    // تمسّ طبقةً** — فالتكلفةُ مسؤوليةُ المستدعي بالتصميم، وهذه الخدمةُ
+                    // كانت تستدعي `ReverseReceiptCostAsync` (حسابُ متوسطٍ لا طبقات).
+                    //
+                    // فتبقى طبقةُ الشراء الملغى كاملةً وينشقّ المجموعُ عن الرصيد. وقيس:
+                    // **الطبقات 250 والرصيد 200**. وهو نمطُ م0-٣ وم0-٣ب في جانب الشراء.
+                    await inv.ReverseDocumentMovementAsync(movement);
+                    movement.MarkCancelled();
                 }
             }
 
