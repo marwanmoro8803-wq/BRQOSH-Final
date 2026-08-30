@@ -25,12 +25,38 @@ public class YearEndCloseService(BrqoshDbContext db)
             var yearStart = new DateOnly(year, 1, 1);
             var yearEnd = new DateOnly(year, 12, 31);
 
+            // (CEEF-229 · م1-١٥ / B-4) **القفلُ قبل الفحص — وإلا كان الفحصُ حكايةً.**
+            //
+            // كان الحارسُ الوحيد قراءةً عاديّة، والإدراجُ بعدها بنحو خمسةٍ وتسعين سطراً،
+            // والمعاملةُ على `Read Committed`. فيقرأ المُقفلان «غيرُ مقفلة» ويكتبان قيدَين.
+            //
+            // **وقيس بالرقم:** ستّةُ إقفالاتٍ متزامنة ⟵ **ثلاثةُ قيودِ إقفال**، فتضاعفت
+            // الأرباحُ المبقاة ثلاثاً. وأخطرُ ما فيه أنّه لا يُرى: قائمةُ الدخل تستثني قيودَ
+            // الإقفال، **فيستقرّ التضاعفُ صامتاً في حقوق الملكية بالميزانية**.
+            //
+            // ومفتاحٌ مستقلٌّ عن مفتاح ترقيم القيود: إقفالُ سنةٍ لا يجوز أن يُجمّد ترحيلَ
+            // كلّ قيدٍ فيها طوالَ مدّته.
+            await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "YEAREND", year, token);
+
             var existingClose = await db.JournalEntries.AnyAsync(e =>
                 e.CompanyId == companyId
                 && e.SourceDocument == $"YearEndClose:{year}"
                 && e.Status != JournalEntryStatus.Draft, token);
             if (existingClose)
                 throw new AccountingException($"السنة {year} مقفلة مسبقاً.");
+
+            // **والسنةُ الساكنة لا تترك أثراً في الدفتر** — المسارُ القصير يُغلق الفترات
+            // ولا يكتب قيداً، فلا يجد الفحصُ أعلاه شيئاً ويُقفَل العامُ مرّةً بعد مرّة.
+            // وقيس: سنةٌ ساكنة أُقفلت **ستّ مرّات** بلا اعتراضٍ واحد. فيُسأل عن الفترات نفسِها.
+            var hasOpenPeriods = await db.FiscalPeriods.AnyAsync(p =>
+                p.CompanyId == companyId
+                && p.StartDate.Year == year
+                && p.Status == FiscalPeriodStatus.Open, token);
+            var hasAnyPeriod = await db.FiscalPeriods.AnyAsync(p =>
+                p.CompanyId == companyId && p.StartDate.Year == year, token);
+
+            if (hasAnyPeriod && !hasOpenPeriods)
+                throw new AccountingException($"السنة {year} مقفلة مسبقاً — فتراتُها كلُّها مغلقة.");
 
             // (CEEF-229 · م0-١٤) حُذف حارس «قيود بعد نهاية السنة».
             //
