@@ -54,6 +54,19 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     /// المستند الملغى يبقى في إقرار فترة إصداره كما قُدِّم للهيئة، ويظهر أثر إلغائه
     /// في فترة الإلغاء. بدون هذا التاريخ لا سبيل لوضع الأثر في فترته الصحيحة.
     /// </summary>
+    /// <summary>
+    /// (CEEF-229 · م2-٢٤) <b>لحظةُ الترحيل — لا تاريخُه وحده.</b>
+    ///
+    /// <para>رمزُ الطور الأوّل إلزاميّ نظاماً على كلّ مسجَّلٍ في ضريبة القيمة المضافة، ويحمل
+    /// وسماً زمنياً. وكان المسارُ المطبوع يختلق له <b>ظهرَ يوم الإصدار</b> لأنّ المستند لا
+    /// يملك لحظةً يعلنها. فالمشتري يمسح الرمزَ فيرى وقتاً ليس وقتَ شرائه، وكلُّ فواتير اليوم
+    /// تحمل الطابعَ نفسه حرفاً بحرف.</para>
+    ///
+    /// <para>وهو <b>قابلٌ للعدم</b> عمداً: المستنداتُ المرحّلة قبل هذه الدفعة لا لحظةَ لها،
+    /// وادّعاءُ لحظةٍ لها اختلاقٌ آخر. فتُقرأ فارغةً ويعود المسارُ إلى الظهر الحتميّ مُقِرّاً.</para>
+    /// </summary>
+    public DateTime? PostedAtUtc { get; private set; }
+
     public DateOnly? CancelledAt { get; private set; }
 
     // EF Core
@@ -155,6 +168,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
 
         InvoiceNumber = invoiceNumber.Trim();
         Status = SalesInvoiceStatus.Posted;
+        PostedAtUtc = DateTime.UtcNow;
         return entry;
     }
 

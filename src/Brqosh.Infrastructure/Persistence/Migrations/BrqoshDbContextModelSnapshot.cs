@@ -1968,6 +1968,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("OriginalInvoiceId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime?>("PostedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -2098,6 +2101,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<long?>("PosShiftId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("PostedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()

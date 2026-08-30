@@ -44,6 +44,8 @@ internal static class SchemaSqlGuard
         // النموذج (‏string?‎ بلا HasMaxLength ⟵ text). ولو حُدَّ هنا وحده لاختلف عن النموذج
         // ولأسقط مسبارَ تغطية المخطّط بفارق نوع.
         "text NULL",
+        // (CEEF-229 · م2-٢٤) لحظةُ الترحيل.
+        "timestamp with time zone NULL",
         "NUMERIC(18,2) NOT NULL DEFAULT 0",
     };
 

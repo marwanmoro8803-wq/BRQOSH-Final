@@ -37,7 +37,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             PartyVatNumber: customer.VatRegistrationNumber,
             PartyAddress: customer.Address,
             QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.GrandTotal(), invoice.VatAmount),
+                         ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.PostedAtUtc, invoice.GrandTotal(), invoice.VatAmount),
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString());
 
@@ -104,7 +104,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             PrintDocumentKind.CreditNote,
             PartyName: customer.NameAr,
             QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, note.NoteDate, note.GrandTotal(), note.VatAmount),
+                         ?? Phase1QrFallback(company, note.NoteDate, note.PostedAtUtc, note.GrandTotal(), note.VatAmount),
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString());
 
@@ -293,7 +293,11 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     /// المضافة**، ولا يحتاج شهادة ولا CSID ولا اتصالاً بالهيئة — خمسة حقول تُحسب محلياً
     /// من بيانات الفاتورة نفسها. فربطه بتفعيل المرحلة الثانية خلطٌ بين مرحلتين مستقلّتين.
     ///
-    /// <para><b>(CEEF-229 · م2-٢١) وطابعُه الزمنيّ حدٌّ مُقَرٌّ به، لا اصطلاحٌ مشترك.</b>
+    /// <para><b>(CEEF-229 · م2-٢٤) وطابعُه الزمنيّ صار لحظةَ الترحيل المسجَّلة.</b>
+    /// كان ظهرَ يوم الإصدار مختلقاً، فصار <c>PostedAtUtc</c> — والمشتري يمسح الرمزَ فيرى
+    /// وقتَ شرائه. ويبقى الظهرُ للمستندات التي سبقت وسمَ اللحظة وحدها.</para>
+    ///
+    /// <para><b>(م2-٢١) وكان قبلها حدّاً مُقَرّاً به:</b>
     /// كان يقول إنّه «نفس اصطلاح <c>ZatcaEInvoiceGenerator</c>» — ولم يعد كذلك: المولّد صار
     /// يعلن لحظةَ توليده الحقيقية المسجَّلة في <c>GeneratedAtUtc</c>. وهذا المسارُ لا يملك
     /// لحظةً يعلنها: <c>SalesInvoice</c> بلا طابعٍ زمنيّ، وهو يُستدعى أصلاً حين **لا مستندَ
@@ -305,12 +309,16 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     ///
     /// وبلا رقم ضريبيّ لا رمز — لأنّ وسم 2 إلزاميّ ولا يجوز اختلاقه.
     /// </summary>
-    private static string? Phase1QrFallback(Company company, DateOnly date, decimal total, decimal vat)
+    internal static string? Phase1QrFallback(
+        Company company, DateOnly date, DateTime? postedAtUtc, decimal total, decimal vat)
     {
         if (string.IsNullOrWhiteSpace(company.NameAr) || string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
             return null;
 
-        var timestampUtc = date.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)), DateTimeKind.Utc);
+        // ‏لحظةُ الترحيل المسجَّلة إن وُجدت — وهي الحقّ. والظهرُ الحتميّ للمستندات التي
+        // ‏سبقت وسمَ اللحظة، إذ لا لحظةَ لها وادّعاؤها اختلاق.
+        var timestampUtc = postedAtUtc
+            ?? date.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)), DateTimeKind.Utc);
         return Zatca.ZatcaQrGenerator.GenerateTlvBase64Phase1(
             company.NameAr, company.VatRegistrationNumber, timestampUtc, total, vat);
     }

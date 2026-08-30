@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
@@ -98,19 +99,25 @@ public class InvoiceQrOnPrintTests : IDisposable
     {
         var (company, invoice) = await SeedPostedInvoiceAsync("310123456700003");
 
-        // نفس المسار الذي تسلكه الطباعة تماماً
-        var tlv = ZatcaQrGenerator.GenerateTlvBase64Phase1(
-            company.NameAr,
-            company.VatRegistrationNumber,
-            invoice.InvoiceDate.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(12)), DateTimeKind.Utc),
-            invoice.GrandTotal(),
-            invoice.VatAmount);
+        // (CEEF-229 · م2-٢٤) **تُستدعى دالّةُ الطباعة نفسُها — لا تُعاد كتابتُها هنا.**
+        //
+        // كان هذا الاختبار يبني الـTLV بيده ويقول في تعليقه «نفس المسار الذي تسلكه الطباعة
+        // تماماً». وهو نمطُ «قياس النسخة لا الأصل» الذي تكرّر في هذا المستودع: أيّ تغييرٍ
+        // في مسار الطباعة يبقى الاختبارُ أخضرَ عنه، لأنّه لا يمسّه.
+        var tlv = DocumentPrintService.Phase1QrFallback(
+            company, invoice.InvoiceDate, invoice.PostedAtUtc, invoice.GrandTotal(), invoice.VatAmount);
+        Assert.NotNull(tlv);
 
         var tags = DecodeTlv(tlv);
 
         Assert.Equal("مؤسسة الطباعة", Encoding.UTF8.GetString(tags[1]));
         Assert.Equal("310123456700003", Encoding.UTF8.GetString(tags[2]));
-        Assert.Equal("2026-03-14T12:00:00Z", Encoding.UTF8.GetString(tags[3]));
+        // ‏والوسمُ الزمنيّ هو **لحظةُ الترحيل المسجَّلة**، لا ظهراً مختلقاً. وكان هذا السطر
+        // ‏يُرسّخ `2026-03-14T12:00:00Z` — أي يحرس العطل.
+        Assert.NotNull(invoice.PostedAtUtc);
+        Assert.Equal(
+            invoice.PostedAtUtc!.Value.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+            Encoding.UTF8.GetString(tags[3]));
         Assert.Equal("1150.00", Encoding.UTF8.GetString(tags[4]));
         Assert.Equal("150.00", Encoding.UTF8.GetString(tags[5]));
     }

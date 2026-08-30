@@ -37,6 +37,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // وأسطرُ المستندات مملوكةٌ فتُحمَّل معها دائماً.
         await EnsureExemptionReasonColumnsAsync(isPg, ct);
 
+        // (CEEF-229 · م2-٢٤) لحظةُ الترحيل — **قبل ترقيعات المزوّد** للسبب نفسه: تلك
+        // الترقيعات تُجري استعلامات EF على المستندات، و EF يبني SELECT بكل أعمدة النموذج.
+        await EnsurePostedAtColumnsAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -113,6 +117,23 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// رمزُ سبب الإعفاء ونصُّه على جداول أسطر المستندات — نصّان قابلان للعدم، وفارغُهما
     /// يعني «لم يُختَر». ولا قيمةَ افتراضية: سطرٌ قديمٌ بفئةٍ أساسية لا يحتاج سبباً أصلاً.
     /// </summary>
+    /// <summary>
+    /// لحظةُ ترحيل الفاتورة والإشعار الدائن — قابلةٌ للعدم، وفارغُها يعني «مستندٌ سبق الوسم».
+    /// </summary>
+    private async Task EnsurePostedAtColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        foreach (var table in new[] { "sales_invoices", "credit_notes" })
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+                await EnsurePgColumnAsync(table, "PostedAtUtc", "timestamp with time zone NULL", ct);
+            else
+                await EnsureSqliteColumnAsync(table, "PostedAtUtc", "TEXT NULL", ct);
+        }
+    }
+
     private async Task EnsureExemptionReasonColumnsAsync(bool isPg, CancellationToken ct)
     {
         foreach (var table in VatCategoryLineTables)
