@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Companies;
+﻿using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using System.Globalization;
 using Brqosh.Infrastructure.Security;
@@ -1453,23 +1454,28 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
 
         await CollectRepairsAsync(db.SalesInvoices.Where(i => i.Subtotal == 0 && i.Lines.Any()),
             "SalesInvoice", d => d.Id, d => d.CompanyId, d => d.InvoiceNumber,
-            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(),
+            d => d.JournalEntryId, d => d.GrandTotal(), repairs, ct);
 
         await CollectRepairsAsync(db.PurchaseInvoices.Where(i => i.Subtotal == 0 && i.Lines.Any()),
             "PurchaseInvoice", d => d.Id, d => d.CompanyId, d => d.InvoiceNumber,
-            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(),
+            d => d.JournalEntryId, d => d.GrandTotal(), repairs, ct);
 
         await CollectRepairsAsync(db.CreditNotes.Where(n => n.Subtotal == 0 && n.Lines.Any()),
             "CreditNote", d => d.Id, d => d.CompanyId, d => d.NoteNumber,
-            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(),
+            d => d.JournalEntryId, d => d.GrandTotal(), repairs, ct);
 
         await CollectRepairsAsync(db.DebitNotes.Where(n => n.Subtotal == 0 && n.Lines.Any()),
             "DebitNote", d => d.Id, d => d.CompanyId, d => d.NoteNumber,
-            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(),
+            d => d.JournalEntryId, d => d.GrandTotal(), repairs, ct);
 
         await CollectRepairsAsync(db.PurchaseOrders.Where(o => o.Subtotal == 0 && o.Lines.Any()),
             "PurchaseOrder", d => d.Id, d => d.CompanyId, d => d.OrderNumber,
-            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(),
+            _ => null, d => d.GrandTotal(), repairs, ct);
 
         if (repairs.Count == 0)
             return;
@@ -1486,7 +1492,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "تصحيح إجماليات مستند عند الإقلاع",
                     repair.EntityType,
                     repair.Id.ToString(CultureInfo.InvariantCulture),
-                    repair.Describe(),
+                    repair.Describe(await LedgerDisagreementAsync(
+                        repair.JournalEntryId, repair.GrandTotal, token)),
                     "إجمالياتٌ صفريّةٌ في القاعدة أُعيد حسابُها من أسطر المستند.",
                     token);
         }, ct);
@@ -1495,18 +1502,63 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// <summary>اسمُ الفاعل في سطور التدقيق التي يكتبها الإقلاع — فلا مستخدمَ مسجَّلاً بعد.</summary>
     private const string BootstrapActor = "النظام (ترقية القاعدة)";
 
+    /// <summary>
+    /// (CEEF-229) ‏<b>يقارن ما أصلحه الإقلاعُ بما يقوله القيدُ المرحَّل.</b>
+    ///
+    /// <para>الإصلاحُ صار مُوثَّقاً في م2-١١، <b>وبقي أنّه لا ينظر إلى القيد</b>. فمستندٌ
+    /// تغيّر أحدُ سطوره بعد الترحيل (بترقيعٍ أو هجرةٍ أو يدٍ في القاعدة) يُعاد حسابُه فيُنتج
+    /// رقماً <b>يخالف الأستاذ</b> — والأثرُ يقول «صُحّح» ولا يقول «وخالف».</para>
+    ///
+    /// <para><b>وإصلاحٌ يُنتج خلافاً ولا يُعلنه أسوأُ من ترك الصفر</b>: الصفرُ ظاهرٌ للعين
+    /// في أيّ تقرير، والخلافُ لا — فالمستندُ سليمُ الشكل والقيدُ متوازن، <b>ولا تكشفهما
+    /// هويّةٌ قائمة</b> لأنّ هـ-١ وهـ-٢ تقيسان الأستاذَ بالاستعلام ولا تمرّان بإجماليات
+    /// المستند المخزَّنة.</para>
+    ///
+    /// <para><b>والمقارنةُ بسطر الطرف المقابل</b> — الذمم المدينة أو الدائنة — فهو وحده
+    /// يحمل الإجماليَّ شاملَ الضريبة. وبقيّةُ السطور (إيراد · ضريبة · تكلفة مبيعات) أجزاءٌ
+    /// منه أو مستقلّةٌ عنه.</para>
+    ///
+    /// <para>وتُعيد <c>null</c> حين لا سبيلَ إلى المقارنة: لا قيدَ مرتبطٌ، أو لا سطرَ طرفٍ
+    /// مقابل. <b>ولا تُعلن اتّفاقاً لم تقسه.</b></para>
+    /// </summary>
+    private async Task<string?> LedgerDisagreementAsync(
+        long? journalEntryId, decimal documentTotal, CancellationToken ct)
+    {
+        if (journalEntryId is not long entryId)
+            return null;
+
+        // ‏سطورُ القيد مملوكةٌ له، وتحمل رمزَ الحساب في نفسها — فلا حاجةَ إلى ربط.
+        var entry = await db.JournalEntries.AsNoTracking()
+            .Where(e => e.Id == entryId)
+            .Select(e => e.Lines)
+            .SingleOrDefaultAsync(ct);
+
+        var counterparty = entry?.FirstOrDefault(l =>
+            l.AccountCode == SaudiChartOfAccounts.SystemCodes.AccountsReceivable
+            || l.AccountCode == SaudiChartOfAccounts.SystemCodes.AccountsPayable);
+
+        var ledgerTotal = Math.Abs(counterparty.Debit - counterparty.Credit);
+        if (Math.Abs(ledgerTotal - documentTotal) <= 0.01m)
+            return null;
+
+        return string.Format(CultureInfo.InvariantCulture,
+            " — ⚠️ ويخالف القيدَ المرحَّل: الأستاذ {0:N2} والمستند {1:N2}",
+            ledgerTotal, documentTotal);
+    }
+
     /// <summary>لمسةٌ واحدة على مستند: مَن هو، وما كان، وما صار.</summary>
     private readonly record struct TotalsRepair(
         long CompanyId, string EntityType, long Id, string? Number,
-        decimal OldSubtotal, decimal OldVat, decimal NewSubtotal, decimal NewVat)
+        decimal OldSubtotal, decimal OldVat, decimal NewSubtotal, decimal NewVat,
+        long? JournalEntryId, decimal GrandTotal)
     {
         /// <summary>
         /// بصيغةٍ ثابتةٍ لا تتبع ثقافةَ الجهاز — فسطرُ التدقيق يُقرأ بعد سنواتٍ وعلى
         /// أجهزةٍ أخرى، ولا يجوز أن تتبدّل أرقامُه بتبدّل الإعدادات.
         /// </summary>
-        public string Describe() => string.Format(CultureInfo.InvariantCulture,
-            "«{0}»: الوعاء {1:N2} ← {2:N2}، والضريبة {3:N2} ← {4:N2}",
-            Number ?? "بلا رقم", OldSubtotal, NewSubtotal, OldVat, NewVat);
+        public string Describe(string? disagreement) => string.Format(CultureInfo.InvariantCulture,
+            "«{0}»: الوعاء {1:N2} ← {2:N2}، والضريبة {3:N2} ← {4:N2}{5}",
+            Number ?? "بلا رقم", OldSubtotal, NewSubtotal, OldVat, NewVat, disagreement ?? "");
     }
 
     /// <summary>
@@ -1517,6 +1569,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         IQueryable<T> candidates, string entityType,
         Func<T, long> id, Func<T, long> companyId, Func<T, string?> number,
         Func<T, decimal> subtotal, Func<T, decimal> vat, Action<T> recalculate,
+        Func<T, long?> journalEntryId, Func<T, decimal> grandTotal,
         List<TotalsRepair> repairs, CancellationToken ct) where T : class
     {
         foreach (var document in await candidates.ToListAsync(ct))
@@ -1532,7 +1585,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 continue;
 
             repairs.Add(new TotalsRepair(companyId(document), entityType, id(document),
-                number(document), oldSubtotal, oldVat, newSubtotal, newVat));
+                number(document), oldSubtotal, oldVat, newSubtotal, newVat,
+                journalEntryId(document), grandTotal(document)));
         }
     }
 
