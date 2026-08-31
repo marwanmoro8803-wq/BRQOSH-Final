@@ -54,19 +54,10 @@ public partial class VatReturnPage : UserControl
 
         var r = _lastResult;
         ReportPanel.Children.Clear();
-        AddRow("مبيعات خاضعة (وعاء)", r.SalesSubtotal);
-        AddRow("ضريبة المخرجات — مبيعات", r.OutputVat);
-        AddRow("مستخلصات أعمال (وعاء)", r.ProgressBillingsSubtotal);
-        AddRow("ضريبة المخرجات — مستخلصات", r.ProgressBillingsVat);
-        AddRow("إشعارات دائن (وعاء)", r.CreditNotesSubtotal);
-        AddRow("ضريبة مرتجعة (إشعارات دائن)", r.CreditNotesVat);
-        AddRow("صافي ضريبة المخرجات", r.NetOutputVat, bold: true);
-        AddRow("مشتريات (وعاء)", r.PurchasesSubtotal);
-        AddRow("ضريبة مدخلات قابلة للخصم", r.DeductibleInputVat);
-        AddRow("إشعارات مدينة (وعاء)", r.DebitNotesSubtotal);
-        AddRow("ضريبة مدخلات مُخفّضة (إشعارات مدينة)", r.DebitNotesDeductibleVat);
-        AddRow("صافي ضريبة المدخلات", r.NetDeductibleInputVat, bold: true);
-        AddRow("صافي الضريبة المستحقة/المستردة", r.NetVatPayable, bold: true);
+        // (CEEF-229 · م1-١٠) الصفوفُ تُبنى في `VatReturnRows` — دالّةٌ صافيةٌ تُقاس
+        // ‏في اختبار. وكان بناؤها هنا يجعل ما يراه المستخدمُ غيرَ قابلٍ للقياس أصلاً.
+        foreach (var row in Ui.VatReturnRows.Build(r))
+            AddRow(row.Indented ? $"    {row.Label}" : row.Label, row.Value, row.Bold);
 
         var label = r.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
         TotalsText.Text = $"صافي الضريبة: {r.NetVatPayable:N2} — {label}";

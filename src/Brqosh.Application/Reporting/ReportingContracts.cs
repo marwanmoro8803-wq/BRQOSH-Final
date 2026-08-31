@@ -123,6 +123,19 @@ public interface ICashFlowStatementQuery
         long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default);
 }
 
+/// <summary>
+/// (CEEF-229 · م1-١٠ / Z-12) <b>وعاءٌ وضريبةٌ لفئةٍ واحدة — على الحدّ الذي تقرؤه الشاشة.</b>
+///
+/// <para>التفكيكُ كان محسوباً في <c>VatReturnQuery</c> منذ A-15 <b>ولا يعبر هذا الحدّ</b>:
+/// صفرُ قارئٍ لـ<c>SalesByCategory</c> خارج ملفّ الاستعلام. فكلُّ سطحٍ يراه المستخدم —
+/// الشاشةُ والمطبوعة — يعرض مجموعاً كلّياً بنسبةٍ مخلوطة.</para>
+///
+/// <para>وهو نمطُ «الوصلة» الذي أُغلق مرّتين (م2-٢٥/٢٦): <b>الطرفان مقيسان والوسطُ مُستنتَج.</b></para>
+/// </summary>
+/// <para><b>الرمزُ وحده — لا تسمية.</b> نصوصُ العرض تسكن طبقةَ العرض، وإلا أفلتت من بوّابة
+/// الترجمة (تمسح <c>src/Brqosh.Desktop</c> وحدها) فبقيت عربيةً عند التبديل إلى الإنجليزية.</para>
+public record VatReturnCategoryDto(string Code, decimal TaxableAmount, decimal VatAmount);
+
 public record VatReturnDto(
     DateOnly FromDate,
     DateOnly ToDate,
@@ -137,7 +150,9 @@ public record VatReturnDto(
     decimal DebitNotesSubtotal,
     decimal DebitNotesVat,
     decimal DebitNotesDeductibleVat,
-    decimal? GlVatNetPayableBalance = null)
+    decimal? GlVatNetPayableBalance = null,
+    IReadOnlyList<VatReturnCategoryDto>? SalesByCategory = null,
+    IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null)
 {
     public decimal NetOutputVat => OutputVat + ProgressBillingsVat - CreditNotesVat;
     public decimal NetDeductibleInputVat => DeductibleInputVat - DebitNotesDeductibleVat;

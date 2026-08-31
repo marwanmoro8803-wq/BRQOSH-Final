@@ -275,14 +275,8 @@ file sealed class VatReturnQueryAdapter(BrqoshDbContext db) : IVatReturnQuery
         long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
     {
         var r = await new VatReturnQuery(db).ExecuteAsync(companyId, fromDate, toDate);
-        return new VatReturnDto(
-            r.FromDate, r.ToDate,
-            r.SalesSubtotal, r.OutputVat,
-            r.ProgressBillingsSubtotal, r.ProgressBillingsVat,
-            r.CreditNotesSubtotal, r.CreditNotesVat,
-            r.PurchasesSubtotal, r.DeductibleInputVat,
-            r.DebitNotesSubtotal, r.DebitNotesVat, r.DebitNotesDeductibleVat,
-            r.GlVatNetPayableBalance);
+        // (CEEF-229 · م1-١٠) العبورُ في موضعٍ يُقاس — لا سطراً داخل مُحوِّلٍ لا يُرى.
+        return VatReturnMapping.From(r);
     }
 }
 
