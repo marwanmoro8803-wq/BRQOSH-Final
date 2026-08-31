@@ -63,7 +63,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             decimal priceVariance = 0m;
             var openAccrual = hasPostedGrn
                 ? await OpenAccrualByProductAsync(invoice, ct)
-                : new Dictionary<long, decimal>();
+                : [];
 
             foreach (var line in invoice.Lines)
             {
@@ -78,9 +78,14 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                     continue;
                 }
 
-                var available = openAccrual.TryGetValue(pid, out var open) ? open : 0m;
-                var relief = Math.Min(line.LineTotal, available);
-                openAccrual[pid] = available - relief;
+                // (CEEF-229 · م1-٢٠) ‏الاستهلاكُ بالكمية، والقيمةُ المُحرَّرة تتبعها.
+                // ‏والفرقُ = ما تقوله الفاتورة ناقصَ ما حُرّر — **موجباً أو سالباً**:
+                // ‏موجبٌ حين تُفوتَر البضاعةُ بأغلى ممّا استُلمت، وسالبٌ حين بأرخص.
+                // ‏وكان يُحسب بالقيمة فيصير صفراً في حالة الانخفاض، فيبقى الفرقُ التزاماً
+                // ‏وهمياً في 2112 لا يُقفله شيءٌ أبداً.
+                var relief = openAccrual.TryGetValue(pid, out var accrual)
+                    ? accrual.Consume(line.Quantity)
+                    : 0m;
 
                 grniRelief += relief;
                 priceVariance += line.LineTotal - relief;
@@ -140,13 +145,23 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · م1-١٩) الاستحقاقُ المفتوح لكلّ صنف: ما استُلم <b>ناقصَ ما أقفلته فواتيرُ
-    /// سابقة على أمر الشراء نفسه</b>.
+    /// (CEEF-229 · م1-٢٠ / I-8) الاستحقاقُ المفتوح لكلّ صنف — <b>كمّيةً وقيمةً معاً</b>:
+    /// ما استُلم ناقصَ ما <b>فوترته</b> فواتيرُ سابقة على أمر الشراء نفسه.
     ///
-    /// <para>وبلا الطرح تُقفل فاتورتان الاستحقاقَ نفسَه، فيصير 2112 مديناً سالباً والذمّةُ
-    /// مضخَّمة. <b>والفوترةُ الجزئية غير مغطّاةٍ بحارسٍ اليوم</b> — بندٌ مسجَّل.</para>
+    /// <para><b>وكان يُتابَع بالقيمة وحدها، فيُخطئ متى اختلف سعرُ الفاتورة عن سعر الاستلام.</b>
+    /// الطرحُ كان <c>Σ(كمية الفاتورة × سعرها)</c> — أيْ ما <b>دفعته</b> الفاتورة لا ما
+    /// <b>استهلكته</b> من البضاعة. فالبضاعةُ تخرج من الاستحقاق بكمّيتها، والمالُ يخرج بسعره،
+    /// والاثنان لا يتساويان.</para>
+    ///
+    /// <para><b>مقيسٌ:</b> استُلمت 10 بـ10 (استحقاق 100) وفُوتِرت 10 بـ9.9 ⟵ <b>يبقى ريالٌ
+    /// في 2112 إلى الأبد</b>. وجزئياً: 4 من 10 بسعر 9.9 ⟵ المتبقّي <c>60.40</c> لا 60،
+    /// <b>فينحرف الرصيدُ فاتورةً بعد فاتورة</b>.</para>
+    ///
+    /// <para><b>وحدودُ الأثر مقيسة</b>: المطابقةُ الثلاثية ترفض انحرافاً يتجاوز ٢٪ وترفض
+    /// فوترةَ أكثرَ ممّا استُلم. فالخطأُ محصورٌ في التسامح — <b>ريالٌ أو ريالان على كلّ أمر
+    /// شراء، لكنّهما لا يُقفلان أبداً ويتراكمان</b>. والتسامحُ معاملٌ قابلٌ للرفع.</para>
     /// </summary>
-    private async Task<Dictionary<long, decimal>> OpenAccrualByProductAsync(
+    private async Task<Dictionary<long, AccrualState>> OpenAccrualByProductAsync(
         PurchaseInvoice invoice, CancellationToken ct)
     {
         var poId = invoice.PurchaseOrderId!.Value;
@@ -160,31 +175,66 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             .Select(l => new { ProductId = l.ProductId!.Value, l.ReceivedQuantity, l.UnitCost })
             .ToListAsync(ct);
 
-        var open = received
+        var invoicedQuantity = (await db.PurchaseInvoices
+                .Where(i => i.CompanyId == invoice.CompanyId
+                            && i.PurchaseOrderId == poId
+                            && i.Status == PurchaseInvoiceStatus.Posted)
+                .SelectMany(i => i.Lines)
+                .Where(l => l.ProductId != null)
+                .Select(l => new { ProductId = l.ProductId!.Value, l.Quantity })
+                .ToListAsync(ct))
             .GroupBy(l => l.ProductId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(l => Math.Round(l.ReceivedQuantity * l.UnitCost, 2, MidpointRounding.AwayFromZero)));
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
 
-        var relievedAlready = await db.PurchaseInvoices
-            .Where(i => i.CompanyId == invoice.CompanyId
-                        && i.PurchaseOrderId == poId
-                        && i.Status == PurchaseInvoiceStatus.Posted)
-            .SelectMany(i => i.Lines)
-            .Where(l => l.ProductId != null)
-            .Select(l => new { ProductId = l.ProductId!.Value, l.Quantity, l.UnitPrice })
-            .ToListAsync(ct);
-
-        foreach (var group in relievedAlready.GroupBy(l => l.ProductId))
+        var open = new Dictionary<long, AccrualState>();
+        foreach (var group in received.GroupBy(l => l.ProductId))
         {
-            if (!open.TryGetValue(group.Key, out var remaining))
-                continue;
+            var receivedQuantity = group.Sum(l => l.ReceivedQuantity);
+            if (receivedQuantity <= 0) continue;
 
-            var used = group.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2, MidpointRounding.AwayFromZero));
-            open[group.Key] = Math.Max(0m, remaining - used);
+            var receivedValue = group.Sum(l =>
+                Math.Round(l.ReceivedQuantity * l.UnitCost, 2, MidpointRounding.AwayFromZero));
+
+            var consumed = invoicedQuantity.GetValueOrDefault(group.Key);
+            var remaining = Math.Max(0m, receivedQuantity - consumed);
+
+            // ‏القيمةُ المتبقّية تُشتقّ من الكمية المتبقّية بمتوسط سعر الاستلام — فما خرج
+            // ‏من البضاعة خرج من قيمتها بالنسبة نفسِها، مهما اختلف سعرُ الفاتورة.
+            open[group.Key] = new AccrualState(
+                remaining,
+                Math.Round(receivedValue * remaining / receivedQuantity, 2, MidpointRounding.AwayFromZero));
         }
 
         return open;
+    }
+
+    /// <summary>ما بقي من استحقاق صنفٍ: كمّيةً وقيمةً. والقيمةُ تتبع الكمية لا سعرَ الفاتورة.</summary>
+    private sealed class AccrualState(decimal quantity, decimal value)
+    {
+        public decimal Quantity { get; private set; } = quantity;
+        public decimal Value { get; private set; } = value;
+
+        /// <summary>
+        /// ‏يستهلك من الاستحقاق ما يقابل <paramref name="quantityInvoiced"/>، ويُعيد القيمةَ
+        /// المُحرَّرة.
+        ///
+        /// <para><b>وآخرُ ما بقي يُحرَّر كاملاً</b> لا بحاصل الضرب: التقريبُ إلى هللتين على
+        /// كلّ فاتورةٍ يترك كسراً، وكسرٌ في حساب استحقاقٍ لا يُقفله شيءٌ بعده. فالشرطُ
+        /// يضمن الهوية <b>بالبناء</b>: فُوتِر كلُّ ما استُلم ⟵ 2112 صفرٌ تماماً.</para>
+        /// </summary>
+        public decimal Consume(decimal quantityInvoiced)
+        {
+            var consumed = Math.Min(quantityInvoiced, Quantity);
+            if (consumed <= 0) return 0m;
+
+            var released = consumed == Quantity
+                ? Value
+                : Math.Round(consumed * Value / Quantity, 2, MidpointRounding.AwayFromZero);
+
+            Quantity -= consumed;
+            Value -= released;
+            return released;
+        }
     }
 
     private async Task<Account> SystemAccountAsync(long companyId, string code) =>

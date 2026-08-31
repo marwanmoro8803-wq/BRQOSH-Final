@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
@@ -100,6 +102,73 @@ public static class LedgerIdentities
         var statement = await new CashFlowStatementService(db).ExecuteAsync(companyId, from, to);
         var sections = statement.Operating.Subtotal + statement.Investing.Subtotal + statement.Financing.Subtotal;
         return new IdentityResult("هـ-٤ التدفقات النقدية", Round(sections), Round(statement.NetCashChange));
+    }
+
+    // ── هـ-٨ · استحقاقُ البضاعة المستلمة غير المفوترة ───────────────────────
+
+    /// <summary>
+    /// (CEEF-229 · م1-٢٠) <b>2112 == قيمةُ ما استُلم ولم يُفوتَر بعد.</b>
+    ///
+    /// <para>الطرفُ المساعد يُحسب من المستندات: لكلّ أمر شراء وصنف، <c>الكميةُ المستلمة −
+    /// الكميةُ المفوترة</c> مضروبةً في متوسط سعر الاستلام. والطرفُ الآخر رصيدُ 2112 في الأستاذ.</para>
+    ///
+    /// <para><b>وهي الهويةُ الوحيدة التي تكشف بقايا الاستحقاق.</b> فحين يختلف سعرُ الفاتورة
+    /// عن سعر الاستلام، يبقى الفرقُ في 2112 <b>بلا كمّيةٍ تقابله</b> — التزامٌ وهميٌّ لا يُقفله
+    /// شيءٌ أبداً. ولا تكشفه هـ-٢ (ذمّةُ المورد صادقة) ولا هـ-٣ (المخزونُ لم يُمَسّ مع وجود
+    /// إذن)، <b>والقيدُ متوازنٌ تماماً</b>. مقيسٌ: استُلمت 10 بـ10 وفُوتِرت 10 بـ9.9 ⟵ يبقى ريال.</para>
+    ///
+    /// <para><b>ولا تُدرَج في <see cref="AssertAllAsync"/></b>: تلك تُستدعى في ذيل كلّ سيناريو
+    /// بما فيها ما لا شراءَ فيه، وهذه تلزمها مستنداتُ شراءٍ لتقول شيئاً. فتُستدعى في ذيل
+    /// سيناريوهات الشراء وحدها — <b>واستدعاؤها حيث لا استحقاق يجعلها صفراً == صفر، وهو
+    /// أخضرُ لا يقول شيئاً</b>.</para>
+    /// </summary>
+    public static async Task<IdentityResult> GoodsReceivedNotInvoicedAsync(
+        BrqoshDbContext db, long companyId)
+    {
+        // ‏التجميعُ في الذاكرة لا في SQL: إسقاطُ حقلٍ من الأب داخل SelectMany يلزمه APPLY
+        // ‏ولا يدعمه SQLite. وحجمُ البيانات في اختبارٍ لا يجعل ذلك ثمناً.
+        var receipts = await db.GoodsReceipts
+            .Include(g => g.Lines)
+            .Where(g => g.CompanyId == companyId && g.Status == GoodsReceiptStatus.Posted)
+            .ToListAsync();
+
+        var invoices = await db.PurchaseInvoices
+            .Include(i => i.Lines)
+            .Where(i => i.CompanyId == companyId && i.Status == PurchaseInvoiceStatus.Posted
+                        && i.PurchaseOrderId != null)
+            .ToListAsync();
+
+        var invoiced = invoices
+            .SelectMany(i => i.Lines
+                .Where(l => l.ProductId != null)
+                .Select(l => (Key: (i.PurchaseOrderId!.Value, l.ProductId!.Value), l.Quantity)))
+            .GroupBy(x => x.Key)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+
+        var receiptLines = receipts
+            .SelectMany(g => g.Lines
+                .Where(l => l.ProductId != null)
+                .Select(l => (Key: (g.PurchaseOrderId, l.ProductId!.Value), l.ReceivedQuantity, l.UnitCost)));
+
+        var subsidiary = 0m;
+        foreach (var group in receiptLines.GroupBy(l => l.Key))
+        {
+            var receivedQuantity = group.Sum(l => l.ReceivedQuantity);
+            if (receivedQuantity <= 0) continue;
+
+            var receivedValue = group.Sum(l =>
+                Math.Round(l.ReceivedQuantity * l.UnitCost, 2, MidpointRounding.AwayFromZero));
+
+            var remaining = Math.Max(0m, receivedQuantity - invoiced.GetValueOrDefault(group.Key));
+            subsidiary += Math.Round(
+                receivedValue * remaining / receivedQuantity, 2, MidpointRounding.AwayFromZero);
+        }
+
+        // ‏الاستحقاقُ التزامٌ، فرصيدُه في الأستاذ دائنٌ أيْ سالبٌ بالتوقيع. والمساعدُ يُقارَن بقيمته.
+        var ledger = await SignedLedgerBalanceAsync(
+            db, companyId, SaudiChartOfAccounts.SystemCodes.GoodsReceivedNotInvoiced);
+
+        return new IdentityResult("هـ-٨ بضاعة مستلمة غير مفوترة (2112)", Round(subsidiary), Round(-ledger));
     }
 
     // ── التجميع ─────────────────────────────────────────────────────────────
