@@ -531,78 +531,6 @@ static async Task<int> ProveLegacyRepairAsync(string connectionString)
     Console.WriteLine("       وأنواعها كما يتوقّعها النموذج، بالإقلاع وحده.");
     Console.WriteLine();
 
-    return await ProveAuditChainUpgradeAsync(connectionString);
-}
-
-// ── المرحلة الرابعة: قاعدةٌ فيها أثرُ تدقيقٍ سابقٌ للسلسلة ────────────────
-// ‏(CEEF-229) المراحلُ الثلاث السابقة تُرحّل قواعدَ **فارغةً من البيانات**، فهجرةٌ تُضيف
-// ‏عموداً بقيمةٍ افتراضية ثمّ تُنشئ عليه فهرساً **فريداً** تمرّ بلا اعتراض: لا صفوفَ تتصادم.
-//
-// ‏و‏AddAuditChain تفعل ذلك بعينه: تُضيف Sequence بصفرٍ افتراضيّ لكلّ الصفوف القائمة، ثمّ
-// ‏تُنشئ UNIQUE (CompanyId, Sequence) — **بلا ترقيمٍ للصفوف القديمة**. فمنشأةٌ لها سطرا
-// ‏تدقيقٍ اثنان قبل الترقية يصير لهما المفتاحُ نفسُه.
-//
-// ‏وسجلُّ التدقيق يُكتب عند كلّ ترحيلٍ وإغلاقِ فترة، فقاعدةُ أيّ عميلٍ عمل يوماً واحداً فيها
-// ‏عشراتُ الصفوف. **فالسؤال: هل تُرقَّى قاعدةٌ عليها أثرٌ أصلاً؟**
-static async Task<int> ProveAuditChainUpgradeAsync(string connectionString)
-{
-    const string Before = "20260725082135_AddVatCategoryToDocumentLines";  // ‏ما قبل AddAuditChain مباشرة
-
-    await using (var conn = new NpgsqlConnection(connectionString))
-    {
-        await conn.OpenAsync();
-        await using var reset = new NpgsqlCommand("DROP SCHEMA public CASCADE; CREATE SCHEMA public;", conn);
-        await reset.ExecuteNonQueryAsync();
-    }
-
-    await using var db = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, connectionString);
-
-    Console.WriteLine($"[..] بناءُ قاعدةِ عميلٍ على «{Before}» — أيْ قبل سلسلة التدقيق ...");
-    try
-    {
-        await db.GetService<IMigrator>().MigrateAsync(Before);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[FAIL] تعذّر بناءُ القاعدة السابقة للسلسلة: {ex.GetType().Name}: {ex.Message}");
-        return 10;
-    }
-
-    // ‏منشأةٌ وسطرا تدقيقٍ — أقلُّ ما يُنتجه أيُّ عميلٍ عمل يوماً واحداً.
-    await using (var conn = new NpgsqlConnection(connectionString))
-    {
-        await conn.OpenAsync();
-        await using var seed = new NpgsqlCommand(
-            "INSERT INTO companies (\"NameAr\", \"VatRegistrationNumber\", \"Profile\", \"CostingMethod\", " +
-            "\"BaseCurrencyCode\", \"FunctionalCurrencyCode\", \"TenantId\", \"OperationalMode\", \"CreatedAtUtc\") " +
-            "VALUES ('منشأةُ الأثر', '310123456700003', 'Retail', 'Fifo', 'SAR', 'SAR', gen_random_uuid(), 'Active', now()); " +
-            "INSERT INTO audit_log (\"CompanyId\", \"Username\", \"Action\", \"EntityType\", \"EntityKey\", \"Details\", \"OccurredAtUtc\") " +
-            "SELECT c.\"Id\", 'admin', 'ترحيل فاتورة', 'SalesInvoice', 'INV-1', '', now() FROM companies c; " +
-            "INSERT INTO audit_log (\"CompanyId\", \"Username\", \"Action\", \"EntityType\", \"EntityKey\", \"Details\", \"OccurredAtUtc\") " +
-            "SELECT c.\"Id\", 'admin', 'ترحيل فاتورة', 'SalesInvoice', 'INV-2', '', now() FROM companies c;", conn);
-        await seed.ExecuteNonQueryAsync();
-    }
-
-    Console.WriteLine("[..] سطرا تدقيقٍ لمنشأةٍ واحدة. تشغيلُ بقيّة الهجرات — ومنها AddAuditChain ...");
-
-    try
-    {
-        await db.Database.MigrateAsync();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("[FAIL] ترقيةُ قاعدةٍ عليها أثرُ تدقيقٍ **سقطت**:");
-        Console.WriteLine($"       {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
-        Console.WriteLine();
-        Console.WriteLine("       AddAuditChain تُضيف Sequence بصفرٍ لكلّ الصفوف القائمة ثمّ تُنشئ");
-        Console.WriteLine("       UNIQUE (CompanyId, Sequence) — فسطران لمنشأةٍ واحدة يتصادمان.");
-        Console.WriteLine("       ولا يظهر هذا في أيّ قياسٍ سابق: كلُّ ما نُرحّله قواعدُ فارغةٌ من البيانات.");
-        return 11;
-    }
-
-    Console.WriteLine("[PASS] قاعدةٌ عليها أثرُ تدقيقٍ سابقٌ للسلسلة تُرقَّى بلا تصادم.");
-    Console.WriteLine();
-
     return await ProvePatcherNumbersLegacyAuditAsync(connectionString);
 }
 
@@ -621,10 +549,27 @@ static async Task<int> ProvePatcherNumbersLegacyAuditAsync(string connectionStri
     await using (var conn = new NpgsqlConnection(connectionString))
     {
         await conn.OpenAsync();
+
+
         await using var undo = new NpgsqlCommand(
-            "DROP INDEX IF EXISTS \"IX_audit_log_CompanyId_Sequence\"; " +
-            "UPDATE audit_log SET \"Sequence\" = 0 WHERE \"EntryHash\" = '';", conn);
+            "DROP INDEX IF EXISTS \"IX_audit_log_CompanyId_Sequence\"", conn);
         await undo.ExecuteNonQueryAsync();
+        // ‏أثرٌ قديمٌ لمنشأةٍ **واحدة** — والوحدةُ هي الشرط: صفّان لمنشأتين لا يتصادمان،
+        // ‏وقياسٌ لا يتصادم لا يقيس شيئاً. (وهو بعينه ما أعمى أوّلَ نسخةٍ من بذّار السادسة.)
+        await using var seed = new NpgsqlCommand(
+            "INSERT INTO companies (\"NameAr\", \"VatRegistrationNumber\", \"Profile\", \"CostingMethod\", " +
+            "\"BaseCurrencyCode\", \"FunctionalCurrencyCode\", \"TenantId\", \"OperationalMode\", \"CreatedAtUtc\") " +
+            "SELECT 'منشأةُ الأثر', '310123456700003', 'Retail', 'Fifo', 'SAR', 'SAR', gen_random_uuid(), 'Active', now() " +
+            "WHERE NOT EXISTS (SELECT 1 FROM companies); " +
+            "INSERT INTO audit_log (\"CompanyId\", \"Username\", \"Action\", \"EntityType\", \"EntityKey\", \"Details\", \"OccurredAtUtc\") " +
+            "SELECT c.\"Id\", 'admin', 'ترحيل فاتورة', 'SalesInvoice', 'INV-1', '', now() FROM companies c ORDER BY c.\"Id\" LIMIT 1; " +
+            "INSERT INTO audit_log (\"CompanyId\", \"Username\", \"Action\", \"EntityType\", \"EntityKey\", \"Details\", \"OccurredAtUtc\") " +
+            "SELECT c.\"Id\", 'admin', 'ترحيل فاتورة', 'SalesInvoice', 'INV-2', '', now() FROM companies c ORDER BY c.\"Id\" LIMIT 1;", conn);
+        await seed.ExecuteNonQueryAsync();
+
+        await using var zero = new NpgsqlCommand(
+            "UPDATE audit_log SET \"Sequence\" = 0 WHERE \"EntryHash\" = ''", conn);
+        await zero.ExecuteNonQueryAsync();
 
         await using var count = new NpgsqlCommand(
             "SELECT COUNT(*) FROM audit_log WHERE \"EntryHash\" = '' AND \"Sequence\" = 0", conn);
@@ -675,10 +620,298 @@ static async Task<int> ProvePatcherNumbersLegacyAuditAsync(string connectionStri
     }
 
     Console.WriteLine("[PASS] المُرقِّع رقّم ما قبل السلسلة في حقبةٍ سالبة وأنشأ الفهرسَ الفريد.");
-    return 0;
+    Console.WriteLine();
+
+    return await ProveMigrationsSurviveRealDataAsync(connectionString);
 }
 
 
+
+// ── المرحلة السادسة: كلُّ الهجرات على قاعدةٍ **فيها بيانات** ──────────────
+// ‏(CEEF-229) المرحلتان الرابعة والخامسة أمسكتا عيباً حقيقياً — هجرةُ سلسلة التدقيق تُضيف
+// ‏عموداً بصفرٍ لكلّ الصفوف ثمّ تُنشئ عليه فهرساً فريداً، فتسقط ترقيةُ أيّ قاعدةٍ فيها
+// ‏سطرا تدقيق. لكنّهما تقيسان **جدولاً واحداً**، والعيبُ ليس خاصّاً به:
+//
+//   **كلُّ هجرةٍ تُضيف عموداً بقيمةٍ افتراضية ثمّ تُقيّده تحمل الخطرَ نفسَه** — فريداً،
+//   أو غيرَ قابلٍ للعدم، أو مفتاحاً أجنبياً يشير إلى ما لا وجود له في الصفوف القائمة.
+//
+// ‏والسببُ الجذريّ في **طريقة قياسنا** لا في هجرةٍ بعينها: كلُّ ما نُرحّله قواعدُ **فارغةٌ
+// ‏من البيانات**، فلا صفوفَ تتصادم ولا قيدَ يُختبر. وقاعدةُ العميل عكسُ ذلك تماماً.
+//
+// ‏فهذه المرحلة تُعمّم القياس: تُرحّل إلى أوّل هجرة، ثمّ **تملأ كلّ جدولٍ بصفَّين**، ثمّ
+// ‏تُطبّق الهجرات **واحدةً واحدة** — ومَلءُ الجداول يُعاد بين كلّ هجرتين ليشمل ما استحدثته
+// ‏السابقة. فأيُّ هجرةٍ تسقط تُسمّى باسمها.
+//
+// ‏والبذّارُ عامّ لا يعرف النطاق: يقرأ information_schema، ويرتّب الجداول بمفاتيحها
+// ‏الأجنبية، ويولّد قيمةً لكلّ عمودٍ إلزاميّ بلا قيمةٍ افتراضية. وما يعجز عن بذره **يُعلَن
+// ‏عدداً واسماً** — فبذّارٌ يصمت عمّا فاته يُحوّل تغطيةً ناقصة إلى ادّعاء اكتمال.
+static async Task<int> ProveMigrationsSurviveRealDataAsync(string connectionString)
+{
+    const string DataDb = "brqosh_dataprobe";
+
+    // ‏قاعدةٌ مستقلّة: هذه المرحلة تبذر صفوفاً لا يقرؤها النطاق (قيمٌ عامّةٌ بلا معنى
+    // ‏محاسبيّ)، فخلطُها بقاعدة المراحل السابقة يُفسد ما تقيسه تلك.
+    var adminCs = new NpgsqlConnectionStringBuilder(connectionString) { Database = "postgres" }.ToString();
+    var dataCs = new NpgsqlConnectionStringBuilder(connectionString) { Database = DataDb }.ToString();
+
+    await using (var c = new NpgsqlConnection(adminCs))
+    {
+        await c.OpenAsync();
+        await using (var drop = new NpgsqlCommand($"DROP DATABASE IF EXISTS {DataDb} WITH (FORCE)", c))
+            await drop.ExecuteNonQueryAsync();
+        await using (var create = new NpgsqlCommand($"CREATE DATABASE {DataDb}", c))
+            await create.ExecuteNonQueryAsync();
+    }
+
+    await using var db = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, dataCs);
+    var migrations = db.Database.GetMigrations().ToList();
+    var migrator = db.GetService<IMigrator>();
+
+    Console.WriteLine($"[..] ترحيلٌ متدرّجٌ عبر {migrations.Count} هجرة — وبين كلّ هجرتين تُملأ الجداول ...");
+
+    await migrator.MigrateAsync(migrations[0]);
+
+    var totalSeeded = 0;
+    var unseeded = new List<string>();
+
+    for (var i = 1; i < migrations.Count; i++)
+    {
+        var (seeded, failures) = await SeedEveryEmptyTableAsync(dataCs);
+        totalSeeded += seeded;
+        foreach (var f in failures)
+            if (!unseeded.Contains(f)) unseeded.Add(f);
+
+        try
+        {
+            await migrator.MigrateAsync(migrations[i]);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FAIL] «{migrations[i]}» سقطت على قاعدةٍ فيها بيانات:");
+            Console.WriteLine($"       {ex.GetType().Name}: {FirstLine(ex.Message)}");
+            Console.WriteLine();
+            Console.WriteLine("       الهجرةُ تمرّ على قاعدةٍ فارغة وتسقط على قاعدةٍ فيها صفوف —");
+            Console.WriteLine("       وقاعدةُ العميل من الصنف الثاني. التعبئةُ تسبق القيدَ داخل الهجرة نفسِها.");
+            return 16;
+        }
+    }
+
+    if (totalSeeded == 0)
+    {
+        Console.WriteLine("[FAIL] القياسُ أجوف — لم يُبذَر صفٌّ واحد، فما اختُبر قيدٌ قطّ.");
+        return 17;
+    }
+
+    Console.WriteLine($"[PASS] الهجرات الـ{migrations.Count} كلُّها تمرّ على قاعدةٍ فيها بيانات — {totalSeeded} صفّاً مبذوراً.");
+    if (unseeded.Count > 0)
+    {
+        Console.WriteLine($"       ⚠️ وتعذّر بذرُ {unseeded.Count} جدولاً — فهذه **خارج القياس**، لا مشهودٌ لها:");
+        var shown = string.Join("، ", unseeded.Take(12));
+        Console.WriteLine($"          {shown}{(unseeded.Count > 12 ? " ..." : "")}");
+    }
+    return 0;
+}
+
+/// <summary>
+/// ‏يملأ كلَّ جدولٍ فارغ بصفَّين. عامٌّ لا يعرف النطاق: يقرأ الأعمدة والمفاتيح الأجنبية من
+/// ‏information_schema، ويرتّب الجداول ترتيباً يجعل الأبَ قبل الابن، ويولّد قيمةً لكلّ عمودٍ
+/// ‏إلزاميّ بلا قيمةٍ افتراضية. <b>والأعمدةُ ذاتُ القيم الافتراضية تُترك عمداً</b> — فقيمتُها
+/// ‏الافتراضية هي بعينها ما يتصادم لاحقاً، وهي موضعُ القياس.
+/// </summary>
+static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(string connectionString)
+{
+    await using var conn = new NpgsqlConnection(connectionString);
+    await conn.OpenAsync();
+
+    var tables = new List<string>();
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT table_name FROM information_schema.tables " +
+        "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' " +
+        "AND table_name <> '__EFMigrationsHistory' ORDER BY table_name", conn))
+    await using (var r = await cmd.ExecuteReaderAsync())
+        while (await r.ReadAsync()) tables.Add(r.GetString(0));
+
+    var columns = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT table_name, column_name, is_nullable, column_default, " +
+        "       is_identity, is_generated, character_maximum_length, udt_name " +
+        "FROM information_schema.columns WHERE table_schema = 'public'", conn))
+    await using (var r = await cmd.ExecuteReaderAsync())
+        while (await r.ReadAsync())
+        {
+            var t = r.GetString(0);
+            if (!columns.TryGetValue(t, out var list)) columns[t] = list = [];
+            list.Add(new ColumnInfo(
+                r.GetString(1), r.GetString(2) == "YES", !r.IsDBNull(3),
+                r.GetString(4) == "YES", r.GetString(5) != "NEVER",
+                r.IsDBNull(6) ? null : r.GetInt32(6), r.GetString(7)));
+        }
+
+    var foreignKeys = new Dictionary<(string Table, string Column), (string Parent, string ParentColumn)>();
+    var dependsOn = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT tc.table_name, kcu.column_name, ccu.table_name, ccu.column_name " +
+        "FROM information_schema.table_constraints tc " +
+        "JOIN information_schema.key_column_usage kcu " +
+        "  ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema " +
+        "JOIN information_schema.constraint_column_usage ccu " +
+        "  ON tc.constraint_name = ccu.constraint_name AND tc.table_schema = ccu.table_schema " +
+        "WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'public'", conn))
+    await using (var r = await cmd.ExecuteReaderAsync())
+        while (await r.ReadAsync())
+        {
+            string t = r.GetString(0), c = r.GetString(1), parent = r.GetString(2), pc = r.GetString(3);
+            foreignKeys[(t, c)] = (parent, pc);
+            if (!dependsOn.TryGetValue(t, out var set))
+                dependsOn[t] = set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.Equals(parent, t, StringComparison.OrdinalIgnoreCase)) set.Add(parent);
+        }
+
+    // ‏(CEEF-229) **أعمدةُ التنويع.** أوّلُ نسخةٍ من هذا البذّار نوّعت قيمةَ كلّ عمودٍ بين
+    // ‏الصفَّين كي لا يتصادما على قيدِ تفرّد — **فكان ذلك بعينه ما أعماها**. التصادمُ الذي
+    // ‏نصطاده يحتاج صفَّين **متشابهَين** في عمود التجميع: سطرا تدقيقٍ لنفس المنشأة، لا
+    // ‏لمنشأتين. ومقيسٌ: `audit_log.CompanyId` بلا مفتاحٍ أجنبيّ، فأخذ الصفّان 1 و2 —
+    // ‏ومرّت الهجرةُ المعطوبة **خضراء** على مسبارٍ بُني لالتقاطها.
+    //
+    // ‏فالقاعدة انقلبت: **الأصلُ التشابه**، ولا يُنوَّع إلا ما يفرض قيدُ تفرّدٍ تنويعَه —
+    // ‏وعمودٌ واحدٌ من كلّ قيد يكفي.
+    var varyColumns = new HashSet<(string Table, string Column)>();
+    var uniqueSets = new Dictionary<uint, (string Table, List<string> Columns)>();
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT i.indexrelid, c.relname, a.attname " +
+        "FROM pg_index i " +
+        "JOIN pg_class c ON c.oid = i.indrelid " +
+        "JOIN pg_namespace n ON n.oid = c.relnamespace " +
+        "JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(i.indkey) " +
+        "WHERE i.indisunique AND n.nspname = 'public'", conn))
+    await using (var r = await cmd.ExecuteReaderAsync())
+        while (await r.ReadAsync())
+        {
+            var oid = (uint)r.GetValue(0);
+            if (!uniqueSets.TryGetValue(oid, out var set))
+                uniqueSets[oid] = set = (r.GetString(1), []);
+            set.Columns.Add(r.GetString(2));
+        }
+
+    foreach (var (table, cols) in uniqueSets.Values)
+    {
+        if (!columns.TryGetValue(table, out var all)) continue;
+
+        // ‏عمودٌ واحدٌ يُنوَّع من كلّ قيد — ويُختار ممّا نبذره فعلاً (لا هويّةً ولا افتراضياً
+        // ‏ولا مفتاحاً أجنبياً)، وإلا بقي القيدُ مخروقاً. وترتيبٌ أبجديّ ليكون الاختيارُ حتمياً.
+        var candidate = cols.OrderBy(c => c, StringComparer.Ordinal).FirstOrDefault(c =>
+            all.Any(x => x.Name == c && !x.IsIdentity && !x.IsGenerated && !x.HasDefault)
+            && !foreignKeys.ContainsKey((table, c)));
+
+        if (candidate is not null) varyColumns.Add((table, candidate));
+    }
+
+    // ‏ترتيبٌ يضع الأبَ قبل الابن. وحلقةٌ في الرسم تُكسر بأخذ ما بقي كما هو —
+    // ‏فالأعمدةُ الرابطة في الحلقة قابلةٌ للعدم بالضرورة، وتُترك فارغة.
+    var ordered = new List<string>();
+    var placed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    for (var pass = 0; pass < tables.Count && placed.Count < tables.Count; pass++)
+        foreach (var t in tables)
+        {
+            if (placed.Contains(t)) continue;
+            if (dependsOn.TryGetValue(t, out var deps)
+                && deps.Any(d => tables.Contains(d) && !placed.Contains(d))) continue;
+            ordered.Add(t);
+            placed.Add(t);
+        }
+    ordered.AddRange(tables.Where(t => !placed.Contains(t)));
+
+    var seeded = 0;
+    var failed = new List<string>();
+
+    foreach (var table in ordered)
+    {
+        await using (var count = new NpgsqlCommand($"SELECT COUNT(*) FROM \"{table}\"", conn))
+            if (Convert.ToInt64(await count.ExecuteScalarAsync()) > 0) continue;
+
+        if (!columns.TryGetValue(table, out var cols)) continue;
+
+        for (var row = 1; row <= 2; row++)
+        {
+            var names = new List<string>();
+            var values = new List<string>();
+
+            foreach (var col in cols)
+            {
+                // ‏الهويّةُ والمحسوبُ والافتراضيّ تُترك للقاعدة. **والافتراضيّ عمداً** —
+                // ‏فقيمتُه هي ما يتصادم لاحقاً، وهي موضعُ القياس.
+                if (col.IsIdentity || col.IsGenerated || col.HasDefault) continue;
+
+                string value;
+                if (foreignKeys.TryGetValue((table, col.Name), out var fk))
+                {
+                    if (string.Equals(fk.Parent, table, StringComparison.OrdinalIgnoreCase)) continue;
+                    value = $"(SELECT \"{fk.ParentColumn}\" FROM \"{fk.Parent}\" ORDER BY 1 LIMIT 1)";
+                }
+                else
+                {
+                    if (col.IsNullable) continue;
+                    value = LiteralFor(col, varyColumns.Contains((table, col.Name)) ? row : 1);
+                }
+
+                names.Add($"\"{col.Name}\"");
+                values.Add(value);
+            }
+
+            var sql = names.Count == 0
+                ? $"INSERT INTO \"{table}\" DEFAULT VALUES"
+                : $"INSERT INTO \"{table}\" ({string.Join(", ", names)}) VALUES ({string.Join(", ", values)})";
+
+            try
+            {
+                await using var insert = new NpgsqlCommand(sql, conn);
+                await insert.ExecuteNonQueryAsync();
+                seeded++;
+            }
+            catch (PostgresException)
+            {
+                break;
+            }
+        }
+
+        // ‏العدُّ بعد المحاولة لا أثناءها: **جدولٌ فيه صفٌّ واحد لا يتصادم**، فهو خارج
+        // ‏القياس تماماً كالفارغ. وحصرُ الإخفاق في «الصفّ الأوّل» كان يُخفي ذلك ويُظهر
+        // ‏تغطيةً أوسعَ من الحقّ.
+        await using (var after = new NpgsqlCommand($"SELECT COUNT(*) FROM \"{table}\"", conn))
+            if (Convert.ToInt64(await after.ExecuteScalarAsync()) < 2 && !failed.Contains(table))
+                failed.Add(table);
+    }
+
+    return (seeded, failed);
+}
+
+/// <summary>‏قيمةٌ صالحةٌ لنوع العمود — تختلف بين الصفَّين كي لا يتصادما على قيدِ تفرّد.</summary>
+static string LiteralFor(ColumnInfo col, int row) => col.UdtName switch
+{
+    "int2" or "int4" or "int8" => row.ToString(),
+    "numeric" or "float4" or "float8" or "money" => row.ToString(),
+    "bool" => "false",
+    "uuid" => "gen_random_uuid()",
+    "date" => "current_date",
+    "timestamp" or "timestamptz" => "now()",
+    "time" or "timetz" => "'00:00:00'",
+    "interval" => "'0 seconds'",
+    "bytea" => "'\\x00'::bytea",
+    "json" or "jsonb" => "'{}'",
+    _ => Quoted("p" + row, col.MaxLength),
+};
+
+static string Quoted(string raw, int? maxLength)
+{
+    var text = maxLength is > 0 && raw.Length > maxLength ? raw[..maxLength.Value] : raw;
+    return "'" + text.Replace("'", "''") + "'";
+}
+
+static string FirstLine(string message)
+{
+    var index = message.IndexOf('\n');
+    return index < 0 ? message : message[..index].TrimEnd('\r');
+}
 
 static string Normalize(string storeType) => storeType.Replace(" ", "").ToLowerInvariant();
 
@@ -689,3 +922,6 @@ static void Report(string title, List<string> items)
     foreach (var item in items) Console.WriteLine($"     • {item}");
     Console.WriteLine();
 }
+
+record ColumnInfo(string Name, bool IsNullable, bool HasDefault,
+    bool IsIdentity, bool IsGenerated, int? MaxLength, string UdtName);
