@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
@@ -117,6 +118,30 @@ public class PaymentAllocationService(BrqoshDbContext db)
         if (lines.Count == 0)
             return;
 
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            await AcquireDocumentLocksAsync(db.Database, companyId, lines, token);
+            await ValidateAndAddCoreAsync(companyId, date, lines, receiptId, paymentId, isReceipt, token);
+
+            // (CEEF-229) ‏**الحفظُ داخل القفل، وإلا لم يحمِ القفلُ شيئاً.**
+            //
+            // ‏كانت الخدمةُ تُضيف إلى المتتبِّع ويحفظ المستدعي بعده. فأوّلُ صياغةٍ للقفل
+            // ‏مرّت بلا أثر: يُؤخذ القفل، يُقرأ المتبقي، تُضاف السطور، **تُغلق المعاملةُ
+            // ‏فيُحرَّر القفل**، ثمّ يحفظ المستدعي — فيقرأ المتزاحمُ الرقمَ نفسَه ويكتب.
+            // ‏وقيس: `خُصّص 2,300.00 على فاتورةٍ بـ1,150` **بعد إضافة القفل**.
+            //
+            // ‏والحفظُ هنا لا يُفسد تركيبَ المستدعي: إن كان في معاملةٍ قائمة انضمّ إليها
+            // ‏هذا الحفظُ وارتدّ معها، وإلا فُتحت معاملةٌ لهذا وحده.
+            await db.SaveChangesAsync(token);
+        }, ct);
+    }
+
+    private async Task ValidateAndAddCoreAsync(
+        long companyId, DateOnly date,
+        IReadOnlyList<(PaymentAllocationDocumentType Type, long DocumentId, string Number, decimal Amount)> lines,
+        long? receiptId, long? paymentId, bool isReceipt, CancellationToken ct)
+    {
+
         // (CEEF-229 · م1-١٦ / A-13) **ما خُصّص في هذه الدفعة يُطرح كذلك.**
         //
         // `RemainingAsync` يجمع بـ`SumAsync` — أي **استعلامٌ على القاعدة**. والسطورُ المضافةُ
@@ -159,6 +184,77 @@ public class PaymentAllocationService(BrqoshDbContext db)
                 db.PaymentAllocationLines.Add(PaymentAllocationLine.ForPayment(
                     companyId, paymentId!.Value, line.Type, line.DocumentId, line.Number, line.Amount, date));
             }
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-229) ‏<b>قفلُ التخصيص — لكلّ (منشأة · مستند).</b>
+    ///
+    /// <para>الخدمةُ تقرأ المتبقيَ بـ<c>SumAsync</c> ثمّ تكتب. وبلا قفلٍ يقرأ متزاحمان
+    /// المتبقيَ نفسَه ويكتبان معاً، <b>فتُسدَّد الفاتورةُ بأكثر من قيمتها</b> ويصير رصيدُ
+    /// العميل سالباً بلا مقابلٍ في الأستاذ.</para>
+    ///
+    /// <para><b>وكانت الحمايةُ قائمةً بالعَرَض:</b> <c>ReceiptVoucherPostingService</c> يأخذ
+    /// قفلَ ترقيم المستندات داخل معاملته فيُسلسِل كلَّ سنداتِ المنشأة في تلك السنة. وذلك
+    /// مقيسٌ في <c>م1-١٦</c>، <b>ولم يُضَف قفلٌ حينها لأنّ عضّتَه لم تكن تُقاس</b>: قفلٌ
+    /// يستره قفلٌ آخر لا يُثبَت نفعُه.</para>
+    ///
+    /// <para><b>وقياسُها بُني الآن</b>: تُستدعى الخدمةُ مباشرةً بلا مسار السند — وهو مسارٌ
+    /// حقيقيّ يسلكه سطحُ API وشاشتان — فينكشف السباقُ عارياً. والمقيس بنافذةٍ موسَّعة:
+    /// <c>خُصّص 2,300.00 على فاتورةٍ بـ1,150</c>.</para>
+    ///
+    /// <para><b>والقفلُ لكلّ مستندٍ لا للمنشأة</b>: تخصيصٌ على فاتورةٍ لا ينتظر تخصيصاً على
+    /// غيرها. <b>ويُؤخذ بترتيبٍ ثابت</b> حين تحمل الدفعةُ مستنداتٍ عدّة — فدفعتان تأخذان
+    /// قفلَين بترتيبين متعاكسين تتقافلان.</para>
+    ///
+    /// <para>والاشتقاقُ بـFNV-1a لا <c>GetHashCode</c> — <b>فالأخيرُ مُعشّى لكلّ عملية
+    /// تشغيل</b>، فجهازان يحسبان مفتاحين مختلفين للمستند نفسه ولا يتزاحمان على قفلٍ واحد.
+    /// وهو درسُ <c>DocumentSequenceLock</c> بحرفه.</para>
+    /// </summary>
+    private static async Task AcquireDocumentLocksAsync(
+        DatabaseFacade database, long companyId,
+        IReadOnlyList<(PaymentAllocationDocumentType Type, long DocumentId, string Number, decimal Amount)> lines,
+        CancellationToken ct)
+    {
+        if (!database.IsNpgsql())
+            return;
+
+        if (database.CurrentTransaction is null)
+            throw new InvalidOperationException(
+                "تخصيصُ المدفوعات يجري خارج معاملة — والقفلُ الاستشاريّ يُحرَّر فوراً "
+                + "فلا يحمي قراءةَ المتبقي ولا كتابةَ التخصيص.");
+
+        var keys = lines
+            .Select(l => KeyFor(l.Type, l.DocumentId))
+            .Distinct()
+            .OrderBy(k => k)
+            .ToList();
+
+        foreach (var key in keys)
+        {
+            await database.ExecuteSqlRawAsync(
+                "SELECT pg_advisory_xact_lock({0}::int, {1}::int)",
+                new object[] { companyId, key },
+                ct);
+        }
+    }
+
+    /// <summary>مفتاحٌ ثابتٌ من نوع المستند ورقمه — FNV-1a، للسبب المشروح أعلاه.</summary>
+    internal static int KeyFor(PaymentAllocationDocumentType type, long documentId)
+    {
+        unchecked
+        {
+            const uint offset = 2166136261;
+            const uint prime = 16777619;
+
+            var hash = offset;
+            foreach (var b in System.Text.Encoding.UTF8.GetBytes($"ALLOC|{type}|{documentId}"))
+            {
+                hash ^= b;
+                hash *= prime;
+            }
+
+            return (int)hash;
         }
     }
 
