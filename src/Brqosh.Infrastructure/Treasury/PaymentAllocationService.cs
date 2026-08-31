@@ -117,6 +117,18 @@ public class PaymentAllocationService(BrqoshDbContext db)
         if (lines.Count == 0)
             return;
 
+        // (CEEF-229 · م1-١٦ / A-13) **ما خُصّص في هذه الدفعة يُطرح كذلك.**
+        //
+        // `RemainingAsync` يجمع بـ`SumAsync` — أي **استعلامٌ على القاعدة**. والسطورُ المضافةُ
+        // قبل قليلٍ في الدفعة نفسها `Added` ولم تُحفَظ، فلا يراها الاستعلام. فسطران على
+        // المستند نفسه داخل سندٍ واحد **يقرآن المتبقيَ نفسَه ويمرّان معاً**.
+        //
+        // وحارسُ «المجموع يساوي مبلغ السند» لا يمنعه: سندٌ بـ2,000 وسطران بـ1,000 مجموعُهما
+        // 2,000 — **والفاتورةُ 1,150**. وقيس: `No exception was thrown`.
+        //
+        // فيُحفظ في الذاكرة ما أُخذ من كلّ مستندٍ في هذه الدفعة، ويُطرح من المتبقي المقروء.
+        var takenInThisBatch = new Dictionary<(PaymentAllocationDocumentType, long), decimal>();
+
         foreach (var line in lines)
         {
             if (line.Amount <= 0)
@@ -124,12 +136,18 @@ public class PaymentAllocationService(BrqoshDbContext db)
 
             var original = await OriginalAmountAsync(companyId, line.Type, line.DocumentId, ct);
             var remaining = await RemainingAsync(companyId, line.Type, line.DocumentId, original, ct);
+
+            var key = (line.Type, line.DocumentId);
+            if (takenInThisBatch.TryGetValue(key, out var alreadyTaken))
+                remaining -= alreadyTaken;
             // (CEEF-206) بلا تفاوت: كل المبالغ مقرّبة لخانتين أصلاً، فالتفاوت 0.01 كان
             // يسمح بتجاوز المتبقي بهللة لكل سطر — وتخصيصات متتابعة تُراكم الفارق حتى
             // يظهر مستند مسدَّداً بأكثر من قيمته في تقارير الذمم.
             if (line.Amount > remaining)
                 throw new AccountingException(
                     $"التخصيص على {line.Number} ({line.Amount:N2}) يتجاوز المتبقي {remaining:N2}.");
+
+            takenInThisBatch[key] = alreadyTaken + line.Amount;
 
             if (isReceipt)
             {

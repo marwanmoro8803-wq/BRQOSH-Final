@@ -103,4 +103,80 @@ public class PaymentAllocationTests : IDisposable
         open = await new PaymentAllocationService(_db).OpenPurchaseDocumentsAsync(company.Id, supplier.Id);
         Assert.Empty(open);
     }
+    /// <summary>
+    /// (CEEF-229 · م1-١٦ / A-13) <b>سقفُ التخصيص — الحارسُ القائم الذي لم يقسه اختبارٌ واحد.</b>
+    ///
+    /// <para>الحارسُ موجودٌ منذ CEEF-206 (‏<c>يتجاوز المتبقي</c>)، <b>ولا اختبارَ في المستودع
+    /// يمرّ به</b>: الاختبارُ الوحيد للتخصيص يقيس رسالةَ «المجموع يساوي» وحدها. فحارسٌ لا
+    /// يُقاس حارسٌ لا يُعلَم أحيٌّ هو.</para>
+    /// </summary>
+    [Fact]
+    public async Task AllocatingMoreThanTheRemainder_IsRefused()
+    {
+        var (companyId, customerId, invoiceId, number) = await SeedInvoiceAsync();
+
+        var first = ReceiptVoucher.CreateDraft(companyId, customerId, new DateOnly(2026, 2, 5),
+            1_000m, ReceiptMethod.Cash, "دفعة أولى");
+        await new ReceiptVoucherPostingService(_db).PostAsync(first, [
+            (PaymentAllocationDocumentType.SalesInvoice, invoiceId, number, 1_000m),
+        ]);
+
+        // ‏المتبقي 150 — ومحاولةُ تخصيص 500 تتجاوزه.
+        var second = ReceiptVoucher.CreateDraft(companyId, customerId, new DateOnly(2026, 2, 6),
+            500m, ReceiptMethod.Cash, "دفعة ثانية");
+
+        var ex = await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(() =>
+            new ReceiptVoucherPostingService(_db).PostAsync(second, [
+                (PaymentAllocationDocumentType.SalesInvoice, invoiceId, number, 500m),
+            ]));
+
+        Assert.Contains("يتجاوز المتبقي", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// <b>وسطران على المستند نفسه داخل سندٍ واحد — وهذا ما كان يمرّ.</b>
+    ///
+    /// <para>الحلقةُ تقرأ المتبقي <b>من القاعدة</b> لكلّ سطر، والسطورُ المضافةُ قبله في
+    /// الدفعة نفسها لم تُحفَظ بعد — فلا يراها الاستعلام. فيقرأ السطران المتبقيَ نفسَه
+    /// ويمرّان معاً، <b>ويُسدَّد المستندُ بأكثر من قيمته</b>.</para>
+    ///
+    /// <para>وحارسُ «المجموع يساوي مبلغ السند» لا يمنعه: مبلغُ السند 2,000 ومجموعُ سطوره
+    /// 2,000 — <b>والفاتورةُ 1,150</b>.</para>
+    /// </summary>
+    [Fact]
+    public async Task TwoLinesOnTheSameDocument_InOneVoucher_AreRefused()
+    {
+        var (companyId, customerId, invoiceId, number) = await SeedInvoiceAsync();
+
+        var voucher = ReceiptVoucher.CreateDraft(companyId, customerId, new DateOnly(2026, 2, 5),
+            2_000m, ReceiptMethod.Cash, "سطران على فاتورة واحدة");
+
+        var ex = await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(() =>
+            new ReceiptVoucherPostingService(_db).PostAsync(voucher, [
+                (PaymentAllocationDocumentType.SalesInvoice, invoiceId, number, 1_000m),
+                (PaymentAllocationDocumentType.SalesInvoice, invoiceId, number, 1_000m),
+            ]));
+
+        Assert.Contains("يتجاوز المتبقي", ex.Message, StringComparison.Ordinal);
+
+        // ‏ولا يبقى أثرٌ جزئيّ: الفاتورةُ كما كانت.
+        var open = await new PaymentAllocationService(_db).OpenSalesDocumentsAsync(companyId, customerId);
+        Assert.Equal(1_150m, open.Single(o => o.DocumentId == invoiceId).RemainingAmount);
+    }
+
+    private async Task<(long CompanyId, long CustomerId, long InvoiceId, string Number)> SeedInvoiceAsync()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("شركة التخصيص", "310123456700005", BusinessProfile.Retail);
+        var customer = Customer.Create(company.Id, "عميل");
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+
+        var invoice = SalesInvoice.CreateDraft(company.Id, customer.Id, new DateOnly(2026, 2, 1));
+        invoice.AddLine("بضاعة", 10m, 100m); // 1150 شاملة الضريبة
+        var posted = await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        return (company.Id, customer.Id, posted.Id, posted.InvoiceNumber!);
+    }
+
 }
