@@ -1007,7 +1007,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE TABLE IF NOT EXISTS goods_receipt_lines (
                   "Id" BIGSERIAL PRIMARY KEY,
-                  "goods_receipt_id" BIGINT NOT NULL,
+                  "goods_receipt_id" BIGINT NOT NULL REFERENCES goods_receipts("Id") ON DELETE CASCADE,
                   "ProductId" BIGINT NULL,
                   "Description" character varying(512) NOT NULL,
                   "OrderedQuantity" NUMERIC(18,4) NOT NULL,
@@ -1027,7 +1027,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE TABLE IF NOT EXISTS debit_note_lines (
                   "id" BIGSERIAL PRIMARY KEY,
-                  "debit_note_id" BIGINT NOT NULL,
+                  "debit_note_id" BIGINT NOT NULL REFERENCES debit_notes("Id") ON DELETE CASCADE,
                   "Description" character varying(512) NOT NULL,
                   "Quantity" NUMERIC(18,4) NOT NULL,
                   "UnitPrice" NUMERIC(18,2) NOT NULL,
@@ -1136,7 +1136,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   ON workflow_instances ("CompanyId", "DocumentKind", "DocumentId");
               CREATE TABLE IF NOT EXISTS workflow_approval_records (
                   id BIGSERIAL PRIMARY KEY,
-                  workflow_instance_id BIGINT NOT NULL,
+                  workflow_instance_id BIGINT NOT NULL REFERENCES workflow_instances("Id") ON DELETE CASCADE,
                   "Slot" character varying(16) NOT NULL,
                   "ApprovedBy" character varying(128) NOT NULL,
                   "ApprovedAtUtc" TIMESTAMPTZ NOT NULL,
@@ -1158,7 +1158,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   ON purchase_requests ("CompanyId", "RequestNumber");
               CREATE TABLE IF NOT EXISTS purchase_request_lines (
                   id BIGSERIAL PRIMARY KEY,
-                  purchase_request_id BIGINT NOT NULL,
+                  purchase_request_id BIGINT NOT NULL REFERENCES purchase_requests("Id") ON DELETE CASCADE,
                   "Description" character varying(512) NOT NULL,
                   "Quantity" NUMERIC(18,4) NOT NULL,
                   "UnitPrice" NUMERIC(18,2) NOT NULL,
@@ -1235,7 +1235,15 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE TABLE IF NOT EXISTS bank_statement_lines (
                   id BIGSERIAL PRIMARY KEY,
-                  bank_statement_id BIGINT NOT NULL,
+                  -- (CEEF-229 · م2-١٠) **المفاتيحُ الأجنبية تُكتب هنا أيضاً.**
+                  -- ‏`InitialCreate` تُنشئ سبعةَ جداولٍ بمفاتيحها، وهذا الفرعُ يُنشئها بـSQL
+                  -- ‏يدويّ بلا مفتاحٍ واحد — **وما لا يُكتب هنا لا يوجد أبداً**، ولا هجرةَ تصل
+                  -- ‏هذه القاعدة. فقاعدتان بالاسم نفسه: واحدةٌ يحرسها المحرّك من سطرٍ يتيم
+                  -- ‏وأخرى لا، والفرقُ لا يظهر حتى يُحذف مستندٌ فتبقى سطورُه معلّقةً بلا أب.
+                  --
+                  -- ‏والنسخةُ البوستجرسية وحدها: SQLite مزوّدُ تطويرٍ تُبنى قواعدُه من النموذج،
+                  -- ‏وإنفاذُ المفاتيح فيه مُطفأٌ افتراضياً. وهو حدٌّ مُصرَّحٌ به لا سهو.
+                  bank_statement_id BIGINT NOT NULL REFERENCES bank_statements("Id") ON DELETE CASCADE,
                   "TransactionDate" DATE NOT NULL,
                   "Description" character varying(512) NOT NULL,
                   "Reference" character varying(128) NOT NULL DEFAULT '',
@@ -1483,7 +1491,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_quotation_lines (
                     "id" BIGSERIAL PRIMARY KEY,
-                    "sales_quotation_id" BIGINT NOT NULL,
+                    -- (CEEF-229 · م2-١٠) **المفتاحُ الأجنبيّ يُكتب هنا أيضاً.**
+                    -- ‏`InitialCreate` تُنشئ الجدولَ بمفتاحه، وهذا الفرعُ يُنشئه بـSQL يدويّ —
+                    -- ‏فما لا يُكتب هنا لا يوجد أبداً، **ولا هجرةَ تصل هذه القاعدة لتُصلحه**.
+                    -- ‏والفرقُ لا يظهر حتى يُحذف مستندٌ فتبقى سطورُه معلّقةً بلا أب.
+                    "sales_quotation_id" BIGINT NOT NULL REFERENCES sales_quotations("Id") ON DELETE CASCADE,
                     "Description" character varying(512) NOT NULL,
                     "Quantity" NUMERIC(18,4) NOT NULL,
                     "UnitPrice" NUMERIC(18,2) NOT NULL,
@@ -1518,7 +1530,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_order_lines (
                     "id" BIGSERIAL PRIMARY KEY,
-                    "sales_order_id" BIGINT NOT NULL,
+                    -- (CEEF-229 · م2-١٠) **المفتاحُ الأجنبيّ يُكتب هنا أيضاً.**
+                    -- ‏`InitialCreate` تُنشئ الجدولَ بمفتاحه، وهذا الفرعُ يُنشئه بـSQL يدويّ —
+                    -- ‏فما لا يُكتب هنا لا يوجد أبداً، **ولا هجرةَ تصل هذه القاعدة لتُصلحه**.
+                    -- ‏والفرقُ لا يظهر حتى يُحذف مستندٌ فتبقى سطورُه معلّقةً بلا أب.
+                    "sales_order_id" BIGINT NOT NULL REFERENCES sales_orders("Id") ON DELETE CASCADE,
                     "Description" character varying(512) NOT NULL,
                     "Quantity" NUMERIC(18,4) NOT NULL,
                     "UnitPrice" NUMERIC(18,2) NOT NULL,

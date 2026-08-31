@@ -148,7 +148,31 @@ await using (var conn = new NpgsqlConnection(cs))
         actualUniqueSets.Add((table, columns));
 }
 
-Console.WriteLine($"[..] القاعدة تحوي {actual.Count} جدولاً و{actualUniqueSets.Count} قيدَ تفرّد");
+// (CEEF-229 · م2-١٠) **المفاتيحُ الأجنبية — والمُرقِّعُ لا يُنشئ واحداً.**
+//
+// `InitialCreate` تُنشئ الجداولَ بمفاتيحها الأجنبية، **و`BrqoshSchemaUpdater` يُنشئ
+// اثنين وثلاثين جدولاً بلا قيدٍ واحد**. فقاعدتان بالاسم نفسه: واحدةٌ يحرسها المحرّك
+// من سطرٍ يتيم، وأخرى لا. والفرقُ لا يظهر حتى يُحذف مستندٌ فتبقى سطورُه معلّقة.
+var actualForeignKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+await using (var fkConn = new NpgsqlConnection(cs))
+{
+    await fkConn.OpenAsync();
+    await using var fkCmd = new NpgsqlCommand("""
+    SELECT c.conrelid::regclass::text AS child,
+           a.attname                  AS col,
+           c.confrelid::regclass::text AS parent
+    FROM pg_constraint c
+    JOIN LATERAL unnest(c.conkey) WITH ORDINALITY AS k(attnum, ord) ON TRUE
+    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum
+    WHERE c.contype = 'f' AND c.connamespace = 'public'::regnamespace
+    """, fkConn);
+    await using var fkReader = await fkCmd.ExecuteReaderAsync();
+    while (await fkReader.ReadAsync())
+        actualForeignKeys.Add($"{fkReader.GetString(0)}.{fkReader.GetString(1)}->{fkReader.GetString(2)}");
+}
+
+Console.WriteLine($"[..] القاعدة تحوي {actual.Count} جدولاً و{actualUniqueSets.Count} قيدَ تفرّد "
+                  + $"و{actualForeignKeys.Count} مفتاحاً أجنبياً");
 
 // ── ما يتوقّعه النموذج ────────────────────────────────────────────────────
 var missingTables = new List<string>();
@@ -156,6 +180,7 @@ var missingColumns = new List<string>();
 var wrongType = new List<string>();
 var wrongNullability = new List<string>();
 var missingUnique = new List<string>();
+var missingForeignKeys = new List<string>();
 var modelTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
 foreach (var entity in db.Model.GetEntityTypes().OrderBy(e => e.GetTableName(), StringComparer.Ordinal))
@@ -214,13 +239,37 @@ foreach (var entity in db.Model.GetEntityTypes().OrderBy(e => e.GetTableName(), 
         var line = $"{table} ({string.Join(", ", want)})";
         if (!covered && !missingUnique.Contains(line)) missingUnique.Add(line);
     }
+
+    // ‏والمفاتيحُ الأجنبية: كلُّ ما يُعلنه النموذجُ يجب أن يوجد في القاعدة.
+    foreach (var fk in entity.GetForeignKeys())
+    {
+        var principal = fk.PrincipalEntityType.GetTableName();
+        if (principal is null) continue;
+
+        // ‏النوعُ المملوك الذي يشترك جدولَ مالكه (‏table splitting) يُنتج في النموذج مفتاحاً
+        // ‏أجنبياً من الجدول إلى نفسه على مفتاحه الأساسيّ — ولا تُنشئه القاعدةُ ولا ينبغي.
+        // ‏وهو ما أبلغ عنه المسبارُ أوّلَ مرّة: «companies.Id ⟵ companies». فيُستبعد.
+        if (string.Equals(principal, table, StringComparison.OrdinalIgnoreCase)
+            && fk.Properties.All(pr => entity.FindPrimaryKey()?.Properties.Contains(pr) == true))
+            continue;
+
+        foreach (var property in fk.Properties)
+        {
+            var column = property.GetColumnName(id) ?? property.Name;
+            var key = $"{table}.{column}->{principal}";
+            if (actualForeignKeys.Contains(key)) continue;
+
+            var line = $"{table}.{column} ⟵ {principal}";
+            if (!missingForeignKeys.Contains(line)) missingForeignKeys.Add(line);
+        }
+    }
 }
 
 Console.WriteLine($"[..] النموذج يتوقّع {modelTables.Count} جدولاً");
 Console.WriteLine();
 
 var problems = missingTables.Count + missingColumns.Count
-             + wrongType.Count + wrongNullability.Count + missingUnique.Count;
+             + wrongType.Count + wrongNullability.Count + missingUnique.Count + missingForeignKeys.Count;
 
 if (problems == 0)
 {
@@ -237,6 +286,7 @@ Report("أعمدة مفقودة — كلّ استعلامٍ يلمسها يرم�
 Report("أنواع مخالفة — تقريبٌ صامتٌ أو رمي عند التحويل", wrongType);
 Report("قابليةُ إفراغٍ مخالفة — إمّا 23502 عند الإدراج أو صفٌّ ناقصٌ يمرّ بلا حارس", wrongNullability);
 Report("قيودُ تفرّدٍ مفقودة — تكرارٌ صامتٌ في الدفاتر", missingUnique);
+Report("مفاتيحُ أجنبية مفقودة — سطورٌ يتيمةٌ لا يمنعها المحرّك", missingForeignKeys);
 return 4;
 
 // ── المرحلة الثانية: مسارُ الترقية ────────────────────────────────────────
@@ -431,6 +481,39 @@ static async Task<int> ProveLegacyRepairAsync(string connectionString)
 
             if (property.IsColumnNullable(id) != live.Nullable)
                 faults.Add($"{table}.{column} — قابليةُ الإفراغ تخالف النموذج");
+        }
+    }
+
+    // (CEEF-229 · م2-١٠) **والتكاملُ المرجعيّ يعود كذلك — أم يُعاد الجدولُ بلا حارس؟**
+    //
+    // `InitialCreate` تُنشئ الجداولَ بمفاتيحها الأجنبية، **والمُرقِّعُ يُنشئها بـSQL يدويّ**.
+    // فما لا يُكتب في ذلك النصّ لا يوجد أبداً — ولا هجرةَ تصل هذه القاعدة لتُصلحه.
+    // والفرقُ لا يظهر حتى يُحذف مستندٌ فتبقى سطورُه معلّقةً في الدفاتر بلا أب.
+    await using (var fkConn = new NpgsqlConnection(connectionString))
+    {
+        await fkConn.OpenAsync();
+        await using var fkCmd = new NpgsqlCommand("""
+            SELECT c.conrelid::regclass::text
+            FROM pg_constraint c
+            WHERE c.contype = 'f' AND c.connamespace = 'public'::regnamespace
+            """, fkConn);
+        await using var fkReader = await fkCmd.ExecuteReaderAsync();
+
+        var withForeignKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (await fkReader.ReadAsync())
+            withForeignKeys.Add(fkReader.GetString(0));
+
+        foreach (var table in wave)
+        {
+            var entity = db.Model.GetEntityTypes()
+                .FirstOrDefault(e => string.Equals(e.GetTableName(), table, StringComparison.OrdinalIgnoreCase));
+            if (entity is null) continue;
+
+            var expects = entity.GetForeignKeys().Any(fk =>
+                !string.Equals(fk.PrincipalEntityType.GetTableName(), table, StringComparison.OrdinalIgnoreCase));
+
+            if (expects && !withForeignKeys.Contains(table))
+                faults.Add($"{table} — عاد بلا مفتاحٍ أجنبيّ؛ سطرٌ يتيمٌ لا يمنعه المحرّك");
         }
     }
 
