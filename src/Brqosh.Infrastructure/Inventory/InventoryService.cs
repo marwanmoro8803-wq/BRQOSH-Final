@@ -368,8 +368,31 @@ public class InventoryService(BrqoshDbContext db)
         if (layersRemoved)
             return;
 
-        foreach (var line in movement.Lines)
-            await ReverseReceiptCostAsync(movement.CompanyId, line.ProductId, line.Quantity, line.UnitCost);
+        // (CEEF-229 · م0-٥ / I-NEW-2) ‏**التجميعُ بالصنف قبل عكس التكلفة.**
+        //
+        // ‏`ReverseReceiptCostAsync` **موثَّقٌ فيها** أنّ الرصيد المقروء نقص بكمّية هذا النداء
+        // ‏سلفاً، فتُعيد بناء ما قبله بـ `remainingQty + qtyOut`. و`ReverseMovementBalancesAsync`
+        // ‏أعلاه تُزيل **كلَّ سطور المستند** دفعةً واحدة — فالافتراضُ يصحّ لسطرٍ واحد ويسقط
+        // ‏لسطرين فصاعداً: كلُّ نداءٍ يُعيد بناءَ رصيدٍ لم يكن.
+        //
+        // ‏**والأثرُ مقيس**: افتتاحيٌّ 10@10 ثمّ وارِدٌ بثلاثة سطور (2@12 · 3@15 · 5@20) ثمّ
+        // ‏إلغاؤه ⟵ المتوسط **11.9701** والصواب 10، و**الدفتر المساعد 119.70 والأستاذ 100.00**.
+        // ‏فهي هوية هـ-٣ مكسورةً بـ19.70 ريالاً — انفصالُ دفترٍ مساعدٍ عن الأستاذ، لا رقمٌ متّسق.
+        //
+        // ‏**وليس ما وصفته الخطة.** قالت «سطران يعكسان كلٌّ الكميةَ كاملة»؛ والكمياتُ تُعكس
+        // ‏صحيحةً (مقيسٌ: سطران بـ3 و4 ⟵ الرصيد يعود تماماً). العطلُ في **التكلفة** وحدها،
+        // ‏ولا يظهر إلا حين تختلف تكاليفُ السطور — **ودواؤه هو التجميعُ نفسُه الذي وصفته**.
+        //
+        // ‏والتكلفةُ الموحَّدة **مرجّحةٌ بالكمية** لا وسطاً حسابياً: هي القيمةُ التي أدخلها
+        // ‏المستند فعلاً مقسومةً على كمّيته، فيخرج من المتوسط ما دخل فيه بعينه.
+        foreach (var group in movement.Lines.GroupBy(l => l.ProductId))
+        {
+            var quantity = group.Sum(l => l.Quantity);
+            if (quantity <= 0) continue;
+
+            var weightedUnitCost = group.Sum(l => l.Quantity * l.UnitCost) / quantity;
+            await ReverseReceiptCostAsync(movement.CompanyId, group.Key, quantity, weightedUnitCost);
+        }
     }
 
     public async Task ReverseMovementBalancesAsync(StockMovement movement)

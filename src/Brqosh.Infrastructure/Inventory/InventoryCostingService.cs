@@ -23,8 +23,29 @@ public class InventoryCostingService(BrqoshDbContext db)
         long companyId, long productId, long warehouseId, DateOnly date,
         decimal qty, decimal unitCost, string sourceDocument, CancellationToken ct = default)
     {
-        var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
-        if (!product.IsStockable()) return;
+        if (!await AddCostLayerAsync(companyId, productId, warehouseId, date, qty, unitCost, sourceDocument, ct))
+            return;
+
+        await new InventoryService(db).ApplyReceiptCostAsync(companyId, productId, qty, unitCost);
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م0-٥) ‏تسجيلُ طبقة التكلفة <b>وحدها</b>، بلا لمس المتوسط المرجّح.
+    ///
+    /// <para>‏فُصلت عن <see cref="OnReceiptAsync"/> لأنّ الاثنين يختلفان في وحدة العمل:
+    /// <b>الطبقةُ لكلّ سطر</b> — بتكلفة ذلك السطر بعينها، وإلا ضاعت تفرقةُ الدفعات التي
+    /// تقوم عليها FIFO كلُّها. <b>والمتوسطُ لكلّ صنف</b> — يُحسب مرّةً واحدة من مجموع
+    /// الكميات وقيمتها، لأنّه دالّةٌ في رصيدٍ لا يتقدّم بين السطور.</para>
+    ///
+    /// <para>‏تُعيد <c>false</c> لصنفٍ غير مخزنيّ — فلا طبقةَ له ولا متوسط.</para>
+    /// </summary>
+    public async Task<bool> AddCostLayerAsync(
+        long companyId, long productId, long warehouseId, DateOnly date,
+        decimal qty, decimal unitCost, string sourceDocument, CancellationToken ct = default)
+    {
+        var product = await db.Products.IgnoreQueryFilters()
+            .SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
+        if (!product.IsStockable()) return false;
 
         var method = await GetMethodAsync(companyId, ct);
         if (method == InventoryCostingMethod.Fifo)
@@ -33,7 +54,7 @@ public class InventoryCostingService(BrqoshDbContext db)
                 companyId, productId, warehouseId, date, qty, unitCost, sourceDocument));
         }
 
-        await new InventoryService(db).ApplyReceiptCostAsync(companyId, productId, qty, unitCost);
+        return true;
     }
 
     /// <summary>

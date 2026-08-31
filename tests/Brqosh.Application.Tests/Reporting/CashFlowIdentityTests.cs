@@ -1,3 +1,4 @@
+using Brqosh.Infrastructure.Accounting;
 ﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
@@ -237,5 +238,50 @@ public class CashFlowIdentityTests : IDisposable
         TestActor.None();
         _db.Dispose();
         GC.SuppressFinalize(this);
+    }
+    /// <summary>
+    /// (CEEF-229 · م1-١١ / NEW-1) <b>حسابٌ متداولٌ جديد لا يَرِد في أيّ قائمة — أيسقط صامتاً؟</b>
+    ///
+    /// <para><b>البندُ المفتوح كان يقول:</b> بنودُ رأس المال العامل تُعدَّد يدوياً، فكلُّ حسابٍ
+    /// يُضاف إلى الدليل لاحقاً يسقط من القائمة بلا خطأ ولا تحذير. ودفعتان سابقتان اضطرّتا
+    /// لإضافة سبعة أكواد غائبة — <b>فالعطل نمطٌ لا حادثة</b>.</para>
+    ///
+    /// <para><b>وهذا القياسُ يسأل: هل استُهلك الجذرُ فعلاً؟</b> يُنشأ حسابٌ متداول بكودٍ
+    /// <c>1198</c> — لا يَرِد في قائمة الأسماء ولا في أيّ اختبار — ويُحرَّك مقابل النقد.
+    /// فإن كان الاشتقاقُ بالبادئة حقيقياً ظهر أثرُه في التشغيل وصدقت هـ-٧؛ وإن بقيت القائمةُ
+    /// البيضاء حاكمةً <b>تحرّك نقدٌ بلا تفسير</b>.</para>
+    /// </summary>
+    [Fact]
+    public async Task ACurrentAssetOutsideEveryNamedList_IsStillExplained()
+    {
+        var bankId = await BankAccountAsync();
+        var cash = await AccountByCodeAsync(await BankLedgerCodeAsync(bankId));
+
+        // ‏حسابٌ متداولٌ جديد: سُلفةُ موظّف. بادئتُه "11" ولا اسمَ له في الخدمة.
+        var advance = Account.Create("1198", "سلف الموظفين", "Staff Advances",
+            AccountType.Asset, companyId: _companyId);
+        _db.Accounts.Add(advance);
+        await _db.SaveChangesAsync();
+
+        // ‏صرفُ سُلفةٍ نقداً: مدين 1198 / دائن النقد. نقدٌ خرج، وتفسيرُه رأسُ مالٍ عامل.
+        var entry = JournalEntry.CreateDraft(_companyId, new DateOnly(2026, 2, 10), "سلفة موظّف");
+        entry.AddLine(advance, 500m, 0m, "سلفة");
+        entry.AddLine(cash, 0m, 500m, "من الصندوق");
+        await new JournalPostingService(_db).PostAsync(entry);
+
+        var statement = await StatementAsync();
+
+        AssertIdentities(statement);
+        Assert.True(statement.NetCashChange != 0m,
+            "لم يتحرّك نقدٌ أصلاً — فالقياسُ أجوف ولا يقول شيئاً عن الاشتقاق.");
+    }
+
+    private async Task<Account> AccountByCodeAsync(string code) =>
+        await _db.Accounts.SingleAsync(a => a.CompanyId == _companyId && a.Code == code);
+
+    private async Task<string> BankLedgerCodeAsync(long bankAccountId)
+    {
+        var bank = await _db.BankAccounts.SingleAsync(b => b.Id == bankAccountId);
+        return (await _db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId)).Code;
     }
 }

@@ -46,12 +46,43 @@ public class StockMovementPostingService(BrqoshDbContext db)
 
             if (movement.IsInbound)
             {
+                // (CEEF-229 · م0-٥ / I-NEW-2) ‏**المتوسطُ يُحسب لكلّ صنفٍ مرّةً، والطبقةُ لكلّ سطر.**
+                //
+                // ‏كان النداءُ لكلّ سطرٍ على حدة، وكلٌّ منها يقرأ الرصيدَ ليبني المتوسط —
+                // ‏**والرصيدُ لا يتقدّم**، لأنّ `ApplyMovementBalancesAsync` أدناه تُطبّق
+                // ‏سطورَ المستند كلَّها **بعد** هذه الحلقة. فكلُّ سطرٍ يحسب كأنّه وحده.
+                //
+                // ‏**مقيسٌ:** افتتاحيٌّ 10@10 ثمّ وارِدٌ بثلاثة سطور لصنفٍ واحد
+                // ‏(2@12 · 3@15 · 5@20) ⟵ المتوسط يتدحرج `10.3333 → 11.4103 → 14.2735`
+                // ‏والصواب `13.45`. وعند الترحيل مباشرةً — **قبل أيّ إلغاء** — يصير
+                // ‏الدفترُ المساعد **285.47** والأستاذُ **269.00**: هوية هـ-٣ مكسورةً
+                // ‏بـ16.47 ريالاً. **انفصالُ دفترٍ مساعدٍ عن الأستاذ، لا رقمٌ متّسق.**
+                //
+                // ‏**ولا يقع في مسار المستندات** (`PostDocumentMovementAsync`): هناك يُطبَّق
+                // ‏رصيدُ كلّ سطرٍ داخل الحلقة نفسِها، فيتقدّم. فالعطلُ في حركات المخزون
+                // ‏اليدوية وحدها — **الرصيدِ الافتتاحيّ وتسويةِ الوارد**، وهما أوّلُ ما
+                // ‏تُدخله منشأةٌ جديدة.
+                //
+                // ‏والتكلفةُ الموحَّدة **مرجّحةٌ بالكمية**: قيمةُ ما دخل مقسومةً على كمّيته.
                 var costing = new InventoryCostingService(db);
-                foreach (var line in movement.Lines)
+                foreach (var group in movement.Lines.GroupBy(l => l.ProductId))
                 {
-                    await costing.OnReceiptAsync(movement.CompanyId, line.ProductId, movement.WarehouseId,
-                        movement.MovementDate, line.Quantity, line.UnitCost,
-                        movement.SourceDocument ?? movement.Description ?? "StockMovement");
+                    var stockable = false;
+                    foreach (var line in group)
+                    {
+                        stockable = await costing.AddCostLayerAsync(
+                            movement.CompanyId, line.ProductId, movement.WarehouseId,
+                            movement.MovementDate, line.Quantity, line.UnitCost,
+                            movement.SourceDocument ?? movement.Description ?? "StockMovement", ct);
+                    }
+
+                    if (!stockable) continue;
+
+                    var quantity = group.Sum(l => l.Quantity);
+                    if (quantity <= 0) continue;
+
+                    await inv.ApplyReceiptCostAsync(movement.CompanyId, group.Key, quantity,
+                        group.Sum(l => l.Quantity * l.UnitCost) / quantity);
                 }
             }
 
