@@ -1,5 +1,7 @@
 ﻿using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
+using System.Globalization;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Persistence;
@@ -1331,47 +1333,115 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// 3 ثوانٍ» ويتحوّل إلى دقائق مع نمو البيانات. الآن يُرشَّح على ما يحتاج المعالجة
     /// فعلاً (إجمالي صفر مع وجود سطور)، فالحالة الشائعة استعلام يعود فارغاً.
     /// </summary>
+    /// <summary>
+    /// (CEEF-229 · م2-١١ / D-4) إعادةُ حساب إجماليات المستندات التي لم تُحفظ إجمالياتُها قطّ —
+    /// <b>داخل معاملةٍ واحدة، وبأثرِ تدقيقٍ يُسمّي كلّ مستندٍ لُمس وما تغيّر فيه.</b>
+    ///
+    /// <para><b>ما كان:</b> المسارُ يُعيد كتابةَ الإجماليات لكلّ مستندٍ إجمالُه صفرٌ وله أسطر —
+    /// <b>بلا حارسِ حالةٍ ولا معاملةٍ ولا أثر</b>. فمستندٌ <b>مرحَّل</b> تُعاد كتابةُ إجمالياته
+    /// عند الإقلاع بينما يبقى قيدُه كما رُحّل، فيقول المستندُ شيئاً ويقول الأستاذُ غيرَه —
+    /// <b>ولا سطرَ واحدٌ يدلّ على أنّ الإقلاع غيّره</b>.</para>
+    ///
+    /// <para><b>والقرار: لا نمنع الإصلاح — نمنع صمتَه.</b> المستنداتُ الصفريّةُ خطأٌ يقيناً
+    /// (وعاءٌ صفرٌ مع أسطرَ موجودة)، وتركُها يُبقي التقاريرَ كاذبة. لكنّ تعديلاً على مستندٍ
+    /// مرحَّلٍ لا يُقبل في دفترٍ محاسبيّ ما لم يُرَ. فصار كلُّ لمسةٍ سطرَ تدقيقٍ يحمل الرقمَ
+    /// القديم والجديد، والمالكُ يرى ما فعله الإقلاعُ بدفاتره.</para>
+    ///
+    /// <para><b>والمعاملة:</b> خمسةُ أنواعٍ من المستندات تُحفظ مع أسطر تدقيقها معاً أو لا
+    /// تُحفظ. وسلسلةُ التدقيق مجزّأةٌ مربوطة، فقفلُها الاستشاريّ في <c>AuditService</c>
+    /// من نوع <c>xact</c> — <b>ميّتٌ خارج معاملة</b> (درس Z-4). فالمعاملةُ هنا تُحيِيه.</para>
+    ///
+    /// <para><b>ولا يُلمس السليم:</b> مرشّحُ <c>Subtotal == 0</c> يمنع إعادةَ الحساب على كلّ
+    /// إقلاع، والمقارنةُ بعد الحساب تمنع سطرَ تدقيقٍ لمستندٍ لم يتغيّر فيه شيء — وإلا امتلأ
+    /// السجلُّ ضجيجاً وضاع فيه ما يهمّ.</para>
+    /// </summary>
     private async Task BackfillDocumentTotalsAsync(CancellationToken ct)
     {
-        var touched = false;
+        var repairs = new List<TotalsRepair>();
 
-        foreach (var invoice in await db.SalesInvoices
-            .Where(i => i.Subtotal == 0 && i.Lines.Any()).ToListAsync(ct))
+        await CollectRepairsAsync(db.SalesInvoices.Where(i => i.Subtotal == 0 && i.Lines.Any()),
+            "SalesInvoice", d => d.Id, d => d.CompanyId, d => d.InvoiceNumber,
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+
+        await CollectRepairsAsync(db.PurchaseInvoices.Where(i => i.Subtotal == 0 && i.Lines.Any()),
+            "PurchaseInvoice", d => d.Id, d => d.CompanyId, d => d.InvoiceNumber,
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+
+        await CollectRepairsAsync(db.CreditNotes.Where(n => n.Subtotal == 0 && n.Lines.Any()),
+            "CreditNote", d => d.Id, d => d.CompanyId, d => d.NoteNumber,
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+
+        await CollectRepairsAsync(db.DebitNotes.Where(n => n.Subtotal == 0 && n.Lines.Any()),
+            "DebitNote", d => d.Id, d => d.CompanyId, d => d.NoteNumber,
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+
+        await CollectRepairsAsync(db.PurchaseOrders.Where(o => o.Subtotal == 0 && o.Lines.Any()),
+            "PurchaseOrder", d => d.Id, d => d.CompanyId, d => d.OrderNumber,
+            d => d.Subtotal, d => d.VatAmount, d => d.RecalculateTotals(), repairs, ct);
+
+        if (repairs.Count == 0)
+            return;
+
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            invoice.RecalculateTotals();
-            touched = true;
-        }
+            await db.SaveChangesAsync(token);
 
-        foreach (var invoice in await db.PurchaseInvoices
-            .Where(i => i.Subtotal == 0 && i.Lines.Any()).ToListAsync(ct))
+            var audit = new AuditService(db);
+            foreach (var repair in repairs)
+                await audit.LogAsync(
+                    repair.CompanyId,
+                    BootstrapActor,
+                    "تصحيح إجماليات مستند عند الإقلاع",
+                    repair.EntityType,
+                    repair.Id.ToString(CultureInfo.InvariantCulture),
+                    repair.Describe(),
+                    "إجمالياتٌ صفريّةٌ في القاعدة أُعيد حسابُها من أسطر المستند.",
+                    token);
+        }, ct);
+    }
+
+    /// <summary>اسمُ الفاعل في سطور التدقيق التي يكتبها الإقلاع — فلا مستخدمَ مسجَّلاً بعد.</summary>
+    private const string BootstrapActor = "النظام (ترقية القاعدة)";
+
+    /// <summary>لمسةٌ واحدة على مستند: مَن هو، وما كان، وما صار.</summary>
+    private readonly record struct TotalsRepair(
+        long CompanyId, string EntityType, long Id, string? Number,
+        decimal OldSubtotal, decimal OldVat, decimal NewSubtotal, decimal NewVat)
+    {
+        /// <summary>
+        /// بصيغةٍ ثابتةٍ لا تتبع ثقافةَ الجهاز — فسطرُ التدقيق يُقرأ بعد سنواتٍ وعلى
+        /// أجهزةٍ أخرى، ولا يجوز أن تتبدّل أرقامُه بتبدّل الإعدادات.
+        /// </summary>
+        public string Describe() => string.Format(CultureInfo.InvariantCulture,
+            "«{0}»: الوعاء {1:N2} ← {2:N2}، والضريبة {3:N2} ← {4:N2}",
+            Number ?? "بلا رقم", OldSubtotal, NewSubtotal, OldVat, NewVat);
+    }
+
+    /// <summary>
+    /// يُعيد الحسابَ ويُسجّل ما تغيّر فعلاً. <b>الحفظُ ليس هنا</b> — يجري مرّةً واحدة
+    /// داخل المعاملة مع أسطر التدقيق.
+    /// </summary>
+    private static async Task CollectRepairsAsync<T>(
+        IQueryable<T> candidates, string entityType,
+        Func<T, long> id, Func<T, long> companyId, Func<T, string?> number,
+        Func<T, decimal> subtotal, Func<T, decimal> vat, Action<T> recalculate,
+        List<TotalsRepair> repairs, CancellationToken ct) where T : class
+    {
+        foreach (var document in await candidates.ToListAsync(ct))
         {
-            invoice.RecalculateTotals();
-            touched = true;
-        }
+            var oldSubtotal = subtotal(document);
+            var oldVat = vat(document);
 
-        foreach (var note in await db.CreditNotes
-            .Where(n => n.Subtotal == 0 && n.Lines.Any()).ToListAsync(ct))
-        {
-            note.RecalculateTotals();
-            touched = true;
-        }
+            recalculate(document);
 
-        foreach (var note in await db.DebitNotes
-            .Where(n => n.Subtotal == 0 && n.Lines.Any()).ToListAsync(ct))
-        {
-            note.RecalculateTotals();
-            touched = true;
-        }
+            var newSubtotal = subtotal(document);
+            var newVat = vat(document);
+            if (newSubtotal == oldSubtotal && newVat == oldVat)
+                continue;
 
-        foreach (var order in await db.PurchaseOrders
-            .Where(o => o.Subtotal == 0 && o.Lines.Any()).ToListAsync(ct))
-        {
-            order.RecalculateTotals();
-            touched = true;
+            repairs.Add(new TotalsRepair(companyId(document), entityType, id(document),
+                number(document), oldSubtotal, oldVat, newSubtotal, newVat));
         }
-
-        if (touched)
-            await db.SaveChangesAsync(ct);
     }
 
     private async Task EnsureMasterDataGovernanceColumnsAsync(bool isPg, CancellationToken ct)
