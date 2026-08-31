@@ -72,13 +72,18 @@ public class I18nCoverageTests
                 file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
                 continue;
 
-            foreach (Match m in CodeBehindAssignment.Matches(File.ReadAllText(file)))
+            var source = File.ReadAllText(file);
+
+            foreach (Match m in CodeBehindAssignment.Matches(source))
             {
                 var text = m.Groups[1].Value.Trim();
                 // ‏المُستكمَلات (‏$"…{x}…"‎) لا تصلح مفتاحاً ثابتاً، فتُستبعد كما يستبعدها المولّد.
                 if (text.Length > 0 && !text.Contains('{') && !text.Contains('\\'))
                     literals.Add(text);
             }
+
+            foreach (var text in LiteralsPassedToUiHelpers(source))
+                literals.Add(text);
         }
 
         return literals.ToList();
@@ -120,4 +125,63 @@ public class I18nCoverageTests
             Assert.NotEqual(literal, english);
         }
     }
+    /// <summary>
+    /// (CEEF-229) <b>نصٌّ يُمرَّر وسيطاً إلى دالّةٍ تُسنده إلى خاصيّةِ عرض — وكانت البوّابةُ عمياءَ عنه.</b>
+    ///
+    /// <para><b>ما كشفه:</b> كانت البوّابةُ تمسح شكلين نحويّين فقط — سمةَ XAML
+    /// (<c>Text="…"</c>) وإسناداً مباشراً (<c>.Text = "…"</c>) — وتُعلن <b>«100.0% · صفرُ
+    /// غير مترجَم»</b>. وشاشةُ الإقرار الضريبيّ تُمرّر كلَّ صفوفها وسائطَ إلى <c>AddRow</c>،
+    /// <b>فلم تُترجَم قطّ</b>: شاشةٌ كاملة تبقى عربيةً عند التبديل والبوّابةُ تقول مئة بالمئة.</para>
+    ///
+    /// <para><b>والقاعدةُ قفزةٌ واحدة داخل الملفّ نفسه:</b> تُلتقط الدوالُّ التي أوّلُ وسيطها
+    /// نصٌّ ويُسنَد إلى <c>Text</c> أو <c>Content</c> أو <c>Header</c> — وهي الخصائصُ التي
+    /// يترجمها <c>XamlUiLocalizer</c> فعلاً — ثمّ تُلتقط نداءاتُها بنصٍّ عربيّ حرفيّ.</para>
+    ///
+    /// <para><b>وحدُّها مُصرَّحٌ به:</b> نصٌّ يبلغ الشجرةَ عبر سجلٍّ أو مجموعةٍ أو قفزتين لا
+    /// تراه، ونصُّ <c>MessageBox</c> لا يترجمه المُشغِّل أصلاً لأنّه خارج شجرة العناصر.
+    /// <b>فالبوّابةُ صارت أصدقَ لا كاملة.</b></para>
+    /// </summary>
+    private static IEnumerable<string> LiteralsPassedToUiHelpers(string source)
+    {
+        var helpers = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (Match declaration in UiHelperDeclaration.Matches(source))
+        {
+            var parameter = declaration.Groups[2].Value;
+            var start = declaration.Index + declaration.Length;
+            var body = source[start..Math.Min(source.Length, start + 1500)];
+
+            foreach (Match assignment in UiPropertyFromVariable.Matches(body))
+            {
+                if (assignment.Groups[2].Value == parameter)
+                {
+                    helpers.Add(declaration.Groups[1].Value);
+                    break;
+                }
+            }
+        }
+
+        foreach (var helper in helpers)
+        {
+            var call = new Regex(
+                Regex.Escape(helper) + @"\(\s*""([^""\\n]*[\u0600-\u06FF][^""\\n]*)""",
+                RegexOptions.Compiled);
+
+            foreach (Match m in call.Matches(source))
+            {
+                var text = m.Groups[1].Value.Trim();
+                if (text.Length > 0 && !text.Contains('{'))
+                    yield return text;
+            }
+        }
+    }
+
+    private static readonly Regex UiHelperDeclaration = new(
+        @"(?:private|public|internal|protected)[^\n(]*\s(\w+)\s*\(\s*string\s+(\w+)[^)]*\)\s*\{",
+        RegexOptions.Compiled);
+
+    private static readonly Regex UiPropertyFromVariable = new(
+        @"\b(Text|Content|Header)\s*=\s*(\w+)\b",
+        RegexOptions.Compiled);
+
 }
