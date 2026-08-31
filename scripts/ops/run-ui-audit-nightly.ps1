@@ -12,7 +12,6 @@ if (-not (Test-Path "$root\Brqosh.sln")) { $root = Split-Path -Parent $PSScriptR
 
 if (-not $SkipPasswordSync) {
     Write-Host "[prep] Sync marwan password via FullScenarioAudit..." -ForegroundColor Yellow
-    $env:BRQOSH_SKIP_STRESS = "1"
     $env:BRQOSH_TEST = "1"
     $env:BRQOSH_TEST_USERNAME = $Username
     $fsa = Join-Path $root "tools\FullScenarioAudit\FullScenarioAudit.csproj"
@@ -24,7 +23,8 @@ $env:BRQOSH_TEST_USERNAME = $Username
 $env:BRQOSH_TEST_PASSWORD = if ($env:BRQOSH_TEST_PASSWORD) { $env:BRQOSH_TEST_PASSWORD } else { "UiAudit9!" }
 $env:BRQOSH_AUDIT_ALL_PROFILES = "1"
 $env:BRQOSH_UIAUDIT_TIMEOUT_MS = "240000"
-$env:BRQOSH_SKIP_STRESS = "1"
+# (CEEF-229 · م2-٤) حُذف التخطّي: تشغيلُ هذا النصّ مرشَّحٌ على تدقيق الواجهة، فلا تبلغه
+# بوّابتا الأداء أصلاً — ووجودُ المتغيّر يوحي بإقصاءٍ مقصود لا وجود له.
 $env:BRQOSH_TEST = "1"
 
 Write-Host "[prep] Build Desktop Release..." -ForegroundColor Yellow

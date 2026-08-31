@@ -15,8 +15,10 @@ Write-Host "[In-repo] Security static scan..." -ForegroundColor Yellow
 & "$root\scripts\security-static-scan.ps1"
 Write-Host ""
 
-Write-Host "[In-repo] Tests (BRQOSH_SKIP_STRESS=1)..." -ForegroundColor Yellow
-$env:BRQOSH_SKIP_STRESS = "1"
+# (CEEF-229 · م2-٤) لا تخطّي هنا: هذا النصُّ يدّعي «التحقّق في المستودع»، وتحقّقٌ
+# يتخطّى بوّابتَي الأداء يُعلن نتيجةً أضيق ممّا يقوله اسمُه. والثمنُ نحو 44 ثانية.
+Write-Host "[In-repo] Tests (بوّابتا الأداء تعملان)..." -ForegroundColor Yellow
+Remove-Item Env:\BRQOSH_SKIP_STRESS -ErrorAction SilentlyContinue
 $env:BRQOSH_TEST = "1"
 dotnet test Brqosh.sln -c Release --nologo -v q
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

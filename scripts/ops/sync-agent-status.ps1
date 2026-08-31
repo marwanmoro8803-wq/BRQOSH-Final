@@ -6,7 +6,9 @@ param(
 $ErrorActionPreference = "Stop"
 Push-Location $RepoRoot
 
-$env:BRQOSH_SKIP_STRESS = "1"
+# (CEEF-229 · م2-٤) لا تخطّي: هذا النصُّ **مصدرُ الحقيقة لعدّاد الاختبارات** في
+# STATUS.yaml. وعددٌ يُنشر عن تشغيلٍ متخطٍّ يصف حزمةً غير التي تُشحن.
+Remove-Item Env:\BRQOSH_SKIP_STRESS -ErrorAction SilentlyContinue
 $env:BRQOSH_TEST = "1"
 
 Write-Host "Running dotnet test to refresh agent STATUS.yaml..."
@@ -81,7 +83,6 @@ verify:
   gates: "scripts/ops/run-external-gates.ps1"
   i18n: "scripts/ops/i18n-coverage-audit.ps1"
   env:
-    BRQOSH_SKIP_STRESS: "1"
     BRQOSH_TEST: "1"
 "@
 
