@@ -1,4 +1,4 @@
-using Brqosh.Application;
+﻿using Brqosh.Application;
 using Brqosh.Application.Accounting;
 using Brqosh.Application.Intelligence;
 using Brqosh.Application.MasterData;
@@ -92,6 +92,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<StockMovementCancellationService>();
         services.AddScoped<StockCountAdjustmentService>();
         services.AddScoped<CostingMethodService>();
+        services.AddScoped<SoftDeletedRowService>();
+        services.AddScoped<CodeAvailabilityQuery>();
         services.AddScoped<InventoryService>();
         services.AddScoped<LandedCostAllocationService>();
         services.AddScoped<PurchaseOrderService>();
