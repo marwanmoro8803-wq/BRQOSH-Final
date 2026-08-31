@@ -13,6 +13,12 @@ public enum AuditChainBreakKind
     /// <summary>تجزئة السابق لا تطابق الإدخال الذي قبله — أُقحم أو أُبدل صفّ.</summary>
     BrokenLink,
 
+    /// <summary>
+    /// (CEEF-229) صفٌّ غيرُ مربوطٍ ظهر **بعد** بدء السلسلة — أتى من خارج التطبيق.
+    /// `AuditService` هو الكاتبُ الوحيد وهو يربط دائماً، فلا سبيلَ إلى صفٍّ كهذا من الشفرة.
+    /// </summary>
+    UnchainedEntry,
+
     /// <summary>فجوة في الترتيب — حُذف إدخال أو أكثر.</summary>
     MissingEntry,
 }
@@ -48,11 +54,37 @@ public sealed class AuditChainVerifier(BrqoshDbContext db)
         var expectedSequence = 1L;
         var expectedPrevious = AuditLogEntry.GenesisHash;
 
+        // (CEEF-229) ‏حدُّ الحقبة: أوّلُ صفٍّ مربوطٍ كُتب لهذه المنشأة.
+        // ‏كلُّ صفٍّ غيرِ مربوطٍ **مفتاحُه الأوّليّ أعلى منه** كُتب بعد بدء السلسلة —
+        // ‏ولا سبيلَ إلى ذلك من الشفرة: `AuditService` هو الكاتبُ الوحيد وهو يربط دائماً.
+        var firstChainedId = entries
+            .Where(e => !string.IsNullOrEmpty(e.EntryHash))
+            .Select(e => (long?)e.Id)
+            .Min();
+
         foreach (var entry in entries)
         {
-            // إدخالات ما قبل تفعيل السلسلة (Sequence=0) لا تُفحص — لا سلسلة لها أصلاً.
-            if (entry.Sequence == 0)
+            // ‏(CEEF-229) صفوفُ ما قبل السلسلة: تجزئتُها فارغة — لا سلسلةَ لها تُفحص.
+            //
+            // ‏وكان الشرطُ هنا `Sequence == 0` وحدَه، **بإعفاءٍ بلا تاريخِ انقضاء**: فصفٌّ
+            // ‏يُدسّ اليوم بترتيبٍ صفر يمرّ على كاشف العبث إلى الأبد. كشفته طفرةٌ **لم
+            // ‏تُلدَغ** في م2-١١ — والحارسُ الذي لا تُلدَغ طفرتُه حارسٌ أعمى.
+            //
+            // ‏فصار الإعفاءُ مشروطاً بشرطَين يستحيل على المهاجم استيفاؤهما معاً:
+            // ‏ترتيبٌ **سالب** (حقبةُ ما قبل السلسلة، يضعه الترقيمُ عند الترقية)،
+            // ‏ومفتاحٌ أوّليّ **أقدمُ من أوّل صفٍّ مربوط**.
+            if (string.IsNullOrEmpty(entry.EntryHash))
+            {
+                var isGenuinelyOlder = entry.Sequence < 0
+                    && (firstChainedId is null || entry.Id < firstChainedId);
+
+                if (!isGenuinelyOlder)
+                    breaks.Add(new AuditChainBreak(
+                        AuditChainBreakKind.UnchainedEntry, entry.Sequence, entry.Id,
+                        "صفٌّ بلا ارتباطٍ ظهر بعد بدء السلسلة — أُدخل من خارج التطبيق."));
+
                 continue;
+            }
 
             if (entry.Sequence != expectedSequence)
             {

@@ -106,6 +106,18 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         }
     }
 
+    /// <summary>
+    /// أعمدةُ سلسلة التدقيق على القواعد القائمة — <b>ومعها ترقيمُ ما قبل السلسلة وفهرسُه</b>.
+    ///
+    /// <para>(CEEF-229) كان يُضيف الأعمدةَ الثلاثة ويقف. فبقيت الصفوفُ القديمة كلُّها
+    /// <c>Sequence = 0</c> بلا فهرسٍ فريد — بينما تحمله القاعدةُ الجديدة من النموذج.
+    /// <b>فانقسم النظام قسمَين</b>: قاعدةٌ يمنع فيها الفهرسُ ازدواجَ الترتيب وقاعدةٌ لا يمنعه.</para>
+    ///
+    /// <para>والترقيمُ هنا هو نفسُه الذي في هجرة <c>AddAuditChain</c> حرفاً بحرف: ما قبل
+    /// السلسلة في <c>[-N..-1]</c> بترتيب المفتاح الأوّليّ، والسلسلةُ من ١ فصاعداً.
+    /// <b>ومشروطٌ بـ<c>EntryHash = ''</c></b> — فالمُرقِّع يعمل عند كلّ إقلاع، ولمسُ صفٍّ
+    /// مربوطٍ يكسر تجزئتَه وتجزئةَ كلّ ما بعده.</para>
+    /// </summary>
     private async Task EnsureAuditChainColumnsAsync(bool isPg, CancellationToken ct)
     {
         if (!await TableExistsAsync("audit_log", isPg, ct))
@@ -116,12 +128,44 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("audit_log", "Sequence", "BIGINT NOT NULL DEFAULT 0", ct);
             await EnsurePgColumnAsync("audit_log", "PreviousHash", "character varying(64) NOT NULL DEFAULT ''", ct);
             await EnsurePgColumnAsync("audit_log", "EntryHash", "character varying(64) NOT NULL DEFAULT ''", ct);
+
+            await db.Database.ExecuteSqlRawAsync("""
+                UPDATE audit_log AS a
+                SET "Sequence" = -n.rn
+                FROM (
+                    SELECT "Id",
+                           row_number() OVER (PARTITION BY "CompanyId" ORDER BY "Id" DESC) AS rn
+                    FROM audit_log
+                    WHERE "EntryHash" = '' AND "Sequence" = 0
+                ) AS n
+                WHERE a."Id" = n."Id" AND a."EntryHash" = '' AND a."Sequence" = 0;
+                """, ct);
+
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_audit_log_CompanyId_Sequence"
+                ON audit_log ("CompanyId", "Sequence")
+                """, ct);
         }
         else
         {
             await EnsureSqliteColumnAsync("audit_log", "Sequence", "INTEGER NOT NULL DEFAULT 0", ct);
             await EnsureSqliteColumnAsync("audit_log", "PreviousHash", "TEXT NOT NULL DEFAULT ''", ct);
             await EnsureSqliteColumnAsync("audit_log", "EntryHash", "TEXT NOT NULL DEFAULT ''", ct);
+
+            await db.Database.ExecuteSqlRawAsync("""
+                UPDATE audit_log
+                SET "Sequence" = -(
+                    SELECT COUNT(*) FROM audit_log AS later
+                    WHERE later."CompanyId" = audit_log."CompanyId"
+                      AND later."EntryHash" = '' AND later."Sequence" = 0
+                      AND later."Id" >= audit_log."Id")
+                WHERE "EntryHash" = '' AND "Sequence" = 0;
+                """, ct);
+
+            await SafeSqliteIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS ix_audit_log_company_sequence
+                ON audit_log ("CompanyId", "Sequence")
+                """, ct);
         }
     }
 

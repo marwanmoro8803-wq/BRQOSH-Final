@@ -24,8 +24,12 @@ public class AuditService(BrqoshDbContext db)
             .Select(a => new { a.Sequence, a.EntryHash })
             .FirstOrDefaultAsync(ct);
 
+        // (CEEF-229) ‏ترتيبُ ما قبل السلسلة **سالب** — فأعلاه لمنشأةٍ كلُّ أثرها قديمٌ
+        // ‏هو -1، و«‎+1» عليه يُنتج صفراً: ترتيباً محجوزاً للصفوف غير المربوطة، فيصير
+        // ‏أوّلُ صفٍّ مربوطٍ في تاريخ المنشأة **غيرَ مربوطٍ في نظر المتحقّق**.
+        // ‏فالسلسلةُ تبدأ من ١ دائماً مهما كان ما قبلها.
         entry.ChainTo(
-            (last?.Sequence ?? 0) + 1,
+            Math.Max(last?.Sequence ?? 0, 0) + 1,
             last?.EntryHash ?? AuditLogEntry.GenesisHash);
 
         db.AuditLogEntries.Add(entry);

@@ -529,8 +529,156 @@ static async Task<int> ProveLegacyRepairAsync(string connectionString)
 
     Console.WriteLine("[PASS] القاعدةُ القديمة أُصلحت بالكامل — جداولُ الموجة عادت بأعمدتها");
     Console.WriteLine("       وأنواعها كما يتوقّعها النموذج، بالإقلاع وحده.");
+    Console.WriteLine();
+
+    return await ProveAuditChainUpgradeAsync(connectionString);
+}
+
+// ── المرحلة الرابعة: قاعدةٌ فيها أثرُ تدقيقٍ سابقٌ للسلسلة ────────────────
+// ‏(CEEF-229) المراحلُ الثلاث السابقة تُرحّل قواعدَ **فارغةً من البيانات**، فهجرةٌ تُضيف
+// ‏عموداً بقيمةٍ افتراضية ثمّ تُنشئ عليه فهرساً **فريداً** تمرّ بلا اعتراض: لا صفوفَ تتصادم.
+//
+// ‏و‏AddAuditChain تفعل ذلك بعينه: تُضيف Sequence بصفرٍ افتراضيّ لكلّ الصفوف القائمة، ثمّ
+// ‏تُنشئ UNIQUE (CompanyId, Sequence) — **بلا ترقيمٍ للصفوف القديمة**. فمنشأةٌ لها سطرا
+// ‏تدقيقٍ اثنان قبل الترقية يصير لهما المفتاحُ نفسُه.
+//
+// ‏وسجلُّ التدقيق يُكتب عند كلّ ترحيلٍ وإغلاقِ فترة، فقاعدةُ أيّ عميلٍ عمل يوماً واحداً فيها
+// ‏عشراتُ الصفوف. **فالسؤال: هل تُرقَّى قاعدةٌ عليها أثرٌ أصلاً؟**
+static async Task<int> ProveAuditChainUpgradeAsync(string connectionString)
+{
+    const string Before = "20260725082135_AddVatCategoryToDocumentLines";  // ‏ما قبل AddAuditChain مباشرة
+
+    await using (var conn = new NpgsqlConnection(connectionString))
+    {
+        await conn.OpenAsync();
+        await using var reset = new NpgsqlCommand("DROP SCHEMA public CASCADE; CREATE SCHEMA public;", conn);
+        await reset.ExecuteNonQueryAsync();
+    }
+
+    await using var db = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, connectionString);
+
+    Console.WriteLine($"[..] بناءُ قاعدةِ عميلٍ على «{Before}» — أيْ قبل سلسلة التدقيق ...");
+    try
+    {
+        await db.GetService<IMigrator>().MigrateAsync(Before);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[FAIL] تعذّر بناءُ القاعدة السابقة للسلسلة: {ex.GetType().Name}: {ex.Message}");
+        return 10;
+    }
+
+    // ‏منشأةٌ وسطرا تدقيقٍ — أقلُّ ما يُنتجه أيُّ عميلٍ عمل يوماً واحداً.
+    await using (var conn = new NpgsqlConnection(connectionString))
+    {
+        await conn.OpenAsync();
+        await using var seed = new NpgsqlCommand(
+            "INSERT INTO companies (\"NameAr\", \"VatRegistrationNumber\", \"Profile\", \"CostingMethod\", " +
+            "\"BaseCurrencyCode\", \"FunctionalCurrencyCode\", \"TenantId\", \"OperationalMode\", \"CreatedAtUtc\") " +
+            "VALUES ('منشأةُ الأثر', '310123456700003', 'Retail', 'Fifo', 'SAR', 'SAR', gen_random_uuid(), 'Active', now()); " +
+            "INSERT INTO audit_log (\"CompanyId\", \"Username\", \"Action\", \"EntityType\", \"EntityKey\", \"Details\", \"OccurredAtUtc\") " +
+            "SELECT c.\"Id\", 'admin', 'ترحيل فاتورة', 'SalesInvoice', 'INV-1', '', now() FROM companies c; " +
+            "INSERT INTO audit_log (\"CompanyId\", \"Username\", \"Action\", \"EntityType\", \"EntityKey\", \"Details\", \"OccurredAtUtc\") " +
+            "SELECT c.\"Id\", 'admin', 'ترحيل فاتورة', 'SalesInvoice', 'INV-2', '', now() FROM companies c;", conn);
+        await seed.ExecuteNonQueryAsync();
+    }
+
+    Console.WriteLine("[..] سطرا تدقيقٍ لمنشأةٍ واحدة. تشغيلُ بقيّة الهجرات — ومنها AddAuditChain ...");
+
+    try
+    {
+        await db.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("[FAIL] ترقيةُ قاعدةٍ عليها أثرُ تدقيقٍ **سقطت**:");
+        Console.WriteLine($"       {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+        Console.WriteLine();
+        Console.WriteLine("       AddAuditChain تُضيف Sequence بصفرٍ لكلّ الصفوف القائمة ثمّ تُنشئ");
+        Console.WriteLine("       UNIQUE (CompanyId, Sequence) — فسطران لمنشأةٍ واحدة يتصادمان.");
+        Console.WriteLine("       ولا يظهر هذا في أيّ قياسٍ سابق: كلُّ ما نُرحّله قواعدُ فارغةٌ من البيانات.");
+        return 11;
+    }
+
+    Console.WriteLine("[PASS] قاعدةٌ عليها أثرُ تدقيقٍ سابقٌ للسلسلة تُرقَّى بلا تصادم.");
+    Console.WriteLine();
+
+    return await ProvePatcherNumbersLegacyAuditAsync(connectionString);
+}
+
+// ── المرحلة الخامسة: المُرقِّع على أثرٍ قديم ───────────────────────────────
+// ‏(CEEF-229) للترقية مساران لا مسارٌ واحد: الهجرات (أعلاه)، و**المُرقِّع اليدويّ** —
+// ‏وهو ما يسلكه كلُّ عميلٍ جدولُ هجراته فارغ (DatabaseSchemaService.cs: coreTableExists
+// ‏&& appliedCount == 0). وكان المُرقِّع يُضيف الأعمدة الثلاثة **ويقف**: لا ترقيمَ ولا فهرس.
+//
+// ‏فانقسم النظام قسمَين — قاعدةٌ يمنع فيها الفهرسُ ازدواجَ الترتيب وقاعدةٌ لا يمنعه،
+// ‏وصفوفٌ قديمة تبقى أصفاراً فيها بينما تبدأ السلسلةُ فوقها من ١.
+//
+// ‏فهذه المرحلة تبني تلك الحالة بعينها: تُسقط الفهرس، وتُعيد صفوفاً قديمةً إلى الصفر،
+// ‏ثمّ تسأل المُرقِّع: هل رقّمتَ ما قبل السلسلة، وهل أنشأتَ الفهرس؟
+static async Task<int> ProvePatcherNumbersLegacyAuditAsync(string connectionString)
+{
+    await using (var conn = new NpgsqlConnection(connectionString))
+    {
+        await conn.OpenAsync();
+        await using var undo = new NpgsqlCommand(
+            "DROP INDEX IF EXISTS \"IX_audit_log_CompanyId_Sequence\"; " +
+            "UPDATE audit_log SET \"Sequence\" = 0 WHERE \"EntryHash\" = '';", conn);
+        await undo.ExecuteNonQueryAsync();
+
+        await using var count = new NpgsqlCommand(
+            "SELECT COUNT(*) FROM audit_log WHERE \"EntryHash\" = '' AND \"Sequence\" = 0", conn);
+        var zeros = Convert.ToInt64(await count.ExecuteScalarAsync());
+        Console.WriteLine($"[..] قاعدةُ المُرقِّع: الفهرسُ مُسقَط و{zeros} صفّاً قديماً بترتيبٍ صفر ...");
+
+        if (zeros < 2)
+        {
+            Console.WriteLine("[FAIL] القياسُ أجوف — لا صفوفَ متصادمةً أصلاً.");
+            return 12;
+        }
+    }
+
+    await using var db = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, connectionString);
+
+    try
+    {
+        await new BrqoshSchemaUpdater(db).ApplyAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[FAIL] المُرقِّع رمى على أثرٍ قديم: {ex.GetType().Name}: {ex.Message.Split('\n')[0]}");
+        return 13;
+    }
+
+    await using (var conn = new NpgsqlConnection(connectionString))
+    {
+        await conn.OpenAsync();
+
+        await using var stillZero = new NpgsqlCommand(
+            "SELECT COUNT(*) FROM audit_log WHERE \"EntryHash\" = '' AND \"Sequence\" >= 0", conn);
+        if (Convert.ToInt64(await stillZero.ExecuteScalarAsync()) > 0)
+        {
+            Console.WriteLine("[FAIL] المُرقِّع لم يُرقّم ما قبل السلسلة — صفوفٌ غير مربوطةٍ ما زالت بترتيبٍ غيرِ سالب.");
+            Console.WriteLine("       والمتحقّقُ يعدّها دخيلةً، فيصير دفترُ العميل «معبوثاً به» عند أوّل فحص.");
+            return 14;
+        }
+
+        await using var hasIndex = new NpgsqlCommand(
+            "SELECT COUNT(*) FROM pg_indexes WHERE tablename = 'audit_log' AND indexdef LIKE '%UNIQUE%' " +
+            "AND indexdef LIKE '%CompanyId%' AND indexdef LIKE '%Sequence%'", conn);
+        if (Convert.ToInt64(await hasIndex.ExecuteScalarAsync()) == 0)
+        {
+            Console.WriteLine("[FAIL] المُرقِّع لم يُنشئ الفهرسَ الفريد — فقاعدةُ العميل تقبل ترتيبَين متطابقَين");
+            Console.WriteLine("       بينما تمنعهما القاعدةُ الجديدة. تركيبٌ يعمل وتركيبٌ يسقط، ولا يكشف أحدُهما الآخر.");
+            return 15;
+        }
+    }
+
+    Console.WriteLine("[PASS] المُرقِّع رقّم ما قبل السلسلة في حقبةٍ سالبة وأنشأ الفهرسَ الفريد.");
     return 0;
 }
+
+
 
 static string Normalize(string storeType) => storeType.Replace(" ", "").ToLowerInvariant();
 
