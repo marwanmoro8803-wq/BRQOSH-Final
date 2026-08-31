@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using Brqosh.Infrastructure.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 using Brqosh.Infrastructure.Security;
 using Brqosh.Desktop.Security;
@@ -103,18 +104,18 @@ public partial class StockCountPage : UserControl
     {
         if (WarehouseCombo.SelectedValue is not long whId)
         {
-            MessageBox.Show("اختر مستودعاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستودعاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         var variances = _rows.Count(r => r.Variance != 0);
         if (variances == 0)
         {
-            MessageBox.Show("لا توجد فروقات للترحيل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا توجد فروقات للترحيل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (MessageBox.Show($"ترحيل {variances} فرق جرد؟", "BRQOSH",
+        if (UiDialog.Show($"ترحيل {variances} فرق جرد؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -129,12 +130,12 @@ public partial class StockCountPage : UserControl
             var posted = await facade.GetService<StockCountAdjustmentService>().PostVariancesAsync(
                 AppServices.CompanyId, whId, DateOnly.FromDateTime(DateTime.Today), lines, username);
 
-            MessageBox.Show($"تم ترحيل {posted} صنف.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show($"تم ترحيل {posted} صنف.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await RefreshAsync();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

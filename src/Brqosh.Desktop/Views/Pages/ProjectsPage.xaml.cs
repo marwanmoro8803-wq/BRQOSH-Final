@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Domain.Construction;
@@ -105,7 +105,7 @@ public partial class ProjectsPage : UserControl
     private async void OnDeactivate(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not ProjectRow row) return;
-        if (MessageBox.Show($"إيقاف المشروع {row.NameAr}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف المشروع {row.NameAr}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

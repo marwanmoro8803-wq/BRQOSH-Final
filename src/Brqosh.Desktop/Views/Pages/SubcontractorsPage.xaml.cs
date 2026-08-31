@@ -75,13 +75,13 @@ public partial class SubcontractorsPage : UserControl
     {
         if (Grid.SelectedItem is not AgreementRow row)
         {
-            MessageBox.Show("اختر عقد باطن.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر عقد باطن.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != SubcontractAgreementStatus.Active)
         {
-            MessageBox.Show("يُسجَّل المحتجز لعقد باطن نشط فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("يُسجَّل المحتجز لعقد باطن نشط فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -93,7 +93,7 @@ public partial class SubcontractorsPage : UserControl
 
         if (!NumericInput.TryParse(dialog.Value, out var amount) || amount <= 0)
         {
-            MessageBox.Show("أدخل مبلغاً صحيحاً أكبر من صفر.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("أدخل مبلغاً صحيحاً أكبر من صفر.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -104,11 +104,11 @@ public partial class SubcontractorsPage : UserControl
             await facade.GetService<SubcontractRetentionWithholdService>().WithholdAsync(
                 AppServices.CompanyId, row.Id, amount, DateOnly.FromDateTime(DateTime.Today),
                 "محتجز مستحق", username);
-            MessageBox.Show("تم ترحيل قيد المحتجز.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم ترحيل قيد المحتجز.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -116,13 +116,13 @@ public partial class SubcontractorsPage : UserControl
     {
         if (Grid.SelectedItem is not AgreementRow row)
         {
-            MessageBox.Show("اختر عقد باطن.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر عقد باطن.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != SubcontractAgreementStatus.Active)
         {
-            MessageBox.Show("يُستكمل عقد الباطن النشط فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("يُستكمل عقد الباطن النشط فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -136,7 +136,7 @@ public partial class SubcontractorsPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -144,17 +144,17 @@ public partial class SubcontractorsPage : UserControl
     {
         if (Grid.SelectedItem is not AgreementRow row)
         {
-            MessageBox.Show("اختر عقد باطن.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر عقد باطن.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status is SubcontractAgreementStatus.Completed or SubcontractAgreementStatus.Cancelled)
         {
-            MessageBox.Show("لا يمكن إلغاء العقد في حالته الحالية.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يمكن إلغاء العقد في حالته الحالية.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"إلغاء عقد الباطن {row.AgreementNumber}؟", "BRQOSH",
+        if (UiDialog.Show($"إلغاء عقد الباطن {row.AgreementNumber}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -168,7 +168,7 @@ public partial class SubcontractorsPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

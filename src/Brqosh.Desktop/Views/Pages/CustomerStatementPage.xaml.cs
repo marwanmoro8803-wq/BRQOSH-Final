@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Application.Reporting;
 using Brqosh.Desktop.Automation;
@@ -6,6 +6,7 @@ using Brqosh.Desktop.Reporting;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -49,7 +50,7 @@ public partial class CustomerStatementPage : UserControl
     {
         if (_lastCustomerId is not long customerId || _lastLines.Count == 0)
         {
-            MessageBox.Show("اعرض الكشف أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اعرض الكشف أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

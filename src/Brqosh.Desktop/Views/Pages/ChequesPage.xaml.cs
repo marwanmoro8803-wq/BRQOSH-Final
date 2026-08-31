@@ -1,10 +1,11 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -108,7 +109,7 @@ public partial class ChequesPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -132,7 +133,7 @@ public partial class ChequesPage : UserControl
     {
         if (_selected is null)
         {
-            MessageBox.Show("اختر شيكاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر شيكاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -158,6 +159,6 @@ public partial class ChequesPage : UserControl
         }
 
         if (!shown)
-            MessageBox.Show("لا توجد قيود مرتبطة بهذا الشيك.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا توجد قيود مرتبطة بهذا الشيك.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

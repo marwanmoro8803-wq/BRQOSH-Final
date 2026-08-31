@@ -73,7 +73,7 @@ public partial class PayrollPage : UserControl
     {
         if (Grid.SelectedItem is not RunRow row || row.Status != PayrollRunStatus.Draft)
         {
-            MessageBox.Show("اختر دورة رواتب بحالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر دورة رواتب بحالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -85,12 +85,12 @@ public partial class PayrollPage : UserControl
             var username = SecurityContext.ResolveUsername();
             await facade.GetService<PayrollPostingService>().PostAsync(run, username);
 
-            MessageBox.Show("تم ترحيل دورة الرواتب.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم ترحيل دورة الرواتب.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -98,25 +98,25 @@ public partial class PayrollPage : UserControl
     {
         if (Grid.SelectedItem is not RunRow row)
         {
-            MessageBox.Show("اختر دورة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر دورة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.JournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد محاسبي مرتبط بهذه الدورة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد محاسبي مرتبط بهذه الدورة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void OnReverse(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not RunRow row || row.Status != PayrollRunStatus.Posted)
         {
-            MessageBox.Show("اختر دورة رواتب مرحّلة للعكس.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر دورة رواتب مرحّلة للعكس.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (MessageBox.Show($"عكس دورة الرواتب {row.PeriodCode}؟", "BRQOSH",
+        if (UiDialog.Show($"عكس دورة الرواتب {row.PeriodCode}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -135,7 +135,7 @@ public partial class PayrollPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

@@ -9,6 +9,7 @@ using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -69,17 +70,17 @@ public partial class StockMovementsPage : UserControl
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر حركة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر حركة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.StatusAr != "مرحّلة")
         {
-            MessageBox.Show("لا يُلغى إلا حركة مرحّلة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يُلغى إلا حركة مرحّلة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"إلغاء الحركة {row.MovementNumber}؟", "BRQOSH",
+        if (UiDialog.Show($"إلغاء الحركة {row.MovementNumber}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -95,11 +96,11 @@ public partial class StockMovementsPage : UserControl
                 AppServices.CompanyId, row.Id, cancelDate.Value,
                 SecurityContext.ResolveUsername());
             await ReloadAsync();
-            MessageBox.Show("تم إلغاء الحركة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم إلغاء الحركة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -107,21 +108,21 @@ public partial class StockMovementsPage : UserControl
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر حركة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر حركة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.JournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد محاسبي مرتبط بهذه الحركة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد محاسبي مرتبط بهذه الحركة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async Task ViewSelectedAsync()
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر حركة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر حركة من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

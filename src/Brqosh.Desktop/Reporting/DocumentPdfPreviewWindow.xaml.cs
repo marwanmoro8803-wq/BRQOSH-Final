@@ -1,6 +1,7 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using Brqosh.Infrastructure.Reporting;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Reporting;
 
@@ -49,7 +50,7 @@ public partial class DocumentPdfPreviewWindow : Window
     {
         if (!_previewReady)
         {
-            MessageBox.Show(this, "المعاينة غير جاهزة — استخدم «فتح خارجياً» ثم اطبع.", "BRQOSH",
+            UiDialog.Show(this, "المعاينة غير جاهزة — استخدم «فتح خارجياً» ثم اطبع.", "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -60,7 +61,7 @@ public partial class DocumentPdfPreviewWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
+            UiDialog.Show(this, ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

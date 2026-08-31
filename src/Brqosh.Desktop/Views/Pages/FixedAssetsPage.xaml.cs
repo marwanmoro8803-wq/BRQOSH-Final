@@ -80,28 +80,28 @@ public partial class FixedAssetsPage : UserControl
     {
         if (Grid.SelectedItem is not AssetRow row)
         {
-            MessageBox.Show("اختر أصلاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أصلاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.AcquisitionJournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد اقتناء مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد اقتناء مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void OnViewDisposalJournal(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not AssetRow row)
         {
-            MessageBox.Show("اختر أصلاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أصلاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.DisposalJournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد استبعاد مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد استبعاد مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void OnDispose(object sender, RoutedEventArgs e)
@@ -116,7 +116,7 @@ public partial class FixedAssetsPage : UserControl
 
         if (!NumericInput.TryParse(dialog.Value, out var proceeds) || proceeds < 0)
         {
-            MessageBox.Show("أدخل مبلغاً صحيحاً (صفر أو أكثر).", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("أدخل مبلغاً صحيحاً (صفر أو أكثر).", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -132,7 +132,7 @@ public partial class FixedAssetsPage : UserControl
             ? $"ربح متوقّع {gainLoss:N2}"
             : $"خسارة متوقّعة {-gainLoss:N2}";
 
-        if (MessageBox.Show(
+        if (UiDialog.Show(
                 $"استبعاد الأصل {row.NameAr}؟\n\n" +
                 $"التكلفة: {row.AcquisitionCost:N2}\n" +
                 $"مجمّع الإهلاك: {row.AccumulatedDepreciation:N2}\n" +
@@ -151,17 +151,17 @@ public partial class FixedAssetsPage : UserControl
             await facade.GetService<FixedAssetDisposalPostingService>().PostDisposalAsync(
                 asset, proceeds, DateOnly.FromDateTime(DateTime.Today), username);
             await ReloadAsync();
-            MessageBox.Show("تم ترحيل قيد الاستبعاد.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم ترحيل قيد الاستبعاد.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
     private async void OnRunDepreciation(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show("تشغيل إهلاك شهري لجميع الأصول النشطة؟", "BRQOSH",
+        if (UiDialog.Show("تشغيل إهلاك شهري لجميع الأصول النشطة؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -172,7 +172,7 @@ public partial class FixedAssetsPage : UserControl
             var count = await facade.GetService<DepreciationService>().RunMonthlyAsync(
                 AppServices.CompanyId, DateOnly.FromDateTime(DateTime.Today), username);
 
-            MessageBox.Show(count > 0
+            UiDialog.Show(count > 0
                     ? $"تم ترحيل إهلاك {count} أصل."
                     : "لا توجد أصول تحتاج إهلاكاً.",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -180,7 +180,7 @@ public partial class FixedAssetsPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

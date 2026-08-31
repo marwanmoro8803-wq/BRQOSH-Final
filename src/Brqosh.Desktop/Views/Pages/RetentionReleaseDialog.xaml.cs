@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using Brqosh.Desktop.Ui;
 
@@ -19,7 +19,7 @@ public partial class RetentionReleaseDialog : Window
     {
         if (!NumericInput.TryParse(AmountBox.Text, out var amount) || amount <= 0)
         {
-            MessageBox.Show("أدخل مبلغاً صحيحاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("أدخل مبلغاً صحيحاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

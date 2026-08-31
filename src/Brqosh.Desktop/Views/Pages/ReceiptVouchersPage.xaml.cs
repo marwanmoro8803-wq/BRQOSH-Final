@@ -9,6 +9,7 @@ using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -105,14 +106,14 @@ public partial class ReceiptVouchersPage : UserControl
     {
         if (VouchersGrid.SelectedItem is not VoucherRow row)
         {
-            MessageBox.Show("اختر سنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.JournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show($"سند قبض {row.VoucherNumber}\nالعميل: {row.CustomerName}\nالمبلغ: {row.Amount:N2}\n{row.Description}",
+            UiDialog.Show($"سند قبض {row.VoucherNumber}\nالعميل: {row.CustomerName}\nالمبلغ: {row.Amount:N2}\n{row.Description}",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -120,7 +121,7 @@ public partial class ReceiptVouchersPage : UserControl
     {
         if (VouchersGrid.SelectedItem is not VoucherRow row)
         {
-            MessageBox.Show("اختر سنداً للطباعة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً للطباعة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -135,17 +136,17 @@ public partial class ReceiptVouchersPage : UserControl
     {
         if (VouchersGrid.SelectedItem is not VoucherRow row)
         {
-            MessageBox.Show("اختر سنداً للعكس.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً للعكس.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != ReceiptVoucherStatus.Posted)
         {
-            MessageBox.Show("لا يُعكس إلا سند مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يُعكس إلا سند مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"عكس سند القبض {row.VoucherNumber}؟", "BRQOSH",
+        if (UiDialog.Show($"عكس سند القبض {row.VoucherNumber}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -164,7 +165,7 @@ public partial class ReceiptVouchersPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

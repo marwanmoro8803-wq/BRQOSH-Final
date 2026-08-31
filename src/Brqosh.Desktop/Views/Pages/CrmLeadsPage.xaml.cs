@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Crm;
 using Brqosh.Desktop.Security;
@@ -60,7 +60,7 @@ public partial class CrmLeadsPage : UserControl
         using var scope = AppServices.CreateInfrastructureScope();
         var crm = scope.ServiceProvider.GetRequiredService<CrmService>();
         await crm.ConvertLeadAsync(AppServices.CompanyId, row.Id);
-        MessageBox.Show("تم تحويل العميل المحتمل إلى عميل في دليل العملاء.", "CRM",
+        UiDialog.Show("تم تحويل العميل المحتمل إلى عميل في دليل العملاء.", "CRM",
             MessageBoxButton.OK, MessageBoxImage.Information);
         await ReloadAsync();
     }

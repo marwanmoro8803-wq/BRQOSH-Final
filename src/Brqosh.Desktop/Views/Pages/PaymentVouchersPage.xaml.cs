@@ -12,6 +12,7 @@ using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
 using Microsoft.Extensions.DependencyInjection;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -145,14 +146,14 @@ public partial class PaymentVouchersPage : UserControl
     {
         if (VouchersGrid.SelectedItem is not VoucherRow row)
         {
-            MessageBox.Show("اختر سنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.JournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show($"سند صرف {row.VoucherNumber}\nالمورد: {row.SupplierName}\nالمبلغ: {row.Amount:N2}\n{row.Description}",
+            UiDialog.Show($"سند صرف {row.VoucherNumber}\nالمورد: {row.SupplierName}\nالمبلغ: {row.Amount:N2}\n{row.Description}",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -160,7 +161,7 @@ public partial class PaymentVouchersPage : UserControl
     {
         if (VouchersGrid.SelectedItem is not VoucherRow row)
         {
-            MessageBox.Show("اختر سنداً للطباعة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً للطباعة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -175,17 +176,17 @@ public partial class PaymentVouchersPage : UserControl
     {
         if (VouchersGrid.SelectedItem is not VoucherRow row)
         {
-            MessageBox.Show("اختر سنداً للعكس.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً للعكس.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != PaymentVoucherStatus.Posted)
         {
-            MessageBox.Show("لا يُعكس إلا سند مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يُعكس إلا سند مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"عكس سند الصرف {row.VoucherNumber}؟", "BRQOSH",
+        if (UiDialog.Show($"عكس سند الصرف {row.VoucherNumber}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -204,7 +205,7 @@ public partial class PaymentVouchersPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -214,7 +215,7 @@ public partial class PaymentVouchersPage : UserControl
     {
         if (Selected is not { Status: PaymentVoucherStatus.Draft } row)
         {
-            MessageBox.Show("اختر سنداً في حالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً في حالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -231,7 +232,7 @@ public partial class PaymentVouchersPage : UserControl
     {
         if (Selected is not { Status: PaymentVoucherStatus.Submitted } row)
         {
-            MessageBox.Show("اختر سنداً مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -246,7 +247,7 @@ public partial class PaymentVouchersPage : UserControl
     {
         if (Selected is not { Status: PaymentVoucherStatus.Submitted } row)
         {
-            MessageBox.Show("اختر سنداً مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر سنداً مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

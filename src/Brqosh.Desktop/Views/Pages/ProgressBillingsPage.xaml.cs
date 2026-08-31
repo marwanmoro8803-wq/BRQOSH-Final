@@ -8,6 +8,7 @@ using Brqosh.Infrastructure.Security;
 using Brqosh.Domain.Construction;
 using Brqosh.Infrastructure.Construction;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -75,7 +76,7 @@ public partial class ProgressBillingsPage : UserControl
     {
         if (Grid.SelectedItem is not BillingRow row)
         {
-            MessageBox.Show("اختر مستخلصاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستخلصاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -89,34 +90,34 @@ public partial class ProgressBillingsPage : UserControl
             return;
         }
 
-        MessageBox.Show(details, $"مستخلص {row.BillingNumber}", MessageBoxButton.OK, MessageBoxImage.Information);
+        UiDialog.Show(details, $"مستخلص {row.BillingNumber}", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void OnViewJournal(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not BillingRow row)
         {
-            MessageBox.Show("اختر مستخلصاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستخلصاً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.JournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد محاسبي مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد محاسبي مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void OnPrintPdf(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not BillingRow row)
         {
-            MessageBox.Show("اختر مستخلصاً للطباعة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستخلصاً للطباعة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != ProgressBillingStatus.Posted)
         {
-            MessageBox.Show("الطباعة متاحة للمستخلصات المرحّلة فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("الطباعة متاحة للمستخلصات المرحّلة فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -131,17 +132,17 @@ public partial class ProgressBillingsPage : UserControl
     {
         if (Grid.SelectedItem is not BillingRow row)
         {
-            MessageBox.Show("اختر مستخلصاً للإلغاء.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستخلصاً للإلغاء.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != ProgressBillingStatus.Posted)
         {
-            MessageBox.Show("لا يُلغى إلا مستخلص مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يُلغى إلا مستخلص مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"إلغاء المستخلص {row.BillingNumber}؟ سيتم عكس القيد.", "BRQOSH",
+        if (UiDialog.Show($"إلغاء المستخلص {row.BillingNumber}؟ سيتم عكس القيد.", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -160,7 +161,7 @@ public partial class ProgressBillingsPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

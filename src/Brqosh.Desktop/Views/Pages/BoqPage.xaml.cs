@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Domain.Construction;
@@ -6,6 +6,7 @@ using Brqosh.Infrastructure.Construction;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -71,7 +72,7 @@ public partial class BoqPage : UserControl
     {
         if (SelectedProject is not { } project)
         {
-            MessageBox.Show("اختر المشروع أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر المشروع أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -91,7 +92,7 @@ public partial class BoqPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -103,13 +104,13 @@ public partial class BoqPage : UserControl
     {
         if (SelectedProject is not { } project)
         {
-            MessageBox.Show("اختر المشروع أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر المشروع أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (Grid.SelectedItem is not BoqItem selected)
         {
-            MessageBox.Show("اختر بنداً للتعديل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر بنداً للتعديل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -131,7 +132,7 @@ public partial class BoqPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -139,17 +140,17 @@ public partial class BoqPage : UserControl
     {
         if (SelectedProject is not { } project)
         {
-            MessageBox.Show("اختر المشروع أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر المشروع أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (Grid.SelectedItem is not BoqItem selected)
         {
-            MessageBox.Show("اختر بنداً للحذف.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر بنداً للحذف.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (MessageBox.Show($"حذف البند {selected.ItemNumber}؟", "BRQOSH",
+        if (UiDialog.Show($"حذف البند {selected.ItemNumber}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -166,7 +167,7 @@ public partial class BoqPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

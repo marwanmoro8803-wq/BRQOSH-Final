@@ -58,7 +58,7 @@ public partial class BankTransferDialog : Window
             var entry = await facade.PostBankTransferAsync(fromId, toId, amount, date,
                 string.IsNullOrWhiteSpace(ReferenceBox.Text) ? null : ReferenceBox.Text.Trim());
 
-            MessageBox.Show(this, $"تم التحويل وترحيل القيد {entry.EntryNumber}.", "BRQOSH",
+            UiDialog.Show(this, $"تم التحويل وترحيل القيد {entry.EntryNumber}.", "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             DialogResult = true;
             Close();

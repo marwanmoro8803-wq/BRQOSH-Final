@@ -8,6 +8,7 @@ using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Accounting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -76,7 +77,7 @@ public partial class FiscalPeriodsPage : UserControl
             return;
         }
 
-        var confirm = MessageBox.Show(
+        var confirm = UiDialog.Show(
             $"سيتم إقفال جميع فترات السنة {year} وإنشاء قيد إقفال الإيرادات/المصروفات.\nهل تريد المتابعة؟",
             "BRQOSH — إقفال سنوي", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes) return;
@@ -86,7 +87,7 @@ public partial class FiscalPeriodsPage : UserControl
             using var facade = new DesktopAccountingFacade();
             var result = await facade.GetService<YearEndCloseService>().CloseYearAsync(
                 AppServices.CompanyId, year, SecurityContext.ResolveUsername());
-            MessageBox.Show(
+            UiDialog.Show(
                 $"تم إقفال السنة {result.Year}.\nصافي الدخل: {result.NetIncome:N2}\nالقيد: {result.EntryNumber}",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
@@ -101,7 +102,7 @@ public partial class FiscalPeriodsPage : UserControl
     {
         if (PeriodsGrid.SelectedItem is not PeriodRow row)
         {
-            MessageBox.Show("اختر فترة من الجدول أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر فترة من الجدول أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -113,7 +114,7 @@ public partial class FiscalPeriodsPage : UserControl
                 using var scope = AppServices.CreateInfrastructureScope();
                 var monthEnd = scope.ServiceProvider.GetRequiredService<IMonthEndCloseUseCase>();
                 var result = await monthEnd.ClosePeriodAsync(AppServices.CompanyId, row.Id, username);
-                MessageBox.Show(
+                UiDialog.Show(
                     $"تم إقفال {result.PeriodCode}.\nتسويات بنكية معلّقة: {result.UnreconciledBankLineCount}",
                     "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             }

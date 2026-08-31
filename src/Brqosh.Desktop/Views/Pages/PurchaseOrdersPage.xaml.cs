@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Domain.Accounting;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
 using Microsoft.Extensions.DependencyInjection;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -144,7 +145,7 @@ public partial class PurchaseOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row)
         {
-            MessageBox.Show("اختر أمر شراء من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر شراء من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -160,17 +161,17 @@ public partial class PurchaseOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row)
         {
-            MessageBox.Show("اختر أمر شراء للإلغاء.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر شراء للإلغاء.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status is PurchaseOrderStatus.Fulfilled or PurchaseOrderStatus.Cancelled)
         {
-            MessageBox.Show("لا يمكن إلغاء أمر شراء في حالته الحالية.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يمكن إلغاء أمر شراء في حالته الحالية.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"إلغاء أمر الشراء {row.OrderNumber ?? row.Id.ToString()}؟", "BRQOSH",
+        if (UiDialog.Show($"إلغاء أمر الشراء {row.OrderNumber ?? row.Id.ToString()}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -182,7 +183,7 @@ public partial class PurchaseOrdersPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -190,7 +191,7 @@ public partial class PurchaseOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row || row.Status != PurchaseOrderStatus.Approved)
         {
-            MessageBox.Show("اختر أمر شراء معتمداً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر شراء معتمداً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -211,12 +212,12 @@ public partial class PurchaseOrdersPage : UserControl
                 AppServices.CompanyId, row.Id, reference,
                 DateOnly.FromDateTime(DateTime.Today), supplier.IsVatRegistered);
 
-            MessageBox.Show("تم إنشاء فاتورة المشتريات وترحيلها.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم إنشاء فاتورة المشتريات وترحيلها.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await UiFeedback.RunSafeAsync(ReloadAsync);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -226,7 +227,7 @@ public partial class PurchaseOrdersPage : UserControl
     {
         if (Selected is not { Status: PurchaseOrderStatus.Draft } row)
         {
-            MessageBox.Show("اختر أمر شراء في حالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر شراء في حالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -243,7 +244,7 @@ public partial class PurchaseOrdersPage : UserControl
     {
         if (Selected is not { Status: PurchaseOrderStatus.Submitted } row)
         {
-            MessageBox.Show("اختر أمر شراء مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر شراء مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -262,7 +263,7 @@ public partial class PurchaseOrdersPage : UserControl
     {
         if (Selected is not { Status: PurchaseOrderStatus.Submitted } row)
         {
-            MessageBox.Show("اختر أمر شراء مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر شراء مُرسَلاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

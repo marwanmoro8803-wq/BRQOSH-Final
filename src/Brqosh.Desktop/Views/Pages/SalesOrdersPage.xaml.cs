@@ -1,9 +1,10 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -62,13 +63,13 @@ public partial class SalesOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row)
         {
-            MessageBox.Show("اختر أمر بيع مؤكد.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر بيع مؤكد.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.RawStatus != SalesOrderStatus.Confirmed)
         {
-            MessageBox.Show("يُفوتر أمر مؤكد فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("يُفوتر أمر مؤكد فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -76,13 +77,13 @@ public partial class SalesOrdersPage : UserControl
         {
             using var facade = new DesktopAccountingFacade();
             var invoice = await facade.GetService<SalesOrderService>().CreateInvoiceFromOrderAsync(AppServices.CompanyId, row.Id);
-            MessageBox.Show($"تم إنشاء الفاتورة {invoice.InvoiceNumber}.", "BRQOSH",
+            UiDialog.Show($"تم إنشاء الفاتورة {invoice.InvoiceNumber}.", "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

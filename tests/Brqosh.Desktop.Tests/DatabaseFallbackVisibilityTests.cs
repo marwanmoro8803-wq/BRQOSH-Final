@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 namespace Brqosh.Desktop.Tests;
 
@@ -54,6 +54,13 @@ public class DatabaseFallbackVisibilityTests
         Assert.Contains("AppServices.DatabaseFallbackWarning", source);
         var idx = source.IndexOf("AppServices.DatabaseFallbackWarning", StringComparison.Ordinal);
         var after = source[idx..Math.Min(source.Length, idx + 500)];
-        Assert.Contains("MessageBox.Show", after);
+        // (CEEF-229) ‏الشرطُ «يبلغ المستخدمَ في نافذةٍ حاجزة» لا «يستدعي MessageBox باسمه».
+        // ‏وقد صار الطريقُ إلى تلك النافذة `UiDialog` — غلافاً يترجم النصَّ عند الاستدعاء،
+        // ‏لأنّ MessageBox نافذةُ Win32 لا يبلغها مترجِمُ الواجهة. فلو بقي الشرطُ على الاسم
+        // ‏القديم لمنع الإصلاحَ باسم الحراسة.
+        Assert.True(
+            after.Contains("UiDialog.Show", StringComparison.Ordinal)
+            || after.Contains("MessageBox.Show", StringComparison.Ordinal),
+            "تحذيرُ الإقلاع لا يُعرض في نافذةٍ حاجزة — فقد يمضي المستخدمُ على قاعدةٍ غير التي يظنّ.");
     }
 }

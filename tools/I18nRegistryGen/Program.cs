@@ -58,12 +58,37 @@ foreach (var cs in Directory.EnumerateFiles(desktopRoot, "*.cs", SearchOption.Al
         || cs.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
         continue;
 
-    foreach (Match m in Regex.Matches(File.ReadAllText(cs),
+    var source = File.ReadAllText(cs);
+
+    foreach (Match m in Regex.Matches(source,
                  @"\.(?:Text|Content|Header|ToolTip|Title|PlaceholderText)\s*=\s*""([^""]*[؀-ۿ][^""]*)"""))
     {
         var s = m.Groups[1].Value;
         if (IsValidUiString(s))
             strings.Add(s);
+    }
+
+    // (CEEF-229) ‏نصوصُ الحوارات — وكانت خارج السجلّ كلِّها.
+    //
+    // ‏MessageBox نافذةُ Win32 لا يبلغها XamlUiLocalizer، فكان إدخالُ نصوصها في السجلّ
+    // ‏عبثاً يُخضِّر البوّابةَ والنصُّ عربيٌّ كما هو. وقد بُني UiDialog يترجم **عند
+    // ‏الاستدعاء** بالبحث في هذا السجلّ — فصار للمدخل معنى.
+    //
+    // ‏ويُلتقط كلُّ اقتباسٍ حرفيٍّ فيه عربية داخل الاستدعاء: النصُّ والوسمُ معاً، فكلاهما
+    // ‏يُعرض. والمركَّبُ (‏$"…") لا يُلتقط — لا يُطابَق ككلّ، وهو معدودٌ ومحروسٌ في
+    // ‏DialogLocalizationTests.
+    foreach (Match call in Regex.Matches(source, @"\bUiDialog\.Show\s*\("))
+    {
+        var slice = source[call.Index..Math.Min(source.Length, call.Index + 600)];
+        var end = slice.IndexOf(");", StringComparison.Ordinal);
+        if (end > 0) slice = slice[..end];
+
+        foreach (Match lit in Regex.Matches(slice, @"(?<!\$)""([^""]*[؀-ۿ][^""]*)"""))
+        {
+            var s = lit.Groups[1].Value;
+            if (IsValidUiString(s))
+                strings.Add(s);
+        }
     }
 }
 

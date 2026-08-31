@@ -1,7 +1,8 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop;
 
@@ -40,14 +41,22 @@ internal static class UiFeedback
         overlayRoot.Children.Add(_toastHost);
     }
 
-    public static void ShowSuccess(string message) => ShowToast(message, "#059669");
-    public static void ShowInfo(string message) => ShowToast(message, "#2563EB");
-    public static void ShowWarning(string message) => ShowToast(message, "#D97706");
-    public static void ShowError(string message) => ShowToast(message, "#DC2626");
+    // (CEEF-229) ‏التوست يحمل عمى الحوارات نفسَه: نصٌّ عربيٌّ يُكتب في عنصرٍ يُنشأ في
+    // ‏الكود، فلا يمرّ به XamlUiLocalizer ولا يشكو أحد. فالترجمةُ عند الاستدعاء، بالسجلّ
+    // ‏نفسِه الذي يقرؤه UiDialog.
+    public static void ShowSuccess(string message) => ShowToast(Localize(message), "#059669");
+    public static void ShowInfo(string message) => ShowToast(Localize(message), "#2563EB");
+    public static void ShowWarning(string message) => ShowToast(Localize(message), "#D97706");
+    public static void ShowError(string message) => ShowToast(Localize(message), "#DC2626");
+
+    private static string Localize(string message) =>
+        LocaleManager.IsEnglish && !string.IsNullOrEmpty(message)
+            ? UiBilingualRegistry.Lookup(message)
+            : message;
 
     /// <summary>تنبيه يحتاج قراراً — يبقى MessageBox.</summary>
     public static bool Confirm(string message, string title = "BRQOSH") =>
-        MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+        UiDialog.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 
     public static async Task RunSafeAsync(Func<Task> action)
     {
@@ -65,7 +74,7 @@ internal static class UiFeedback
     {
         if (_toastHost is null || _toastText is null)
         {
-            MessageBox.Show(message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show(message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

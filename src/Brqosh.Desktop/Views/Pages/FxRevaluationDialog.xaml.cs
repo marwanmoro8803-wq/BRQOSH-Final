@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Treasury;
@@ -42,12 +42,12 @@ public partial class FxRevaluationDialog : Window
 
             if (entry is null)
             {
-                MessageBox.Show("لا يوجد فرق تقييم — لم يُنشأ قيد.", "BRQOSH",
+                UiDialog.Show("لا يوجد فرق تقييم — لم يُنشأ قيد.", "BRQOSH",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show($"تم ترحيل قيد التقييم رقم {entry.EntryNumber ?? entry.Id.ToString()}.", "BRQOSH",
+                UiDialog.Show($"تم ترحيل قيد التقييم رقم {entry.EntryNumber ?? entry.Id.ToString()}.", "BRQOSH",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }
 

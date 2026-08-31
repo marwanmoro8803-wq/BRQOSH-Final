@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -112,7 +113,7 @@ public partial class CreditNotesPage : UserControl
     {
         if (NotesGrid.SelectedItem is not NoteRow row)
         {
-            MessageBox.Show("اختر إشعاراً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر إشعاراً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -127,21 +128,21 @@ public partial class CreditNotesPage : UserControl
     {
         if (NotesGrid.SelectedItem is not NoteRow row)
         {
-            MessageBox.Show("اختر إشعاراً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر إشعاراً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.JournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد محاسبي مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد محاسبي مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void OnPrintPdf(object sender, RoutedEventArgs e)
     {
         if (NotesGrid.SelectedItem is not NoteRow row)
         {
-            MessageBox.Show("اختر إشعاراً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر إشعاراً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -156,17 +157,17 @@ public partial class CreditNotesPage : UserControl
     {
         if (NotesGrid.SelectedItem is not NoteRow row)
         {
-            MessageBox.Show("اختر إشعاراً للإلغاء.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر إشعاراً للإلغاء.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.Status != CreditNoteStatus.Posted)
         {
-            MessageBox.Show("لا يُلغى إلا إشعار دائن مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("لا يُلغى إلا إشعار دائن مرحّل.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (MessageBox.Show($"إلغاء إشعار الدائن {row.NoteNumber}؟ سيتم عكس القيد والمخزون.", "BRQOSH",
+        if (UiDialog.Show($"إلغاء إشعار الدائن {row.NoteNumber}؟ سيتم عكس القيد والمخزون.", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -185,7 +186,7 @@ public partial class CreditNotesPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

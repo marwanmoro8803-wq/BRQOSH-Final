@@ -1,6 +1,7 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -38,7 +39,7 @@ public class DateInputDialog : Window
         {
             if (_datePicker.SelectedDate is not DateTime dt)
             {
-                MessageBox.Show("اختر تاريخاً صالحاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+                UiDialog.Show("اختر تاريخاً صالحاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 

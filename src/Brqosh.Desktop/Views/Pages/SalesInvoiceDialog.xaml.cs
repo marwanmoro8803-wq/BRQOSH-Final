@@ -159,7 +159,7 @@ public partial class SalesInvoiceDialog : Window
                 .ToList();
 
             if (priceWarnings.Count > 0 &&
-                MessageBox.Show(
+                UiDialog.Show(
                     "أسعار تختلف عن سعر البيع الافتراضي:\n" + string.Join("\n", priceWarnings) + "\n\nمتابعة؟",
                     "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
                 return;

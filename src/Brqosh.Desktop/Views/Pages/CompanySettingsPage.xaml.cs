@@ -222,7 +222,7 @@ public partial class CompanySettingsPage : UserControl
 
     private async Task AfterProvisionAsync(long companyId, string companyName)
     {
-        var answer = MessageBox.Show(
+        var answer = UiDialog.Show(
             $"تم إنشاء المنشأة «{companyName}» (معرّف {companyId}).\nهل تريد التبديل إليها الآن؟",
             "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Yes && _shell is not null)
@@ -291,7 +291,7 @@ public partial class CompanySettingsPage : UserControl
             _removeLogoRequested = false;
             ShowLogoPreview(company.LogoFilePath);
             ErrorText.Visibility = Visibility.Collapsed;
-            MessageBox.Show("تم حفظ إعدادات المنشأة — يُطبَّق الشعار والخط على كل المطبوعات.", "BRQOSH",
+            UiDialog.Show("تم حفظ إعدادات المنشأة — يُطبَّق الشعار والخط على كل المطبوعات.", "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)

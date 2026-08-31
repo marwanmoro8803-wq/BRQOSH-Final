@@ -6,6 +6,7 @@ using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -81,7 +82,7 @@ public partial class SuppliersPage : UserControl
     private async void OnDeactivate(object sender, RoutedEventArgs e)
     {
         if (SuppliersGrid.SelectedItem is not SupplierRow row) return;
-        if (MessageBox.Show($"إيقاف المورد {row.NameAr}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف المورد {row.NameAr}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

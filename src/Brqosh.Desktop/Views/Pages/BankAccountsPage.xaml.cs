@@ -1,10 +1,11 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Domain.Treasury;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -99,7 +100,7 @@ public partial class BankAccountsPage : UserControl
     private async void OnDeactivate(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not Row row) return;
-        if (MessageBox.Show($"إيقاف الحساب البنكي {row.NameAr}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف الحساب البنكي {row.NameAr}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

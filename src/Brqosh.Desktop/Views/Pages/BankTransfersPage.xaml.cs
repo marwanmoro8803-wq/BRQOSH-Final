@@ -1,9 +1,10 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Domain.Accounting;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -66,7 +67,7 @@ public partial class BankTransfersPage : UserControl
     {
         if (TransfersGrid.SelectedItem is not TransferRow row)
         {
-            MessageBox.Show("اختر تحويلاً من القائمة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر تحويلاً من القائمة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

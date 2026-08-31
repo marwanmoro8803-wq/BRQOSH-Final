@@ -1,10 +1,11 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Automation;
 using Brqosh.Domain.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -50,7 +51,7 @@ public partial class WarehousesPage : UserControl
     private async void OnDeactivate(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not Row row) return;
-        if (MessageBox.Show($"إيقاف المستودع {row.Code}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف المستودع {row.Code}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

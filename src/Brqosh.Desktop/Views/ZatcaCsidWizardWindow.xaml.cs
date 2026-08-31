@@ -1,8 +1,9 @@
-using System.Windows;
+﻿using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views;
 
@@ -112,7 +113,7 @@ public partial class ZatcaCsidWizardWindow : Window
             await db.SaveChangesAsync();
 
             ResultText.Text = $"شهادة الإنتاج جاهزة.\nالشهادة: {result.CertificatePemPath}\nيمكنك الآن إرسال الفواتير للهيئة.";
-            MessageBox.Show("تم تسجيل CSID للإنتاج بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم تسجيل CSID للإنتاج بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

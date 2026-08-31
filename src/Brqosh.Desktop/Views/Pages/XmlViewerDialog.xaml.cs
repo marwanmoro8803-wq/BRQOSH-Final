@@ -1,5 +1,6 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -15,7 +16,7 @@ public partial class XmlViewerDialog : Window
     private void OnCopy(object sender, RoutedEventArgs e)
     {
         Clipboard.SetText(ContentBox.Text);
-        MessageBox.Show("تم النسخ.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+        UiDialog.Show("تم النسخ.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void OnClose(object sender, RoutedEventArgs e) => Close();

@@ -1,8 +1,9 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Security;
 using Microsoft.Win32;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Reporting;
 
@@ -37,7 +38,7 @@ public static class DocumentPrintHelper
         }
 
         if (opts.OfferSaveAs &&
-            MessageBox.Show(owner, "هل تريد حفظ نسخة من الملف؟", "BRQOSH",
+            UiDialog.Show(owner, "هل تريد حفظ نسخة من الملف؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
         {
             TrySaveAs(result, owner);
@@ -83,7 +84,7 @@ public static class DocumentPrintHelper
             return false;
 
         File.WriteAllBytes(dialog.FileName, result.PdfBytes);
-        MessageBox.Show(owner, "تم الحفظ بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+        UiDialog.Show(owner, "تم الحفظ بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         return true;
     }
 

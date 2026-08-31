@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
@@ -9,6 +9,7 @@ using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -75,7 +76,7 @@ public partial class ZatcaInvoicesPage : UserControl
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         try
@@ -83,11 +84,11 @@ public partial class ZatcaInvoicesPage : UserControl
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<ZatcaSubmissionService>().SubmitAsync(row.Id);
             await ReloadAsync();
-            MessageBox.Show("تم الإرسال بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم الإرسال بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -95,7 +96,7 @@ public partial class ZatcaInvoicesPage : UserControl
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -110,7 +111,7 @@ public partial class ZatcaInvoicesPage : UserControl
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -122,7 +123,7 @@ public partial class ZatcaInvoicesPage : UserControl
 
         if (string.IsNullOrEmpty(path) || !File.Exists(path))
         {
-            MessageBox.Show("ملف XML غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("ملف XML غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -133,7 +134,7 @@ public partial class ZatcaInvoicesPage : UserControl
     {
         if (Grid.SelectedItem is not Row row)
         {
-            MessageBox.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مستنداً من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -145,7 +146,7 @@ public partial class ZatcaInvoicesPage : UserControl
             var invoice = await db.SalesInvoices.SingleOrDefaultAsync(i => i.Id == row.SourceDocumentId);
             if (invoice is null)
             {
-                MessageBox.Show("الفاتورة المصدر غير موجودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+                UiDialog.Show("الفاتورة المصدر غير موجودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -158,7 +159,7 @@ public partial class ZatcaInvoicesPage : UserControl
         var note = await db.CreditNotes.SingleOrDefaultAsync(n => n.Id == row.SourceDocumentId);
         if (note is null)
         {
-            MessageBox.Show("إشعار الدائن المصدر غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("إشعار الدائن المصدر غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

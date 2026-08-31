@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Security;
@@ -6,6 +6,7 @@ using Brqosh.Desktop.Views;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Modules;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -71,7 +72,7 @@ public partial class OrganizationsPage : UserControl
     private async Task AfterProvisionAsync(long companyId, string companyName)
     {
         await ReloadAsync();
-        var answer = MessageBox.Show(
+        var answer = UiDialog.Show(
             $"تم إنشاء المنشأة «{companyName}».\nهل تريد التبديل إليها الآن؟",
             "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Yes && _shell is not null)

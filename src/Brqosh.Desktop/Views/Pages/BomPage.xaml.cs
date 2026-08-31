@@ -1,9 +1,10 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Domain.Manufacturing;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -79,7 +80,7 @@ public partial class BomPage : UserControl
     private async void OnDeactivate(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not BomRow row) return;
-        if (MessageBox.Show($"إيقاف BOM {row.Code}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف BOM {row.Code}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

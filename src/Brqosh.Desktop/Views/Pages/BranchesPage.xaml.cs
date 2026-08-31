@@ -1,9 +1,10 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Domain.Companies;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -58,7 +59,7 @@ public partial class BranchesPage : UserControl
             return;
         }
 
-        if (MessageBox.Show($"إيقاف الفرع {row.NameAr}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف الفرع {row.NameAr}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -6,6 +6,7 @@ using Brqosh.Domain.Accounting;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -120,7 +121,7 @@ public partial class ChartOfAccountsPage : UserControl
         var account = SelectedAccount;
         if (account is null)
         {
-            MessageBox.Show("اختر حساباً من الشجرة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر حساباً من الشجرة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -135,11 +136,11 @@ public partial class ChartOfAccountsPage : UserControl
         var account = SelectedAccount;
         if (account is null)
         {
-            MessageBox.Show("اختر حساباً من الشجرة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر حساباً من الشجرة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (MessageBox.Show($"إيقاف الحساب {account.Code} — {account.NameAr}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف الحساب {account.Code} — {account.NameAr}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

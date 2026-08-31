@@ -5,6 +5,7 @@ using Brqosh.Desktop.Automation;
 using Brqosh.Domain.Sales;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -80,7 +81,7 @@ public partial class CustomersPage : UserControl
     private async void OnDeactivate(object sender, RoutedEventArgs e)
     {
         if (CustomersGrid.SelectedItem is not CustomerRow row) return;
-        if (MessageBox.Show($"إيقاف العميل {row.NameAr}؟", "BRQOSH",
+        if (UiDialog.Show($"إيقاف العميل {row.NameAr}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 

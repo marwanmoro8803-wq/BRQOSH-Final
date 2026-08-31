@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Setup;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop;
 
@@ -24,7 +25,7 @@ public partial class App : System.Windows.Application
             var detail = args.Exception.InnerException is null
                 ? args.Exception.Message
                 : $"{args.Exception.Message}\n\n{args.Exception.InnerException.Message}";
-            MessageBox.Show(
+            UiDialog.Show(
                 $"خطأ غير متوقع:\n{detail}",
                 "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
@@ -34,7 +35,7 @@ public partial class App : System.Windows.Application
         {
             if (args.ExceptionObject is Exception ex)
             {
-                MessageBox.Show(
+                UiDialog.Show(
                     $"خطأ حرج:\n{ex.Message}",
                     "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -65,7 +66,7 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
+            UiDialog.Show(
                 $"تعذر تهيئة قاعدة البيانات:\n{ex.Message}",
                 "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
@@ -75,7 +76,7 @@ public partial class App : System.Windows.Application
         // (ع-D3، CEEF-202): أعلِم المستخدم إن عمل على قاعدة غير التي هيّأها — قبل أن يُدخل أي بيانات.
         if (AppServices.DatabaseFallbackWarning is { } fallbackWarning)
         {
-            MessageBox.Show(
+            UiDialog.Show(
                 fallbackWarning,
                 "BRQOSH — تنبيه: تغيّرت قاعدة البيانات",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -96,7 +97,7 @@ public partial class App : System.Windows.Application
             var detail = ex.InnerException is null
                 ? ex.Message
                 : $"{ex.Message}\n—\n{ex.InnerException.Message}";
-            MessageBox.Show(
+            UiDialog.Show(
                 $"تعذر تهيئة قاعدة البيانات ({AppServices.ActiveProviderLabel}):\n{detail}",
                 "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();

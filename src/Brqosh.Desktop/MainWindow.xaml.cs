@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -289,12 +289,12 @@ public partial class MainWindow : Window
     {
         AppServices.CurrentUser = null;
         if (!string.IsNullOrWhiteSpace(message))
-            MessageBox.Show(this, message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show(this, message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
 
         var login = new LoginWindow { Owner = this };
         if (login.ShowDialog() != true || login.AuthenticatedUser is null)
         {
-            MessageBox.Show(this, "انتهت الجلسة ولم يُعاد تسجيل الدخول — سيتم إغلاق البرنامج.",
+            UiDialog.Show(this, "انتهت الجلسة ولم يُعاد تسجيل الدخول — سيتم إغلاق البرنامج.",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             System.Windows.Application.Current.Shutdown();
             return false;
@@ -306,7 +306,7 @@ public partial class MainWindow : Window
             var change = new PasswordChangeWindow(user) { Owner = this };
             if (change.ShowDialog() != true || change.UpdatedUser is null)
             {
-                MessageBox.Show(this, "يجب تغيير كلمة المرور قبل المتابعة — سيتم إغلاق البرنامج.",
+                UiDialog.Show(this, "يجب تغيير كلمة المرور قبل المتابعة — سيتم إغلاق البرنامج.",
                     "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
                 System.Windows.Application.Current.Shutdown();
                 return false;
@@ -586,7 +586,7 @@ public partial class MainWindow : Window
 
         if (!PermissionService.CanAccess(AppServices.CurrentUser, pageKey))
         {
-            MessageBox.Show(this, PermissionService.DeniedMessage(title), "BRQOSH",
+            UiDialog.Show(this, PermissionService.DeniedMessage(title), "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }

@@ -67,7 +67,7 @@ public partial class WorkOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row || row.Status != WorkOrderStatus.Draft)
         {
-            MessageBox.Show("اختر أمر إنتاج بحالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر إنتاج بحالة مسودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -79,7 +79,7 @@ public partial class WorkOrdersPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -87,7 +87,7 @@ public partial class WorkOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row || row.Status != WorkOrderStatus.Released)
         {
-            MessageBox.Show("اختر أمر إنتاج صادراً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر إنتاج صادراً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -98,7 +98,7 @@ public partial class WorkOrdersPage : UserControl
 
         if (!NumericInput.TryParse(dialog.Value, out var qty) || qty <= 0)
         {
-            MessageBox.Show("الكمية غير صالحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show("الكمية غير صالحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -107,12 +107,12 @@ public partial class WorkOrdersPage : UserControl
             using var facade = new DesktopAccountingFacade();
             var username = SecurityContext.ResolveUsername();
             await facade.GetService<WorkOrderService>().CompleteAsync(AppServices.CompanyId, row.Id, qty, username);
-            MessageBox.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -120,14 +120,14 @@ public partial class WorkOrdersPage : UserControl
     {
         if (Grid.SelectedItem is not OrderRow row)
         {
-            MessageBox.Show("اختر أمر إنتاج من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر إنتاج من الجدول.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (row.CompletionJournalEntryId is long entryId)
             new JournalEntryViewDialog(entryId) { Owner = Window.GetWindow(this) }.ShowDialog();
         else
-            MessageBox.Show("لا يوجد قيد إكمال مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد قيد إكمال مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private async void OnCancel(object sender, RoutedEventArgs e)
@@ -135,11 +135,11 @@ public partial class WorkOrdersPage : UserControl
         if (Grid.SelectedItem is not OrderRow row ||
             row.Status is WorkOrderStatus.Completed or WorkOrderStatus.Cancelled)
         {
-            MessageBox.Show("اختر أمر إنتاج مسودة أو صادراً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر إنتاج مسودة أو صادراً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (MessageBox.Show($"إلغاء أمر الإنتاج {row.OrderNumber ?? row.Id.ToString()}؟", "BRQOSH",
+        if (UiDialog.Show($"إلغاء أمر الإنتاج {row.OrderNumber ?? row.Id.ToString()}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -152,7 +152,7 @@ public partial class WorkOrdersPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using Brqosh.Infrastructure.Construction;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Ui;
 
 using Brqosh.Infrastructure.Security;
 using Brqosh.Desktop.Security;
@@ -45,14 +46,14 @@ public partial class RetentionsPage : UserControl
     {
         if (Grid.SelectedItem is not RetentionSummaryQuery.RetentionRow row)
         {
-            MessageBox.Show("اختر مشروعاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر مشروعاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         var max = maxAmount(row);
         if (max <= 0)
         {
-            MessageBox.Show("لا يوجد محتجز للإفراج.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("لا يوجد محتجز للإفراج.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -62,7 +63,7 @@ public partial class RetentionsPage : UserControl
 
         if (dialog.Amount > max)
         {
-            MessageBox.Show($"المبلغ يتجاوز المحتجز ({max:N2}).", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show($"المبلغ يتجاوز المحتجز ({max:N2}).", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -74,12 +75,12 @@ public partial class RetentionsPage : UserControl
                 AppServices.CompanyId, row.ProjectId, type, dialog.Amount,
                 DateOnly.FromDateTime(DateTime.Today), "إفراج محتجز", username);
 
-            MessageBox.Show("تم ترحيل قيد الإفراج.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("تم ترحيل قيد الإفراج.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

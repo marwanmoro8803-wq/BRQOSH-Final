@@ -1,9 +1,10 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Infrastructure.Operations;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -66,7 +67,7 @@ public partial class BackupPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
-        var confirm = MessageBox.Show(
+        var confirm = UiDialog.Show(
             $"سيُمحى كلُّ ما في القاعدة الحالية ويحلّ محلَّه محتوى:\n{Path.GetFileName(dialog.FileName)}\n\n"
             + "لا رجعةَ في هذه العملية. هل أنت متأكّد؟",
             "استعادة نسخة احتياطية", MessageBoxButton.YesNo, MessageBoxImage.Warning,

@@ -1,10 +1,11 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Application.Reporting;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
+using Brqosh.Desktop.Ui;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -29,7 +30,7 @@ public partial class BalanceSheetPage : UserControl
     {
         if (_lastResult is null)
         {
-            MessageBox.Show("اعرض التقرير أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اعرض التقرير أولاً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

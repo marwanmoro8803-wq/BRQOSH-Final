@@ -183,7 +183,7 @@ public partial class PosSessionPage : UserControl
 
         if (_cart.Count == 0)
         {
-            MessageBox.Show("السلة فارغة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("السلة فارغة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -216,7 +216,7 @@ public partial class PosSessionPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -231,7 +231,7 @@ public partial class PosSessionPage : UserControl
                 .FirstOrDefaultAsync();
             if (invoice is null)
             {
-                MessageBox.Show("لا توجد فواتير POS.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+                UiDialog.Show("لا توجد فواتير POS.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -243,7 +243,7 @@ public partial class PosSessionPage : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }
