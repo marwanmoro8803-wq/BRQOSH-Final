@@ -6,6 +6,7 @@ using Brqosh.Application.Setup;
 using Brqosh.Desktop.Ui;
 using Brqosh.Desktop.Views;
 using Brqosh.Domain.Inventory;
+using Brqosh.Infrastructure.Inventory;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Reporting;
@@ -269,12 +270,22 @@ public partial class CompanySettingsPage : UserControl
                 company.SetLogoFilePath(savedPath);
             }
 
-            if (CostingMethodBox.SelectedItem is CostingOption opt)
-                company.SetCostingMethod(opt.Method);
             company.SetCurrencies(BaseCurrencyBox.Text, FunctionalCurrencyBox.Text);
             if (GroupCombo.SelectedItem is GroupOption groupOpt)
                 company.AssignCompanyGroup(groupOpt.Id);
             await db.SaveChangesAsync();
+
+            // (CEEF-229 · م1-٢٢) ‏طريقةُ التكلفة **لا تُبدَّل بالسنّارة**: تمرّ بخدمةٍ تمنع
+            // ‏التبديلَ وفي المستودعات بضاعة. وكان السطرُ هنا `company.SetCostingMethod(...)`
+            // ‏مباشرةً، فيصير المخزونُ القائم بلا طبقاتٍ ويتوقّف المتجرُ عن البيع.
+            //
+            // ‏**وبعد الحفظ لا قبله**: بقيّةُ الإعدادات (الشعار والعنوان والعملة) تُحفظ أوّلاً،
+            // ‏فرفضُ تبديل التكلفة لا يُضيّع ما عداه.
+            if (CostingMethodBox.SelectedItem is CostingOption opt)
+                {
+                using var facade = new DesktopAccountingFacade();
+                await facade.GetService<CostingMethodService>().ChangeAsync(company.Id, opt.Method);
+            }
 
             _pendingLogoSourcePath = null;
             _removeLogoRequested = false;

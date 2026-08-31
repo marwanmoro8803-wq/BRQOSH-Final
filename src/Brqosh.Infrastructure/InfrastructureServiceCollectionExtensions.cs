@@ -91,6 +91,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<JournalReversalService>();
         services.AddScoped<StockMovementCancellationService>();
         services.AddScoped<StockCountAdjustmentService>();
+        services.AddScoped<CostingMethodService>();
         services.AddScoped<InventoryService>();
         services.AddScoped<LandedCostAllocationService>();
         services.AddScoped<PurchaseOrderService>();
