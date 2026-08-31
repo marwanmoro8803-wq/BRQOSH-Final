@@ -24,6 +24,8 @@ public class CreditNoteCancellationService(BrqoshDbContext db)
 
         var settings = await db.ZatcaSettings.FirstOrDefaultAsync(s => s.CompanyId == companyId, ct);
 
+        Brqosh.Domain.Zatca.ZatcaEInvoiceDocument? zatcaDocument = null;
+
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var note = await db.CreditNotes
@@ -70,18 +72,29 @@ public class CreditNoteCancellationService(BrqoshDbContext db)
             await DomainEventHub.PublishAsync(new DocumentCancelledEvent(
                 companyId, "CreditNote", note.Id, note.NoteNumber ?? note.Id.ToString(),
                 "إلغاء إشعار دائن"), token);
+
+            // (CEEF-229 · م1-٦ / Z-4) **التوليدُ داخل المعاملة — والإرسالُ خارجها.**
+            //
+            // كان الاثنان بعد إغلاقها، فوقع عطلان:
+            //
+            // ١) **قفلُ عدّاد ICV ميّت.** `pg_advisory_xact_lock` مربوطٌ بالمعاملة، وخارجَها
+            //    يُحرَّر بانتهاء العبارة — فيقرأ متزاحمان العدّادَ نفسَه. وإلغاءُ الفاتورة
+            //    كان يستدعيه **داخل** معاملته، فحيَّ هناك وميّتٌ هنا.
+            //
+            // ٢) **والأخطر: `catch (AccountingException) { }` يبتلع الفشلَ كلَّه.** فمستندُ
+            //    الإلغاء لا يُولَّد ولا يُقال شيء — **المستندُ ملغىً في الدفاتر وقائمٌ لدى
+            //    الهيئة**، وهو انشقاقٌ لا يُصلَح بأثرٍ رجعيّ. وقيس: مستندان لا ثلاثة، بلا خطأ.
+            //
+            // **والتمييزُ جوهريّ:** فشلُ **التوليد** محلّيٌّ (هويةٌ ناقصة، شهادةٌ غائبة)
+            // فيجب أن يوقف الإلغاء — إلغاءٌ لا يُبلَّغ أسوأُ من إلغاءٍ لم يقع. وفشلُ
+            // **الإرسال** شبكيٌّ فيبقى غيرَ موقِف، والمستندُ مُولَّدٌ محفوظٌ يُعاد إرساله.
+            if (settings?.IsEnabled == true)
+                zatcaDocument = await new ZatcaEInvoiceGenerator(db)
+                    .TryGenerateCancellationForCreditNoteAsync(noteId);
         }, ct);
 
-        if (settings?.IsEnabled == true)
-        {
-            try
-            {
-                var zatcaDoc = await new ZatcaEInvoiceGenerator(db)
-                    .TryGenerateCancellationForCreditNoteAsync(noteId);
-                if (zatcaDoc is not null)
-                    await ZatcaAutoSubmissionHelper.TrySubmitDocumentAsync(db, companyId, zatcaDoc, ct);
-            }
-            catch (AccountingException) { /* لا نُوقف الإلغاء */ }
-        }
+        // ‏الإرسالُ بعد الالتزام: فشلُه شبكيٌّ لا يُبطل إلغاءً وقع، والمستندُ محفوظ.
+        if (zatcaDocument is not null)
+            await ZatcaAutoSubmissionHelper.TrySubmitDocumentAsync(db, companyId, zatcaDocument, ct);
     }
 }
