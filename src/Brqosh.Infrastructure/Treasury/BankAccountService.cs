@@ -1,3 +1,4 @@
+﻿using Brqosh.Infrastructure.Platform;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Persistence;
@@ -14,8 +15,16 @@ public class BankAccountService(BrqoshDbContext db)
         string accountNumber, string iban, bool isDefault, CancellationToken ct = default)
     {
         code = code.Trim().ToUpperInvariant();
-        if (await db.BankAccounts.AnyAsync(b => b.CompanyId == companyId && b.Code == code, ct))
-            throw new AccountingException($"كود الحساب البنكي '{code}' مستخدم مسبقاً.");
+
+        // (CEEF-229 · م2-١٠ / D-6) ‏الفحصُ يشمل **المحذوف**.
+        //
+        // ‏كان `AnyAsync` وحدَه، وهو مُرشَّحٌ بالحذف الناعم — فكودُ حسابٍ محذوف يمرّ الفحصَ
+        // ‏ثمّ يصطدم بالفهرس الفريد، فيُعرض نصُّ المحرّك الإنجليزيّ في واجهةٍ عربية.
+        // ‏والفحصُ الآن يقول **ما الذي يحجز الكود**: قائمٌ أم محذوفٌ لا يُرى.
+        var availability = await new CodeAvailabilityQuery(db)
+            .CheckAsync(CodeAvailabilityScope.BankAccount, companyId, code, ct: ct);
+        if (CodeAvailabilityQuery.Explain(availability, CodeAvailabilityScope.BankAccount, code) is string reason)
+            throw new AccountingException(reason);
 
         var parent = await db.Accounts.SingleAsync(a =>
             a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashAtBanks, ct);

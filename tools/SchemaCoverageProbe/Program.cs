@@ -1,4 +1,4 @@
-// مسبار تغطية المخطط (CEEF-229 · م2-٩)
+﻿// مسبار تغطية المخطط (CEEF-229 · م2-٩)
 //
 // ‏السؤال الذي يجيب عنه:
 //   هل المخطط الذي تحصل عليه قاعدة إنتاجٍ نظيفة يطابق ما **يتوقّعه الكود** — اسماً ونوعاً
@@ -622,6 +622,10 @@ static async Task<int> ProvePatcherNumbersLegacyAuditAsync(string connectionStri
     Console.WriteLine("[PASS] المُرقِّع رقّم ما قبل السلسلة في حقبةٍ سالبة وأنشأ الفهرسَ الفريد.");
     Console.WriteLine();
 
+    var duplicates = await ProveNoDuplicateUniqueIndexesAsync(connectionString);
+    if (duplicates != 0) return duplicates;
+    Console.WriteLine();
+
     return await ProveMigrationsSurviveRealDataAsync(connectionString);
 }
 
@@ -911,6 +915,48 @@ static string FirstLine(string message)
 {
     var index = message.IndexOf('\n');
     return index < 0 ? message : message[..index].TrimEnd('\r');
+}
+
+// ── المرحلة السابعة: فهارسُ فريدة مكرَّرة ─────────────────────────────────
+// ‏(CEEF-229 · م2-١٠ / D-5) للمخطّط مصدران: النموذجُ يُنشئ `IX_...`، والمُرقِّعُ يُنشئ
+// ‏`ix_..._snake` على **الأعمدة نفسِها**. فقاعدةٌ مرّت بالاثنين تحمل الفهرسَ مرّتين.
+//
+// ‏وليس عطلاً في الأرقام: القيدُ يُفرَض مرّةً واحدة سواء كان الفهرسُ واحداً أو اثنين.
+// ‏لكنّ كلَّ إدراجٍ وتحديثٍ يُصان به **شجرتان متطابقتان** بدل واحدة، وكلُّ قراءةٍ للمخطّط
+// ‏تُظهر قيداً لا وجودَ له في النموذج — **فيُخفي التكرارُ فهرساً حقيقياً مفقوداً** بين ضجيجه.
+//
+// ‏والمقيسُ قبل الإصلاح: **٢٠ زوجاً**، لا سبعةً كما قالت الخطة.
+static async Task<int> ProveNoDuplicateUniqueIndexesAsync(string connectionString)
+{
+    await using var conn = new NpgsqlConnection(connectionString);
+    await conn.OpenAsync();
+
+    var duplicates = new List<string>();
+    await using (var cmd = new NpgsqlCommand(
+        "SELECT tablename, regexp_replace(indexdef, '.*USING btree ', '') AS cols, " +
+        "       string_agg(indexname, ' | ' ORDER BY indexname) " +
+        "FROM pg_indexes " +
+        "WHERE schemaname = 'public' AND indexdef LIKE '%UNIQUE%' " +
+        "GROUP BY tablename, regexp_replace(indexdef, '.*USING btree ', '') " +
+        "HAVING count(*) > 1 " +
+        "ORDER BY tablename", conn))
+    await using (var r = await cmd.ExecuteReaderAsync())
+        while (await r.ReadAsync())
+            duplicates.Add($"{r.GetString(0)} {r.GetString(1)} ⟵ {r.GetString(2)}");
+
+    if (duplicates.Count > 0)
+    {
+        Console.WriteLine($"[FAIL] {duplicates.Count} قيدَ تفرّدٍ مُنشأ مرّتين على الأعمدة نفسِها:");
+        foreach (var d in duplicates.Take(8)) Console.WriteLine($"       • {d}");
+        if (duplicates.Count > 8) Console.WriteLine($"       ... و{duplicates.Count - 8} غيرها");
+        Console.WriteLine();
+        Console.WriteLine("       النموذجُ والمُرقِّع يُنشئان الفهرسَ نفسَه باسمين. وكلُّ كتابةٍ تُصان بها");
+        Console.WriteLine("       شجرتان بدل واحدة، والمخطّطُ يُظهر قيداً لا وجودَ له في النموذج.");
+        return 18;
+    }
+
+    Console.WriteLine("[PASS] لا قيدَ تفرّدٍ مُنشأ مرّتين — لكلّ قيدٍ فهرسٌ واحد.");
+    return 0;
 }
 
 static string Normalize(string storeType) => storeType.Replace(" ", "").ToLowerInvariant();

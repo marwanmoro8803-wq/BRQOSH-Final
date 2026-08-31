@@ -1,3 +1,4 @@
+﻿using Brqosh.Infrastructure.Platform;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
@@ -34,6 +35,15 @@ public partial class WarehouseDialog : Window
             }
             else
             {
+                // (CEEF-229 · م2-١٠ / D-6) ‏فحصُ الكود قبل الحفظ — وإلا تحدّثت قاعدةُ
+                // ‏البيانات بلغتها: انتهاكُ تفرّدٍ يُعرض نصُّه الإنجليزيّ في حوارٍ عربيّ،
+                // ‏والمالكُ لا يرى الصفَّ الحاجز في أيّ قائمة (قد يكون محذوفاً).
+                var availability = await new CodeAvailabilityQuery(db)
+                    .CheckAsync(CodeAvailabilityScope.Warehouse, AppServices.CompanyId, CodeBox.Text);
+                if (CodeAvailabilityQuery.Explain(availability, CodeAvailabilityScope.Warehouse, CodeBox.Text.Trim())
+                    is string reason)
+                    throw new AccountingException(reason);
+
                 var wh = Warehouse.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text, DefaultCheck.IsChecked == true);
                 db.Warehouses.Add(wh);
             }

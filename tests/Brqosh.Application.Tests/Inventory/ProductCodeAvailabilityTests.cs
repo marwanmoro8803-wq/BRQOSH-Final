@@ -1,3 +1,4 @@
+﻿using Brqosh.Infrastructure.Platform;
 using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
@@ -44,13 +45,13 @@ public class ProductCodeAvailabilityTests : IDisposable
         return product;
     }
 
-    private Task<ProductCodeAvailability> CheckAsync(string code) =>
-        new ProductCodeAvailabilityQuery(_db).CheckAsync(_companyId, code);
+    private Task<CodeAvailability> CheckAsync(string code) =>
+        new CodeAvailabilityQuery(_db).CheckAsync(CodeAvailabilityScope.Product, _companyId, code);
 
     /// <summary>كودٌ جديد متاح — وإلا لكان الفحص يمنع كل إنشاء.</summary>
     [Fact]
     public async Task AFreshCode_IsAvailable() =>
-        Assert.Equal(ProductCodeAvailability.Available, await CheckAsync("P-NEW"));
+        Assert.Equal(CodeAvailability.Available, await CheckAsync("P-NEW"));
 
     /// <summary>وكودٌ لصنفٍ قائم يُرفض برسالةٍ تدلّ على مكان الصنف.</summary>
     [Fact]
@@ -60,8 +61,8 @@ public class ProductCodeAvailabilityTests : IDisposable
 
         var availability = await CheckAsync("P-1");
 
-        Assert.Equal(ProductCodeAvailability.TakenByExistingProduct, availability);
-        Assert.Contains("أظهِر الموقوف", ProductCodeAvailabilityQuery.Explain(availability, "P-1")!);
+        Assert.Equal(CodeAvailability.TakenByExistingRow, availability);
+        Assert.Contains("أظهِر الموقوف", CodeAvailabilityQuery.Explain(availability, CodeAvailabilityScope.Product, "P-1")!);
     }
 
     /// <summary>
@@ -78,8 +79,8 @@ public class ProductCodeAvailabilityTests : IDisposable
 
         var availability = await CheckAsync("P-2");
 
-        Assert.Equal(ProductCodeAvailability.TakenByDeletedProduct, availability);
-        Assert.Contains("محذوف", ProductCodeAvailabilityQuery.Explain(availability, "P-2")!);
+        Assert.Equal(CodeAvailability.TakenByDeletedRow, availability);
+        Assert.Contains("محذوف", CodeAvailabilityQuery.Explain(availability, CodeAvailabilityScope.Product, "P-2")!);
     }
 
     /// <summary>
@@ -94,7 +95,7 @@ public class ProductCodeAvailabilityTests : IDisposable
         product.Deactivate();
         await _db.SaveChangesAsync();
 
-        Assert.Equal(ProductCodeAvailability.TakenByExistingProduct, await CheckAsync("P-3"));
+        Assert.Equal(CodeAvailability.TakenByExistingRow, await CheckAsync("P-3"));
     }
 
     /// <summary>وتعديلُ الصنف نفسه لا يصطدم بكوده — وإلا استحال حفظُ أيّ تعديل.</summary>
@@ -103,9 +104,9 @@ public class ProductCodeAvailabilityTests : IDisposable
     {
         var product = await AddAsync("P-4");
 
-        Assert.Equal(ProductCodeAvailability.Available,
-            await new ProductCodeAvailabilityQuery(_db)
-                .CheckAsync(_companyId, "P-4", excludingProductId: product.Id));
+        Assert.Equal(CodeAvailability.Available,
+            await new CodeAvailabilityQuery(_db)
+                .CheckAsync(CodeAvailabilityScope.Product, _companyId, "P-4", excludingId: product.Id));
     }
 
     public void Dispose()

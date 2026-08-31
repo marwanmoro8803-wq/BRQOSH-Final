@@ -290,39 +290,43 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureMasterDataGovernanceColumnsAsync(isPg: true, ct);
         await ApplySoftDeleteColumnsAsync(isPg: true, ct);
         await EnsureDocumentTotalColumnsAsync(isPg: true, ct);
+
+        // (CEEF-229 · م2-١٠ / D-5) ‏آخرَ شيء: يُكنَس ما أنشأه المُرقِّعُ سابقاً بأسماءٍ
+        // ‏تخالف النموذج، بعد أن صار يُسمّي بأسمائه فلا يعود يُنشئ تكراراً.
+        await DropDuplicateUniqueIndexesAsync(ct);
         await EnsurePgColumnAsync("audit_log", "Reason", "character varying(512) NULL", ct);
         await EnsureV12LifecycleTablesAsync(isPg: true, ct);
         await EnsureV14CrmTablesAsync(isPg: true, ct);
 
         // فهارس اختيارية — PascalCase
         await SafePgIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_bank_accounts_company_code
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_bank_accounts_CompanyId_Code"
                 ON bank_accounts ("CompanyId", "Code");
             """, ct);
 
         await SafePgIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_construction_projects_company_code
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_construction_projects_CompanyId_Code"
                 ON construction_projects ("CompanyId", "Code");
             """, ct);
 
         await SafePgIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_construction_contracts_company_number
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_construction_contracts_CompanyId_ContractNumber"
                 ON construction_contracts ("CompanyId", "ContractNumber");
             """, ct);
 
         await SafePgIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_subcontract_agreements_company_number
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_subcontract_agreements_CompanyId_AgreementNumber"
                 ON subcontract_agreements ("CompanyId", "AgreementNumber");
             """, ct);
 
         // (CEEF-229 · Z-4) الفهرس الفريد على عدّاد ZATCA — للقواعد القائمة كذلك.
         await SafePgIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_zatca_documents_company_icv
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_zatca_einvoice_documents_CompanyId_Icv"
                 ON zatca_einvoice_documents ("CompanyId", "Icv");
             """, ct);
 
         await SafePgIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_app_users_company_username
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_app_users_CompanyId_Username"
                 ON app_users ("CompanyId", "Username");
             """, ct);
     }
@@ -388,17 +392,17 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureV14CrmTablesAsync(isPg: false, ct);
 
         await SafeSqliteIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_bank_accounts_company_code
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_bank_accounts_CompanyId_Code"
                 ON bank_accounts (CompanyId, Code);
             """, ct);
 
         await SafeSqliteIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_construction_projects_company_code
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_construction_projects_CompanyId_Code"
                 ON construction_projects (CompanyId, Code);
             """, ct);
 
         await SafeSqliteIndexAsync("""
-            CREATE UNIQUE INDEX IF NOT EXISTS ix_app_users_company_username
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_app_users_CompanyId_Username"
                 ON app_users (CompanyId, Username);
             """, ct);
     }
@@ -414,7 +418,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "ReportingCurrencyCode" character varying(3) NOT NULL DEFAULT 'SAR',
                   "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_company_groups_code ON company_groups ("Code");
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_company_groups_Code" ON company_groups ("Code");
               """
             : """
               CREATE TABLE IF NOT EXISTS company_groups (
@@ -424,7 +428,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   ReportingCurrencyCode TEXT NOT NULL DEFAULT 'SAR',
                   CreatedAtUtc TEXT NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_company_groups_code ON company_groups (Code);
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_company_groups_Code" ON company_groups (Code);
               """;
         try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
         catch { /* */ }
@@ -501,7 +505,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "CompanyGroupId" BIGINT NOT NULL,
                   "AccountCode" character varying(16) NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_ic_account_maps_group_code
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_intercompany_account_maps_CompanyGroupId_AccountCode"
                   ON intercompany_account_maps ("CompanyGroupId", "AccountCode");
               """
             : """
@@ -510,7 +514,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   CompanyGroupId INTEGER NOT NULL,
                   AccountCode TEXT NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_ic_account_maps_group_code
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_intercompany_account_maps_CompanyGroupId_AccountCode"
                   ON intercompany_account_maps (CompanyGroupId, AccountCode);
               """;
         try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
@@ -528,7 +532,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "MaxCompanies" INTEGER NOT NULL DEFAULT 1,
                   "IsActive" BOOLEAN NOT NULL DEFAULT true
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_billing_plans_code ON billing_plans ("Code");
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_billing_plans_Code" ON billing_plans ("Code");
 
               CREATE TABLE IF NOT EXISTS tenant_subscriptions (
                   "Id" BIGSERIAL PRIMARY KEY,
@@ -537,7 +541,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "Status" character varying(16) NOT NULL DEFAULT 'Trial',
                   "StartedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_tenant_subscriptions_tenant ON tenant_subscriptions ("TenantId");
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_tenant_subscriptions_TenantId" ON tenant_subscriptions ("TenantId");
               """
             : """
               CREATE TABLE IF NOT EXISTS billing_plans (
@@ -547,7 +551,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   MaxCompanies INTEGER NOT NULL DEFAULT 1,
                   IsActive INTEGER NOT NULL DEFAULT 1
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_billing_plans_code ON billing_plans (Code);
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_billing_plans_Code" ON billing_plans (Code);
 
               CREATE TABLE IF NOT EXISTS tenant_subscriptions (
                   Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -556,7 +560,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   Status TEXT NOT NULL DEFAULT 'Trial',
                   StartedAtUtc TEXT NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_tenant_subscriptions_tenant ON tenant_subscriptions (TenantId);
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_tenant_subscriptions_TenantId" ON tenant_subscriptions (TenantId);
               """;
         try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
         catch { /* */ }
@@ -613,6 +617,50 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsurePgColumnAsync(table, "BranchId", "BIGINT NULL", ct);
             else
                 await EnsureSqliteColumnAsync(table, "BranchId", "INTEGER NULL", ct);
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-229 · م2-١٠ / D-5) ‏<b>كنسُ قيدِ تفرّدٍ أُنشئ مرّتين.</b>
+    ///
+    /// <para>للمخطّط مصدران: النموذجُ يُنشئ <c>IX_…</c>، وكان المُرقِّعُ يُنشئ
+    /// <c>ix_…_snake</c> على <b>الأعمدة نفسِها</b>. فقاعدةٌ مرّت بالاثنين تحمل الفهرسَ
+    /// مرّتين — <b>وقِيس: ٢٠ زوجاً</b>.</para>
+    ///
+    /// <para>وليس عطلاً في الأرقام: القيدُ يُفرَض مرّةً واحدة. لكنّ كلَّ إدراجٍ يُصان به
+    /// شجرتان متطابقتان، <b>ويُظهر المخطّطُ قيوداً لا وجودَ لها في النموذج — فيُخفي التكرارُ
+    /// فهرساً حقيقياً مفقوداً بين ضجيجه</b>.</para>
+    ///
+    /// <para><b>وأصلُ العلاج تسميةٌ لا كنس:</b> صار المُرقِّعُ يُسمّي فهارسَه بأسماء النموذج،
+    /// فـ<c>IF NOT EXISTS</c> يكفي ولا يُنشأ ثانٍ أصلاً. وهذا الكنسُ <b>لما مضى وحده</b> —
+    /// للقواعد التي تحمل التكرارَ من قبل. ولولا التسمية لصار كنساً في كلّ إقلاع وإنشاءً
+    /// بعده: <b>دورةُ بناءٍ وهدمٍ دائمة على جداولَ قد تكون كبيرة</b>.</para>
+    ///
+    /// <para><b>ولا يُسقط إلا ما يبقى قيدُه مضموناً بعده</b>، ولا يمسّ فهرسَ النموذج:
+    /// الشرطُ أن يوجد فهرسٌ فريدٌ آخر على الأعمدة نفسِها واسمُه يبدأ بـ<c>IX_</c>.</para>
+    /// </summary>
+    private async Task DropDuplicateUniqueIndexesAsync(CancellationToken ct)
+    {
+        var duplicates = await db.Database.SqlQuery<string>($"""
+            SELECT d.indexname AS "Value"
+            FROM pg_indexes d
+            WHERE d.schemaname = 'public'
+              AND d.indexdef LIKE '%UNIQUE%'
+              AND d.indexname NOT LIKE 'IX!_%' ESCAPE '!'
+              AND EXISTS (
+                    SELECT 1 FROM pg_indexes k
+                    WHERE k.schemaname = 'public'
+                      AND k.tablename = d.tablename
+                      AND k.indexdef LIKE '%UNIQUE%'
+                      AND k.indexname LIKE 'IX!_%' ESCAPE '!'
+                      AND regexp_replace(k.indexdef, '.*USING btree ', '')
+                          = regexp_replace(d.indexdef, '.*USING btree ', ''))
+            """).ToListAsync(ct);
+
+        foreach (var index in duplicates)
+        {
+            SchemaSqlGuard.ValidateTable(index);
+            await db.Database.ExecuteSqlRawAsync($"DROP INDEX IF EXISTS \"{index}\"", ct);
         }
     }
 
@@ -927,7 +975,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "PayloadJson" TEXT NOT NULL,
                   "OccurredAtUtc" TIMESTAMPTZ NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_domain_events_event_id ON domain_events ("EventId");
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_domain_events_EventId" ON domain_events ("EventId");
               CREATE INDEX IF NOT EXISTS ix_domain_events_company_occurred ON domain_events ("CompanyId", "OccurredAtUtc");
               """
             : """
@@ -939,7 +987,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   PayloadJson TEXT NOT NULL,
                   OccurredAtUtc TEXT NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_domain_events_event_id ON domain_events (EventId);
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_domain_events_EventId" ON domain_events (EventId);
               CREATE INDEX IF NOT EXISTS ix_domain_events_company_occurred ON domain_events (CompanyId, OccurredAtUtc);
               """;
         try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
@@ -1017,7 +1065,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "IsActive" BOOLEAN NOT NULL DEFAULT true,
                   "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_branches_company_code ON branches ("CompanyId", "Code");
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_branches_CompanyId_Code" ON branches ("CompanyId", "Code");
               """
             : """
               CREATE TABLE IF NOT EXISTS branches (
@@ -1029,7 +1077,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   IsActive INTEGER NOT NULL DEFAULT 1,
                   CreatedAtUtc TEXT NOT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_branches_company_code ON branches (CompanyId, Code);
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_branches_CompanyId_Code" ON branches (CompanyId, Code);
               """;
         try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
         catch { /* */ }
@@ -1137,7 +1185,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "ProductId" BIGINT NOT NULL,
                   "QuantityOnHand" NUMERIC(18,4) NOT NULL DEFAULT 0
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_inventory_balances_company_wh_product
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_inventory_balances_CompanyId_WarehouseId_ProductId"
                   ON inventory_balances ("CompanyId", "WarehouseId", "ProductId");
               """
             : """
@@ -1148,7 +1196,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   ProductId INTEGER NOT NULL,
                   QuantityOnHand REAL NOT NULL DEFAULT 0
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_inventory_balances_company_wh_product
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_inventory_balances_CompanyId_WarehouseId_ProductId"
                   ON inventory_balances (CompanyId, WarehouseId, ProductId);
               """;
 
@@ -1178,7 +1226,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "RejectedBy" character varying(128) NULL,
                   "RejectionReason" character varying(1024) NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_workflow_instances_company_kind_doc
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_workflow_instances_CompanyId_DocumentKind_DocumentId"
                   ON workflow_instances ("CompanyId", "DocumentKind", "DocumentId");
               CREATE TABLE IF NOT EXISTS workflow_approval_records (
                   id BIGSERIAL PRIMARY KEY,
@@ -1200,7 +1248,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   "PurchaseOrderId" BIGINT NULL,
                   "WorkflowInstanceId" BIGINT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_purchase_requests_company_number
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_purchase_requests_CompanyId_RequestNumber"
                   ON purchase_requests ("CompanyId", "RequestNumber");
               CREATE TABLE IF NOT EXISTS purchase_request_lines (
                   id BIGSERIAL PRIMARY KEY,
@@ -1224,7 +1272,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   RejectedBy TEXT NULL,
                   RejectionReason TEXT NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_workflow_instances_company_kind_doc
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_workflow_instances_CompanyId_DocumentKind_DocumentId"
                   ON workflow_instances (CompanyId, DocumentKind, DocumentId);
               CREATE TABLE IF NOT EXISTS workflow_approval_records (
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1246,7 +1294,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   PurchaseOrderId INTEGER NULL,
                   WorkflowInstanceId INTEGER NULL
               );
-              CREATE UNIQUE INDEX IF NOT EXISTS ix_purchase_requests_company_number
+              CREATE UNIQUE INDEX IF NOT EXISTS "IX_purchase_requests_CompanyId_RequestNumber"
                   ON purchase_requests (CompanyId, RequestNumber);
               CREATE TABLE IF NOT EXISTS purchase_request_lines (
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1501,12 +1549,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("journal_entries", "WorkflowInstanceId", "BIGINT NULL", ct);
 
             await SafePgIndexAsync("""
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_customers_company_vat
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_customers_CompanyId_VatRegistrationNumber"
                     ON customers ("CompanyId", "VatRegistrationNumber")
                     WHERE "VatRegistrationNumber" <> '';
                 """, ct);
             await SafePgIndexAsync("""
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_suppliers_company_vat
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_suppliers_CompanyId_VatRegistrationNumber"
                     ON suppliers ("CompanyId", "VatRegistrationNumber")
                     WHERE "VatRegistrationNumber" <> '';
                 """, ct);
@@ -1522,12 +1570,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("journal_entries", "WorkflowInstanceId", "INTEGER NULL", ct);
 
             await SafeSqliteIndexAsync("""
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_customers_company_vat
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_customers_CompanyId_VatRegistrationNumber"
                     ON customers (CompanyId, VatRegistrationNumber)
                     WHERE VatRegistrationNumber <> '';
                 """, ct);
             await SafeSqliteIndexAsync("""
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_suppliers_company_vat
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_suppliers_CompanyId_VatRegistrationNumber"
                     ON suppliers (CompanyId, VatRegistrationNumber)
                     WHERE VatRegistrationNumber <> '';
                 """, ct);
@@ -1549,7 +1597,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Username" character varying(64) NOT NULL,
                     "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_doc_version_company_type_key_ver
+                -- (CEEF-229) ‏الاسمُ منتهٍ بـ~ عمداً: حدُّ PostgreSQL ٦٣ بايتاً، وEF يبتر
+                -- ‏بهذه العلامة. فاسمٌ مبتورٌ بغيرها يُنتج فهرساً ثانياً على الأعمدة نفسِها.
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_document_version_history_CompanyId_DocumentType_DocumentKey~"
                     ON document_version_history ("CompanyId", "DocumentType", "DocumentKey", "Version");
                 """, ct);
 
@@ -1594,7 +1644,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Subtotal" NUMERIC(18,2) NOT NULL DEFAULT 0,
                     "VatAmount" NUMERIC(18,2) NOT NULL DEFAULT 0
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_sales_quotations_company_number
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_sales_quotations_CompanyId_QuotationNumber"
                     ON sales_quotations ("CompanyId", "QuotationNumber");
                 """, ct);
 
@@ -1635,7 +1685,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Subtotal" NUMERIC(18,2) NOT NULL DEFAULT 0,
                     "VatAmount" NUMERIC(18,2) NOT NULL DEFAULT 0
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_sales_orders_company_number
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_sales_orders_CompanyId_OrderNumber"
                     ON sales_orders ("CompanyId", "OrderNumber");
                 """, ct);
 
@@ -1672,7 +1722,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Username TEXT NOT NULL,
                     CreatedAtUtc TEXT NOT NULL DEFAULT (datetime('now'))
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_doc_version_company_type_key_ver
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_document_version_history_CompanyId_DocumentType_DocumentKey~"
                     ON document_version_history (CompanyId, DocumentType, DocumentKey, Version);
                 """, ct);
 
@@ -1717,7 +1767,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Subtotal REAL NOT NULL DEFAULT 0,
                     VatAmount REAL NOT NULL DEFAULT 0
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_sales_quotations_company_number
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_sales_quotations_CompanyId_QuotationNumber"
                     ON sales_quotations (CompanyId, QuotationNumber);
                 """, ct);
 
@@ -1749,7 +1799,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Subtotal REAL NOT NULL DEFAULT 0,
                     VatAmount REAL NOT NULL DEFAULT 0
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_sales_orders_company_number
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_sales_orders_CompanyId_OrderNumber"
                     ON sales_orders (CompanyId, OrderNumber);
                 """, ct);
 

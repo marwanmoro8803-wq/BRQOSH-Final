@@ -1,3 +1,4 @@
+﻿using Brqosh.Infrastructure.Platform;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,15 @@ public partial class CostCenterDialog : Window
             }
             else
             {
+                // (CEEF-229 · م2-١٠ / D-6) ‏فحصُ الكود قبل الحفظ — وإلا تحدّثت قاعدةُ
+                // ‏البيانات بلغتها: انتهاكُ تفرّدٍ يُعرض نصُّه الإنجليزيّ في حوارٍ عربيّ،
+                // ‏والمالكُ لا يرى الصفَّ الحاجز في أيّ قائمة (قد يكون محذوفاً).
+                var availability = await new CodeAvailabilityQuery(db)
+                    .CheckAsync(CodeAvailabilityScope.CostCenter, AppServices.CompanyId, CodeBox.Text);
+                if (CodeAvailabilityQuery.Explain(availability, CodeAvailabilityScope.CostCenter, CodeBox.Text.Trim())
+                    is string reason)
+                    throw new AccountingException(reason);
+
                 var center = CostCenter.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text);
                 if (await db.CostCenters.AnyAsync(c => c.CompanyId == AppServices.CompanyId && c.Code == center.Code))
                     throw new AccountingException($"كود مركز التكلفة '{center.Code}' مستخدم مسبقاً.");
