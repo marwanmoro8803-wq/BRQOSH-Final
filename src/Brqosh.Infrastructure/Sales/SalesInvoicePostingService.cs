@@ -138,7 +138,12 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
         entry.Post(entryNumber);
 
         db.JournalEntries.Add(entry);
-        db.SalesInvoices.Add(invoice);
+        // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+        // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
+        // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
+        // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
+        if (invoice.Id == 0)
+            db.SalesInvoices.Add(invoice);
         await db.SaveChangesAsync(ct);
 
         invoice.LinkJournalEntry(entry.Id);

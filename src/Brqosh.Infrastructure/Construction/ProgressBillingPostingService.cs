@@ -44,7 +44,12 @@ public class ProgressBillingPostingService(BrqoshDbContext db)
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);
-            db.ProgressBillings.Add(billing);
+            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
+            // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
+            // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
+            if (billing.Id == 0)
+                db.ProgressBillings.Add(billing);
             await db.SaveChangesAsync(token);
 
             billing.LinkJournalEntry(entry.Id);

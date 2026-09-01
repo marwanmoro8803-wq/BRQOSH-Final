@@ -107,7 +107,12 @@ public class CreditNotePostingService(BrqoshDbContext db)
         entry.Post(entryNumber);
 
         db.JournalEntries.Add(entry);
-        db.CreditNotes.Add(note);
+        // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+        // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
+        // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
+        // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
+        if (note.Id == 0)
+            db.CreditNotes.Add(note);
         await db.SaveChangesAsync(ct);
 
         note.LinkJournalEntry(entry.Id);

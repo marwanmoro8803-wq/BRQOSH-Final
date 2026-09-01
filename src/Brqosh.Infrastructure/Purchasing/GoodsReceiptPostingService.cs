@@ -112,7 +112,12 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
             }
 
             receipt.MarkPosted(number, movementId);
-            db.GoodsReceipts.Add(receipt);
+            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
+            // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
+            // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
+            if (receipt.Id == 0)
+                db.GoodsReceipts.Add(receipt);
             await db.SaveChangesAsync(token);
 
             if (accrual is not null)

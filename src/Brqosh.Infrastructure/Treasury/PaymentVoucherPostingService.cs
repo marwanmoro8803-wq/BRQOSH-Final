@@ -65,7 +65,12 @@ public class PaymentVoucherPostingService(BrqoshDbContext db)
 
             db.JournalEntries.Add(entry);
             if (voucher.Id == 0)
-                db.PaymentVouchers.Add(voucher);
+                // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+                // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
+                // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
+                // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
+                if (voucher.Id == 0)
+                    db.PaymentVouchers.Add(voucher);
             await db.SaveChangesAsync(ct);
 
             voucher.LinkJournalEntry(entry.Id);
