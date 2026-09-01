@@ -78,6 +78,48 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("accounts", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Accounting.Budget", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Year");
+
+                    b.ToTable("budgets", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Accounting.CostCenter", b =>
                 {
                     b.Property<long>("Id")
@@ -3337,6 +3379,51 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("zatca_settings", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Accounting.Budget", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Accounting.BudgetLine", "Lines", b1 =>
+                        {
+                            b1.Property<long>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<string>("AccountCode")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<long?>("CostCenterId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<string>("PeriodCode")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("character varying(7)");
+
+                            b1.Property<long>("budget_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("id");
+
+                            b1.HasIndex("budget_id");
+
+                            b1.HasIndex("PeriodCode", "AccountCode");
+
+                            b1.ToTable("budget_lines", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("budget_id");
+                        });
+
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Accounting.JournalEntry", b =>

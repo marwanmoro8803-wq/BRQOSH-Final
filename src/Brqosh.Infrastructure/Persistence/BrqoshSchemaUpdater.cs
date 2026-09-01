@@ -1993,6 +1993,46 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
         }
 
+        // (CEEF-230 · ط1-٦) ‏الموازنة.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS budgets (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "Code" character varying(32) NOT NULL,
+                    "NameAr" character varying(256) NOT NULL,
+                    "Year" INTEGER NOT NULL,
+                    "Status" character varying(16) NOT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS budget_lines (
+                    id BIGSERIAL PRIMARY KEY,
+                    budget_id BIGINT NOT NULL REFERENCES budgets("Id") ON DELETE CASCADE,
+                    "AccountCode" character varying(20) NOT NULL,
+                    "PeriodCode" character varying(7) NOT NULL,
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "CostCenterId" BIGINT NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_budgets_CompanyId_Code"
+                    ON budgets ("CompanyId", "Code");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_budgets_CompanyId_Year" ON budgets ("CompanyId", "Year");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_budget_lines_budget_id" ON budget_lines (budget_id);
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_budget_lines_PeriodCode_AccountCode"
+                    ON budget_lines ("PeriodCode", "AccountCode");
+                """, ct);
+        }
+
         // (CEEF-230 · ط1-٥) ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
         if (isPg)
         {

@@ -74,6 +74,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
     public DbSet<StockBatch> StockBatches => Set<StockBatch>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
+    public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
     public DbSet<InventoryCostConsumption> InventoryCostConsumptions => Set<InventoryCostConsumption>();
@@ -524,6 +525,31 @@ public class BrqoshDbContext : DbContext
             entity.Property(u => u.BaseCode).HasMaxLength(16).IsRequired();
             entity.Property(u => u.Factor).HasPrecision(18, 6);
             entity.HasIndex(u => new { u.CompanyId, u.Code }).IsUnique();
+        });
+
+        // (CEEF-230 · ط1-٦) ‏الموازنة — حبّتُها شهريّةٌ بمفتاح الفترة المالية نفسِه.
+        modelBuilder.Entity<Budget>(entity =>
+        {
+            entity.ToTable("budgets");
+            entity.Property(b => b.Code).HasMaxLength(32).IsRequired();
+            entity.Property(b => b.NameAr).HasMaxLength(256).IsRequired();
+            entity.Property(b => b.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(b => new { b.CompanyId, b.Code }).IsUnique();
+            entity.HasIndex(b => new { b.CompanyId, b.Year });
+
+            entity.OwnsMany(b => b.Lines, lines =>
+            {
+                lines.ToTable("budget_lines");
+                lines.WithOwner().HasForeignKey("budget_id");
+                lines.Property<long>("id");
+                lines.HasKey("id");
+                lines.Property(l => l.AccountCode).HasMaxLength(20).IsRequired();
+                lines.Property(l => l.PeriodCode).HasMaxLength(7).IsRequired();
+                lines.Property(l => l.Amount).HasPrecision(18, 2);
+                lines.HasIndex(l => new { l.PeriodCode, l.AccountCode });
+            });
+
+            entity.Navigation(b => b.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط1-٥) ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
