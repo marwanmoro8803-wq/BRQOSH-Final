@@ -29,7 +29,11 @@ public class PayrollPostingService(BrqoshDbContext db)
                 db, run.CompanyId, run.PayDate, PostingDocumentKind.Payroll,
                 accountIds: [salaries.Id, gosiExp.Id, salariesPayable.Id, gosiPayable.Id], ct: token);
 
-            var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable);
+            // (CEEF-230 · ط2-٤) ‏حسابُ البدلات — يُنشأ من القالب إن غاب، فقواعدُ العملاء
+            // ‏تحمله أصلاً (هو في الشجرة منذ البداية) لكنّه لم يكن يُستعمل.
+            var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, "5202", token);
+
+            var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(run.CompanyId, run.PayDate);
             entry.Post(entryNumber);
 

@@ -143,7 +143,15 @@ public class PayrollRun : IBranchScoped
             employee.Id, employee.OtherAllowance);
     }
 
-    public JournalEntry Post(Account salariesExpense, Account gosiExpense, Account salariesPayable, Account gosiPayable)
+    /// <summary>الأساسيُّ وحده — وهو ما يذهب إلى حساب الرواتب والأجور.</summary>
+    public decimal TotalBasic => _lines.Sum(l => l.BasicSalary);
+
+    /// <summary>البدلاتُ كلُّها — سكنٌ ونقلٌ وغيرُهما.</summary>
+    public decimal TotalAllowances =>
+        _lines.Sum(l => l.HousingAllowance + l.TransportAllowance + l.OtherAllowance);
+
+    public JournalEntry Post(Account salariesExpense, Account gosiExpense, Account salariesPayable,
+        Account gosiPayable, Account? allowancesExpense = null)
     {
         if (Status != PayrollRunStatus.Draft)
             throw new AccountingException("الدورة مرحّلة مسبقاً.");
@@ -153,7 +161,23 @@ public class PayrollRun : IBranchScoped
         var entry = JournalEntry.CreateDraft(CompanyId, PayDate,
             $"رواتب {PeriodCode}", $"Payroll:{PeriodCode}");
 
-        entry.AddLine(salariesExpense, TotalGross, 0m, "مصروف رواتب");
+        // (CEEF-230 · ط2-٤) ‏**البدلاتُ تُفصَل عن الأساسيّ.**
+        //
+        // ‏كان الإجماليُّ كلُّه يذهب إلى `5201`، و`5202 بدلات السكن والانتقال` **حسابٌ
+        // ‏ميّتٌ في الشجرة**. فمالكٌ يسأل «كم أنفقتُ على بدلات السكن؟» لا يجد جواباً —
+        // ‏والرقمُ موجودٌ في كلّ سطرِ رواتبَ ولا يخرج منه.
+        //
+        // ‏**والمجموعُ لا يتغيّر**، فلا تنكسر هويّةٌ ولا يتحرّك صافي الربح. وحسابُ البدلات
+        // ‏اختياريٌّ في التوقيع: مستدعٍ لا يُمرّره يسلك السلوكَ القديم حرفاً.
+        if (allowancesExpense is not null && TotalAllowances > 0m)
+        {
+            entry.AddLine(salariesExpense, TotalBasic, 0m, "مصروف رواتب");
+            entry.AddLine(allowancesExpense, TotalAllowances, 0m, "بدلات السكن والانتقال");
+        }
+        else
+        {
+            entry.AddLine(salariesExpense, TotalGross, 0m, "مصروف رواتب");
+        }
         if (TotalGosiEmployer > 0)
             entry.AddLine(gosiExpense, TotalGosiEmployer, 0m, "تأمينات اجتماعية — صاحب عمل");
         entry.AddLine(salariesPayable, 0m, TotalNet, "رواتب مستحقة");
