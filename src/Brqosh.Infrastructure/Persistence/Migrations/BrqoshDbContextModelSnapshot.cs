@@ -3117,6 +3117,13 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasDefaultValue("SAR");
+
                     b.Property<long>("CustomerId")
                         .HasColumnType("bigint");
 
@@ -3125,6 +3132,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<decimal>("ExchangeRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasDefaultValue(1m);
+
                     b.Property<long?>("JournalEntryId")
                         .HasColumnType("bigint");
 
@@ -3132,6 +3145,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
+
+                    b.Property<decimal>("ReceivableRelieved")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Reference")
                         .IsRequired()

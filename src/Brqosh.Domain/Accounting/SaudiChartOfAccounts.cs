@@ -89,6 +89,10 @@ public static class SaudiChartOfAccounts
         new("4105", "إيرادات الخدمات", "Service Revenue", AccountType.Revenue, "4", IsGroup: false),
         new("4106", "إيرادات أخرى", "Other Income", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
         new("4107", "أرباح فروق عملة غير محققة", "Unrealized FX Gain", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
+        // (CEEF-230 · ط1-٤) ‏**المحقَّقُ غيرُ غير المحقَّق** — والفصلُ بينهما ليس تصنيفاً:
+        // ‏المحقَّقُ ربحٌ وقع بسدادٍ فعليّ لا يعود، وغيرُ المحقَّق تقديرٌ يتغيّر بكلّ إعادة
+        // ‏تقييم ويُعكس. **وخلطُهما يجعل الأرباحَ تبدو مستقرّةً وهي متقلّبة.**
+        new("4108", "أرباح فروق عملة محققة", "Realized FX Gain", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
 
         // ============ 5 — المصروفات ============
         new("5", "المصروفات", "Expenses", AccountType.Expense, null, IsGroup: true),
@@ -124,6 +128,7 @@ public static class SaudiChartOfAccounts
         new("5215", "مصروفات متنوعة", "Miscellaneous Expenses", AccountType.Expense, "52", IsGroup: false),
         new("5216", "مصروف الزكاة", "Zakat Expense", AccountType.Expense, "52", IsGroup: false),
         new("5217", "خسائر فروق عملة غير محققة", "Unrealized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
+        new("5218", "خسائر فروق عملة محققة", "Realized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>
@@ -155,6 +160,10 @@ public static class SaudiChartOfAccounts
         public const string WorkInProgress = "1113";
         public const string UnrealizedFxGain = "4107";
         public const string UnrealizedFxLoss = "5217";
+
+        /// <summary>(CEEF-230 · ط1-٤) فرقُ عملةٍ وقع بسدادٍ فعليّ — لا يُعكس ولا يُعاد تقديرُه.</summary>
+        public const string RealizedFxGain = "4108";
+        public const string RealizedFxLoss = "5218";
         public const string BankCharges = "5213";
         public const string OtherIncome = "4106";
     }

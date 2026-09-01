@@ -114,7 +114,19 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         var received = await db.ReceiptVouchers
             .Where(v => v.CompanyId == companyId && v.Status == ReceiptVoucherStatus.Posted)
             .GroupBy(v => v.CustomerId)
-            .Select(g => new { CustomerId = g.Key, Total = g.Sum(v => v.Amount) })
+            // (CEEF-230 · ط1-٤) ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق.**
+            //
+            // ‏كان يطرح `Amount` — وهو بعملة السند. فسندٌ دولاريٌّ يُنقص الذمّةَ الريالية
+            // ‏بعددٍ دولاريّ، **وينفصل الدفترُ المساعد عن الأستاذ**. وأسقطته هـ-١ في أوّل
+            // ‏تشغيل: الأستاذُ صفرٌ والمساعدُ 3,162.50.
+            //
+            // ‏و`ReceivableRelieved == 0` يعني سنداً قديماً سابقاً لهذه الدفعة — و`Amount`
+            // ‏هو الصوابُ له، إذ كان كلُّ سندٍ بالريال بالضرورة.
+            .Select(g => new
+            {
+                CustomerId = g.Key,
+                Total = g.Sum(v => v.ReceivableRelieved == 0m ? v.Amount : v.ReceivableRelieved),
+            })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
         var chequeReceived = await db.Cheques

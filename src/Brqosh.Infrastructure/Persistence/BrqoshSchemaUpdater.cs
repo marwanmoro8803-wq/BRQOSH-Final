@@ -1955,6 +1955,29 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync(table, "CostCenterId", "INTEGER NULL", ct);
         }
 
+        // (CEEF-230 · ط1-٤) ‏عملةُ سند القبض.
+        if (await TableExistsAsync("receipt_vouchers", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("receipt_vouchers", "CurrencyCode",
+                    "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+                await EnsurePgColumnAsync("receipt_vouchers", "ExchangeRate",
+                    "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+                await EnsurePgColumnAsync("receipt_vouchers", "ReceivableRelieved",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("receipt_vouchers", "CurrencyCode",
+                    "TEXT NOT NULL DEFAULT 'SAR'", ct);
+                await EnsureSqliteColumnAsync("receipt_vouchers", "ExchangeRate",
+                    "TEXT NOT NULL DEFAULT '1'", ct);
+                await EnsureSqliteColumnAsync("receipt_vouchers", "ReceivableRelieved",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+        }
+
         if (await TableExistsAsync("sales_invoices", isPg, ct))
         {
             if (isPg)

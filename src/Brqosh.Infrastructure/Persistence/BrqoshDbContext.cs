@@ -362,6 +362,11 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<ReceiptVoucher>(entity =>
         {
             entity.ToTable("receipt_vouchers");
+            // (CEEF-230 · ط1-٤) ‏عملةُ السند وسعرُها يوم التحصيل — ومن فرقِه عن
+            // ‏سعر يوم الفاتورة يقع الربحُ أو الخسارةُ المحقَّقة.
+            entity.Property(v => v.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
+            entity.Property(v => v.ExchangeRate).HasPrecision(18, 6).HasDefaultValue(1m);
+            entity.Property(v => v.ReceivableRelieved).HasPrecision(18, 2);
             entity.Property(v => v.VoucherNumber).HasMaxLength(32);
             entity.Property(v => v.Description).HasMaxLength(512).IsRequired();
             entity.Property(v => v.Reference).HasMaxLength(128);

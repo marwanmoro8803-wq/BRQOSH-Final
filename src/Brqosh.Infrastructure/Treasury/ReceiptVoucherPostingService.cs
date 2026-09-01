@@ -19,6 +19,57 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db)
     public Task<ReceiptVoucher> PostAsync(ReceiptVoucher voucher) =>
         PostAsync(voucher, Array.Empty<(PaymentAllocationDocumentType, long, string, decimal)>());
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٤) <b>يحسب ما يُحرَّر من الذمّة، ويُحضر حسابَي فرقِ العملة.</b>
+    ///
+    /// <para><b>وسندٌ بالريال يُعيد <c>null</c></b> — فيسلك الترحيلُ مسارَه القديم حرفاً،
+    /// ولا يتغيّر رقمٌ في قاعدةٍ قائمة.</para>
+    ///
+    /// <para><b>ولا يُخلط سندٌ واحدٌ بعملتين</b>: تخصيصُ سندٍ دولاريٍّ على فاتورةٍ بالريال
+    /// يعني مقارنةَ مبلغين لا يقبل أحدُهما الآخر — <b>ويُنتج «فرقَ عملة» هو في الحقيقة
+    /// خطأُ إدخال</b>. فيُرفض ويُسمّى.</para>
+    /// </summary>
+    private async Task<(decimal? Released, Account? Gain, Account? Loss)> ResolveSettlementAsync(
+        ReceiptVoucher voucher,
+        IReadOnlyList<(PaymentAllocationDocumentType Type, long DocumentId, string Number, decimal Amount)> allocations,
+        CancellationToken ct)
+    {
+        if (voucher.CurrencyCode == "SAR" || allocations.Count == 0)
+            return (null, null, null);
+
+        var invoiceIds = allocations
+            .Where(a => a.Type == PaymentAllocationDocumentType.SalesInvoice)
+            .Select(a => a.DocumentId)
+            .ToList();
+
+        var invoices = await db.SalesInvoices.AsNoTracking()
+            .Where(i => invoiceIds.Contains(i.Id))
+            .ToDictionaryAsync(i => i.Id, ct);
+
+        decimal released = 0m;
+        foreach (var allocation in allocations)
+        {
+            if (!invoices.TryGetValue(allocation.DocumentId, out var invoice))
+                throw new AccountingException(
+                    $"سندٌ بعملة {voucher.CurrencyCode} خُصّص على مستندٍ لا تُقرأ عملتُه: {allocation.Number}.");
+
+            if (invoice.CurrencyCode != voucher.CurrencyCode)
+                throw new AccountingException(
+                    $"عملةُ السند ({voucher.CurrencyCode}) تخالف عملةَ الفاتورة {allocation.Number} "
+                    + $"({invoice.CurrencyCode}) — ولا يُخلط سندٌ واحدٌ بعملتين.");
+
+            released += Math.Round(allocation.Amount * invoice.ExchangeRate, 2,
+                MidpointRounding.AwayFromZero);
+        }
+
+        var gain = await SystemAccountProvisioning.EnsureAsync(
+            db, voucher.CompanyId, SaudiChartOfAccounts.SystemCodes.RealizedFxGain, ct);
+        var loss = await SystemAccountProvisioning.EnsureAsync(
+            db, voucher.CompanyId, SaudiChartOfAccounts.SystemCodes.RealizedFxLoss, ct);
+
+        return (released, gain, loss);
+    }
+
     public async Task<ReceiptVoucher> PostAsync(
         ReceiptVoucher voucher,
         IReadOnlyList<(PaymentAllocationDocumentType Type, long DocumentId, string Number, decimal Amount)> allocations)
@@ -49,7 +100,13 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db)
                 db.ReceiptVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
                 "RV", voucher.VoucherDate.Year, voucher.CompanyId);
 
-            var entry = voucher.Post(voucherNumber, cashOrBank, receivable);
+            // (CEEF-230 · ط1-٤) ‏**قيمةُ الذمّة كما نشأت** — بسعرِ يوم كلّ فاتورة، لا بسعر
+            // ‏يوم التحصيل. ومن فرقِ السعرين يقع الربحُ أو الخسارةُ المحقَّقة.
+            var (releasedReceivable, fxGain, fxLoss) =
+                await ResolveSettlementAsync(voucher, allocations, ct);
+
+            var entry = voucher.Post(voucherNumber, cashOrBank, receivable,
+                releasedReceivable, fxGain, fxLoss);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);
             entry.Post(entryNumber);
 
