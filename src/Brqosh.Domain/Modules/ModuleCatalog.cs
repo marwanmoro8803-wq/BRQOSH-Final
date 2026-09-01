@@ -27,8 +27,16 @@ public static class ModuleCatalog
     private static readonly IReadOnlyDictionary<BusinessProfile, ModuleKey[]> ProfileModules =
         new Dictionary<BusinessProfile, ModuleKey[]>
         {
+            // (CEEF-230 · ط0-١) ‏أُضيفت Zatca — **مَن يبيع في السعودية يُفوتِر إلكترونياً**.
+            //
+            // ‏الملفُّ لا يُعلن `Sales` صراحةً، **لكنّه يُحلّ إليها بالتبعية** — فمنشأةُ
+            // ‏«محاسبة عامة» تُصدر فواتيرَ مبيعات. وبلا `Zatca` تُصدَر **خارج نظام الهيئة**:
+            // ‏لا بصمةَ ولا رمزَ استجابةٍ ولا إرسال، وهو مخالفةٌ نظامية لا نقصُ ميزة.
+            //
+            // ‏ولم يُكشف إلا بمسبار القطاعات: الخريطةُ الخام تقول «بلا مبيعات» والمحلولةُ
+            // ‏تقول غيرَه — **وهو الفرقُ بين ما كُتب وما يعمل**.
             [BusinessProfile.General] =
-                [ModuleKey.GeneralLedger, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.FixedAssets, ModuleKey.Payroll],
+                [ModuleKey.GeneralLedger, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.Zatca],
             [BusinessProfile.Construction] =
                 [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Manufacturing] =
