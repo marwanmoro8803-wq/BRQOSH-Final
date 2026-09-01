@@ -201,6 +201,20 @@ public class SystemAccountCoverageTests : IDisposable
         payroll.AddLine("موظف المبيعات", basic: 4000m, housing: 1000m, gosiEmployee: 400m, gosiEmployer: 450m);
         await new PayrollPostingService(_db).PostAsync(payroll, "admin");
 
+        // ── مكافأةُ نهاية الخدمة — التزامٌ يتراكم بمجرّد وجود موظّف ──────────
+        //
+        // ‏(CEEF-230 · ط2-٣) ‏وأُضيفت إلى الدورة **لا إلى قائمة الإقرار**: التخصيصُ يقع
+        // ‏في كلّ منشأةٍ لها موظّفون، **فهو من صلب دورة المحلّ لا استثناءٍ منها**. وحسابُ
+        // ‏المخصّص `2202` كان في الشجرة بلا كاتبٍ منذ اليوم الأوّل.
+        var employee = Employee.Create(companyId, "EMP-1", "موظف المبيعات", "1012345678",
+            EmployeeNationality.Saudi, "بائع", new DateOnly(2023, 1, 1));
+        employee.SetPay(basic: 4000m, housing: 1000m, transport: 0m);
+        _db.Employees.Add(employee);
+        await _db.SaveChangesAsync();
+
+        await new EndOfServiceAccrualService(_db)
+            .RunMonthlyAsync(companyId, new DateOnly(2026, 5, 31), "admin");
+
         // ── إقفالُ السنة ───────────────────────────────────────────────────
         await new YearEndCloseService(_db).CloseYearAsync(companyId, 2026, "admin");
 

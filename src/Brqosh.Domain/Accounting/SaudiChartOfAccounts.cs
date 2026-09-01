@@ -129,6 +129,8 @@ public static class SaudiChartOfAccounts
         new("5216", "مصروف الزكاة", "Zakat Expense", AccountType.Expense, "52", IsGroup: false),
         new("5217", "خسائر فروق عملة غير محققة", "Unrealized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         new("5218", "خسائر فروق عملة محققة", "Realized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
+        // (CEEF-230 · ط2-٣) ‏مصروفُ المكافأة — يقابل المخصّصَ 2202 الذي كان بلا كاتب.
+        new("5219", "مصروف مكافأة نهاية الخدمة", "End of Service Benefit Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>
