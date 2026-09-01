@@ -27,8 +27,16 @@ public class TrialBalanceQuery(BrqoshDbContext db)
     /// استبعاد قيود الإقفال السنوي — تستخدمه قائمة الدخل لعرض أداء الفترة (ع-R2).
     /// الافتراضي false: ميزان المراجعة سجل خام للأستاذ، وقيد الإقفال قيد مرحّل حقيقي فيه.
     /// </param>
+    /// <param name="costCenterId">
+    /// (CEEF-230 · ط1-٧) ‏مركزُ تكلفةٍ بعينه — و<c>null</c> يعني الكلّ، وهو الأصل.
+    ///
+    /// <para><b>وميزانٌ مُرشَّحٌ بمركزٍ لا يتوازن بالضرورة</b>، ولا يُنتظر منه ذلك: هو
+    /// مقطعٌ من الأستاذ لا دفترٌ قائمٌ بذاته. <b>وقارئٌ يتوقّع توازنَه يظنّ العطلَ حيث
+    /// لا عطل</b> — ولهذا يُقال هنا صراحة.</para>
+    /// </param>
     public async Task<IReadOnlyList<TrialBalanceRow>> ExecuteAsync(
-        long companyId, DateOnly fromDate, DateOnly toDate, bool excludeYearEndClosing = false)
+        long companyId, DateOnly fromDate, DateOnly toDate, bool excludeYearEndClosing = false,
+        long? costCenterId = null)
     {
         var entries = db.JournalEntries.WhereReportable(companyId, fromDate, toDate);
         if (excludeYearEndClosing)
@@ -37,6 +45,7 @@ public class TrialBalanceQuery(BrqoshDbContext db)
         // تجميع على مستوى قاعدة البيانات — لا تحميل سطور القيود إلى الذاكرة
         var totals = await entries
             .SelectMany(e => e.Lines)
+            .Where(l => costCenterId == null || l.CostCenterId == costCenterId)
             .GroupBy(l => l.AccountId)
             .Select(g => new
             {

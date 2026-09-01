@@ -71,6 +71,18 @@ public class PaymentVoucher : IBranchScoped
         return voucher;
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٧) مركزُ تكلفة السند — يُختم على سطور المصروف في قيده.
+    /// </summary>
+    public long? CostCenterId { get; private set; }
+
+    public void AssignCostCenter(long? costCenterId)
+    {
+        if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل.");
+        CostCenterId = costCenterId;
+    }
+
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

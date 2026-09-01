@@ -140,6 +140,36 @@ public class JournalEntry : IBranchScoped
                 "مبلغ السطر يتجاوز خانتَي الهللة — قرِّب المبلغ قبل الترحيل.");
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٧) <b>يختم مركزَ التكلفة على سطور الأرباح والخسائر.</b>
+    ///
+    /// <para><b>وعلى تلك وحدَها:</b> مركزُ التكلفة مفهومُ <b>أداء</b> لا مركزٍ ماليّ.
+    /// فتصنيفُ ذمّةٍ دائنةٍ أو ضريبةِ مدخلاتٍ على مركزٍ لا يُجيب سؤالاً يُسأل، ويُضخّم
+    /// التقريرَ بأرقامٍ لا تُقرأ.</para>
+    ///
+    /// <para><b>والتمييزُ ببادئة الكود</b> (4 إيراد · 5 مصروف) — وهو ارتباطٌ بقالب الحسابات
+    /// السعوديّ يُقرّ به هذا التعليق. <b>وهو اصطلاحُ هذا المستودع القائم</b>: الهويّاتُ
+    /// الجبرية ومسبارُ القطاعات يقرآن الأكواد ببادئاتها. وبديلُه حملُ نوعِ الحساب على كلّ
+    /// سطرٍ مُخزَّن، وهو تكرارٌ يفترق عن مصدره يوماً.</para>
+    ///
+    /// <para><b>ولا يُبدَّل ما ضُبط</b>: سطرٌ حمل مركزَه من مُدخِله أولى من ختمٍ عامّ.</para>
+    /// </summary>
+    public void StampCostCenter(long? costCenterId)
+    {
+        if (costCenterId is null) return;
+        EnsureDraft("ختم مركز التكلفة");
+
+        for (var i = 0; i < _lines.Count; i++)
+        {
+            var line = _lines[i];
+            if (line.CostCenterId is not null) continue;
+            if (line.AccountCode.Length == 0) continue;
+            if (line.AccountCode[0] is not ('4' or '5')) continue;
+
+            _lines[i] = line with { CostCenterId = costCenterId };
+        }
+    }
+
     public void AddLine(Account account, decimal debit, decimal credit, string? lineDescription = null, long? costCenterId = null)
     {
         EnsureDraft("إضافة سطر");

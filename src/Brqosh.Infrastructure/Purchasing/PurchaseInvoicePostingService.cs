@@ -112,6 +112,12 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable,
                 inventorySubtotal, inventoryAccount, grniRelief, grniAccount, priceVariance, varianceAccount);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
+
+            // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
+            // ‏الترحيل**، فالقيدُ المرحَّل لا يُعدَّل. ويُتحقَّق من المركز أوّلاً: مرجعٌ
+            // ‏لمركزٍ محذوفٍ يُنتج تقريراً يعرض «غير مُصنَّف» ويُقرأ نقصَ تصنيف.
+            await FinancialPostingSupport.EnsureCostCenterAsync(db, invoice.CompanyId, invoice.CostCenterId, ct);
+            entry.StampCostCenter(invoice.CostCenterId);
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);

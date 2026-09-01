@@ -1757,6 +1757,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("CostCenterId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateOnly>("InvoiceDate")
                         .HasColumnType("date");
 
@@ -2881,6 +2884,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("CostCenterId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -3278,6 +3284,8 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.HasKey("id");
 
                             b1.HasIndex("AccountId");
+
+                            b1.HasIndex("CostCenterId");
 
                             b1.HasIndex("journal_entry_id");
 

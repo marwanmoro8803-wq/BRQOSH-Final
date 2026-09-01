@@ -55,6 +55,12 @@ public class PaymentVoucherPostingService(BrqoshDbContext db)
 
             var entry = voucher.Post(voucherNumber, payable, cashOrBank);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);
+
+            // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
+            // ‏الترحيل**، فالقيدُ المرحَّل لا يُعدَّل. ويُتحقَّق من المركز أوّلاً: مرجعٌ
+            // ‏لمركزٍ محذوفٍ يُنتج تقريراً يعرض «غير مُصنَّف» ويُقرأ نقصَ تصنيف.
+            await FinancialPostingSupport.EnsureCostCenterAsync(db, voucher.CompanyId, voucher.CostCenterId, ct);
+            entry.StampCostCenter(voucher.CostCenterId);
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);

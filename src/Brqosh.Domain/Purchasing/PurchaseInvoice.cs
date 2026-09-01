@@ -160,6 +160,22 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         return entry;
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٧) مركزُ تكلفة المستند — يُختم على سطور المصروف في قيده.
+    ///
+    /// <para><b>وعلى المستند لا على السطر</b>: فاتورةُ كهرباءٍ كلُّها لمركزٍ واحد، وتوزيعُ
+    /// سطورها على مراكزَ شتّى حالةٌ نادرةٌ تُعالَج بقيدٍ يدويّ. <b>وحقلٌ على كلّ سطرٍ
+    /// يُطلب ملؤه دائماً يُملأ عشوائياً</b>.</para>
+    /// </summary>
+    public long? CostCenterId { get; private set; }
+
+    /// <summary>يربط الفاتورةَ بمركز تكلفة — ولا يُقبل بعد الترحيل.</summary>
+    public void AssignCostCenter(long? costCenterId)
+    {
+        EnsureDraft();
+        CostCenterId = costCenterId;
+    }
+
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

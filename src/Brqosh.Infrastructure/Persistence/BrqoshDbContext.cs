@@ -218,6 +218,11 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Debit).HasPrecision(18, 2);
                 lines.Property(l => l.Credit).HasPrecision(18, 2);
                 lines.HasIndex(l => l.AccountId);
+                // (CEEF-230 · ط1-٧) ‏فهرسٌ لمركز التكلفة — **وبلا مفتاحٍ أجنبيّ عمداً**:
+                // ‏المركزُ يُوقَف حذفاً ناعماً، والمفتاحُ إمّا يمنع إيقافَه أو يترك المرجعَ
+                // ‏معلّقاً بلا معنى. فالتحقّقُ في زمن الترحيل هو الطبقةُ الصحيحة،
+                // ‏والفهرسُ لأجل تقريرٍ يُجمّع به.
+                lines.HasIndex(l => l.CostCenterId);
                 lines.HasOne<Account>().WithMany().HasForeignKey(l => l.AccountId).OnDelete(DeleteBehavior.Restrict);
             });
 

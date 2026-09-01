@@ -29,6 +29,7 @@ public class JournalPostingService(BrqoshDbContext db)
                     .EnsureWorkflowApprovedAsync(entry);
 
             await _orchestrator.ValidateJournalEntryAsync(entry);
+            await EnsureCostCentersExistAsync(entry);
 
             var number = await new JournalEntryNumberGenerator(db).NextAsync(entry.CompanyId, entry.EntryDate);
             entry.Post(number);
@@ -46,6 +47,38 @@ public class JournalPostingService(BrqoshDbContext db)
 
             return entry;
         });
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٧) <b>مركزُ التكلفة يجب أن يكون موجوداً ونشطاً وللمنشأة نفسِها.</b>
+    ///
+    /// <para><b>وكان يُقبل أيُّ رقم.</b> فالعمودُ بلا مفتاحٍ أجنبيّ — <b>وذلك قرارٌ لا سهو</b>:
+    /// مركزُ التكلفة يُوقَف حذفاً ناعماً، ومفتاحٌ أجنبيٌّ إمّا يمنع إيقافَه أو يترك المرجعَ
+    /// معلّقاً بلا معنى. <b>فالتحقّقُ في زمن الترحيل هو الطبقةُ الصحيحة</b>: يمنع دخولَ
+    /// مرجعٍ خاطئ، ولا يمنع إيقافَ مركزٍ عليه حركةٌ تاريخية.</para>
+    ///
+    /// <para>و<b>«ونشطاً»</b> مقصودة: الترحيلُ إلى مركزٍ موقوفٍ يعني تصنيفاً على بابٍ
+    /// أُغلق — والتقريرُ سيعرضه، فيُقرأ كأنّه قائم.</para>
+    /// </summary>
+    private async Task EnsureCostCentersExistAsync(JournalEntry entry)
+    {
+        var ids = entry.Lines
+            .Where(l => l.CostCenterId is not null)
+            .Select(l => l.CostCenterId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (ids.Count == 0) return;
+
+        var valid = await db.CostCenters
+            .Where(c => c.CompanyId == entry.CompanyId && c.IsActive && ids.Contains(c.Id))
+            .Select(c => c.Id)
+            .ToListAsync();
+
+        var missing = ids.Except(valid).ToList();
+        if (missing.Count > 0)
+            throw new AccountingException(
+                $"مركزُ تكلفةٍ غيرُ معروفٍ أو موقوف في القيد: {string.Join("، ", missing)}.");
+    }
 
     /// <summary>
     /// (CEEF-229 · م2-٦) <b>اسمُها «تحقُّق» وفعلُها كتابة.</b>

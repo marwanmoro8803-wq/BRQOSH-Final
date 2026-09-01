@@ -1944,6 +1944,17 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
+        // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند على فاتورة المشتريات وسندِ الصرف.
+        foreach (var table in new[] { "purchase_invoices", "payment_vouchers" })
+        {
+            if (!await TableExistsAsync(table, isPg, ct)) continue;
+
+            if (isPg)
+                await EnsurePgColumnAsync(table, "CostCenterId", "BIGINT NULL", ct);
+            else
+                await EnsureSqliteColumnAsync(table, "CostCenterId", "INTEGER NULL", ct);
+        }
+
         if (await TableExistsAsync("sales_invoices", isPg, ct))
         {
             if (isPg)
