@@ -43,6 +43,36 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     public IReadOnlyList<SalesInvoiceLine> Lines => _lines.AsReadOnly();
 
     /// <summary>الإجمالي قبل الضريبة — مُخزَّن ويُحدَّث مع السطور.</summary>
+    /// <summary>
+    /// (CEEF-230 · ط1-٤) عملةُ المستند — و<c>SAR</c> هي الأصل.
+    ///
+    /// <para><b>ولا مستندَ في هذا النظام كان يقبل عملةً أجنبية</b>: أربعةُ أعمدةِ عملةٍ
+    /// في القاعدة كلِّها، وكلُّها على المنشأة والمجموعة والحساب البنكيّ — <b>ولا واحدٌ
+    /// على مستند</b>.</para>
+    /// </summary>
+    public string CurrencyCode { get; private set; } = "SAR";
+
+    /// <summary>
+    /// سعرُ الصرف إلى عملة الدفاتر <b>يوم المستند</b> — ويُثبَّت عليه.
+    ///
+    /// <para><b>ولا يُعاد حسابُه لاحقاً</b>: الذمّةُ نشأت بقيمةٍ بعينها، وتغييرُ السعر
+    /// بأثرٍ رجعيّ يُعيد كتابة إيرادٍ مُقرٍّ عنه للهيئة.</para>
+    /// </summary>
+    public decimal ExchangeRate { get; private set; } = 1m;
+
+    /// <summary>الوعاءُ <b>بعملة المستند</b> — وهو ما يراه العميل وما يخرج في الفوترة.</summary>
+    public decimal ForeignSubtotal { get; private set; }
+
+    /// <summary>الضريبةُ بعملة المستند.</summary>
+    public decimal ForeignVatAmount { get; private set; }
+
+    /// <summary>
+    /// الوعاءُ <b>بعملة الدفاتر</b> — وهو ما يُرحَّل ويُقاس بالهويّات.
+    ///
+    /// <para><b>ولذلك بقي اسمُه كما هو</b>: كلُّ ما بُني على هذا الحقل — الأستاذُ والذممُ
+    /// والهويّاتُ والتقاريرُ — يبقى صحيحاً بلا تعديلٍ واحد. <b>وبسعر صرفٍ واحدٍ يساوي
+    /// الأجنبيَّ حرفاً</b>، فلا يتغيّر رقمٌ في قاعدةٍ قائمة.</para>
+    /// </summary>
     public decimal Subtotal { get; private set; }
 
     /// <summary>ضريبة القيمة المضافة — مُخزَّنة.</summary>
@@ -178,11 +208,42 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         RecalculateTotals();
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٤) يضبط عملةَ المستند وسعرَ صرفها.
+    ///
+    /// <para><b>ويُرفض بعد الترحيل</b>: تغييرُ العملة أو السعر يُعيد كتابة قيدٍ مرحَّل
+    /// وإقرارٍ سُلّم.</para>
+    /// </summary>
+    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    {
+        EnsureDraft();
+        if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
+            throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
+        if (exchangeRate <= 0m)
+            throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+
+        CurrencyCode = currencyCode.Trim().ToUpperInvariant();
+        ExchangeRate = exchangeRate;
+        RecalculateTotals();
+    }
+
     public void RecalculateTotals()
     {
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(
+        (ForeignSubtotal, ForeignVatAmount) = LineDocumentTotalsCalculator.Compute(
             _lines, documentDiscount: DocumentDiscountAmount);
+
+        // ‏**التحويلُ على الوعاء والضريبة كلٍّ على حدة** لا على الإجمالي: الهيئةُ تقرأ
+        // ‏الضريبةَ بعملة الدفاتر رقماً مستقلّاً، وتقريبُ الإجمالي ثمّ اشتقاقُها منه
+        // ‏يُنتج فلساً لا يُطابق. وبسعرٍ واحدٍ يعود الرقمان إلى ما كانا حرفاً.
+        Subtotal = Math.Round(ForeignSubtotal * ExchangeRate, 2, MidpointRounding.AwayFromZero);
+        VatAmount = Math.Round(ForeignVatAmount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
     }
+
+    /// <summary>الإجماليُّ بعملة المستند — وهو ما يُطالَب به العميل.</summary>
+    public decimal ForeignGrandTotal => ForeignSubtotal + ForeignVatAmount;
+
+    /// <summary>عملةُ المستند تخالف عملةَ الدفاتر — فيلزم المستندَ إفصاحٌ إضافيّ.</summary>
+    public bool IsForeignCurrency => CurrencyCode != "SAR";
 
     /// <summary>
     /// ترحيل الفاتورة وتوليد قيدها: مدين العميل بالإجمالي، دائن الإيراد بالوعاء، دائن ضريبة المخرجات.

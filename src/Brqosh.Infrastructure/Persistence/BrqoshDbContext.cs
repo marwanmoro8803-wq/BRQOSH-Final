@@ -279,6 +279,13 @@ public class BrqoshDbContext : DbContext
             entity.ToTable("sales_invoices");
             // (CEEF-230 · ط1-٢) ‏خصمُ المستند — يُوزَّع على الأوعية الضريبية عند الحساب.
             entity.Property(i => i.DocumentDiscountAmount).HasPrecision(18, 2);
+
+            // (CEEF-230 · ط1-٤) ‏عملةُ المستند ومبالغُها — والريالُ يبقى في `Subtotal`
+            // ‏و`VatAmount` فلا يتغيّر شيءٌ ممّا بُني عليهما.
+            entity.Property(i => i.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
+            entity.Property(i => i.ExchangeRate).HasPrecision(18, 6).HasDefaultValue(1m);
+            entity.Property(i => i.ForeignSubtotal).HasPrecision(18, 2);
+            entity.Property(i => i.ForeignVatAmount).HasPrecision(18, 2);
             entity.Property(i => i.InvoiceNumber).HasMaxLength(32);
             entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);
             entity.Property(i => i.PosPaymentMethod).HasConversion<string>().HasMaxLength(16);

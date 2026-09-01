@@ -51,6 +51,8 @@ internal static class SchemaSqlGuard
         "NUMERIC(18,2) NOT NULL DEFAULT 0",
         // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر — مئةٌ بأربعة أرقامٍ عشرية.
         "NUMERIC(9,4) NOT NULL DEFAULT 0",
+        // (CEEF-230 · ط1-٤) ‏سعرُ الصرف — افتراضُه واحدٌ لا صفر: صفرٌ يُصفّر كلَّ مبلغ.
+        "NUMERIC(18,6) NOT NULL DEFAULT 1",
     };
 
     private static readonly HashSet<string> AllowedSqliteTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -66,6 +68,8 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT 'None'",
         // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر ومبلغُ خصم المستند.
         "TEXT NOT NULL DEFAULT '0'",
+        // (CEEF-230 · ط1-٤) ‏سعرُ الصرف الافتراضيّ.
+        "TEXT NOT NULL DEFAULT '1'",
         // (CEEF-207) فئة الضريبة لأسطر المستندات — قيمة ثابتة ضمن قائمة السماح.
         "TEXT NOT NULL DEFAULT 'Standard'",
         // (O-19) أعمدة سلسلة تجزئة سجل التدقيق.

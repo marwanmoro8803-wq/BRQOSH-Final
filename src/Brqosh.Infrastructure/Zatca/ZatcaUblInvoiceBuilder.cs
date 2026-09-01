@@ -53,7 +53,20 @@ public static class ZatcaUblInvoiceBuilder
         /// يُبلَّغ للهيئة خمسَ قطع. <b>تصريحٌ مخالفٌ للواقع يمرّ على كلّ تصديقٍ بنيويّ</b>،
         /// لأنّ المخطّط يفحص وجودَ الرمز لا صدقَه.</para>
         /// </summary>
-        IReadOnlyList<string>? LineUnitCodes = null);
+        IReadOnlyList<string>? LineUnitCodes = null,
+
+        /// <summary>(CEEF-230 · ط1-٤) عملةُ المستند — والمبالغُ أعلاه بها.</summary>
+        string CurrencyCode = "SAR",
+
+        /// <summary>سعرُ الصرف إلى الريال يوم المستند.</summary>
+        decimal ExchangeRate = 1m,
+
+        /// <summary>
+        /// الضريبةُ <b>بالريال</b> — وتُعلَن في <c>TaxTotal</c> ثانٍ حين تختلف العملتان
+        /// (BT-111). <b>وهو إفصاحٌ تفرضه الهيئة</b>: الضريبةُ تُورَّد بالريال أيّاً كانت
+        /// عملةُ الفاتورة.
+        /// </summary>
+        decimal? VatAmountInSar = null);
 
 /// <summary>
 /// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
@@ -89,7 +102,9 @@ public sealed record BuyerIdentity(
             El(Cbc, "IssueDate", data.InvoiceDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
             El(Cbc, "IssueTime", data.IssueTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture)),
             InvoiceTypeCodeEl(typeCode, typeName),
-            El(Cbc, "DocumentCurrencyCode", "SAR"),
+            // (CEEF-230 · ط1-٤) ‏عملةُ المستند تتغيّر، **وعملةُ الضريبة ريالٌ أبداً** —
+            // ‏فالضريبةُ تُورَّد بالريال أيّاً كانت عملةُ الفاتورة (BR-KSA-EN16931-09).
+            El(Cbc, "DocumentCurrencyCode", data.CurrencyCode),
             El(Cbc, "TaxCurrencyCode", "SAR"));
 
         // (CEEF-229 · Z-6) ترتيب `xsd:sequence` في مخطّط UBL 2.1 مُلزِم — لا اصطلاح.
@@ -123,13 +138,13 @@ public sealed record BuyerIdentity(
         var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(
             data.Lines, documentDiscount: data.DocumentDiscount);
         var taxTotal = new XElement(Cac + "TaxTotal",
-            El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")));
+            El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", data.CurrencyCode)));
 
         foreach (var sub in subtotals)
         {
             taxTotal.Add(new XElement(Cac + "TaxSubtotal",
-                El(Cbc, "TaxableAmount", F(sub.TaxableAmount), ("currencyID", "SAR")),
-                El(Cbc, "TaxAmount", F(sub.VatAmount), ("currencyID", "SAR")),
+                El(Cbc, "TaxableAmount", F(sub.TaxableAmount), ("currencyID", data.CurrencyCode)),
+                El(Cbc, "TaxAmount", F(sub.VatAmount), ("currencyID", data.CurrencyCode)),
                 new XElement(Cac + "TaxCategory",
                     El(Cbc, "ID", sub.Category.UblCode()),
                     El(Cbc, "Percent", (sub.Rate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
@@ -157,26 +172,50 @@ public sealed record BuyerIdentity(
             root.Add(new XElement(Cac + "AllowanceCharge",
                 El(Cbc, "ChargeIndicator", "false"),
                 El(Cbc, "AllowanceChargeReason", "خصم على إجمالي المستند"),
-                El(Cbc, "Amount", F(amount), ("currencyID", "SAR")),
+                El(Cbc, "Amount", F(amount), ("currencyID", data.CurrencyCode)),
                 new XElement(Cac + "TaxCategory",
                     El(Cbc, "ID", category.UblCode()),
                     El(Cbc, "Percent", (rate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
                     new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
         }
 
+        // (CEEF-230 · ط1-٤) ‏سعرُ الصرف ثمّ ضريبةٌ ثانيةٌ بالريال — **ولا يخرجان إلا عند
+        // ‏اختلاف العملتين**. فمستندٌ بالريال يبقى حرفاً كما كان، ولا تتغيّر بصمةُ فاتورةٍ
+        // ‏قائمة.
+        if (data.CurrencyCode != "SAR")
+        {
+            root.Add(new XElement(Cac + "TaxExchangeRate",
+                El(Cbc, "SourceCurrencyCode", data.CurrencyCode),
+                El(Cbc, "TargetCurrencyCode", "SAR"),
+                El(Cbc, "CalculationRate",
+                    data.ExchangeRate.ToString("0.000000", CultureInfo.InvariantCulture))));
+        }
+
         root.Add(taxTotal);
+
+        if (data.CurrencyCode != "SAR")
+        {
+            // ‏**عنصرٌ فيه TaxAmount وحدَه** — لا أوعية: هو إفصاحُ المبلغ بعملة التوريد
+            // ‏(BT-111)، لا تفصيلٌ ثانٍ للوعاء. وإضافةُ أوعيةٍ إليه تُخرج مستنداً
+            // ‏يُضاعف الضريبةَ في عين المُصدِّق.
+            root.Add(new XElement(Cac + "TaxTotal",
+                El(Cbc, "TaxAmount",
+                    F(data.VatAmountInSar ?? Math.Round(data.VatAmount * data.ExchangeRate, 2,
+                        MidpointRounding.AwayFromZero)),
+                    ("currencyID", "SAR"))));
+        }
 
         // ‏`LineExtensionAmount` **قبل** الخصم و`TaxExclusiveAmount` بعده — والفرقُ بينهما
         // ‏هو `AllowanceTotalAmount` بعينه. وهذه المعادلةُ يفرضها المدقّق.
         var lineExtension = data.Subtotal + data.DocumentDiscount;
         var monetary = new XElement(Cac + "LegalMonetaryTotal",
-            El(Cbc, "LineExtensionAmount", F(lineExtension), ("currencyID", "SAR")),
-            El(Cbc, "TaxExclusiveAmount", F(data.Subtotal), ("currencyID", "SAR")),
-            El(Cbc, "TaxInclusiveAmount", F(data.GrandTotal), ("currencyID", "SAR")),
+            El(Cbc, "LineExtensionAmount", F(lineExtension), ("currencyID", data.CurrencyCode)),
+            El(Cbc, "TaxExclusiveAmount", F(data.Subtotal), ("currencyID", data.CurrencyCode)),
+            El(Cbc, "TaxInclusiveAmount", F(data.GrandTotal), ("currencyID", data.CurrencyCode)),
             data.DocumentDiscount > 0m
-                ? El(Cbc, "AllowanceTotalAmount", F(data.DocumentDiscount), ("currencyID", "SAR"))
+                ? El(Cbc, "AllowanceTotalAmount", F(data.DocumentDiscount), ("currencyID", data.CurrencyCode))
                 : null,
-            El(Cbc, "PayableAmount", F(data.GrandTotal), ("currencyID", "SAR")));
+            El(Cbc, "PayableAmount", F(data.GrandTotal), ("currencyID", data.CurrencyCode)));
         root.Add(monetary);
 
         var idx = 1;
@@ -193,7 +232,7 @@ public sealed record BuyerIdentity(
                     ("unitCode", data.LineUnitCodes is { } codes && idx - 1 < codes.Count
                         ? codes[idx - 1]
                         : UnitCatalog.FallbackUnCode)),
-                El(Cbc, "LineExtensionAmount", F(lineNet), ("currencyID", "SAR")),
+                El(Cbc, "LineExtensionAmount", F(lineNet), ("currencyID", data.CurrencyCode)),
 
                 // (CEEF-230 · ط1-٢) ‏خصمُ السطر — و`BaseAmount` هو الإجماليُّ قبله، فيُقرأ
                 // ‏السعرُ المعلَن والخصمُ معاً بدل سعرٍ مخفَّضٍ يُخفي أنّ خصماً وقع.
@@ -203,18 +242,18 @@ public sealed record BuyerIdentity(
                         El(Cbc, "AllowanceChargeReason", "خصم على السطر"),
                         El(Cbc, "MultiplierFactorNumeric",
                             line.DiscountPercent.ToString("0.00", CultureInfo.InvariantCulture)),
-                        El(Cbc, "Amount", F(line.DiscountAmount), ("currencyID", "SAR")),
-                        El(Cbc, "BaseAmount", F(line.GrossAmount), ("currencyID", "SAR")))
+                        El(Cbc, "Amount", F(line.DiscountAmount), ("currencyID", data.CurrencyCode)),
+                        El(Cbc, "BaseAmount", F(line.GrossAmount), ("currencyID", data.CurrencyCode)))
                     : null,
 
-                new XElement(Cac + "TaxTotal", El(Cbc, "TaxAmount", F(lineVat), ("currencyID", "SAR"))),
+                new XElement(Cac + "TaxTotal", El(Cbc, "TaxAmount", F(lineVat), ("currencyID", data.CurrencyCode))),
                 new XElement(Cac + "Item",
                     El(Cbc, "Name", line.Description),
                     new XElement(Cac + "ClassifiedTaxCategory",
                         El(Cbc, "ID", line.VatCategory.UblCode()),
                         El(Cbc, "Percent", (lineRate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
                         new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))),
-                new XElement(Cac + "Price", El(Cbc, "PriceAmount", F(line.UnitPrice), ("currencyID", "SAR"))));
+                new XElement(Cac + "Price", El(Cbc, "PriceAmount", F(line.UnitPrice), ("currencyID", data.CurrencyCode))));
             root.Add(invLine);
             idx++;
         }

@@ -88,6 +88,7 @@ public static class UblStructureValidator
         CheckSupplierParty(root, violations);
         CheckCustomerParty(root, violations);
         CheckAllowances(root, violations);
+        CheckForeignCurrency(root, violations);
 
         return violations;
     }
@@ -326,6 +327,88 @@ public static class UblStructureValidator
             violations.Add(
                 $"مجموعُ أوعية الضريبة {taxableSum:N2} يخالف TaxExclusiveAmount "
                 + $"{taxExclusive.Value:N2} — خصمٌ لم يُوزَّع على الأوعية");
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٤) <b>فاتورةٌ بعملةٍ أجنبية — وما تفرضه الهيئة عليها.</b>
+    ///
+    /// <para><c>TaxCurrencyCode</c> <b>ريالٌ أبداً</b> (BR-KSA-EN16931-09): الضريبةُ تُورَّد
+    /// بالريال أيّاً كانت عملةُ الفاتورة. وحين تختلف العملتان يلزم <b>إفصاحان</b>:
+    /// <c>cac:TaxExchangeRate</c> بسعرِ التحويل، و<c>TaxTotal</c> ثانٍ فيه
+    /// <c>TaxAmount</c> بالريال وحدَه (BT-111).</para>
+    ///
+    /// <para><b>والثاني فيه <c>TaxAmount</c> وحدَه بلا أوعية</b>: هو إفصاحُ مبلغٍ لا تفصيلٌ
+    /// ثانٍ للوعاء — <b>وإضافةُ أوعيةٍ إليه تُخرج مستنداً يُضاعف الضريبة</b> في عين
+    /// المُصدِّق.</para>
+    ///
+    /// <para><b>ومستندٌ بالريال يجب ألّا يحمل أيّاً منهما</b>: عنصرُ صرفٍ في فاتورةٍ
+    /// محلّية بلا معنى، ويُقرأ تحويلاً لم يقع.</para>
+    /// </summary>
+    private static void CheckForeignCurrency(XElement root, List<string> violations)
+    {
+        var documentCurrency = root.Element(Cbc + "DocumentCurrencyCode")?.Value;
+        var taxCurrency = root.Element(Cbc + "TaxCurrencyCode")?.Value;
+
+        if (taxCurrency is not null && taxCurrency != "SAR")
+            violations.Add($"TaxCurrencyCode يجب أن يكون SAR — ووردَ «{taxCurrency}»");
+
+        var isForeign = documentCurrency is not null && documentCurrency != "SAR";
+        var rate = root.Element(Cac + "TaxExchangeRate");
+        var taxTotals = root.Elements(Cac + "TaxTotal").ToList();
+
+        if (!isForeign)
+        {
+            if (rate is not null)
+                violations.Add("TaxExchangeRate في مستندٍ بالريال — تحويلٌ لم يقع");
+            if (taxTotals.Count > 1)
+                violations.Add($"{taxTotals.Count} عنصرَ TaxTotal في مستندٍ بالريال — والمنتظر واحد");
+            return;
+        }
+
+        if (rate is null)
+            violations.Add("فاتورةٌ بعملةٍ أجنبية بلا TaxExchangeRate");
+        else
+        {
+            if (rate.Element(Cbc + "SourceCurrencyCode")?.Value != documentCurrency)
+                violations.Add("SourceCurrencyCode يخالف عملةَ المستند");
+            if (rate.Element(Cbc + "TargetCurrencyCode")?.Value != "SAR")
+                violations.Add("TargetCurrencyCode يجب أن يكون SAR");
+            if (rate.Element(Cbc + "CalculationRate") is null)
+                violations.Add("TaxExchangeRate بلا CalculationRate");
+        }
+
+        var sarTotals = taxTotals
+            .Where(t => t.Element(Cbc + "TaxAmount")?.Attribute("currencyID")?.Value == "SAR")
+            .ToList();
+
+        if (sarTotals.Count == 0)
+        {
+            violations.Add("فاتورةٌ بعملةٍ أجنبية بلا TaxTotal بالريال (BT-111)");
+            return;
+        }
+
+        foreach (var sar in sarTotals)
+        {
+            if (sar.Elements(Cac + "TaxSubtotal").Any())
+                violations.Add("TaxTotal بالريال يحمل أوعيةً — وهو إفصاحُ مبلغٍ لا تفصيلُ وعاء");
+
+            var declared = Amount(sar, "TaxAmount");
+            var documentVat = taxTotals
+                .Where(t => t != sar)
+                .Select(t => Amount(t, "TaxAmount"))
+                .FirstOrDefault(a => a is not null);
+            var calculationRate = rate is null ? null : Amount(rate, "CalculationRate");
+
+            if (declared is null || documentVat is null || calculationRate is null) continue;
+
+            var expected = Math.Round(documentVat.Value * calculationRate.Value, 2,
+                MidpointRounding.AwayFromZero);
+
+            // ‏فلسٌ مسموحٌ للتقريب — وأكثرُ منه يعني سعراً غيرَ الذي أُعلن.
+            if (Math.Abs(expected - declared.Value) > 0.01m)
+                violations.Add(
+                    $"الضريبةُ بالريال {declared.Value:N2} تخالف ضريبةَ المستند × سعرَ الصرف = {expected:N2}");
+        }
     }
 
     private static decimal? Amount(XElement parent, string name) =>

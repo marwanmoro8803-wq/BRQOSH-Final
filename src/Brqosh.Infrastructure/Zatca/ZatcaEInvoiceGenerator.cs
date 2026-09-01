@@ -37,8 +37,14 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.SalesInvoice, salesInvoiceId,
             invoice.InvoiceNumber, invoice.InvoiceDate, company, customer,
-            invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode,
-            isCreditNote: false, documentDiscount: invoice.DocumentDiscountAmount);
+            // (CEEF-230 · ط1-٤) ‏**المستندُ يخرج بعملته**: الوعاءُ والضريبةُ والإجماليُّ
+            // ‏بالعملة الأجنبية، والريالُ يُعلَن في عنصرٍ مستقلٍّ للضريبة وحدَها.
+            // ‏وبسعرٍ واحدٍ يعود الجميعُ إلى ما كان حرفاً — فبصمةُ فاتورةٍ قائمة لا تتغيّر.
+            invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.ForeignGrandTotal,
+            invoice.Lines, mode,
+            isCreditNote: false, documentDiscount: invoice.DocumentDiscountAmount,
+            currencyCode: invoice.CurrencyCode, exchangeRate: invoice.ExchangeRate,
+            vatAmountInSar: invoice.VatAmount);
     }
 
     public async Task<ZatcaEInvoiceDocument?> TryGenerateForCreditNoteAsync(long creditNoteId)
@@ -248,7 +254,8 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         Customer customer,
         decimal subtotal, decimal vat, decimal total,
         IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote,
-        bool isDebitNote = false, string? issueReason = null, decimal documentDiscount = 0m)
+        bool isDebitNote = false, string? issueReason = null, decimal documentDiscount = 0m,
+        string currencyCode = "SAR", decimal exchangeRate = 1m, decimal? vatAmountInSar = null)
     {
         // (CEEF-229 · م2-١٣أ) **هويةُ البائع تُفحص قبل استهلاك أيّ عدّاد.**
         //
@@ -389,7 +396,12 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
             // (CEEF-230 · ط1-١) ‏رمزُ الوحدة لكلّ سطر — من وحدة السطر إن ذُكرت، وإلا من
             // ‏وحدة الصنف النصّية عبر جدول المرادفات. **وما لا يُعرَف يخرج PCE مُعلَناً.**
-            LineUnitCodes: await ResolveUnitCodesAsync(companyId, lines));
+            LineUnitCodes: await ResolveUnitCodesAsync(companyId, lines),
+
+            // (CEEF-230 · ط1-٤) ‏عملةُ المستند وسعرُها، والضريبةُ بالريال للإفصاح BT-111.
+            CurrencyCode: currencyCode,
+            ExchangeRate: exchangeRate,
+            VatAmountInSar: vatAmountInSar);
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);

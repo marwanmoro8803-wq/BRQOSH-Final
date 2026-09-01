@@ -1958,11 +1958,42 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         if (await TableExistsAsync("sales_invoices", isPg, ct))
         {
             if (isPg)
+            {
                 await EnsurePgColumnAsync("sales_invoices", "DocumentDiscountAmount",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                // (CEEF-230 · ط1-٤) ‏عملةُ المستند — والافتراضُ ريالٌ بسعرِ واحد،
+                // ‏فلا يتغيّر رقمٌ في فاتورةٍ قائمة.
+                await EnsurePgColumnAsync("sales_invoices", "CurrencyCode",
+                    "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+                await EnsurePgColumnAsync("sales_invoices", "ExchangeRate",
+                    "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+                await EnsurePgColumnAsync("sales_invoices", "ForeignSubtotal",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                await EnsurePgColumnAsync("sales_invoices", "ForeignVatAmount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            }
             else
+            {
                 await EnsureSqliteColumnAsync("sales_invoices", "DocumentDiscountAmount",
                     "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("sales_invoices", "CurrencyCode",
+                    "TEXT NOT NULL DEFAULT 'SAR'", ct);
+                await EnsureSqliteColumnAsync("sales_invoices", "ExchangeRate",
+                    "TEXT NOT NULL DEFAULT '1'", ct);
+                await EnsureSqliteColumnAsync("sales_invoices", "ForeignSubtotal",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("sales_invoices", "ForeignVatAmount",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+
+            // (CEEF-230 · ط1-٤) ‏**وتعبئةُ الأجنبيّ من الريال لكلّ فاتورةٍ قائمة**: بسعرِ
+            // ‏واحدٍ هما رقمٌ واحد، وتركُ الأجنبيّ صفراً يجعل الفوترةَ تُصدر مستنداً
+            // ‏بإجماليٍّ صفر. **وتعبئةٌ بقيمةٍ مساوية لا تُغيّر معنىً**، بخلاف تعبئةٍ تخترع.
+            var backfill = isPg
+                ? """UPDATE sales_invoices SET "ForeignSubtotal" = "Subtotal", "ForeignVatAmount" = "VatAmount" WHERE "ForeignSubtotal" = 0 AND "Subtotal" <> 0;"""
+                : """UPDATE sales_invoices SET ForeignSubtotal = Subtotal, ForeignVatAmount = VatAmount WHERE CAST(ForeignSubtotal AS REAL) = 0 AND CAST(Subtotal AS REAL) <> 0;""";
+            if (isPg) await SafePgIndexAsync(backfill, ct);
+            else await SafeSqliteIndexAsync(backfill, ct);
         }
 
         foreach (var table in new[] { "goods_receipt_lines", "stock_movement_lines" })
