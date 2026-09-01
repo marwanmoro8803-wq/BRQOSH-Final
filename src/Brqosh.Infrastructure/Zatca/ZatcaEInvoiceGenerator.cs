@@ -37,7 +37,8 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.SalesInvoice, salesInvoiceId,
             invoice.InvoiceNumber, invoice.InvoiceDate, company, customer,
-            invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: false);
+            invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode,
+            isCreditNote: false, documentDiscount: invoice.DocumentDiscountAmount);
     }
 
     public async Task<ZatcaEInvoiceDocument?> TryGenerateForCreditNoteAsync(long creditNoteId)
@@ -222,7 +223,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         Customer customer,
         decimal subtotal, decimal vat, decimal total,
         IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote,
-        bool isDebitNote = false, string? issueReason = null)
+        bool isDebitNote = false, string? issueReason = null, decimal documentDiscount = 0m)
     {
         // (CEEF-229 · م2-١٣أ) **هويةُ البائع تُفحص قبل استهلاك أيّ عدّاد.**
         //
@@ -356,7 +357,10 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             // (CEEF-229 · م1-١ب) هويةُ المشتري للقياسية وحدها — والمبسّطة بلا مشترٍ معرَّف.
             Buyer: customer.SupportsStandardTaxInvoice
                 ? new ZatcaUblInvoiceBuilder.BuyerIdentity(customer.RegistrationName, customer.NationalAddress)
-                : null);
+                : null,
+
+            // (CEEF-230 · ط1-٢) ‏خصمُ المستند — يخرج `AllowanceCharge` لكلّ وعاءٍ ضريبيّ.
+            DocumentDiscount: documentDiscount);
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);

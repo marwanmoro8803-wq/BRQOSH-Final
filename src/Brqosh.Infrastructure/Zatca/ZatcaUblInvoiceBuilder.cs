@@ -37,7 +37,13 @@ public static class ZatcaUblInvoiceBuilder
         Guid? BillingReferenceUuid = null,
         string? IssueReason = null,
         SellerIdentity? Seller = null,
-        BuyerIdentity? Buyer = null);
+        BuyerIdentity? Buyer = null,
+
+        /// <summary>
+        /// (CEEF-230 · ط1-٢) خصمُ المستند — يخرج <c>AllowanceCharge</c> لكلّ وعاءٍ ضريبيّ.
+        /// و<c>Subtotal</c> أعلاه <b>بعده</b>، فـ<c>LineExtensionAmount</c> يساوي مجموعَهما.
+        /// </summary>
+        decimal DocumentDiscount = 0m);
 
 /// <summary>
 /// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
@@ -104,7 +110,8 @@ public sealed record BuyerIdentity(
         // (CEEF-207) وعاء لكل فئة ضريبية حاضرة في الفاتورة، لا وعاء واحد بنسبة مسمّرة:
         // فاتورة فيها سطر أساسيّ وآخر صفريّ تُنتج وعاءين — والنسبة المعلنة في كل وعاء
         // تطابق مبلغ ضريبته، فينتفي التناقض الذي كان يرفضه المدقّق (صفر مصنّف بنسبة 15).
-        var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(data.Lines);
+        var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(
+            data.Lines, documentDiscount: data.DocumentDiscount);
         var taxTotal = new XElement(Cac + "TaxTotal",
             El(Cbc, "TaxAmount", F(data.VatAmount), ("currencyID", "SAR")));
 
@@ -127,12 +134,38 @@ public sealed record BuyerIdentity(
                     new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
         }
 
+        // (CEEF-230 · ط1-٢) ‏**خصمُ المستند: عنصرٌ لكلّ وعاءٍ ضريبيّ لا عنصرٌ واحد.**
+        //
+        // ‏لأنّ `cac:AllowanceCharge` على مستوى المستند يحمل `cac:TaxCategory` — فخصمٌ
+        // ‏واحدٌ على فاتورةٍ فيها وعاءان لا يستطيع أن يُعلن فئتَه. **والتوزيعُ يصير
+        // ‏مقروءاً في المستند** لا مستنتَجاً من فرق الأرقام. وموضعُه قبل `TaxTotal`
+        // ‏بحكم متتالية المخطّط.
+        foreach (var (category, rate, amount) in
+                 LineDocumentTotalsCalculator.ComputeDiscountAllocation(
+                     data.Lines, data.DocumentDiscount))
+        {
+            root.Add(new XElement(Cac + "AllowanceCharge",
+                El(Cbc, "ChargeIndicator", "false"),
+                El(Cbc, "AllowanceChargeReason", "خصم على إجمالي المستند"),
+                El(Cbc, "Amount", F(amount), ("currencyID", "SAR")),
+                new XElement(Cac + "TaxCategory",
+                    El(Cbc, "ID", category.UblCode()),
+                    El(Cbc, "Percent", (rate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
+                    new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
+        }
+
         root.Add(taxTotal);
 
+        // ‏`LineExtensionAmount` **قبل** الخصم و`TaxExclusiveAmount` بعده — والفرقُ بينهما
+        // ‏هو `AllowanceTotalAmount` بعينه. وهذه المعادلةُ يفرضها المدقّق.
+        var lineExtension = data.Subtotal + data.DocumentDiscount;
         var monetary = new XElement(Cac + "LegalMonetaryTotal",
-            El(Cbc, "LineExtensionAmount", F(data.Subtotal), ("currencyID", "SAR")),
+            El(Cbc, "LineExtensionAmount", F(lineExtension), ("currencyID", "SAR")),
             El(Cbc, "TaxExclusiveAmount", F(data.Subtotal), ("currencyID", "SAR")),
             El(Cbc, "TaxInclusiveAmount", F(data.GrandTotal), ("currencyID", "SAR")),
+            data.DocumentDiscount > 0m
+                ? El(Cbc, "AllowanceTotalAmount", F(data.DocumentDiscount), ("currencyID", "SAR"))
+                : null,
             El(Cbc, "PayableAmount", F(data.GrandTotal), ("currencyID", "SAR")));
         root.Add(monetary);
 
@@ -148,6 +181,19 @@ public sealed record BuyerIdentity(
                 El(Cbc, "ID", idx.ToString()),
                 El(Cbc, "InvoicedQuantity", F(line.Quantity), ("unitCode", "PCE")),
                 El(Cbc, "LineExtensionAmount", F(lineNet), ("currencyID", "SAR")),
+
+                // (CEEF-230 · ط1-٢) ‏خصمُ السطر — و`BaseAmount` هو الإجماليُّ قبله، فيُقرأ
+                // ‏السعرُ المعلَن والخصمُ معاً بدل سعرٍ مخفَّضٍ يُخفي أنّ خصماً وقع.
+                line.DiscountAmount > 0m
+                    ? new XElement(Cac + "AllowanceCharge",
+                        El(Cbc, "ChargeIndicator", "false"),
+                        El(Cbc, "AllowanceChargeReason", "خصم على السطر"),
+                        El(Cbc, "MultiplierFactorNumeric",
+                            line.DiscountPercent.ToString("0.00", CultureInfo.InvariantCulture)),
+                        El(Cbc, "Amount", F(line.DiscountAmount), ("currencyID", "SAR")),
+                        El(Cbc, "BaseAmount", F(line.GrossAmount), ("currencyID", "SAR")))
+                    : null,
+
                 new XElement(Cac + "TaxTotal", El(Cbc, "TaxAmount", F(lineVat), ("currencyID", "SAR"))),
                 new XElement(Cac + "Item",
                     El(Cbc, "Name", line.Description),

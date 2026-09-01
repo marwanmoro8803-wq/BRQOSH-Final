@@ -1929,9 +1929,26 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 continue;
 
             if (isPg)
+            {
                 await EnsurePgColumnAsync(table, "BatchNumber", "character varying(64) NULL", ct);
+                // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر — على الثمانية أنفسِها، فالسجلُّ مشترك.
+                await EnsurePgColumnAsync(table, "DiscountPercent", "NUMERIC(9,4) NOT NULL DEFAULT 0", ct);
+            }
             else
+            {
                 await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
+                await EnsureSqliteColumnAsync(table, "DiscountPercent", "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+        }
+
+        if (await TableExistsAsync("sales_invoices", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("sales_invoices", "DocumentDiscountAmount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            else
+                await EnsureSqliteColumnAsync("sales_invoices", "DocumentDiscountAmount",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
         }
 
         foreach (var table in new[] { "goods_receipt_lines", "stock_movement_lines" })

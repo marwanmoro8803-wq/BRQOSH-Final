@@ -23,6 +23,15 @@ namespace Brqosh.Application.Tests.Zatca;
 /// </summary>
 public class UblStructureConformanceTests
 {
+    private static readonly IReadOnlyList<SalesInvoiceLine> DefaultLines =
+        [new SalesInvoiceLine("صنف", 1m, 1000m)];
+
+    private static decimal Net(IReadOnlyList<SalesInvoiceLine>? lines) =>
+        Brqosh.Domain.Accounting.LineDocumentTotalsCalculator.Compute(lines ?? DefaultLines).Subtotal;
+
+    private static decimal Vat(IReadOnlyList<SalesInvoiceLine>? lines) =>
+        Brqosh.Domain.Accounting.LineDocumentTotalsCalculator.Compute(lines ?? DefaultLines).VatAmount;
+
     private static ZatcaUblInvoiceBuilder.InvoiceData Data(
         bool isCreditNote = false, bool isDebitNote = false, bool isSimplified = true,
         string? billingReference = null, IReadOnlyList<SalesInvoiceLine>? lines = null,
@@ -36,10 +45,15 @@ public class UblStructureConformanceTests
             SellerVat: "310123456700003",
             CustomerName: isSimplified ? "" : "عميل",
             CustomerVat: isSimplified ? null : "311111111100003",
-            Subtotal: 1000m,
-            VatAmount: 150m,
-            GrandTotal: 1150m,
-            Lines: lines ?? [new SalesInvoiceLine("صنف", 1m, 1000m)],
+            // (CEEF-230 · ط1-٢) ‏الإجماليّاتُ **تُشتقّ من السطور** لا تُكتب بيدٍ.
+            //
+            // ‏كانت مثبَّتةً على 1000/150/1150 بينما سطورُ الحالة المختلطة تجمع 1500 —
+            // ‏**فالتجهيزةُ نفسُها كانت متناقضة**، ولا شيءَ كان يقيس ذلك. وكشفته معادلاتُ
+            // ‏الخصم الجديدة في المُصدِّق: `LineExtensionAmount 1,000 يخالف مجموعَ الأسطر 1,500`.
+            Subtotal: Net(lines),
+            VatAmount: Vat(lines),
+            GrandTotal: Net(lines) + Vat(lines),
+            Lines: lines ?? DefaultLines,
             Icv: "42",
             PreviousInvoiceHash: "NWZlY2ViNjZmZmM4NmYzOGQ5NTI3ODZjNmQ2OTZjNzljMmRiYzIzOWRkNGU5MWI0NjcyOWQ3M2EyN2ZiNTdlOQ==",
             QrTlvBase64: "AQ5UZXN0AgsxMjM0NTY3ODkwMQ==",

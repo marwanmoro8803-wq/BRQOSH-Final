@@ -1,3 +1,4 @@
+using System.Globalization;
 ﻿using System.Xml.Linq;
 
 namespace Brqosh.Application.Tests.TestSupport;
@@ -86,6 +87,7 @@ public static class UblStructureValidator
         CheckIssueReason(root, violations);
         CheckSupplierParty(root, violations);
         CheckCustomerParty(root, violations);
+        CheckAllowances(root, violations);
 
         return violations;
     }
@@ -248,6 +250,89 @@ public static class UblStructureValidator
     }
 
     // ── الضريبة ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٢) <b>حسابُ الخصم — لا شكلُه.</b>
+    ///
+    /// <para>ثلاثُ معادلاتٍ تفرضها الهيئة على المستند، وكلُّها <b>تُقاس بالأرقام لا بوجود
+    /// العنصر</b>: عنصرٌ موجودٌ بمبلغٍ خاطئ يمرّ على كلّ فحص وجود، <b>ويسقط عند
+    /// المُصدِّق</b>.</para>
+    ///
+    /// <list type="number">
+    /// <item><c>LineExtensionAmount</c> == مجموع <c>LineExtensionAmount</c> للأسطر.</item>
+    /// <item><c>TaxExclusiveAmount</c> == <c>LineExtensionAmount</c> − <c>AllowanceTotalAmount</c>.</item>
+    /// <item><c>AllowanceTotalAmount</c> == مجموع خصومات المستند المعلَنة.</item>
+    /// </list>
+    ///
+    /// <para><b>ورابعةٌ أهمُّها:</b> مجموعُ أوعية الضريبة == <c>TaxExclusiveAmount</c>.
+    /// فخصمٌ يُطرح من الإجمالي ولا يُوزَّع على الأوعية <b>يمرّ على المعادلات الثلاث ويسقط
+    /// هنا</b> — وهو بعينه العطلُ الذي يجعل الضريبةَ محسوبةً على مبلغٍ لم يُدفع.</para>
+    /// </summary>
+    private static void CheckAllowances(XElement root, List<string> violations)
+    {
+        var monetary = root.Element(Cac + "LegalMonetaryTotal");
+        if (monetary is null)
+            return;   // ‏سُجّل في CheckMandatory
+
+        var lineExtension = Amount(monetary, "LineExtensionAmount");
+        var taxExclusive = Amount(monetary, "TaxExclusiveAmount");
+        var allowanceTotal = Amount(monetary, "AllowanceTotalAmount");
+        var chargeTotal = Amount(monetary, "ChargeTotalAmount");
+
+        var linesSum = root.Elements(Cac + "InvoiceLine")
+            .Sum(l => Amount(l, "LineExtensionAmount") ?? 0m);
+
+        if (lineExtension is not null && Math.Abs(lineExtension.Value - linesSum) > 0.01m)
+            violations.Add(
+                $"LineExtensionAmount {lineExtension.Value:N2} يخالف مجموعَ الأسطر {linesSum:N2}");
+
+        if (lineExtension is not null && taxExclusive is not null)
+        {
+            var expected = lineExtension.Value - (allowanceTotal ?? 0m) + (chargeTotal ?? 0m);
+            if (Math.Abs(expected - taxExclusive.Value) > 0.01m)
+                violations.Add(
+                    $"TaxExclusiveAmount {taxExclusive.Value:N2} يخالف "
+                    + $"LineExtensionAmount − AllowanceTotalAmount = {expected:N2}");
+        }
+
+        var declared = root.Elements(Cac + "AllowanceCharge")
+            .Where(a => a.Element(Cbc + "ChargeIndicator")?.Value == "false")
+            .Sum(a => Amount(a, "Amount") ?? 0m);
+
+        if (Math.Abs(declared - (allowanceTotal ?? 0m)) > 0.01m)
+            violations.Add(
+                $"AllowanceTotalAmount {(allowanceTotal ?? 0m):N2} يخالف مجموعَ "
+                + $"خصومات المستند المعلَنة {declared:N2}");
+
+        foreach (var allowance in root.Elements(Cac + "AllowanceCharge"))
+        {
+            if (allowance.Element(Cbc + "ChargeIndicator") is null)
+                violations.Add("AllowanceCharge بلا ChargeIndicator");
+            if (allowance.Element(Cbc + "Amount") is null)
+                violations.Add("AllowanceCharge بلا Amount");
+
+            // ‏وفئتُه الضريبية لازمة: خصمٌ لا يُعلن وعاءَه لا يُعرف من أيّ ضريبةٍ يُخصم.
+            if (allowance.Element(Cac + "TaxCategory") is null)
+                violations.Add("AllowanceCharge على مستوى المستند بلا TaxCategory");
+        }
+
+        if (taxExclusive is null) return;
+
+        var taxableSum = root.Elements(Cac + "TaxTotal")
+            .Elements(Cac + "TaxSubtotal")
+            .Sum(sub => Amount(sub, "TaxableAmount") ?? 0m);
+
+        if (Math.Abs(taxableSum - taxExclusive.Value) > 0.01m)
+            violations.Add(
+                $"مجموعُ أوعية الضريبة {taxableSum:N2} يخالف TaxExclusiveAmount "
+                + $"{taxExclusive.Value:N2} — خصمٌ لم يُوزَّع على الأوعية");
+    }
+
+    private static decimal? Amount(XElement parent, string name) =>
+        decimal.TryParse(parent.Element(Cbc + name)?.Value,
+            NumberStyles.Any, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : null;
 
     private static void CheckTaxTotals(XElement root, List<string> violations)
     {

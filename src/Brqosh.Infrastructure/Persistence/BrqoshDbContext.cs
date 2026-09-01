@@ -268,6 +268,8 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<SalesInvoice>(entity =>
         {
             entity.ToTable("sales_invoices");
+            // (CEEF-230 · ط1-٢) ‏خصمُ المستند — يُوزَّع على الأوعية الضريبية عند الحساب.
+            entity.Property(i => i.DocumentDiscountAmount).HasPrecision(18, 2);
             entity.Property(i => i.InvoiceNumber).HasMaxLength(32);
             entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);
             entity.Property(i => i.PosPaymentMethod).HasConversion<string>().HasMaxLength(16);
@@ -288,6 +290,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("sales_invoice_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -322,6 +325,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("credit_note_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -391,6 +395,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("purchase_invoice_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -636,6 +641,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("purchase_order_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -667,6 +673,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("purchase_request_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -754,6 +761,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("debit_note_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -964,6 +972,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("sales_quotation_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -991,6 +1000,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.WithOwner().HasForeignKey("sales_order_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");

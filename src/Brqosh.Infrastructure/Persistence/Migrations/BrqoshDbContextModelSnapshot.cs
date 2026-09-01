@@ -2187,6 +2187,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CustomerId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("DocumentDiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateOnly>("InvoiceDate")
                         .HasColumnType("date");
 
@@ -3509,6 +3513,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
 
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
+
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
 
@@ -3625,6 +3633,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
 
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
+
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
 
@@ -3681,6 +3693,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .IsRequired()
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
+
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
 
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
@@ -3739,6 +3755,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
 
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
+
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
 
@@ -3793,6 +3813,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .IsRequired()
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
+
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
 
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
@@ -3924,6 +3948,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
 
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
+
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
 
@@ -3981,6 +4009,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
 
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
+
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
 
@@ -4037,6 +4069,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .IsRequired()
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
+
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
 
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");

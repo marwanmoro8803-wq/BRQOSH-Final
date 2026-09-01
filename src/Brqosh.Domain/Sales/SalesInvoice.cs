@@ -97,7 +97,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
         string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
-        string? batchNumber = null)
+        string? batchNumber = null, decimal discountPercent = 0m)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -107,6 +107,13 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         if (unitPrice < 0)
             throw new AccountingException("سعر الوحدة لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
+
+        // (CEEF-230 · ط1-٢) ‏الخصمُ نسبةٌ بين صفرٍ ومئة. **والمئةُ مقبولة** — عيّنةٌ
+        // ‏مجّانيةٌ سطرُها بخصمٍ كامل، وهي ممارسةٌ قائمةٌ لا حالةٌ شاذّة. وما فوقها
+        // ‏يُنتج سطراً سالباً يقلب الوعاءَ الضريبيّ.
+        if (discountPercent < 0m || discountPercent > 100m)
+            throw new AccountingException(
+                $"نسبة خصم السطر «{description}» يجب أن تكون بين 0 و100 — ووردت {discountPercent:N2}.");
 
 
         // (CEEF-229 · م1-١ب الشقّ الثاني) الرفضُ عند بناء السطر — أبكرُ موضعٍ ممكن.
@@ -131,13 +138,49 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
 
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory,
             taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
-            string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim()));
+            string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim(),
+            Math.Round(discountPercent, 4, MidpointRounding.AwayFromZero)));
+        RecalculateTotals();
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٢) <b>خصمُ المستند — يُوزَّع على الأوعية الضريبية لا يُطرح من الإجمالي.</b>
+    ///
+    /// <para>فاتورةٌ فيها سطرٌ أساسيّ (15%) وسطرٌ صفريّ (0%)، وخصمٌ على المستند كلِّه:
+    /// <b>طرحُه من الإجمالي يترك الوعاءَ الأساسيَّ كما هو</b> فتُحتسب الضريبةُ على مبلغٍ
+    /// أكبرَ ممّا دُفع. والصوابُ توزيعُه على الوعاءَين بنسبتيهما.</para>
+    /// </summary>
+    public decimal DocumentDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// يضبط خصمَ المستند.
+    ///
+    /// <para><b>ولا يتجاوز صافيَ السطور</b>: خصمٌ أكبرُ منها يُنتج وعاءً سالباً — أي
+    /// فاتورةً تُعيد مالاً، وتلك <b>إشعارُ دائنٍ لا فاتورة</b>.</para>
+    /// </summary>
+    public void ApplyDocumentDiscount(decimal amount)
+    {
+        EnsureDraft();
+        if (amount < 0m)
+            throw new AccountingException("خصم المستند لا يكون سالباً.");
+
+        var linesNet = _lines.Sum(l => l.LineTotal);
+        if (amount > linesNet)
+            throw new AccountingException(
+                $"خصم المستند {amount:N2} يتجاوز صافي السطور {linesNet:N2} — "
+                + "وفاتورةٌ بوعاءٍ سالبٍ إشعارُ دائنٍ لا فاتورة.");
+
+        // ‏**ويبقى الشرطُ صحيحاً بعد أيّ إضافة**: السطورُ تُضاف ولا تُحذف — لا
+        // ‏`RemoveLine` في هذا الكيان — فصافيها لا ينقص، والخصمُ المقبول اليوم مقبولٌ غداً.
+        // ‏ولو أُضيف حذفُ سطرٍ يوماً **لزم إعادةُ هذا الفحص هناك**.
+        DocumentDiscountAmount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
         RecalculateTotals();
     }
 
     public void RecalculateTotals()
     {
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(
+            _lines, documentDiscount: DocumentDiscountAmount);
     }
 
     /// <summary>
@@ -222,7 +265,30 @@ public record SalesInvoiceLine(
     string? TaxExemptionReason = null,
 
     /// <summary>(CEEF-230 · ط1-٣) الدفعةُ المصروفة — هويّةُ ما خرج، ويلزم للصنف المتتبَّع.</summary>
-    string? BatchNumber = null)
+    string? BatchNumber = null,
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٢) نسبةُ خصم السطر — <b>نسبةً لا مبلغاً</b>.
+    ///
+    /// <para>لأنّ النسبةَ هي ما يُتَّفق عليه تجارياً («خصمُ عشرة بالمئة»)، والمبلغُ مشتقٌّ
+    /// منها. وتخزينُ الاثنين يفتح بابَ تناقضهما بعد تعديل الكمّية — <b>وقيمتان تصفان
+    /// شيئاً واحداً تفترقان يوماً</b>.</para>
+    /// </summary>
+    decimal DiscountPercent = 0m)
 {
-    public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
+    /// <summary>القيمةُ قبل الخصم — وهي ما يُعرض للعميل سعراً معلَناً.</summary>
+    public decimal GrossAmount => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>مبلغُ خصم السطر — مُقرَّبٌ على السطر، فهو ما يظهر في الفاتورة.</summary>
+    public decimal DiscountAmount =>
+        Math.Round(GrossAmount * DiscountPercent / 100m, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// صافي السطر — <b>وهو الوعاءُ الضريبيّ</b>.
+    ///
+    /// <para>(CEEF-230 · ط1-٢) صار بعد الخصم. <b>والضريبةُ على الصافي نظاماً</b>: احتسابُها
+    /// على الإجمالي يُحمّل العميلَ ضريبةً على مبلغٍ لم يدفعه، ويجعل المُصرَّحَ به للهيئة
+    /// أكبرَ من الواجب.</para>
+    /// </summary>
+    public decimal LineTotal => GrossAmount - DiscountAmount;
 }

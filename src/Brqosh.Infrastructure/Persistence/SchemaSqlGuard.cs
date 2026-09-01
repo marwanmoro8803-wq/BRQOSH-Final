@@ -49,6 +49,8 @@ internal static class SchemaSqlGuard
         // (CEEF-229 · م2-٢٤) لحظةُ الترحيل.
         "timestamp with time zone NULL",
         "NUMERIC(18,2) NOT NULL DEFAULT 0",
+        // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر — مئةٌ بأربعة أرقامٍ عشرية.
+        "NUMERIC(9,4) NOT NULL DEFAULT 0",
     };
 
     private static readonly HashSet<string> AllowedSqliteTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -62,6 +64,8 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT 'Active'",
         // (CEEF-230 · ط1-٣) ‏نمطُ تتبّع الصنف — تعدادٌ نصّيّ افتراضُه None.
         "TEXT NOT NULL DEFAULT 'None'",
+        // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر ومبلغُ خصم المستند.
+        "TEXT NOT NULL DEFAULT '0'",
         // (CEEF-207) فئة الضريبة لأسطر المستندات — قيمة ثابتة ضمن قائمة السماح.
         "TEXT NOT NULL DEFAULT 'Standard'",
         // (O-19) أعمدة سلسلة تجزئة سجل التدقيق.
