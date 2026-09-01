@@ -118,14 +118,29 @@ public class InventoryService(BrqoshDbContext db)
     }
 
     /// <summary>تسجيل حركة مخزنية من مستند — يُفترض تنفيذها داخل معاملة الترحيل.</summary>
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) ‏التحميلُ القديم — <b>مسارٌ بلا هويّةِ دفعة</b>.
+    ///
+    /// <para>يُفوّض إلى التحميل الحامل للهويّة بـ<c>null</c> لكلّ سطر. <b>ومسارٌ يستعمله
+    /// يرفض الصنفَ المتتبَّع رفضاً مسمّى</b> عند المَخنَق — ولا يمرّره بلا رقم. فتحويلُ
+    /// المسارات إلى الهويّة يجري واحداً واحداً، <b>وما لم يُحوَّل يُعلن نفسَه</b> بدل أن
+    /// يبتلع الصلاحية بصمت.</para>
+    /// </summary>
+    public Task<StockMovement> PostDocumentMovementAsync(long companyId, long warehouseId,
+        StockMovementType type, DateOnly date, string description, string sourceDocument,
+        IEnumerable<(long ProductId, decimal Qty, decimal UnitCost)> lines) =>
+        PostDocumentMovementAsync(companyId, warehouseId, type, date, description, sourceDocument,
+            lines.Select(l => (l.ProductId, l.Qty, l.UnitCost, (string?)null, (DateOnly?)null)));
+
+    /// <summary>‏التحميلُ الحاملُ لهويّة الدفعة — وهو ما تستعمله المسارات المحوَّلة.</summary>
     public async Task<StockMovement> PostDocumentMovementAsync(long companyId, long warehouseId,
         StockMovementType type, DateOnly date, string description, string sourceDocument,
-        IEnumerable<(long ProductId, decimal Qty, decimal UnitCost)> lines)
+        IEnumerable<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> lines)
     {
         var costing = new InventoryCostingService(db);
         var movement = StockMovement.CreateDraft(companyId, date, type, warehouseId, description, sourceDocument: sourceDocument);
-        foreach (var (productId, qty, cost) in lines)
-            movement.AddLine(productId, qty, cost);
+        foreach (var (productId, qty, cost, batchNumber, expiry) in lines)
+            movement.AddLine(productId, qty, cost, batchNumber, expiry);
 
         if (movement.IsInbound)
         {
@@ -133,7 +148,8 @@ public class InventoryService(BrqoshDbContext db)
             {
                 await costing.OnReceiptAsync(companyId, line.ProductId, warehouseId, date,
                     line.Quantity, line.UnitCost, sourceDocument);
-                await ApplyBalanceDeltaAsync(companyId, warehouseId, line.ProductId, line.Quantity);
+                await ApplyBalanceDeltaAsync(companyId, warehouseId, line.ProductId, line.Quantity,
+                    BatchRef.From(line.BatchNumber, line.ExpiryDate), date, type);
             }
         }
         else if (movement.IsOutbound)
@@ -147,7 +163,8 @@ public class InventoryService(BrqoshDbContext db)
                     throw new AccountingException($"رصيد '{p.NameAr}' غير كافٍ — المتوفر {onHand:N2}.");
                 }
                 // التحقق من كفاية الطبقات FIFO (إن وُجدت) — التكلفة تُستهلك من المستدعي عبر CostingService
-                await ApplyBalanceDeltaAsync(companyId, warehouseId, line.ProductId, -line.Quantity);
+                await ApplyBalanceDeltaAsync(companyId, warehouseId, line.ProductId, -line.Quantity,
+                    BatchRef.From(line.BatchNumber, line.ExpiryDate), date, type);
             }
         }
 
@@ -177,8 +194,14 @@ public class InventoryService(BrqoshDbContext db)
             }
             var productEntity = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId);
             movement.AddLine(productId, qty, productEntity.WeightedAverageCost);
-            await ApplyBalanceDeltaAsync(companyId, fromWarehouseId, productId, -qty);
-            await ApplyBalanceDeltaAsync(companyId, toWarehouseId, productId, qty);
+            // (CEEF-230 · ط1-٣) ‏**التحويلُ لا يحمل هويّةَ دفعةٍ بعد** — ووسيطُه
+            // ‏`(ProductId, Qty)` بلا رقم. فيمرّ `null`، ويرفض المَخنَقُ الصنفَ المتتبَّع
+            // ‏**رفضاً مسمّى**. وهو مقصود: نقلُ دفعةٍ بلا رقمها يُفقدها هويّتَها في
+            // ‏المستودع الآخر، **والرفضُ أصدقُ من نقلٍ يمحو الصلاحية**.
+            await ApplyBalanceDeltaAsync(companyId, fromWarehouseId, productId, -qty,
+                null, date, StockMovementType.Transfer);
+            await ApplyBalanceDeltaAsync(companyId, toWarehouseId, productId, qty,
+                null, date, StockMovementType.Transfer);
         }
 
         var number = await DocumentNumberGenerator.NextAsync(db, 
@@ -303,15 +326,21 @@ public class InventoryService(BrqoshDbContext db)
     {
         foreach (var line in movement.Lines)
         {
+            var batch = BatchRef.From(line.BatchNumber, line.ExpiryDate);
+
             if (movement.IsInbound)
-                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId, line.Quantity);
+                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId,
+                    line.Quantity, batch, movement.MovementDate, movement.Type);
             else if (movement.IsOutbound)
-                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId, -line.Quantity);
+                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId,
+                    -line.Quantity, batch, movement.MovementDate, movement.Type);
             else if (movement.Type == StockMovementType.Transfer)
             {
-                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId, -line.Quantity);
+                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId,
+                    -line.Quantity, batch, movement.MovementDate, movement.Type);
                 if (movement.ToWarehouseId is long toWh)
-                    await ApplyBalanceDeltaAsync(movement.CompanyId, toWh, line.ProductId, line.Quantity);
+                    await ApplyBalanceDeltaAsync(movement.CompanyId, toWh, line.ProductId,
+                        line.Quantity, batch, movement.MovementDate, movement.Type);
             }
         }
     }
@@ -399,21 +428,44 @@ public class InventoryService(BrqoshDbContext db)
     {
         foreach (var line in movement.Lines)
         {
+            // (CEEF-230 · ط1-٣) ‏الدفعةُ تُقرأ من السطر المحفوظ — **فيعود ما خرج بعينه**.
+            // ‏ولو رُدّت الكمّيةُ بلا رقمٍ لانكسرت هـ-٩ عند أوّل إلغاء.
+            var batch = BatchRef.From(line.BatchNumber, line.ExpiryDate);
+
             if (movement.IsInbound)
-                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId, -line.Quantity);
+                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId,
+                    -line.Quantity, batch, movement.MovementDate, movement.Type);
             else if (movement.IsOutbound)
-                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId, line.Quantity);
+                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId,
+                    line.Quantity, batch, movement.MovementDate, movement.Type);
             else if (movement.Type == StockMovementType.Transfer)
             {
-                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId, line.Quantity);
+                await ApplyBalanceDeltaAsync(movement.CompanyId, movement.WarehouseId, line.ProductId,
+                    line.Quantity, batch, movement.MovementDate, movement.Type);
                 if (movement.ToWarehouseId is long toWh)
-                    await ApplyBalanceDeltaAsync(movement.CompanyId, toWh, line.ProductId, -line.Quantity);
+                    await ApplyBalanceDeltaAsync(movement.CompanyId, toWh, line.ProductId,
+                        -line.Quantity, batch, movement.MovementDate, movement.Type);
             }
         }
     }
 
-    private async Task ApplyBalanceDeltaAsync(long companyId, long warehouseId, long productId, decimal delta)
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) <b>المَخنَقُ الوحيد لكلّ تغيّرٍ في كمّية المخزون.</b>
+    ///
+    /// <para>ولذلك <b>لا قيمةَ افتراضية</b> لـ<paramref name="batch"/> ولا لـ<paramref name="type"/>:
+    /// المُصرِّفُ يُجبر كلَّ مستدعٍ من الاثني عشر على أن <b>يُقرّر</b> هل يحمل هويّةَ دفعةٍ أم
+    /// لا. <b>وحارسٌ يُفرض في زمن الترجمة لا يُنسى</b> — وحارسٌ ذو قيمةٍ افتراضية يُنسى
+    /// بالضبط في المسار الذي لم يُفكَّر فيه.</para>
+    ///
+    /// <para><b>ومسارٌ لا يحمل دفعةً يرفض الصنفَ المتتبَّع رفضاً صريحاً</b> — لا يمرّره
+    /// بلا هويّة. فالبضاعةُ التي تدخل بلا رقمِ دفعةٍ تخرج بلا صلاحية، <b>وصمتُ المسار
+    /// أخطرُ من رفضه</b>: المستخدم يظنّ التتبّعَ عاملاً وهو مثقوب.</para>
+    /// </summary>
+    private async Task ApplyBalanceDeltaAsync(long companyId, long warehouseId, long productId,
+        decimal delta, BatchRef? batch, DateOnly onDate, StockMovementType type)
     {
+        await ApplyBatchDeltaAsync(companyId, warehouseId, productId, delta, batch, onDate, type);
+
         var balance = await FindBalanceAsync(companyId, warehouseId, productId);
 
         if (balance is null)
@@ -435,6 +487,94 @@ public class InventoryService(BrqoshDbContext db)
         }
 
         balance.ApplyDelta(delta);
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) يفرض هويّةَ الدفعة ويُحرّك رصيدَها.
+    ///
+    /// <para><b>وثلاثةُ قراراتٍ محسومةٌ هنا:</b></para>
+    /// <list type="number">
+    /// <item><b>صنفٌ غيرُ متتبَّعٍ ووردت له دفعة</b> ⟵ رفض. فقيمةٌ تُمرَّر ولا تُخزَّن
+    /// أسوأُ من قيمةٍ لا تُمرَّر: المستخدم يراها في الشاشة ويظنّها محفوظة.</item>
+    /// <item><b>صنفٌ متتبَّعٌ بلا دفعة</b> ⟵ رفض، ولو كان المسار هو الذي لا يحملها.</item>
+    /// <item><b>المنتهيةُ تخرج ولا تُباع.</b> فالبيع (<c>Issue</c>) يُرفض عليها، أمّا
+    /// الإتلافُ (<c>AdjustmentOut</c>) والتحويلُ إلى مستودع حجرٍ فيمرّان — <b>ومنعُ
+    /// إخراجِ المنتهي يحبسه في الدفاتر إلى الأبد</b>، وهو ضررٌ لا حماية.</item>
+    /// </list>
+    /// </summary>
+    private async Task ApplyBatchDeltaAsync(long companyId, long warehouseId, long productId,
+        decimal delta, BatchRef? batch, DateOnly onDate, StockMovementType type)
+    {
+        var product = await db.Products.IgnoreQueryFilters().SingleAsync(x => x.Id == productId);
+
+        if (!product.IsTracked)
+        {
+            if (batch is not null)
+                throw new AccountingException(
+                    $"الصنف '{product.NameAr}' لا يُتتبَّع بالدفعة، فلا يُقبل له رقمُ دفعة. "
+                    + "غيّرْ نمطَ تتبّعه أوّلاً إن كان يلزمه.");
+            return;
+        }
+
+        if (batch is null)
+            throw new AccountingException(
+                $"الصنف '{product.NameAr}' يُتتبَّع بـ{TrackingName(product.Tracking)} "
+                + "ولا يحمل هذا السطرُ هويّةً — فلا يدخل ولا يخرج بلا رقم.");
+
+        if (product.Tracking == InventoryTracking.Serial && Math.Abs(delta) != 1m)
+            throw new AccountingException(
+                $"الصنف '{product.NameAr}' يُتتبَّع بالرقم التسلسليّ، فكلُّ سطرٍ وحدةٌ واحدة "
+                + $"— ووردت {Math.Abs(delta):N4}.");
+
+        var row = await FindBatchAsync(companyId, warehouseId, productId, batch.Value.Number);
+
+        if (row is null)
+        {
+            if (delta < 0)
+                throw new AccountingException(
+                    $"لا توجد دفعةٌ «{batch.Value.Number}» من '{product.NameAr}' في هذا المستودع.");
+
+            if (product.Tracking == InventoryTracking.Serial
+                && await db.StockBatches.AnyAsync(b => b.CompanyId == companyId
+                    && b.ProductId == productId && b.BatchNumber == batch.Value.Number
+                    && b.Quantity > 0))
+                throw new AccountingException(
+                    $"الرقم التسلسليّ «{batch.Value.Number}» مستعمَلٌ لوحدةٍ قائمة من "
+                    + $"'{product.NameAr}' — والرقمُ التسلسليّ لا يتكرّر.");
+
+            row = StockBatch.Create(companyId, warehouseId, productId,
+                batch.Value.Number, batch.Value.Expiry);
+            db.StockBatches.Add(row);
+        }
+
+        row.EnsureExpiry(batch.Value.Expiry);
+
+        if (delta < 0 && type == StockMovementType.Issue && row.IsExpiredOn(onDate))
+            throw new AccountingException(
+                $"الدفعة «{row.BatchNumber}» من '{product.NameAr}' منتهيةُ الصلاحية في "
+                + $"{row.ExpiryDate:yyyy-MM-dd} — لا تُباع. أخرِجْها بتسويةِ إتلاف.");
+
+        row.ApplyDelta(delta);
+    }
+
+    private static string TrackingName(InventoryTracking tracking) => tracking switch
+    {
+        InventoryTracking.Batch => "الدفعة",
+        InventoryTracking.Serial => "الرقم التسلسليّ",
+        _ => "الكمّية",
+    };
+
+    private async Task<StockBatch?> FindBatchAsync(
+        long companyId, long warehouseId, long productId, string batchNumber)
+    {
+        var local = db.StockBatches.Local.FirstOrDefault(b =>
+            b.CompanyId == companyId && b.WarehouseId == warehouseId
+            && b.ProductId == productId && b.BatchNumber == batchNumber);
+        if (local is not null) return local;
+
+        return await db.StockBatches.SingleOrDefaultAsync(b =>
+            b.CompanyId == companyId && b.WarehouseId == warehouseId
+            && b.ProductId == productId && b.BatchNumber == batchNumber);
     }
 
     private async Task<InventoryBalance?> FindBalanceAsync(long companyId, long warehouseId, long productId)

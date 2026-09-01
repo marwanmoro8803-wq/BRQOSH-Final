@@ -21,6 +21,8 @@ internal static class SchemaSqlGuard
         "character varying(16) NULL",
         "character varying(3) NOT NULL DEFAULT 'SAR'",
         "character varying(32) NOT NULL DEFAULT 'WeightedAverage'",
+        // (CEEF-230 · ط1-٣) ‏نمطُ تتبّع الصنف — تعدادٌ نصّيّ افتراضُه None.
+        "character varying(16) NOT NULL DEFAULT 'None'",
         "character varying(64) NOT NULL DEFAULT ''",
         "character varying(512) NOT NULL DEFAULT ''",
         "character varying(512) NULL",
@@ -58,6 +60,8 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT 'SAR'",
         "TEXT NOT NULL DEFAULT 'Tahoma'",
         "TEXT NOT NULL DEFAULT 'Active'",
+        // (CEEF-230 · ط1-٣) ‏نمطُ تتبّع الصنف — تعدادٌ نصّيّ افتراضُه None.
+        "TEXT NOT NULL DEFAULT 'None'",
         // (CEEF-207) فئة الضريبة لأسطر المستندات — قيمة ثابتة ضمن قائمة السماح.
         "TEXT NOT NULL DEFAULT 'Standard'",
         // (O-19) أعمدة سلسلة تجزئة سجل التدقيق.

@@ -711,6 +711,16 @@ static async Task<int> ProveMigrationsSurviveRealDataAsync(string connectionStri
         return 17;
     }
 
+    // ‏(CEEF-230 · ط1-٣) **بذرةٌ أخيرةٌ بعد آخر هجرة.** البذرُ يقع **قبل** كلّ هجرة، فجدولٌ
+    // ‏تُنشئه **آخرُ** هجرةٍ لا يُبذر قطّ ولا يُعدّ — فيُعلن المسبارُ تغطيةً أصغرَ من الحقّ
+    // ‏ويصمت عن أحدث ما أُضيف. وكشفه أنّ العددَ بقي ٧٤ بعد إضافة `stock_batches`.
+    {
+        var (lastSeeded, _, lastTables, lastShort) = await SeedEveryEmptyTableAsync(dataCs);
+        totalSeeded += lastSeeded;
+        tableCount = lastTables;
+        foreach (var (table, rows) in lastShort) shallow[table] = rows;
+    }
+
     Console.WriteLine($"[PASS] الهجرات الـ{migrations.Count} كلُّها تمرّ على قاعدةٍ فيها بيانات — "
                       + $"{totalSeeded} صفّاً مبذوراً، بعمق {depth} صفوفٍ للجدول.");
 

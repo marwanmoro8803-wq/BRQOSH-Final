@@ -1089,6 +1089,13 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<string>("Tracking")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("None");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -1109,6 +1116,53 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("products", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Inventory.StockBatch", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BatchNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<long>("WarehouseId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "BranchId");
+
+                    b.HasIndex("CompanyId", "ProductId", "ExpiryDate");
+
+                    b.HasIndex("CompanyId", "WarehouseId", "ProductId", "BatchNumber")
+                        .IsUnique();
+
+                    b.ToTable("stock_batches", (string)null);
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Inventory.StockMovement", b =>
@@ -3318,6 +3372,13 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<DateOnly?>("ExpiryDate")
+                                .HasColumnType("date");
+
                             b1.Property<long>("ProductId")
                                 .HasColumnType("bigint");
 
@@ -3439,6 +3500,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
@@ -3492,10 +3557,17 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
+
+                            b1.Property<DateOnly?>("ExpiryDate")
+                                .HasColumnType("date");
 
                             b1.Property<decimal>("OrderedQuantity")
                                 .HasPrecision(18, 4)
@@ -3543,6 +3615,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasColumnType("bigint");
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
 
                             b1.Property<string>("Description")
                                 .IsRequired()
@@ -3597,6 +3673,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
@@ -3650,6 +3730,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
@@ -3700,6 +3784,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasColumnType("bigint");
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
 
                             b1.Property<string>("Description")
                                 .IsRequired()
@@ -3827,6 +3915,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
@@ -3880,6 +3972,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
@@ -3932,6 +4028,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasColumnType("bigint");
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
 
                             b1.Property<string>("Description")
                                 .IsRequired()

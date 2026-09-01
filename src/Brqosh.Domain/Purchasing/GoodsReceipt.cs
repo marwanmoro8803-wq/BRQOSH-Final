@@ -20,10 +20,17 @@ public class GoodsReceiptLine
     public decimal ReceivedQuantity { get; private set; }
     public decimal UnitCost { get; private set; }
 
+    /// <summary>(CEEF-230 · ط1-٣) رقمُ الدفعة أو الرقمُ التسلسليّ — هويّةُ ما دخل.</summary>
+    public string? BatchNumber { get; private set; }
+
+    /// <summary>(CEEF-230 · ط1-٣) تاريخُ انتهاء صلاحية الدفعة — اختياريّ.</summary>
+    public DateOnly? ExpiryDate { get; private set; }
+
     private GoodsReceiptLine() { Description = null!; }
 
     public GoodsReceiptLine(string description, decimal orderedQuantity, decimal receivedQuantity,
-        decimal unitCost, long? productId = null)
+        decimal unitCost, long? productId = null,
+        string? batchNumber = null, DateOnly? expiryDate = null)
     {
         if (string.IsNullOrWhiteSpace(description))
             throw new AccountingException("وصف سطر الاستلام مطلوب.");
@@ -36,6 +43,8 @@ public class GoodsReceiptLine
         OrderedQuantity = Math.Round(orderedQuantity, 4, MidpointRounding.AwayFromZero);
         ReceivedQuantity = Math.Round(receivedQuantity, 4, MidpointRounding.AwayFromZero);
         UnitCost = Math.Round(unitCost, 4, MidpointRounding.AwayFromZero);
+        BatchNumber = string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim();
+        ExpiryDate = expiryDate;
         ProductId = productId;
     }
 }
@@ -94,11 +103,19 @@ public class GoodsReceipt : IBranchScoped
         return new GoodsReceipt(companyId, supplierId, purchaseOrderId, warehouseId, receiptDate, (notes ?? "").Trim());
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) ‏و<paramref name="batchNumber"/> هويّةُ ما دخل.
+    ///
+    /// <para><b>والاستلامُ هو الموضعُ الوحيد الذي تُولَد فيه الهويّة</b>: ما لم يُسمَّ هنا
+    /// لا يُسمّى بعدُ أبداً — فالبضاعةُ صارت في المستودع مختلطةً بغيرها.</para>
+    /// </summary>
     public void AddLine(string description, decimal orderedQuantity, decimal receivedQuantity,
-        decimal unitCost, long? productId = null)
+        decimal unitCost, long? productId = null,
+        string? batchNumber = null, DateOnly? expiryDate = null)
     {
         EnsureDraft();
-        _lines.Add(new GoodsReceiptLine(description, orderedQuantity, receivedQuantity, unitCost, productId));
+        _lines.Add(new GoodsReceiptLine(description, orderedQuantity, receivedQuantity, unitCost,
+            productId, batchNumber, expiryDate));
     }
 
     public void AssignBranch(long branchId)

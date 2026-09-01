@@ -88,9 +88,16 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         return new SalesInvoice(companyId, customerId, invoiceDate);
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) ‏و<paramref name="batchNumber"/> الدفعةُ التي تُصرَف من المستودع.
+    ///
+    /// <para><b>ويلزم للصنف المتتبَّع</b> — ويرفضه المَخنَقُ إن غاب. أمّا الصنفُ غيرُ
+    /// المتتبَّع فيرفضه إن حضر: <b>قيمةٌ تُدخَل ولا تُخزَّن أسوأُ من قيمةٍ لا تُدخَل</b>.</para>
+    /// </summary>
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
-        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
+        string? batchNumber = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -122,7 +129,9 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
                 taxExemptionReason = reason.EnglishText;
         }
 
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory,
+            taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
+            string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim()));
         RecalculateTotals();
     }
 
@@ -210,7 +219,10 @@ public record SalesInvoiceLine(
     long? ProductId = null,
     Tax.VatCategory VatCategory = Tax.VatCategory.Standard,
     string? TaxExemptionReasonCode = null,
-    string? TaxExemptionReason = null)
+    string? TaxExemptionReason = null,
+
+    /// <summary>(CEEF-230 · ط1-٣) الدفعةُ المصروفة — هويّةُ ما خرج، ويلزم للصنف المتتبَّع.</summary>
+    string? BatchNumber = null)
 {
     public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
 }

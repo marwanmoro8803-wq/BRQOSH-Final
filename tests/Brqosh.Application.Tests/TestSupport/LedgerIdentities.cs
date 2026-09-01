@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Purchasing;
@@ -172,6 +173,41 @@ public static class LedgerIdentities
     }
 
     // ── التجميع ─────────────────────────────────────────────────────────────
+
+    // ── هـ-٩ · الدفعاتُ مقابلَ رصيد المخزون ─────────────────────────────────
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) <b>مجموعُ دفعات صنفٍ متتبَّعٍ في مستودعٍ == رصيدُه فيه.</b>
+    ///
+    /// <para>وهي هـ-٣ نازلةً درجةً: تلك تربط <b>قيمةَ</b> المخزون بالأستاذ، وهذه تربط
+    /// <b>تفصيلَ الكمّية على الدفعات</b> بمجملها. <b>وانفصالُهما هو العطلُ الذي يجعل
+    /// تتبّعَ الصلاحية كذبة</b>: رصيدٌ مئةُ حبّةٍ ودفعاتٌ مجموعُها ثمانون يعني عشرين حبّةً
+    /// في المستودع <b>لا يعرف النظامُ متى تنتهي</b>.</para>
+    ///
+    /// <para><b>وتُحسب للأصناف المتتبَّعة وحدَها</b>: غيرُ المتتبَّع لا دفعاتٍ له بحكم
+    /// المَخنَق، فإقحامُه يجعل الهويّةَ تسقط على كلّ منشأةٍ عاديّة — <b>وهويّةٌ تسقط دائماً
+    /// لا تُقرأ، فتُطفأ</b>.</para>
+    ///
+    /// <para><b>ولا تُدرَج في <see cref="AssertAllAsync"/></b> لأنّها تقيس الكمّيات لا
+    /// القيم، وذيلُ كلّ سيناريو ليس موضعَها: تُستدعى في اختبارات التتبّع بعينها.</para>
+    /// </summary>
+    public static async Task<IdentityResult> TrackedBatchesAsync(BrqoshDbContext db, long companyId)
+    {
+        var trackedIds = await db.Products.AsNoTracking().IgnoreQueryFilters()
+            .Where(p => p.CompanyId == companyId && p.Tracking != InventoryTracking.None)
+            .Select(p => p.Id)
+            .ToListAsync();
+
+        var balances = await db.InventoryBalances.AsNoTracking()
+            .Where(b => b.CompanyId == companyId && trackedIds.Contains(b.ProductId))
+            .SumAsync(b => (decimal?)b.QuantityOnHand) ?? 0m;
+
+        var batches = await db.StockBatches.AsNoTracking()
+            .Where(b => b.CompanyId == companyId && trackedIds.Contains(b.ProductId))
+            .SumAsync(b => (decimal?)b.Quantity) ?? 0m;
+
+        return new IdentityResult("هـ-٩ دفعاتُ الأصناف المتتبَّعة", Round(batches), Round(balances));
+    }
 
     /// <summary>يقيس الهويات الثلاث الرصيدية بلا إسقاط — لتوثيق حجم انفصالٍ قائم.</summary>
     public static async Task<IReadOnlyList<IdentityResult>> MeasureAsync(BrqoshDbContext db, long companyId) =>

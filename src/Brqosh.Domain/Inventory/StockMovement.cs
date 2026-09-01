@@ -101,7 +101,15 @@ public class StockMovement : IBranchScoped
         BranchId = branchId;
     }
 
-    public void AddLine(long productId, decimal quantity, decimal unitCost)
+    /// <summary>
+    /// يُضيف سطراً — و<paramref name="batchNumber"/> هويّةُ الدفعة أو الرقمُ التسلسليّ.
+    ///
+    /// <para><b>ولا يُفرض هنا وجودُها</b>: النطاقُ يعرف معرّفَ الصنف ولا يعرف نمطَ تتبّعه،
+    /// فالفرضُ من طبقةٍ تحمل الصنفَ نفسَه — وهو <c>InventoryService</c>. <b>وحارسٌ يُبنى
+    /// حيث لا تكتمل معرفتُه يمرّ صامتاً.</b></para>
+    /// </summary>
+    public void AddLine(long productId, decimal quantity, decimal unitCost,
+        string? batchNumber = null, DateOnly? expiryDate = null)
     {
         EnsureDraft();
         if (productId <= 0)
@@ -110,7 +118,9 @@ public class StockMovement : IBranchScoped
             throw new AccountingException("الكمية يجب أن تكون موجبة.");
         if (unitCost < 0)
             throw new AccountingException("تكلفة الوحدة لا تكون سالبة.");
-        _lines.Add(new StockMovementLine(productId, quantity, unitCost));
+
+        var batch = string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim();
+        _lines.Add(new StockMovementLine(productId, quantity, unitCost, batch, expiryDate));
     }
 
     public void MarkPosted(string movementNumber)
@@ -146,7 +156,16 @@ public class StockMovement : IBranchScoped
     }
 }
 
-public record StockMovementLine(long ProductId, decimal Quantity, decimal UnitCost)
+/// <summary>
+/// سطرُ حركةٍ مخزنية.
+///
+/// <para>(CEEF-230 · ط1-٣) <b>و<c>BatchNumber</c> يبقى على السطر بعد الترحيل عمداً</b>:
+/// هو أثرُ ما دخل أو خرج بعينه. وبدونه لا يُعرف عند الإلغاء <b>أيَّ دفعةٍ تُعاد</b> —
+/// فيُردّ المخزونُ كمّيةً بلا هويّة وتنكسر <c>هـ-٩</c>.</para>
+/// </summary>
+public record StockMovementLine(
+    long ProductId, decimal Quantity, decimal UnitCost,
+    string? BatchNumber = null, DateOnly? ExpiryDate = null)
 {
     public decimal LineCost => Math.Round(Quantity * UnitCost, 2, MidpointRounding.AwayFromZero);
 }

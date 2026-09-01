@@ -32,6 +32,14 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (CEEF-229 · Z-10) هوية المنشأة النظامية — هنا للسبب نفسه المشروح أعلاه.
         await EnsureRegulatoryIdentityColumnsAsync(isPg, ct);
 
+        // (CEEF-230 · ط1-٣) تتبّعُ الدفعة — **هنا للسبب نفسه، وقد وقعتُ فيه**.
+        //
+        // ‏وُضع أوّلاً بعد ترقيعات المزوّد فسقط الإقلاع بـ
+        // ‏`42703: column p1.BatchNumber does not exist` — والتحذيرُ مكتوبٌ فوقه بأربعة
+        // ‏أسطر، وسبقني إليه `Z-10` و`م1-١ب`. **فتعليقٌ يشرح فخّاً لا يمنع الوقوعَ فيه**،
+        // ‏والذي منعه مسبارُ المخطّط في ثانية.
+        await EnsureBatchTrackingAsync(isPg, ct);
+
         // (CEEF-229 · م1-١ب الشقّ الثاني) سببُ الإعفاء — **قبل ترقيعات المزوّد للسبب نفسه
         // المشروح أعلاه**، لا بعدها مع الفئة الضريبية. وهو ما كشفه `SchemaCoverageProbe`:
         // وُضع أوّلاً مع `EnsureVatCategoryColumnsAsync` فسقط مسارُ الترقية بـ
@@ -297,6 +305,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await DropDuplicateUniqueIndexesAsync(ct);
         await EnsurePgColumnAsync("audit_log", "Reason", "character varying(512) NULL", ct);
         await EnsureV12LifecycleTablesAsync(isPg: true, ct);
+
+        // (CEEF-230 · ط1-٣) ‏النداءُ الثاني — على ما أعادت المرحلةُ السابقة بناءَه.
+        await EnsureBatchTrackingAsync(isPg: true, ct);
         await EnsureV14CrmTablesAsync(isPg: true, ct);
 
         // فهارس اختيارية — PascalCase
@@ -390,6 +401,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureDocumentTotalColumnsAsync(isPg: false, ct);
         await EnsureSqliteColumnAsync("audit_log", "Reason", "TEXT NULL", ct);
         await EnsureV12LifecycleTablesAsync(isPg: false, ct);
+
+        // (CEEF-230 · ط1-٣) ‏النداءُ الثاني — على ما أعادت المرحلةُ السابقة بناءَه.
+        await EnsureBatchTrackingAsync(isPg: false, ct);
         await EnsureV14CrmTablesAsync(isPg: false, ct);
 
         await SafeSqliteIndexAsync("""
@@ -1869,6 +1883,125 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     VatCategory TEXT NOT NULL DEFAULT 'Standard',
                     TaxExemptionReasonCode TEXT NULL,
                     TaxExemptionReason TEXT NULL
+                );
+                """, ct);
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) <b>تتبّعُ الدفعة والصلاحية والرقم التسلسليّ — على قاعدةٍ قائمة.</b>
+    ///
+    /// <para>جدولُ الدفعات جديد، وأربعةُ أعمدةٍ تُضاف إلى جداولَ قائمة. <b>وكلُّها تقبل
+    /// العدم أو لها قيمةٌ افتراضية</b> — فالترقيةُ تمرّ على قاعدةٍ فيها ملايينُ الصفوف بلا
+    /// تعبئةٍ ولا قيدٍ يتصادم، وهو الدرسُ المقيسُ في <c>ط0-٢</c>.</para>
+    ///
+    /// <para><b>و<c>Tracking</c> افتراضُه <c>None</c></b>: فلا يتغيّر سلوكُ صنفٍ قائمٍ
+    /// واحدٍ بهذه الترقية — والصنفُ يصير متتبَّعاً بقرارِ المالك وحدَه، ولا يُتّخذ ذلك
+    /// القرارُ إلا ورصيدُه صفر.</para>
+    /// </summary>
+    private async Task EnsureBatchTrackingAsync(bool isPg, CancellationToken ct)
+    {
+        // (CEEF-230 · ط1-٣) ‏**ثمانيةُ جداولٍ لا واحد.** `SalesInvoiceLine` سجلٌّ
+        // ‏**مشتركٌ** بين ثمانية مستندات: فاتورةُ المبيعات وأمرُها وعرضُ سعرها، وإشعارا
+        // ‏الدائن والمدين، وفاتورةُ المشتريات وأمرُها وطلبُها. **فحقلٌ يُضاف لأجل البيع
+        // ‏يظهر في الثمانية** — ويُنسى منها واحدٌ فيسقط إقلاعُ كلّ قاعدةِ عميلٍ قائم،
+        // ‏لأنّ EF يبني SELECT بكلّ أعمدة النموذج.
+        //
+        // ‏وقد نسيتُ أربعةً منها، **وسمّاها مسبارُ المخطّط في ثانية**:
+        // ‏`42703: column p1.BatchNumber does not exist`.
+        string[] lineTables =
+        [
+            "sales_invoice_lines", "sales_order_lines", "sales_quotation_lines",
+            "credit_note_lines", "debit_note_lines",
+            "purchase_invoice_lines", "purchase_order_lines", "purchase_request_lines",
+        ];
+
+        // ‏**وحارسُ الوجود لازم**: هذه المرحلةُ تسبق إعادةَ بناء جداول دورة حياة المبيعات،
+        // ‏فقاعدةٌ قديمةٌ ينقصها `sales_order_lines` تُسقط الإقلاعَ بـ`42P01` لولا التخطّي.
+        //
+        // ‏**ولهذا تُستدعى هذه الدالّةُ مرّتين.** كتبتُ هنا أوّلاً أنّ ما يُتخطّى «يُنشأ
+        // ‏لاحقاً من النموذج فيحمل العمودَ أصلاً» — **وكان ذلك خطأً**، وأسقطه مسبارُ
+        // ‏المخطّط: المُرقِّعُ يُعيد بناء تلك الجداول **من DDL مكتوبٍ بيده** لا من النموذج،
+        // ‏فتعود بلا العمود. فنداءٌ ثانٍ بعد إعادة البناء، والدالّةُ مُطاوِعةٌ للتكرار.
+        foreach (var table in lineTables)
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+                await EnsurePgColumnAsync(table, "BatchNumber", "character varying(64) NULL", ct);
+            else
+                await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
+        }
+
+        foreach (var table in new[] { "goods_receipt_lines", "stock_movement_lines" })
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+            {
+                await EnsurePgColumnAsync(table, "BatchNumber", "character varying(64) NULL", ct);
+                await EnsurePgColumnAsync(table, "ExpiryDate", "DATE NULL", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
+                await EnsureSqliteColumnAsync(table, "ExpiryDate", "TEXT NULL", ct);
+            }
+        }
+
+        if (await TableExistsAsync("products", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("products", "Tracking",
+                    "character varying(16) NOT NULL DEFAULT 'None'", ct);
+            else
+                await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
+        }
+
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS stock_batches (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "WarehouseId" BIGINT NOT NULL,
+                    "ProductId" BIGINT NOT NULL,
+                    "BatchNumber" character varying(64) NOT NULL,
+                    "ExpiryDate" DATE NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL DEFAULT 0,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_stock_batches_CompanyId_WarehouseId_ProductId_BatchNumber"
+                    ON stock_batches ("CompanyId", "WarehouseId", "ProductId", "BatchNumber");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_stock_batches_CompanyId_ProductId_ExpiryDate"
+                    ON stock_batches ("CompanyId", "ProductId", "ExpiryDate");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_stock_batches_CompanyId_BranchId"
+                    ON stock_batches ("CompanyId", "BranchId");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS stock_batches (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    BranchId INTEGER NULL,
+                    WarehouseId INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    BatchNumber TEXT NOT NULL,
+                    ExpiryDate TEXT NULL,
+                    Quantity TEXT NOT NULL DEFAULT '0',
+                    CreatedAtUtc TEXT NOT NULL
                 );
                 """, ct);
         }

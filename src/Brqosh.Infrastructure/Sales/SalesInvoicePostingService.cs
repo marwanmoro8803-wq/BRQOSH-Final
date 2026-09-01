@@ -83,7 +83,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
             .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
 
-            .Select(l => (l.ProductId!.Value, l.Quantity))
+            .Select(l => (l.ProductId!.Value, l.Quantity, l.BatchNumber))
 
             .ToList();
 
@@ -95,11 +95,12 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
         var invoiceNumber = await NextInvoiceNumberAsync(invoice.CompanyId, invoice.InvoiceDate);
 
         decimal cogsAmount = 0;
-        var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+        var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
+            string? BatchNumber, DateOnly? ExpiryDate)>();
         var costing = new InventoryCostingService(db);
         var warehouse = await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
 
-        foreach (var (productId, qty) in stockLines)
+        foreach (var (productId, qty, batchNumber) in stockLines)
         {
             var onHand = await inv.GetOnHandAsync(invoice.CompanyId, productId, warehouse.Id);
             if (qty > onHand)
@@ -113,7 +114,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
                 invoice.CompanyId, productId, warehouse.Id, qty,
                 $"SalesInvoice:{invoiceNumber}", ct);
             cogsAmount += totalCost;
-            issueLines.Add((productId, qty, unitCost));
+            issueLines.Add((productId, qty, unitCost, batchNumber, null));
         }
 
         var receivable = await DebitAccountForSaleAsync(invoice);

@@ -19,6 +19,12 @@ public class Product : ISoftDeletable
     /// <summary>متوسط التكلفة المرجح — يُستخدم لحساب تكلفة المبيعات.</summary>
     public decimal WeightedAverageCost { get; private set; }
 
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) نمطُ التتبّع — <b>والأصلُ <c>None</c></b>، فلا يتغيّر سلوكُ أيّ
+    /// صنفٍ قائم بإضافة هذه الميزة.
+    /// </summary>
+    public InventoryTracking Tracking { get; private set; } = InventoryTracking.None;
+
     public string Barcode { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime? DeletedAtUtc { get; private set; }
@@ -106,4 +112,31 @@ public class Product : ISoftDeletable
 
     /// <summary>إعادة تفعيل الصنف الموقوف.</summary>
     public void Reactivate() => IsActive = true;
+
+    /// <summary>
+    /// (CEEF-230 · ط1-٣) <b>يضبط نمطَ التتبّع — ويُرفض ما دام للصنف رصيد.</b>
+    ///
+    /// <para><b>ولماذا يُرفض:</b> صنفٌ في المستودع منه مئةُ حبّةٍ بلا دفعات، فإن صار
+    /// «يُتتبَّع بالدفعة» صارت المئةُ <b>بضاعةً بلا هويّة</b>: لا رقمَ لها ولا صلاحية،
+    /// فتنكسر <c>هـ-٩</c> في اللحظة نفسِها — مجموعُ الدفعات صفرٌ والرصيد مئة. والعكسُ
+    /// كذلك: إلغاءُ التتبّع يترك دفعاتٍ برصيدٍ لا يقابله شيء.</para>
+    ///
+    /// <para><b>وهو مذهبُ <c>م1-٢٢</c> بعينه</b>: طريقةُ التكلفة لا تُبدَّل والمخزونُ قائم،
+    /// لأنّ التبديلَ يُعيد تفسيرَ ما مضى. <b>والمخرجُ للمستخدم واحد</b>: يُصفّى الرصيدُ
+    /// جرداً ثمّ يُضبط النمطُ ثمّ يُدخَل بدفعاته — لا التفافَ على الحارس.</para>
+    /// </summary>
+    public void SetTracking(InventoryTracking tracking, decimal currentOnHand)
+    {
+        if (Tracking == tracking) return;
+
+        if (currentOnHand != 0m)
+            throw new AccountingException(
+                $"لا يمكن تغيير نمط تتبّع '{NameAr}' وله رصيدٌ قائم ({currentOnHand:N4}). "
+                + "صفِّ الرصيدَ بجردٍ أوّلاً، ثمّ غيّر النمط، ثمّ أدخِلْه بدفعاته.");
+
+        Tracking = tracking;
+    }
+
+    /// <summary>يُتتبَّع بدفعةٍ أو رقمٍ تسلسليّ — فكلُّ حركةٍ له تلزمها هويّة.</summary>
+    public bool IsTracked => Tracking != InventoryTracking.None;
 }

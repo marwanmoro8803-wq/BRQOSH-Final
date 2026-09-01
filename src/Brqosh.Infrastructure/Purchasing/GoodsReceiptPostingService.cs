@@ -39,14 +39,16 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
             var products = await inv.LoadProductsForLinesAsync(
                 receipt.CompanyId, receipt.Lines.Select(l => l.ProductId));
 
-            var stockLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+            var stockLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
+                string? BatchNumber, DateOnly? ExpiryDate)>();
             decimal accruedValue = 0m;
             foreach (var line in receipt.Lines)
             {
                 if (line.ProductId is not long pid)
                     continue;
 
-                stockLines.Add((pid, line.ReceivedQuantity, line.UnitCost));
+                stockLines.Add((pid, line.ReceivedQuantity, line.UnitCost,
+                    line.BatchNumber, line.ExpiryDate));
 
                 // (CEEF-229 · م1-١٩) **القيدُ يُرشَّح بما هو مخزنيّ — والحركةُ لا تُرشَّح.**
                 //

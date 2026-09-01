@@ -72,6 +72,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
+    public DbSet<StockBatch> StockBatches => Set<StockBatch>();
     public DbSet<InventoryCostConsumption> InventoryCostConsumptions => Set<InventoryCostConsumption>();
     public DbSet<PaymentAllocationLine> PaymentAllocationLines => Set<PaymentAllocationLine>();
     public DbSet<ProjectCostEntry> ProjectCostEntries => Set<ProjectCostEntry>();
@@ -284,6 +285,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(i => i.Lines, lines =>
             {
                 lines.ToTable("sales_invoice_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("sales_invoice_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -315,6 +319,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(n => n.Lines, lines =>
             {
                 lines.ToTable("credit_note_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("credit_note_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -381,6 +388,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(i => i.Lines, lines =>
             {
                 lines.ToTable("purchase_invoice_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("purchase_invoice_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -420,6 +430,10 @@ public class BrqoshDbContext : DbContext
             entity.Property(p => p.NameAr).HasMaxLength(256).IsRequired();
             entity.Property(p => p.Unit).HasMaxLength(32).IsRequired();
             entity.Property(p => p.Type).HasConversion<string>().HasMaxLength(16);
+            // (CEEF-230 · ط1-٣) ‏نصّاً لا رقماً — كبقيّة تعدادات هذا المخطّط، وليُقرأ في
+            // ‏القاعدة بلا جدولِ ترجمة. والافتراضُ `None` فلا يتغيّر صنفٌ قائم.
+            entity.Property(p => p.Tracking).HasConversion<string>().HasMaxLength(16)
+                .HasDefaultValue(InventoryTracking.None);
             entity.Property(p => p.SalePrice).HasPrecision(18, 2);
             entity.Property(p => p.WeightedAverageCost).HasPrecision(18, 4);
             entity.Property(p => p.Barcode).HasMaxLength(64);
@@ -457,10 +471,29 @@ public class BrqoshDbContext : DbContext
                 lines.HasKey("id");
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitCost).HasPrecision(18, 4);
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.ExpiryDate);
             });
 
             entity.Navigation(m => m.Lines)
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط1-٣) ‏رصيدُ الدفعة — تفصيلٌ لرصيد المخزون تربطه به الهويّةُ هـ-٩.
+        modelBuilder.Entity<StockBatch>(entity =>
+        {
+            entity.ToTable("stock_batches");
+            entity.Property(b => b.BatchNumber).HasMaxLength(64).IsRequired();
+            entity.Property(b => b.Quantity).HasPrecision(18, 4);
+            entity.Property(b => b.BranchId);
+
+            // ‏**الدفعةُ هويّةٌ في مستودعها**: الرقمُ نفسُه في مستودعين صفّان لا صفّ،
+            // ‏فالكمّيةُ تُحفظ حيث هي فعلاً. والتفرّدُ يمنع صفَّين للدفعة الواحدة —
+            // ‏وهو ما يجعل هـ-٩ قابلةً للقياس أصلاً.
+            entity.HasIndex(b => new { b.CompanyId, b.WarehouseId, b.ProductId, b.BatchNumber })
+                .IsUnique();
+            entity.HasIndex(b => new { b.CompanyId, b.ProductId, b.ExpiryDate });
+            entity.HasIndex(b => new { b.CompanyId, b.BranchId });
         });
 
         modelBuilder.Entity<InventoryBalance>(entity =>
@@ -600,6 +633,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(o => o.Lines, lines =>
             {
                 lines.ToTable("purchase_order_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("purchase_order_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -628,6 +664,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(r => r.Lines, lines =>
             {
                 lines.ToTable("purchase_request_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("purchase_request_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -681,6 +720,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(g => g.Lines, lines =>
             {
                 lines.ToTable("goods_receipt_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("goods_receipt_id");
                 lines.Property<long>("Id");
                 lines.HasKey("Id");
@@ -709,6 +751,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(n => n.Lines, lines =>
             {
                 lines.ToTable("debit_note_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("debit_note_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -916,6 +961,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(q => q.Lines, lines =>
             {
                 lines.ToTable("sales_quotation_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("sales_quotation_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -940,6 +988,9 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(o => o.Lines, lines =>
             {
                 lines.ToTable("sales_order_lines");
+                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.WithOwner().HasForeignKey("sales_order_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -1079,6 +1130,7 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<Warehouse>());
         MapBranchScope(modelBuilder.Entity<InventoryBalance>());
         MapBranchScope(modelBuilder.Entity<InventoryCostLayer>());
+        MapBranchScope(modelBuilder.Entity<StockBatch>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());
