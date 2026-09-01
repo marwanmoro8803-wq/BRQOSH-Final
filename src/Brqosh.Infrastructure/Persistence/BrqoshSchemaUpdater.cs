@@ -1993,6 +1993,74 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
         }
 
+        // (CEEF-230 · ط1-٥) ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS recurring_invoice_plans (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "CustomerId" BIGINT NOT NULL,
+                    "Code" character varying(32) NOT NULL,
+                    "Description" character varying(512) NOT NULL,
+                    "Frequency" character varying(16) NOT NULL,
+                    "Status" character varying(16) NOT NULL,
+                    "StartDate" DATE NOT NULL,
+                    "EndDate" DATE NULL,
+                    "OccurrencesGenerated" INTEGER NOT NULL DEFAULT 0,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS recurring_invoice_plan_lines (
+                    id BIGSERIAL PRIMARY KEY,
+                    recurring_invoice_plan_id BIGINT NOT NULL
+                        REFERENCES recurring_invoice_plans("Id") ON DELETE CASCADE,
+                    "Description" character varying(512) NOT NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL DEFAULT 0,
+                    "UnitPrice" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "ProductId" BIGINT NULL,
+                    "VatCategory" character varying(16) NOT NULL DEFAULT 'Standard',
+                    "TaxExemptionReasonCode" character varying(32) NULL,
+                    "TaxExemptionReason" text NULL,
+                    "BatchNumber" character varying(64) NULL,
+                    "DiscountPercent" NUMERIC(9,4) NOT NULL DEFAULT 0,
+                    "UnitCode" character varying(16) NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS recurring_invoice_runs (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "PlanId" BIGINT NOT NULL,
+                    "OccurrenceDate" DATE NOT NULL,
+                    "SalesInvoiceId" BIGINT NOT NULL,
+                    "GeneratedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_recurring_invoice_runs_PlanId_OccurrenceDate"
+                    ON recurring_invoice_runs ("PlanId", "OccurrenceDate");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_recurring_invoice_runs_CompanyId_OccurrenceDate"
+                    ON recurring_invoice_runs ("CompanyId", "OccurrenceDate");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_recurring_invoice_plans_CompanyId_Code"
+                    ON recurring_invoice_plans ("CompanyId", "Code");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_recurring_invoice_plans_CompanyId_Status"
+                    ON recurring_invoice_plans ("CompanyId", "Status");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_recurring_invoice_plans_CompanyId_BranchId"
+                    ON recurring_invoice_plans ("CompanyId", "BranchId");
+                """, ct);
+        }
+
         // (CEEF-230 · ط1-١) ‏جدولُ وحدات القياس — يُبذَر للمنشآت الجديدة في التهيئة،
         // ‏ويُنشأ فارغاً هنا للقواعد القائمة. **وفارغٌ يعني «بلا تحويل»** وهو سلوكُ ما مضى،
         // ‏فلا يتغيّر رقمٌ حتى تُعرِّف المنشأةُ وحداتِها.

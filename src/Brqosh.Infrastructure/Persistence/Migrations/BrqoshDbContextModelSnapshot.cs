@@ -2216,6 +2216,100 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("customers", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Sales.RecurringInvoicePlan", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("OccurrencesGenerated")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "BranchId");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Status");
+
+                    b.ToTable("recurring_invoice_plans", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Sales.RecurringInvoiceRun", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("GeneratedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("OccurrenceDate")
+                        .HasColumnType("date");
+
+                    b.Property<long>("PlanId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SalesInvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "OccurrenceDate");
+
+                    b.HasIndex("PlanId", "OccurrenceDate")
+                        .IsUnique();
+
+                    b.ToTable("recurring_invoice_runs", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Sales.SalesInvoice", b =>
                 {
                     b.Property<long>("Id")
@@ -3999,6 +4093,72 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Navigation("NationalAddress")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Sales.RecurringInvoicePlan", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Sales.SalesInvoiceLine", "Lines", b1 =>
+                        {
+                            b1.Property<long>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("Description")
+                                .IsRequired()
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)");
+
+                            b1.Property<decimal>("DiscountPercent")
+                                .HasPrecision(9, 4)
+                                .HasColumnType("numeric(9,4)");
+
+                            b1.Property<long?>("ProductId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<decimal>("Quantity")
+                                .HasPrecision(18, 4)
+                                .HasColumnType("numeric(18,4)");
+
+                            b1.Property<string>("TaxExemptionReason")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("TaxExemptionReasonCode")
+                                .HasMaxLength(32)
+                                .HasColumnType("character varying(32)");
+
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
+                            b1.Property<decimal>("UnitPrice")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
+                            b1.Property<long>("recurring_invoice_plan_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("id");
+
+                            b1.HasIndex("recurring_invoice_plan_id");
+
+                            b1.ToTable("recurring_invoice_plan_lines", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("recurring_invoice_plan_id");
+                        });
+
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Sales.SalesInvoice", b =>

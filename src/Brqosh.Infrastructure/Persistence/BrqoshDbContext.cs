@@ -74,6 +74,8 @@ public class BrqoshDbContext : DbContext
     public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
     public DbSet<StockBatch> StockBatches => Set<StockBatch>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
+    public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
+    public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
     public DbSet<InventoryCostConsumption> InventoryCostConsumptions => Set<InventoryCostConsumption>();
     public DbSet<PaymentAllocationLine> PaymentAllocationLines => Set<PaymentAllocationLine>();
     public DbSet<ProjectCostEntry> ProjectCostEntries => Set<ProjectCostEntry>();
@@ -522,6 +524,48 @@ public class BrqoshDbContext : DbContext
             entity.Property(u => u.BaseCode).HasMaxLength(16).IsRequired();
             entity.Property(u => u.Factor).HasPrecision(18, 6);
             entity.HasIndex(u => new { u.CompanyId, u.Code }).IsUnique();
+        });
+
+        // (CEEF-230 · ط1-٥) ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
+        modelBuilder.Entity<RecurringInvoicePlan>(entity =>
+        {
+            entity.ToTable("recurring_invoice_plans");
+            entity.Property(p => p.Code).HasMaxLength(32).IsRequired();
+            entity.Property(p => p.Description).HasMaxLength(512).IsRequired();
+            entity.Property(p => p.Frequency).HasConversion<string>().HasMaxLength(16);
+            entity.Property(p => p.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(p => p.BranchId);
+            entity.HasIndex(p => new { p.CompanyId, p.Code }).IsUnique();
+            entity.HasIndex(p => new { p.CompanyId, p.Status });
+            entity.HasIndex(p => new { p.CompanyId, p.BranchId });
+
+            entity.OwnsMany(p => p.Lines, lines =>
+            {
+                lines.ToTable("recurring_invoice_plan_lines");
+                lines.WithOwner().HasForeignKey("recurring_invoice_plan_id");
+                lines.Property<long>("id");
+                lines.HasKey("id");
+                lines.Property(l => l.Description).HasMaxLength(512).IsRequired();
+                lines.Property(l => l.Quantity).HasPrecision(18, 4);
+                lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
+                lines.Property(l => l.TaxExemptionReasonCode).HasMaxLength(32);
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
+            });
+
+            entity.Navigation(p => p.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<RecurringInvoiceRun>(entity =>
+        {
+            entity.ToTable("recurring_invoice_runs");
+
+            // ‏**هذا القيدُ هو حارسُ الازدواج الحقيقيّ** — لا فحصٌ في الذاكرة يسبقه تشغيلٌ
+            // ‏آخر. وفوترةُ العميل مرّتين عن شهرٍ واحد عطلٌ يراه العميلُ قبلنا.
+            entity.HasIndex(r => new { r.PlanId, r.OccurrenceDate }).IsUnique();
+            entity.HasIndex(r => new { r.CompanyId, r.OccurrenceDate });
         });
 
         modelBuilder.Entity<InventoryBalance>(entity =>
@@ -1170,6 +1214,7 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<InventoryBalance>());
         MapBranchScope(modelBuilder.Entity<InventoryCostLayer>());
         MapBranchScope(modelBuilder.Entity<StockBatch>());
+        MapBranchScope(modelBuilder.Entity<RecurringInvoicePlan>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());
