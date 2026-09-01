@@ -21,6 +21,7 @@
 //
 // ‏التشغيل:  dotnet run --project tools/SchemaCoverageProbe
 
+using System.Globalization;
 using Brqosh.Application.Setup;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -676,14 +677,18 @@ static async Task<int> ProveMigrationsSurviveRealDataAsync(string connectionStri
     await migrator.MigrateAsync(migrations[0]);
 
     var totalSeeded = 0;
-    var unseeded = new List<string>();
+    var depth = 0;
+    var tableCount = 0;
+    var shallow = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     for (var i = 1; i < migrations.Count; i++)
     {
-        var (seeded, failures) = await SeedEveryEmptyTableAsync(dataCs);
+        var (seeded, rowsWanted, tables, short_) = await SeedEveryEmptyTableAsync(dataCs);
         totalSeeded += seeded;
-        foreach (var f in failures)
-            if (!unseeded.Contains(f)) unseeded.Add(f);
+        depth = rowsWanted;
+        tableCount = tables;
+        foreach (var (table, rows) in short_)
+            shallow[table] = rows;
 
         try
         {
@@ -706,24 +711,50 @@ static async Task<int> ProveMigrationsSurviveRealDataAsync(string connectionStri
         return 17;
     }
 
-    Console.WriteLine($"[PASS] الهجرات الـ{migrations.Count} كلُّها تمرّ على قاعدةٍ فيها بيانات — {totalSeeded} صفّاً مبذوراً.");
-    if (unseeded.Count > 0)
+    Console.WriteLine($"[PASS] الهجرات الـ{migrations.Count} كلُّها تمرّ على قاعدةٍ فيها بيانات — "
+                      + $"{totalSeeded} صفّاً مبذوراً، بعمق {depth} صفوفٍ للجدول.");
+
+    // ‏(CEEF-230 · ط0-٢) **تقريرُ النقص على درجتين لا درجةً واحدة.** جدولٌ فيه صفٌّ واحد
+    // ‏لا يتصادم أصلاً، فهو **خارج القياس**. وجدولٌ فيه صفّان يتصادم لكنّه لا يكشف
+    // ‏«احذف مكرّراً ثمّ قيّد» — فهو **مقيسٌ ناقصُ العمق**. وخلطُ الحالتين في رقمٍ واحد
+    // ‏يُخفي أيَّهما وقع.
+    var blind = shallow.Where(x => x.Value < 2).Select(x => x.Key).Order(StringComparer.Ordinal).ToList();
+    var thin = shallow.Where(x => x.Value >= 2).Select(x => $"{x.Key}({x.Value})")
+                      .Order(StringComparer.Ordinal).ToList();
+
+    // ‏(CEEF-230 · ط0-٢) **وتُعلَن التغطيةُ الكاملة إيجاباً لا بالصمت.** تحذيرٌ لا يُطبع
+    // ‏لا يفرّق القارئُ بينه وبين تحذيرٍ لا يستطيع أن يُطبع — وهذا بعينه ما يجعل مسباراً
+    // ‏معطوباً يبدو سليماً. فالسطرُ التالي يُطبع دائماً.
+    Console.WriteLine($"       تغطيةُ العمق: {tableCount - shallow.Count} من {tableCount} جدولاً بلغت {depth} صفوفٍ كاملة.");
+
+    if (blind.Count > 0)
     {
-        Console.WriteLine($"       ⚠️ وتعذّر بذرُ {unseeded.Count} جدولاً — فهذه **خارج القياس**، لا مشهودٌ لها:");
-        var shown = string.Join("، ", unseeded.Take(12));
-        Console.WriteLine($"          {shown}{(unseeded.Count > 12 ? " ..." : "")}");
+        Console.WriteLine($"       ⚠️ و{blind.Count} جدولاً لم يبلغ صفَّين — فهذه **خارج القياس**، لا تصادمَ فيها:");
+        Console.WriteLine($"          {string.Join("، ", blind.Take(12))}{(blind.Count > 12 ? " ..." : "")}");
+    }
+    if (thin.Count > 0)
+    {
+        Console.WriteLine($"       ⚠️ و{thin.Count} جدولاً بلغ صفَّين ولم يبلغ {depth} — فالتصادمُ مقيسٌ فيها، "
+                          + "و«احذف مكرّراً ثمّ قيّد» ليس كذلك:");
+        Console.WriteLine($"          {string.Join("، ", thin.Take(12))}{(thin.Count > 12 ? " ..." : "")}");
     }
     return 0;
 }
 
 /// <summary>
-/// ‏يملأ كلَّ جدولٍ فارغ بصفَّين. عامٌّ لا يعرف النطاق: يقرأ الأعمدة والمفاتيح الأجنبية من
+/// ‏يملأ كلَّ جدولٍ فارغ بأربعة صفوف. عامٌّ لا يعرف النطاق: يقرأ الأعمدة والمفاتيح الأجنبية من
 /// ‏information_schema، ويرتّب الجداول ترتيباً يجعل الأبَ قبل الابن، ويولّد قيمةً لكلّ عمودٍ
 /// ‏إلزاميّ بلا قيمةٍ افتراضية. <b>والأعمدةُ ذاتُ القيم الافتراضية تُترك عمداً</b> — فقيمتُها
 /// ‏الافتراضية هي بعينها ما يتصادم لاحقاً، وهي موضعُ القياس.
 /// </summary>
-static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(string connectionString)
+static async Task<(int Seeded, int Depth, int Tables, Dictionary<string, int> Shallow)>
+    SeedEveryEmptyTableAsync(string connectionString)
 {
+    // ‏(CEEF-230 · ط0-٢) **عمقُ البذر.** صفّان كانا يكشفان «قيّدْ ما هو قائم»، ولا
+    // ‏يكشفان **«احذف المكرّرَ ثمّ قيّد»** — وهي أشيعُ شكلٍ لهجرةِ تنظيف: صفّان يبقى
+    // ‏منهما واحدٌ فينجح الفهرسُ الفريد، وأربعةٌ يبقى منها ثلاثةٌ فيسقط. ومقيسٌ بطفرة.
+    const int SeedRows = 4;
+
     await using var conn = new NpgsqlConnection(connectionString);
     await conn.OpenAsync();
 
@@ -738,7 +769,8 @@ static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(st
     var columns = new Dictionary<string, List<ColumnInfo>>(StringComparer.OrdinalIgnoreCase);
     await using (var cmd = new NpgsqlCommand(
         "SELECT table_name, column_name, is_nullable, column_default, " +
-        "       is_identity, is_generated, character_maximum_length, udt_name " +
+        "       is_identity, is_generated, character_maximum_length, udt_name, " +
+        "       numeric_precision, numeric_scale " +
         "FROM information_schema.columns WHERE table_schema = 'public'", conn))
     await using (var r = await cmd.ExecuteReaderAsync())
         while (await r.ReadAsync())
@@ -746,9 +778,11 @@ static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(st
             var t = r.GetString(0);
             if (!columns.TryGetValue(t, out var list)) columns[t] = list = [];
             list.Add(new ColumnInfo(
-                r.GetString(1), r.GetString(2) == "YES", !r.IsDBNull(3),
+                t, r.GetString(1), r.GetString(2) == "YES", !r.IsDBNull(3),
                 r.GetString(4) == "YES", r.GetString(5) != "NEVER",
-                r.IsDBNull(6) ? null : r.GetInt32(6), r.GetString(7)));
+                r.IsDBNull(6) ? null : r.GetInt32(6), r.GetString(7),
+                r.IsDBNull(8) ? null : r.GetInt32(8),
+                r.IsDBNull(9) ? null : r.GetInt32(9)));
         }
 
     var foreignKeys = new Dictionary<(string Table, string Column), (string Parent, string ParentColumn)>();
@@ -826,7 +860,7 @@ static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(st
     ordered.AddRange(tables.Where(t => !placed.Contains(t)));
 
     var seeded = 0;
-    var failed = new List<string>();
+    var shallow = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
     foreach (var table in ordered)
     {
@@ -835,7 +869,7 @@ static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(st
 
         if (!columns.TryGetValue(table, out var cols)) continue;
 
-        for (var row = 1; row <= 2; row++)
+        for (var row = 1; row <= SeedRows; row++)
         {
             var names = new List<string>();
             var values = new List<string>();
@@ -855,7 +889,7 @@ static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(st
                 else
                 {
                     if (col.IsNullable) continue;
-                    value = LiteralFor(col, varyColumns.Contains((table, col.Name)) ? row : 1);
+                    value = LiteralFor(col, row, varyColumns.Contains((table, col.Name)));
                 }
 
                 names.Add($"\"{col.Name}\"");
@@ -882,28 +916,127 @@ static async Task<(int Seeded, List<string> Failed)> SeedEveryEmptyTableAsync(st
         // ‏القياس تماماً كالفارغ. وحصرُ الإخفاق في «الصفّ الأوّل» كان يُخفي ذلك ويُظهر
         // ‏تغطيةً أوسعَ من الحقّ.
         await using (var after = new NpgsqlCommand($"SELECT COUNT(*) FROM \"{table}\"", conn))
-            if (Convert.ToInt64(await after.ExecuteScalarAsync()) < 2 && !failed.Contains(table))
-                failed.Add(table);
+        {
+            var rows = Convert.ToInt64(await after.ExecuteScalarAsync());
+            if (rows < SeedRows) shallow[table] = (int)rows;
+        }
     }
 
-    return (seeded, failed);
+    return (seeded, SeedRows, tables.Count, shallow);
 }
 
-/// <summary>‏قيمةٌ صالحةٌ لنوع العمود — تختلف بين الصفَّين كي لا يتصادما على قيدِ تفرّد.</summary>
-static string LiteralFor(ColumnInfo col, int row) => col.UdtName switch
+/// <summary>
+/// ‏(CEEF-230 · ط0-٢) <b>قيمةٌ تختلف بين الأعمدة وتتطابق بين الصفوف.</b>
+///
+/// <para><b>ما كان:</b> كلُّ رقمٍ مبذورٍ <c>1</c> وكلُّ نصٍّ <c>p1</c>. <b>والواحدُ يبتلع
+/// الحساب</b>: <c>كمّية × سعر</c> و<c>كمّية ÷ سعر</c> و<c>كمّية</c> كلُّها واحد — فهجرةُ
+/// تعبئةٍ بمعاملٍ خاطئ تمرّ <b>خضراء</b>، وقد قِيس ذلك بطفرة.</para>
+///
+/// <para><b>والعلاجُ اختلافٌ بين الأعمدة لا بين الصفوف.</b> فالتطابقُ بين الصفوف هو ما
+/// يصطاد التصادم — وهو درسُ <c>CEEF-229</c> الذي لا يُنقض — والاختلافُ بين الأعمدة هو ما
+/// يصطاد الحساب. <b>ولا يتعارضان</b>: قيمةُ العمود تُشتقّ من اسمه فتثبت عبر صفوفه.</para>
+///
+/// <para><b>وتنويعٌ صامتٌ أُوقف:</b> <c>now()</c> و<c>gen_random_uuid()</c> كانتا تُعطيان
+/// كلَّ صفٍّ قيمةً مختلفة — <b>فالتصادمُ على عمودٍ زمنيّ أو uuid كان مستحيلاً</b>. وهو
+/// عينُ العيب الذي أصلحته <c>CEEF-229</c> لبقيّة الأنواع <b>ونجا فيهما</b>، لأنّ التنويعَ
+/// جاء من دالّة القاعدة لا من البذّار فلم تره القاعدةُ الجديدة. صارتا حرفيّتين حتميّتين.</para>
+///
+/// <para>و<paramref name="vary"/> يُرفع للعمود الواحد المختار من كلّ قيدِ تفرّد — <b>وهو
+/// وحده ما يختلف بين الصفوف</b>، وبغيره لا يُدرَج صفٌّ ثانٍ أصلاً.</para>
+/// </summary>
+static string LiteralFor(ColumnInfo col, int row, bool vary)
 {
-    "int2" or "int4" or "int8" => row.ToString(),
-    "numeric" or "float4" or "float8" or "money" => row.ToString(),
-    "bool" => "false",
-    "uuid" => "gen_random_uuid()",
-    "date" => "current_date",
-    "timestamp" or "timestamptz" => "now()",
-    "time" or "timetz" => "'00:00:00'",
-    "interval" => "'0 seconds'",
-    "bytea" => "'\\x00'::bytea",
-    "json" or "jsonb" => "'{}'",
-    _ => Quoted("p" + row, col.MaxLength),
-};
+    var seed = Fnv(col.Table + "." + col.Name);
+    var bump = vary ? row : 0;
+    var n = seed + (uint)bump;
+
+    return col.UdtName switch
+    {
+        "int2" => ((seed % 90) + 7 + bump).ToString(CultureInfo.InvariantCulture),
+        "int4" or "int8" => ((seed % 900) + 13 + bump).ToString(CultureInfo.InvariantCulture),
+        "numeric" or "float4" or "float8" or "money" => MoneyLiteral(col, seed, bump),
+        "bool" => (vary ? row % 2 == 0 : seed % 2 == 0) ? "true" : "false",
+        "uuid" => $"'{n:x8}-0000-4000-8000-{n:x8}0000'",
+        "date" => "'" + new DateOnly(2026, 1, 1).AddDays((int)(seed % 300) + bump)
+            .ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "'",
+        "timestamp" or "timestamptz" => "'" + new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            .AddMinutes((seed % 400_000) + bump)
+            .ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) + "+00'",
+        "time" or "timetz" => $"'{n % 24:00}:{n % 60:00}:00'",
+        "interval" => $"'{(seed % 90) + bump} seconds'",
+        "bytea" => $"decode('{n % 256:x2}', 'hex')",
+        "json" or "jsonb" => $"'{(seed % 1000) + bump}'",
+        _ => Quoted(TextLiteral(col, seed, bump), col.MaxLength),
+    };
+}
+
+/// <summary>
+/// ‏مبلغٌ بشكلٍ محاسبيّ — <b>ولا واحدَ فيه ولا صفر</b>، فهما وحدَهما ما يجعل الضربَ
+/// والقسمةَ سواءً. ومحصورٌ في دقّة العمود ومقياسه، وإلا رفضته القاعدةُ فسقط الجدولُ من
+/// القياس وهو أسوأُ من قيمةٍ عامّة.
+/// </summary>
+static string MoneyLiteral(ColumnInfo col, uint seed, int bump)
+{
+    decimal[] ladder = [3m, 7m, 12.5m, 25m, 48.75m, 125.50m, 340.25m, 999.99m, 1250.75m, 8400m];
+
+    var scale = Math.Clamp(col.Scale ?? 2, 0, 6);
+    var whole = Math.Clamp((col.Precision ?? 18) - (col.Scale ?? 2), 1, 9);
+    var cap = (decimal)Math.Pow(10, whole) - 1m;
+
+    var value = ladder[(int)(seed % (uint)ladder.Length)];
+    if (value > cap) value = Math.Max(cap / 3m, 2m);
+
+    value += bump;
+    if (value > cap) value = cap - bump;
+
+    return Math.Round(value, scale, MidpointRounding.AwayFromZero)
+        .ToString(CultureInfo.InvariantCulture);
+}
+
+/// <summary>
+/// ‏نصٌّ بشكلِ ما يحمله العمود فعلاً — كودٌ، بريدٌ، هاتفٌ، آيبان، رقمُ ضريبة، عملة.
+///
+/// <para><b>لأنّ هجرةَ تحويلِ بيانات تقرأ الشكلَ لا الطول</b>: هجرةٌ تستخرج مقطعاً من
+/// رقم ضريبةٍ أو تُحلّل كوداً لا يختبرها <c>p1</c> إطلاقاً — تمرّ عليه بلا تحويل.</para>
+///
+/// <para><b>وهذا استدلالٌ بالاسم، وهو يُخطئ.</b> عمودٌ اسمُه <c>Code</c> وليس كوداً يأخذ
+/// شكلَ كود. لكنّ الخطأ هنا في <b>اتّجاهٍ آمن</b>: قيمةٌ أغنى ممّا يلزم، لا أفقر.</para>
+/// </summary>
+static string TextLiteral(ColumnInfo col, uint seed, int bump)
+{
+    var n = (seed % 900) + 100 + (uint)bump;
+    var name = col.Name.ToLowerInvariant();
+
+    if (name.Contains("email")) return $"probe{n}@example.sa";
+    if (name.Contains("iban")) return $"SA{n}0000006080101675";
+    if (name.Contains("phone") || name.Contains("mobile")) return $"+9665{n}00000";
+    if (name.Contains("currency"))
+    {
+        string[] codes = ["SAR", "USD", "EUR", "AED", "KWD"];
+        return codes[(int)(n % (uint)codes.Length)];
+    }
+    if (name.Contains("vat") || name.Contains("tax")) return $"3{n}00000000003";
+    if (name.Contains("code") || name.Contains("number") || name.Contains("reference"))
+        return $"PRB-{n}";
+    if (name.Contains("namear")) return $"اسمُ القياس {n}";
+    if (name.Contains("name")) return $"Probe Name {n}";
+    return $"probe-{n}";
+}
+
+/// <summary>
+/// ‏بصمةٌ حتميّة (FNV-1a). و<c>string.GetHashCode()</c> <b>لا يصلح</b>: يختلف بين
+/// تشغيلٍ وتشغيل، فيصير البذرُ غيرَ قابلٍ للإعادة — ومسبارٌ لا يُعيد نتيجتَه لا يُصدَّق.
+/// </summary>
+static uint Fnv(string text)
+{
+    var hash = 2166136261u;
+    foreach (var ch in text)
+    {
+        hash ^= ch;
+        hash *= 16777619u;
+    }
+    return hash;
+}
 
 static string Quoted(string raw, int? maxLength)
 {
@@ -969,5 +1102,6 @@ static void Report(string title, List<string> items)
     Console.WriteLine();
 }
 
-record ColumnInfo(string Name, bool IsNullable, bool HasDefault,
-    bool IsIdentity, bool IsGenerated, int? MaxLength, string UdtName);
+record ColumnInfo(string Table, string Name, bool IsNullable, bool HasDefault,
+    bool IsIdentity, bool IsGenerated, int? MaxLength, string UdtName,
+    int? Precision, int? Scale);
