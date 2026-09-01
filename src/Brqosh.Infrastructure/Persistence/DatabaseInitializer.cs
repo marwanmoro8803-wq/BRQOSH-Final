@@ -2,6 +2,7 @@ using Brqosh.Application.Setup;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Inventory;
+using Brqosh.Domain.Payroll;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Setup;
@@ -39,6 +40,7 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
         await SeedChartOfAccountsAsync(company.Id, config.Country.ChartOfAccounts);
         await SeedDefaultWarehouseAsync(company.Id);
         await SeedUnitsOfMeasureAsync(company.Id);
+        await SeedGosiPolicyAsync(company.Id);
         await SeedHeadquartersBranchAsync(company.Id);
         await SeedZatcaSettingsAsync(company.Id, config.Country.Zatca);
         return company;
@@ -55,6 +57,7 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
         await SeedChartOfAccountsAsync(companyId, config.Country.ChartOfAccounts);
         await SeedDefaultWarehouseAsync(companyId);
         await SeedUnitsOfMeasureAsync(companyId);
+        await SeedGosiPolicyAsync(companyId);
         await SeedHeadquartersBranchAsync(companyId);
         await SeedZatcaSettingsAsync(companyId, config.Country.Zatca);
     }
@@ -116,6 +119,21 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
             db.UnitsOfMeasure.Add(UnitOfMeasure.Create(
                 companyId, seed.Code, seed.NameAr, seed.UnCode, seed.BaseCode, seed.Factor));
 
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط2-٢) ‏بذرُ نِسَب التأمينات بقيمها المبدئية.
+    ///
+    /// <para><b>وتُبذَر لكلّ منشأةٍ لتكون قابلةً للتصحيح</b> — والنِّسَبُ يُعدّلها المُنظِّم،
+    /// فثابتٌ في الشيفرة يجعل كلَّ تعديلٍ نظاميٍّ إصداراً جديداً.</para>
+    /// </summary>
+    private async Task SeedGosiPolicyAsync(long companyId)
+    {
+        if (await db.GosiPolicies.AnyAsync(g => g.CompanyId == companyId))
+            return;
+
+        db.GosiPolicies.Add(GosiPolicy.CreateDefault(companyId));
         await db.SaveChangesAsync();
     }
 

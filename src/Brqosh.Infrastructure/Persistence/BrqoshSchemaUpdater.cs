@@ -2047,6 +2047,60 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
         }
 
+        // (CEEF-230 · ط2) ‏سجلُّ الموظفين ونِسَبُ التأمينات.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS employees (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "Code" character varying(32) NOT NULL,
+                    "NameAr" character varying(256) NOT NULL,
+                    "NationalId" character varying(10) NOT NULL,
+                    "Nationality" character varying(16) NOT NULL,
+                    "JobTitle" character varying(128) NOT NULL,
+                    "HireDate" DATE NOT NULL,
+                    "TerminationDate" DATE NULL,
+                    "Iban" character varying(24) NULL,
+                    "BasicSalary" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "HousingAllowance" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "TransportAllowance" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "OtherAllowance" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "CostCenterId" BIGINT NULL,
+                    "IsActive" BOOLEAN NOT NULL DEFAULT true,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS gosi_policies (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "SaudiEmployeePercent" NUMERIC(9,4) NOT NULL DEFAULT 9.75,
+                    "SaudiEmployerPercent" NUMERIC(9,4) NOT NULL DEFAULT 11.75,
+                    "NonSaudiEmployeePercent" NUMERIC(9,4) NOT NULL DEFAULT 0,
+                    "NonSaudiEmployerPercent" NUMERIC(9,4) NOT NULL DEFAULT 2,
+                    "ContributoryWageCap" NUMERIC(18,2) NOT NULL DEFAULT 45000,
+                    "ContributoryWageFloor" NUMERIC(18,2) NOT NULL DEFAULT 0
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_employees_CompanyId_Code" ON employees ("CompanyId", "Code");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_employees_CompanyId_NationalId" ON employees ("CompanyId", "NationalId");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_employees_CompanyId_IsActive" ON employees ("CompanyId", "IsActive");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_employees_CompanyId_BranchId" ON employees ("CompanyId", "BranchId");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_gosi_policies_CompanyId" ON gosi_policies ("CompanyId");""", ct);
+
+            await EnsurePgColumnAsync("payroll_lines", "EmployeeId", "BIGINT NULL", ct);
+            await EnsurePgColumnAsync("payroll_lines", "OtherAllowance",
+                "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("payroll_lines", "EmployeeId", "INTEGER NULL", ct);
+            await EnsureSqliteColumnAsync("payroll_lines", "OtherAllowance",
+                "TEXT NOT NULL DEFAULT '0'", ct);
+        }
+
         // (CEEF-230 · ط1-٦) ‏الموازنة.
         if (isPg)
         {

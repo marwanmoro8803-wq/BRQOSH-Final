@@ -75,6 +75,8 @@ public class BrqoshDbContext : DbContext
     public DbSet<StockBatch> StockBatches => Set<StockBatch>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
     public DbSet<Budget> Budgets => Set<Budget>();
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
     public DbSet<InventoryCostConsumption> InventoryCostConsumptions => Set<InventoryCostConsumption>();
@@ -537,6 +539,44 @@ public class BrqoshDbContext : DbContext
             entity.Property(u => u.BaseCode).HasMaxLength(16).IsRequired();
             entity.Property(u => u.Factor).HasPrecision(18, 6);
             entity.HasIndex(u => new { u.CompanyId, u.Code }).IsUnique();
+        });
+
+        // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
+        modelBuilder.Entity<Employee>(entity =>
+        {
+            entity.ToTable("employees");
+            entity.Property(e => e.Code).HasMaxLength(32).IsRequired();
+            entity.Property(e => e.NameAr).HasMaxLength(256).IsRequired();
+            entity.Property(e => e.NationalId).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.JobTitle).HasMaxLength(128).IsRequired();
+            entity.Property(e => e.Nationality).HasConversion<string>().HasMaxLength(16);
+            entity.Property(e => e.Iban).HasMaxLength(24);
+            entity.Property(e => e.BasicSalary).HasPrecision(18, 2);
+            entity.Property(e => e.HousingAllowance).HasPrecision(18, 2);
+            entity.Property(e => e.TransportAllowance).HasPrecision(18, 2);
+            entity.Property(e => e.OtherAllowance).HasPrecision(18, 2);
+            entity.Property(e => e.BranchId);
+
+            entity.HasIndex(e => new { e.CompanyId, e.Code }).IsUnique();
+
+            // ‏**والهويّةُ لا تتكرّر**: موظّفان برقمٍ واحدٍ يعنيان راتباً مزدوجاً لشخص،
+            // ‏أو ملفَّ أجورٍ ترفضه الجهةُ المستقبِلة.
+            entity.HasIndex(e => new { e.CompanyId, e.NationalId }).IsUnique();
+            entity.HasIndex(e => new { e.CompanyId, e.IsActive });
+            entity.HasIndex(e => new { e.CompanyId, e.BranchId });
+        });
+
+        // (CEEF-230 · ط2-٢) ‏نِسَبُ التأمينات — لكلّ منشأةٍ نسختُها، فالمُنظِّم يُعدّلها.
+        modelBuilder.Entity<GosiPolicy>(entity =>
+        {
+            entity.ToTable("gosi_policies");
+            entity.Property(g => g.SaudiEmployeePercent).HasPrecision(9, 4);
+            entity.Property(g => g.SaudiEmployerPercent).HasPrecision(9, 4);
+            entity.Property(g => g.NonSaudiEmployeePercent).HasPrecision(9, 4);
+            entity.Property(g => g.NonSaudiEmployerPercent).HasPrecision(9, 4);
+            entity.Property(g => g.ContributoryWageCap).HasPrecision(18, 2);
+            entity.Property(g => g.ContributoryWageFloor).HasPrecision(18, 2);
+            entity.HasIndex(g => g.CompanyId).IsUnique();
         });
 
         // (CEEF-230 · ط1-٦) ‏الموازنة — حبّتُها شهريّةٌ بمفتاح الفترة المالية نفسِه.
@@ -1173,6 +1213,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.TransportAllowance).HasPrecision(18, 2);
                 lines.Property(l => l.GosiEmployee).HasPrecision(18, 2);
                 lines.Property(l => l.GosiEmployer).HasPrecision(18, 2);
+                            lines.Property(l => l.OtherAllowance).HasPrecision(18, 2);
+                lines.Property(l => l.EmployeeId);
             });
             entity.Navigation(p => p.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
@@ -1253,6 +1295,7 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<InventoryCostLayer>());
         MapBranchScope(modelBuilder.Entity<StockBatch>());
         MapBranchScope(modelBuilder.Entity<RecurringInvoicePlan>());
+        MapBranchScope(modelBuilder.Entity<Employee>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());

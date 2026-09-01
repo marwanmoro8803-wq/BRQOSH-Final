@@ -1,0 +1,178 @@
+using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Companies;
+
+namespace Brqosh.Domain.Payroll;
+
+/// <summary>
+/// جنسيةُ الموظّف — <b>وهي متغيّرٌ محاسبيٌّ لا حقلٌ تعريفيّ</b>: نسبةُ التأمينات تختلف بها
+/// اختلافاً جوهرياً، فالسعوديُّ يُشترك في المعاش والساند والوافدُ في الأخطار المهنية وحدها.
+/// </summary>
+public enum EmployeeNationality
+{
+    Saudi = 0,
+    NonSaudi = 1,
+}
+
+/// <summary>
+/// (CEEF-230 · ط2-١) <b>سجلُّ الموظّف.</b>
+///
+/// <para><b>ما كان:</b> لا كيانَ موظّفٍ في النظام كلِّه — لا جدولَ ولا شاشة. والاسمُ
+/// <b>نصٌّ حرٌّ يُعاد كتابتُه في كلّ شهر</b> داخل شبكة إدخال دورة الرواتب، بلا هويّةٍ ولا
+/// إقامةٍ ولا آيبان ولا تاريخِ التحاق.</para>
+///
+/// <para><b>وأثرُ ذلك ليس ترفاً:</b> بلا سجلٍّ لا تُحسب تأميناتٌ (فالنسبةُ تتبع الجنسية)،
+/// ولا يُصدَّر ملفُّ حماية الأجور (فهو يقوم على الهويّة والآيبان)، ولا تُحتسب مكافأةُ
+/// نهاية الخدمة (فهي دالّةٌ في تاريخ الالتحاق). <b>وكلُّ ذلك كان صفراً بسبب حقلٍ نصّيّ.</b></para>
+/// </summary>
+public class Employee : IBranchScoped
+{
+    public long Id { get; private set; }
+    public long CompanyId { get; private set; }
+    public long? BranchId { get; private set; }
+
+    public string Code { get; private set; }
+    public string NameAr { get; private set; }
+
+    /// <summary>
+    /// رقمُ الهويّة أو الإقامة — <b>عشرةُ أرقام</b>، وهو مفتاحُ الموظّف لدى الجهات.
+    ///
+    /// <para><b>ولا يتكرّر في المنشأة</b>: موظّفان بالرقم نفسِه يعنيان راتباً مزدوجاً
+    /// لشخصٍ واحد، أو ملفَّ أجورٍ ترفضه الجهةُ المستقبِلة.</para>
+    /// </summary>
+    public string NationalId { get; private set; }
+
+    public EmployeeNationality Nationality { get; private set; }
+    public string JobTitle { get; private set; }
+    public DateOnly HireDate { get; private set; }
+    public DateOnly? TerminationDate { get; private set; }
+
+    /// <summary>الآيبان — يلزم ملفَّ حماية الأجور، ويجوز أن يغيب حتى يُفتح الحساب.</summary>
+    public string? Iban { get; private set; }
+
+    public decimal BasicSalary { get; private set; }
+    public decimal HousingAllowance { get; private set; }
+    public decimal TransportAllowance { get; private set; }
+    public decimal OtherAllowance { get; private set; }
+
+    public long? CostCenterId { get; private set; }
+    public bool IsActive { get; private set; } = true;
+    public DateTime CreatedAtUtc { get; private set; }
+
+    // EF Core
+    private Employee()
+    {
+        Code = null!;
+        NameAr = null!;
+        NationalId = null!;
+        JobTitle = null!;
+    }
+
+    private Employee(long companyId, string code, string nameAr, string nationalId,
+        EmployeeNationality nationality, string jobTitle, DateOnly hireDate)
+    {
+        CompanyId = companyId;
+        Code = code;
+        NameAr = nameAr;
+        NationalId = nationalId;
+        Nationality = nationality;
+        JobTitle = jobTitle;
+        HireDate = hireDate;
+        CreatedAtUtc = DateTime.UtcNow;
+    }
+
+    public static Employee Create(long companyId, string code, string nameAr, string nationalId,
+        EmployeeNationality nationality, string jobTitle, DateOnly hireDate)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            throw new AccountingException("كود الموظف مطلوب.");
+        if (string.IsNullOrWhiteSpace(nameAr))
+            throw new AccountingException("اسم الموظف مطلوب.");
+        if (string.IsNullOrWhiteSpace(jobTitle))
+            throw new AccountingException("المسمّى الوظيفي مطلوب.");
+
+        var id = (nationalId ?? "").Trim();
+        if (id.Length != 10 || !id.All(char.IsAsciiDigit))
+            throw new AccountingException(
+                $"رقم الهوية أو الإقامة عشرةُ أرقام — ووردَ «{nationalId}».");
+
+        return new Employee(companyId, code.Trim(), nameAr.Trim(), id, nationality,
+            jobTitle.Trim(), hireDate);
+    }
+
+    /// <summary>
+    /// يضبط عناصرَ الأجر.
+    ///
+    /// <para><b>ويُفصَل بدلُ السكن عن الأساسيّ عمداً</b>: الأجرُ الخاضع للتأمينات هو
+    /// الأساسيُّ + السكن دون بقيّة البدلات — <b>فطيُّهما في رقمٍ واحدٍ يُخرج اشتراكاً
+    /// خاطئاً</b> لا يمكن تصحيحُه بعد الترحيل.</para>
+    /// </summary>
+    public void SetPay(decimal basic, decimal housing, decimal transport, decimal other = 0m)
+    {
+        if (basic < 0 || housing < 0 || transport < 0 || other < 0)
+            throw new AccountingException("عناصر الأجر لا تكون سالبة.");
+
+        BasicSalary = Math.Round(basic, 2, MidpointRounding.AwayFromZero);
+        HousingAllowance = Math.Round(housing, 2, MidpointRounding.AwayFromZero);
+        TransportAllowance = Math.Round(transport, 2, MidpointRounding.AwayFromZero);
+        OtherAllowance = Math.Round(other, 2, MidpointRounding.AwayFromZero);
+    }
+
+    public void SetIban(string? iban)
+    {
+        var value = (iban ?? "").Trim().Replace(" ", "").ToUpperInvariant();
+        if (value.Length == 0)
+        {
+            Iban = null;
+            return;
+        }
+
+        // ‏آيبانٌ سعوديّ: SA ثمّ اثنان وعشرون رقماً.
+        if (!value.StartsWith("SA", StringComparison.Ordinal) || value.Length != 24
+            || !value[2..].All(char.IsAsciiDigit))
+            throw new AccountingException($"الآيبان السعودي «SA» و22 رقماً — ووردَ «{iban}».");
+
+        Iban = value;
+    }
+
+    public void AssignCostCenter(long? costCenterId) => CostCenterId = costCenterId;
+
+    /// <summary>
+    /// ينهي خدمةَ الموظّف.
+    ///
+    /// <para><b>ولا يُحذف</b>: راتبُه المرحَّل جزءٌ من دفاترِ سنواتٍ مضت، ومكافأةُ نهاية
+    /// خدمته تُحسب من تاريخَي التحاقه وانتهائه. <b>فالحذفُ يمحو أثراً نظامياً.</b></para>
+    /// </summary>
+    public void Terminate(DateOnly date)
+    {
+        if (date < HireDate)
+            throw new AccountingException("تاريخ انتهاء الخدمة قبل تاريخ الالتحاق.");
+
+        TerminationDate = date;
+        IsActive = false;
+    }
+
+    public void Reinstate()
+    {
+        TerminationDate = null;
+        IsActive = true;
+    }
+
+    /// <summary>على رأس العمل في تاريخٍ بعينه — وهو ما يُبنى عليه سِجلُّ الرواتب.</summary>
+    public bool IsEmployedOn(DateOnly date) =>
+        HireDate <= date && (TerminationDate is null || TerminationDate >= date);
+
+    /// <summary>إجماليُّ الأجر الشهريّ.</summary>
+    public decimal GrossPay => BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
+
+    /// <summary>
+    /// سنواتُ الخدمة حتى تاريخٍ — <b>كسريّةً لا صحيحة</b>، فمكافأةُ نهاية الخدمة تُحسب
+    /// بالشهر واليوم لا بالسنة الكاملة.
+    /// </summary>
+    public decimal ServiceYearsAt(DateOnly date) =>
+        Math.Round((date.DayNumber - HireDate.DayNumber) / 365.25m, 4, MidpointRounding.AwayFromZero);
+
+    public void AssignBranch(long branchId)
+    {
+        if (BranchId is null) BranchId = branchId;
+    }
+}
