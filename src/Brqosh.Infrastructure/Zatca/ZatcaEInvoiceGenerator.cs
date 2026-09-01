@@ -217,6 +217,31 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     /// <summary>الرياض ‏+03:00‎ ثابتةً — لا توقيتَ صيفيّ في السعودية.</summary>
     private static readonly TimeSpan RiyadhOffset = TimeSpan.FromHours(3);
 
+    /// <summary>
+    /// (CEEF-230 · ط1-١) ‏يحلّ رمزَ UN/ECE لكلّ سطر.
+    ///
+    /// <para><b>ويُحلّ من الصنف حين لا يذكر السطرُ وحدةً</b> — وهي الحالةُ السائدة في كلّ
+    /// قاعدةٍ قائمة. فالتصحيحُ يشمل ما مضى، لا ما يُدخَل من اليوم وحده.</para>
+    /// </summary>
+    private async Task<IReadOnlyList<string>> ResolveUnitCodesAsync(
+        long companyId, IReadOnlyList<SalesInvoiceLine> lines)
+    {
+        var converter = new Brqosh.Infrastructure.Inventory.UnitConversionService(db);
+        var productIds = lines.Where(l => l.ProductId is not null).Select(l => l.ProductId!.Value).ToList();
+        var units = await db.Products.IgnoreQueryFilters()
+            .Where(p => productIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.Unit);
+
+        var codes = new List<string>(lines.Count);
+        foreach (var line in lines)
+        {
+            var productUnit = line.ProductId is long pid && units.TryGetValue(pid, out var u) ? u : null;
+            codes.Add(await converter.UnCodeForAsync(companyId, line.UnitCode, productUnit));
+        }
+
+        return codes;
+    }
+
     private async Task<ZatcaEInvoiceDocument> GenerateAsync(
         long companyId, ZatcaDocumentType docType, long sourceId,
         string number, DateOnly date, Company company,
@@ -360,7 +385,11 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 : null,
 
             // (CEEF-230 · ط1-٢) ‏خصمُ المستند — يخرج `AllowanceCharge` لكلّ وعاءٍ ضريبيّ.
-            DocumentDiscount: documentDiscount);
+            DocumentDiscount: documentDiscount,
+
+            // (CEEF-230 · ط1-١) ‏رمزُ الوحدة لكلّ سطر — من وحدة السطر إن ذُكرت، وإلا من
+            // ‏وحدة الصنف النصّية عبر جدول المرادفات. **وما لا يُعرَف يخرج PCE مُعلَناً.**
+            LineUnitCodes: await ResolveUnitCodesAsync(companyId, lines));
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);

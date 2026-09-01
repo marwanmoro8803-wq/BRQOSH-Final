@@ -83,7 +83,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
             .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
 
-            .Select(l => (l.ProductId!.Value, l.Quantity, l.BatchNumber))
+            .Select(l => (l.ProductId!.Value, l.Quantity, l.BatchNumber, l.UnitCode))
 
             .ToList();
 
@@ -100,8 +100,13 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
         var costing = new InventoryCostingService(db);
         var warehouse = await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
 
-        foreach (var (productId, qty, batchNumber) in stockLines)
+        foreach (var (productId, entered, batchNumber, unitCode) in stockLines)
         {
+            // (CEEF-230 · ط1-١) ‏يُحوَّل **قبل** فحص الرصيد: بيعُ كرتونٍ من مئةِ حبّةٍ
+            // ‏يجب أن يُقارَن باثنتَي عشرة لا بواحدة، **وإلا مرّ بيعٌ لا رصيدَ له**.
+            var qty = await new UnitConversionService(db).ToProductUnitAsync(
+                invoice.CompanyId, products[productId], entered, unitCode, ct);
+
             var onHand = await inv.GetOnHandAsync(invoice.CompanyId, productId, warehouse.Id);
             if (qty > onHand)
             {

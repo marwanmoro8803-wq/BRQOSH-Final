@@ -1226,6 +1226,52 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("stock_movements", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Inventory.UnitOfMeasure", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("BaseCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Factor")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UnCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("units_of_measure", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Inventory.Warehouse", b =>
                 {
                     b.Property<long>("Id")
@@ -3530,6 +3576,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
 
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3587,6 +3637,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<decimal>("ReceivedQuantity")
                                 .HasPrecision(18, 4)
                                 .HasColumnType("numeric(18,4)");
+
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<decimal>("UnitCost")
                                 .HasPrecision(18, 4)
@@ -3650,6 +3704,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
 
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3710,6 +3768,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
+
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
@@ -3772,6 +3834,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
 
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -3830,6 +3896,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
+
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
@@ -3965,6 +4035,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
 
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -4026,6 +4100,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
 
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -4086,6 +4164,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             b1.Property<string>("TaxExemptionReasonCode")
                                 .HasColumnType("text");
+
+                            b1.Property<string>("UnitCode")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<decimal>("UnitPrice")
                                 .HasPrecision(18, 2)

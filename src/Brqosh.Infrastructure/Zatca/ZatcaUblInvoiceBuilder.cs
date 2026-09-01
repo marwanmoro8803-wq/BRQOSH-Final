@@ -2,6 +2,7 @@
 using System.Text;
 using System.Xml.Linq;
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Tax;
 
@@ -43,7 +44,16 @@ public static class ZatcaUblInvoiceBuilder
         /// (CEEF-230 · ط1-٢) خصمُ المستند — يخرج <c>AllowanceCharge</c> لكلّ وعاءٍ ضريبيّ.
         /// و<c>Subtotal</c> أعلاه <b>بعده</b>، فـ<c>LineExtensionAmount</c> يساوي مجموعَهما.
         /// </summary>
-        decimal DocumentDiscount = 0m);
+        decimal DocumentDiscount = 0m,
+
+        /// <summary>
+        /// (CEEF-230 · ط1-١) رمزُ UN/ECE لكلّ سطر، بترتيب <c>Lines</c> نفسِه.
+        ///
+        /// <para><b>وكان ثابتاً <c>PCE</c> لكلّ سطرٍ في النظام</b> — فبيعُ خمسة كيلوجرامات
+        /// يُبلَّغ للهيئة خمسَ قطع. <b>تصريحٌ مخالفٌ للواقع يمرّ على كلّ تصديقٍ بنيويّ</b>،
+        /// لأنّ المخطّط يفحص وجودَ الرمز لا صدقَه.</para>
+        /// </summary>
+        IReadOnlyList<string>? LineUnitCodes = null);
 
 /// <summary>
 /// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
@@ -179,7 +189,10 @@ public sealed record BuyerIdentity(
             var lineVat = Math.Round(lineNet * lineRate, 2, MidpointRounding.AwayFromZero);
             var invLine = new XElement(Cac + "InvoiceLine",
                 El(Cbc, "ID", idx.ToString()),
-                El(Cbc, "InvoicedQuantity", F(line.Quantity), ("unitCode", "PCE")),
+                El(Cbc, "InvoicedQuantity", F(line.Quantity),
+                    ("unitCode", data.LineUnitCodes is { } codes && idx - 1 < codes.Count
+                        ? codes[idx - 1]
+                        : UnitCatalog.FallbackUnCode)),
                 El(Cbc, "LineExtensionAmount", F(lineNet), ("currencyID", "SAR")),
 
                 // (CEEF-230 · ط1-٢) ‏خصمُ السطر — و`BaseAmount` هو الإجماليُّ قبله، فيُقرأ

@@ -38,6 +38,7 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
 
         await SeedChartOfAccountsAsync(company.Id, config.Country.ChartOfAccounts);
         await SeedDefaultWarehouseAsync(company.Id);
+        await SeedUnitsOfMeasureAsync(company.Id);
         await SeedHeadquartersBranchAsync(company.Id);
         await SeedZatcaSettingsAsync(company.Id, config.Country.Zatca);
         return company;
@@ -53,6 +54,7 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
         var config = _templates.Resolve(countryTemplateId, profile);
         await SeedChartOfAccountsAsync(companyId, config.Country.ChartOfAccounts);
         await SeedDefaultWarehouseAsync(companyId);
+        await SeedUnitsOfMeasureAsync(companyId);
         await SeedHeadquartersBranchAsync(companyId);
         await SeedZatcaSettingsAsync(companyId, config.Country.Zatca);
     }
@@ -96,6 +98,24 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
         if (!string.IsNullOrWhiteSpace(zatcaTemplate.ApiBaseUrl))
             settings.ApplyTemplateDefaults(zatcaTemplate.Enabled, zatcaTemplate.ApiBaseUrl);
         db.ZatcaSettings.Add(settings);
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط1-١) ‏بذرُ وحدات القياس.
+    ///
+    /// <para><b>ويُبذر لكلّ منشأةٍ نسختُها</b> لا جدولٌ عامّ: معاملُ «العلبة» قرارٌ تجاريّ
+    /// تُصحّحه المنشأةُ لنفسها، ولا يجوز أن يتغيّر بتغييرِ منشأةٍ أخرى.</para>
+    /// </summary>
+    private async Task SeedUnitsOfMeasureAsync(long companyId)
+    {
+        if (await db.UnitsOfMeasure.AnyAsync(u => u.CompanyId == companyId))
+            return;
+
+        foreach (var seed in UnitCatalog.Template)
+            db.UnitsOfMeasure.Add(UnitOfMeasure.Create(
+                companyId, seed.Code, seed.NameAr, seed.UnCode, seed.BaseCode, seed.Factor));
+
         await db.SaveChangesAsync();
     }
 

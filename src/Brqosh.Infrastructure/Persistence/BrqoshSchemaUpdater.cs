@@ -1933,11 +1933,14 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsurePgColumnAsync(table, "BatchNumber", "character varying(64) NULL", ct);
                 // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر — على الثمانية أنفسِها، فالسجلُّ مشترك.
                 await EnsurePgColumnAsync(table, "DiscountPercent", "NUMERIC(9,4) NOT NULL DEFAULT 0", ct);
+                // (CEEF-230 · ط1-١) ‏وحدةُ السطر — على الثمانية أنفسِها للسبب نفسِه.
+                await EnsurePgColumnAsync(table, "UnitCode", "character varying(16) NULL", ct);
             }
             else
             {
                 await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
                 await EnsureSqliteColumnAsync(table, "DiscountPercent", "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync(table, "UnitCode", "TEXT NULL", ct);
             }
         }
 
@@ -1960,11 +1963,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             {
                 await EnsurePgColumnAsync(table, "BatchNumber", "character varying(64) NULL", ct);
                 await EnsurePgColumnAsync(table, "ExpiryDate", "DATE NULL", ct);
+                await EnsurePgColumnAsync(table, "UnitCode", "character varying(16) NULL", ct);
             }
             else
             {
                 await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
                 await EnsureSqliteColumnAsync(table, "ExpiryDate", "TEXT NULL", ct);
+                await EnsureSqliteColumnAsync(table, "UnitCode", "TEXT NULL", ct);
             }
         }
 
@@ -1975,6 +1980,44 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "character varying(16) NOT NULL DEFAULT 'None'", ct);
             else
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
+        }
+
+        // (CEEF-230 · ط1-١) ‏جدولُ وحدات القياس — يُبذَر للمنشآت الجديدة في التهيئة،
+        // ‏ويُنشأ فارغاً هنا للقواعد القائمة. **وفارغٌ يعني «بلا تحويل»** وهو سلوكُ ما مضى،
+        // ‏فلا يتغيّر رقمٌ حتى تُعرِّف المنشأةُ وحداتِها.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS units_of_measure (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "Code" character varying(16) NOT NULL,
+                    "NameAr" character varying(64) NOT NULL,
+                    "UnCode" character varying(8) NOT NULL,
+                    "BaseCode" character varying(16) NOT NULL,
+                    "Factor" NUMERIC(18,6) NOT NULL DEFAULT 1,
+                    "IsActive" BOOLEAN NOT NULL DEFAULT true
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_units_of_measure_CompanyId_Code"
+                    ON units_of_measure ("CompanyId", "Code");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS units_of_measure (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    Code TEXT NOT NULL,
+                    NameAr TEXT NOT NULL,
+                    UnCode TEXT NOT NULL,
+                    BaseCode TEXT NOT NULL,
+                    Factor TEXT NOT NULL DEFAULT '1',
+                    IsActive INTEGER NOT NULL DEFAULT 1
+                );
+                """, ct);
         }
 
         if (isPg)

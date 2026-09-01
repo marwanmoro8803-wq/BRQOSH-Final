@@ -73,6 +73,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
     public DbSet<StockBatch> StockBatches => Set<StockBatch>();
+    public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
     public DbSet<InventoryCostConsumption> InventoryCostConsumptions => Set<InventoryCostConsumption>();
     public DbSet<PaymentAllocationLine> PaymentAllocationLines => Set<PaymentAllocationLine>();
     public DbSet<ProjectCostEntry> ProjectCostEntries => Set<ProjectCostEntry>();
@@ -291,6 +292,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("sales_invoice_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -326,6 +328,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("credit_note_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -396,6 +399,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("purchase_invoice_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -499,6 +503,20 @@ public class BrqoshDbContext : DbContext
                 .IsUnique();
             entity.HasIndex(b => new { b.CompanyId, b.ProductId, b.ExpiryDate });
             entity.HasIndex(b => new { b.CompanyId, b.BranchId });
+        });
+
+        // (CEEF-230 · ط1-١) ‏وحداتُ القياس — قالبٌ مبذورٌ لكلّ منشأة **قابلٌ للتعديل**.
+        // ‏فمعاملُ «العلبة» ليس ثابتاً كونياً: علبةُ هذا التاجر اثنتا عشرة وعلبةُ ذاك أربعٌ
+        // ‏وعشرون. **وثابتٌ في الشيفرة يكذب على أحدهما**.
+        modelBuilder.Entity<UnitOfMeasure>(entity =>
+        {
+            entity.ToTable("units_of_measure");
+            entity.Property(u => u.Code).HasMaxLength(16).IsRequired();
+            entity.Property(u => u.NameAr).HasMaxLength(64).IsRequired();
+            entity.Property(u => u.UnCode).HasMaxLength(8).IsRequired();
+            entity.Property(u => u.BaseCode).HasMaxLength(16).IsRequired();
+            entity.Property(u => u.Factor).HasPrecision(18, 6);
+            entity.HasIndex(u => new { u.CompanyId, u.Code }).IsUnique();
         });
 
         modelBuilder.Entity<InventoryBalance>(entity =>
@@ -642,6 +660,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("purchase_order_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -674,6 +693,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("purchase_request_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -730,6 +750,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("goods_receipt_id");
                 lines.Property<long>("Id");
                 lines.HasKey("Id");
@@ -762,6 +783,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("debit_note_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -973,6 +995,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("sales_quotation_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");
@@ -1001,6 +1024,7 @@ public class BrqoshDbContext : DbContext
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
+                lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("sales_order_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");

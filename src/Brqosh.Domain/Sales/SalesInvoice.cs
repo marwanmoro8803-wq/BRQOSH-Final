@@ -97,7 +97,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
         string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
-        string? batchNumber = null, decimal discountPercent = 0m)
+        string? batchNumber = null, decimal discountPercent = 0m, string? unitCode = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -139,7 +139,8 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory,
             taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
             string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim(),
-            Math.Round(discountPercent, 4, MidpointRounding.AwayFromZero)));
+            Math.Round(discountPercent, 4, MidpointRounding.AwayFromZero),
+            string.IsNullOrWhiteSpace(unitCode) ? null : unitCode.Trim()));
         RecalculateTotals();
     }
 
@@ -274,7 +275,17 @@ public record SalesInvoiceLine(
     /// منها. وتخزينُ الاثنين يفتح بابَ تناقضهما بعد تعديل الكمّية — <b>وقيمتان تصفان
     /// شيئاً واحداً تفترقان يوماً</b>.</para>
     /// </summary>
-    decimal DiscountPercent = 0m)
+    decimal DiscountPercent = 0m,
+
+    /// <summary>
+    /// (CEEF-230 · ط1-١) وحدةُ السطر — <b>و<c>null</c> تعني وحدةَ الصنف</b>، وهو الأصل
+    /// وسلوكُ كلّ ما مضى. فلا يتغيّر رقمٌ في قاعدةٍ قائمة.
+    ///
+    /// <para><b>ولا تُتاح إلا حيث تُحوَّل:</b> `AddLine` في فاتورة المبيعات وإذنِ الاستلام
+    /// وحدَهما يقبلان الوحدة. وبقيّةُ المستندات الستّة التي تشترك في هذا السجلّ لا تُمرّرها
+    /// — <b>فالمُصرِّفُ يضمن ألّا توجد وحدةٌ في مسارٍ لا يُحوّلها</b>، بلا حارسٍ يُنسى.</para>
+    /// </summary>
+    string? UnitCode = null)
 {
     /// <summary>القيمةُ قبل الخصم — وهي ما يُعرض للعميل سعراً معلَناً.</summary>
     public decimal GrossAmount => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);

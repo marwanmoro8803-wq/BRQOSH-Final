@@ -47,8 +47,19 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
                 if (line.ProductId is not long pid)
                     continue;
 
-                stockLines.Add((pid, line.ReceivedQuantity, line.UnitCost,
-                    line.BatchNumber, line.ExpiryDate));
+                // (CEEF-230 · ط1-١) ‏**التحويلُ هنا وحدَه** — عند حدود المستند.
+                // ‏فما يدخل المخزونَ بوحدة الصنف أبداً، ولا يحمل رقمٌ أعمقَ من هذا الحدّ
+                // ‏وحدةً مختلفة. والتكلفةُ تُقسَم بالمعامل نفسِه: **كرتونٌ بمئة ريالٍ
+                // ‏اثنتا عشرة حبّةً بـ8.33** — وإلا صارت الحبّةُ بمئة والمخزونُ منتفخاً
+                // ‏اثنَي عشر ضعفاً.
+                var baseQty = await new UnitConversionService(db).ToProductUnitAsync(
+                    receipt.CompanyId, products[pid], line.ReceivedQuantity, line.UnitCode, token);
+                var baseCost = baseQty == 0m
+                    ? line.UnitCost
+                    : Math.Round(line.ReceivedQuantity * line.UnitCost / baseQty, 4,
+                        MidpointRounding.AwayFromZero);
+
+                stockLines.Add((pid, baseQty, baseCost, line.BatchNumber, line.ExpiryDate));
 
                 // (CEEF-229 · م1-١٩) **القيدُ يُرشَّح بما هو مخزنيّ — والحركةُ لا تُرشَّح.**
                 //

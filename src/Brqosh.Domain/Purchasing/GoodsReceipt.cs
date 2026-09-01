@@ -26,11 +26,14 @@ public class GoodsReceiptLine
     /// <summary>(CEEF-230 · ط1-٣) تاريخُ انتهاء صلاحية الدفعة — اختياريّ.</summary>
     public DateOnly? ExpiryDate { get; private set; }
 
+    /// <summary>(CEEF-230 · ط1-١) وحدةُ الاستلام — و<c>null</c> تعني وحدةَ الصنف.</summary>
+    public string? UnitCode { get; private set; }
+
     private GoodsReceiptLine() { Description = null!; }
 
     public GoodsReceiptLine(string description, decimal orderedQuantity, decimal receivedQuantity,
         decimal unitCost, long? productId = null,
-        string? batchNumber = null, DateOnly? expiryDate = null)
+        string? batchNumber = null, DateOnly? expiryDate = null, string? unitCode = null)
     {
         if (string.IsNullOrWhiteSpace(description))
             throw new AccountingException("وصف سطر الاستلام مطلوب.");
@@ -45,6 +48,7 @@ public class GoodsReceiptLine
         UnitCost = Math.Round(unitCost, 4, MidpointRounding.AwayFromZero);
         BatchNumber = string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim();
         ExpiryDate = expiryDate;
+        UnitCode = string.IsNullOrWhiteSpace(unitCode) ? null : unitCode.Trim();
         ProductId = productId;
     }
 }
@@ -111,11 +115,11 @@ public class GoodsReceipt : IBranchScoped
     /// </summary>
     public void AddLine(string description, decimal orderedQuantity, decimal receivedQuantity,
         decimal unitCost, long? productId = null,
-        string? batchNumber = null, DateOnly? expiryDate = null)
+        string? batchNumber = null, DateOnly? expiryDate = null, string? unitCode = null)
     {
         EnsureDraft();
         _lines.Add(new GoodsReceiptLine(description, orderedQuantity, receivedQuantity, unitCost,
-            productId, batchNumber, expiryDate));
+            productId, batchNumber, expiryDate, unitCode));
     }
 
     public void AssignBranch(long branchId)
