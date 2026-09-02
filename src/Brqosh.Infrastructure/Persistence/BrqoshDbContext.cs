@@ -12,6 +12,7 @@ using Brqosh.Domain.Payroll;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Workflow;
 using Brqosh.Domain.Retail;
+using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
 using Brqosh.Domain.Zatca;
@@ -76,6 +77,9 @@ public class BrqoshDbContext : DbContext
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<Property> Properties => Set<Property>();
+    public DbSet<PropertyUnit> PropertyUnits => Set<PropertyUnit>();
+    public DbSet<LeaseContract> LeaseContracts => Set<LeaseContract>();
     public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
@@ -539,6 +543,50 @@ public class BrqoshDbContext : DbContext
             entity.Property(u => u.BaseCode).HasMaxLength(16).IsRequired();
             entity.Property(u => u.Factor).HasPrecision(18, 6);
             entity.HasIndex(u => new { u.CompanyId, u.Code }).IsUnique();
+        });
+
+        // (CEEF-230 · ط3-١) ‏العقاراتُ والوحداتُ وعقودُ الإيجار.
+        modelBuilder.Entity<Property>(entity =>
+        {
+            entity.ToTable("properties");
+            entity.Property(x => x.Code).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.NameAr).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.Kind).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.City).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.Address).HasMaxLength(512).IsRequired();
+            entity.Property(x => x.DeedNumber).HasMaxLength(64);
+            entity.Property(x => x.BranchId);
+            entity.HasIndex(x => new { x.CompanyId, x.Code }).IsUnique();
+            entity.HasIndex(x => new { x.CompanyId, x.BranchId });
+        });
+
+        modelBuilder.Entity<PropertyUnit>(entity =>
+        {
+            entity.ToTable("property_units");
+            entity.Property(x => x.UnitNumber).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.AreaSquareMeters).HasPrecision(18, 2);
+            entity.Property(x => x.ListedAnnualRent).HasPrecision(18, 2);
+
+            // ‏**ورقمُ الوحدة لا يتكرّر في عقارها**: «شقّة ٣» مرّتين في مبنىً واحدٍ
+            // ‏يجعل العقدَ يُشير إلى إحداهما بلا تمييز.
+            entity.HasIndex(x => new { x.PropertyId, x.UnitNumber }).IsUnique();
+            entity.HasIndex(x => new { x.CompanyId, x.Status });
+        });
+
+        modelBuilder.Entity<LeaseContract>(entity =>
+        {
+            entity.ToTable("lease_contracts");
+            entity.Property(x => x.ContractNumber).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.Frequency).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.RentPerPeriod).HasPrecision(18, 2);
+            entity.Property(x => x.SecurityDeposit).HasPrecision(18, 2);
+            entity.Property(x => x.DepositForfeited).HasPrecision(18, 2);
+            entity.Property(x => x.BranchId);
+            entity.HasIndex(x => new { x.CompanyId, x.ContractNumber }).IsUnique();
+            entity.HasIndex(x => new { x.CompanyId, x.PropertyUnitId, x.Status });
+            entity.HasIndex(x => new { x.CompanyId, x.BranchId });
         });
 
         // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
@@ -1296,6 +1344,8 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<StockBatch>());
         MapBranchScope(modelBuilder.Entity<RecurringInvoicePlan>());
         MapBranchScope(modelBuilder.Entity<Employee>());
+        MapBranchScope(modelBuilder.Entity<Property>());
+        MapBranchScope(modelBuilder.Entity<LeaseContract>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());

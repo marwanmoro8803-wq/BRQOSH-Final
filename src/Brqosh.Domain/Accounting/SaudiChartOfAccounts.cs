@@ -66,6 +66,9 @@ public static class SaudiChartOfAccounts
         // (CEEF-229 · م1-١٩ / I-5) بضاعةٌ استُلمت ولم تُفوتَر — التزامٌ قائمٌ بين الاستلام
         // ‏والفاتورة. وبدونه تغيب البضاعةُ عن الميزانية أصلاً والتزاماً في تلك المدّة كلِّها.
         new("2112", "بضاعة مستلمة غير مفوترة", "Goods Received Not Invoiced", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
+        // (CEEF-230 · ط3-١) ‏تأميناتُ المستأجرين — **أمانةٌ لا إيراد**. وقيدُها إيراداً
+        // ‏يُضخّم ربحَ المنشأة بمالٍ ليس لها وتردُّه، وهو من أشيع أخطاء المحاسبة العقارية.
+        new("2113", "تأمينات مستأجرين محتفظ بها", "Tenant Security Deposits Held", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
@@ -168,6 +171,9 @@ public static class SaudiChartOfAccounts
         public const string RealizedFxLoss = "5218";
         public const string BankCharges = "5213";
         public const string OtherIncome = "4106";
+
+        // (CEEF-230 · ط3-١) ‏تأميناتُ المستأجرين المحتفظ بها.
+        public const string TenantSecurityDeposits = "2113";
     }
 
     /// <summary>
