@@ -22,6 +22,26 @@
                 </StackPanel>
             </Border>
 
+            <!-- (CEEF-231 · ط5-٤) نسخةٌ خارج الجهاز — والنصيحةُ أعلاه لم تكن ميزة.
+                 القرصُ الذي تتلف عليه القاعدةُ تتلف عليه نسختُها، والفديةُ التي تُشفّر
+                 المجلّدَ تُشفّر مجلّدَ النسخ الذي بجواره. -->
+            <Border Style="{StaticResource ContentCard}" Padding="18" Margin="0,0,0,14">
+                <StackPanel>
+                    <TextBlock Text="نسخة خارج الجهاز" Style="{StaticResource FieldLabel}" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <TextBlock Style="{StaticResource FieldLabel}" TextWrapping="Wrap" Margin="0,0,0,10"
+                               Text="وجهة لكل سطر: مسار شبكة أو قرص آخر. وتُتحقق كل نسخة ببصمتها لا بحجمها."/>
+                    <TextBox x:Name="DestinationsBox" Style="{StaticResource AppTextBox}"
+                             AcceptsReturn="True" TextWrapping="NoWrap" Height="76"
+                             VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="OffsiteBtn" Content="نسخ إلى الوجهات" Click="OnReplicate"
+                                Style="{StaticResource PrimaryButton}" MinWidth="170"/>
+                    </StackPanel>
+                    <TextBlock x:Name="OffsiteResultText" TextWrapping="Wrap" Margin="0,10,0,0"
+                               Style="{StaticResource FieldLabel}"/>
+                </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource ContentCard}" Padding="18" Margin="0,0,0,14">
                 <StackPanel>
                     <TextBlock Text="الاستعادة" Style="{StaticResource FieldLabel}" FontWeight="Bold" Margin="0,0,0,10"/>

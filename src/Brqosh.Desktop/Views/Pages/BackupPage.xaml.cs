@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,6 +46,67 @@ public partial class BackupPage : UserControl
         finally
         {
             BackupBtn.IsEnabled = true;
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط5-٤) ينسخ <b>أحدثَ نسخةٍ</b> إلى الوجهات المُدخَلة.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>وأحدثُ نسخةٍ لا نسخةٌ جديدة</b>: النسخُ عمليةٌ ثقيلة على قاعدةٍ كبيرة،
+    /// <b>وأخذُ نسخةٍ ثانيةٍ لمجرّد نقلها يُضاعف الحملَ ويُنتج ملفّين لا يتطابقان</b>.
+    /// فيُنقل ما أُخذ وتُحقَّق بصمتُه.</para>
+    ///
+    /// <para><b>ووجهةٌ على القرص نفسِه تُنسَخ إليها ويُقال إنّها ليست خارج الجهاز</b> —
+    /// لا تُرفض. فقرصٌ ثانٍ داخليٌّ أفضلُ من لا شيء، <b>والادّعاءَ بأنّه حمايةٌ من تلف
+    /// الجهاز كذب</b>.</para>
+    /// </remarks>
+    private async void OnReplicate(object sender, RoutedEventArgs e)
+    {
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
+        try
+        {
+            var destinations = (DestinationsBox.Text ?? string.Empty)
+                .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (destinations.Count == 0)
+                throw new Brqosh.Domain.Accounting.AccountingException(
+                    "أدخِلْ وجهةً واحدةً على الأقلّ — ونسخةٌ على القرص نفسِه ليست نسخة.");
+
+            Directory.CreateDirectory(BackupFolder);
+            var latest = new DirectoryInfo(BackupFolder)
+                .GetFiles("brqosh_*")
+                .OrderByDescending(f => f.LastWriteTimeUtc)
+                .FirstOrDefault()
+                ?? throw new Brqosh.Domain.Accounting.AccountingException(
+                    "لا نسخةَ لنقلها — خُذْ نسخةً أوّلاً.");
+
+            using var facade = new DesktopAccountingFacade();
+            var results = await facade.GetService<OffsiteBackupService>()
+                .ReplicateAsync(latest.FullName, destinations);
+
+            var lines = results.Select(r => r.Succeeded
+                ? $"✔ {r.Destination} — {r.SizeBytes / 1024.0 / 1024.0:N1} ميجابايت"
+                  + (r.IsOffMachine ? "" : " (على القرص نفسه — ليست حمايةً من تلف الجهاز)")
+                  + (r.Pruned > 0 ? $" · حُذفت {r.Pruned} نسخةً قديمة" : "")
+                : $"✘ {r.Destination} — {r.Failure}");
+
+            OffsiteResultText.Text = string.Join(Environment.NewLine, lines);
+
+            // ‏**وفشلُ وجهةٍ يُعلَن نصّاً لا لوناً**: المالكُ يقرأ السطرَ ولا يُحصي العلامات.
+            var failed = results.Count(r => !r.Succeeded);
+            Show(failed == 0
+                ? $"نُقلت النسخةُ إلى {results.Count} وجهة."
+                : $"نجحت {results.Count - failed} من {results.Count} — وفشلت {failed}، وأسبابُها أعلاه.",
+                isError: failed > 0);
+        }
+        catch (Exception ex)
+        {
+            Show(ex.Message, isError: true);
         }
     }
 

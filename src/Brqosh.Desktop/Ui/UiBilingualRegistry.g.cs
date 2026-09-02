@@ -833,6 +833,8 @@ public static partial class UiBilingualRegistry
         ["خدمة (بلا مخزون)"] = "Service (non-stock)",
         ["خرائط حسابات المعاملات بين الشركات"] = "Intercompany account maps",
         ["خصم %"] = "Discount %",
+        ["خصم سداد مبكر (مسموح به)"] = "Early-payment discount (allowed)",
+        ["خصم سداد مبكر (مكتسب)"] = "Early-payment discount (earned)",
         ["خصم على المستند"] = "Document Discount",
         ["خط الطباعة العربي"] = "Arabic print font",
         ["خطأ اتصال"] = "Connection error",

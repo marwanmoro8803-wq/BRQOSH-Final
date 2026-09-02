@@ -1,4 +1,4 @@
-﻿using Brqosh.Application;
+using Brqosh.Application;
 using Brqosh.Application.Accounting;
 using Brqosh.Application.Intelligence;
 using Brqosh.Application.MasterData;
@@ -104,6 +104,8 @@ public static class InfrastructureServiceCollectionExtensions
         // CEEF-123 Tier P1: خزينة · POS · تدقيق
         services.AddScoped<BankAccountService>();
         services.AddScoped<Operations.BackupService>();
+        // (CEEF-231 · ط5-٤) ‏تكرارُ النسخة خارج الجهاز.
+        services.AddScoped<Operations.OffsiteBackupService>();
         services.AddScoped<BankTransferService>();
         services.AddScoped<Retail.PosSaleService>();
         services.AddScoped<Security.AuditService>();
