@@ -1,4 +1,4 @@
-﻿using System.Windows.Threading;
+using System.Windows.Threading;
 using Brqosh.Desktop.Views.Pages;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
@@ -119,6 +119,105 @@ public class PurchaseDialogSeamTests : IDisposable
         var inv = new InventoryService(_db);
         Assert.Equal(0m, await inv.GetOnHandAsync(_companyId, _productId, _warehouseId));
         Assert.True(invoice.Subtotal > 0m, "المال سُجّل — والبضاعة لم تدخل.");
+    }
+
+    // ── (CEEF-231 · ط1-٣ب) إذنُ الاستلام: الدفعةُ والاستلامُ الجزئيّ ─────────
+
+    /// <summary>
+    /// <b>القياسُ الحاكم: صنفٌ متتبَّعٌ يُستلَم من الشاشة بدفعته وصلاحيتها.</b>
+    ///
+    /// <para><b>ما كان:</b> شاشةُ الاستلام تنسخ سطورَ أمر الشراء حرفاً — <b>ولا حقلَ
+    /// لرقم الدفعة</b>. فالمَخنَقُ يرفض الصنفَ المتتبَّع باسمه، <b>ولا تستطيع صيدليةٌ ولا
+    /// مطعمٌ إدخالَ بضاعتِه أصلاً</b> — وكلُّ ما بُني من تتبّعِ صلاحيةٍ وصرفِ دواءٍ قائمٌ
+    /// خلف بابٍ مقفل.</para>
+    /// </summary>
+    [Fact]
+    public async Task ATrackedProduct_IsReceivedWithItsBatchAndExpiry()
+    {
+        var tracked = await TrackedProductAsync();
+        var order = await ApprovedOrderAsync(tracked, qty: 100m, cost: 12m);
+
+        var receipt = UiDispatcher.Invoke(() =>
+        {
+            var dialog = new GoodsReceiptDialog();
+            dialog.RowsForTests.Add(new GoodsReceiptDialog.LineRow
+            {
+                ProductId = tracked,
+                Description = "دواء",
+                OrderedQuantity = 100m,
+                ReceivedQuantity = 100m,
+                UnitCost = 12m,
+                IsTracked = true,
+                BatchNumber = "LOT-A",
+                ExpiryDate = new DateTime(2027, 6, 30),
+            });
+
+            return dialog.BuildReceiptFromRows(_companyId, _supplierId, order,
+                _warehouseId, new DateOnly(2026, 2, 1));
+        });
+
+        await new GoodsReceiptPostingService(_db).PostAsync(receipt);
+
+        var batch = await _db.StockBatches.SingleAsync(b => b.BatchNumber == "LOT-A");
+        Assert.Equal(100m, batch.Quantity);
+        Assert.Equal(new DateOnly(2027, 6, 30), batch.ExpiryDate);
+    }
+
+    /// <summary>
+    /// <b>والاستلامُ الجزئيُّ يُدخل ما وصل وحدَه.</b>
+    ///
+    /// <para><b>وهو الحالةُ الغالبة</b>: يُطلب مئةٌ فيصل ستّون. <b>وقفلُ المستلَم على
+    /// المطلوب يُثبت في المخزون أربعين لم تصل</b> — ثمّ يُباع منها فيقف الكاشيرُ أمام
+    /// رفٍّ فارغ.</para>
+    /// </summary>
+    [Fact]
+    public async Task APartialReceipt_BringsInOnlyWhatArrived()
+    {
+        var order = await ApprovedOrderAsync(_productId, qty: 100m, cost: 60m);
+
+        var receipt = UiDispatcher.Invoke(() =>
+        {
+            var dialog = new GoodsReceiptDialog();
+            dialog.RowsForTests.Add(new GoodsReceiptDialog.LineRow
+            {
+                ProductId = _productId,
+                Description = "بضاعة",
+                OrderedQuantity = 100m,
+                ReceivedQuantity = 60m,
+                UnitCost = 60m,
+            });
+
+            return dialog.BuildReceiptFromRows(_companyId, _supplierId, order,
+                _warehouseId, new DateOnly(2026, 2, 1));
+        });
+
+        await new GoodsReceiptPostingService(_db).PostAsync(receipt);
+
+        Assert.Equal(60m,
+            await new InventoryService(_db).GetOnHandAsync(_companyId, _productId, _warehouseId));
+    }
+
+    /// <summary>صنفٌ متتبَّعٌ للقياس — يُنشأ مرّةً ويُعاد استعمالُه.</summary>
+    private async Task<long> TrackedProductAsync()
+    {
+        var existing = await _db.Products.FirstOrDefaultAsync(
+            p => p.CompanyId == _companyId && p.Code == "DRG-1");
+        if (existing is not null) return existing.Id;
+
+        var product = Product.Create(_companyId, "DRG-1", "دواء", "علبة", ProductType.Stockable, 50m);
+        product.SetTracking(InventoryTracking.Batch, currentOnHand: 0m);
+        _db.Products.Add(product);
+        await _db.SaveChangesAsync();
+        return product.Id;
+    }
+
+    private async Task<long> ApprovedOrderAsync(long productId, decimal qty, decimal cost)
+    {
+        var order = PurchaseOrder.CreateDraft(_companyId, _supplierId, new DateOnly(2026, 1, 1));
+        order.AddLine("بضاعة", qty, cost, productId);
+        await new PurchaseOrderService(_db).ApproveAsync(order);
+        await _db.SaveChangesAsync();
+        return order.Id;
     }
 
     /// <summary>وحارسٌ للحارس: صفٌّ فارغ لا يُنتج سطراً.</summary>
