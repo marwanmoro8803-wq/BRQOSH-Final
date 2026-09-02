@@ -119,6 +119,41 @@ public class ReceiptVoucher : IBranchScoped
     public decimal FunctionalAmount =>
         Math.Round(Amount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
 
+    /// <summary>
+    /// (CEEF-231 · ط1-٢ج) <b>خصمُ السداد المبكر — والحسابُ 4103 كان بلا كاتب.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para><b>وهو ممارسةٌ قائمةٌ لا حالةٌ شاذّة</b>: «٢٪ خلال عشرة أيام، وإلا فثلاثون».
+    /// فالعميلُ يدفع ٩٨٠ عن فاتورةِ ألف، <b>والذمّةُ تُطفأ كاملةً</b> والعشرون خصمٌ
+    /// مسموحٌ به.</para>
+    ///
+    /// <para><b>وبغيره أحدُ أمرين، وكلاهما عطل:</b> إمّا تبقى العشرون ذمّةً مفتوحةً إلى
+    /// الأبد <b>فتُقرأ ديناً وتُطالَب</b> ويكبر الوهمُ بكلّ فاتورة؛ وإمّا تُشطب <b>بقيدٍ
+    /// يدويّ</b> — <b>وقيدٌ يدويٌّ يُغيّر الأستاذَ ولا يراه الدفترُ المساعد</b>، فتنكسر
+    /// <c>هـ-١</c> ويفترق كشفُ العميل عن الميزانية.</para>
+    ///
+    /// <para><b>ولا يُخلط بفرق العملة</b>: الفرقُ يقع بغير إرادةٍ ويُقاس بسعرَين،
+    /// <b>والخصمُ قرارٌ يُتّخذ ويُصرَّح به</b> — ودفنُهما في حسابٍ واحد يُخفي أيَّهما وقع.</para>
+    /// </remarks>
+    public decimal SettlementDiscount { get; private set; }
+
+    /// <summary>
+    /// يمنح خصمَ سدادٍ مبكرٍ يُطفئ من الذمّة أكثرَ ممّا دخل الصندوق.
+    /// </summary>
+    /// <remarks>
+    /// <b>ولا يُمنَح على سندٍ بلا تخصيص</b>: الخصمُ يخصّ فاتورةً سُدِّدت مبكراً،
+    /// <b>وخصمٌ على دفعةٍ عائمةٍ يُطفئ ذمّةً لا يُعرف أيُّها</b>.
+    /// </remarks>
+    public void GrantSettlementDiscount(decimal amount)
+    {
+        if (Status != ReceiptVoucherStatus.Draft)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل.");
+        if (amount < 0m)
+            throw new AccountingException("خصم السداد لا يكون سالباً.");
+
+        SettlementDiscount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+    }
+
     public void SetCurrency(string currencyCode, decimal exchangeRate)
     {
         if (Status != ReceiptVoucherStatus.Draft)
@@ -143,7 +178,8 @@ public class ReceiptVoucher : IBranchScoped
     /// دفع كلَّ ما عليه والدفاترُ تقول إنّه مدين.</para>
     /// </summary>
     public JournalEntry Post(string voucherNumber, Account cashOrBankAccount, Account receivableAccount,
-        decimal? receivableFunctional = null, Account? fxGainAccount = null, Account? fxLossAccount = null)
+        decimal? receivableFunctional = null, Account? fxGainAccount = null, Account? fxLossAccount = null,
+        Account? settlementDiscountAccount = null)
     {
         if (Status != ReceiptVoucherStatus.Draft)
             throw new AccountingException("السند مرحّل — لا يُعدَّل، والتصحيح بقيد عكسي.");
@@ -161,6 +197,22 @@ public class ReceiptVoucher : IBranchScoped
 
         entry.AddLine(cashOrBankAccount, cash, 0m,
             Method == ReceiptMethod.Cash ? "تحصيل نقدي" : $"تحصيل بنكي {Reference}".Trim());
+
+        // (CEEF-231 · ط1-٢ج) ‏**والخصمُ يُطفئ من الذمّة ما لم يدخل الصندوق.**
+        //
+        // ‏فالمُحرَّرُ من الذمّة = النقدُ + الخصم، **والقيدُ يحمل الخصمَ مديناً على `4103`**.
+        // ‏وبغيره تبقى قيمةُ الخصم ذمّةً مفتوحةً تُقرأ ديناً وتُطالَب، **أو تُشطب بقيدٍ
+        // ‏يدويٍّ لا يراه الدفترُ المساعد** فتنكسر هـ-١.
+        if (SettlementDiscount > 0m)
+        {
+            if (settlementDiscountAccount is null)
+                throw new AccountingException(
+                    "خصمُ سدادٍ بلا حساب «خصم مسموح به» — والقيدُ لا يُطفئ ما لا حسابَ له.");
+
+            releasedReceivable += SettlementDiscount;
+            entry.AddLine(settlementDiscountAccount, SettlementDiscount, 0m, "خصم سداد مبكر");
+        }
+
         entry.AddLine(receivableAccount, 0m, releasedReceivable, "تحصيل من ذمة العميل");
 
         if (difference != 0m)

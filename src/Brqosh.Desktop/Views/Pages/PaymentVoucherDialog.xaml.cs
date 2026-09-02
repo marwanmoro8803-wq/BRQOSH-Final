@@ -168,6 +168,11 @@ public partial class PaymentVoucherDialog : Window
             if (ReadCurrency() is (string code, decimal rate))
                 voucher.SetCurrency(code, rate);
 
+            // (CEEF-231 · ط1-٢ج) ‏**والخصمُ يُطفئ من الذمّة ما لم يمرّ بالصندوق.**
+            var discount = SettlementDiscount();
+            if (discount > 0m)
+                voucher.GrantSettlementDiscount(discount);
+
             using var facade = new DesktopAccountingFacade();
             await facade.PostPaymentVoucherAsync(voucher, allocLines);
 
@@ -207,6 +212,15 @@ public partial class PaymentVoucherDialog : Window
 
         return (code, rate);
     }
+
+    /// <summary>
+    /// (CEEF-231 · ط1-٢ج) خصمُ السداد المُدخَل — <b>وما لا يُقرأ صفرٌ لا رفض</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>والحراسةُ في النطاق عند الترحيل</b> — وهو الموضعُ الذي لا يُلتفّ عليه.
+    /// </remarks>
+    private decimal SettlementDiscount() =>
+        decimal.TryParse(SettlementDiscountBox.Text, out var value) && value > 0m ? value : 0m;
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {

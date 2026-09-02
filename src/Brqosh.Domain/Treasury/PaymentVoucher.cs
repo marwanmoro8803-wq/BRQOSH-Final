@@ -159,8 +159,33 @@ public class PaymentVoucher : IBranchScoped
     /// المحرَّرة ربحٌ للمنشأة — دفعنا أقلَّ ممّا كنّا مدينين به. <b>ونسخُ منطق العملاء
     /// حرفاً يقلب الربحَ خسارةً في كلّ سدادٍ بالعملة.</b></para>
     /// </param>
+    /// <summary>
+    /// (CEEF-231 · ط1-٢ج) <b>خصمُ السداد المبكر المكتسَب — والحسابُ 5214 كان بلا كاتب.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para><b>والإشارةُ معكوسةٌ عن جانب العملاء</b>: هناك نُعطي خصماً فيُقيَّد <b>مديناً</b>
+    /// يُنقص الإيراد، وهنا <b>نكسبه</b> فيُقيَّد <b>دائناً</b> يُنقص المصروف. <b>ونسخُ
+    /// جانب العملاء حرفاً يقلب الكسبَ خسارةً في كلّ سداد.</b></para>
+    ///
+    /// <para><b>وبغيره تبقى قيمةُ الخصم ذمّةً على المنشأة</b> تُدفع مرّةً أخرى أو تُشطب
+    /// بقيدٍ يدويٍّ لا يراه دفترُ الموردين — <b>فتنكسر <c>هـ-٢</c></b>.</para>
+    /// </remarks>
+    public decimal SettlementDiscount { get; private set; }
+
+    /// <summary>يُثبت خصمَ سدادٍ مبكرٍ اكتسبته المنشأةُ من مورّدها.</summary>
+    public void GrantSettlementDiscount(decimal amount)
+    {
+        if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل.");
+        if (amount < 0m)
+            throw new AccountingException("خصم السداد لا يكون سالباً.");
+
+        SettlementDiscount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+    }
+
     public JournalEntry Post(string voucherNumber, Account payableAccount, Account cashOrBankAccount,
-        decimal? payableFunctional = null, Account? fxGainAccount = null, Account? fxLossAccount = null)
+        decimal? payableFunctional = null, Account? fxGainAccount = null, Account? fxLossAccount = null,
+        Account? settlementDiscountAccount = null)
     {
         if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
             throw new AccountingException("السند مرحّل — لا يُعدَّل.");
@@ -176,9 +201,25 @@ public class PaymentVoucher : IBranchScoped
             $"سند صرف رقم {voucherNumber} — {Description}",
             sourceDocument: $"PaymentVoucher:{voucherNumber}");
 
+        // (CEEF-231 · ط1-٢ج) ‏**والخصمُ يُطفئ من الذمّة ما لم يخرج من الصندوق.**
+        //
+        // ‏فالمُحرَّرُ من الذمّة = النقدُ + الخصم، **والخصمُ دائنٌ على `5214`** — يُنقص
+        // ‏المصروفَ لا يزيده. وبغيره تبقى قيمتُه ذمّةً على المنشأة تُدفع مرّةً أخرى.
+        if (SettlementDiscount > 0m)
+        {
+            if (settlementDiscountAccount is null)
+                throw new AccountingException(
+                    "خصمُ سدادٍ بلا حساب «خصم مكتسب» — والقيدُ لا يُطفئ ما لا حسابَ له.");
+
+            releasedPayable += SettlementDiscount;
+        }
+
         entry.AddLine(payableAccount, releasedPayable, 0m, "سداد ذمة المورد");
         entry.AddLine(cashOrBankAccount, 0m, cash,
             Method == ReceiptMethod.Cash ? "صرف نقدي" : $"صرف بنكي {Reference}".Trim());
+
+        if (SettlementDiscount > 0m)
+            entry.AddLine(settlementDiscountAccount!, 0m, SettlementDiscount, "خصم سداد مبكر مكتسب");
 
         if (difference != 0m)
         {

@@ -68,6 +68,13 @@
                 </StackPanel>
             </Grid>
 
+            <!-- (CEEF-231 · ط1-٢ج) خصمُ السداد المبكر — والحسابان 4103 و5214 كانا بلا
+                 كاتبٍ في المستودع كلِّه. وبغيره تبقى قيمةُ الخصم ذمّةً مفتوحةً تُطالَب،
+                 أو تُشطب بقيدٍ يدويٍّ لا يراه الدفترُ المساعد فتنكسر هـ-١. -->
+            <TextBlock Text="خصم سداد مبكر (مكتسب)" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="SettlementDiscountBox" Style="{StaticResource AppTextBox}"
+                     Text="0.00" Margin="0,0,0,14"/>
+
             <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="DescriptionBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 

@@ -1,4 +1,4 @@
-﻿using Brqosh.Application.Accounting;
+using Brqosh.Application.Accounting;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Platform;
 using Brqosh.Domain.Treasury;
@@ -108,8 +108,14 @@ public class PaymentVoucherPostingService(BrqoshDbContext db)
             var (releasedPayable, fxGain, fxLoss) =
                 await ResolveSettlementAsync(voucher, allocations, ct);
 
+            // (CEEF-231 · ط1-٢ج) ‏حسابُ خصم السداد — **ولا يُنشأ إلا حين يوجد خصم**،
+            // ‏فقاعدةٌ لا تمنح خصماً لا يظهر فيها حسابٌ بلا حركة.
+            var discountAccount = voucher.SettlementDiscount > 0m
+                ? await SystemAccountProvisioning.EnsureAsync(db, voucher.CompanyId, "5214", ct)
+                : null;
+
             var entry = voucher.Post(voucherNumber, payable, cashOrBank,
-                releasedPayable, fxGain, fxLoss);
+                releasedPayable, fxGain, fxLoss, discountAccount);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);
 
             // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
