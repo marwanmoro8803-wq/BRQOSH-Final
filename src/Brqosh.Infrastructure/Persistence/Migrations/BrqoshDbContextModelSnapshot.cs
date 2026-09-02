@@ -1174,6 +1174,30 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("visits", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.GuestFolio", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsSettled")
+                        .HasColumnType("boolean");
+
+                    b.Property<long>("ReservationId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "ReservationId", "IsSettled");
+
+                    b.ToTable("guest_folios", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Hospitality.MenuItem", b =>
                 {
                     b.Property<long>("Id")
@@ -1213,6 +1237,112 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("menu_items", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.Reservation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("CheckInDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("CheckOutDate")
+                        .HasColumnType("date");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("GuestCustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Guests")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("RatePerNight")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("ReservationNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<long>("RoomId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("SettlementInvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "BranchId");
+
+                    b.HasIndex("CompanyId", "CheckInDate");
+
+                    b.HasIndex("CompanyId", "ReservationNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "RoomId", "Status");
+
+                    b.ToTable("reservations", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.Room", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Floor")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<decimal>("NightlyRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("RoomNumber")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "RoomNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Status");
+
+                    b.ToTable("rooms", (string)null);
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Inventory.InventoryBalance", b =>
@@ -4274,6 +4404,58 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.GuestFolio", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Hospitality.FolioCharge", "Charges", b1 =>
+                        {
+                            b1.Property<long>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<DateOnly>("ChargeDate")
+                                .HasColumnType("date");
+
+                            b1.Property<string>("Description")
+                                .IsRequired()
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)");
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
+                            b1.Property<DateOnly?>("RoomNightDate")
+                                .HasColumnType("date");
+
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
+                            b1.Property<long>("guest_folio_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("id");
+
+                            b1.HasIndex("guest_folio_id", "RoomNightDate")
+                                .IsUnique();
+
+                            b1.ToTable("folio_charges", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("guest_folio_id");
+                        });
+
+                    b.Navigation("Charges");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Hospitality.MenuItem", b =>

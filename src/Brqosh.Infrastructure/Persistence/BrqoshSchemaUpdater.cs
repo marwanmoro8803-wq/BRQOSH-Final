@@ -2047,6 +2047,68 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
         }
 
+        // (CEEF-230 · ط3-٣ب) ‏الغرفُ والحجوزُ وحساباتُ النزلاء.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS rooms (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "RoomNumber" character varying(16) NOT NULL,
+                    "Kind" character varying(16) NOT NULL,
+                    "Floor" INTEGER NOT NULL DEFAULT 0,
+                    "NightlyRate" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "Status" character varying(16) NOT NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS reservations (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "RoomId" BIGINT NOT NULL,
+                    "GuestCustomerId" BIGINT NOT NULL,
+                    "ReservationNumber" character varying(32) NOT NULL,
+                    "CheckInDate" DATE NOT NULL,
+                    "CheckOutDate" DATE NOT NULL,
+                    "RatePerNight" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "Guests" INTEGER NOT NULL DEFAULT 1,
+                    "Status" character varying(16) NOT NULL,
+                    "SettlementInvoiceId" BIGINT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS guest_folios (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "ReservationId" BIGINT NOT NULL,
+                    "IsSettled" BOOLEAN NOT NULL DEFAULT false
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS folio_charges (
+                    id BIGSERIAL PRIMARY KEY,
+                    guest_folio_id BIGINT NOT NULL
+                        REFERENCES guest_folios("Id") ON DELETE CASCADE,
+                    "ChargeDate" DATE NOT NULL,
+                    "Kind" character varying(16) NOT NULL,
+                    "Description" character varying(512) NOT NULL,
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "VatCategory" character varying(16) NOT NULL,
+                    "RoomNightDate" DATE NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_rooms_CompanyId_RoomNumber" ON rooms ("CompanyId", "RoomNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_rooms_CompanyId_Status" ON rooms ("CompanyId", "Status");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_reservations_CompanyId_ReservationNumber" ON reservations ("CompanyId", "ReservationNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_reservations_CompanyId_RoomId_Status" ON reservations ("CompanyId", "RoomId", "Status");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_reservations_CompanyId_CheckInDate" ON reservations ("CompanyId", "CheckInDate");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_reservations_CompanyId_BranchId" ON reservations ("CompanyId", "BranchId");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_guest_folios_CompanyId_ReservationId_IsSettled" ON guest_folios ("CompanyId", "ReservationId", "IsSettled");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_folio_charges_guest_folio_id_RoomNightDate" ON folio_charges (guest_folio_id, "RoomNightDate");""", ct);
+        }
+
         // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.
         if (isPg)
         {

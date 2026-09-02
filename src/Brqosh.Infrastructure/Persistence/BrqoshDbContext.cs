@@ -91,6 +91,9 @@ public class BrqoshDbContext : DbContext
 
     // (CEEF-230 · ط3-٣) ‏الضيافة.
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
+    public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<GuestFolio> GuestFolios => Set<GuestFolio>();
     public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
@@ -693,6 +696,55 @@ public class BrqoshDbContext : DbContext
             });
 
             entity.Navigation(m => m.Components).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-٣ب) ‏الغرفُ والحجوزُ وحساباتُ النزلاء.
+        modelBuilder.Entity<Room>(entity =>
+        {
+            entity.ToTable("rooms");
+            entity.Property(r => r.RoomNumber).HasMaxLength(16).IsRequired();
+            entity.Property(r => r.Kind).HasConversion<string>().HasMaxLength(16);
+            entity.Property(r => r.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(r => r.NightlyRate).HasPrecision(18, 2);
+            entity.HasIndex(r => new { r.CompanyId, r.RoomNumber }).IsUnique();
+            entity.HasIndex(r => new { r.CompanyId, r.Status });
+        });
+
+        modelBuilder.Entity<Reservation>(entity =>
+        {
+            entity.ToTable("reservations");
+            entity.Property(r => r.ReservationNumber).HasMaxLength(32).IsRequired();
+            entity.Property(r => r.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(r => r.RatePerNight).HasPrecision(18, 2);
+            entity.Property(r => r.BranchId);
+            entity.HasIndex(r => new { r.CompanyId, r.ReservationNumber }).IsUnique();
+            entity.HasIndex(r => new { r.CompanyId, r.RoomId, r.Status });
+            entity.HasIndex(r => new { r.CompanyId, r.CheckInDate });
+            entity.HasIndex(r => new { r.CompanyId, r.BranchId });
+        });
+
+        modelBuilder.Entity<GuestFolio>(entity =>
+        {
+            entity.ToTable("guest_folios");
+            entity.HasIndex(f => new { f.CompanyId, f.ReservationId, f.IsSettled });
+
+            entity.OwnsMany(f => f.Charges, charges =>
+            {
+                charges.ToTable("folio_charges");
+                charges.WithOwner().HasForeignKey("guest_folio_id");
+                charges.Property<long>("id");
+                charges.HasKey("id");
+                charges.Property(c => c.Description).HasMaxLength(512).IsRequired();
+                charges.Property(c => c.Amount).HasPrecision(18, 2);
+                charges.Property(c => c.Kind).HasConversion<string>().HasMaxLength(16);
+                charges.Property(c => c.VatCategory).HasConversion<string>().HasMaxLength(16);
+
+                // ‏**هذا القيدُ هو حارسُ الازدواج الحقيقيّ** — لا فحصٌ في الذاكرة يسبقه
+                // ‏تشغيلٌ آخر. **والفراغُ لا يتصادم**، فرسومُ المطعم والغسيل تتعدّد بحرّية.
+                charges.HasIndex("guest_folio_id", "RoomNightDate").IsUnique();
+            });
+
+            entity.Navigation(f => f.Charges).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
@@ -1454,6 +1506,7 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<LeaseContract>());
         MapBranchScope(modelBuilder.Entity<Patient>());
         MapBranchScope(modelBuilder.Entity<Visit>());
+        MapBranchScope(modelBuilder.Entity<Reservation>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());
