@@ -2047,6 +2047,33 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
         }
 
+        // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS menu_items (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "Code" character varying(32) NOT NULL,
+                    "NameAr" character varying(256) NOT NULL,
+                    "Section" character varying(16) NOT NULL,
+                    "SalePrice" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "IsActive" BOOLEAN NOT NULL DEFAULT true
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS menu_item_components (
+                    id BIGSERIAL PRIMARY KEY,
+                    menu_item_id BIGINT NOT NULL
+                        REFERENCES menu_items("Id") ON DELETE CASCADE,
+                    "ProductId" BIGINT NOT NULL,
+                    "QuantityPerServing" NUMERIC(18,4) NOT NULL DEFAULT 0
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_items_CompanyId_Code" ON menu_items ("CompanyId", "Code");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_item_components_menu_item_id_ProductId" ON menu_item_components (menu_item_id, "ProductId");""", ct);
+        }
+
         // (CEEF-230 · ط3-٢) ‏المرضى وشركاتُ التأمين والوثائقُ والزيارات.
         if (isPg)
         {

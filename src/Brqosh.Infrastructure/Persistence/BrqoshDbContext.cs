@@ -13,6 +13,7 @@ using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Workflow;
 using Brqosh.Domain.Retail;
 using Brqosh.Domain.Healthcare;
+using Brqosh.Domain.Hospitality;
 using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
@@ -87,6 +88,9 @@ public class BrqoshDbContext : DbContext
     public DbSet<InsurancePayer> InsurancePayers => Set<InsurancePayer>();
     public DbSet<InsurancePolicy> InsurancePolicies => Set<InsurancePolicy>();
     public DbSet<Visit> Visits => Set<Visit>();
+
+    // (CEEF-230 · ط3-٣) ‏الضيافة.
+    public DbSet<MenuItem> MenuItems => Set<MenuItem>();
     public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
@@ -663,6 +667,32 @@ public class BrqoshDbContext : DbContext
             });
 
             entity.Navigation(v => v.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.
+        modelBuilder.Entity<MenuItem>(entity =>
+        {
+            entity.ToTable("menu_items");
+            entity.Property(m => m.Code).HasMaxLength(32).IsRequired();
+            entity.Property(m => m.NameAr).HasMaxLength(256).IsRequired();
+            entity.Property(m => m.Section).HasConversion<string>().HasMaxLength(16);
+            entity.Property(m => m.SalePrice).HasPrecision(18, 2);
+            entity.HasIndex(m => new { m.CompanyId, m.Code }).IsUnique();
+
+            entity.OwnsMany(m => m.Components, components =>
+            {
+                components.ToTable("menu_item_components");
+                components.WithOwner().HasForeignKey("menu_item_id");
+                components.Property<long>("id");
+                components.HasKey("id");
+                components.Property(c => c.QuantityPerServing).HasPrecision(18, 4);
+
+                // ‏**ومكوّنٌ واحدٌ لا يتكرّر في وصفةٍ واحدة** — والجمعُ في النطاق يمنعه
+                // ‏قبل القاعدة، وهذا حارسُه الأخير.
+                components.HasIndex("menu_item_id", "ProductId").IsUnique();
+            });
+
+            entity.Navigation(m => m.Components).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.

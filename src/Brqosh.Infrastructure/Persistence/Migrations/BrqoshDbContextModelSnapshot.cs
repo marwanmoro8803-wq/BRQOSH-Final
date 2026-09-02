@@ -1174,6 +1174,47 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("visits", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.MenuItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<decimal>("SalePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Section")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("menu_items", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Inventory.InventoryBalance", b =>
                 {
                     b.Property<long>("Id")
@@ -4233,6 +4274,40 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.MenuItem", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Hospitality.RecipeComponent", "Components", b1 =>
+                        {
+                            b1.Property<long>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<long>("ProductId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<decimal>("QuantityPerServing")
+                                .HasPrecision(18, 4)
+                                .HasColumnType("numeric(18,4)");
+
+                            b1.Property<long>("menu_item_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("id");
+
+                            b1.HasIndex("menu_item_id", "ProductId")
+                                .IsUnique();
+
+                            b1.ToTable("menu_item_components", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("menu_item_id");
+                        });
+
+                    b.Navigation("Components");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Inventory.StockMovement", b =>
