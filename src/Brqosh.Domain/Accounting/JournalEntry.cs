@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Companies;
+using Brqosh.Domain.Companies;
 namespace Brqosh.Domain.Accounting;
 
 /// <summary>حالة القيد في دورة حياته المحاسبية.</summary>
@@ -82,6 +82,27 @@ public class JournalEntry : IBranchScoped
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");
         EnsureDraft("تعيين الفرع");
+        BranchId = branchId;
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط4-٢) <b>يختم الفرعَ إن لم يكن مختوماً — ولا يُبدّله أبداً.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para><b>ولماذا يُقبل بعد الترحيل، و<see cref="AssignBranch"/> لا يُقبل:</b>
+    /// حارسُ المسودّة يمنع <b>تعديلَ</b> قيدٍ مرحَّل — وهو صوابٌ لا يُمَسّ. <b>وملءُ حقلٍ
+    /// فارغٍ ليس تعديلاً</b>: لا رقمَ يتغيّر، ولا قيدَ ينقلب، ولا تقريرَ يُعاد. والقيدُ
+    /// يُرحَّل في السطر الذي يسبق إضافتَه إلى السياق، <b>فلا موضعَ للختم قبله</b> إلا أن
+    /// تُصلَح سبعٌ وثلاثون خدمة — <b>والثامنةُ والثلاثون تُكتب غداً بلا ختم</b>.</para>
+    ///
+    /// <para><b>ولا يُبدّل فرعاً قائماً</b>: خدمةٌ أسندته من مستندها أعلمُ به من فرع
+    /// الجلسة. <b>وختمٌ يكتب فوق ما أُسند يجعل قيدَ فرعٍ يُنسب إلى فرعٍ آخر</b>.</para>
+    /// </remarks>
+    public void StampBranchIfUnset(long branchId)
+    {
+        if (BranchId is not null) return;
+        if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");
+
         BranchId = branchId;
     }
 

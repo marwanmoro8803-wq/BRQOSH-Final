@@ -19,6 +19,7 @@ using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
 using Brqosh.Domain.Zatca;
+using Brqosh.Infrastructure.Companies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -1734,5 +1735,63 @@ public class BrqoshDbContext : DbContext
     {
         entity.Property(e => e.BranchId);
         entity.HasIndex(e => new { e.CompanyId, e.BranchId });
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط4-٢) <b>المَخنَقُ الوحيد لختم الفرع على القيود.</b>
+    ///
+    /// <para><b>ما كان:</b> <c>JournalEntry.BranchId</c> يُسنَد في <c>JournalPostingService</c>
+    /// وثلاثِ خدماتِ خزينةٍ فقط — <b>وسبعٌ وثلاثون خدمةً تُضيف قيوداً في المستودع</b>.
+    /// فقيدُ فاتورةِ مبيعاتٍ يخرج بلا فرع، <b>والفاتورةُ نفسُها تحمله</b>. فمنشأةٌ بثلاثة
+    /// فروعٍ يقع كلُّ أستاذها في «بلا فرع»، <b>ولا يُعرف أيُّ فرعٍ يكسب</b>.</para>
+    ///
+    /// <para><b>ولماذا هنا لا في كلّ خدمة:</b> سبعٌ وثلاثون موضعاً تُصلَح اليوم،
+    /// <b>والثامنةُ والثلاثون تُكتب غداً بلا ختم</b> — وهو صنفُ العطل نفسُه عائداً.
+    /// <b>والمَخنَقُ يُغلق الصنفَ لا الحالة</b>، وهو اصطلاحُ هذا المستودع في
+    /// <c>ApplyBalanceDeltaAsync</c> وفي <c>PostCoreAsync</c>.</para>
+    ///
+    /// <para><b>وما لا فرعَ له يبقى بلا فرعٍ صامتاً</b>: منشأةٌ بلا فروعٍ نشطة — وهي حالُ
+    /// كلّ قاعدةٍ في أوّل يومها — <b>ورميٌ هنا يمنع أوّلَ قيدٍ فيها</b>. والختمُ راحةٌ
+    /// لا حراسة، <b>والحراسةُ في <c>BranchAssignmentHelper</c></b> حيث تُطلب صراحة.</para>
+    /// </summary>
+    private async Task StampJournalEntryBranchesAsync(CancellationToken ct)
+    {
+        var unstamped = ChangeTracker.Entries<Brqosh.Domain.Accounting.JournalEntry>()
+            .Where(e => e.State == EntityState.Added && e.Entity.BranchId is null)
+            .Select(e => e.Entity)
+            .ToList();
+
+        if (unstamped.Count == 0) return;
+
+        foreach (var companyId in unstamped.Select(e => e.CompanyId).Distinct())
+        {
+            // ‏**وفرعُ الجلسة أوّلاً ثمّ المقرّ** — وهو ترتيبُ `BranchAssignmentService`
+            // ‏نفسِه. ولا يُستدعى ذلك النوعُ من هنا لأنّ السياقَ لا يعرف طبقتَه.
+            long? resolved = null;
+
+            if (BranchSessionContext.PreferredBranchId is long preferred && preferred > 0)
+            {
+                var ok = await Branches.AsNoTracking().AnyAsync(
+                    b => b.CompanyId == companyId && b.Id == preferred && b.IsActive, ct);
+                if (ok) resolved = preferred;
+            }
+
+            resolved ??= (await Branches.AsNoTracking()
+                .Where(b => b.CompanyId == companyId && b.IsActive)
+                .OrderByDescending(b => b.IsHeadquarters)
+                .ThenBy(b => b.Id)
+                .FirstOrDefaultAsync(ct))?.Id;
+
+            if (resolved is not long branchId) continue;
+
+            foreach (var entry in unstamped.Where(e => e.CompanyId == companyId))
+                entry.StampBranchIfUnset(branchId);
+        }
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        await StampJournalEntryBranchesAsync(ct);
+        return await base.SaveChangesAsync(ct);
     }
 }

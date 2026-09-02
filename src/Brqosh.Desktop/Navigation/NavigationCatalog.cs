@@ -23,6 +23,7 @@ public static class NavigationCatalog
             new("chart_of_accounts", "دليل الحسابات"),
             new("journal_entries", "القيود اليومية"),
             new("cost_centers", "مراكز التكلفة"),
+            new("branch_profitability", "ربحية الفروع"),
             new("budget_variance", "الموازنة والانحراف"),
             new("cost_center_statement", "كشف مراكز التكلفة"),
             new("fiscal_periods", "الفترات المالية"),
@@ -140,6 +141,7 @@ public static class NavigationCatalog
         [
             new("properties", "العقارات والوحدات"),
             new("leases", "عقود الإيجار"),
+            new("maintenance_orders", "أوامر الصيانة"),
         ]),
 
         new("الرعاية الصحية", ModuleKey.Healthcare,
@@ -210,6 +212,7 @@ public static class NavigationCatalog
         ["chart_of_accounts"] = "Chart of Accounts",
         ["journal_entries"] = "Journal Entries",
         ["cost_centers"] = "Cost Centers",
+        ["branch_profitability"] = "Branch Profitability",
         ["fiscal_periods"] = "Fiscal Periods",
         ["projects"] = "Projects",
         ["contracts"] = "Contracts",
@@ -275,6 +278,7 @@ public static class NavigationCatalog
         ["insurance_payers"] = "Insurance Payers",
         ["insurance_claims"] = "Insurance Claims",
         ["tip_pools"] = "Tip Pools",
+        ["maintenance_orders"] = "Maintenance Orders",
         ["delivery_trips"] = "Delivery Trips",
         ["menu_items"] = "Menu & Recipes",
         ["rooms"] = "Rooms",
