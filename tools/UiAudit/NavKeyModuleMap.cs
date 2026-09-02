@@ -82,6 +82,9 @@ internal static class NavKeyModuleMap
         ["general_ledger_report"] = ModuleKey.Reports,
         ["fixed_assets"] = ModuleKey.FixedAssets,
         ["payroll"] = ModuleKey.Payroll,
+        ["employees"] = ModuleKey.Payroll,
+        ["payslips"] = ModuleKey.Payroll,
+        ["wage_protection"] = ModuleKey.Payroll,
     };
 
     public static bool IsInProfile(string navKey, BusinessProfile profile)

@@ -126,7 +126,10 @@ public static class NavigationCatalog
 
         new("الرواتب", ModuleKey.Payroll,
         [
+            new("employees", "سجل الموظفين"),
             new("payroll", "دورات الرواتب"),
+            new("payslips", "قسائم الرواتب"),
+            new("wage_protection", "ملف حماية الأجور"),
         ]),
 
         new("الأمان والتدقيق", ModuleKey.GeneralLedger,
@@ -220,6 +223,9 @@ public static class NavigationCatalog
         ["general_ledger_report"] = "General Ledger",
         ["fixed_assets"] = "Fixed Assets",
         ["payroll"] = "Payroll",
+        ["employees"] = "Employees",
+        ["payslips"] = "Payslips",
+        ["wage_protection"] = "Wage Protection File",
         ["company_settings"] = "Company Settings",
         ["backup"] = "Backup & Restore",
         ["organizations"] = "Organizations",

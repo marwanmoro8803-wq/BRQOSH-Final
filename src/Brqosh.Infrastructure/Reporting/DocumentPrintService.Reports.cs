@@ -195,6 +195,37 @@ public partial class DocumentPrintService
         };
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط6-٢) <b>قسيمةُ راتبٍ واحدة — والمولِّدُ كان مبنيّاً بلا مستدعٍ واحد.</b>
+    ///
+    /// <para><c>PayslipPdfGenerator</c> بُني في <c>ط2-٦</c> <b>ولا شيءَ في المستودع
+    /// يستدعيه</b>. فالقسيمةُ ميزةٌ موصوفةٌ ومختبَرةٌ <b>لا يستطيع المالكُ إخراجَها</b> —
+    /// وهو عينُ عطل «الاسم بلا جسد» في طبقة العرض.</para>
+    ///
+    /// <para><b>ويُختار السطرُ بترتيبه في الدورة</b>: الموظّفُ قد لا يكون له سجلٌّ بعد،
+    /// <b>فمفتاحُه الكودُ يخرج «—»</b> ولا يُميّز. والترتيبُ في الدورة ثابتٌ ومُخزَّن.</para>
+    /// </summary>
+    public async Task<PrintResult> ExportPayslipAsync(
+        long companyId, long payrollRunId, int lineIndex, string username,
+        CancellationToken ct = default)
+    {
+        var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
+        var branding = PrintBranding.FromCompany(company);
+
+        var slips = await new Brqosh.Infrastructure.Payroll.PayslipQuery(db)
+            .ExecuteAsync(companyId, payrollRunId, ct);
+
+        if (lineIndex < 0 || lineIndex >= slips.Count)
+            throw new Brqosh.Domain.Accounting.AccountingException("سطر القسيمة غير موجود في الدورة.");
+
+        var slip = slips[lineIndex];
+        var pdf = PayslipPdfGenerator.Build(branding, slip);
+        var fileName = $"brqosh-payslip-{slip.PeriodCode}-{lineIndex + 1}.pdf";
+
+        await LogAsync(companyId, username, "Payslip", $"{slip.PeriodCode}#{lineIndex + 1}", ct);
+        return new PrintResult(pdf, fileName);
+    }
+
     private async Task<CompanyGroup> LoadGroupAsync(long groupId, CancellationToken ct) =>
         await db.CompanyGroups.SingleAsync(g => g.Id == groupId, ct);
 }

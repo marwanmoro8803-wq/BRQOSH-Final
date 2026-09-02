@@ -1,0 +1,109 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.EmployeeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="موظف" Width="720" Height="560"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="HeaderText" Text="موظف جديد"
+                   Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="الكود *" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="الاسم *" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="180"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="رقم الهوية أو الإقامة (عشرة أرقام) *" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NationalIdBox" Style="{StaticResource AppTextBox}" MaxLength="10"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="الجنسية *" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="NationalityBox" FontSize="14">
+                            <ComboBoxItem Content="سعودي" IsSelected="True"/>
+                            <ComboBoxItem Content="وافد"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="180"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="المسمى الوظيفي *" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="JobTitleBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="تاريخ التعيين *" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker x:Name="HireDateBox" FontSize="14"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="عناصر الأجر — والسكن يُفصل عن الأساسي لأن الاشتراك يُحسب عليهما دون بقية البدلات"
+                           Style="{StaticResource PageSubtitleText}" Margin="0,6,0,8" TextWrapping="Wrap"/>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Text="الأساسي" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="BasicBox" Style="{StaticResource AppTextBox}" Text="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                        <TextBlock Text="بدل سكن" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="HousingBox" Style="{StaticResource AppTextBox}" Text="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                        <TextBlock Text="بدل نقل" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TransportBox" Style="{StaticResource AppTextBox}" Text="0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="بدلات أخرى" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="OtherBox" Style="{StaticResource AppTextBox}" Text="0"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Margin="0,0,0,12">
+                    <TextBlock Text="الآيبان — يلزم لملف حماية الأجور" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="IbanBox" Style="{StaticResource AppTextBox}" MaxLength="24"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0">
+            <Button DockPanel.Dock="Left" Content="إلغاء" Style="{StaticResource SecondaryButton}"
+                    Padding="20,9" Click="OnCancel"/>
+            <Button DockPanel.Dock="Right" Content="حفظ" Style="{StaticResource PrimaryButton}"
+                    Padding="26,9" Click="OnSave"/>
+        </DockPanel>
+    </Grid>
+</Window>

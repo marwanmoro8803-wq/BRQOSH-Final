@@ -134,6 +134,27 @@ public class Employee : IBranchScoped
         Iban = value;
     }
 
+    /// <summary>
+    /// يُصحّح الاسمَ والمسمّى الوظيفيّ.
+    ///
+    /// <para><b>ولا يمسّ الهويّةَ ولا تاريخَ التعيين</b>: الأوّلُ مفتاحُ الموظّف لدى
+    /// التأمينات والبنك، والثاني أساسُ حساب مكافأة نهاية الخدمة. <b>وتعديلُهما بعد
+    /// أوّل ترحيلٍ يُعيد كتابة تاريخٍ مضى</b> — ويُغيّر التزاماً حُسب وقُيّد.</para>
+    ///
+    /// <para><b>والترقيةُ تغيّر المسمّى لا الأجرَ</b> — والأجرُ في <see cref="SetPay"/>،
+    /// فالفصلُ يجعل كلَّ تغييرٍ مقصوداً.</para>
+    /// </summary>
+    public void Rename(string nameAr, string jobTitle)
+    {
+        if (string.IsNullOrWhiteSpace(nameAr))
+            throw new AccountingException("اسم الموظف مطلوب.");
+        if (string.IsNullOrWhiteSpace(jobTitle))
+            throw new AccountingException("المسمّى الوظيفي مطلوب.");
+
+        NameAr = nameAr.Trim();
+        JobTitle = jobTitle.Trim();
+    }
+
     public void AssignCostCenter(long? costCenterId) => CostCenterId = costCenterId;
 
     /// <summary>

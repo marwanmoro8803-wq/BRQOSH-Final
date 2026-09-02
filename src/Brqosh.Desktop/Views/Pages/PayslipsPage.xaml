@@ -1,0 +1,52 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PayslipsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="قسائم الرواتب" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="تُبنى من الدورة المرحّلة — لا من سجل الموظفين الحالي"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="PrintBtn" Content="طباعة القسيمة" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnPrint"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <ComboBox x:Name="RunBox" DockPanel.Dock="Right" Width="280" FontSize="14"
+                          VerticalAlignment="Center" Margin="0,0,12,0"
+                          SelectionChanged="OnRunChanged"/>
+                <TextBlock DockPanel.Dock="Right" Text="دورة الرواتب" VerticalAlignment="Center"
+                           Margin="0,0,10,0" Style="{StaticResource FieldLabel}"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="90"/>
+                    <DataGridTextColumn Header="الموظف" Binding="{Binding EmployeeName}" Width="*"/>
+                    <DataGridTextColumn Header="الهوية" Binding="{Binding NationalId}" Width="120"/>
+                    <DataGridTextColumn Header="المسمى" Binding="{Binding JobTitle}" Width="140"/>
+                    <DataGridTextColumn Header="الأساسي" Binding="{Binding Basic, StringFormat=N2}" Width="100"/>
+                    <DataGridTextColumn Header="سكن" Binding="{Binding Housing, StringFormat=N2}" Width="90"/>
+                    <DataGridTextColumn Header="نقل" Binding="{Binding Transport, StringFormat=N2}" Width="90"/>
+                    <DataGridTextColumn Header="أخرى" Binding="{Binding Other, StringFormat=N2}" Width="90"/>
+                    <DataGridTextColumn Header="تأمينات" Binding="{Binding Gosi, StringFormat=N2}" Width="100"/>
+                    <DataGridTextColumn Header="الصافي" Binding="{Binding Net, StringFormat=N2}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
