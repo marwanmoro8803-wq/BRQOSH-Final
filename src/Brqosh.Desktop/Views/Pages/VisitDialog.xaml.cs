@@ -24,6 +24,14 @@ public partial class VisitDialog : Window
         public decimal Quantity { get; set; } = 1m;
         public decimal UnitPrice { get; set; }
         public bool IsCovered { get; set; } = true;
+
+        /// <summary>
+        /// (CEEF-231 · ط3-٢ج) صنفُ الصيدلية المصروف — <b>وفارغٌ لسطر الخدمة</b>.
+        /// </summary>
+        public long? ProductId { get; set; }
+
+        /// <summary>رقمُ الدفعة — <b>ويلزم لكلّ دواءٍ متتبَّع</b>.</summary>
+        public string? BatchNumber { get; set; }
     }
 
     private sealed record Option(long Id, string Label)
@@ -38,7 +46,40 @@ public partial class VisitDialog : Window
         InitializeComponent();
         DateBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
-        Loaded += async (_, _) => await LoadPatientsAsync();
+        Loaded += async (_, _) =>
+        {
+            await LoadPatientsAsync();
+            await LoadProductsAsync();
+        };
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط3-٢ج) أصنافُ الصيدلية المخزنية.
+    /// </summary>
+    /// <remarks>
+    /// <b>والمخزنيّةُ وحدَها تُعرض</b>: صنفٌ خدميٌّ لا يُصرف من مستودع، <b>ويرفضه الصرفُ
+    /// باسمه</b> — وعرضُه هنا يجعل الشاشةَ تقترح ما سيُرفض.
+    /// </remarks>
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var products = await db.Products.AsNoTracking()
+                .Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive
+                            && p.Type == Brqosh.Domain.Inventory.ProductType.Stockable)
+                .OrderBy(p => p.Code)
+                .Select(p => new { p.Id, p.Code, p.NameAr })
+                .ToListAsync();
+
+            ProductColumn.ItemsSource = products
+                .Select(p => new Option(p.Id, $"{p.Code} — {p.NameAr}"))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
     }
 
     private async Task LoadPatientsAsync()
@@ -121,7 +162,8 @@ public partial class VisitDialog : Window
                 (PolicyBox.SelectedItem as Option)?.Id);
 
             foreach (var line in lines)
-                visit.AddLine(line.Description!, line.Quantity, line.UnitPrice, line.IsCovered);
+                visit.AddLine(line.Description!, line.Quantity, line.UnitPrice, line.IsCovered,
+                    line.ProductId, batchNumber: line.BatchNumber);
 
             await using var db = AppServices.CreateDb();
             db.Visits.Add(visit);

@@ -35,6 +35,13 @@ public class PayrollReversalService(BrqoshDbContext db)
             run.MarkReversed();
             await db.SaveChangesAsync(token);
 
+            // (CEEF-231 · ط2-٧) ‏**والعكسُ يُعيد الدَّين.**
+            //
+            // ‏الاستقطاعُ الذي أقفل السُّلفةَ ارتدّ بارتداد الدورة — **وسُلفةٌ تبقى
+            // ‏«مسدَّدة» بعد ارتداد سدادها دَينٌ سقط بلا قبض**. والاتّجاهان في كاتبٍ
+            // ‏واحد، فلا يُقفَل بلا أن يُعاد.
+            await new EmployeeAdvanceService(db).RefreshStatusesAsync(companyId, token);
+
             await new AuditService(db).LogAsync(companyId, username, "عكس دورة رواتب",
                 "PayrollRun", run.PeriodCode, "تم عكس قيد الاستحقاق");
         }, ct);

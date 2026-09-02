@@ -99,9 +99,15 @@ public class Visit : IBranchScoped
     /// <b>شمولُ الوثيقة لهذه الخدمة بعينها</b> — والتجميلُ وما استُثني نصّاً غيرُ مشمول
     /// مهما بلغت نسبةُ التغطية. <b>وشمولُ كلّ شيءٍ افتراضاً يُطالِب الشركةَ بما ترفضه.</b>
     /// </param>
+    /// <param name="batchNumber">
+    /// (CEEF-231 · ط3-٢ج) <b>رقمُ الدفعة المصروفة</b> — ويلزم لكلّ دواءٍ متتبَّع.
+    /// <b>وصنفٌ متتبَّعٌ بلا رقمٍ يرفضه المَخنَقُ باسمه عند الصرف</b>، فلا يخرج دواءٌ
+    /// بلا هويّةٍ ولا صلاحية.
+    /// </param>
     public void AddLine(string description, decimal quantity, decimal unitPrice,
         bool isCovered = true, long? productId = null, VatCategory vatCategory = VatCategory.Standard,
-        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
+        string? batchNumber = null)
     {
         if (Status != VisitStatus.Open)
             throw new AccountingException("لا تُعدَّل زيارةٌ فُوتِرت أو أُلغيت.");
@@ -112,8 +118,15 @@ public class Visit : IBranchScoped
         if (unitPrice < 0m)
             throw new AccountingException("سعر الخدمة لا يكون سالباً.");
 
+        // ‏**ورقمُ دفعةٍ بلا صنفٍ يُرفض**: الدفعةُ هويّةُ صنفٍ في مستودع، **وسطرُ خدمةٍ
+        // ‏يحمل رقمَ دفعةٍ يُخزَّن بياناً لا يقرؤه أحد** — ثمّ يُقرأ يوماً فيُصرَف به.
+        if (!string.IsNullOrWhiteSpace(batchNumber) && productId is null)
+            throw new AccountingException(
+                $"سطرُ «{description.Trim()}» يحمل رقمَ دفعةٍ بلا صنف — والدفعةُ هويّةُ صنفٍ لا وصفِ خدمة.");
+
         _lines.Add(VisitLine.Create(description.Trim(), quantity, unitPrice, isCovered,
-            productId, vatCategory, taxExemptionReasonCode, taxExemptionReason));
+            productId, vatCategory, taxExemptionReasonCode, taxExemptionReason,
+            string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim()));
     }
 
     /// <summary>يُقفل الزيارةَ بالفوترة — <b>ورقمُ فاتورةٍ واحدةٍ على الأقلّ يلزم</b>.</summary>
@@ -149,7 +162,23 @@ public class VisitLine
     public decimal Quantity { get; private set; }
     public decimal UnitPrice { get; private set; }
     public bool IsCovered { get; private set; }
+
+    /// <summary>
+    /// (CEEF-231 · ط3-٢ج) صنفُ الصيدلية المصروف — <b>وسطرُ الخدمة بلا صنف</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وكان هذا الحقلُ ميّتاً منذ بنائه</b>: يُكتب ولا يقرؤه أحد. فدواءٌ يُصرف للمريض
+    /// <b>لا ينقص من المستودع، ولا تُقيَّد له تكلفةُ مبيعات، ولا تُستهلَك دفعتُه</b> —
+    /// فيبيع المستوصفُ الدواءَ بربحٍ مئةٍ بالمئة في دفاتره، <b>ثمّ يُقيَّد الفرقُ «عجزَ
+    /// جرد» آخرَ السنة</b> وهو صرفٌ صحيحٌ بلا مصروف.
+    /// </remarks>
     public long? ProductId { get; private set; }
+
+    /// <summary>
+    /// (CEEF-231 · ط3-٢ج) رقمُ الدفعة المصروفة — <b>والدواءُ المتتبَّع لا يخرج بلا رقم</b>.
+    /// </summary>
+    public string? BatchNumber { get; private set; }
+
     public VatCategory VatCategory { get; private set; }
 
     /// <summary>سببُ الإعفاء النظاميّ — يلزم للصفريّ والمعفى، ويُحمَل إلى الفاتورتين معاً.</summary>
@@ -163,7 +192,8 @@ public class VisitLine
 
     internal static VisitLine Create(string description, decimal quantity, decimal unitPrice,
         bool isCovered, long? productId, VatCategory vatCategory,
-        string? taxExemptionReasonCode, string? taxExemptionReason) =>
+        string? taxExemptionReasonCode, string? taxExemptionReason,
+        string? batchNumber = null) =>
         new()
         {
             Description = description,
@@ -171,6 +201,7 @@ public class VisitLine
             UnitPrice = unitPrice,
             IsCovered = isCovered,
             ProductId = productId,
+            BatchNumber = batchNumber,
             VatCategory = vatCategory,
             TaxExemptionReasonCode = taxExemptionReasonCode,
             TaxExemptionReason = taxExemptionReason,

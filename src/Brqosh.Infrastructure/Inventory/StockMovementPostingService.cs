@@ -1,4 +1,4 @@
-﻿using Brqosh.Application.Accounting;
+using Brqosh.Application.Accounting;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Platform;
@@ -86,12 +86,47 @@ public class StockMovementPostingService(BrqoshDbContext db)
                 }
             }
 
-            await inv.ApplyMovementBalancesAsync(movement);
-
             var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.StockMovements.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber),
                 "SM", movement.MovementDate.Year, movement.CompanyId,
                 db.StockMovements.Local.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber));
+
+            // (CEEF-231 · ط4-٤) ‏**والتحويلُ ينقل طبقاتِ التكلفة معه.**
+            //
+            // ‏**ما كان:** التحويلُ يُحرّك الكمّياتِ **ولا يمسّ الطبقاتِ البتّة**. فمستودعٌ
+            // ‏يُفرَّغ عن آخره تبقى طبقاتُه فيه كاملةً، **والمستقبِلُ يمتلئ بلا طبقةٍ واحدة**.
+            // ‏فجردُ الأوّل يُقوَّم بمالٍ لبضاعةٍ ليست فيه، والثاني بصفرٍ وفيه بضاعة،
+            // ‏**وبيعٌ من الأوّل بعدها يُرفض بـ«طبقات FIFO غير كافية»** وفيه رصيدٌ ماديّ.
+            //
+            // ‏**والموضعُ هنا لا في `InventoryService.TransferAsync`** — أو بالأحرى في
+            // ‏كليهما: تلك بلا مستدعٍ في المستودع كلِّه، **وهذه ما تستدعيه الشاشة**.
+            // ‏وإصلاحُ أحد مسارَي حسابٍ واحدٍ هو عطلُ `ط4-٣` بعينه عائداً.
+            //
+            // ‏**والرقمُ يُخصَّص قبل الاستهلاك** — فهو مفتاحُ سجلّ الترميم عند الإلغاء.
+            if (movement.Type == StockMovementType.Transfer && movement.ToWarehouseId is long destination)
+            {
+                // ‏**والمفتاحُ يُشتقّ من رقم الحركة ولا يُخزَّن في `SourceDocument`.**
+                //
+                // ‏فذلك الحقلُ معناه في هذا المستودع **«حركةٌ يملكها مستندٌ آخر»** —
+                // ‏ويرفض `StockMovementCancellationService` إلغاءَ ما يحمله. **فتخزينُه
+                // ‏هنا يمنع إلغاءَ كلّ تحويل**، وهو عطلٌ أُدخل باسم إصلاح. والرقمُ محفوظٌ
+                // ‏ثابتٌ يُشتقّ منه المفتاحُ نفسُه عند العكس.
+                var costKey = $"StockMovement:{number}";
+                var costing = new InventoryCostingService(db);
+
+                foreach (var line in movement.Lines)
+                {
+                    var (_, unitCost) = await costing.ConsumeForIssueAsync(
+                        movement.CompanyId, line.ProductId, movement.WarehouseId,
+                        line.Quantity, costKey, ct);
+
+                    await costing.AddCostLayerAsync(movement.CompanyId, line.ProductId, destination,
+                        movement.MovementDate, line.Quantity, unitCost, costKey, ct);
+                }
+            }
+
+            await inv.ApplyMovementBalancesAsync(movement);
+
             movement.MarkPosted(number);
 
             if (entry is not null)

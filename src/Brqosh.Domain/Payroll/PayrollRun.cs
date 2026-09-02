@@ -29,9 +29,19 @@ public class PayrollLine
     public decimal GosiEmployee { get; private set; }
     public decimal GosiEmployer { get; private set; }
 
+    /// <summary>
+    /// (CEEF-230 · ط2-٥) <b>قسطُ السُّلفة المُستقطَع هذا الشهر.</b>
+    ///
+    /// <para><b>وبغير موضعٍ له كان الموظّفُ يقبض راتبَه كاملاً وقد أخذ سُلفتَه</b> —
+    /// فتدفع المنشأةُ مرّتين، ولا يُكتشف إلا عند الاستقالة.</para>
+    /// </summary>
+    public decimal AdvanceDeduction { get; private set; }
+
     public decimal GrossPay =>
         BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
-    public decimal NetPay => GrossPay - GosiEmployee;
+
+    /// <summary><b>والصافي بعد التأمينات والسُّلفة معاً</b> — وكلاهما يخرج من جيب الموظّف.</summary>
+    public decimal NetPay => GrossPay - GosiEmployee - AdvanceDeduction;
 
     private PayrollLine()
     {
@@ -42,8 +52,10 @@ public class PayrollLine
     public decimal OtherAllowance { get; private set; }
 
     internal PayrollLine(string employeeName, decimal basic, decimal housing, decimal transport,
-        decimal gosiEmployee, decimal gosiEmployer, long? employeeId = null, decimal other = 0m)
+        decimal gosiEmployee, decimal gosiEmployer, long? employeeId = null, decimal other = 0m,
+        decimal advanceDeduction = 0m)
     {
+        AdvanceDeduction = advanceDeduction;
         EmployeeId = employeeId;
         OtherAllowance = other;
         EmployeeName = employeeName;
@@ -73,6 +85,9 @@ public class PayrollRun : IBranchScoped
     public decimal TotalNet => _lines.Sum(l => l.NetPay);
     public decimal TotalGosiEmployer => _lines.Sum(l => l.GosiEmployer);
 
+    /// <summary>(CEEF-230 · ط2-٥) مجموعُ أقساط السُّلَف — <b>وهو ما يُعفي حسابَ 1116</b>.</summary>
+    public decimal TotalAdvanceDeduction => _lines.Sum(l => l.AdvanceDeduction);
+
     private PayrollRun()
     {
         PeriodCode = null!;
@@ -92,7 +107,7 @@ public class PayrollRun : IBranchScoped
 
     public void AddLine(string employeeName, decimal basic, decimal housing = 0m, decimal transport = 0m,
         decimal gosiEmployee = 0m, decimal gosiEmployer = 0m,
-        long? employeeId = null, decimal other = 0m)
+        long? employeeId = null, decimal other = 0m, decimal advanceDeduction = 0m)
     {
         if (Status != PayrollRunStatus.Draft)
             throw new AccountingException("لا يمكن تعديل دورة مرحّلة.");
@@ -112,7 +127,23 @@ public class PayrollRun : IBranchScoped
             Math.Round(gosiEmployee, 2, MidpointRounding.AwayFromZero),
             Math.Round(gosiEmployer, 2, MidpointRounding.AwayFromZero),
             employeeId,
-            Math.Round(other, 2, MidpointRounding.AwayFromZero)));
+            Math.Round(other, 2, MidpointRounding.AwayFromZero),
+            Math.Round(advanceDeduction, 2, MidpointRounding.AwayFromZero)));
+
+        // (CEEF-230 · ط2-٥) ‏**واستقطاعٌ يبتلع الصافيَ يُرفض.**
+        //
+        // ‏الاستقطاعُ يُنقص ما يقبضه الموظّف، **وصافٍ سالبٌ يعني أنّ الموظّف يدفع للمنشأة
+        // ‏من جيبه** — ويُخرج ملفَّ حماية الأجور بمبلغٍ سالبٍ ترفضه المنظومة. والحدُّ
+        // ‏هنا **صفرٌ لا أقلّ**: قسطٌ يبلغ الصافيَ كلَّه معناه أنّ الشهرَ كلَّه ذهب للسُّلفة،
+        // ‏**وهو قرارٌ يجوز** — أمّا ما دونه فلا.
+        var line = _lines[^1];
+        if (line.NetPay < 0m)
+        {
+            _lines.RemoveAt(_lines.Count - 1);
+            throw new AccountingException(
+                $"استقطاعُ «{employeeName.Trim()}» {advanceDeduction:N2} يتجاوز صافيَ أجره "
+                + $"{line.GrossPay - line.GosiEmployee:N2} — والصافي لا يكون سالباً.");
+        }
     }
 
     /// <summary>
@@ -122,7 +153,7 @@ public class PayrollRun : IBranchScoped
     /// ورقةٍ خارجية كلَّ شهر. <b>وهنا تُحسب من الأجر الخاضع والجنسية والنِّسَب المُخزَّنة</b>
     /// — فلا تُنسى، ولا تُنسخ خطأً، ولا تختلف بين موظّفٍ وآخر بلا سبب.</para>
     /// </summary>
-    public void AddEmployee(Employee employee, GosiPolicy policy)
+    public void AddEmployee(Employee employee, GosiPolicy policy, decimal advanceDeduction = 0m)
     {
         ArgumentNullException.ThrowIfNull(employee);
         ArgumentNullException.ThrowIfNull(policy);
@@ -140,7 +171,7 @@ public class PayrollRun : IBranchScoped
 
         AddLine(employee.NameAr, employee.BasicSalary, employee.HousingAllowance,
             employee.TransportAllowance, gosi.Employee, gosi.Employer,
-            employee.Id, employee.OtherAllowance);
+            employee.Id, employee.OtherAllowance, advanceDeduction);
     }
 
     /// <summary>الأساسيُّ وحده — وهو ما يذهب إلى حساب الرواتب والأجور.</summary>
@@ -151,7 +182,7 @@ public class PayrollRun : IBranchScoped
         _lines.Sum(l => l.HousingAllowance + l.TransportAllowance + l.OtherAllowance);
 
     public JournalEntry Post(Account salariesExpense, Account gosiExpense, Account salariesPayable,
-        Account gosiPayable, Account? allowancesExpense = null)
+        Account gosiPayable, Account? allowancesExpense = null, Account? advancesReceivable = null)
     {
         if (Status != PayrollRunStatus.Draft)
             throw new AccountingException("الدورة مرحّلة مسبقاً.");
@@ -181,6 +212,21 @@ public class PayrollRun : IBranchScoped
         if (TotalGosiEmployer > 0)
             entry.AddLine(gosiExpense, TotalGosiEmployer, 0m, "تأمينات اجتماعية — صاحب عمل");
         entry.AddLine(salariesPayable, 0m, TotalNet, "رواتب مستحقة");
+
+        // (CEEF-230 · ط2-٥) ‏**والاستقطاعُ يُعفي السُّلفةَ لا يُنقص المصروف.**
+        //
+        // ‏المصروفُ وقع كاملاً — الموظّفُ استحقّ أجرَه كلَّه. **والمُستقطَعُ سدادُ دَينٍ
+        // ‏سابق**، فيُقيَّد دائناً على `1116` لا خصماً من `5201`. **وإنقاصُ المصروف
+        // ‏يُظهر شهراً برواتبَ أقلَّ بلا سببٍ تشغيليّ**، ويُبقي الأصلَ في الميزانية بعد
+        // ‏استرداده.
+        if (TotalAdvanceDeduction > 0m)
+        {
+            if (advancesReceivable is null)
+                throw new AccountingException(
+                    "استقطاعُ سُلفٍ بلا حساب «سُلَف الموظفين» — والقيدُ لا يُعفي ما لا حسابَ له.");
+
+            entry.AddLine(advancesReceivable, 0m, TotalAdvanceDeduction, "سداد سُلَف بالاستقطاع");
+        }
         var gosiTotal = _lines.Sum(l => l.GosiEmployee) + TotalGosiEmployer;
         if (gosiTotal > 0)
             entry.AddLine(gosiPayable, 0m, gosiTotal, "تأمينات مستحقة");

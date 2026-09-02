@@ -43,6 +43,13 @@ public static class SaudiChartOfAccounts
         // ‏إقفال**. والميزانيةُ تعرض 1104 + 1115 معاً، وهو اصطلاحُ الأنظمة الكبرى.
         new("1115", "تسوية إعادة تقييم ذمم مدينة بعملة أجنبية", "FX Revaluation Adjustment - Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
+        // (CEEF-230 · ط2-٥) ‏**سُلفةُ الموظف ذمّةٌ عليه لا مصروفُ راتب.**
+        //
+        // ‏فبلا هذا الحساب يخرج المالُ ولا يُقيَّد إلا مصروفاً — **فيُضخَّم مصروفُ الرواتب
+        // ‏بما سيُسترَدّ**، ويختفي الأصلُ من الميزانية. ثمّ يُستقطَع من الراتب فيُخفَّض
+        // ‏المصروفُ في شهرٍ آخر، **فيتذبذب مصروفُ الرواتب بلا سببٍ تشغيليّ**.
+        new("1116", "سُلَف الموظفين", "Employee Advances", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+
         new("12", "الأصول غير المتداولة", "Non-Current Assets", AccountType.Asset, "1", IsGroup: true),
         new("1201", "الأراضي", "Land", AccountType.Asset, "12", IsGroup: false),
         new("1202", "المباني والإنشاءات", "Buildings & Constructions", AccountType.Asset, "12", IsGroup: false),
@@ -172,6 +179,9 @@ public static class SaudiChartOfAccounts
 
         // (CEEF-230 · ط4-٧) ‏حسابا تسوية إعادة التقييم — يحفظان هـ-١ وهـ-٢.
         public const string FxAdjustmentReceivable = "1115";
+
+        /// <summary>(CEEF-230 · ط2-٥) سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.</summary>
+        public const string EmployeeAdvances = "1116";
         public const string FxAdjustmentPayable = "2115";
         public const string RetentionPayableSubcontractors = "2110";
         public const string ContractRevenue = "4104";

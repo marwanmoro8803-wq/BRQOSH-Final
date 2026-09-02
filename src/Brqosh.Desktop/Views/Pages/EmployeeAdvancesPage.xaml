@@ -1,0 +1,51 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.EmployeeAdvancesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="سلف الموظفين" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="السلفة ذمة على الموظف لا مصروف راتب — وتسدد بالاستقطاع الشهري"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ سلفة" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DisburseBtn" DockPanel.Dock="Right" Content="صرف السلفة"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnDisburse"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="RefreshBtn" DockPanel.Dock="Right" Content="تحديث الحالات"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnRefreshStatuses"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      GridLinesVisibility="Horizontal">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم السلفة" Binding="{Binding AdvanceNumber}" Width="130"/>
+                    <DataGridTextColumn Header="الموظف" Binding="{Binding EmployeeName}" Width="*"/>
+                    <DataGridTextColumn Header="تاريخ الصرف" Binding="{Binding DisbursedOn}" Width="120"/>
+                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="المستقطع" Binding="{Binding Deducted, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="المتبقي" Binding="{Binding Outstanding, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="القسط" Binding="{Binding Installment, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

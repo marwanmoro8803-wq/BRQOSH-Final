@@ -553,6 +553,49 @@ static class ModuleProbes
             var after = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.SalariesExpense);
             ProbeContext.Expect(after - before > 0m,
                 $"دورةُ الرواتب رُحِّلت ولم يتحرّك مصروفُ الرواتب: قبل {before:N2} وبعد {after:N2}.");
+
+            // ‏**ثمّ دورةُ السُّلَف (ط2-٥)**: سُلفةٌ تُصرف **أصلاً لا مصروفاً**، ثمّ تُستقطَع
+            // ‏من الراتب **فتُعفي الأصلَ ولا تُنقص المصروف**. وبغير هذا يقبض الموظّفُ
+            // ‏راتبَه كاملاً وقد أخذ سُلفتَه — والمنشأةُ دفعت مرّتين.
+            var employee = Employee.Create(c.CompanyId, "PRB-EMP-ADV", "موظّفُ السُّلفة",
+                "1055555555", EmployeeNationality.Saudi, "فنّي", new DateOnly(2024, 1, 1));
+            employee.SetPay(basic: 6_000m, housing: 0m, transport: 0m);
+            c.Db.Employees.Add(employee);
+            await c.Db.SaveChangesAsync();
+
+            var advance = EmployeeAdvance.Create(c.CompanyId, employee.Id, "PRB-ADV-1",
+                new DateOnly(2026, 4, 1), amount: 3_000m, installmentAmount: 1_000m);
+            c.Db.EmployeeAdvances.Add(advance);
+            await c.Db.SaveChangesAsync();
+
+            var advanceService = new EmployeeAdvanceService(c.Db);
+            var salariesBeforeAdvance = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.SalariesExpense);
+
+            await advanceService.DisburseAsync(c.CompanyId, advance.Id, new DateOnly(2026, 4, 1),
+                SaudiChartOfAccounts.SystemCodes.CashOnHand);
+
+            var asset = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.EmployeeAdvances);
+            ProbeContext.Expect(asset == 3_000m,
+                $"صرفُ السُّلفة لم يُنشئ أصلاً: رصيدُ 1116 هو {asset:N2} والمنتظر 3000.00.");
+            ProbeContext.Expect(
+                await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.SalariesExpense) == salariesBeforeAdvance,
+                "صرفُ السُّلفة مسّ مصروفَ الرواتب — وهي أصلٌ يُستردّ لا مصروف.");
+
+            var second = PayrollRun.CreateDraft(c.CompanyId, 2026, 4, new DateOnly(2026, 4, 28));
+            second.AddLine("موظّفُ السُّلفة", basic: 6_000m, employeeId: employee.Id,
+                advanceDeduction: 1_000m);
+            await new PayrollPostingService(c.Db).PostAsync(second, "sector-probe");
+
+            var relieved = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.EmployeeAdvances);
+            ProbeContext.Expect(relieved == 2_000m,
+                $"الاستقطاعُ لم يُعفِ السُّلفة: رصيدُ 1116 هو {relieved:N2} والمنتظر 2000.00.");
+
+            ProbeContext.Expect(second.TotalNet == 5_000m,
+                $"صافي الأجر {second.TotalNet:N2} والمنتظر 5000.00 — والاستقطاعُ لم يُنقصه.");
+
+            var balances = await advanceService.BalancesAsync(c.CompanyId, employee.Id);
+            ProbeContext.Expect(balances.Sum(b => b.Outstanding) == relieved,
+                "الدفترُ المساعد للسُّلَف يخالف حسابَه العامّ (هـ-١٧).");
         }),
 
         // ─ التصنيع: قائمةُ موادّ ⟵ أمرُ تشغيلٍ ⟵ إتمامٌ يُدخل المنتجَ التامّ ─

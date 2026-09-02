@@ -33,7 +33,14 @@ public class PayrollPostingService(BrqoshDbContext db)
             // ‏تحمله أصلاً (هو في الشجرة منذ البداية) لكنّه لم يكن يُستعمل.
             var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, "5202", token);
 
-            var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances);
+            // (CEEF-230 · ط2-٥) ‏حسابُ السُّلَف — ولا يُنشأ إلا حين يوجد استقطاع، فقاعدةٌ
+            // ‏لا تُسلّف أحداً لا يظهر فيها حسابٌ بلا حركة.
+            var advances = run.TotalAdvanceDeduction > 0m
+                ? await SystemAccountProvisioning.EnsureAsync(
+                    db, run.CompanyId, SaudiChartOfAccounts.SystemCodes.EmployeeAdvances, token)
+                : null;
+
+            var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances, advances);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(run.CompanyId, run.PayDate);
             entry.Post(entryNumber);
 
@@ -61,6 +68,14 @@ public class PayrollPostingService(BrqoshDbContext db)
             await FinancialPostingSupport.AuditPostAsync(
                 db, run.CompanyId, "PayrollRun", run.PeriodCode,
                 reason: "ترحيل رواتب", details: $"صافي: {run.TotalNet:N2}", ct: token);
+
+            // (CEEF-231 · ط2-٧) ‏**والسُّلفةُ المسدَّدةُ تُقفَل هنا لا في شاشتها.**
+            //
+            // ‏كان تحديثُ الحالات زرّاً في شاشة السُّلَف — **والزرُّ يُغلق الفجوةَ لمَن
+            // ‏يتذكّره**. فسُلفةٌ سُدِّد آخرُ قسطها تبقى «قائمةً» في كلّ تقريرٍ يقرأ الحالة،
+            // ‏**وتُعرض ديناً لا وجودَ له** حتى يفتح أحدٌ تلك الشاشة. والترحيلُ هو اللحظةُ
+            // ‏التي يتغيّر فيها الرصيد، فهو موضعُ التحديث.
+            await new EmployeeAdvanceService(db).RefreshStatusesAsync(run.CompanyId, token);
 
             await DomainEventHub.PublishAsync(new DocumentPostedEvent(
                 run.CompanyId, "PayrollRun", run.Id, run.PeriodCode), token);

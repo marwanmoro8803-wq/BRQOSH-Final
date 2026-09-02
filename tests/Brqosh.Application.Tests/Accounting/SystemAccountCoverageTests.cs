@@ -231,9 +231,34 @@ public class SystemAccountCoverageTests : IDisposable
         await new FixedAssetDisposalPostingService(_db)
             .PostDisposalAsync(asset, saleProceeds: 11_900m, new DateOnly(2026, 5, 25), "admin");
 
+        // ── الموظّفُ أوّلاً — فالرواتبُ تُبنى من سجلّه لا من أصابعِ كاتب ──────
+        //
+        // ‏(CEEF-231 · ط2-٧) ‏وكانت الدورةُ هنا تُبنى بـ`AddLine` نصّاً حرّاً — **وهو
+        // ‏المسارُ الذي لا يسلكه مستخدم**. فتُقاس الرواتبُ بطريقٍ غيرِ طريقها، ويبقى ما
+        // ‏يمرّ بالمعرّف (ملفُّ الأجور · القسيمة · السُّلَف) بلا قياسٍ في هذه الدورة.
+        var employee = Employee.Create(companyId, "EMP-1", "موظف المبيعات", "1012345678",
+            EmployeeNationality.Saudi, "بائع", new DateOnly(2023, 1, 1));
+        employee.SetPay(basic: 4000m, housing: 1000m, transport: 0m);
+        _db.Employees.Add(employee);
+        await _db.SaveChangesAsync();
+
+        // ── سُلفةٌ تُصرف ثمّ تُستقطَع — والحسابُ 1116 يُدين ويُدان ────────────
+        //
+        // ‏(CEEF-230 · ط2-٥) ‏وهي من صلب الدورة لا استثناءٍ منها: **منشأةٌ لها موظّفون
+        // ‏تُسلّفهم**. والصرفُ أصلٌ، والاستقطاعُ يُعفيه — فلولا الاثنين معاً لبقي الحسابُ
+        // ‏«اسماً بلا جسد» يراه المالكُ في دليله ويبقى صفراً.
+        var advance = EmployeeAdvance.Create(companyId, employee.Id, "ADV-001",
+            new DateOnly(2026, 5, 1), amount: 1_000m, installmentAmount: 1_000m);
+        _db.EmployeeAdvances.Add(advance);
+        await _db.SaveChangesAsync();
+
+        await new EmployeeAdvanceService(_db).DisburseAsync(
+            companyId, advance.Id, new DateOnly(2026, 5, 2),
+            SaudiChartOfAccounts.SystemCodes.CashOnHand);
+
         // ── رواتبُ الشهر — ووحدةُ الرواتب **ضمن** ملفّ التجزئة، فالمحلّ له موظّفون ──
-        var payroll = PayrollRun.CreateDraft(companyId, 2026, 5, new DateOnly(2026, 5, 28));
-        payroll.AddLine("موظف المبيعات", basic: 4000m, housing: 1000m, gosiEmployee: 400m, gosiEmployer: 450m);
+        var payroll = await new PayrollRunBuilder(_db)
+            .BuildAsync(companyId, 2026, 5, new DateOnly(2026, 5, 28));
         await new PayrollPostingService(_db).PostAsync(payroll, "admin");
 
         // ── مكافأةُ نهاية الخدمة — التزامٌ يتراكم بمجرّد وجود موظّف ──────────
@@ -241,12 +266,6 @@ public class SystemAccountCoverageTests : IDisposable
         // ‏(CEEF-230 · ط2-٣) ‏وأُضيفت إلى الدورة **لا إلى قائمة الإقرار**: التخصيصُ يقع
         // ‏في كلّ منشأةٍ لها موظّفون، **فهو من صلب دورة المحلّ لا استثناءٍ منها**. وحسابُ
         // ‏المخصّص `2202` كان في الشجرة بلا كاتبٍ منذ اليوم الأوّل.
-        var employee = Employee.Create(companyId, "EMP-1", "موظف المبيعات", "1012345678",
-            EmployeeNationality.Saudi, "بائع", new DateOnly(2023, 1, 1));
-        employee.SetPay(basic: 4000m, housing: 1000m, transport: 0m);
-        _db.Employees.Add(employee);
-        await _db.SaveChangesAsync();
-
         await new EndOfServiceAccrualService(_db)
             .RunMonthlyAsync(companyId, new DateOnly(2026, 5, 31), "admin");
 

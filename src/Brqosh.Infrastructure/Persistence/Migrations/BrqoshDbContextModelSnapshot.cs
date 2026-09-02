@@ -2089,6 +2089,67 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("employees", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Payroll.EmployeeAdvance", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AdvanceNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("DisbursedOn")
+                        .HasColumnType("date");
+
+                    b.Property<long>("EmployeeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("InstallmentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long?>("JournalEntryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateOnly>("RequestDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "AdvanceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "EmployeeId", "Status");
+
+                    b.ToTable("employee_advances", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Payroll.GosiPolicy", b =>
                 {
                     b.Property<long>("Id")
@@ -4600,6 +4661,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
 
+                            b1.Property<string>("BatchNumber")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)");
+
                             b1.Property<string>("Description")
                                 .IsRequired()
                                 .HasMaxLength(512)
@@ -4819,6 +4884,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasColumnType("bigint");
 
                             NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<decimal>("AdvanceDeduction")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
 
                             b1.Property<decimal>("BasicSalary")
                                 .HasPrecision(18, 2)

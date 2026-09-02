@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -177,11 +177,40 @@ public class InventoryService(BrqoshDbContext db)
         return movement;
     }
 
+    /// <summary>
+    /// يُحوّل بضاعةً بين مستودعين — <b>والتكلفةُ تنتقل معها</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>(CEEF-231 · ط4-٤) <b>وما كان:</b> التحويلُ يُحرّك الكمّياتِ <b>ولا يمسّ
+    /// طبقاتِ التكلفة البتّة</b>. فمستودعٌ يُفرَّغ عن آخره تبقى طبقاتُه فيه كاملةً،
+    /// <b>والمستودعُ المستقبِل يمتلئ بضاعةً بلا طبقةٍ واحدة</b>.</para>
+    ///
+    /// <para><b>وأثرُه ثلاثةٌ:</b> جردُ المستودع الأوّل يُقوَّم بمالٍ لبضاعةٍ ليست فيه ·
+    /// والثاني بصفرٍ وفيه بضاعة · <b>وبيعٌ من الأوّل بعد ذلك يُرفض بـ«طبقات FIFO غير
+    /// كافية»</b> وفيه رصيدٌ ماديّ — رفضٌ كاذبٌ يُوقف البيع.</para>
+    ///
+    /// <para><b>وهويّةُ هـ-١٩:</b> بعد التحويل، مجموعُ الطبقات الباقية في المستودعين
+    /// <b>مساوٍ لما كان قبله</b>، وتوزيعُها يتبع الكمّيات. <b>والتحويلُ لا يُغيّر قيمةَ
+    /// المخزون كلِّه</b> — فلا قيدَ في الأستاذ، وهو صوابٌ يبقى.</para>
+    /// </remarks>
     public async Task<StockMovement> TransferAsync(long companyId, long fromWarehouseId, long toWarehouseId,
         DateOnly date, string description, IEnumerable<(long ProductId, decimal Qty)> lines)
     {
+        // (CEEF-231 · ط4-٤) ‏**الرقمُ يُخصَّص قبل استهلاك الطبقات** — فهو مفتاحُ سجلّ
+        // ‏الاستهلاك الذي يُرمَّم منه عند الإلغاء. ولو خُصّص بعده لَسُجّل الاستهلاكُ باسمٍ
+        // ‏فارغ **فلا يجده الإلغاءُ ولا تعود الطبقات** — وهو درسُ `م0-٣` بعينه.
+        var number = await DocumentNumberGenerator.NextAsync(db,
+            db.StockMovements.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber),
+            "SM", date.Year, companyId,
+            db.StockMovements.Local.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber));
+
+        // ‏**ولا يُخزَّن في `SourceDocument`** — فذاك معناه «حركةٌ يملكها مستندٌ آخر»،
+        // ‏وتخزينُه هنا يمنع إلغاءَ التحويل من شاشته.
+        var sourceDocument = $"StockMovement:{number}";
         var movement = StockMovement.CreateDraft(companyId, date, StockMovementType.Transfer,
             fromWarehouseId, description, toWarehouseId);
+
+        var costing = new InventoryCostingService(db);
 
         foreach (var (productId, qty) in lines)
         {
@@ -192,8 +221,20 @@ public class InventoryService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"رصيد '{product.NameAr}' غير كافٍ للتحويل — المتوفر {onHand:N2}.");
             }
-            var productEntity = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId);
-            movement.AddLine(productId, qty, productEntity.WeightedAverageCost);
+
+            // ‏**والطبقةُ تُستهلَك من المُرسِل وتُنشأ في المستقبِل بالتكلفة نفسِها.**
+            //
+            // ‏والمتوسطُ المرجّح لا طبقاتِ له، فتُعيد `ConsumeForIssueAsync` المتوسطَ
+            // ‏العامّ ولا تُغيّر شيئاً — **والمنشأةُ على المتوسط لا تُفرّق بين مستودعين
+            // ‏أصلاً**، فالسلوكان صحيحان كلٌّ في طريقته.
+            var (_, unitCost) = await costing.ConsumeForIssueAsync(
+                companyId, productId, fromWarehouseId, qty, sourceDocument);
+
+            await costing.AddCostLayerAsync(companyId, productId, toWarehouseId, date,
+                qty, unitCost, sourceDocument);
+
+            movement.AddLine(productId, qty, unitCost);
+
             // (CEEF-230 · ط1-٣) ‏**التحويلُ لا يحمل هويّةَ دفعةٍ بعد** — ووسيطُه
             // ‏`(ProductId, Qty)` بلا رقم. فيمرّ `null`، ويرفض المَخنَقُ الصنفَ المتتبَّع
             // ‏**رفضاً مسمّى**. وهو مقصود: نقلُ دفعةٍ بلا رقمها يُفقدها هويّتَها في
@@ -204,10 +245,6 @@ public class InventoryService(BrqoshDbContext db)
                 null, date, StockMovementType.Transfer);
         }
 
-        var number = await DocumentNumberGenerator.NextAsync(db, 
-            db.StockMovements.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber),
-            "SM", date.Year, companyId,
-            db.StockMovements.Local.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber));
         movement.MarkPosted(number);
         db.StockMovements.Add(movement);
         return movement;
@@ -373,6 +410,26 @@ public class InventoryService(BrqoshDbContext db)
     public async Task ReverseDocumentMovementAsync(StockMovement movement)
     {
         await ReverseMovementBalancesAsync(movement);
+
+        // (CEEF-231 · ط4-٤) ‏**والتحويلُ يُعكَس في الطرفين معاً.**
+        //
+        // ‏هو صادرٌ ووارِدٌ في مستندٍ واحد: **استهلك طبقةً هنا وأنشأ طبقةً هناك**.
+        // ‏فعكسٌ يُرمّم المستهلَكَ ولا يُزيل المُنشأ **يُضاعف قيمةَ المخزون** بقيمة كلّ
+        // ‏تحويلٍ يُلغى — وهو أشدُّ من العطل الذي عولج، لا أخفّ.
+        if (movement.Type == StockMovementType.Transfer)
+        {
+            // ‏**والمفتاحُ يُشتقّ من رقم الحركة** — لا من `SourceDocument`، فذاك معناه
+            // ‏«حركةٌ يملكها مستندٌ آخر» ويمنع الإلغاءَ من أصله.
+            if (!string.IsNullOrWhiteSpace(movement.MovementNumber))
+            {
+                var costing = new InventoryCostingService(db);
+                var costKey = $"StockMovement:{movement.MovementNumber}";
+                await costing.ReverseReceiptLayersAsync(movement.CompanyId, costKey);
+                await costing.RestoreConsumedLayersAsync(movement.CompanyId, costKey);
+            }
+
+            return;
+        }
 
         if (!movement.IsInbound)
         {

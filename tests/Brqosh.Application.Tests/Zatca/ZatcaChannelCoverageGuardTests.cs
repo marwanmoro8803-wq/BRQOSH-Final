@@ -266,6 +266,8 @@ public class ZatcaChannelCoverageGuardTests : IDisposable
         new("تصفيةُ حساب نزيل", ZatcaDocumentType.SalesInvoice, FolioCheckOutAsync),
         new("الفوترةُ الدورية", ZatcaDocumentType.SalesInvoice, RecurringAsync),
         new("إشعارٌ دائن", ZatcaDocumentType.CreditNote, CreditNoteAsync),
+        new("رفضُ مطالبةٍ ⟵ إشعارٌ دائن للشركة", ZatcaDocumentType.CreditNote, ClaimCreditNotesAsync),
+        new("رفضُ مطالبةٍ ⟵ إعادةُ تحميلٍ على المريض", ZatcaDocumentType.SalesInvoice, ClaimRebillsAsync),
     ];
 
     private async Task<IReadOnlyList<long>> DirectSaleAsync()
@@ -360,6 +362,64 @@ public class ZatcaChannelCoverageGuardTests : IDisposable
 
         return [note.Id];
     }
+
+    // ── دورةُ المطالبات: مستندان من تسويةٍ واحدة ─────────────────────────────
+
+    // (CEEF-230 · ط6-٧) ‏**وهذه القناةُ ورثت التوليدَ بلا سطرٍ يُضاف إليها.**
+    //
+    // ‏`ClaimSettlementService` يستدعي `PostCoreAsync` للإشعار وللفاتورة **ولا يعرف
+    // ‏بالفوترة الإلكترونية شيئاً** — وهو عينُ ما يعنيه إغلاقُ صنفِ العطل: قناةٌ كُتبت
+    // ‏بعد الإصلاح فأصابته بمجرّد أن رحّلت.
+    //
+    // ‏**وتُسجَّل هنا مع ذلك**: القياسُ الشامل كان سيكشف سقوطَها، **ولا يُسمّيها**.
+    // ‏وحارسٌ يقول «فاتورةٌ ٩ بلا مستند» يُرسل قارئَه ينقّب، وحارسٌ يقول «رفضُ مطالبةٍ
+    // ‏⟵ إعادةُ تحميل» يقول له أين يذهب.
+    private ClaimSettlementResult? _settlement;
+
+    /// <summary>
+    /// تُسوّى المطالبةُ مرّةً واحدةً والقناتان تقرآن حصيلتَها — <b>فالتسويةُ الواحدة تُخرج
+    /// مستندَين من نوعين</b>: إشعارٌ دائنٌ للشركة وفاتورةُ إعادةِ تحميلٍ على المريض.
+    /// </summary>
+    private async Task<ClaimSettlementResult> SettledClaimAsync()
+    {
+        if (_settlement is not null) return _settlement;
+
+        // ‏**وشهرٌ خاصٌّ بهذه القناة**: `BuildAsync` يمسح زياراتِ المدّة كلَّها، **ومدّةٌ
+        // ‏تشمل زيارةَ قناةٍ أخرى تجعل القياسَ يعتمد على ترتيب الجدول**.
+        var visit = Visit.Create(_companyId, _patientId, "V-CLM", new DateOnly(2026, 6, 10),
+            "د. أحمد", _policyId);
+        visit.AddLine("علاجٌ يُطالَب به", 1m, 2_000m, isCovered: true);
+        _db.Visits.Add(visit);
+        await _db.SaveChangesAsync();
+
+        var payerInvoiceId = (await new VisitBillingService(_db).BillAsync(_companyId, visit.Id))
+            .PayerInvoiceId ?? throw new InvalidOperationException(
+                "لا فاتورةَ تأمينٍ للزيارة — القياسُ نفسُه معطوب.");
+
+        var claims = new ClaimSettlementService(_db);
+        var claim = await claims.BuildAsync(_companyId, _payerId, "CLM-1",
+            new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 30));
+        _db.InsuranceClaims.Add(claim);
+        await _db.SaveChangesAsync();
+
+        var claimed = claim.Lines.Single().ClaimedAmount;
+        claim.Submit(new DateOnly(2026, 6, 30));
+        claim.Adjudicate(payerInvoiceId, claimed - 500m, 500m, "خدمةٌ خارج التغطية");
+        claim.CloseAdjudication(new DateOnly(2026, 6, 30));
+
+        // ‏**وإعادةُ التحميل لا الشطب**: الشطبُ يُخرج الإشعارَ وحدَه، **فتبقى قناةُ
+        // ‏الفاتورة بلا قياس** — وهي إحدى القناتين المقصودتين.
+        claim.DisposeRejection(payerInvoiceId, RejectionDisposition.RebillPatient);
+        await _db.SaveChangesAsync();
+
+        return _settlement = await claims.SettleAsync(_companyId, claim.Id, new DateOnly(2026, 7, 1));
+    }
+
+    private async Task<IReadOnlyList<long>> ClaimCreditNotesAsync() =>
+        (await SettledClaimAsync()).CreditNoteIds;
+
+    private async Task<IReadOnlyList<long>> ClaimRebillsAsync() =>
+        (await SettledClaimAsync()).RebillInvoiceIds;
 
     // ── تهيئة ────────────────────────────────────────────────────────────────
 

@@ -57,6 +57,13 @@
                     <DataGridTextColumn Header="الخدمة" Binding="{Binding Description}" Width="*"/>
                     <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity}" Width="90"/>
                     <DataGridTextColumn Header="السعر" Binding="{Binding UnitPrice}" Width="120"/>
+                    <!-- (CEEF-231 · ط3-٢ج) صنفُ الصيدلية — وبغيره يُصرف الدواء ولا ينقص
+                         من المستودع، فتكلفةُ المبيعات صفر والربحُ مئةٌ بالمئة. اترك
+                         العمودَ فارغاً لسطر الخدمة. -->
+                    <DataGridComboBoxColumn x:Name="ProductColumn" Header="صنف الصيدلية" Width="200"
+                                            SelectedValueBinding="{Binding ProductId}"
+                                            DisplayMemberPath="Label" SelectedValuePath="Id"/>
+                    <DataGridTextColumn Header="رقم الدفعة" Binding="{Binding BatchNumber}" Width="120"/>
                     <DataGridCheckBoxColumn Header="مشمولة بالوثيقة" Binding="{Binding IsCovered}" Width="140"/>
                 </DataGrid.Columns>
             </DataGrid>

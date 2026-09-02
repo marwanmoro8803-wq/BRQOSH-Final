@@ -89,6 +89,8 @@ public class BrqoshDbContext : DbContext
     public DbSet<InsurancePayer> InsurancePayers => Set<InsurancePayer>();
     public DbSet<InsurancePolicy> InsurancePolicies => Set<InsurancePolicy>();
     public DbSet<Visit> Visits => Set<Visit>();
+    public DbSet<Brqosh.Domain.Payroll.EmployeeAdvance> EmployeeAdvances =>
+        Set<Brqosh.Domain.Payroll.EmployeeAdvance>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
 
     // (CEEF-230 · ط3-٣) ‏الضيافة.
@@ -683,9 +685,26 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
                 lines.Property(l => l.TaxExemptionReasonCode).HasMaxLength(32);
+
+                // (CEEF-231 · ط3-٢ج) ‏دفعةُ الدواء المصروف — الطولُ نفسُه في كلّ مستند.
+                lines.Property(l => l.BatchNumber).HasMaxLength(64);
             });
 
             entity.Navigation(v => v.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط2-٥) ‏سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.
+        modelBuilder.Entity<Brqosh.Domain.Payroll.EmployeeAdvance>(entity =>
+        {
+            entity.ToTable("employee_advances");
+            entity.Property(a => a.AdvanceNumber).HasMaxLength(32).IsRequired();
+            entity.Property(a => a.Reason).HasMaxLength(256);
+            entity.Property(a => a.Amount).HasPrecision(18, 2);
+            entity.Property(a => a.InstallmentAmount).HasPrecision(18, 2);
+            entity.Property(a => a.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(a => a.BranchId);
+            entity.HasIndex(a => new { a.CompanyId, a.AdvanceNumber }).IsUnique();
+            entity.HasIndex(a => new { a.CompanyId, a.EmployeeId, a.Status });
         });
 
         // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
@@ -1484,6 +1503,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(p => p.Lines, lines =>
             {
                 lines.ToTable("payroll_lines");
+                lines.Property(l => l.AdvanceDeduction).HasPrecision(18, 2);
                 lines.WithOwner().HasForeignKey("payroll_run_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");

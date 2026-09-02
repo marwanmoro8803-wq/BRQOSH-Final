@@ -105,6 +105,17 @@ public class VisitBillingService(BrqoshDbContext db)
                     patientGroups, $"حصّة المريض — زيارة {visit.VisitNumber}", token);
             }
 
+            // (CEEF-231 · ط3-٢ج) ‏**وما صُرف من الصيدلية يخرج من المستودع هنا.**
+            //
+            // ‏والموضعُ قرارٌ: **الزيارةُ لا الفاتورة**. فالمبلغُ يُقسَم على فاتورتين
+            // ‏بنسبة التغطية **والكمّيةُ لا تُقسَم** — فصرفٌ من كلٍّ منهما يُخرج الدواءَ
+            // ‏مرّتين، **ووثيقةٌ تُغطّي كلَّ شيءٍ لا تُنشئ فاتورةَ مريضٍ أصلاً** فيضيع
+            // ‏الصرفُ كلُّه لو عُلِّق بها.
+            //
+            // ‏**وداخل المعاملة**: صرفٌ بعدها يترك زيارةً مفوترةً ودواءً لم يخرج إن تعثّر.
+            await new PharmacyDispenseService(db).DispenseForVisitAsync(
+                companyId, visit, $"Visit:{visit.VisitNumber}", token);
+
             visit.MarkBilled(patientInvoiceId, payerInvoiceId);
             await db.SaveChangesAsync(token);
 

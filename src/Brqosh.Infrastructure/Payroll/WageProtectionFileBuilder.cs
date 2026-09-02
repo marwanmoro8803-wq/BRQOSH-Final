@@ -75,6 +75,13 @@ public class WageProtectionFileBuilder(BrqoshDbContext db)
 
             var other = line.TransportAllowance + line.OtherAllowance;
 
+            // (CEEF-231 · ط2-٧) ‏**والاستقطاعاتُ كلُّها، لا التأميناتِ وحدَها.**
+            //
+            // ‏أضافت `ط2-٥` استقطاعَ السُّلفة إلى `NetPay` **ولم تُضفه إلى هذا العمود**.
+            // ‏فيخرج الملفُّ بمتطابقةٍ مكسورة — `الإجماليّ − الاستقطاعات ≠ الصافي` —
+            // ‏**والجهةُ تفحصها فترفض الملفَّ كلَّه**، وسببُ الرفض لا يظهر في النظام.
+            var deductions = line.GosiEmployee + line.AdvanceDeduction;
+
             rows.AppendLine(string.Join(',',
                 employee.NationalId,
                 Csv(employee.NameAr),
@@ -82,7 +89,7 @@ public class WageProtectionFileBuilder(BrqoshDbContext db)
                 Money(line.BasicSalary),
                 Money(line.HousingAllowance),
                 Money(other),
-                Money(line.GosiEmployee),
+                Money(deductions),
                 Money(line.NetPay)));
 
             records++;

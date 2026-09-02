@@ -2352,6 +2352,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "UnitPrice" NUMERIC(18,2) NOT NULL DEFAULT 0,
                     "IsCovered" BOOLEAN NOT NULL DEFAULT true,
                     "ProductId" BIGINT NULL,
+                    "BatchNumber" character varying(64) NULL,
                     "VatCategory" character varying(16) NOT NULL,
                     "TaxExemptionReasonCode" character varying(32) NULL,
                     "TaxExemptionReason" text NULL
@@ -2368,6 +2369,19 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_visits_CompanyId_PolicyId_VisitDate" ON visits ("CompanyId", "PolicyId", "VisitDate");""", ct);
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_visits_CompanyId_BranchId" ON visits ("CompanyId", "BranchId");""", ct);
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_visit_lines_visit_id" ON visit_lines (visit_id);""", ct);
+        }
+
+        // (CEEF-231 · ط3-٢ج) ‏**رقمُ دفعة الدواء المصروف — على قاعدةٍ قائمةٍ كذلك.**
+        //
+        // ‏و`CREATE TABLE IF NOT EXISTS` أعلاه **لا يمسّ جدولاً موجوداً** — فقاعدةُ عميلٍ
+        // ‏رُقّيت من نسخةٍ سابقة تبقى بلا العمود، **ويسقط إقلاعُها** لأنّ EF يبني SELECT
+        // ‏بكلّ أعمدة النموذج. وهو درسُ `BatchNumber` نفسِه في مستندات البيع.
+        if (await TableExistsAsync("visit_lines", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("visit_lines", "BatchNumber", "character varying(64) NULL", ct);
+            else
+                await EnsureSqliteColumnAsync("visit_lines", "BatchNumber", "TEXT NULL", ct);
         }
 
         // (CEEF-230 · ط3-١) ‏العقاراتُ والوحداتُ وعقودُ الإيجار.
@@ -2477,11 +2491,38 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("payroll_lines", "EmployeeId", "BIGINT NULL", ct);
             await EnsurePgColumnAsync("payroll_lines", "OtherAllowance",
                 "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+
+            // (CEEF-230 · ط2-٥) ‏قسطُ السُّلفة المُستقطَع — وبغيره يقبض الموظّفُ راتبَه
+            // ‏كاملاً وقد أخذ سُلفتَه.
+            await EnsurePgColumnAsync("payroll_lines", "AdvanceDeduction",
+                "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS employee_advances (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "EmployeeId" BIGINT NOT NULL,
+                    "AdvanceNumber" character varying(32) NOT NULL,
+                    "RequestDate" DATE NOT NULL,
+                    "DisbursedOn" DATE NULL,
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "InstallmentAmount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "Status" character varying(16) NOT NULL DEFAULT 'Approved',
+                    "Reason" character varying(256) NULL,
+                    "JournalEntryId" BIGINT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_employee_advances_CompanyId_AdvanceNumber" ON employee_advances ("CompanyId", "AdvanceNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_employee_advances_CompanyId_EmployeeId_Status" ON employee_advances ("CompanyId", "EmployeeId", "Status");""", ct);
         }
         else
         {
             await EnsureSqliteColumnAsync("payroll_lines", "EmployeeId", "INTEGER NULL", ct);
             await EnsureSqliteColumnAsync("payroll_lines", "OtherAllowance",
+                "TEXT NOT NULL DEFAULT '0'", ct);
+            await EnsureSqliteColumnAsync("payroll_lines", "AdvanceDeduction",
                 "TEXT NOT NULL DEFAULT '0'", ct);
         }
 
