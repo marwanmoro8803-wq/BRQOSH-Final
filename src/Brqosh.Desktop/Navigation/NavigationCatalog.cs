@@ -144,6 +144,7 @@ public static class NavigationCatalog
         [
             new("patients", "المرضى"),
             new("visits", "الزيارات والفوترة"),
+            new("insurance_claims", "مطالبات التأمين"),
         ]),
 
         new("الضيافة", ModuleKey.Hospitality,
@@ -264,6 +265,7 @@ public static class NavigationCatalog
         ["leases"] = "Lease Contracts",
         ["patients"] = "Patients",
         ["visits"] = "Visits & Billing",
+        ["insurance_claims"] = "Insurance Claims",
         ["menu_items"] = "Menu & Recipes",
         ["rooms"] = "Rooms",
         ["reservations"] = "Reservations & Folios",

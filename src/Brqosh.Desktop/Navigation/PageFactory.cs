@@ -66,6 +66,7 @@ public static class PageFactory
         ["leases"] = () => new Views.Pages.LeasesPage(),
         ["patients"] = () => new Views.Pages.PatientsPage(),
         ["visits"] = () => new Views.Pages.VisitsPage(),
+        ["insurance_claims"] = () => new Views.Pages.InsuranceClaimsPage(),
         ["menu_items"] = () => new Views.Pages.MenuItemsPage(),
         ["rooms"] = () => new Views.Pages.RoomsPage(),
         ["reservations"] = () => new Views.Pages.ReservationsPage(),

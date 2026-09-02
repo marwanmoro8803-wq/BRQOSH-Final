@@ -89,6 +89,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<InsurancePayer> InsurancePayers => Set<InsurancePayer>();
     public DbSet<InsurancePolicy> InsurancePolicies => Set<InsurancePolicy>();
     public DbSet<Visit> Visits => Set<Visit>();
+    public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
 
     // (CEEF-230 · ط3-٣) ‏الضيافة.
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
@@ -685,6 +686,37 @@ public class BrqoshDbContext : DbContext
             });
 
             entity.Navigation(v => v.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
+        modelBuilder.Entity<InsuranceClaim>(entity =>
+        {
+            entity.ToTable("insurance_claims");
+            entity.Property(c => c.ClaimNumber).HasMaxLength(64).IsRequired();
+            entity.Property(c => c.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(c => c.BranchId);
+            entity.HasIndex(c => new { c.CompanyId, c.PayerId, c.ClaimNumber }).IsUnique();
+            entity.HasIndex(c => new { c.CompanyId, c.Status });
+
+            entity.OwnsMany(c => c.Lines, lines =>
+            {
+                lines.ToTable("insurance_claim_lines");
+                lines.WithOwner().HasForeignKey("claim_id");
+                lines.HasKey(l => l.Id);
+                lines.Property(l => l.ClaimedAmount).HasPrecision(18, 2);
+                lines.Property(l => l.ApprovedAmount).HasPrecision(18, 2);
+                lines.Property(l => l.RejectedAmount).HasPrecision(18, 2);
+                lines.Property(l => l.RejectionReason).HasMaxLength(512);
+                lines.Property(l => l.Disposition).HasConversion<string>().HasMaxLength(16);
+
+                // ‏**وفاتورةُ مطالبةٍ واحدةٌ في دفعةٍ واحدة — عبر الدفعات كلِّها.**
+                // ‏فحارسُ النطاق يمنع التكرارَ داخل الدفعة، **ودفعتان تحملان الفاتورةَ
+                // ‏نفسَها تُصدران إشعارين دائنين لدينٍ واحد** فيصير رصيدُ الشركة سالباً.
+                lines.HasIndex(l => l.PayerInvoiceId).IsUnique();
+                lines.HasIndex(l => l.VisitId);
+            });
+
+            entity.Navigation(c => c.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.

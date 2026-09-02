@@ -1,0 +1,64 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.ClaimBuildDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="دفعة مطالبة جديدة" Height="330" Width="640"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="دفعة مطالبة جديدة" Style="{StaticResource PageTitleText}"
+                   Margin="0,0,0,6"/>
+        <TextBlock Grid.Row="1" Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"
+                   Margin="0,0,0,14"
+                   Text="تُبنى مما فوتر على الشركة في المدة — والمبلغ المطالب به هو إجمالي الفاتورة نفسها"/>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="150"/>
+                <ColumnDefinition Width="150"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="شركة التأمين *" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="PayerBox" FontSize="14" DisplayMemberPath="Label"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                <TextBlock Text="رقم المطالبة *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="NumberBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                <TextBlock Text="من تاريخ" Style="{StaticResource FieldLabel}"/>
+                <DatePicker x:Name="FromBox" FontSize="14"/>
+            </StackPanel>
+            <StackPanel Grid.Column="3">
+                <TextBlock Text="إلى تاريخ" Style="{StaticResource FieldLabel}"/>
+                <DatePicker x:Name="ToBox" FontSize="14"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="3" Style="{StaticResource AlertStrip}" Margin="0,16,0,0" Padding="16,12"
+                VerticalAlignment="Top">
+            <TextBlock x:Name="PreviewText" TextWrapping="Wrap" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Text="اختر الشركة والمدة ثم اضغط «معاينة» لترى ما سيضم."/>
+        </Border>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,16,0,0">
+            <Button Content="حفظ الدفعة" Style="{StaticResource PrimaryButton}" Padding="20,9"
+                    Click="OnSave"/>
+            <Border Style="{StaticResource ToolbarSpacer}"/>
+            <Button Content="معاينة" Style="{StaticResource SecondaryButton}" Padding="18,9"
+                    Click="OnPreview"/>
+            <Border Style="{StaticResource ToolbarSpacer}"/>
+            <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Padding="18,9"
+                    Click="OnCancel"/>
+        </StackPanel>
+    </Grid>
+</Window>

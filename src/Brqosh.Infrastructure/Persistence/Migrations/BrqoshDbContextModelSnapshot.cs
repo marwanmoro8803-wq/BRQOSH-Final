@@ -951,6 +951,58 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("crm_opportunities", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Healthcare.InsuranceClaim", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateOnly?>("AdjudicatedOn")
+                        .HasColumnType("date");
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ClaimNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("PayerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("PeriodEnd")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateOnly?>("SubmittedOn")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Status");
+
+                    b.HasIndex("CompanyId", "PayerId", "ClaimNumber")
+                        .IsUnique();
+
+                    b.ToTable("insurance_claims", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Healthcare.InsurancePayer", b =>
                 {
                     b.Property<long>("Id")
@@ -4469,6 +4521,73 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("BoqItems");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Healthcare.InsuranceClaim", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Healthcare.InsuranceClaimLine", "Lines", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<decimal>("ApprovedAmount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<decimal>("ClaimedAmount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<long?>("CreditNoteId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<string>("Disposition")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
+
+                            b1.Property<bool>("IsAdjudicated")
+                                .HasColumnType("boolean");
+
+                            b1.Property<long>("PayerInvoiceId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<long?>("RebillInvoiceId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<decimal>("RejectedAmount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<string>("RejectionReason")
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)");
+
+                            b1.Property<long>("VisitId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<long>("claim_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PayerInvoiceId")
+                                .IsUnique();
+
+                            b1.HasIndex("VisitId");
+
+                            b1.HasIndex("claim_id");
+
+                            b1.ToTable("insurance_claim_lines", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("claim_id");
+                        });
+
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Healthcare.Visit", b =>

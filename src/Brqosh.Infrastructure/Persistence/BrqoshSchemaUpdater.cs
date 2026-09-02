@@ -2237,6 +2237,48 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("menu_items", "SaleProductId", "INTEGER NULL", ct);
         }
 
+        // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS insurance_claims (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "PayerId" BIGINT NOT NULL,
+                    "ClaimNumber" character varying(64) NOT NULL,
+                    "PeriodStart" DATE NOT NULL,
+                    "PeriodEnd" DATE NOT NULL,
+                    "Status" character varying(16) NOT NULL DEFAULT 'Draft',
+                    "SubmittedOn" DATE NULL,
+                    "AdjudicatedOn" DATE NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS insurance_claim_lines (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    claim_id BIGINT NOT NULL
+                        REFERENCES insurance_claims("Id") ON DELETE CASCADE,
+                    "VisitId" BIGINT NOT NULL,
+                    "PayerInvoiceId" BIGINT NOT NULL,
+                    "ClaimedAmount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "ApprovedAmount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "RejectedAmount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "RejectionReason" character varying(512) NULL,
+                    "Disposition" character varying(16) NOT NULL DEFAULT 'Undecided',
+                    "IsAdjudicated" BOOLEAN NOT NULL DEFAULT false,
+                    "CreditNoteId" BIGINT NULL,
+                    "RebillInvoiceId" BIGINT NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_insurance_claims_CompanyId_PayerId_ClaimNumber" ON insurance_claims ("CompanyId", "PayerId", "ClaimNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_insurance_claims_CompanyId_Status" ON insurance_claims ("CompanyId", "Status");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_insurance_claim_lines_PayerInvoiceId" ON insurance_claim_lines ("PayerInvoiceId");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_insurance_claim_lines_VisitId" ON insurance_claim_lines ("VisitId");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_insurance_claim_lines_claim_id" ON insurance_claim_lines (claim_id);""", ct);
+        }
+
         // (CEEF-230 · ط3-٢) ‏المرضى وشركاتُ التأمين والوثائقُ والزيارات.
         if (isPg)
         {

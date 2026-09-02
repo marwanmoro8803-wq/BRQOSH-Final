@@ -62,6 +62,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<RealEstate.LeaseService>();
         services.AddScoped<RealEstate.SecurityDepositService>();
         services.AddScoped<Healthcare.VisitBillingService>();
+        services.AddScoped<Healthcare.ClaimSettlementService>();
         services.AddScoped<Hospitality.FolioService>();
         services.AddScoped<Hospitality.KitchenIssueService>();
 

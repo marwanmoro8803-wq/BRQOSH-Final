@@ -701,6 +701,41 @@ static class ModuleProbes
                 $"حصّةُ المريض {result.PatientShare:N2} والمنتظر 200.00.");
             ProbeContext.Expect(result.PatientInvoiceId is not null && result.PayerInvoiceId is not null,
                 "الزيارةُ فُوتِرت بذمّةٍ واحدة — والحقُّ ذمّتان بمستندين.");
+
+            // ‏**ثمّ دورةُ المطالبة (ط3-٢ب)**: الشركةُ ترفض جزءاً، **والمرفوضُ يجب أن يخرج
+            // ‏من ذمّتها**. وهذا هو المالُ الذي يضيع في العيادات: ذمّةٌ بكامل قيمتها بعد
+            // ‏رفضٍ مُعلَن — تُقرأ سيولةً وليست شيئاً.
+            var settlement = new ClaimSettlementService(c.Db);
+            var claim = await settlement.BuildAsync(c.CompanyId, payer.Id, "PRB-CLM",
+                new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31));
+
+            // ‏‏٨٠٠ صافياً + ١٥٪ = ٩٢٠ — **وهو ما تدين به الشركةُ فعلاً**، لا الصافي.
+            ProbeContext.Expect(claim.ClaimedTotal == 920m,
+                $"الدفعةُ بُنيت بمبلغ {claim.ClaimedTotal:N2} والمنتظر 920.00 — وهو إجمالي فاتورة الشركة بالضريبة.");
+
+            claim.Submit(new DateOnly(2026, 4, 1));
+            c.Db.InsuranceClaims.Add(claim);
+            await c.Db.SaveChangesAsync();
+
+            var payerInvoiceId = claim.Lines[0].PayerInvoiceId;
+            claim.Adjudicate(payerInvoiceId, approvedAmount: 747.50m, rejectedAmount: 172.50m,
+                "خدمةٌ غيرُ مغطّاة بالوثيقة");
+            claim.CloseAdjudication(new DateOnly(2026, 4, 5));
+            claim.DisposeRejection(payerInvoiceId, RejectionDisposition.RebillPatient);
+            await c.Db.SaveChangesAsync();
+
+            await settlement.SettleAsync(c.CompanyId, claim.Id, new DateOnly(2026, 4, 5));
+
+            var payerBalance = (await new CustomerBalanceQuery(c.Db)
+                .ForCustomerAsync(c.CompanyId, payerCustomer.Id)).Balance;
+            ProbeContext.Expect(payerBalance == 747.50m,
+                $"ذمّةُ الشركة {payerBalance:N2} والمنتظر 747.50 — والمرفوضُ لم يخرج منها بالفلس.");
+
+            var patientBalance = (await new CustomerBalanceQuery(c.Db)
+                .ForCustomerAsync(c.CompanyId, patientCustomer.Id)).Balance;
+            // ‏حصّتُه ٢٠٠ صافياً (٢٣٠ إجمالاً) والمُعادُ تحميلُه ١٧٢٫٥٠.
+            ProbeContext.Expect(patientBalance == 402.50m,
+                $"ذمّةُ المريض {patientBalance:N2} والمنتظر 402.50 — حصّتُه 230 والمُعادُ تحميلُه 172.50.");
         }),
 
         // ─ الضيافة: بيعُ طبقٍ يصرف مكوّناتِه ─

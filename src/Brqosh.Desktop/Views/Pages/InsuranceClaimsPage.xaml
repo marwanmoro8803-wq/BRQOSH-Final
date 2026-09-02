@@ -1,0 +1,72 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.InsuranceClaimsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="220"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطالبات التأمين" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="المرفوض يخرج من ذمة الشركة بإشعار دائن — إما تحميلاً على المريض أو شطباً"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="BuildBtn" Content="＋ دفعة مطالبة" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnBuild"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="SettleBtn" DockPanel.Dock="Right" Content="معالجة المرفوض"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnSettle"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="AdjudicateBtn" DockPanel.Dock="Right" Content="قرار الشركة"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAdjudicate"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="SubmitBtn" DockPanel.Dock="Right" Content="تقديم الدفعة"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnSubmit"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      GridLinesVisibility="Horizontal" SelectionChanged="OnClaimSelected">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم المطالبة" Binding="{Binding ClaimNumber}" Width="140"/>
+                    <DataGridTextColumn Header="الشركة" Binding="{Binding PayerName}" Width="*"/>
+                    <DataGridTextColumn Header="المدة" Binding="{Binding Period}" Width="180"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="110"/>
+                    <DataGridTextColumn Header="زيارات" Binding="{Binding LineCount}" Width="80"/>
+                    <DataGridTextColumn Header="المطالَب" Binding="{Binding Claimed, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="المعتمَد" Binding="{Binding Approved, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="المرفوض" Binding="{Binding Rejected, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="بلا قرار" Binding="{Binding Undecided, StringFormat=N2}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+        <TextBlock Grid.Row="3" x:Name="LinesCaption" Margin="4,12,4,6" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextSecondaryBrush}" Text="سطور الدفعة"/>
+        <Border Grid.Row="4" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      GridLinesVisibility="Horizontal" FontSize="13">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الزيارة" Binding="{Binding VisitNumber}" Width="130"/>
+                    <DataGridTextColumn Header="المطالَب" Binding="{Binding Claimed, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="المعتمَد" Binding="{Binding Approved, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="المرفوض" Binding="{Binding Rejected, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="سبب الرفض" Binding="{Binding Reason}" Width="*"/>
+                    <DataGridTextColumn Header="المصير" Binding="{Binding DispositionText}" Width="130"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
