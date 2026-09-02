@@ -58,7 +58,13 @@ public class KitchenIssueService(BrqoshDbContext db)
                 ? await db.Warehouses.SingleAsync(w => w.Id == id && w.CompanyId == companyId, token)
                 : await inv.GetDefaultWarehouseAsync(companyId);
 
-            await EnsureUntrackedAsync(companyId, required, token);
+            // (CEEF-231 · ط1-٣ج) ‏**والمتتبَّعُ يُصرف بالأقدم انتهاءً — ولم يكن يُصرف.**
+            //
+            // ‏كان يُرفض باسمه: «والصرفُ بالأقدم انتهاءً لم يُبنَ». **فمطعمٌ يتتبّع صلاحيةَ
+            // ‏لحمه لا يستطيع تشغيلَ وصفةٍ واحدة** — والتتبّعُ هو ما يفعله كلُّ مطعمٍ
+            // ‏جادّ. وقد بُني `BatchAllocationService`، فصار الرفضُ تخصيصاً.
+            var tracked = await TrackedProductsAsync(companyId, required, token);
+            var allocator = new BatchAllocationService(db);
 
             var costing = new InventoryCostingService(db);
             var issueLines = new List<(long, decimal, decimal, string?, DateOnly?)>();
@@ -69,7 +75,21 @@ public class KitchenIssueService(BrqoshDbContext db)
                 var (lineCost, unitCost) = await costing.ConsumeForIssueAsync(
                     companyId, productId, warehouse.Id, quantity, sourceDocument, token);
                 totalCost += lineCost;
-                issueLines.Add((productId, quantity, unitCost, null, null));
+
+                if (!tracked.Contains(productId))
+                {
+                    issueLines.Add((productId, quantity, unitCost, null, null));
+                    continue;
+                }
+
+                // ‏**وسطرٌ لكلّ دفعةٍ تُسحب منها** — فالمَخنَقُ يُنقص كلَّ دفعةٍ بعينها،
+                // ‏**وسطرٌ واحدٌ بمجموعٍ يُفقد الأثر** الذي بُني التتبّعُ لأجله.
+                foreach (var draw in await allocator.AllocateAsync(
+                             companyId, productId, warehouse.Id, quantity, date, token))
+                {
+                    issueLines.Add((productId, draw.Quantity, unitCost,
+                        draw.BatchNumber, draw.ExpiryDate));
+                }
             }
 
             var movement = await inv.PostDocumentMovementAsync(companyId, warehouse.Id,
@@ -186,27 +206,20 @@ public class KitchenIssueService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// <b>ومكوّنٌ متتبَّعٌ بالدفعة يُرفض باسمه</b> — ولا يُبتلع بلا رقم.
+    /// (CEEF-231 · ط1-٣ج) <b>أيُّ المكوّنات متتبَّعٌ — فيُخصَّص بالأقدم انتهاءً.</b>
     ///
-    /// <para>وهو القرارُ نفسُه المُعلَن في <c>ط1-٣</c> لأربعة مساراتٍ أخرى: <b>بضاعةٌ تخرج
-    /// بلا هويّةٍ تُفقد أثرَها</b>، فلا يُعرف عند سحبِ دفعةٍ ما الذي صُرف منها. والصرفُ
-    /// بالأقدمِ انتهاءً (FEFO) لم يُبنَ بعد، <b>واختيارٌ عشوائيٌّ للدفعة أسوأُ من الرفض</b>.</para>
+    /// <para><b>وكان هذا الفحصُ رفضاً</b>: مكوّنٌ متتبَّعٌ يمنع الوصفةَ كلَّها، لأنّ الصرفَ
+    /// بالأقدم انتهاءً لم يكن مبنياً <b>واختيارٌ عشوائيٌّ للدفعة يُفقد الأثر</b>. وقد بُني،
+    /// فصار الفحصُ فرزاً لا سدّاً.</para>
     /// </summary>
-    private async Task EnsureUntrackedAsync(long companyId, Dictionary<long, decimal> required,
-        CancellationToken ct)
-    {
-        var tracked = await db.Products
+    private async Task<HashSet<long>> TrackedProductsAsync(long companyId,
+        Dictionary<long, decimal> required, CancellationToken ct) =>
+        [.. await db.Products.IgnoreQueryFilters()
             .Where(p => p.CompanyId == companyId
                         && required.Keys.Contains(p.Id)
                         && p.Tracking != InventoryTracking.None)
-            .Select(p => p.NameAr)
-            .ToListAsync(ct);
-
-        if (tracked.Count > 0)
-            throw new AccountingException(
-                $"مكوّناتٌ متتبَّعةٌ بالدفعة أو الصلاحية لا تُصرف من الوصفة بعد: {string.Join("، ", tracked)} — "
-                + "والصرفُ بالأقدم انتهاءً لم يُبنَ، واختيارٌ عشوائيٌّ للدفعة يُفقد الأثر.");
-    }
+            .Select(p => p.Id)
+            .ToListAsync(ct)];
 
     private async Task<long> PostCostAsync(long companyId, DateOnly date, decimal totalCost,
         string sourceDocument, CancellationToken ct)
