@@ -20,6 +20,9 @@ internal static class NavKeyModuleMap
         ["audit_log"] = ModuleKey.GeneralLedger,
         ["soft_deleted_rows"] = ModuleKey.GeneralLedger,
         ["fx_revaluation"] = ModuleKey.Treasury,
+        ["bank_statements"] = ModuleKey.Treasury,
+        ["cash_position"] = ModuleKey.Treasury,
+        ["data_migration"] = ModuleKey.GeneralLedger,
         ["data_quality"] = ModuleKey.GeneralLedger,
 
         // (CEEF-230 · ط6-١) ‏النسخُ الاحتياطيّ — **كان غائباً عن هذه الخريطة وحدَها**.

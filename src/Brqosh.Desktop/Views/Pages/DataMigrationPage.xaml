@@ -1,0 +1,57 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.DataMigrationPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="ترحيل البيانات" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="نقل دليل الحسابات والعملاء من نظام سابق"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="ImportCustomersBtn" Content="استيراد العملاء"
+                            Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnImportCustomers"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ImportAccountsBtn" DockPanel.Dock="Right" Content="استيراد دليل الحسابات"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnImportAccounts"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,10" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Text="اختر ملفًا بصيغة CSV. والصف الأول عناوين، وما تعذّر يُعرض بسطره وسببه."/>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,0,0,10" Padding="16,12">
+            <StackPanel>
+                <TextBlock Text="الأعمدة المتوقعة" FontWeight="Bold"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                <TextBlock Text="دليل الحسابات: الكود · الاسم · النوع · كود الحساب الأب"
+                           Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+                <TextBlock Text="العملاء: الاسم · الرقم الضريبي · الجوال · العنوان"
+                           Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم السطر" Binding="{Binding LineNumber}" Width="120"/>
+                    <DataGridTextColumn Header="النتيجة" Binding="{Binding State}" Width="120"/>
+                    <DataGridTextColumn Header="السبب" Binding="{Binding Error}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
