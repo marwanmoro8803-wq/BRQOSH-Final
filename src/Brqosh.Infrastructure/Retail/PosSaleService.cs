@@ -74,6 +74,10 @@ public class PosSaleService(BrqoshDbContext db)
 
             invoice.MarkPosSale(shiftId, paymentMethod);
 
+            // (CEEF-230 · ط6-٧) ‏**والتوليدُ يقع هنا الآن** — داخل `PostCoreAsync` نفسِه،
+            // ‏فلا يُستدعى بعده. وكان يُستدعى صراحةً في آخر هذه المعاملة، **وهو ما جعله
+            // ‏عادةً تُنسخ لا مساراً يُسلَك**: نسختْه نقطةُ البيع ونسيته الزيارةُ الطبّية
+            // ‏وحسابُ النزيل والفوترةُ الدورية.
             await new Sales.SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
             shift.RecordSale(invoice.GrandTotal(), paymentMethod);
             await db.SaveChangesAsync(token);
@@ -81,11 +85,6 @@ public class PosSaleService(BrqoshDbContext db)
             await new AuditService(db).LogAsync(companyId, username, "بيع POS",
                 "SalesInvoice", invoice.InvoiceNumber ?? invoice.Id.ToString(),
                 $"مبلغ: {invoice.GrandTotal():N2} — {PaymentLabel(paymentMethod)}");
-
-            await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
-                db, companyId,
-                () => new ZatcaEInvoiceGenerator(db).TryGenerateForSalesInvoiceAsync(invoice.Id),
-                token);
 
             return invoice;
         }, ct);

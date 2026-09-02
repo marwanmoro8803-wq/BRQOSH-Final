@@ -111,12 +111,11 @@ public class GoldenPathSellZatcaCollectTests : IDisposable
         await _db.Database.BeginTransactionAsync();
         try
         {
+            // (CEEF-230 · ط6-٧) ‏**والتوليدُ داخل `PostCoreAsync` نفسِه** — لا سطرٌ بعده.
+            // ‏وكان هذا الاختبار يستدعي المنسّقَ صراحةً، **فكان يقيس عادةَ الكاتب لا
+            // ‏سلوكَ النظام**: مسارٌ لا يسلكه أحدٌ من قنوات الترحيل الستّ.
             await new SalesInvoicePostingService(_db).PostCoreAsync(invoice);
             await _db.SaveChangesAsync();
-
-            await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
-                _db, _companyId,
-                () => new ZatcaEInvoiceGenerator(_db).TryGenerateForSalesInvoiceAsync(invoice.Id));
 
             var zatca = await _db.ZatcaEInvoiceDocuments.SingleAsync(d => d.SourceDocumentId == invoice.Id);
             // (CEEF-229 · م0-١٠) المحاكاة ليست اعتماداً — انظر PosZatcaTests.

@@ -26,11 +26,8 @@ public class CreditNotePostingService(BrqoshDbContext db)
         SecurityContext.EnsureCanPost();
         await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
         {
+            // (CEEF-230 · ط6-٧) ‏التوليدُ نزل إلى `PostCoreAsync` — انظر الشرحَ هناك.
             await PostCoreAsync(note, ct);
-            await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
-                db, note.CompanyId,
-                () => new ZatcaEInvoiceGenerator(db).TryGenerateForCreditNoteAsync(note.Id),
-                ct);
             return note;
         });
 
@@ -136,6 +133,15 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 $"CreditNote:{noteNumber}", returnLines);
             await db.SaveChangesAsync(ct);
         }
+
+        // (CEEF-230 · ط6-٧) ‏**والمستندُ الإلكترونيُّ من المسار المشترك** — كما في فاتورة
+        // ‏المبيعات، وللسبب نفسِه. **وللإشعار قناةٌ واحدةٌ اليوم** لا خمس، لكنّ موضعَ
+        // ‏التوليد يُوحَّد على الاصطلاح: **حيث يقع الترحيلُ يقع التوليد**. فمَن يبني قناةَ
+        // ‏إشعارٍ غداً — إلغاءُ مطالبةٍ أو تسويةُ تأمين — لا يحتاج أن يعلم بهذا السطر.
+        await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
+            db, note.CompanyId,
+            () => new ZatcaEInvoiceGenerator(db).TryGenerateForCreditNoteAsync(note.Id),
+            ct);
     }
 
     /// <summary>

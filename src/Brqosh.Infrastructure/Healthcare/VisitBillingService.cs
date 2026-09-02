@@ -2,9 +2,11 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Healthcare;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Tax;
+using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Healthcare;
@@ -45,7 +47,7 @@ public class VisitBillingService(BrqoshDbContext db)
     {
         SecurityContext.EnsureCanPost();
 
-        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        var result = await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var visit = await db.Visits
                 .SingleOrDefaultAsync(v => v.Id == visitId && v.CompanyId == companyId, token)
@@ -109,6 +111,20 @@ public class VisitBillingService(BrqoshDbContext db)
             return new VisitBillingResult(visit.Id, visit.Total, split.PatientShare,
                 split.PayerShare, split.Basis, patientInvoiceId, payerInvoiceId);
         }, ct);
+
+        // (CEEF-230 · ط6-٧) ‏**والمستندُ وُلِّد داخل المعاملة، والإبلاغُ من هنا** — بعد
+        // ‏الـcommit وحدَه، فالنداءُ الشبكيُّ لا يُحبس معاملةً مفتوحة.
+        //
+        // ‏**والفاتورتان تُبلَّغان كلتاهما**: حصّةُ المريض ومطالبةُ الشركة **فاتورتا ضريبةٍ
+        // ‏لا واحدة** — وإبلاغُ إحداهما يترك الأخرى ديناً معلوماً للهيئة بلا مستند.
+        foreach (var invoiceId in new[] { result.PatientInvoiceId, result.PayerInvoiceId })
+        {
+            if (invoiceId is long id)
+                await ZatcaPostingOrchestrator.SubmitAfterCommitAsync(
+                    db, companyId, ZatcaDocumentType.SalesInvoice, id, ct);
+        }
+
+        return result;
     }
 
     /// <summary>

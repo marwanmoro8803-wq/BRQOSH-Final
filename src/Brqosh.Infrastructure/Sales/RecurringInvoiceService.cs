@@ -1,7 +1,9 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Sales;
@@ -57,6 +59,12 @@ public class RecurringInvoiceService(BrqoshDbContext db)
         var advanced = 0;
         var refusals = new List<string>();
 
+        // (CEEF-230 · ط6-٧) ‏**ما وُلِّد يُجمع ليُبلَّغ بعد التشغيلة كلِّها** — لا داخل
+        // ‏معاملة الخطة: النداءُ الشبكيُّ لا يجري إلّا بعد الـcommit، **ولا داخل الـ`try`
+        // ‏الذي يُسمّي المتعذِّر**: تعثُّرُ إبلاغٍ ليس تعذُّرَ توليد، وخلطُهما يُخبر
+        // ‏المستخدمَ أنّ فاتورةً لم تُولَّد وهي في الدفاتر.
+        var issued = new List<long>();
+
         foreach (var plan in plans)
         {
             var madeForThisPlan = 0;
@@ -73,7 +81,7 @@ public class RecurringInvoiceService(BrqoshDbContext db)
 
                 try
                 {
-                    await GenerateOneAsync(plan, occurrence, ct);
+                    issued.Add(await GenerateOneAsync(plan, occurrence, ct));
                     created++;
                     madeForThisPlan++;
                 }
@@ -89,6 +97,10 @@ public class RecurringInvoiceService(BrqoshDbContext db)
                 refusals.Add($"«{plan.Code}» بلغت سقفَ {MaxPerRun} تكراراً في التشغيلة — راجعْ تاريخَ بدايتها.");
         }
 
+        foreach (var invoiceId in issued)
+            await ZatcaPostingOrchestrator.SubmitAfterCommitAsync(
+                db, companyId, ZatcaDocumentType.SalesInvoice, invoiceId, ct);
+
         return new RecurringGenerationResult(created, advanced, refusals);
     }
 
@@ -99,7 +111,8 @@ public class RecurringInvoiceService(BrqoshDbContext db)
     /// <c>(PlanId, OccurrenceDate)</c> هو ما يمنع الازدواجَ فعلاً — لا فحصٌ في الذاكرة
     /// يسبقه تشغيلٌ آخر. <b>وفوترةُ العميل مرّتين عن شهرٍ واحد عطلٌ يراه العميلُ قبلنا.</b></para>
     /// </summary>
-    private async Task GenerateOneAsync(RecurringInvoicePlan plan, DateOnly occurrence, CancellationToken ct) =>
+    private async Task<long> GenerateOneAsync(
+        RecurringInvoicePlan plan, DateOnly occurrence, CancellationToken ct) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             if (plan.Lines.Count == 0)
@@ -118,6 +131,8 @@ public class RecurringInvoiceService(BrqoshDbContext db)
 
             plan.MarkGenerated();
             await db.SaveChangesAsync(token);
+
+            return invoice.Id;
         }, ct);
 
     private static string FirstLine(Exception ex)

@@ -1,9 +1,11 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Hospitality;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Hospitality;
@@ -160,7 +162,7 @@ public class FolioService(BrqoshDbContext db)
     {
         SecurityContext.EnsureCanPost();
 
-        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        var invoiceId = await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var reservation = await db.Reservations
                 .SingleOrDefaultAsync(r => r.Id == reservationId && r.CompanyId == companyId, token)
@@ -194,6 +196,13 @@ public class FolioService(BrqoshDbContext db)
 
             return invoice.Id;
         }, ct);
+
+        // (CEEF-230 · ط6-٧) ‏**والمستندُ وُلِّد مع الترحيل، والإبلاغُ بعد الـcommit** —
+        // ‏فاتورةُ المغادرة فاتورةُ ضريبةٍ كاملة، **والنزيلُ يغادر بها**.
+        await ZatcaPostingOrchestrator.SubmitAfterCommitAsync(
+            db, companyId, ZatcaDocumentType.SalesInvoice, invoiceId, ct);
+
+        return invoiceId;
     }
 
     private static string FirstLine(Exception ex)

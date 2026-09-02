@@ -45,11 +45,10 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
         SecurityContext.EnsureCanPost();
         await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
         {
+            // (CEEF-230 · ط6-٧) ‏**والتوليدُ نزل إلى `PostCoreAsync`** فصار كلُّ قناةٍ
+            // ‏تُصيبه، وارتفع من هنا. ولو بقي في الموضعين لرمى المولّدُ «مستند ZATCA
+            // ‏موجود مسبقاً» على **كلّ** فاتورةٍ تُرحَّل من هذا الباب.
             await PostCoreAsync(invoice, ct);
-            await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
-                db, invoice.CompanyId,
-                () => new ZatcaEInvoiceGenerator(db).TryGenerateForSalesInvoiceAsync(invoice.Id),
-                ct);
             return invoice;
         });
 
@@ -177,6 +176,26 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             [.. invoice.Lines.Where(l => l.ProductId is not null)
                 .Select(l => (ProductId: l.ProductId!.Value, Quantity: l.Quantity))],
             $"SalesInvoice:{invoiceNumber}", ct: ct);
+
+        // (CEEF-230 · ط6-٧) ‏**والمستندُ الإلكترونيُّ يُولَّد من هنا لا من فوق** — فكلُّ
+        // ‏فاتورةِ ضريبةٍ في النظام تلتقي في هذا المسار: الفاتورةُ المباشرة وأمرُ البيع
+        // ‏ونقطةُ البيع **والزيارةُ الطبّية وحسابُ النزيل والفوترةُ الدورية**. وكانت
+        // ‏الثلاثُ الأخيرةُ تُصدر فاتورةَ ضريبةٍ **بلا مستندٍ إلكترونيّ البتّة** — مخالفةُ
+        // ‏الطور الثاني بعينها: فاتورةٌ تُسلَّم للعميل ولا تعرفها الهيئةُ أبداً.
+        //
+        // ‏**والعطلُ يُغلق صنفاً لا حالةً**: قناةٌ تُكتب غداً تُصيب التوليدَ بمجرّد أن
+        // ‏ترحّل، ولا تعتمد على أن يتذكّر كاتبُها سطراً.
+        //
+        // ‏**وموضعُ التوليد واحدٌ لأنّ المولّدَ يرمي على المكرَّر** ولا يُعيد الموجود.
+        // ‏والرميةُ صوابٌ يُحتفظ به — مستندان لفاتورةٍ واحدةٍ يُبلَّغان برقمَي عدّادٍ
+        // ‏مختلفين فتنكسر سلسلةُ البصمات — **فيُنقل التوليدُ لا يُنسخ**.
+        //
+        // ‏**والإرسالُ يبقى فوق**: هذا داخل المعاملة، والنداءُ الشبكيُّ لا يجري إلّا بعد
+        // ‏الـcommit، وهو عرفُ هذا المستودع منذ أوّله.
+        await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
+            db, invoice.CompanyId,
+            () => new ZatcaEInvoiceGenerator(db).TryGenerateForSalesInvoiceAsync(invoice.Id),
+            ct);
     }
 
 
