@@ -54,16 +54,28 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
             .ToListAsync())
         .Sum(n => n.Subtotal + n.VatAmount);
 
-    public async Task<IReadOnlyDictionary<long, decimal>> AllBalancesAsync(long companyId)
+    /// <summary>
+    /// أرصدةُ الموردين كلِّهم.
+    /// </summary>
+    /// <param name="asOf">
+    /// (CEEF-231 · ط4-٣ب) <b>حتّى تاريخٍ معلوم</b> — و<c>null</c> يعني الآن.
+    /// <b>ولا يُقاس عمرُ دَينٍ بميزانٍ من زمنٍ آخر</b>: تقريرُ أعمارٍ في ٣٠ يونيو تُقابَل
+    /// خاناتُه برصيدِ اليوم فيُخرج فرقاً يُنسب إلى التقرير <b>وهو في المرجع</b>.
+    /// <b>والدرسُ مأخوذٌ من جانب العملاء</b> حيث أخرجته طفرةٌ نجت.
+    /// </param>
+    public async Task<IReadOnlyDictionary<long, decimal>> AllBalancesAsync(
+        long companyId, DateOnly? asOf = null)
     {
         var invoiced = await db.PurchaseInvoices
-            .Where(i => i.CompanyId == companyId && i.Status == PurchaseInvoiceStatus.Posted)
+            .Where(i => i.CompanyId == companyId && i.Status == PurchaseInvoiceStatus.Posted
+                        && (asOf == null || i.InvoiceDate <= asOf))
             .GroupBy(i => i.SupplierId)
             .Select(g => new { SupplierId = g.Key, Total = g.Sum(i => i.Subtotal + i.VatAmount) })
             .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
 
         var paidVouchers = await db.PaymentVouchers
-            .Where(v => v.CompanyId == companyId && v.Status == PaymentVoucherStatus.Posted)
+            .Where(v => v.CompanyId == companyId && v.Status == PaymentVoucherStatus.Posted
+                        && (asOf == null || v.VoucherDate <= asOf))
             .GroupBy(v => v.SupplierId)
             // (CEEF-230 · ط4-٥) ‏**ما حُرِّر من الذمّة لا ما خرج من الصندوق** — والدرسُ
             // ‏مأخوذٌ من `ط1-٤` وممّا كشفه `ط4-٣`: هناك طُبّق الإصلاحُ على مسارٍ واحدٍ من
@@ -79,7 +91,8 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
         var chequePaid = await db.Cheques
             .Where(c => c.CompanyId == companyId && c.SupplierId != null
                         && c.Type == ChequeType.Issued
-                        && IssuedChequePaymentStatuses.Contains(c.Status))
+                        && IssuedChequePaymentStatuses.Contains(c.Status)
+                        && (asOf == null || c.ChequeDate <= asOf))
             .GroupBy(c => c.SupplierId!.Value)
             .Select(g => new { SupplierId = g.Key, Total = g.Sum(c => c.Amount) })
             .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
@@ -88,7 +101,8 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
 
         // (CEEF-229 · م0-٨) إشعارات المدين — انظر التعليق في ForSupplierAsync.
         var debited = (await db.DebitNotes
-                .Where(n => n.CompanyId == companyId && n.Status == DebitNoteStatus.Posted)
+                .Where(n => n.CompanyId == companyId && n.Status == DebitNoteStatus.Posted
+                            && (asOf == null || n.NoteDate <= asOf))
                 .Select(n => new { n.SupplierId, n.Subtotal, n.VatAmount })
                 .ToListAsync())
             .GroupBy(n => n.SupplierId)

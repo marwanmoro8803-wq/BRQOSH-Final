@@ -1,0 +1,48 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PayableAgingPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أعمار ديون الموردين" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="لمن هو عليك ومنذ متى — والعمر من تاريخ المستند"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="RunBtn" Content="عرض" Style="{StaticResource PrimaryButton}"
+                            Padding="24,9" Click="OnRun"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="14"
+                            VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="حتى تاريخ" VerticalAlignment="Center"
+                           Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="المورد" Binding="{Binding SupplierNameAr}" Width="*"/>
+                    <DataGridTextColumn Header="جارية (٣٠ يومًا)" Binding="{Binding Current, StringFormat=N2}" Width="150"/>
+                    <DataGridTextColumn Header="٣١ – ٦٠" Binding="{Binding Days31To60, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="٦١ – ٩٠" Binding="{Binding Days61To90, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="أكثر من ٩٠" Binding="{Binding Over90, StringFormat=N2}" Width="140"/>
+                    <DataGridTextColumn Header="رصيد مدين غير مطبَّق" Binding="{Binding UnappliedDebit, StringFormat=N2}" Width="170"/>
+                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding Total, StringFormat=N2}" Width="140"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

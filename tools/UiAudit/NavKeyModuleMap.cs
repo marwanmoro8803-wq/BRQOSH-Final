@@ -49,6 +49,7 @@ internal static class NavKeyModuleMap
         ["customers"] = ModuleKey.Sales,
         ["customer_statement"] = ModuleKey.Sales,
         ["receivable_aging"] = ModuleKey.Sales,
+        ["payable_aging"] = ModuleKey.Purchasing,
         ["sales_quotations"] = ModuleKey.Sales,
         ["sales_orders"] = ModuleKey.Sales,
         ["sales_invoices"] = ModuleKey.Sales,
@@ -105,6 +106,7 @@ internal static class NavKeyModuleMap
         ["cost_center_statement"] = ModuleKey.GeneralLedger,
         ["budget_variance"] = ModuleKey.GeneralLedger,
         ["payslips"] = ModuleKey.Payroll,
+        ["employee_advances"] = ModuleKey.Payroll,
         ["wage_protection"] = ModuleKey.Payroll,
     };
 

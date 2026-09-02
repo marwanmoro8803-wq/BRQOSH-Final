@@ -76,6 +76,7 @@ public static class NavigationCatalog
         [
             new("suppliers", "الموردون"),
             new("supplier_statement", "كشف حساب مورد"),
+            new("payable_aging", "أعمار ديون الموردين"),
             new("purchase_requests", "طلبات الشراء"),
             new("purchase_orders", "أوامر الشراء"),
             new("goods_receipts", "أذونات استلام البضاعة"),
@@ -164,6 +165,7 @@ public static class NavigationCatalog
             new("employees", "سجل الموظفين"),
             new("payroll", "دورات الرواتب"),
             new("payslips", "قسائم الرواتب"),
+            new("employee_advances", "سلف الموظفين"),
             new("wage_protection", "ملف حماية الأجور"),
         ]),
 
@@ -230,6 +232,7 @@ public static class NavigationCatalog
         ["crm_activities"] = "CRM Activities",
         ["suppliers"] = "Suppliers",
         ["supplier_statement"] = "Supplier Statement",
+        ["payable_aging"] = "Payable Aging",
         ["purchase_requests"] = "Purchase Requests",
         ["purchase_orders"] = "Purchase Orders",
         ["goods_receipts"] = "Goods Receipts",
@@ -277,6 +280,7 @@ public static class NavigationCatalog
         ["budget_variance"] = "Budget & Variance",
         ["employees"] = "Employees",
         ["payslips"] = "Payslips",
+        ["employee_advances"] = "Employee Advances",
         ["wage_protection"] = "Wage Protection File",
         ["company_settings"] = "Company Settings",
         ["backup"] = "Backup & Restore",
