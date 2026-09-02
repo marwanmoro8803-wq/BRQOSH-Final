@@ -65,7 +65,15 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
         var paidVouchers = await db.PaymentVouchers
             .Where(v => v.CompanyId == companyId && v.Status == PaymentVoucherStatus.Posted)
             .GroupBy(v => v.SupplierId)
-            .Select(g => new { SupplierId = g.Key, Total = g.Sum(v => v.Amount) })
+            // (CEEF-230 · ط4-٥) ‏**ما حُرِّر من الذمّة لا ما خرج من الصندوق** — والدرسُ
+            // ‏مأخوذٌ من `ط1-٤` وممّا كشفه `ط4-٣`: هناك طُبّق الإصلاحُ على مسارٍ واحدٍ من
+            // ‏اثنين، **فتناقض كشفُ الحساب مع اللوحة**. فيُطبَّق هنا على **المسارين معاً**
+            // ‏في الحفظة نفسِها، ويحرسه قياسٌ يُقابلهما.
+            .Select(g => new
+            {
+                SupplierId = g.Key,
+                Total = g.Sum(v => v.PayableRelieved == 0m ? v.Amount : v.PayableRelieved),
+            })
             .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
 
         var chequePaid = await db.Cheques
@@ -170,7 +178,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
     {
         var paid = await db.PaymentVouchers
             .Where(v => v.CompanyId == companyId && v.SupplierId == supplierId && v.Status == PaymentVoucherStatus.Posted)
-            .SumAsync(v => (decimal?)v.Amount) ?? 0m;
+            .SumAsync(v => (decimal?)(v.PayableRelieved == 0m ? v.Amount : v.PayableRelieved)) ?? 0m;
 
         paid += await db.Cheques
             .Where(c => c.CompanyId == companyId && c.SupplierId == supplierId

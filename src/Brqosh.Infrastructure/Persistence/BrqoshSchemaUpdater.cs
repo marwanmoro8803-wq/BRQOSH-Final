@@ -1955,6 +1955,65 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync(table, "CostCenterId", "INTEGER NULL", ct);
         }
 
+        // (CEEF-230 · ط4-٥) ‏عملةُ المشتريات والسداد — **وكان جانبُ الموردين بلا عملةٍ
+        // ‏إطلاقاً**: المستوردُ يُدخل فاتورةَ الدولار محوَّلةً بيده، فتضيع القيمةُ الأصلية
+        // ‏ولا يُعرف عند السداد بأيّ سعرٍ نشأت الذمّة — **ولا يُحسب فرقُ عملةٍ محقَّق**.
+        if (await TableExistsAsync("purchase_invoices", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("purchase_invoices", "CurrencyCode",
+                    "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+                await EnsurePgColumnAsync("purchase_invoices", "ExchangeRate",
+                    "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+                await EnsurePgColumnAsync("purchase_invoices", "ForeignSubtotal",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                await EnsurePgColumnAsync("purchase_invoices", "ForeignVatAmount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("purchase_invoices", "CurrencyCode",
+                    "TEXT NOT NULL DEFAULT 'SAR'", ct);
+                await EnsureSqliteColumnAsync("purchase_invoices", "ExchangeRate",
+                    "TEXT NOT NULL DEFAULT '1'", ct);
+                await EnsureSqliteColumnAsync("purchase_invoices", "ForeignSubtotal",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("purchase_invoices", "ForeignVatAmount",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+
+            // ‏**والأساسُ الأجنبيّ للفواتير القائمة يُملأ من الرياليّ** — بسعرِ واحدٍ هما
+            // ‏رقمٌ واحد. **وتركُه صفراً يجعل كلَّ فاتورةٍ قديمةٍ تبدو بلا قيمةٍ بعملتها.**
+            var purchaseBackfill = isPg
+                ? """UPDATE purchase_invoices SET "ForeignSubtotal" = "Subtotal", "ForeignVatAmount" = "VatAmount" WHERE "ForeignSubtotal" = 0 AND "Subtotal" <> 0;"""
+                : """UPDATE purchase_invoices SET ForeignSubtotal = Subtotal, ForeignVatAmount = VatAmount WHERE CAST(ForeignSubtotal AS REAL) = 0 AND CAST(Subtotal AS REAL) <> 0;""";
+            if (isPg) await SafePgIndexAsync(purchaseBackfill, ct);
+            else await SafeSqliteIndexAsync(purchaseBackfill, ct);
+        }
+
+        if (await TableExistsAsync("payment_vouchers", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("payment_vouchers", "CurrencyCode",
+                    "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+                await EnsurePgColumnAsync("payment_vouchers", "ExchangeRate",
+                    "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+                await EnsurePgColumnAsync("payment_vouchers", "PayableRelieved",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("payment_vouchers", "CurrencyCode",
+                    "TEXT NOT NULL DEFAULT 'SAR'", ct);
+                await EnsureSqliteColumnAsync("payment_vouchers", "ExchangeRate",
+                    "TEXT NOT NULL DEFAULT '1'", ct);
+                await EnsureSqliteColumnAsync("payment_vouchers", "PayableRelieved",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+        }
+
         // (CEEF-230 · ط1-٤) ‏عملةُ سند القبض.
         if (await TableExistsAsync("receipt_vouchers", isPg, ct))
         {

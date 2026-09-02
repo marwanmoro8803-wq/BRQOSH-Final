@@ -95,9 +95,55 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         RecalculateTotals();
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط4-٥) عملةُ الفاتورة — و<c>SAR</c> هي الأصل.
+    ///
+    /// <para><b>وكان المستوردُ لا يستطيع تسجيلَ فاتورةٍ بالدولار إطلاقاً</b>: يُدخلها
+    /// محوَّلةً بيده، <b>فتضيع القيمةُ الأصلية</b> ولا يُعرف عند السداد بأيّ سعرٍ نشأت —
+    /// ولا يُحسب فرقُ عملةٍ محقَّق. وأُعلن هذا النقصُ في <c>ط1-٤</c> وبقي.</para>
+    /// </summary>
+    public string CurrencyCode { get; private set; } = "SAR";
+
+    /// <summary>سعرُ الصرف <b>يوم الفاتورة</b> — وبه نشأت الذمّة، وإليه يُقاس فرقُ السداد.</summary>
+    public decimal ExchangeRate { get; private set; } = 1m;
+
+    /// <summary>الأساسُ بعملة الفاتورة — <b>وهو ما يُطالِب به المورّد</b>.</summary>
+    public decimal ForeignSubtotal { get; private set; }
+
+    /// <summary>الضريبةُ بعملة الفاتورة.</summary>
+    public decimal ForeignVatAmount { get; private set; }
+
+    public decimal ForeignGrandTotal => ForeignSubtotal + ForeignVatAmount;
+
+    public bool IsForeignCurrency => CurrencyCode != "SAR";
+
+    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    {
+        if (Status != PurchaseInvoiceStatus.Draft)
+            throw new AccountingException("الفاتورة مرحّلة — لا تُعدَّل.");
+        if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
+            throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
+        if (exchangeRate <= 0m)
+            throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+
+        CurrencyCode = currencyCode.Trim().ToUpperInvariant();
+        ExchangeRate = exchangeRate;
+        RecalculateTotals();
+    }
+
+    /// <summary>
+    /// <b>ويُحسب بعملة الفاتورة ثمّ يُضرب في السعر</b> — لا العكس.
+    ///
+    /// <para>فالضريبةُ تُحسب على الأساس <b>بعملته</b> ثمّ يُحوَّل الاثنان. <b>وتحويلُ
+    /// السطور أوّلاً ثمّ حسابُ الضريبة يُنتج هللاتِ فرقٍ لا تُطابق فاتورةَ المورّد</b> —
+    /// وهي التي يُطالِب بها.</para>
+    /// </summary>
     public void RecalculateTotals()
     {
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+        (ForeignSubtotal, ForeignVatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+
+        Subtotal = Math.Round(ForeignSubtotal * ExchangeRate, 2, MidpointRounding.AwayFromZero);
+        VatAmount = Math.Round(ForeignVatAmount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>

@@ -421,6 +421,12 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<PurchaseInvoice>(entity =>
         {
+            // (CEEF-230 · ط4-٥) ‏عملةُ الفاتورة وسعرُها وأساسُها الأجنبيّ.
+            entity.Property(i => i.CurrencyCode).HasMaxLength(3);
+            entity.Property(i => i.ExchangeRate).HasPrecision(18, 6);
+            entity.Property(i => i.ForeignSubtotal).HasPrecision(18, 2);
+            entity.Property(i => i.ForeignVatAmount).HasPrecision(18, 2);
+
             entity.ToTable("purchase_invoices");
             entity.Property(i => i.InvoiceNumber).HasMaxLength(32);
             entity.Property(i => i.SupplierInvoiceReference).HasMaxLength(64).IsRequired();
@@ -461,6 +467,11 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<PaymentVoucher>(entity =>
         {
+            // (CEEF-230 · ط4-٥) ‏عملةُ السند وما حُرِّر من الذمّة بعملة الدفاتر.
+            entity.Property(v => v.CurrencyCode).HasMaxLength(3);
+            entity.Property(v => v.ExchangeRate).HasPrecision(18, 6);
+            entity.Property(v => v.PayableRelieved).HasPrecision(18, 2);
+
             entity.ToTable("payment_vouchers");
             entity.Property(v => v.VoucherNumber).HasMaxLength(32);
             entity.Property(v => v.Description).HasMaxLength(512).IsRequired();

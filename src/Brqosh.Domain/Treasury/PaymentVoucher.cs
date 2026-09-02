@@ -112,22 +112,92 @@ public class PaymentVoucher : IBranchScoped
     }
 
     /// <summary>الترحيل: مدين الموردين، دائن الصندوق/البنك.</summary>
-    public JournalEntry Post(string voucherNumber, Account payableAccount, Account cashOrBankAccount)
+    /// <summary>
+    /// (CEEF-230 · ط4-٥) عملةُ السند — و<c>SAR</c> هي الأصل، و<see cref="Amount"/> بها.
+    /// </summary>
+    public string CurrencyCode { get; private set; } = "SAR";
+
+    /// <summary>سعرُ الصرف <b>يوم السداد</b> — وهو غيرُ سعر يوم الفاتورة.</summary>
+    public decimal ExchangeRate { get; private set; } = 1m;
+
+    /// <summary>
+    /// <b>ما حُرِّر من ذمّة المورّد بعملة الدفاتر</b> — وهو ما قُيّد مديناً في حساب الموردين.
+    ///
+    /// <para><b>والدرسُ مأخوذٌ من <c>ط1-٤</c> حرفاً</b>: هناك انفصل الدفترُ المساعد عن
+    /// الأستاذ لأنّ المبلغَ الأجنبيَّ طُرح بلا تحويل. <b>وهنا يُخزَّن المحرَّرُ صراحةً</b>،
+    /// ويُقرأ في <b>مساري</b> دفتر الموردين معاً — لا في أحدهما.</para>
+    ///
+    /// <para><b>وصفرٌ يعني سنداً قديماً</b> فيُقرأ <see cref="Amount"/> مكانَه.</para>
+    /// </summary>
+    public decimal PayableRelieved { get; private set; }
+
+    /// <summary>المبلغُ بعملة الدفاتر — وهو ما يخرج من الصندوق فعلاً.</summary>
+    public decimal FunctionalAmount =>
+        Math.Round(Amount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
+
+    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    {
+        if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
+            throw new AccountingException("السند مرحّل — لا يُعدَّل.");
+        if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
+            throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
+        if (exchangeRate <= 0m)
+            throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+
+        CurrencyCode = currencyCode.Trim().ToUpperInvariant();
+        ExchangeRate = exchangeRate;
+    }
+
+    /// <summary>
+    /// الترحيل: مدين الموردين، دائن الصندوق/البنك — <b>وسطرُ فرقِ عملةٍ إن اختلف السعران</b>.
+    /// </summary>
+    /// <param name="payableFunctional">
+    /// <b>القيمةُ التي نشأت بها الذمّة</b> بسعرِ يوم الفاتورة. والنقدُ يخرج بسعرِ يوم
+    /// السداد، <b>والفرقُ ربحٌ أو خسارةٌ محقَّقة</b>.
+    ///
+    /// <para><b>والإشارةُ معكوسةٌ عن جانب العملاء</b>: نقدٌ يخرج <b>أقلَّ</b> من الذمّة
+    /// المحرَّرة ربحٌ للمنشأة — دفعنا أقلَّ ممّا كنّا مدينين به. <b>ونسخُ منطق العملاء
+    /// حرفاً يقلب الربحَ خسارةً في كلّ سدادٍ بالعملة.</b></para>
+    /// </param>
+    public JournalEntry Post(string voucherNumber, Account payableAccount, Account cashOrBankAccount,
+        decimal? payableFunctional = null, Account? fxGainAccount = null, Account? fxLossAccount = null)
     {
         if (Status is not PaymentVoucherStatus.Draft and not PaymentVoucherStatus.Submitted)
             throw new AccountingException("السند مرحّل — لا يُعدَّل.");
         if (string.IsNullOrWhiteSpace(voucherNumber))
             throw new AccountingException("رقم السند مطلوب عند الترحيل.");
 
+        var cash = FunctionalAmount;
+        var releasedPayable = payableFunctional ?? cash;
+        var difference = Math.Round(releasedPayable - cash, 2, MidpointRounding.AwayFromZero);
+
         var entry = JournalEntry.CreateDraft(
             CompanyId, VoucherDate,
             $"سند صرف رقم {voucherNumber} — {Description}",
             sourceDocument: $"PaymentVoucher:{voucherNumber}");
 
-        entry.AddLine(payableAccount, Amount, 0m, "سداد ذمة المورد");
-        entry.AddLine(cashOrBankAccount, 0m, Amount,
+        entry.AddLine(payableAccount, releasedPayable, 0m, "سداد ذمة المورد");
+        entry.AddLine(cashOrBankAccount, 0m, cash,
             Method == ReceiptMethod.Cash ? "صرف نقدي" : $"صرف بنكي {Reference}".Trim());
 
+        if (difference != 0m)
+        {
+            // ‏ذمّةٌ أكبرُ من النقد الخارج ⟵ **ربح** · وأصغرُ ⟵ خسارة.
+            if (difference > 0m)
+            {
+                if (fxGainAccount is null)
+                    throw new AccountingException("حساب أرباح فروق العملة المحققة مطلوب.");
+                entry.AddLine(fxGainAccount, 0m, difference, "فرق عملة محقق");
+            }
+            else
+            {
+                if (fxLossAccount is null)
+                    throw new AccountingException("حساب خسائر فروق العملة المحققة مطلوب.");
+                entry.AddLine(fxLossAccount, -difference, 0m, "فرق عملة محقق");
+            }
+        }
+
+        PayableRelieved = releasedPayable;
         VoucherNumber = voucherNumber.Trim();
         Status = PaymentVoucherStatus.Posted;
         return entry;
