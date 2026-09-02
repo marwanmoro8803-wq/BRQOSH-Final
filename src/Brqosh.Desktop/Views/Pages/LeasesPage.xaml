@@ -1,0 +1,50 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.LeasesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="عقود الإيجار" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="التفعيل ينشئ خطة فوترة دورية — والتأمين أمانة لا إيراد"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ عقد إيجار" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="TerminateBtn" DockPanel.Dock="Right" Content="إنهاء العقد"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnTerminate"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ActivateBtn" DockPanel.Dock="Right" Content="تفعيل العقد"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnActivate"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم العقد" Binding="{Binding ContractNumber}" Width="140"/>
+                    <DataGridTextColumn Header="الوحدة" Binding="{Binding UnitLabel}" Width="200"/>
+                    <DataGridTextColumn Header="المستأجر" Binding="{Binding TenantName}" Width="*"/>
+                    <DataGridTextColumn Header="من" Binding="{Binding StartDate}" Width="110"/>
+                    <DataGridTextColumn Header="إلى" Binding="{Binding EndDate}" Width="110"/>
+                    <DataGridTextColumn Header="الإيجار" Binding="{Binding Rent, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="التأمين" Binding="{Binding Deposit, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

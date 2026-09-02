@@ -1,0 +1,53 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.ShipmentsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="البوالص والتحصيل" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="ما يُحصَّل عند الاستلام أمانة للتاجر لا إيراد للشركة"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ بوليصة" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="RemitBtn" DockPanel.Dock="Right" Content="توريد للتاجر"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnRemit"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="CollectBtn" DockPanel.Dock="Right" Content="إثبات التحصيل"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnCollect"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DeliverBtn" DockPanel.Dock="Right" Content="تسليم"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnDeliver"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم البوليصة" Binding="{Binding Waybill}" Width="140"/>
+                    <DataGridTextColumn Header="المرسِل" Binding="{Binding ShipperName}" Width="*"/>
+                    <DataGridTextColumn Header="المرسَل إليه" Binding="{Binding ConsigneeName}" Width="160"/>
+                    <DataGridTextColumn Header="الوجهة" Binding="{Binding City}" Width="110"/>
+                    <DataGridTextColumn Header="أجرة الشحن" Binding="{Binding Freight, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="التحصيل" Binding="{Binding Cod, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="110"/>
+                    <DataGridTextColumn Header="مال التحصيل" Binding="{Binding CodState}" Width="140"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

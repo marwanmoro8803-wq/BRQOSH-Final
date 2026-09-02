@@ -1,0 +1,60 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PropertiesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="العقارات والوحدات" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="عقار · وحدة · حالة الإشغال — والحالة قيد لا وصف"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddPropertyBtn" Content="＋ عقار" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAddProperty"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="AddUnitBtn" DockPanel.Dock="Right" Content="＋ وحدة"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAddUnit"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="360"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource ContentCard}" Margin="0,0,10,0">
+                <DataGrid x:Name="PropertiesGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                          BorderThickness="0" SelectionChanged="OnPropertySelected">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="90"/>
+                        <DataGridTextColumn Header="العقار" Binding="{Binding NameAr}" Width="*"/>
+                        <DataGridTextColumn Header="المدينة" Binding="{Binding City}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource ContentCard}">
+                <DataGrid x:Name="UnitsGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="رقم الوحدة" Binding="{Binding UnitNumber}" Width="130"/>
+                        <DataGridTextColumn Header="المساحة (م²)" Binding="{Binding Area, StringFormat=N2}" Width="120"/>
+                        <DataGridTextColumn Header="الغرف" Binding="{Binding Bedrooms}" Width="80"/>
+                        <DataGridTextColumn Header="الإيجار السنوي المعلن" Binding="{Binding ListedRent, StringFormat=N2}" Width="180"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

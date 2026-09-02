@@ -129,6 +129,30 @@ public static class NavigationCatalog
             new("fixed_assets", "سجل الأصول"),
         ]),
 
+        new("العقارات والإيجارات", ModuleKey.RealEstate,
+        [
+            new("properties", "العقارات والوحدات"),
+            new("leases", "عقود الإيجار"),
+        ]),
+
+        new("الرعاية الصحية", ModuleKey.Healthcare,
+        [
+            new("patients", "المرضى"),
+            new("visits", "الزيارات والفوترة"),
+        ]),
+
+        new("الضيافة", ModuleKey.Hospitality,
+        [
+            new("menu_items", "قائمة الطعام والوصفات"),
+            new("rooms", "الغرف"),
+            new("reservations", "الحجوزات وحسابات النزلاء"),
+        ]),
+
+        new("اللوجستيات", ModuleKey.Logistics,
+        [
+            new("shipments", "البوالص والتحصيل"),
+        ]),
+
         new("الرواتب", ModuleKey.Payroll,
         [
             new("employees", "سجل الموظفين"),
@@ -228,6 +252,14 @@ public static class NavigationCatalog
         ["general_ledger_report"] = "General Ledger",
         ["fixed_assets"] = "Fixed Assets",
         ["payroll"] = "Payroll",
+        ["properties"] = "Properties & Units",
+        ["leases"] = "Lease Contracts",
+        ["patients"] = "Patients",
+        ["visits"] = "Visits & Billing",
+        ["menu_items"] = "Menu & Recipes",
+        ["rooms"] = "Rooms",
+        ["reservations"] = "Reservations & Folios",
+        ["shipments"] = "Waybills & COD",
         ["units_of_measure"] = "Units of Measure",
         ["stock_batches"] = "Batches & Expiry",
         ["recurring_plans"] = "Recurring Billing",
@@ -260,6 +292,10 @@ public static class NavigationCatalog
         ["إدارة علاقات العملاء"] = "CRM",
         ["المشتريات والموردون"] = "Purchasing",
         ["المخزون والمستودعات"] = "Inventory",
+        ["العقارات والإيجارات"] = "Real Estate & Leasing",
+        ["الرعاية الصحية"] = "Healthcare",
+        ["الضيافة"] = "Hospitality",
+        ["اللوجستيات"] = "Logistics",
         ["الخزينة والبنوك"] = "Treasury",
         ["الفوترة الإلكترونية"] = "E-Invoicing",
         ["التقارير المالية"] = "Financial Reports",

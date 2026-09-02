@@ -1,0 +1,69 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.MenuItemDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="صنف قائمة" Width="720" Height="520"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="صنف قائمة جديد" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="الكود *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                <TextBlock Text="اسم الصنف *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                <TextBlock Text="القسم" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="SectionBox" FontSize="14">
+                    <ComboBoxItem Content="مقبلات"/>
+                    <ComboBoxItem Content="أطباق رئيسية" IsSelected="True"/>
+                    <ComboBoxItem Content="حلويات"/>
+                    <ComboBoxItem Content="مشروبات"/>
+                    <ComboBoxItem Content="أصناف أخرى"/>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="3">
+                <TextBlock Text="سعر البيع *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="PriceBox" Style="{StaticResource AppTextBox}" Text="0"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="ComponentsGrid" AutoGenerateColumns="False" CanUserAddRows="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridComboBoxColumn x:Name="ProductColumn" Header="المكوّن المخزني"
+                                            SelectedValueBinding="{Binding ProductId}"
+                                            SelectedValuePath="Id" DisplayMemberPath="Label" Width="*"/>
+                    <DataGridTextColumn Header="الكمية لكل حصة" Binding="{Binding Quantity}" Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <DockPanel Grid.Row="3" LastChildFill="False" Margin="0,14,0,0">
+            <Button DockPanel.Dock="Left" Content="إلغاء" Style="{StaticResource SecondaryButton}"
+                    Padding="20,9" Click="OnCancel"/>
+            <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" Margin="16,0,0,0"
+                       Style="{StaticResource PageSubtitleText}"
+                       Text="والكمية لحصة واحدة لا لدفعة — ووصفة تُكتب لعشر حصص تصرف عشرة أضعاف المخزون"/>
+            <Button DockPanel.Dock="Right" Content="حفظ" Style="{StaticResource PrimaryButton}"
+                    Padding="26,9" Click="OnSave"/>
+        </DockPanel>
+    </Grid>
+</Window>

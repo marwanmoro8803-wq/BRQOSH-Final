@@ -1,0 +1,62 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PatientsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="المرضى والوثائق" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="رقم ملف لا يتكرر — وملفان لشخص واحد يفرقان تاريخه المرضي"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ مريض" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="AddPolicyBtn" DockPanel.Dock="Right" Content="＋ وثيقة تأمين"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAddPolicy"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="440"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource ContentCard}" Margin="0,0,10,0">
+                <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
+                          BorderThickness="0" SelectionChanged="OnPatientSelected">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="رقم الملف" Binding="{Binding Mrn}" Width="120"/>
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding NameAr}" Width="*"/>
+                        <DataGridTextColumn Header="الهوية" Binding="{Binding NationalId}" Width="120"/>
+                        <DataGridTextColumn Header="العمر" Binding="{Binding Age}" Width="70"/>
+                        <DataGridTextColumn Header="الجوال" Binding="{Binding Phone}" Width="130"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource ContentCard}">
+                <DataGrid x:Name="PoliciesGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الشركة" Binding="{Binding PayerName}" Width="*"/>
+                        <DataGridTextColumn Header="رقم الوثيقة" Binding="{Binding PolicyNumber}" Width="120"/>
+                        <DataGridTextColumn Header="التغطية" Binding="{Binding Coverage}" Width="80"/>
+                        <DataGridTextColumn Header="التحمل" Binding="{Binding Copay, StringFormat=N2}" Width="90"/>
+                        <DataGridTextColumn Header="السريان" Binding="{Binding Validity}" Width="180"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

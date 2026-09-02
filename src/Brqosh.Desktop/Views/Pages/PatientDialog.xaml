@@ -1,0 +1,70 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.PatientDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="مريض" Width="560" Height="440"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="مريض جديد" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+        <StackPanel Grid.Row="1">
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="180"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="رقم الملف الطبي *" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="MrnBox" Style="{StaticResource AppTextBox}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="اسم المريض *" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="160"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="رقم الهوية أو الإقامة" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="NationalIdBox" Style="{StaticResource AppTextBox}" MaxLength="10"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="الجنس *" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="GenderBox" FontSize="14">
+                        <ComboBoxItem Content="ذكر" IsSelected="True"/>
+                        <ComboBoxItem Content="أنثى"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="تاريخ الميلاد *" Style="{StaticResource FieldLabel}"/>
+                    <DatePicker x:Name="BirthBox" FontSize="14"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="رقم الجوال" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="PhoneBox" Style="{StaticResource AppTextBox}"/>
+                </StackPanel>
+            </Grid>
+            <TextBlock Text="ويُفتح للمريض حساب في دفتر العملاء — فحصته من الفاتورة ذمة تُحصَّل وتُتابع"
+                       Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+        </StackPanel>
+        <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0">
+            <Button DockPanel.Dock="Left" Content="إلغاء" Style="{StaticResource SecondaryButton}"
+                    Padding="20,9" Click="OnCancel"/>
+            <Button DockPanel.Dock="Right" Content="حفظ" Style="{StaticResource PrimaryButton}"
+                    Padding="26,9" Click="OnSave"/>
+        </DockPanel>
+    </Grid>
+</Window>

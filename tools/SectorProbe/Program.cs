@@ -36,6 +36,14 @@ using Brqosh.Domain.Crm;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Manufacturing;
 using Brqosh.Domain.Modules;
+using Brqosh.Domain.RealEstate;
+using Brqosh.Domain.Healthcare;
+using Brqosh.Domain.Hospitality;
+using Brqosh.Domain.Logistics;
+using Brqosh.Infrastructure.RealEstate;
+using Brqosh.Infrastructure.Healthcare;
+using Brqosh.Infrastructure.Hospitality;
+using Brqosh.Infrastructure.Logistics;
 using Brqosh.Domain.Payroll;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Retail;
@@ -289,6 +297,10 @@ static string Short(ModuleKey m) => m switch
     ModuleKey.Manufacturing => "تصنيع",
     ModuleKey.ProjectsConstruction => "مقاولات",
     ModuleKey.Crm => "علاقات",
+    ModuleKey.RealEstate => "عقارات",
+    ModuleKey.Healthcare => "صحّة",
+    ModuleKey.Hospitality => "ضيافة",
+    ModuleKey.Logistics => "لوجستيات",
     _ => m.ToString(),
 };
 
@@ -622,6 +634,128 @@ static class ModuleProbes
             var after = await c.Db.Customers.CountAsync(x => x.CompanyId == c.CompanyId);
             ProbeContext.Expect(after == before + 1,
                 $"العميلُ المحتمل حُوِّل ولم يظهر عميلٌ جديد: قبل {before} وبعد {after}.");
+        }),
+
+        // ─ العقارات: عقدٌ يُفعَّل فيُنشئ خطةَ فوترةٍ ويشغل الوحدة ─
+        //
+        // ‏**والأثرُ المقيس هو خطةُ الفوترة**: عقدٌ يُحفظ ولا يُنشئ خطةً يترك الإيجارَ
+        // ‏بلا فاتورةٍ شهراً بعد شهر — **وهو ربطُ `ط3-١` بـ`ط1-٥` الذي بُني القطاعُ عليه**.
+        new(ModuleKey.RealEstate, "العقارات — تفعيلُ عقدٍ يُنشئ خطةَ فوترة", async c =>
+        {
+            var property = Property.Create(c.CompanyId, "PRB-P1", "عقارُ المسبار",
+                PropertyKind.Building, "الرياض");
+            c.Db.Properties.Add(property);
+            await c.Db.SaveChangesAsync();
+
+            var unit = PropertyUnit.Create(c.CompanyId, property.Id, "PRB-U1", 100m, 2, 60_000m);
+            c.Db.PropertyUnits.Add(unit);
+            await c.Db.SaveChangesAsync();
+
+            var lease = LeaseContract.Create(c.CompanyId, unit.Id, c.Customer.Id, "PRB-L1",
+                new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), 5_000m);
+
+            await new LeaseService(c.Db).ActivateAsync(lease);
+
+            ProbeContext.Expect(lease.RecurringPlanId is not null,
+                "العقدُ فُعِّل ولم تُنشأ له خطةُ فوترة — والإيجارُ يبقى بلا فاتورة.");
+
+            var stored = await c.Db.PropertyUnits.AsNoTracking().SingleAsync(u => u.Id == unit.Id);
+            ProbeContext.Expect(stored.Status == UnitStatus.Leased,
+                $"الوحدةُ لم تُشغَل بالعقد — حالتُها {stored.Status}.");
+        }),
+
+        // ─ الصحّة: زيارةٌ واحدةٌ تُنتج ذمّتين ─
+        //
+        // ‏**والأثرُ المقيس فاتورتان**: فاتورةٌ واحدةٌ باسم المريض بالمبلغ كلِّه تجعل
+        // ‏أعمارَ الديون خطأً وتُطالِب مريضاً بما يدفعه تأمينُه.
+        new(ModuleKey.Healthcare, "الصحّة — زيارةٌ تُقسَم بين المريض والتأمين", async c =>
+        {
+            var patientCustomer = Customer.Create(c.CompanyId, "مريضُ المسبار");
+            var payerCustomer = Customer.Create(c.CompanyId, "شركةُ تأمين المسبار");
+            c.Db.Customers.AddRange(patientCustomer, payerCustomer);
+            await c.Db.SaveChangesAsync();
+
+            var patient = Patient.Create(c.CompanyId, "PRB-MRN", "مريضُ المسبار", "1000000001",
+                new DateOnly(1990, 1, 1), PatientGender.Male, patientCustomer.Id);
+            var payer = InsurancePayer.Create(c.CompanyId, "PRB-PAY", "تأمينُ المسبار", payerCustomer.Id);
+            c.Db.Patients.Add(patient);
+            c.Db.InsurancePayers.Add(payer);
+            await c.Db.SaveChangesAsync();
+
+            var policy = InsurancePolicy.Create(c.CompanyId, patient.Id, payer.Id, "PRB-POL",
+                "PRB-MEM", 80m, new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31));
+            c.Db.InsurancePolicies.Add(policy);
+            await c.Db.SaveChangesAsync();
+
+            var visit = Visit.Create(c.CompanyId, patient.Id, "PRB-V1",
+                new DateOnly(2026, 3, 1), "طبيبُ المسبار", policy.Id);
+            visit.AddLine("كشف", 1m, 1_000m);
+            c.Db.Visits.Add(visit);
+            await c.Db.SaveChangesAsync();
+
+            var result = await new VisitBillingService(c.Db).BillAsync(c.CompanyId, visit.Id);
+
+            ProbeContext.Expect(result.PayerShare == 800m,
+                $"حصّةُ التأمين {result.PayerShare:N2} والمنتظر 800.00.");
+            ProbeContext.Expect(result.PatientShare == 200m,
+                $"حصّةُ المريض {result.PatientShare:N2} والمنتظر 200.00.");
+            ProbeContext.Expect(result.PatientInvoiceId is not null && result.PayerInvoiceId is not null,
+                "الزيارةُ فُوتِرت بذمّةٍ واحدة — والحقُّ ذمّتان بمستندين.");
+        }),
+
+        // ─ الضيافة: بيعُ طبقٍ يصرف مكوّناتِه ─
+        //
+        // ‏**والأثرُ المقيس نقصُ المخزون**: مطعمٌ يبيع ولا ينقص مخزونُه يُظهر ربحاً مئةً
+        // ‏بالمئة سنةً كاملة، ثمّ يُقيَّد الفرقُ «عجزَ جرد».
+        new(ModuleKey.Hospitality, "الضيافة — بيعُ طبقٍ يصرف وصفتَه", async c =>
+        {
+            var warehouse = await new InventoryService(c.Db).GetDefaultWarehouseAsync(c.CompanyId);
+
+            var before = await new InventoryService(c.Db)
+                .GetOnHandAsync(c.CompanyId, c.Product.Id, warehouse.Id);
+
+            var item = Brqosh.Domain.Hospitality.MenuItem.Create(c.CompanyId, "PRB-M1",
+                "طبقُ المسبار", MenuSection.Main, 40m);
+            item.AddComponent(c.Product.Id, 2m);
+            c.Db.MenuItems.Add(item);
+            await c.Db.SaveChangesAsync();
+
+            await new KitchenIssueService(c.Db).IssueForSalesAsync(
+                c.CompanyId, new DateOnly(2026, 3, 1), [(item.Id, 3m)], "SectorProbe:Kitchen");
+
+            var after = await new InventoryService(c.Db)
+                .GetOnHandAsync(c.CompanyId, c.Product.Id, warehouse.Id);
+
+            ProbeContext.Expect(before - after == 6m,
+                $"الوصفةُ لم تصرف مكوّناتِها: قبل {before:N2} وبعد {after:N2}، والمنتظر نقصُ 6.00.");
+        }),
+
+        // ─ اللوجستيات: المحصَّلُ التزامٌ لا إيراد ─
+        //
+        // ‏**والأثرُ المقيس رصيدُ `2114`**: قيدُ المحصَّل إيراداً يُضخّم إيرادَ شركة
+        // ‏التوصيل عشرين ضعفاً، وتُدفع الزكاةُ على مالٍ يُردّ.
+        new(ModuleKey.Logistics, "اللوجستيات — تحصيلٌ نيابةً عن التاجر", async c =>
+        {
+            var revenueBefore = await c.BalanceAsync("41");
+
+            var shipment = Shipment.Create(c.CompanyId, "PRB-WB1", c.Customer.Id,
+                "مستلمُ المسبار", "جدة", new DateOnly(2026, 3, 1),
+                freightCharge: 25m, codAmount: 900m);
+            shipment.Dispatch();
+            shipment.Deliver(new DateOnly(2026, 3, 3));
+            c.Db.Shipments.Add(shipment);
+            await c.Db.SaveChangesAsync();
+
+            await new CodSettlementService(c.Db).CollectAsync(
+                c.CompanyId, [shipment.Id], new DateOnly(2026, 3, 4));
+
+            var held = await c.BalanceAsync(CodSettlementService.CodPayableCode);
+            ProbeContext.Expect(held == -900m,
+                $"المحصَّلُ لم يُقيَّد التزاماً: رصيدُ 2114 هو {held:N2} والمنتظر -900.00.");
+
+            var revenueAfter = await c.BalanceAsync("41");
+            ProbeContext.Expect(revenueAfter == revenueBefore,
+                $"التحصيلُ مسّ الإيراد: قبل {revenueBefore:N2} وبعد {revenueAfter:N2} — وهو أمانةٌ لا إيراد.");
         }),
     ];
 }

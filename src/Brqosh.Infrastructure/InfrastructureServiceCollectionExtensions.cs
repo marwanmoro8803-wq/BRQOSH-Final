@@ -57,6 +57,14 @@ public static class InfrastructureServiceCollectionExtensions
 
         // (CEEF-230 · ط6-٣) ‏خدمةُ الفوترة الدورية — تُطلَب من الشاشة، فتُسجَّل.
         services.AddScoped<Sales.RecurringInvoiceService>();
+
+        // (CEEF-230 · ط6-٤) ‏خدماتُ القطاعات — تُطلَب من شاشاتها، فتُسجَّل.
+        services.AddScoped<RealEstate.LeaseService>();
+        services.AddScoped<RealEstate.SecurityDepositService>();
+        services.AddScoped<Healthcare.VisitBillingService>();
+        services.AddScoped<Hospitality.FolioService>();
+        services.AddScoped<Hospitality.KitchenIssueService>();
+        services.AddScoped<Logistics.CodSettlementService>();
         services.AddScoped<CreditNotePostingService>();
         services.AddScoped<PurchaseInvoicePostingService>();
         services.AddScoped<DebitNotePostingService>();

@@ -1,0 +1,45 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.PropertyUnitDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="وحدة عقارية" Width="520" Height="380"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="وحدة عقارية جديدة" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+        <StackPanel Grid.Row="1">
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="رقم الوحدة *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="NumberBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="المساحة بالمتر المربع" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="AreaBox" Style="{StaticResource AppTextBox}" Text="0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="عدد الغرف" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="BedroomsBox" Style="{StaticResource AppTextBox}" Text="0"/>
+                </StackPanel>
+            </Grid>
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="الإيجار السنوي المعلن" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="RentBox" Style="{StaticResource AppTextBox}" Text="0"/>
+            </StackPanel>
+        </StackPanel>
+        <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0">
+            <Button DockPanel.Dock="Left" Content="إلغاء" Style="{StaticResource SecondaryButton}"
+                    Padding="20,9" Click="OnCancel"/>
+            <Button DockPanel.Dock="Right" Content="حفظ" Style="{StaticResource PrimaryButton}"
+                    Padding="26,9" Click="OnSave"/>
+        </DockPanel>
+    </Grid>
+</Window>
