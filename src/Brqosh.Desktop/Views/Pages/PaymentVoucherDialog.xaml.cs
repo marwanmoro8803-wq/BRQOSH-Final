@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -165,6 +165,9 @@ public partial class PaymentVoucherDialog : Window
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value),
                 amount, method, DescriptionBox.Text, ReferenceBox.Text, bankId);
 
+            if (ReadCurrency() is (string code, decimal rate))
+                voucher.SetCurrency(code, rate);
+
             using var facade = new DesktopAccountingFacade();
             await facade.PostPaymentVoucherAsync(voucher, allocLines);
 
@@ -176,6 +179,33 @@ public partial class PaymentVoucherDialog : Window
             ErrorText.Text = ex.Message;
             ErrorText.Visibility = Visibility.Visible;
         }
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط1-٤ب) يضبط عملةَ السند وسعرَها — <b>ويرفض ما لا يُقرأ بدل أن يبتلعه</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>وريالٌ بسعرِ واحدٍ لا يُستدعى له شيء</b>: فالمسارُ القديم يبقى حرفاً، ولا
+    /// يتغيّر رقمٌ في منشأةٍ لا تتعامل بالعملات. <b>وهو الشرطُ الذي يحمي كلَّ قاعدةٍ قائمة.</b></para>
+    ///
+    /// <para><b>وما كان:</b> النطاقُ يحمل العملةَ منذ <c>ط1-٤</c> ويحسب فرقَ العملة
+    /// المحقَّق عند السداد — <b>ولا حقلَ في أيّ شاشةٍ يصل إليه</b>. فيُدخل المحاسبُ
+    /// التحصيلَ محوَّلاً بيده، <b>فتضيع القيمةُ الأصلية</b> ولا يُقيَّد فرقٌ محقَّق:
+    /// الحسابان <c>4108</c> و<c>5218</c> بلا كاتبٍ من الشاشة، <b>والذمّةُ تبقى مفتوحةً
+    /// بفرقٍ لا يُغلق</b>.</para>
+    /// </remarks>
+    private (string Code, decimal Rate)? ReadCurrency()
+    {
+        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
+        if (code.Length == 0) code = "SAR";
+        if (code == "SAR") return null;
+
+        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+            throw new AccountingException($"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
+
+        return (code, rate);
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)

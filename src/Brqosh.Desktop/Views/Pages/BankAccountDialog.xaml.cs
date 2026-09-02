@@ -26,6 +26,7 @@ public partial class BankAccountDialog : Window
         BankBox.Text = bank.BankName;
         AccountNumberBox.Text = bank.AccountNumber;
         IbanBox.Text = bank.Iban;
+        CurrencyBox.Text = bank.CurrencyCode;
         DefaultCheck.IsChecked = bank.IsDefault;
     }
 
@@ -39,12 +40,14 @@ public partial class BankAccountDialog : Window
             if (_bankAccountId is long id)
             {
                 await service.UpdateAsync(AppServices.CompanyId, id, NameBox.Text, BankBox.Text,
-                    AccountNumberBox.Text, IbanBox.Text, DefaultCheck.IsChecked == true);
+                    AccountNumberBox.Text, IbanBox.Text, DefaultCheck.IsChecked == true,
+                    currencyCode: Currency());
             }
             else
             {
                 await service.CreateAsync(AppServices.CompanyId, CodeBox.Text, NameBox.Text, BankBox.Text,
-                    AccountNumberBox.Text, IbanBox.Text, DefaultCheck.IsChecked == true);
+                    AccountNumberBox.Text, IbanBox.Text, DefaultCheck.IsChecked == true,
+                    currencyCode: Currency());
             }
 
             DialogResult = true;
@@ -55,6 +58,20 @@ public partial class BankAccountDialog : Window
             ErrorText.Text = ex is AccountingException ae ? ae.Message : ex.Message;
             ErrorText.Visibility = Visibility.Visible;
         }
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط1-٤ب) رمزُ العملة المُدخَل — <b>وفارغٌ يعني الريال</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>والحسابُ البنكيُّ لا يحمل سعرَ صرفٍ خاصّاً به</b> بخلاف المستندات: رصيدُه يُقوَّم
+    /// بسعر يوم التقييم لا بسعرٍ مثبَّت. <b>فالعملةُ وحدَها تكفي</b>، والسعرُ يأتي من
+    /// جدول الأسعار.
+    /// </remarks>
+    private string Currency()
+    {
+        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
+        return code.Length == 0 ? "SAR" : code;
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)

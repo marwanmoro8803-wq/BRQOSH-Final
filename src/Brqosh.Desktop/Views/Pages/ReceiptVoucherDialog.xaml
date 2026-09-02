@@ -50,6 +50,24 @@
                 </StackPanel>
             </Grid>
 
+            <!-- (CEEF-231 · ط1-٤ب) العملةُ وسعرُها — والنطاقُ يحملهما منذ ط1-٤ ولا حقلَ
+                 يصل إليهما. فتحصيلٌ بالدولار يُدخَل محوَّلاً بيدٍ، فتضيع القيمةُ الأصلية
+                 ولا يُقيَّد فرقُ عملةٍ محقَّق — والحسابان 4108 و5218 بلا كاتبٍ من الشاشة. -->
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="180"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <TextBlock Text="العملة" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="RateBox" Style="{StaticResource AppTextBox}" Text="1"/>
+                </StackPanel>
+            </Grid>
+
             <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="DescriptionBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 

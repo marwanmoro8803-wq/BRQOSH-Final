@@ -23,6 +23,12 @@
         <TextBlock Text="رقم الحساب" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="AccountNumberBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
+        <!-- (CEEF-231 · ط1-٤ب) عملةُ الحساب — والنطاقُ يحملها ولا يصل إليها شيء.
+             فحسابٌ بالدولار لا يُنشأ من الشاشة، وشاشةُ إعادة تقييم العملات مبنيّةٌ
+             لتقييمه فتبقى بلا شيءٍ تُقيّمه. -->
+        <TextBlock Text="العملة" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR" Margin="0,0,0,14"/>
+
         <TextBlock Text="الآيبان (IBAN)" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="IbanBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,12"/>
 

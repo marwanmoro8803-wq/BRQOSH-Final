@@ -1,4 +1,4 @@
-﻿using Brqosh.Infrastructure.Platform;
+using Brqosh.Infrastructure.Platform;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Persistence;
@@ -11,8 +11,14 @@ namespace Brqosh.Infrastructure.Treasury;
 /// </summary>
 public class BankAccountService(BrqoshDbContext db)
 {
+    /// <param name="currencyCode">
+    /// (CEEF-231 · ط1-٤ب) <b>عملةُ الحساب</b> — و<c>null</c> تعني الريال.
+    /// <b>وكان النطاقُ يحملها ولا يصل إليها شيء</b>: فحسابٌ بالدولار لا يُنشأ من الشاشة،
+    /// <b>وشاشةُ إعادة تقييم العملات مبنيّةٌ لتقييمه</b> — فتبقى بلا شيءٍ تُقيّمه.
+    /// </param>
     public async Task<BankAccount> CreateAsync(long companyId, string code, string nameAr, string bankName,
-        string accountNumber, string iban, bool isDefault, CancellationToken ct = default)
+        string accountNumber, string iban, bool isDefault, CancellationToken ct = default,
+        string? currencyCode = null)
     {
         code = code.Trim().ToUpperInvariant();
 
@@ -51,13 +57,21 @@ public class BankAccountService(BrqoshDbContext db)
         }
 
         var bank = BankAccount.Create(companyId, code, nameAr, bankName, accountNumber, iban, glAccount.Id, isDefault);
+
+        // ‏**والريالُ لا يُستدعى له شيء** — فالمسارُ القديم يبقى حرفاً، ولا يتغيّر رقمٌ
+        // ‏في منشأةٍ لا تتعامل بالعملات.
+        if (!string.IsNullOrWhiteSpace(currencyCode)
+            && !currencyCode.Trim().Equals("SAR", StringComparison.OrdinalIgnoreCase))
+            bank.SetCurrency(currencyCode);
+
         db.BankAccounts.Add(bank);
         await db.SaveChangesAsync(ct);
         return bank;
     }
 
     public async Task UpdateAsync(long companyId, long bankAccountId, string nameAr, string bankName,
-        string accountNumber, string iban, bool isDefault, CancellationToken ct = default)
+        string accountNumber, string iban, bool isDefault, CancellationToken ct = default,
+        string? currencyCode = null)
     {
         var bank = await db.BankAccounts
             .SingleAsync(b => b.CompanyId == companyId && b.Id == bankAccountId, ct);
@@ -71,6 +85,9 @@ public class BankAccountService(BrqoshDbContext db)
         }
 
         bank.Update(nameAr, bankName, accountNumber, iban, isDefault);
+
+        if (!string.IsNullOrWhiteSpace(currencyCode))
+            bank.SetCurrency(currencyCode);
 
         var gl = await db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId, ct);
         gl.Rename(nameAr.Trim(), nameAr.Trim());
