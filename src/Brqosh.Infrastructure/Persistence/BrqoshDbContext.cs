@@ -14,6 +14,7 @@ using Brqosh.Domain.Workflow;
 using Brqosh.Domain.Retail;
 using Brqosh.Domain.Healthcare;
 using Brqosh.Domain.Hospitality;
+using Brqosh.Domain.Logistics;
 using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
@@ -94,6 +95,9 @@ public class BrqoshDbContext : DbContext
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<GuestFolio> GuestFolios => Set<GuestFolio>();
+
+    // (CEEF-230 · ط3-٤) ‏اللوجستيات.
+    public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
@@ -745,6 +749,28 @@ public class BrqoshDbContext : DbContext
             });
 
             entity.Navigation(f => f.Charges).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-٤) ‏البوالص.
+        modelBuilder.Entity<Shipment>(entity =>
+        {
+            entity.ToTable("shipments");
+            entity.Property(s => s.WaybillNumber).HasMaxLength(32).IsRequired();
+            entity.Property(s => s.ConsigneeName).HasMaxLength(256).IsRequired();
+            entity.Property(s => s.ConsigneePhone).HasMaxLength(32).IsRequired();
+            entity.Property(s => s.DestinationCity).HasMaxLength(64).IsRequired();
+            entity.Property(s => s.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(s => s.WeightKg).HasPrecision(18, 3);
+            entity.Property(s => s.FreightCharge).HasPrecision(18, 2);
+            entity.Property(s => s.CodAmount).HasPrecision(18, 2);
+            entity.Property(s => s.BranchId);
+
+            entity.HasIndex(s => new { s.CompanyId, s.WaybillNumber }).IsUnique();
+
+            // ‏**وهذا الفهرسُ هو ما يُجيب سؤالَ التاجر**: ما الذي حُصّل لي ولم يُورَّد؟
+            entity.HasIndex(s => new { s.CompanyId, s.ShipperCustomerId, s.CodCollected, s.CodRemitted });
+            entity.HasIndex(s => new { s.CompanyId, s.Status });
+            entity.HasIndex(s => new { s.CompanyId, s.BranchId });
         });
 
         // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
@@ -1507,6 +1533,7 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<Patient>());
         MapBranchScope(modelBuilder.Entity<Visit>());
         MapBranchScope(modelBuilder.Entity<Reservation>());
+        MapBranchScope(modelBuilder.Entity<Shipment>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());

@@ -69,6 +69,10 @@ public static class SaudiChartOfAccounts
         // (CEEF-230 · ط3-١) ‏تأميناتُ المستأجرين — **أمانةٌ لا إيراد**. وقيدُها إيراداً
         // ‏يُضخّم ربحَ المنشأة بمالٍ ليس لها وتردُّه، وهو من أشيع أخطاء المحاسبة العقارية.
         new("2113", "تأمينات مستأجرين محتفظ بها", "Tenant Security Deposits Held", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
+        // (CEEF-230 · ط3-٤) ‏ما يُحصَّل نيابةً عن التجّار — **أمانةٌ لا إيراد**. وقيدُه
+        // ‏إيراداً يُضخّم إيرادَ شركة التوصيل عشرين ضعفاً: مليونٌ محصَّلٌ مقابل خمسين
+        // ‏ألفاً أجرةً، **وتُدفع الزكاةُ على مالٍ يُردّ**.
+        new("2114", "تحصيلٌ نيابةً عن التجّار (الدفع عند الاستلام)", "Cash on Delivery Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
@@ -174,6 +178,9 @@ public static class SaudiChartOfAccounts
 
         // (CEEF-230 · ط3-١) ‏تأميناتُ المستأجرين المحتفظ بها.
         public const string TenantSecurityDeposits = "2113";
+
+        // (CEEF-230 · ط3-٤) ‏تحصيلٌ نيابةً عن التجّار.
+        public const string CodPayable = "2114";
     }
 
     /// <summary>
