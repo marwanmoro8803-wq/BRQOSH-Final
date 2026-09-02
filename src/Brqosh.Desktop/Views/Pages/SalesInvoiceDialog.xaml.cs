@@ -198,6 +198,14 @@ public partial class SalesInvoiceDialog : Window
     {
         var invoice = SalesInvoice.CreateDraft(companyId, customerId, invoiceDate);
 
+        // (CEEF-230 · ط4-٦) ‏**والعملةُ تُضبط قبل السطور**: `SetCurrency` يُعيد حسابَ
+        // ‏المجاميع، والسطورُ تُحسب بعملة الفاتورة ثمّ تُضرب في السعر. **وضبطُها بعد
+        // ‏الإضافة يترك الأساسَ الأجنبيَّ صفراً** — فيُصدَر مستندٌ إلكترونيٌّ بإجماليٍّ صفر.
+        //
+        // ‏وكانت هذه الميزةُ مبنيّةً في `ط1-٤` **ولا حقلَ في أيّ شاشةٍ يصل إليها**، فيُدخل
+        // ‏المصدِّرُ فاتورتَه محوَّلةً بيده وتضيع القيمةُ الأصلية.
+        ApplyCurrency(invoice);
+
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
         {
@@ -215,5 +223,25 @@ public partial class SalesInvoiceDialog : Window
     {
         DialogResult = false;
         Close();
+    }
+    /// <summary>
+    /// يضبط عملةَ الفاتورة وسعرَها — <b>ويرفض ما لا يُقرأ بدل أن يبتلعه</b>.
+    ///
+    /// <para><b>وريالٌ بسعرِ واحدٍ لا يُستدعى له شيء</b>: فالمسارُ القديم يبقى حرفاً،
+    /// ولا يتغيّر رقمٌ في منشأةٍ لا تتعامل بالعملات.</para>
+    /// </summary>
+    private void ApplyCurrency(Brqosh.Domain.Sales.SalesInvoice invoice)
+    {
+        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
+        if (code.Length == 0) code = "SAR";
+        if (code == "SAR") return;
+
+        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+            throw new Brqosh.Domain.Accounting.AccountingException(
+                $"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
+
+        invoice.SetCurrency(code, rate);
     }
 }

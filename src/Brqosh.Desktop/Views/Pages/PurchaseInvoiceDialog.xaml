@@ -26,6 +26,8 @@
                 <ColumnDefinition Width="180"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="110"/>
+                <ColumnDefinition Width="130"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
@@ -37,9 +39,18 @@
                           DisplayMemberPath="Display" SelectedValuePath="Id"
                           SelectionChanged="OnSupplierSelected"/>
             </StackPanel>
-            <StackPanel Grid.Column="2">
+            <StackPanel Grid.Column="2" Margin="0,0,12,0">
                 <TextBlock Text="مرجع فاتورة المورد *" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="ReferenceBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                <TextBlock Text="العملة" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR"
+                         MaxLength="3" FlowDirection="LeftToRight"/>
+            </StackPanel>
+            <StackPanel Grid.Column="4">
+                <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="RateBox" Style="{StaticResource AppTextBox}" Text="1"/>
             </StackPanel>
         </Grid>
 

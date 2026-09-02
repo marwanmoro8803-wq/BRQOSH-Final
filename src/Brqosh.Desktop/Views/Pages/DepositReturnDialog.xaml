@@ -1,0 +1,32 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.DepositReturnDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="رد التأمين" Width="480" Height="320"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" x:Name="HeaderText" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+        <StackPanel Grid.Row="1">
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock x:Name="DepositText" Style="{StaticResource FieldLabel}"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,0,12">
+                <TextBlock Text="المخصوم لقاء تلف أو متأخرات" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="ForfeitedBox" Style="{StaticResource AppTextBox}" Text="0"/>
+            </StackPanel>
+            <TextBlock Text="والمخصوم وحده يصير إيرادًا — لأن الالتزام برده سقط. والباقي يخرج نقدًا."
+                       Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+        </StackPanel>
+        <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0">
+            <Button DockPanel.Dock="Left" Content="إلغاء" Style="{StaticResource SecondaryButton}"
+                    Padding="20,9" Click="OnCancel"/>
+            <Button DockPanel.Dock="Right" Content="رد التأمين" Style="{StaticResource PrimaryButton}"
+                    Padding="26,9" Click="OnConfirm"/>
+        </DockPanel>
+    </Grid>
+</Window>

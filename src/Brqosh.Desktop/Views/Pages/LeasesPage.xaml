@@ -26,6 +26,12 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="ActivateBtn" DockPanel.Dock="Right" Content="تفعيل العقد"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnActivate"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ReturnDepositBtn" DockPanel.Dock="Right" Content="رد التأمين"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnReturnDeposit"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ReceiveDepositBtn" DockPanel.Dock="Right" Content="قبض التأمين"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnReceiveDeposit"/>
             </DockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
@@ -42,6 +48,7 @@
                     <DataGridTextColumn Header="إلى" Binding="{Binding EndDate}" Width="110"/>
                     <DataGridTextColumn Header="الإيجار" Binding="{Binding Rent, StringFormat=N2}" Width="120"/>
                     <DataGridTextColumn Header="التأمين" Binding="{Binding Deposit, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="حالة التأمين" Binding="{Binding DepositState}" Width="130"/>
                     <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="110"/>
                 </DataGrid.Columns>
             </DataGrid>

@@ -5,6 +5,7 @@ using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.RealEstate;
 using Brqosh.Infrastructure.RealEstate;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -22,7 +23,8 @@ namespace Brqosh.Desktop.Views.Pages;
 public partial class LeasesPage : UserControl
 {
     public record Row(long Id, string ContractNumber, string UnitLabel, string TenantName,
-        string StartDate, string EndDate, decimal Rent, decimal Deposit, string Status, bool IsDraft);
+        string StartDate, string EndDate, decimal Rent, decimal Deposit, string DepositState,
+        string Status, bool IsDraft, bool CanReceiveDeposit, bool CanReturnDeposit);
 
     public LeasesPage()
     {
@@ -32,7 +34,9 @@ public partial class LeasesPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (AddBtn, PermissionService.CanPost),
                 (ActivateBtn, PermissionService.CanPost),
-                (TerminateBtn, PermissionService.CanPost));
+                (TerminateBtn, PermissionService.CanPost),
+                (ReceiveDepositBtn, PermissionService.CanPostAccounting),
+                (ReturnDepositBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
     }
@@ -59,8 +63,10 @@ public partial class LeasesPage : UserControl
             units.TryGetValue(l.PropertyUnitId, out var unit) ? unit : $"#{l.PropertyUnitId}",
             tenants.TryGetValue(l.TenantCustomerId, out var tenant) ? tenant : $"#{l.TenantCustomerId}",
             l.StartDate.ToString("yyyy-MM-dd"), l.EndDate.ToString("yyyy-MM-dd"),
-            l.RentPerPeriod, l.SecurityDeposit, StatusText(l.Status),
-            l.Status == LeaseStatus.Draft)).ToList();
+            l.RentPerPeriod, l.SecurityDeposit, DepositStateText(l), StatusText(l.Status),
+            l.Status == LeaseStatus.Draft,
+            l.SecurityDeposit > 0m && l.DepositReceivedOn is null,
+            l.DepositReceivedOn is not null && l.DepositReturnedOn is null)).ToList();
 
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);
@@ -126,6 +132,81 @@ public partial class LeasesPage : UserControl
         {
             UiFeedback.ShowWarning(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط4-٦) <b>قبضُ التأمين — والخدمةُ كانت مبنيّةً ولا زرَّ لها.</b>
+    ///
+    /// <para>بُنيت <c>SecurityDepositService</c> في <c>ط3-١</c> ومُقيست بالطفرات: تقبض
+    /// التأمينَ <b>التزاماً في الأستاذ</b> لا إيراداً — <b>ولم يكن في الشاشة ما يستدعيها</b>.
+    /// وهو عينُ العطل الذي بُنيت له مرحلةُ <c>ط6</c> كاملة، <b>ووقعتُ فيه في البند نفسِه
+    /// الذي أصلحتُه</b>.</para>
+    /// </summary>
+    private async void OnReceiveDeposit(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row) return;
+        if (!row.CanReceiveDeposit)
+        {
+            UiFeedback.ShowWarning("لا تأمينَ على هذا العقد، أو قُبض سلفاً.");
+            return;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<SecurityDepositService>().ReceiveAsync(
+                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today),
+                SecurityContext.ResolveUsername());
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// <b>وردُّ التأمين يُغلق الالتزامَ كاملاً</b> — والمخصومُ وحده يصير إيراداً.
+    ///
+    /// <para><b>والمخصومُ يُسأل عنه صراحةً</b>: صفرٌ افتراضاً، <b>فخصمٌ يقع بلا سؤالٍ
+    /// يأخذ من أمانةٍ بلا قرار</b>.</para>
+    /// </summary>
+    private async void OnReturnDeposit(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row) return;
+        if (!row.CanReturnDeposit)
+        {
+            UiFeedback.ShowWarning("لا يُردّ تأمينٌ لم يُقبض، أو رُدّ سلفاً.");
+            return;
+        }
+
+        var dialog = new DepositReturnDialog(row.ContractNumber, row.Deposit)
+        {
+            Owner = Window.GetWindow(this),
+        };
+
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<SecurityDepositService>().ReturnAsync(
+                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today),
+                dialog.Forfeited, SecurityContext.ResolveUsername());
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    private static string DepositStateText(LeaseContract lease)
+    {
+        if (lease.SecurityDeposit <= 0m) return "لا تأمين";
+        if (lease.DepositReturnedOn is not null)
+            return lease.DepositForfeited > 0m ? "رُدّ بخصم" : "رُدّ كاملاً";
+        return lease.DepositReceivedOn is not null ? "مقبوض — التزام" : "لم يُقبض";
     }
 
     private static string StatusText(LeaseStatus status) => status switch

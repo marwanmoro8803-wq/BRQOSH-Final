@@ -117,6 +117,11 @@ public partial class PurchaseInvoiceDialog : Window
         var invoice = PurchaseInvoice.CreateDraft(
             companyId, supplierId, invoiceDate, reference, vatDeductible);
 
+        // (CEEF-230 · ط4-٦) ‏**والعملةُ تُضبط قبل السطور** — `SetCurrency` يُعيد حسابَ
+        // ‏المجاميع. وكان المستوردُ يُدخل فاتورةَ الدولار محوَّلةً بيده، **فتضيع القيمةُ
+        // ‏الأصلية ولا يُحسب فرقُ عملةٍ محقَّقٌ عند السداد**.
+        ApplyCurrency(invoice);
+
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
         {
@@ -133,5 +138,20 @@ public partial class PurchaseInvoiceDialog : Window
     {
         DialogResult = false;
         Close();
+    }
+    /// <summary>يضبط عملةَ الفاتورة — <b>وريالٌ بسعرِ واحدٍ يسلك المسارَ القديم حرفاً</b>.</summary>
+    private void ApplyCurrency(Brqosh.Domain.Purchasing.PurchaseInvoice invoice)
+    {
+        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
+        if (code.Length == 0) code = "SAR";
+        if (code == "SAR") return;
+
+        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+            throw new Brqosh.Domain.Accounting.AccountingException(
+                $"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
+
+        invoice.SetCurrency(code, rate);
     }
 }
