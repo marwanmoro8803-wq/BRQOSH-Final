@@ -42,7 +42,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddDbContext<BrqoshDbContext>(options =>
         {
             if (usePostgres)
-                options.UseNpgsql(connectionString);
+                // (CEEF-231 · ط5-٧) ‏**والمساران معاً** — ودرسُ `ط4-٣`: إصلاحُ أحد
+                // ‏مسارَي شيءٍ واحدٍ يترك العطلَ حيّاً حيث يُستعمل الآخر.
+                options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null));
             else
                 options.UseSqlite(connectionString);
             options.AddInterceptors(new AuditLogImmutabilityInterceptor());
@@ -64,6 +67,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Healthcare.VisitBillingService>();
         services.AddScoped<Healthcare.ClaimSettlementService>();
         services.AddScoped<Hospitality.TipPoolService>();
+        services.AddScoped<RealEstate.MaintenanceOrderService>();
         services.AddScoped<Logistics.DeliveryTripService>();
         services.AddScoped<Payroll.EmployeeAdvanceService>();
         services.AddScoped<Hospitality.FolioService>();

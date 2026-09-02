@@ -87,7 +87,23 @@ public class SecurityDepositService(BrqoshDbContext db)
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var lease = await LeaseAsync(companyId, leaseId, token);
+
+            // (CEEF-230 · ط3-١ب) ‏**والمصادرةُ لا تتجاوز ما يُدين به المستأجر.**
+            //
+            // ‏كان مبلغُ المصادرة **رقماً يكتبه محاسبٌ بلا شيءٍ خلفه**. ومصادرةٌ بلا سندٍ
+            // ‏**دعوى يخسرها المؤجِّر**: المستأجرُ يطلب التفصيل فلا يجده، فيُردّ التأمينُ
+            // ‏كلُّه بحكم.
+            //
+            // ‏**والسندُ هو رصيدُه المفتوح**: إيجارٌ لم يُدفع، أو صيانةُ تلفٍ أُعيد تحميلُها
+            // ‏عليه بفاتورة (`MaintenanceOrderService`). **وبغير فاتورةٍ لا دَينَ**، فلا
+            // ‏شيءَ يُصادَر في مقابله — وهو ما يجعل أمرَ الصيانة لازماً لا زينة.
+            // ‏**وترتيبُ الحارسين مقصود**: حدُّ التأمين أوّلاً ثمّ السند. فحارسٌ يسبق
+            // ‏حارساً **يستره** — ولو سبق السندُ الحدَّ لَأخرج «لا دَينَ يقابله» على مصادرةٍ
+            // ‏عيبُها أنّها تتجاوز التأمينَ أصلاً، **فيُقرأ العطلُ الخطأ**. وهو المزلقُ
+            // ‏الذي وقع في هذا الملفّ نفسِه من قبل، ومكتوبٌ في تعليق اختباره.
             lease.RecordDepositReturned(on, forfeited);
+
+            await EnsureForfeitureIsBackedAsync(companyId, lease, forfeited, token);
 
             var refunded = lease.SecurityDeposit - lease.DepositForfeited;
 
@@ -132,6 +148,28 @@ public class SecurityDepositService(BrqoshDbContext db)
 
             return entry.Id;
         }, ct);
+    }
+
+    /// <summary>
+    /// يتحقّق أنّ للمصادرة سنداً — <b>وهو ما يُدين به المستأجر فعلاً</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>والرصيدُ يُشتقّ من المستندات لا من عدّاد</b>: فواتيرُ الإيجار وإعادةُ تحميل
+    /// الصيانة ناقصةً ما قُبض. <b>ومصادرةٌ تتجاوزه تأخذ من المستأجر ما لا يدين به</b>.
+    /// </remarks>
+    private async Task EnsureForfeitureIsBackedAsync(long companyId, LeaseContract lease,
+        decimal forfeited, CancellationToken ct)
+    {
+        if (forfeited <= 0m) return;
+
+        var owed = (await new Sales.CustomerBalanceQuery(db)
+            .ForCustomerAsync(companyId, lease.TenantCustomerId)).Balance;
+
+        if (forfeited > owed)
+            throw new AccountingException(
+                $"المصادرة {forfeited:N2} أكبر مما يدين به المستأجر {owed:N2} — "
+                + "ولا يُصادَر تأمينٌ بلا دَينٍ يقابله. أصدِرْ أمرَ صيانةٍ بالتلف وحمِّلْه عليه، "
+                + "أو فوتِرْ ما عليه من إيجار.");
     }
 
     private async Task<LeaseContract> LeaseAsync(long companyId, long leaseId, CancellationToken ct) =>

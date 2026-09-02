@@ -816,6 +816,35 @@ static class ModuleProbes
 
             ProbeContext.Expect(before - after == 6m,
                 $"بيعُ الطبق لم يصرف وصفتَه: قبل {before:N2} وبعد {after:N2}، والمنتظر نقصُ 6.00.");
+
+            // ‏**ثمّ وعاءُ الإكراميات (ط3-٣د)**: مالُ النُّدُل التزامٌ لا إيراد. **والأثرُ
+            // ‏المقيس أنّ الإيرادَ لا يتحرّك**: قيدُ الإكرامية إيراداً يدفع ضريبةً وزكاةً
+            // ‏على مالٍ ليس للمنشأة.
+            var revenueBeforeTips = await c.BalanceAsync("4");
+
+            var waiter = Employee.Create(c.CompanyId, "PRB-EMP-TIP", "نادلُ المسبار",
+                "1066666666", EmployeeNationality.Saudi, "نادل", new DateOnly(2025, 1, 1));
+            waiter.SetPay(basic: 4_000m, housing: 0m, transport: 0m);
+            c.Db.Employees.Add(waiter);
+            await c.Db.SaveChangesAsync();
+
+            var pool = TipPool.Open(c.CompanyId, new DateOnly(2026, 3, 2));
+            pool.Collect(TipSource.Cash, 300m);
+            pool.Collect(TipSource.Card, 200m);
+            pool.DistributeEvenly([waiter.Id]);
+            c.Db.TipPools.Add(pool);
+            await c.Db.SaveChangesAsync();
+
+            await new TipPoolService(c.Db).CloseAndPostAsync(
+                c.CompanyId, pool.Id, new DateOnly(2026, 3, 2));
+
+            var tipsHeld = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.TipsPayable);
+            ProbeContext.Expect(tipsHeld == -500m,
+                $"الإكرامياتُ لم تُقيَّد التزاماً: رصيدُ 2116 هو {tipsHeld:N2} والمنتظر -500.00.");
+
+            var revenueAfterTips = await c.BalanceAsync("4");
+            ProbeContext.Expect(revenueAfterTips == revenueBeforeTips,
+                $"الإكراميةُ مسّت الإيراد: قبل {revenueBeforeTips:N2} وبعد {revenueAfterTips:N2} — وهي مالُ العامل.");
         }),
 
         // ─ اللوجستيات: المحصَّلُ التزامٌ لا إيراد ─
@@ -844,6 +873,45 @@ static class ModuleProbes
             var revenueAfter = await c.BalanceAsync("41");
             ProbeContext.Expect(revenueAfter == revenueBefore,
                 $"التحصيلُ مسّ الإيراد: قبل {revenueBefore:N2} وبعد {revenueAfter:N2} — وهو أمانةٌ لا إيراد.");
+
+            // ‏**ثمّ رحلةُ التوصيل (ط3-٤ب)**: عهدةُ السائق **أصلٌ لا مصروف حتى تُسوَّى**،
+            // ‏وهويّةُ هـ-٢٠ تُقاس على رصيد `1117`: يعود صفراً بعد التسوية.
+            var carried = Shipment.Create(c.CompanyId, "PRB-WB2", c.Customer.Id,
+                "مستلمُ الرحلة", "القصيم", new DateOnly(2026, 3, 5),
+                freightCharge: 400m, codAmount: 0m);
+            c.Db.Shipments.Add(carried);
+            await c.Db.SaveChangesAsync();
+
+            var trip = DeliveryTrip.Create(c.CompanyId, "PRB-TR1", "الرياض — القصيم",
+                "PRB-1234", new DateOnly(2026, 3, 5));
+            trip.LoadShipment(carried.Id, carried.Status);
+            c.Db.DeliveryTrips.Add(trip);
+            await c.Db.SaveChangesAsync();
+
+            var trips = new DeliveryTripService(c.Db);
+            await trips.AdvanceFloatAsync(c.CompanyId, trip.Id, 500m, new DateOnly(2026, 3, 5));
+
+            var floatHeld = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.TripCashFloat);
+            ProbeContext.Expect(floatHeld == 500m,
+                $"العهدةُ لم تُقيَّد أصلاً: رصيدُ 1117 هو {floatHeld:N2} والمنتظر 500.00.");
+
+            trip.Dispatch();
+            trip.AddExpense(TripExpenseKind.Fuel, 380m, fromDriverFloat: true);
+            trip.Complete(new DateOnly(2026, 3, 7));
+            await c.Db.SaveChangesAsync();
+
+            await trips.SettleAsync(c.CompanyId, trip.Id, 120m, new DateOnly(2026, 3, 7));
+
+            var floatAfter = await c.BalanceAsync(SaudiChartOfAccounts.SystemCodes.TripCashFloat);
+            ProbeContext.Expect(floatAfter == 0m,
+                $"العهدةُ لم تُفرَّغ بالتسوية: رصيدُ 1117 هو {floatAfter:N2} والمنتظر صفراً — وهي هـ-٢٠.");
+
+            // ‏**وربحيّةُ المسار تُشتقّ**: أجرةٌ ٤٠٠ بمصاريفَ ٣٨٠ ⇒ هامشٌ ٢٠.
+            var routes = await trips.RouteProfitabilityAsync(
+                c.CompanyId, new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
+            ProbeContext.Expect(routes.Count == 1 && routes[0].Margin == 20m,
+                $"ربحيّةُ المسار لم تُشتقّ: {routes.Count} مساراً، والهامشُ "
+                + $"{(routes.Count > 0 ? routes[0].Margin : 0m):N2} والمنتظر 20.00.");
         }),
     ];
 }

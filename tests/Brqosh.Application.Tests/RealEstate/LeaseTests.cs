@@ -244,6 +244,16 @@ public class LeaseTests : IDisposable
         var deposits = new SecurityDepositService(_db);
 
         await deposits.ReceiveAsync(_companyId, lease.Id, new DateOnly(2026, 1, 5), "admin");
+
+        // (CEEF-230 · ط3-١ب) ‏**والمصادرةُ صارت تلزمها ذمّةٌ تقابلها.**
+        //
+        // ‏كان المبلغُ رقماً يُكتب بلا شيءٍ خلفه — **ومصادرةٌ بلا سندٍ دعوى يخسرها
+        // ‏المؤجِّر**. فيُفوتَر التلفُ على المستأجر أوّلاً (وهو ما يفعله أمرُ الصيانة في
+        // ‏المسار الحقيقيّ)، **ثمّ يُصادَر التأمينُ في مقابله**.
+        var damage = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 6, 20));
+        damage.AddLine("إصلاح تلف", 1m, 2_000m);
+        await new SalesInvoicePostingService(_db).PostAsync(damage);
+
         await deposits.ReturnAsync(_companyId, lease.Id, new DateOnly(2026, 6, 30), 2_000m, "admin");
 
         Assert.Equal(0m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.TenantSecurityDeposits));
