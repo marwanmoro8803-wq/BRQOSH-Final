@@ -20,6 +20,7 @@ internal static class NavKeyModuleMap
         ["audit_log"] = ModuleKey.GeneralLedger,
         ["soft_deleted_rows"] = ModuleKey.GeneralLedger,
         ["fx_revaluation"] = ModuleKey.Treasury,
+        ["monetary_revaluation"] = ModuleKey.Treasury,
         ["bank_statements"] = ModuleKey.Treasury,
         ["cash_position"] = ModuleKey.Treasury,
         ["data_migration"] = ModuleKey.GeneralLedger,

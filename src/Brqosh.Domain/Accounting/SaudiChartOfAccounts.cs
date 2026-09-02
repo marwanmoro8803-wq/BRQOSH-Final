@@ -37,6 +37,11 @@ public static class SaudiChartOfAccounts
         new("1112", "عهد وسلف الموظفين", "Employee Advances & Custodies", AccountType.Asset, "11", IsGroup: false),
         new("1113", "أعمال تحت التنفيذ (مستخلصات غير مفوترة)", "Work in Progress - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1114", "محتجزات لدى العملاء", "Retention Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+        // (CEEF-230 · ط4-٧) ‏تسويةُ إعادة تقييم الذمم بعملةٍ أجنبية — **حسابٌ مستقلٌّ
+        // ‏عن 1104 عمداً**. فالدفترُ المساعد يُبنى من المستندات بأسعار نشأتها، وإعادةُ
+        // ‏التقييم تُحرّك الأستاذَ وحدَه — **فتقييمُ حساب الذمم نفسِه يكسر هـ-١ في كلّ
+        // ‏إقفال**. والميزانيةُ تعرض 1104 + 1115 معاً، وهو اصطلاحُ الأنظمة الكبرى.
+        new("1115", "تسوية إعادة تقييم ذمم مدينة بعملة أجنبية", "FX Revaluation Adjustment - Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
         new("12", "الأصول غير المتداولة", "Non-Current Assets", AccountType.Asset, "1", IsGroup: true),
         new("1201", "الأراضي", "Land", AccountType.Asset, "12", IsGroup: false),
@@ -73,6 +78,8 @@ public static class SaudiChartOfAccounts
         // ‏إيراداً يُضخّم إيرادَ شركة التوصيل عشرين ضعفاً: مليونٌ محصَّلٌ مقابل خمسين
         // ‏ألفاً أجرةً، **وتُدفع الزكاةُ على مالٍ يُردّ**.
         new("2114", "تحصيلٌ نيابةً عن التجّار (الدفع عند الاستلام)", "Cash on Delivery Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
+        // (CEEF-230 · ط4-٧) ‏ونظيرُه لجانب الموردين — يحرس هـ-٢ بالمنطق نفسِه.
+        new("2115", "تسوية إعادة تقييم ذمم دائنة بعملة أجنبية", "FX Revaluation Adjustment - Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
@@ -162,6 +169,10 @@ public static class SaudiChartOfAccounts
         public const string CurrentYearProfit = "3104";
         public const string TranslationReserve = "3106";
         public const string RetentionReceivable = "1114";
+
+        // (CEEF-230 · ط4-٧) ‏حسابا تسوية إعادة التقييم — يحفظان هـ-١ وهـ-٢.
+        public const string FxAdjustmentReceivable = "1115";
+        public const string FxAdjustmentPayable = "2115";
         public const string RetentionPayableSubcontractors = "2110";
         public const string ContractRevenue = "4104";
         public const string SubcontractorCosts = "5104";

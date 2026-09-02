@@ -105,6 +105,7 @@ public static class PageFactory
         ["audit_log"] = () => new Views.Pages.AuditLogPage(),
         ["soft_deleted_rows"] = () => new Views.Pages.SoftDeletedRowsPage(),
         ["fx_revaluation"] = () => new Views.Pages.FxRevaluationPage(),
+        ["monetary_revaluation"] = () => new Views.Pages.MonetaryRevaluationPage(),
         ["bank_statements"] = () => new Views.Pages.BankStatementsPage(),
         ["cash_position"] = () => new Views.Pages.CashPositionPage(),
         ["data_migration"] = () => new Views.Pages.DataMigrationPage(),
