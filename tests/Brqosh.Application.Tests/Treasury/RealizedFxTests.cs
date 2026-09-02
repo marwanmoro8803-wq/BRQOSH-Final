@@ -83,6 +83,34 @@ public class RealizedFxTests : IDisposable
     }
 
     /// <summary>
+    /// <b>القياسُ الذي كشف انفصالاً: الدفترُ المساعد يُحسب بطريقتين ويجب أن يتّفقا.</b>
+    ///
+    /// <para><c>CustomerBalanceQuery</c> يعرض الرصيدَ بمسارين: <c>ForCustomerAsync</c>
+    /// لكشف حساب عميلٍ واحد، و<c>AllBalancesAsync</c> للوحة والتقارير الجامعة. <b>وإصلاحُ
+    /// <c>ط1-٤</c> طُبّق على الثاني وحدَه</b> — فالأوّلُ يطرح <c>Amount</c> وهو
+    /// <b>بعملة السند</b>، والثاني يطرح ما حُرِّر فعلاً من الذمّة بعملة الدفاتر.</para>
+    ///
+    /// <para><b>والأثر:</b> عميلٌ سدّد بالدولار يظهر <b>مسدَّداً في اللوحة ومديناً في
+    /// كشف حسابه</b> — أو العكس. <b>ورقمان لشيءٍ واحدٍ يُفقدان الثقةَ بكليهما</b>،
+    /// ولا يعرف المحاسبُ أيَّهما يُصدّق.</para>
+    /// </summary>
+    [Fact]
+    public async Task TheTwoWaysOfComputingTheSubsidiary_Agree()
+    {
+        var invoice = await ForeignInvoiceAsync(1000m, 3.75m);
+        await CollectAsync(invoice, foreignAmount: 1150m, rate: 3.80m);
+
+        var query = new CustomerBalanceQuery(_db);
+        var single = (await query.ForCustomerAsync(_companyId, invoice.CustomerId)).Balance;
+        var all = (await query.AllBalancesAsync(_companyId))[invoice.CustomerId];
+
+        Assert.Equal(all, single);
+
+        // ‏**والاثنان يساويان الأستاذَ كذلك** — وهي هـ-١، فلا يتّفقان على خطأٍ واحد.
+        Assert.Equal(await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AccountsReceivable), single);
+    }
+
+    /// <summary>
     /// <b>وسعرٌ لم يتغيّر لا يُنتج سطرَ فرق.</b>
     ///
     /// <para>وبغير هذا القياس يمرّ ترحيلٌ يُضيف سطرَ صفرٍ إلى كلّ قيد — <b>ويُنتفخ الأستاذُ

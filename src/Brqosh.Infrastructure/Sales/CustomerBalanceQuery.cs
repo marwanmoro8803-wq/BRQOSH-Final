@@ -77,9 +77,16 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
 
         var credited = await ArCreditNotes(db, companyId, customerId).SumGrandTotalAsync();
 
+        // (CEEF-230 · ط4-٠) ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق** — كما في
+        // ‏<see cref="AllBalancesAsync"/>. **وكان هذا المسار وحدَه بلا الإصلاح**: يطرح
+        // ‏`Amount` وهو بعملة السند، فسندٌ دولاريٌّ يُنقص ذمّةً رياليةً بعددٍ دولاريّ.
+        //
+        // ‏**والأثرُ رقمان لشيءٍ واحد**: عميلٌ سدّد بالدولار كلَّ ما عليه يظهر **مسدَّداً
+        // ‏في اللوحة ومديناً بـ3,162.50 في كشف حسابه** — والمحاسبُ لا يعرف أيَّهما يُصدّق.
+        // ‏وأخرجه قياسٌ يُقابل المسارين، لا قراءةُ شيفرة: **كلاهما كان أخضرَ وحدَه.**
         var received = await db.ReceiptVouchers
             .Where(v => v.CompanyId == companyId && v.CustomerId == customerId && v.Status == ReceiptVoucherStatus.Posted)
-            .SumAsync(v => (decimal?)v.Amount) ?? 0m;
+            .SumAsync(v => (decimal?)(v.ReceivableRelieved == 0m ? v.Amount : v.ReceivableRelieved)) ?? 0m;
 
         received += await db.Cheques
             .Where(c => c.CompanyId == companyId && c.CustomerId == customerId
@@ -90,29 +97,43 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         return new CustomerBalance(customerId, invoiced + billings, credited, received);
     }
 
-    public async Task<IReadOnlyDictionary<long, decimal>> AllBalancesAsync(long companyId)
+    /// <summary>
+    /// أرصدةُ العملاء كلِّهم.
+    /// </summary>
+    /// <param name="asOf">
+    /// <b>حتّى تاريخٍ معلوم</b> — و<c>null</c> يعني الآن. <b>ولا يُقاس عمرُ دَينٍ بميزانٍ
+    /// من زمنٍ آخر</b>: تقريرُ أعمارٍ في ٣٠ يونيو يُقابل خاناتِه برصيدِ اليوم يُخرج فرقاً
+    /// يُنسب إلى التقرير وهو في المرجع. <b>وهذا الوسيطُ أخرجته طفرةٌ نجت</b> — ترشيحُ
+    /// المستندات بالتاريخ كان قائماً بلا مرجعٍ يُقابله.
+    /// </param>
+    public async Task<IReadOnlyDictionary<long, decimal>> AllBalancesAsync(
+        long companyId, DateOnly? asOf = null)
     {
         var invoiced = await db.SalesInvoices
             .Where(i => i.CompanyId == companyId
                         && i.Status == SalesInvoiceStatus.Posted
-                        && i.PosShiftId == null)
+                        && i.PosShiftId == null
+                        && (asOf == null || i.InvoiceDate <= asOf))
             .GroupBy(i => i.CustomerId)
             .Select(g => new { CustomerId = g.Key, Total = g.Sum(i => i.Subtotal + i.VatAmount) })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
         var billings = (await db.ProgressBillings
-            .Where(b => b.CompanyId == companyId && b.Status == ProgressBillingStatus.Posted)
+            .Where(b => b.CompanyId == companyId && b.Status == ProgressBillingStatus.Posted
+                        && (asOf == null || b.BillingDate <= asOf))
             .ToListAsync())
             .GroupBy(b => b.CustomerId)
             .ToDictionary(g => g.Key, g => g.Sum(b => b.GrandTotal));
 
         var credited = await ArCreditNotes(db, companyId)
+            .Where(n => asOf == null || n.NoteDate <= asOf)
             .GroupBy(n => n.CustomerId)
             .Select(g => new { CustomerId = g.Key, Total = g.Sum(n => n.Subtotal + n.VatAmount) })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
         var received = await db.ReceiptVouchers
-            .Where(v => v.CompanyId == companyId && v.Status == ReceiptVoucherStatus.Posted)
+            .Where(v => v.CompanyId == companyId && v.Status == ReceiptVoucherStatus.Posted
+                        && (asOf == null || v.VoucherDate <= asOf))
             .GroupBy(v => v.CustomerId)
             // (CEEF-230 · ط1-٤) ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق.**
             //
@@ -132,7 +153,8 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         var chequeReceived = await db.Cheques
             .Where(c => c.CompanyId == companyId && c.CustomerId != null
                         && c.Type == ChequeType.Received
-                        && ReceivedChequeCreditStatuses.Contains(c.Status))
+                        && ReceivedChequeCreditStatuses.Contains(c.Status)
+                        && (asOf == null || c.ChequeDate <= asOf))
             .GroupBy(c => c.CustomerId!.Value)
             .Select(g => new { CustomerId = g.Key, Total = g.Sum(c => c.Amount) })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);

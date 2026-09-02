@@ -30,6 +30,7 @@ public static class PageFactory
         ["trial_balance"] = () => new Views.Pages.TrialBalancePage(),
         ["customers"] = () => new Views.Pages.CustomersPage(),
         ["customer_statement"] = () => new Views.Pages.CustomerStatementPage(),
+        ["receivable_aging"] = () => new Views.Pages.ReceivableAgingPage(),
         ["sales_quotations"] = () => new Views.Pages.SalesQuotationsPage(),
         ["sales_orders"] = () => new Views.Pages.SalesOrdersPage(),
         ["sales_invoices"] = () => new Views.Pages.SalesInvoicesPage(),

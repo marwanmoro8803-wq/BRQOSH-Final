@@ -57,6 +57,7 @@ public static class NavigationCatalog
         [
             new("customers", "العملاء"),
             new("customer_statement", "كشف حساب عميل"),
+            new("receivable_aging", "أعمار ديون العملاء"),
             new("sales_quotations", "عروض الأسعار"),
             new("sales_orders", "أوامر البيع"),
             new("sales_invoices", "فواتير المبيعات"),
@@ -212,6 +213,7 @@ public static class NavigationCatalog
         ["pos_reports"] = "POS Reports",
         ["customers"] = "Customers",
         ["customer_statement"] = "Customer Statement",
+        ["receivable_aging"] = "Receivable Aging",
         ["sales_quotations"] = "Sales Quotations",
         ["sales_orders"] = "Sales Orders",
         ["sales_invoices"] = "Sales Invoices",

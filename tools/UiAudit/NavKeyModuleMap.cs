@@ -42,6 +42,7 @@ internal static class NavKeyModuleMap
         ["pos_reports"] = ModuleKey.PointOfSale,
         ["customers"] = ModuleKey.Sales,
         ["customer_statement"] = ModuleKey.Sales,
+        ["receivable_aging"] = ModuleKey.Sales,
         ["sales_quotations"] = ModuleKey.Sales,
         ["sales_orders"] = ModuleKey.Sales,
         ["sales_invoices"] = ModuleKey.Sales,
