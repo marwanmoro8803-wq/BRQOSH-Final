@@ -705,6 +705,38 @@ static class ModuleProbes
             var stored = await c.Db.PropertyUnits.AsNoTracking().SingleAsync(u => u.Id == unit.Id);
             ProbeContext.Expect(stored.Status == UnitStatus.Leased,
                 $"الوحدةُ لم تُشغَل بالعقد — حالتُها {stored.Status}.");
+
+            // ‏**ثمّ أمرُ الصيانة (ط3-١ب)**: تكلفتُه على وحدته، **وما يُحمَّل على المستأجر
+            // ‏يصير فاتورةً** — وبها وحدَها يجوز أن يُصادَر تأمينُه. **ومصادرةٌ بلا دَينٍ
+            // ‏دعوى يخسرها المؤجِّر**: يطلب المستأجرُ التفصيلَ فلا يجده.
+            var maintenance = new MaintenanceOrderService(c.Db);
+
+            var order = MaintenanceOrder.Create(c.CompanyId, property.Id, "PRB-MO1",
+                MaintenanceKind.TenantDamage, new DateOnly(2026, 3, 10),
+                "تلفٌ بفعل المستأجر", unitId: unit.Id);
+            order.AddCost("قطع غيار", 700m);
+            order.AddCost("أجرة فنّي", 300m);
+            order.ChargeTenant(400m, lease.Id);
+            order.Complete(new DateOnly(2026, 3, 12));
+            c.Db.MaintenanceOrders.Add(order);
+            await c.Db.SaveChangesAsync();
+
+            var result = await maintenance.PostAsync(c.CompanyId, order.Id, new DateOnly(2026, 3, 12));
+
+            // ‏**والتكلفةُ كلُّها مصروف** — لا حصّةُ المالك وحدَها.
+            var repairs = await c.BalanceAsync(MaintenanceOrderService.MaintenanceExpenseCode);
+            ProbeContext.Expect(repairs == 1_000m,
+                $"تكلفةُ الصيانة {repairs:N2} والمنتظر 1,000.00 — والتكلفةُ كلُّها مصروفٌ لا حصّةُ المالك.");
+
+            ProbeContext.Expect(result.TenantInvoiceId is not null,
+                "حصّةُ المستأجر لم تصر فاتورةً — فيُطالَب بما لا يراه في كشفه، ولا سندَ لمصادرة تأمينه.");
+
+            // ‏**وربحيّةُ الوحدة تُشتقّ**: ٦٠٠ على المالك من ألفٍ أُنفقت.
+            var byUnit = await maintenance.CostByUnitAsync(
+                c.CompanyId, new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31));
+            ProbeContext.Expect(byUnit.Count == 1 && byUnit[0].OwnerCost == 600m,
+                $"تكلفةُ الوحدة لم تُشتقّ: {byUnit.Count} وحدةً، وعلى المالك "
+                + $"{(byUnit.Count > 0 ? byUnit[0].OwnerCost : 0m):N2} والمنتظر 600.00.");
         }),
 
         // ─ الصحّة: زيارةٌ واحدةٌ تُنتج ذمّتين ─

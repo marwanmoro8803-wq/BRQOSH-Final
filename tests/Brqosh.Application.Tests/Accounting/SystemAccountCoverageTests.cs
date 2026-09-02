@@ -4,6 +4,10 @@ using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Assets;
 using Brqosh.Domain.Payroll;
+using Brqosh.Infrastructure.Logistics;
+using Brqosh.Infrastructure.Hospitality;
+using Brqosh.Domain.Logistics;
+using Brqosh.Domain.Hospitality;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Treasury;
@@ -70,10 +74,6 @@ public class SystemAccountCoverageTests : IDisposable
         // ‏وحدتَي المقاولات والتصنيع. وأثرُها على مالكنا أنّها تزيّن دليلَه بأسماءٍ
         // ‏لا تخصّ عمله — وذاك بندُ عرضٍ لا بندُ صحّة.
         ["1113"] = "أعمال تحت التنفيذ — يكتبها WorkOrderService (وحدة التصنيع)، وملفُّ التجزئة لا يملكها.",
-        ["1117"] = "عُهَد رحلات التوصيل — يكتبها DeliveryTripService (وحدة اللوجستيات)، وملفُّ التجزئة لا يملكها. "
-                   + "وهويّةُ هـ-٢٠ مقيسةٌ عليه في TripSettlementTests: يعود صفراً بعد التسوية.",
-        ["2116"] = "إكراميات مستحقة للعاملين — يكتبها TipPoolService (وحدة الضيافة)، وملفُّ التجزئة لا يملكها. "
-                   + "وهويّةُ هـ-١٩ مقيسةٌ عليه في TipPostingTests: المحصَّلُ التزامٌ لا إيراد.",
         ["1114"] = "محتجزات لدى العملاء — يكتبها ProgressBillingPostingService (وحدة المقاولات).",
         ["2105"] = "دفعات مقدمة من العملاء — كاتبُها الوحيد ProgressBillingPostingService (المقاولات).",
         ["2110"] = "محتجزات مقاولي الباطن — وحدة المقاولات.",
@@ -280,6 +280,70 @@ public class SystemAccountCoverageTests : IDisposable
     }
 
     /// <summary>أكوادُ الحسابات التي استقبلت سطرَ قيدٍ فعلاً — من الأستاذ نفسه.</summary>
+    /// <summary>
+    /// (CEEF-230) <b>دورةٌ ثانيةٌ لمنشأةٍ قطاعية — ولمَ لم تُضَف إلى دورة المحلّ.</b>
+    ///
+    /// <para><b>ومحلُّ التجزئة لا يجمع إكراميات ولا يُسيّر رحلات.</b> فإقحامُهما في دورته
+    /// <b>يُخضّر الحسابين بطريقٍ لا يسلكه صاحبُ ذلك الملفّ</b> — وهو الغشُّ نفسُه الذي
+    /// تمنعه هذه الحزمة: <b>قياسٌ بمسارٍ غير مسارِه</b>.</para>
+    ///
+    /// <para><b>وكانا مُقَرَّين في <c>DeclaredUnreached</c></b> بسببٍ صادقٍ في حرفه —
+    /// «لهما كاتبان، وملفُّ التجزئة لا يفتح وحدتَيهما». <b>والإقرارُ الصادق أضعفُ من
+    /// القياس</b>: لا يقول إنّ الكاتبَ يكتب في الحساب الصحيح، بل إنّ أحداً لم ينظر.
+    /// <b>فبُنيت لهما دورتُهما</b> وأُسقط الإقرار.</para>
+    /// </summary>
+    private async Task<HashSet<string>> RunSectorCycleAsync()
+    {
+        var company = await new DatabaseInitializer(_db)
+            .InitializeAsync("منشأة قطاعية", "310123456700110", BusinessProfile.Hospitality);
+        var companyId = company.Id;
+
+        var waiter = Employee.Create(companyId, "EMP-T1", "نادل", "1099999999",
+            EmployeeNationality.Saudi, "نادل", new DateOnly(2025, 1, 1));
+        waiter.SetPay(basic: 4000m, housing: 0m, transport: 0m);
+        _db.Employees.Add(waiter);
+
+        var shipper = Customer.Create(companyId, "تاجر", "311122233300004");
+        _db.Customers.Add(shipper);
+        await _db.SaveChangesAsync();
+
+        // ── إكرامياتٌ تُحصَّل ثمّ تُصرف — و2116 يُدان ثمّ يُدين ──────────────
+        var pool = TipPool.Open(companyId, new DateOnly(2026, 5, 10));
+        pool.Collect(TipSource.Cash, 300m);
+        pool.DistributeEvenly([waiter.Id]);
+        _db.TipPools.Add(pool);
+        await _db.SaveChangesAsync();
+
+        var tips = new TipPoolService(_db);
+        await tips.CloseAndPostAsync(companyId, pool.Id, new DateOnly(2026, 5, 10));
+        await tips.PayOutAsync(companyId, pool.Id, new DateOnly(2026, 5, 12));
+
+        // ── عهدةُ رحلةٍ تُسلَّم ثمّ تُسوَّى — و1117 يُدان ثمّ يُفرَّغ ─────────
+        var shipment = Shipment.Create(companyId, "WB-COV1", shipper.Id,
+            consigneeName: "مستلم", destinationCity: "جدة",
+            shipDate: new DateOnly(2026, 5, 15), freightCharge: 400m);
+        _db.Shipments.Add(shipment);
+        await _db.SaveChangesAsync();
+
+        var trip = DeliveryTrip.Create(companyId, "TR-COV1", "الرياض — جدة", "COV-1234",
+            new DateOnly(2026, 5, 15));
+        trip.LoadShipment(shipment.Id, shipment.Status);
+        _db.DeliveryTrips.Add(trip);
+        await _db.SaveChangesAsync();
+
+        var trips = new DeliveryTripService(_db);
+        await trips.AdvanceFloatAsync(companyId, trip.Id, 500m, new DateOnly(2026, 5, 15));
+
+        trip.Dispatch();
+        trip.AddExpense(TripExpenseKind.Fuel, 400m, fromDriverFloat: true);
+        trip.Complete(new DateOnly(2026, 5, 17));
+        await _db.SaveChangesAsync();
+
+        await trips.SettleAsync(companyId, trip.Id, 100m, new DateOnly(2026, 5, 17));
+
+        return await CoveredAccountCodesAsync(companyId);
+    }
+
     private async Task<HashSet<string>> CoveredAccountCodesAsync(long companyId)
     {
         var codes = await _db.JournalEntries
@@ -303,7 +367,10 @@ public class SystemAccountCoverageTests : IDisposable
     [Fact]
     public async Task EverySystemAccount_EitherReceivesAPosting_OrIsDeclaredWithAReason()
     {
-        var covered = await RunBroadCycleAsync();
+        // ‏**والقطاعيةُ أوّلاً**: دورةُ المحلّ تُقفل السنةَ في ذيلها، **وإقفالُ الفترة
+        // ‏يمنع أيَّ ترحيلٍ بعده** — فلو تلتها لَسقطت بـ«الفترة مقفلة» لا بعطلٍ حقيقيّ.
+        var covered = await RunSectorCycleAsync();
+        covered.UnionWith(await RunBroadCycleAsync());
 
         var undeclared = SystemLeafAccounts()
             .Where(a => !covered.Contains(a.Code) && !DeclaredUnreached.ContainsKey(a.Code))
