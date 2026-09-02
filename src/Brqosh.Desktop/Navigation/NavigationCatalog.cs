@@ -23,6 +23,8 @@ public static class NavigationCatalog
             new("chart_of_accounts", "دليل الحسابات"),
             new("journal_entries", "القيود اليومية"),
             new("cost_centers", "مراكز التكلفة"),
+            new("budget_variance", "الموازنة والانحراف"),
+            new("cost_center_statement", "كشف مراكز التكلفة"),
             new("fiscal_periods", "الفترات المالية"),
         ]),
 
@@ -58,6 +60,7 @@ public static class NavigationCatalog
             new("sales_quotations", "عروض الأسعار"),
             new("sales_orders", "أوامر البيع"),
             new("sales_invoices", "فواتير المبيعات"),
+            new("recurring_plans", "الفوترة الدورية"),
             new("sales_returns", "مردودات المبيعات"),
         ]),
 
@@ -82,6 +85,8 @@ public static class NavigationCatalog
         new("المخزون والمستودعات", ModuleKey.Inventory,
         [
             new("products", "الأصناف والمنتجات"),
+            new("stock_batches", "الدفعات والصلاحية"),
+            new("units_of_measure", "وحدات القياس"),
             new("warehouses", "المستودعات"),
             new("stock_movements", "حركات المخزون"),
             new("stock_count", "الجرد"),
@@ -223,6 +228,11 @@ public static class NavigationCatalog
         ["general_ledger_report"] = "General Ledger",
         ["fixed_assets"] = "Fixed Assets",
         ["payroll"] = "Payroll",
+        ["units_of_measure"] = "Units of Measure",
+        ["stock_batches"] = "Batches & Expiry",
+        ["recurring_plans"] = "Recurring Billing",
+        ["cost_center_statement"] = "Cost Center Statement",
+        ["budget_variance"] = "Budget & Variance",
         ["employees"] = "Employees",
         ["payslips"] = "Payslips",
         ["wage_protection"] = "Wage Protection File",

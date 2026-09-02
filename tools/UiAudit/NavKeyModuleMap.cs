@@ -83,6 +83,11 @@ internal static class NavKeyModuleMap
         ["fixed_assets"] = ModuleKey.FixedAssets,
         ["payroll"] = ModuleKey.Payroll,
         ["employees"] = ModuleKey.Payroll,
+        ["units_of_measure"] = ModuleKey.Inventory,
+        ["stock_batches"] = ModuleKey.Inventory,
+        ["recurring_plans"] = ModuleKey.Sales,
+        ["cost_center_statement"] = ModuleKey.GeneralLedger,
+        ["budget_variance"] = ModuleKey.GeneralLedger,
         ["payslips"] = ModuleKey.Payroll,
         ["wage_protection"] = ModuleKey.Payroll,
     };

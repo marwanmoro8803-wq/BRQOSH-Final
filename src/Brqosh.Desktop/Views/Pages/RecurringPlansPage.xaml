@@ -1,0 +1,52 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.RecurringPlansPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الفوترة الدورية" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="إيجار · اشتراك · عقد صيانة — والتوليد دفعة يطلقها المستخدم"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="GenerateBtn" Content="توليد المستحق" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnGenerate"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="PauseBtn" DockPanel.Dock="Right" Content="إيقاف مؤقت"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnPause"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="14"
+                            VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="حتى تاريخ" VerticalAlignment="Center"
+                           Margin="0,0,10,0" Style="{StaticResource FieldLabel}"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="140"/>
+                    <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="180"/>
+                    <DataGridTextColumn Header="الدورية" Binding="{Binding Frequency}" Width="110"/>
+                    <DataGridTextColumn Header="البداية" Binding="{Binding StartDate}" Width="110"/>
+                    <DataGridTextColumn Header="النهاية" Binding="{Binding EndDate}" Width="110"/>
+                    <DataGridTextColumn Header="الاستحقاق القادم" Binding="{Binding NextDue}" Width="140"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

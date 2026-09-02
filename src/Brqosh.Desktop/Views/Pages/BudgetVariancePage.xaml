@@ -1,0 +1,55 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.BudgetVariancePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الموازنة والانحراف" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="المخطط مقابل الفعلي — والموجب صالح للمنشأة في الحالتين"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="RunBtn" Content="عرض" Style="{StaticResource PrimaryButton}"
+                            Padding="24,9" Click="OnRun"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="14"
+                            VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="إلى" VerticalAlignment="Center"
+                           Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
+                <DatePicker x:Name="FromBox" DockPanel.Dock="Right" FontSize="14"
+                            VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="من" VerticalAlignment="Center"
+                           Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="BudgetBox" DockPanel.Dock="Right" Width="220" FontSize="14"
+                          VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="الموازنة" VerticalAlignment="Center"
+                           Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الحساب" Binding="{Binding AccountCode}" Width="110"/>
+                    <DataGridTextColumn Header="اسم الحساب" Binding="{Binding AccountName}" Width="*"/>
+                    <DataGridTextColumn Header="مركز التكلفة" Binding="{Binding CostCenter}" Width="180"/>
+                    <DataGridTextColumn Header="المخطط" Binding="{Binding Planned, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="الفعلي" Binding="{Binding Actual, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="الانحراف" Binding="{Binding Variance, StringFormat=N2}" Width="130"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -54,6 +54,9 @@ public static class InfrastructureServiceCollectionExtensions
         // CEEF-122: خدمات الترحيل المالي — scoped لحل DesktopServiceFacade من DI بدل new XxxService(db)
         services.AddScoped<JournalPostingService>();
         services.AddScoped<SalesInvoicePostingService>();
+
+        // (CEEF-230 · ط6-٣) ‏خدمةُ الفوترة الدورية — تُطلَب من الشاشة، فتُسجَّل.
+        services.AddScoped<Sales.RecurringInvoiceService>();
         services.AddScoped<CreditNotePostingService>();
         services.AddScoped<PurchaseInvoicePostingService>();
         services.AddScoped<DebitNotePostingService>();

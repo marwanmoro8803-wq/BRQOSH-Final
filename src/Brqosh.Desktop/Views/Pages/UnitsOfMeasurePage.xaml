@@ -1,0 +1,41 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.UnitsOfMeasurePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="وحدات القياس" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="كرتون وحبة وكيلو — ورمز UN/ECE يذهب للفاتورة الإلكترونية"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ وحدة قياس" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" Width="110"/>
+                    <DataGridTextColumn Header="الاسم" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="رمز UN/ECE" Binding="{Binding UnCode}" Width="120"/>
+                    <DataGridTextColumn Header="وحدة الأساس" Binding="{Binding BaseCode}" Width="120"/>
+                    <DataGridTextColumn Header="معامل التحويل" Binding="{Binding Factor, StringFormat=N4}" Width="130"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
