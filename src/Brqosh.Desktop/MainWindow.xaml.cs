@@ -595,226 +595,29 @@ public partial class MainWindow : Window
         SetActiveNav(pageKey);
         if (AiColumn.Width.Value > 0)
             _ = RefreshAiPanelAsync();
+        // ‏(CEEF-230 · ط6-١) **الربطُ في `PageFactory` لا هنا** — فما داخلَ نافذةٍ لا
+        // ‏يُقاس. وشاشتان تحتاجان سياقَ النافذة فتبقيان، **ومُعلَنتان في
+        // ‏`PageFactory.WindowScopedKeys`** فلا يُقرأ غيابُهما من المصنع نقصاً.
         switch (pageKey)
         {
-            case "dashboard":
-                PageHost.Content = new Views.Pages.DashboardPage();
-                return;
-            case "chart_of_accounts":
-                PageHost.Content = new Views.Pages.ChartOfAccountsPage();
-                return;
-            case "journal_entries":
-                PageHost.Content = new Views.Pages.JournalEntriesPage();
-                return;
-            case "trial_balance":
-                PageHost.Content = new Views.Pages.TrialBalancePage();
-                return;
-            case "customers":
-                PageHost.Content = new Views.Pages.CustomersPage();
-                return;
-            case "customer_statement":
-                PageHost.Content = new Views.Pages.CustomerStatementPage();
-                return;
-            case "sales_quotations":
-                PageHost.Content = new Views.Pages.SalesQuotationsPage();
-                return;
-            case "sales_orders":
-                PageHost.Content = new Views.Pages.SalesOrdersPage();
-                return;
-            case "sales_invoices":
-                PageHost.Content = new Views.Pages.SalesInvoicesPage();
-                return;
-            case "fiscal_periods":
-                PageHost.Content = new Views.Pages.FiscalPeriodsPage();
-                return;
-            case "sales_returns":
-                PageHost.Content = new Views.Pages.CreditNotesPage();
-                return;
-            case "crm_leads":
-                PageHost.Content = new Views.Pages.CrmLeadsPage();
-                return;
-            case "crm_opportunities":
-                PageHost.Content = new Views.Pages.CrmOpportunitiesPage();
-                return;
-            case "crm_activities":
-                PageHost.Content = new Views.Pages.CrmActivitiesPage();
-                return;
-            case "receipt_vouchers":
-                PageHost.Content = new Views.Pages.ReceiptVouchersPage();
-                return;
-            case "payment_vouchers":
-                PageHost.Content = new Views.Pages.PaymentVouchersPage();
-                return;
-            case "suppliers":
-                PageHost.Content = new Views.Pages.SuppliersPage();
-                return;
-            case "supplier_statement":
-                PageHost.Content = new Views.Pages.SupplierStatementPage();
-                return;
-            case "purchase_requests":
-                PageHost.Content = new Views.Pages.PurchaseRequestsPage();
-                return;
-            case "purchase_orders":
-                PageHost.Content = new Views.Pages.PurchaseOrdersPage();
-                return;
-            case "goods_receipts":
-                PageHost.Content = new Views.Pages.GoodsReceiptsPage();
-                return;
-            case "purchase_invoices":
-                PageHost.Content = new Views.Pages.PurchaseInvoicesPage();
-                return;
-            case "debit_notes":
-                PageHost.Content = new Views.Pages.DebitNotesPage();
-                return;
-            case "products":
-                PageHost.Content = new Views.Pages.ProductsPage();
-                return;
-            case "warehouses":
-                PageHost.Content = new Views.Pages.WarehousesPage();
-                return;
-            case "stock_movements":
-                PageHost.Content = new Views.Pages.StockMovementsPage();
-                return;
-            case "stock_count":
-                PageHost.Content = new Views.Pages.StockCountPage();
-                return;
-            case "landed_cost":
-                PageHost.Content = new Views.Pages.LandedCostPage();
-                return;
-            case "bank_accounts":
-                PageHost.Content = new Views.Pages.BankAccountsPage();
-                return;
-            case "bank_transfers":
-                PageHost.Content = new Views.Pages.BankTransfersPage();
-                return;
-            case "exchange_rates":
-                PageHost.Content = new Views.Pages.ExchangeRatesPage();
-                return;
-            case "cheques":
-                PageHost.Content = new Views.Pages.ChequesPage();
-                return;
-            case "bank_reconciliation":
-                PageHost.Content = new Views.Pages.BankReconciliationPage();
-                return;
-            case "cost_centers":
-                PageHost.Content = new Views.Pages.CostCentersPage();
-                return;
-            case "fixed_assets":
-                PageHost.Content = new Views.Pages.FixedAssetsPage();
-                return;
-            case "payroll":
-                PageHost.Content = new Views.Pages.PayrollPage();
-                return;
-            case "projects":
-                PageHost.Content = new Views.Pages.ProjectsPage();
-                return;
-            case "contracts":
-                PageHost.Content = new Views.Pages.ContractsPage();
-                return;
-            case "boq":
-                PageHost.Content = new Views.Pages.BoqPage();
-                return;
-            case "progress_billings":
-                PageHost.Content = new Views.Pages.ProgressBillingsPage();
-                return;
-            case "subcontractors":
-                PageHost.Content = new Views.Pages.SubcontractorsPage();
-                return;
-            case "retentions":
-                PageHost.Content = new Views.Pages.RetentionsPage();
-                return;
-            case "project_profitability":
-                PageHost.Content = new Views.Pages.ProjectProfitabilityPage();
-                return;
-            case "bom":
-                PageHost.Content = new Views.Pages.BomPage();
-                return;
-            case "work_orders":
-                PageHost.Content = new Views.Pages.WorkOrdersPage();
-                return;
-            case "wip":
-                PageHost.Content = new Views.Pages.WipPage();
-                return;
-            case "pos_session":
-                PageHost.Content = new Views.Pages.PosSessionPage();
-                return;
-            case "pos_shifts":
-                PageHost.Content = new Views.Pages.PosShiftsPage();
-                return;
-            case "pos_reports":
-                PageHost.Content = new Views.Pages.PosReportsPage();
-                return;
-            case "income_statement":
-                PageHost.Content = new Views.Pages.IncomeStatementPage();
-                return;
-            case "balance_sheet":
-                PageHost.Content = new Views.Pages.BalanceSheetPage();
-                return;
-            case "cash_flow_statement":
-                PageHost.Content = new Views.Pages.CashFlowStatementPage();
-                return;
-            case "consolidated_trial_balance":
-                PageHost.Content = new Views.Pages.ConsolidatedTrialBalancePage();
-                return;
-            case "consolidated_income_statement":
-                PageHost.Content = new Views.Pages.ConsolidatedIncomeStatementPage();
-                return;
-            case "consolidated_balance_sheet":
-                PageHost.Content = new Views.Pages.ConsolidatedBalanceSheetPage();
-                return;
-            case "intercompany_elimination":
-                PageHost.Content = new Views.Pages.IntercompanyEliminationPage();
-                return;
-            case "vat_return":
-                PageHost.Content = new Views.Pages.VatReturnPage();
-                return;
-            case "general_ledger_report":
-                PageHost.Content = new Views.Pages.GeneralLedgerPage();
-                return;
-            case "zatca_invoices":
-                PageHost.Content = new Views.Pages.ZatcaInvoicesPage();
-                return;
-            case "zatca_settings":
-                PageHost.Content = new Views.Pages.ZatcaSettingsPage();
-                return;
-            case "users":
-                PageHost.Content = new Views.Pages.UsersPage();
-                return;
-            case "audit_log":
-                PageHost.Content = new Views.Pages.AuditLogPage();
-                return;
-            case "data_quality":
-                PageHost.Content = new Views.Pages.DataQualityPage();
-                return;
-            case "platform_events":
-                PageHost.Content = new Views.Pages.PlatformEventsPage();
-                return;
-            case "customer_support":
-                PageHost.Content = new Views.Pages.CustomerSupportPage();
-                return;
-            case "pricing_plans":
-                PageHost.Content = new Views.Pages.PricingPlansPage();
-                return;
-            case "backup":
-                PageHost.Content = new Views.Pages.BackupPage();
-                return;
             case "company_settings":
                 PageHost.Content = new Views.Pages.CompanySettingsPage(_setup, this);
                 return;
             case "organizations":
                 PageHost.Content = new Views.Pages.OrganizationsPage(this);
                 return;
-            case "company_groups":
-                PageHost.Content = new Views.Pages.CompanyGroupsPage();
-                return;
-            case "branches":
-                PageHost.Content = new Views.Pages.BranchesPage();
-                return;
-            default:
-                ShowPlaceholder(pageKey, title);
-                return;
         }
+
+        var page = Navigation.PageFactory.Create(pageKey);
+        if (page is not null)
+        {
+            PageHost.Content = page;
+            return;
+        }
+
+        ShowPlaceholder(pageKey, title);
     }
+
 
     private void ShowPlaceholder(string pageKey, string title)
     {

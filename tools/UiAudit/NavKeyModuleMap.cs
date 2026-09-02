@@ -19,6 +19,11 @@ internal static class NavKeyModuleMap
         ["users"] = ModuleKey.GeneralLedger,
         ["audit_log"] = ModuleKey.GeneralLedger,
         ["data_quality"] = ModuleKey.GeneralLedger,
+
+        // (CEEF-230 · ط6-١) ‏النسخُ الاحتياطيّ — **كان غائباً عن هذه الخريطة وحدَها**.
+        // ‏فأداةُ التدقيق لا تفحصه في أيّ ملفّ عمل، **وتقول «تمّ الفحص»**. وأخرجه حارسُ
+        // ‏اتّفاق القوائم الثلاث أوّلَ ما شُغّل.
+        ["backup"] = ModuleKey.GeneralLedger,
         ["platform_events"] = ModuleKey.GeneralLedger,
         ["customer_support"] = ModuleKey.GeneralLedger,
         ["pricing_plans"] = ModuleKey.GeneralLedger,
