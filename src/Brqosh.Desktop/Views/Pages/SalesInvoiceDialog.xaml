@@ -1,4 +1,4 @@
-﻿<Window x:Class="Brqosh.Desktop.Views.Pages.SalesInvoiceDialog"
+<Window x:Class="Brqosh.Desktop.Views.Pages.SalesInvoiceDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:Brqosh.Desktop.Ui"
@@ -74,6 +74,10 @@
                         <DataGridTextColumn Header="الوصف / الصنف" Binding="{Binding Description}" Width="*"/>
                         <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="110"/>
                         <DataGridTextColumn Header="سعر الوحدة" Binding="{Binding UnitPrice, StringFormat=N2}" Width="130"/>
+                        <!-- (CEEF-231 · ط1-٢ب) نسبةُ خصم السطر — والمحرّكُ مبنيٌّ منذ ط1-٢
+                             ولا حقلَ في أيّ شاشةٍ يصل إليه، فيُدخل البائعُ السعرَ مخصوماً
+                             بيده وتضيع النسبةُ من المستند الإلكترونيّ ومن كلّ تقرير. -->
+                        <DataGridTextColumn Header="خصم %" Binding="{Binding DiscountPercent, StringFormat=N2}" Width="90"/>
                         <DataGridComboBoxColumn Header="الفئة الضريبية" Width="150"
                                                 SelectedValueBinding="{Binding VatCategory}"
                                                 SelectedValuePath="Value"
@@ -98,6 +102,9 @@
                 <Border Style="{StaticResource ContentCard}" Padding="16" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Text="ملخص مالي" Style="{StaticResource FieldLabel}" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="خصم على المستند" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="DocumentDiscountBox" Style="{StaticResource AppTextBox}" Text="0.00"
+                                 Margin="0,0,0,8" TextChanged="OnDocumentDiscountChanged"/>
                         <TextBlock Text="قبل الضريبة" Style="{StaticResource FieldLabel}"/>
                         <TextBlock x:Name="SubtotalText" Text="0.00" Style="{StaticResource TabularText}" FontSize="18" Margin="0,0,0,8"/>
                         <TextBlock Text="الضريبة 15%" Style="{StaticResource FieldLabel}"/>

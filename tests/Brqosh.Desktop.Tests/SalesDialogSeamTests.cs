@@ -98,6 +98,42 @@ public class SalesDialogSeamTests : IDisposable
         });
 
     /// <summary>
+    /// (CEEF-231 · ط1-٢ب) <b>والخصمُ المكتوبُ في الشبكة يصل إلى الوعاء الضريبيّ.</b>
+    ///
+    /// <para><b>ما كان:</b> محرّكُ الخصم مبنيٌّ منذ <c>ط1-٢</c> بخمسة اختبارات —
+    /// <b>ولا حقلَ في أيّ شاشةٍ يصل إليه</b>. فيُدخل البائعُ السعرَ مخصوماً بيده،
+    /// <b>فتختفي النسبةُ من المستند الإلكترونيّ</b> (<c>AllowanceCharge</c>) فلا تعرفها
+    /// الهيئة، <b>وتختفي من كلّ تقريرِ ربحيّة</b> — فيبدو الصنفُ مبيعاً بسعرٍ أقلَّ لا
+    /// مخصوماً.</para>
+    ///
+    /// <para><b>والقياسُ بمثالٍ لا ينقسم بلا كسر</b>: عشرةٌ بمئةٍ وخصمُ ١٠٪ ⟵ صافٍ ٩٠٠،
+    /// <b>وضريبةٌ ١٣٥ لا ١٥٠</b>. والفرقُ خمسةَ عشرَ ريالاً تُصرَّح للهيئة عن مالٍ لم
+    /// يُقبَض.</para>
+    /// </summary>
+    [Fact]
+    public void ALineDiscountTypedInTheGrid_ReachesTheTaxableBase()
+    {
+        var invoice = UiDispatcher.Invoke(() =>
+        {
+            var dialog = new SalesInvoiceDialog();
+            dialog.RowsForTests.Add(new SalesInvoiceDialog.LineRow
+            {
+                ProductId = _productId,
+                Description = "بضاعة",
+                Quantity = 10m,
+                UnitPrice = 100m,
+                DiscountPercent = 10m,
+            });
+
+            return dialog.BuildInvoiceFromRows(_companyId, _customerId, new DateOnly(2026, 2, 1));
+        });
+
+        Assert.Equal(10m, invoice.Lines.Single().DiscountPercent);
+        Assert.Equal(900m, invoice.Subtotal);
+        Assert.Equal(135m, invoice.VatAmount);
+    }
+
+    /// <summary>
     /// <b>القياس المركزيّ — السلسلة كاملةً.</b> صفٌّ في الشبكة يحمل صنفاً ⟵ مستندٌ يحمله ⟵
     /// ترحيلٌ يُنقص المخزون ويُقيّد التكلفة. هذه هي الوصلة التي كانت مقطوعة.
     /// </summary>

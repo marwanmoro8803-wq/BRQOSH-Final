@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Ui;
@@ -23,6 +23,7 @@ public partial class SalesInvoiceDialog : Window
     {
         private decimal _quantity;
         private decimal _unitPrice;
+        private decimal _discountPercent;
 
         public long? ProductId { get; set; }
         public string? Description { get; set; }
@@ -39,6 +40,21 @@ public partial class SalesInvoiceDialog : Window
             set => Set(ref _unitPrice, value, [nameof(LineTotal)]);
         }
 
+        /// <summary>
+        /// (CEEF-231 · ط1-٢ب) نسبةُ خصم السطر — <b>والمحرّكُ مبنيٌّ منذ <c>ط1-٢</c> ولا
+        /// حقلَ في شاشةٍ يصل إليه</b>.
+        /// </summary>
+        /// <remarks>
+        /// <b>وإدخالُ السعر مخصوماً بيدٍ ليس بديلاً</b>: تختفي النسبةُ من المستند
+        /// الإلكترونيّ (<c>AllowanceCharge</c>) فلا تعرفها الهيئة، <b>وتختفي من كلّ تقريرِ
+        /// ربحيّة</b> — فيبدو الصنفُ مبيعاً بسعرٍ أقلَّ لا مخصوماً.
+        /// </remarks>
+        public decimal DiscountPercent
+        {
+            get => _discountPercent;
+            set => Set(ref _discountPercent, value, [nameof(LineTotal)]);
+        }
+
         /// <summary>الفئة الضريبية للسطر — الافتراضي أساسية 15% (CEEF-208).</summary>
         public Brqosh.Domain.Tax.VatCategory VatCategory { get; set; }
             = Brqosh.Domain.Tax.VatCategory.Standard;
@@ -51,7 +67,16 @@ public partial class SalesInvoiceDialog : Window
         public string? TaxExemptionReasonCode { get; set; }
         public string? TaxExemptionReason { get; set; }
 
-        public decimal LineTotal => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
+        /// <summary>صافي السطر بعد خصمه — <b>وهو الوعاءُ الذي تُحسب عليه الضريبة</b>.</summary>
+        public decimal LineTotal
+        {
+            get
+            {
+                var gross = Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
+                var discount = Math.Round(gross * DiscountPercent / 100m, 2, MidpointRounding.AwayFromZero);
+                return gross - discount;
+            }
+        }
     }
 
     private readonly ObservableCollection<LineRow> _rows = [];
@@ -123,9 +148,28 @@ public partial class SalesInvoiceDialog : Window
     private void OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) =>
         Dispatcher.BeginInvoke(UpdateTotals);
 
+    private void OnDocumentDiscountChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        UpdateTotals();
+    }
+
+    /// <summary>
+    /// خصمُ المستند المُدخَل — <b>وما لا يُقرأ صفرٌ لا رفضٌ هنا</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>والرفضُ عند الحفظ لا عند كلّ حرف</b>: الحقلُ يُقرأ مع كلّ ضغطة، ورفضُ «1.» أثناء
+    /// الكتابة يمنع كتابةَ «1.5». <b>والنطاقُ يحرس عند الترحيل</b> — وهو الموضعُ الذي
+    /// لا يُلتفّ عليه.
+    /// </remarks>
+    private decimal DocumentDiscount() =>
+        decimal.TryParse(DocumentDiscountBox.Text, out var value) && value > 0m ? value : 0m;
+
     private void UpdateTotals()
     {
-        var subtotal = _rows.Sum(r => r.LineTotal);
+        var subtotal = _rows.Sum(r => r.LineTotal) - DocumentDiscount();
+        if (subtotal < 0m) subtotal = 0m;
+
         var vat = Math.Round(subtotal * SalesInvoice.SaudiVatRate, 2, MidpointRounding.AwayFromZero);
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");
@@ -210,8 +254,18 @@ public partial class SalesInvoiceDialog : Window
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
         {
             invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId,
-                row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason);
+                row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason,
+                discountPercent: row.DiscountPercent);
         }
+
+        // (CEEF-231 · ط1-٢ب) ‏**وخصمُ المستند بعد السطور**: النطاقُ يرفض خصماً يتجاوز
+        // ‏صافيَها، **وفحصُه قبل إضافتها يقيس صفراً فيرفض كلَّ خصم**.
+        //
+        // ‏والتوزيعُ على الأوعية بنسبتها يقع في النطاق — **وطرحُه من الإجمالي وحدَه
+        // ‏يُصرَّح للهيئة بضريبةٍ على مبلغٍ لم يُدفع**.
+        var documentDiscount = DocumentDiscount();
+        if (documentDiscount > 0m)
+            invoice.ApplyDocumentDiscount(documentDiscount);
 
         return invoice;
     }

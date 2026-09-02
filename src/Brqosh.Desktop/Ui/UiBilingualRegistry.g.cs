@@ -793,6 +793,8 @@ public static partial class UiBilingualRegistry
         ["حلويات"] = "Desserts",
         ["خدمة (بلا مخزون)"] = "Service (non-stock)",
         ["خرائط حسابات المعاملات بين الشركات"] = "Intercompany account maps",
+        ["خصم %"] = "Discount %",
+        ["خصم على المستند"] = "Document Discount",
         ["خط الطباعة العربي"] = "Arabic print font",
         ["خطأ اتصال"] = "Connection error",
         ["خطوة الموافقة"] = "Approval step",
