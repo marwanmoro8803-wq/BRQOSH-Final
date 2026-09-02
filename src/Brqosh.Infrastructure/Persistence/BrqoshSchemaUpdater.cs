@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using System.Globalization;
@@ -2002,6 +2002,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
                 await EnsurePgColumnAsync("payment_vouchers", "PayableRelieved",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المكتسَب.
+                await EnsurePgColumnAsync("payment_vouchers", "SettlementDiscount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
             }
             else
             {
@@ -2010,6 +2013,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("payment_vouchers", "ExchangeRate",
                     "TEXT NOT NULL DEFAULT '1'", ct);
                 await EnsureSqliteColumnAsync("payment_vouchers", "PayableRelieved",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("payment_vouchers", "SettlementDiscount",
                     "TEXT NOT NULL DEFAULT '0'", ct);
             }
         }
@@ -2025,6 +2030,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
                 await EnsurePgColumnAsync("receipt_vouchers", "ReceivableRelieved",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المسموح به.
+                await EnsurePgColumnAsync("receipt_vouchers", "SettlementDiscount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
             }
             else
             {
@@ -2033,6 +2041,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("receipt_vouchers", "ExchangeRate",
                     "TEXT NOT NULL DEFAULT '1'", ct);
                 await EnsureSqliteColumnAsync("receipt_vouchers", "ReceivableRelieved",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("receipt_vouchers", "SettlementDiscount",
                     "TEXT NOT NULL DEFAULT '0'", ct);
             }
         }
@@ -2235,6 +2245,119 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         else
         {
             await EnsureSqliteColumnAsync("menu_items", "SaleProductId", "INTEGER NULL", ct);
+        }
+
+        // (CEEF-230 · ط3-١ب و ط3-٣د و ط3-٤ب) ‏الصيانةُ والإكرامياتُ ورحلاتُ التوصيل.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS maintenance_orders (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "PropertyId" BIGINT NOT NULL,
+                    "UnitId" BIGINT NULL,
+                    "OrderNumber" character varying(64) NOT NULL,
+                    "Kind" character varying(16) NOT NULL DEFAULT 'Preventive',
+                    "RequestDate" DATE NOT NULL,
+                    "CompletedOn" DATE NULL,
+                    "Description" character varying(512) NOT NULL,
+                    "VendorName" character varying(256) NULL,
+                    "Status" character varying(16) NOT NULL DEFAULT 'Open',
+                    "LeaseContractId" BIGINT NULL,
+                    "TenantChargeAmount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "JournalEntryId" BIGINT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS maintenance_cost_lines (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    order_id BIGINT NOT NULL
+                        REFERENCES maintenance_orders("Id") ON DELETE CASCADE,
+                    "Description" character varying(512) NOT NULL,
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_maintenance_orders_CompanyId_OrderNumber" ON maintenance_orders ("CompanyId", "OrderNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_maintenance_orders_CompanyId_PropertyId_UnitId" ON maintenance_orders ("CompanyId", "PropertyId", "UnitId");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_maintenance_orders_CompanyId_Status" ON maintenance_orders ("CompanyId", "Status");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_maintenance_cost_lines_order_id" ON maintenance_cost_lines (order_id);""", ct);
+
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS tip_pools (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "ShiftId" BIGINT NULL,
+                    "PoolDate" DATE NOT NULL,
+                    "Status" character varying(16) NOT NULL DEFAULT 'Open',
+                    "JournalEntryId" BIGINT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS tip_collections (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    pool_id BIGINT NOT NULL REFERENCES tip_pools("Id") ON DELETE CASCADE,
+                    "Source" character varying(8) NOT NULL DEFAULT 'Cash',
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "Note" character varying(256) NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS tip_distributions (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    pool_id BIGINT NOT NULL REFERENCES tip_pools("Id") ON DELETE CASCADE,
+                    "EmployeeId" BIGINT NOT NULL,
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_tip_pools_CompanyId_PoolDate" ON tip_pools ("CompanyId", "PoolDate");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_tip_pools_CompanyId_Status" ON tip_pools ("CompanyId", "Status");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_tip_collections_pool_id" ON tip_collections (pool_id);""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_tip_distributions_pool_id_EmployeeId" ON tip_distributions (pool_id, "EmployeeId");""", ct);
+
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS delivery_trips (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "TripNumber" character varying(64) NOT NULL,
+                    "RouteName" character varying(256) NOT NULL,
+                    "VehiclePlate" character varying(32) NOT NULL,
+                    "DriverEmployeeId" BIGINT NULL,
+                    "DepartureDate" DATE NOT NULL,
+                    "ReturnDate" DATE NULL,
+                    "Status" character varying(16) NOT NULL DEFAULT 'Planned',
+                    "DriverFloat" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "ReturnedCash" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "JournalEntryId" BIGINT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS trip_shipments (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    trip_id BIGINT NOT NULL REFERENCES delivery_trips("Id") ON DELETE CASCADE,
+                    "ShipmentId" BIGINT NOT NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS trip_expenses (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    trip_id BIGINT NOT NULL REFERENCES delivery_trips("Id") ON DELETE CASCADE,
+                    "Kind" character varying(20) NOT NULL DEFAULT 'Other',
+                    "Amount" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "FromDriverFloat" BOOLEAN NOT NULL DEFAULT false,
+                    "Note" character varying(256) NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_delivery_trips_CompanyId_TripNumber" ON delivery_trips ("CompanyId", "TripNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_delivery_trips_CompanyId_RouteName_DepartureDate" ON delivery_trips ("CompanyId", "RouteName", "DepartureDate");""", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_trip_shipments_ShipmentId" ON trip_shipments ("ShipmentId");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_trip_shipments_trip_id" ON trip_shipments (trip_id);""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_trip_expenses_trip_id" ON trip_expenses (trip_id);""", ct);
         }
 
         // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.

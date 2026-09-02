@@ -98,6 +98,8 @@ internal static class NavKeyModuleMap
         ["patients"] = ModuleKey.Healthcare,
         ["visits"] = ModuleKey.Healthcare,
         ["insurance_claims"] = ModuleKey.Healthcare,
+        ["tip_pools"] = ModuleKey.Hospitality,
+        ["delivery_trips"] = ModuleKey.Logistics,
         ["menu_items"] = ModuleKey.Hospitality,
         ["rooms"] = ModuleKey.Hospitality,
         ["reservations"] = ModuleKey.Hospitality,

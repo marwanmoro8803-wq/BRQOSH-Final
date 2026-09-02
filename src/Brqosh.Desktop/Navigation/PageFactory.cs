@@ -70,6 +70,8 @@ public static class PageFactory
         ["patients"] = () => new Views.Pages.PatientsPage(),
         ["visits"] = () => new Views.Pages.VisitsPage(),
         ["insurance_claims"] = () => new Views.Pages.InsuranceClaimsPage(),
+        ["tip_pools"] = () => new Views.Pages.TipPoolsPage(),
+        ["delivery_trips"] = () => new Views.Pages.DeliveryTripsPage(),
         ["menu_items"] = () => new Views.Pages.MenuItemsPage(),
         ["rooms"] = () => new Views.Pages.RoomsPage(),
         ["reservations"] = () => new Views.Pages.ReservationsPage(),

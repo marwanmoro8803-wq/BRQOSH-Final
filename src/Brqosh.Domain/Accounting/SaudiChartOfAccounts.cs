@@ -50,6 +50,13 @@ public static class SaudiChartOfAccounts
         // ‏المصروفُ في شهرٍ آخر، **فيتذبذب مصروفُ الرواتب بلا سببٍ تشغيليّ**.
         new("1116", "سُلَف الموظفين", "Employee Advances", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
+        // (CEEF-230 · ط3-٤ب) ‏**عهدةُ السائق أصلٌ لا مصروف حتى تُسوَّى.**
+        //
+        // ‏فبلا هذا الحساب تُصرف العهدةُ كلُّها مصروفاً يومَ تسليمها — **فتُضخَّم تكلفةُ
+        // ‏المسار بما سيعود**، ويختفي النقدُ العائد من الصندوق. **وهويّةُ هـ-٢٠ تُقاس
+        // ‏على رصيده**: صفرُه بعد التسوية شرطُ صحّتها.
+        new("1117", "عُهَد رحلات التوصيل", "Trip Cash Floats", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+
         new("12", "الأصول غير المتداولة", "Non-Current Assets", AccountType.Asset, "1", IsGroup: true),
         new("1201", "الأراضي", "Land", AccountType.Asset, "12", IsGroup: false),
         new("1202", "المباني والإنشاءات", "Buildings & Constructions", AccountType.Asset, "12", IsGroup: false),
@@ -87,6 +94,13 @@ public static class SaudiChartOfAccounts
         new("2114", "تحصيلٌ نيابةً عن التجّار (الدفع عند الاستلام)", "Cash on Delivery Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         // (CEEF-230 · ط4-٧) ‏ونظيرُه لجانب الموردين — يحرس هـ-٢ بالمنطق نفسِه.
         new("2115", "تسوية إعادة تقييم ذمم دائنة بعملة أجنبية", "FX Revaluation Adjustment - Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
+
+        // (CEEF-230 · ط3-٣د) ‏**الإكراميةُ مالُ العامل لا إيرادُ المطعم.**
+        //
+        // ‏وبلا هذا الحساب لا يجد لها النظامُ إلا الإيرادَ موضعاً — **فتُدفع ضريبةُ قيمةٍ
+        // ‏مضافةٍ وزكاةٌ على مالٍ ليس للمنشأة**، ويُعلَن إيرادٌ أكبرُ من الحقيقة، ثمّ
+        // ‏يُوزَّع على النُّدُل فيُقيَّد مصروفاً: **فيتضخّم طرفا القائمة معاً**.
+        new("2116", "إكراميات مستحقة للعاملين", "Tips Payable to Staff", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
@@ -202,6 +216,12 @@ public static class SaudiChartOfAccounts
 
         // (CEEF-230 · ط3-٤) ‏تحصيلٌ نيابةً عن التجّار.
         public const string CodPayable = "2114";
+
+        /// <summary>(CEEF-230 · ط3-٣د) إكرامياتٌ مستحقّةٌ للعاملين — التزامٌ لا إيراد.</summary>
+        public const string TipsPayable = "2116";
+
+        /// <summary>(CEEF-230 · ط3-٤ب) عُهَدُ رحلات التوصيل — أصلٌ يُسوَّى مع السائق.</summary>
+        public const string TripCashFloat = "1117";
     }
 
     /// <summary>

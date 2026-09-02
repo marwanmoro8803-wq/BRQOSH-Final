@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Crm;
+using Brqosh.Domain.Crm;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using Brqosh.Domain.Reporting;
@@ -92,6 +92,11 @@ public class BrqoshDbContext : DbContext
     public DbSet<Brqosh.Domain.Payroll.EmployeeAdvance> EmployeeAdvances =>
         Set<Brqosh.Domain.Payroll.EmployeeAdvance>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
+    public DbSet<Domain.RealEstate.MaintenanceOrder> MaintenanceOrders =>
+        Set<Domain.RealEstate.MaintenanceOrder>();
+    public DbSet<TipPool> TipPools => Set<TipPool>();
+    public DbSet<Domain.Logistics.DeliveryTrip> DeliveryTrips =>
+        Set<Domain.Logistics.DeliveryTrip>();
 
     // (CEEF-230 · ط3-٣) ‏الضيافة.
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
@@ -394,6 +399,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(v => v.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
             entity.Property(v => v.ExchangeRate).HasPrecision(18, 6).HasDefaultValue(1m);
             entity.Property(v => v.ReceivableRelieved).HasPrecision(18, 2);
+
+            // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المبكر — يُطفئ من الذمّة ما لم يدخل الصندوق.
+            entity.Property(v => v.SettlementDiscount).HasPrecision(18, 2).HasDefaultValue(0m);
             entity.Property(v => v.VoucherNumber).HasMaxLength(32);
             entity.Property(v => v.Description).HasMaxLength(512).IsRequired();
             entity.Property(v => v.Reference).HasMaxLength(128);
@@ -474,6 +482,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(v => v.CurrencyCode).HasMaxLength(3);
             entity.Property(v => v.ExchangeRate).HasPrecision(18, 6);
             entity.Property(v => v.PayableRelieved).HasPrecision(18, 2);
+
+            // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المكتسَب — يُطفئ من الذمّة ما لم يخرج من الصندوق.
+            entity.Property(v => v.SettlementDiscount).HasPrecision(18, 2).HasDefaultValue(0m);
 
             entity.ToTable("payment_vouchers");
             entity.Property(v => v.VoucherNumber).HasMaxLength(32);
@@ -736,6 +747,110 @@ public class BrqoshDbContext : DbContext
             });
 
             entity.Navigation(c => c.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-١ب) ‏أوامرُ الصيانة وسطورُ تكلفتها.
+        modelBuilder.Entity<Domain.RealEstate.MaintenanceOrder>(entity =>
+        {
+            entity.ToTable("maintenance_orders");
+            entity.Property(m => m.OrderNumber).HasMaxLength(64).IsRequired();
+            entity.Property(m => m.Description).HasMaxLength(512).IsRequired();
+            entity.Property(m => m.VendorName).HasMaxLength(256);
+            entity.Property(m => m.Kind).HasConversion<string>().HasMaxLength(16);
+            entity.Property(m => m.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(m => m.TenantChargeAmount).HasPrecision(18, 2);
+            entity.Property(m => m.BranchId);
+            entity.HasIndex(m => new { m.CompanyId, m.OrderNumber }).IsUnique();
+            entity.HasIndex(m => new { m.CompanyId, m.PropertyId, m.UnitId });
+            entity.HasIndex(m => new { m.CompanyId, m.Status });
+
+            entity.OwnsMany(m => m.Lines, lines =>
+            {
+                lines.ToTable("maintenance_cost_lines");
+                lines.WithOwner().HasForeignKey("order_id");
+                lines.HasKey(l => l.Id);
+                lines.Property(l => l.Description).HasMaxLength(512).IsRequired();
+                lines.Property(l => l.Amount).HasPrecision(18, 2);
+            });
+
+            entity.Navigation(m => m.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-٣د) ‏أوعيةُ الإكراميات وتحصيلُها وتوزيعُها.
+        modelBuilder.Entity<TipPool>(entity =>
+        {
+            entity.ToTable("tip_pools");
+            entity.Property(t => t.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(t => t.BranchId);
+            entity.HasIndex(t => new { t.CompanyId, t.PoolDate });
+            entity.HasIndex(t => new { t.CompanyId, t.Status });
+
+            entity.OwnsMany(t => t.Collections, lines =>
+            {
+                lines.ToTable("tip_collections");
+                lines.WithOwner().HasForeignKey("pool_id");
+                lines.HasKey(l => l.Id);
+                lines.Property(l => l.Source).HasConversion<string>().HasMaxLength(8);
+                lines.Property(l => l.Amount).HasPrecision(18, 2);
+                lines.Property(l => l.Note).HasMaxLength(256);
+            });
+
+            entity.OwnsMany(t => t.Distributions, lines =>
+            {
+                lines.ToTable("tip_distributions");
+                lines.WithOwner().HasForeignKey("pool_id");
+                lines.HasKey(l => l.Id);
+                lines.Property(l => l.Amount).HasPrecision(18, 2);
+
+                // ‏**وحصّةُ الموظّف الواحد صفٌّ واحد** — والجمعُ في النطاق، والقيدُ هنا
+                // ‏يمنع صفَّين يلتقيان في تقريرٍ فيُظهران نادلاً أخذ ضِعفَ ما أخذ.
+                lines.HasIndex("pool_id", "EmployeeId").IsUnique();
+            });
+
+            entity.Navigation(t => t.Collections).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(t => t.Distributions).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // (CEEF-230 · ط3-٤ب) ‏رحلاتُ التوصيل وشحناتُها ومصاريفُها.
+        modelBuilder.Entity<Domain.Logistics.DeliveryTrip>(entity =>
+        {
+            entity.ToTable("delivery_trips");
+            entity.Property(t => t.TripNumber).HasMaxLength(64).IsRequired();
+            entity.Property(t => t.RouteName).HasMaxLength(256).IsRequired();
+            entity.Property(t => t.VehiclePlate).HasMaxLength(32).IsRequired();
+            entity.Property(t => t.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(t => t.DriverFloat).HasPrecision(18, 2);
+            entity.Property(t => t.ReturnedCash).HasPrecision(18, 2);
+            entity.Property(t => t.BranchId);
+            entity.HasIndex(t => new { t.CompanyId, t.TripNumber }).IsUnique();
+
+            // ‏**والمسارُ مفهرسٌ لأنّه مقامُ الربحيّة** — وهو ما يُجمَّع عليه.
+            entity.HasIndex(t => new { t.CompanyId, t.RouteName, t.DepartureDate });
+
+            entity.OwnsMany(t => t.Shipments, lines =>
+            {
+                lines.ToTable("trip_shipments");
+                lines.WithOwner().HasForeignKey("trip_id");
+                lines.HasKey(l => l.Id);
+
+                // ‏**والشحنةُ الواحدة على رحلةٍ واحدة** — عبر الرحلات كلِّها. فحارسُ
+                // ‏النطاق يمنع التكرارَ داخل الرحلة، **ورحلتان تحملان الشحنةَ نفسَها
+                // ‏تحسبان أجرتَها مرّتين** في ربحيّة مسارين.
+                lines.HasIndex(l => l.ShipmentId).IsUnique();
+            });
+
+            entity.OwnsMany(t => t.Expenses, lines =>
+            {
+                lines.ToTable("trip_expenses");
+                lines.WithOwner().HasForeignKey("trip_id");
+                lines.HasKey(l => l.Id);
+                lines.Property(l => l.Kind).HasConversion<string>().HasMaxLength(20);
+                lines.Property(l => l.Amount).HasPrecision(18, 2);
+                lines.Property(l => l.Note).HasMaxLength(256);
+            });
+
+            entity.Navigation(t => t.Shipments).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(t => t.Expenses).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.

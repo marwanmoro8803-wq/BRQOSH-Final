@@ -152,6 +152,7 @@ public static class NavigationCatalog
 
         new("الضيافة", ModuleKey.Hospitality,
         [
+            new("tip_pools", "أوعية الإكراميات"),
             new("menu_items", "قائمة الطعام والوصفات"),
             new("rooms", "الغرف"),
             new("reservations", "الحجوزات وحسابات النزلاء"),
@@ -159,6 +160,7 @@ public static class NavigationCatalog
 
         new("اللوجستيات", ModuleKey.Logistics,
         [
+            new("delivery_trips", "رحلات التوصيل"),
             new("shipments", "البوالص والتحصيل"),
         ]),
 
@@ -272,6 +274,8 @@ public static class NavigationCatalog
         ["visits"] = "Visits & Billing",
         ["insurance_payers"] = "Insurance Payers",
         ["insurance_claims"] = "Insurance Claims",
+        ["tip_pools"] = "Tip Pools",
+        ["delivery_trips"] = "Delivery Trips",
         ["menu_items"] = "Menu & Recipes",
         ["rooms"] = "Rooms",
         ["reservations"] = "Reservations & Folios",

@@ -1,0 +1,52 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.TipPoolsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أوعية الإكراميات" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="الإكرامية مال العامل لا إيراد المطعم — التزام يخرج بالصرف"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ وعاء" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="PayBtn" DockPanel.Dock="Right" Content="صرف الحصص"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnPayOut"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="CloseBtn" DockPanel.Dock="Right" Content="إقفال وقيد"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnClose"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      GridLinesVisibility="Horizontal">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="التاريخ" Binding="{Binding PoolDate}" Width="120"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="100"/>
+                    <DataGridTextColumn Header="نقدي" Binding="{Binding Cash, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="بطاقة" Binding="{Binding Card, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="المحصل" Binding="{Binding Collected, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="الموزع" Binding="{Binding Distributed, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="بلا صاحب" Binding="{Binding Undistributed, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="العاملون" Binding="{Binding Shares}" Width="100"/>
+                    <DataGridTextColumn Header="القيد" Binding="{Binding PostedText}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1403,6 +1403,46 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("rooms", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.TipPool", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("JournalEntryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("PoolDate")
+                        .HasColumnType("date");
+
+                    b.Property<long?>("ShiftId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "PoolDate");
+
+                    b.HasIndex("CompanyId", "Status");
+
+                    b.ToTable("tip_pools", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Inventory.InventoryBalance", b =>
                 {
                     b.Property<long>("Id")
@@ -1807,6 +1847,73 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("warehouses", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Logistics.DeliveryTrip", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DepartureDate")
+                        .HasColumnType("date");
+
+                    b.Property<long?>("DriverEmployeeId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("DriverFloat")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long?>("JournalEntryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("ReturnDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("ReturnedCash")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("RouteName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("TripNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("VehiclePlate")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "TripNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "RouteName", "DepartureDate");
+
+                    b.ToTable("delivery_trips", (string)null);
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Logistics.Shipment", b =>
@@ -2855,6 +2962,81 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.HasIndex("CompanyId", "PropertyUnitId", "Status");
 
                     b.ToTable("lease_contracts", (string)null);
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.RealEstate.MaintenanceOrder", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("BranchId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("CompletedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<long?>("JournalEntryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long?>("LeaseContractId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<long>("PropertyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("RequestDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<decimal>("TenantChargeAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long?>("UnitId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("VendorName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "OrderNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "Status");
+
+                    b.HasIndex("CompanyId", "PropertyId", "UnitId");
+
+                    b.ToTable("maintenance_orders", (string)null);
                 });
 
             modelBuilder.Entity("Brqosh.Domain.RealEstate.Property", b =>
@@ -4798,6 +4980,76 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Navigation("Components");
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Hospitality.TipPool", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Hospitality.TipCollection", "Collections", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<string>("Note")
+                                .HasMaxLength(256)
+                                .HasColumnType("character varying(256)");
+
+                            b1.Property<string>("Source")
+                                .IsRequired()
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)");
+
+                            b1.Property<long>("pool_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("pool_id");
+
+                            b1.ToTable("tip_collections", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("pool_id");
+                        });
+
+                    b.OwnsMany("Brqosh.Domain.Hospitality.TipDistribution", "Distributions", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<long>("EmployeeId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<long>("pool_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("pool_id", "EmployeeId")
+                                .IsUnique();
+
+                            b1.ToTable("tip_distributions", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("pool_id");
+                        });
+
+                    b.Navigation("Collections");
+
+                    b.Navigation("Distributions");
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Inventory.StockMovement", b =>
                 {
                     b.OwnsMany("Brqosh.Domain.Inventory.StockMovementLine", "Lines", b1 =>
@@ -4840,6 +5092,77 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Logistics.DeliveryTrip", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Logistics.TripExpense", "Expenses", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<bool>("FromDriverFloat")
+                                .HasColumnType("boolean");
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)");
+
+                            b1.Property<string>("Note")
+                                .HasMaxLength(256)
+                                .HasColumnType("character varying(256)");
+
+                            b1.Property<long>("trip_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("trip_id");
+
+                            b1.ToTable("trip_expenses", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("trip_id");
+                        });
+
+                    b.OwnsMany("Brqosh.Domain.Logistics.TripShipment", "Shipments", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<long>("ShipmentId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<long>("trip_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ShipmentId")
+                                .IsUnique();
+
+                            b1.HasIndex("trip_id");
+
+                            b1.ToTable("trip_shipments", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("trip_id");
+                        });
+
+                    b.Navigation("Expenses");
+
+                    b.Navigation("Shipments");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Manufacturing.BillOfMaterials", b =>
@@ -5253,6 +5576,41 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("purchase_request_id");
+                        });
+
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.RealEstate.MaintenanceOrder", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.RealEstate.MaintenanceCostLine", "Lines", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
+
+                            b1.Property<string>("Description")
+                                .IsRequired()
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)");
+
+                            b1.Property<long>("order_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("order_id");
+
+                            b1.ToTable("maintenance_cost_lines", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("order_id");
                         });
 
                     b.Navigation("Lines");
