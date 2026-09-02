@@ -32,6 +32,8 @@ public static class PageFactory
         ["customer_statement"] = () => new Views.Pages.CustomerStatementPage(),
         ["receivable_aging"] = () => new Views.Pages.ReceivableAgingPage(),
         ["payable_aging"] = () => new Views.Pages.PayableAgingPage(),
+        ["cash_flow_forecast"] = () => new Views.Pages.CashFlowForecastPage(),
+        ["insurance_payers"] = () => new Views.Pages.InsurancePayersPage(),
         ["sales_quotations"] = () => new Views.Pages.SalesQuotationsPage(),
         ["sales_orders"] = () => new Views.Pages.SalesOrdersPage(),
         ["sales_invoices"] = () => new Views.Pages.SalesInvoicesPage(),

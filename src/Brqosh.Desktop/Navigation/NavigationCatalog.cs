@@ -108,6 +108,7 @@ public static class NavigationCatalog
             new("monetary_revaluation", "إعادة تقييم الذمم بالعملات"),
             new("bank_statements", "كشوف الحسابات البنكية"),
             new("cash_position", "حركة النقد والمركز النقدي"),
+            new("cash_flow_forecast", "التدفق النقدي المتوقع"),
         ]),
 
         new("الفوترة الإلكترونية", ModuleKey.Zatca,
@@ -145,6 +146,7 @@ public static class NavigationCatalog
         [
             new("patients", "المرضى"),
             new("visits", "الزيارات والفوترة"),
+            new("insurance_payers", "شركات التأمين"),
             new("insurance_claims", "مطالبات التأمين"),
         ]),
 
@@ -268,6 +270,7 @@ public static class NavigationCatalog
         ["leases"] = "Lease Contracts",
         ["patients"] = "Patients",
         ["visits"] = "Visits & Billing",
+        ["insurance_payers"] = "Insurance Payers",
         ["insurance_claims"] = "Insurance Claims",
         ["menu_items"] = "Menu & Recipes",
         ["rooms"] = "Rooms",
@@ -294,6 +297,7 @@ public static class NavigationCatalog
         ["monetary_revaluation"] = "Monetary Revaluation",
         ["bank_statements"] = "Bank Statements",
         ["cash_position"] = "Cash Movement & Position",
+        ["cash_flow_forecast"] = "Cash Flow Forecast",
         ["data_migration"] = "Data Migration",
         ["data_quality"] = "Data Quality",
         ["platform_events"] = "Platform Events",

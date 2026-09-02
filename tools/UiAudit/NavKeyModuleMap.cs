@@ -50,6 +50,8 @@ internal static class NavKeyModuleMap
         ["customer_statement"] = ModuleKey.Sales,
         ["receivable_aging"] = ModuleKey.Sales,
         ["payable_aging"] = ModuleKey.Purchasing,
+        ["cash_flow_forecast"] = ModuleKey.Treasury,
+        ["insurance_payers"] = ModuleKey.Healthcare,
         ["sales_quotations"] = ModuleKey.Sales,
         ["sales_orders"] = ModuleKey.Sales,
         ["sales_invoices"] = ModuleKey.Sales,
