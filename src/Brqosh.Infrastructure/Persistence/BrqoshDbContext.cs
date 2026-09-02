@@ -12,6 +12,7 @@ using Brqosh.Domain.Payroll;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Workflow;
 using Brqosh.Domain.Retail;
+using Brqosh.Domain.Healthcare;
 using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
@@ -80,6 +81,12 @@ public class BrqoshDbContext : DbContext
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<PropertyUnit> PropertyUnits => Set<PropertyUnit>();
     public DbSet<LeaseContract> LeaseContracts => Set<LeaseContract>();
+
+    // (CEEF-230 · ط3-٢) ‏الصحّة.
+    public DbSet<Patient> Patients => Set<Patient>();
+    public DbSet<InsurancePayer> InsurancePayers => Set<InsurancePayer>();
+    public DbSet<InsurancePolicy> InsurancePolicies => Set<InsurancePolicy>();
+    public DbSet<Visit> Visits => Set<Visit>();
     public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
     public DbSet<RecurringInvoiceRun> RecurringInvoiceRuns => Set<RecurringInvoiceRun>();
@@ -587,6 +594,75 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(x => new { x.CompanyId, x.ContractNumber }).IsUnique();
             entity.HasIndex(x => new { x.CompanyId, x.PropertyUnitId, x.Status });
             entity.HasIndex(x => new { x.CompanyId, x.BranchId });
+        });
+
+        // (CEEF-230 · ط3-٢) ‏المرضى والوثائقُ والزيارات.
+        modelBuilder.Entity<Patient>(entity =>
+        {
+            entity.ToTable("patients");
+            entity.Property(p => p.MedicalRecordNumber).HasMaxLength(32).IsRequired();
+            entity.Property(p => p.NameAr).HasMaxLength(256).IsRequired();
+            entity.Property(p => p.NationalId).HasMaxLength(32).IsRequired();
+            entity.Property(p => p.Phone).HasMaxLength(32).IsRequired();
+            entity.Property(p => p.Gender).HasConversion<string>().HasMaxLength(16);
+            entity.Property(p => p.BranchId);
+
+            // ‏**ملفّان لشخصٍ واحد يُفرّقان تاريخَه المرضيّ نصفين** — وهو خطرٌ على البدن
+            // ‏قبل أن يكون خطأً في الدفاتر.
+            entity.HasIndex(p => new { p.CompanyId, p.MedicalRecordNumber }).IsUnique();
+            entity.HasIndex(p => new { p.CompanyId, p.CustomerId });
+            entity.HasIndex(p => new { p.CompanyId, p.BranchId });
+        });
+
+        modelBuilder.Entity<InsurancePayer>(entity =>
+        {
+            entity.ToTable("insurance_payers");
+            entity.Property(p => p.Code).HasMaxLength(32).IsRequired();
+            entity.Property(p => p.NameAr).HasMaxLength(256).IsRequired();
+            entity.HasIndex(p => new { p.CompanyId, p.Code }).IsUnique();
+        });
+
+        modelBuilder.Entity<InsurancePolicy>(entity =>
+        {
+            entity.ToTable("insurance_policies");
+            entity.Property(p => p.PolicyNumber).HasMaxLength(64).IsRequired();
+            entity.Property(p => p.MemberNumber).HasMaxLength(64).IsRequired();
+            entity.Property(p => p.CoveragePercent).HasPrecision(9, 4);
+            entity.Property(p => p.CopayFixed).HasPrecision(18, 2);
+            entity.Property(p => p.AnnualLimit).HasPrecision(18, 2);
+            entity.HasIndex(p => new { p.CompanyId, p.PatientId, p.IsActive });
+            entity.HasIndex(p => new { p.CompanyId, p.PayerId });
+        });
+
+        modelBuilder.Entity<Visit>(entity =>
+        {
+            entity.ToTable("visits");
+            entity.Property(v => v.VisitNumber).HasMaxLength(32).IsRequired();
+            entity.Property(v => v.DoctorName).HasMaxLength(128).IsRequired();
+            entity.Property(v => v.Diagnosis).HasMaxLength(512);
+            entity.Property(v => v.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(v => v.BranchId);
+            entity.HasIndex(v => new { v.CompanyId, v.VisitNumber }).IsUnique();
+            entity.HasIndex(v => new { v.CompanyId, v.PatientId, v.VisitDate });
+
+            // ‏**والسقفُ يُشتقّ من هذا الفهرس**: زياراتُ وثيقةٍ في سنتها.
+            entity.HasIndex(v => new { v.CompanyId, v.PolicyId, v.VisitDate });
+            entity.HasIndex(v => new { v.CompanyId, v.BranchId });
+
+            entity.OwnsMany(v => v.Lines, lines =>
+            {
+                lines.ToTable("visit_lines");
+                lines.WithOwner().HasForeignKey("visit_id");
+                lines.Property<long>("id");
+                lines.HasKey("id");
+                lines.Property(l => l.Description).HasMaxLength(512).IsRequired();
+                lines.Property(l => l.Quantity).HasPrecision(18, 4);
+                lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
+                lines.Property(l => l.TaxExemptionReasonCode).HasMaxLength(32);
+            });
+
+            entity.Navigation(v => v.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
@@ -1346,6 +1422,8 @@ public class BrqoshDbContext : DbContext
         MapBranchScope(modelBuilder.Entity<Employee>());
         MapBranchScope(modelBuilder.Entity<Property>());
         MapBranchScope(modelBuilder.Entity<LeaseContract>());
+        MapBranchScope(modelBuilder.Entity<Patient>());
+        MapBranchScope(modelBuilder.Entity<Visit>());
         MapBranchScope(modelBuilder.Entity<FixedAsset>());
         MapBranchScope(modelBuilder.Entity<ProgressBilling>());
         MapBranchScope(modelBuilder.Entity<ConstructionProject>());
