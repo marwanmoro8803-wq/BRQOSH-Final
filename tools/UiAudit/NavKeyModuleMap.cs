@@ -18,6 +18,8 @@ internal static class NavKeyModuleMap
         ["branches"] = ModuleKey.GeneralLedger,
         ["users"] = ModuleKey.GeneralLedger,
         ["audit_log"] = ModuleKey.GeneralLedger,
+        ["soft_deleted_rows"] = ModuleKey.GeneralLedger,
+        ["fx_revaluation"] = ModuleKey.Treasury,
         ["data_quality"] = ModuleKey.GeneralLedger,
 
         // (CEEF-230 · ط6-١) ‏النسخُ الاحتياطيّ — **كان غائباً عن هذه الخريطة وحدَها**.

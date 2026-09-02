@@ -64,6 +64,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Healthcare.VisitBillingService>();
         services.AddScoped<Hospitality.FolioService>();
         services.AddScoped<Hospitality.KitchenIssueService>();
+
+        // (CEEF-230 · ط6-٥) ‏تخصيصُ مكافأة نهاية الخدمة — **ولم يكن مسجَّلاً في الحقن
+        // ‏أصلاً**: خدمةٌ مبنيّةٌ ومقيسةٌ في `ط2-٣` **لا يستطيع أحدٌ طلبَها**. فالمخصّصُ
+        // ‏النظاميُّ لا يجري، والتزامٌ يتراكم لا يظهر في الميزانية.
+        services.AddScoped<Payroll.EndOfServiceAccrualService>();
         services.AddScoped<Logistics.CodSettlementService>();
         services.AddScoped<CreditNotePostingService>();
         services.AddScoped<PurchaseInvoicePostingService>();

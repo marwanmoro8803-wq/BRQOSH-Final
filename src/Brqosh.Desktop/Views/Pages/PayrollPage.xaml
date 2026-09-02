@@ -23,6 +23,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="ReverseBtn" DockPanel.Dock="Right" Content="↩ عكس"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnReverse"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="AccrueEosBtn" DockPanel.Dock="Right" Content="تخصيص مكافأة نهاية الخدمة"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAccrueEndOfService"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"

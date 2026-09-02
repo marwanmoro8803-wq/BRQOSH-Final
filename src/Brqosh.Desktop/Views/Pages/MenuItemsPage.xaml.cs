@@ -4,6 +4,7 @@ using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Hospitality;
+using Brqosh.Infrastructure.Hospitality;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -27,7 +28,8 @@ public partial class MenuItemsPage : UserControl
         Loaded += async (_, _) =>
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
-                (AddBtn, PermissionService.CanPost));
+                (AddBtn, PermissionService.CanPost),
+                (IssueBtn, PermissionService.CanPost));
             await ReloadAsync();
         };
     }
@@ -110,4 +112,48 @@ public partial class MenuItemsPage : UserControl
         MenuSection.Beverage => "مشروبات",
         _ => "أخرى",
     };
+    /// <summary>
+    /// (CEEF-230 · ط6-٥) <b>صرفُ مكوّنات ما بيع — والخدمةُ كانت مبنيّةً بلا زرّ.</b>
+    ///
+    /// <para>بُنيت <c>KitchenIssueService</c> في <c>ط3-٣أ</c> ومُقيست بستّ طفرات: بيعُ
+    /// الطبق يصرف مكوّناتِه ويُقيّد تكلفتَها. <b>ولم يكن في الواجهة ما يستدعيها</b> —
+    /// فالمخزونُ يبقى كما اشتُري، وتكلفةُ المبيعات صفر، <b>ويُقيَّد الفرقُ «عجزَ جرد»
+    /// آخرَ السنة</b>.</para>
+    ///
+    /// <para><b>وهذا صرفٌ يدويٌّ لا ربطٌ بنقطة البيع</b> — وذاك مُعلَنٌ باقٍ. <b>والفرقُ
+    /// مهمّ</b>: الصرفُ اليدويّ يُغلق الفجوةَ المحاسبية لمَن يُشغّله، <b>ولا يُغلق
+    /// صنفَ العطل</b> — فمَن نسي لم يصرف.</para>
+    /// </summary>
+    private async void OnIssue(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row)
+        {
+            UiFeedback.ShowWarning("اختر صنف القائمة المباع.");
+            return;
+        }
+
+        try
+        {
+            if (!decimal.TryParse((ServingsBox.Text ?? "").Trim(),
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture, out var servings)
+                || servings <= 0m)
+                throw new Brqosh.Domain.Accounting.AccountingException(
+                    $"عدد الحصص غير صالح — ووردَ «{ServingsBox.Text}».");
+
+            using var facade = new DesktopAccountingFacade();
+            var result = await facade.GetService<KitchenIssueService>().IssueForSalesAsync(
+                AppServices.CompanyId, DateOnly.FromDateTime(DateTime.Today),
+                [(row.Id, servings)], $"KitchenIssue:{row.Code}:{DateTime.Now:yyyyMMddHHmmss}");
+
+            await ReloadAsync();
+
+            SummaryText.Text = $"صُرفت مكوّنات {servings:N0} حصة من «{row.NameAr}» — "
+                + $"التكلفة {result.TotalCost:N2} على {result.Consumed.Count:N0} مكوّنًا.";
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
 }

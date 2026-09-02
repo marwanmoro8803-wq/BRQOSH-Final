@@ -138,4 +138,46 @@ public partial class PayrollPage : UserControl
             UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
+    /// <summary>
+    /// (CEEF-230 · ط6-٥) <b>تخصيصُ مكافأة نهاية الخدمة — والخدمةُ لم تكن مسجَّلةً في الحقن أصلاً.</b>
+    ///
+    /// <para>بُنيت <c>EndOfServiceAccrualService</c> في <c>ط2-٣</c> بالمادتين 84 و85
+    /// ومُقيست بالطفرات، <b>ولم تكن مسجَّلةً في الحقن ولا يستدعيها زرّ</b>. فحسابُ المخصّص
+    /// <c>2202</c> — الذي كان بلا كاتبٍ منذ اليوم الأوّل — <b>بقي بلا كاتبٍ فعلاً</b>:
+    /// المنشأةُ تحمل التزاماً نظامياً يتراكم <b>ولا يظهر في ميزانيّتها بريالٍ واحد</b>.</para>
+    ///
+    /// <para><b>وهو فرقٌ لا تراكم</b>: يُحسب الالتزامُ اليومَ ويُقارَن بما في الحساب،
+    /// <b>ويُقيَّد الفرقُ وحده</b> — فتشغيلٌ ثانٍ بلا تغييرٍ لا يُقيّد شيئاً.</para>
+    /// </summary>
+    private async void OnAccrueEndOfService(object sender, RoutedEventArgs e)
+    {
+        if (UiDialog.Show("تخصيص مكافأة نهاية الخدمة حتى اليوم؟ — ويُقيَّد الفرق وحده.", "BRQOSH",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var result = await facade.GetService<EndOfServiceAccrualService>().RunMonthlyAsync(
+                AppServices.CompanyId, DateOnly.FromDateTime(DateTime.Today),
+                SecurityContext.ResolveUsername());
+
+            await ReloadAsync();
+
+            // ‏**والنصُّ حرفيٌّ والأرقامُ في العنوان**: نصٌّ مركَّبٌ لا يبلغه مترجِم،
+            // ‏وحارسُ `DialogLocalizationTests` يعدّه. **والرقمُ لا يسقط** — يُحمل في
+            // ‏عنوان الحوار.
+            if (result.Movement == 0m)
+                UiDialog.Show("لا تغيّرَ في الالتزام — ولم يُقيَّد شيء.", "BRQOSH",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+                UiDialog.Show("قُيّدت حركة تخصيص مكافأة نهاية الخدمة.",
+                    $"{result.Movement:N2} · {result.Employees:N0}",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
 }
