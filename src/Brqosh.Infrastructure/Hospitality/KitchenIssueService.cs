@@ -87,6 +87,66 @@ public class KitchenIssueService(BrqoshDbContext db)
     }
 
     /// <summary>
+    /// (CEEF-230 · ط3-٣ج) <b>يتحقّق أنّ صنفَ البيع صالحٌ لأن يُربط بوصفة.</b>
+    ///
+    /// <para><b>والاشتراطُ أن يكون خدمياً</b>: الطبقُ لا يُخزَّن — مكوّناتُه تُخزَّن.
+    /// <b>وربطُ وصفةٍ بصنفٍ مخزنيٍّ يخصم الطبقَ من المخزون ثمّ يخصم مكوّناتِه</b>،
+    /// فتُقيَّد التكلفةُ مرّتين ويُنقص المخزونُ لشيءٍ لم يكن فيه أصلاً.</para>
+    ///
+    /// <para><b>والتحقّقُ هنا لا في النطاق</b>: النطاقُ لا يقرأ الأصناف، والقرارُ يحتاج
+    /// نوعَ الصنف — <b>وهو في القاعدة</b>.</para>
+    /// </summary>
+    public async Task EnsureSaleProductLinkableAsync(long companyId, long? saleProductId,
+        CancellationToken ct = default)
+    {
+        if (saleProductId is not long productId) return;
+
+        var product = await db.Products.AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == productId && p.CompanyId == companyId, ct)
+            ?? throw new AccountingException($"صنف البيع {productId} غير موجود في هذه المنشأة.");
+
+        if (product.Type != ProductType.Service)
+            throw new AccountingException(
+                $"«{product.NameAr}» صنفٌ مخزنيّ — وربطُ وصفةٍ به يخصم الطبقَ ومكوّناتِه معاً "
+                + "فتُقيَّد التكلفةُ مرّتين. اربِطِ الوصفةَ بصنفٍ خدميّ.");
+    }
+
+    /// <summary>
+    /// (CEEF-230 · ط3-٣ج) <b>يصرف مكوّناتِ ما بيع من أصنافٍ مرتبطةٍ بوصفات — ويصمت عن غيرها.</b>
+    ///
+    /// <para><b>وهذا ما يُغلق صنفَ العطل لا حالتَه</b>: الصرفُ اليدويّ يُغلق الفجوةَ لمَن
+    /// يضغط الزرَّ، <b>والربطُ بالبيع يُغلقها لمَن نسي</b>. فكلُّ بيعٍ لطبقٍ مرتبطٍ يصرف
+    /// وصفتَه أيّاً كان الطريق — نقطةَ بيعٍ كانت أو فاتورة.</para>
+    ///
+    /// <para><b>ويصمت عمّا لا وصفةَ له</b>: الفاتورةُ الواحدة تحمل أطباقاً وسلعاً عادية،
+    /// <b>ورفضُ ما ليس طبقاً يمنع البيعَ كلَّه</b>. فالصمتُ هنا صوابٌ — بخلاف الصرف
+    /// اليدويّ حيث اختيارُ صنفٍ بلا وصفةٍ خطأٌ صريح.</para>
+    /// </summary>
+    public async Task<KitchenIssueResult?> IssueForSoldProductsAsync(
+        long companyId, DateOnly date,
+        IReadOnlyList<(long ProductId, decimal Quantity)> soldProducts, string sourceDocument,
+        long? warehouseId = null, CancellationToken ct = default)
+    {
+        if (soldProducts.Count == 0) return null;
+
+        var productIds = soldProducts.Select(s => s.ProductId).Distinct().ToList();
+
+        var menuByProduct = await db.MenuItems
+            .Where(m => m.CompanyId == companyId && m.IsActive
+                        && m.SaleProductId != null && productIds.Contains(m.SaleProductId!.Value))
+            .ToDictionaryAsync(m => m.SaleProductId!.Value, m => m.Id, ct);
+
+        if (menuByProduct.Count == 0) return null;
+
+        var order = soldProducts
+            .Where(s => menuByProduct.ContainsKey(s.ProductId))
+            .Select(s => (MenuItemId: menuByProduct[s.ProductId], Servings: s.Quantity))
+            .ToList();
+
+        return await IssueForSalesAsync(companyId, date, order, sourceDocument, warehouseId, ct);
+    }
+
+    /// <summary>
     /// يُفجّر الوصفات إلى كمّياتٍ مخزنية.
     ///
     /// <para><b>والمكوّنُ المشترك يُجمع لا يُستبدل</b>: البرجرُ والساندويتش كلاهما يستهلك

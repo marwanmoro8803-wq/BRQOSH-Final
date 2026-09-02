@@ -35,6 +35,19 @@ public class MenuItem
     public string NameAr { get; private set; }
     public MenuSection Section { get; private set; }
     public decimal SalePrice { get; private set; }
+
+    /// <summary>
+    /// (CEEF-230 · ط3-٣ج) <b>الصنفُ الذي يُباع به الطبقُ في الفواتير ونقطة البيع.</b>
+    ///
+    /// <para><b>وبه يصير الصرفُ آلياً</b>: بيعُ هذا الصنف يُفجّر الوصفةَ ويصرف مكوّناتِها.
+    /// <b>وبغيره يبقى الصرفُ زرّاً يُضغط</b> — فمَن نسي لم يصرف، ويظهر الفرقُ عجزَ جردٍ
+    /// آخرَ السنة.</para>
+    ///
+    /// <para><b>والصنفُ المرتبط خدميٌّ لا مخزنيّ</b>: الطبقُ لا يُخزَّن — مكوّناتُه تُخزَّن.
+    /// <b>وربطُه بصنفٍ مخزنيٍّ يخصم الطبقَ ومكوّناتِه معاً</b> فتُقيَّد التكلفةُ مرّتين.</para>
+    /// </summary>
+    public long? SaleProductId { get; private set; }
+
     public bool IsActive { get; private set; } = true;
 
     public IReadOnlyList<RecipeComponent> Components => _components;
@@ -94,6 +107,20 @@ public class MenuItem
         }
 
         _components.Add(RecipeComponent.Create(productId, quantityPerServing));
+    }
+
+    /// <summary>
+    /// يربط الطبقَ بصنف البيع.
+    ///
+    /// <para><b>ويُشترط أن يكون خدمياً</b> — والحارسُ عند الرابط لا هنا، فالنطاقُ لا يقرأ
+    /// الأصناف. <b>والاشتراطُ مذكورٌ ليُقرأ</b>.</para>
+    /// </summary>
+    public void LinkSaleProduct(long? saleProductId)
+    {
+        if (saleProductId is long id && id <= 0)
+            throw new AccountingException("صنف البيع غير صالح.");
+
+        SaleProductId = saleProductId;
     }
 
     public void RemoveComponent(long productId) =>

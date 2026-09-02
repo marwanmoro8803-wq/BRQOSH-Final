@@ -697,6 +697,11 @@ public class BrqoshDbContext : DbContext
             entity.Property(m => m.SalePrice).HasPrecision(18, 2);
             entity.HasIndex(m => new { m.CompanyId, m.Code }).IsUnique();
 
+            // ‏**وصنفُ بيعٍ واحدٌ لطبقٍ واحد**: ربطُ صنفين بوصفتين يُفجّر وصفتين
+            // ‏لبيعةٍ واحدة، **فيُصرف ضِعفُ المخزون**.
+            entity.HasIndex(m => new { m.CompanyId, m.SaleProductId }).IsUnique()
+                .HasFilter(null);
+
             entity.OwnsMany(m => m.Components, components =>
             {
                 components.ToTable("menu_item_components");

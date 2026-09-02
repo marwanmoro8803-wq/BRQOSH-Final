@@ -166,6 +166,17 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
                 $"SalesInvoice:{invoiceNumber}", issueLines);
             await db.SaveChangesAsync(ct);
         }
+
+        // (CEEF-230 · ط3-٣ج) ‏**وبيعُ طبقٍ مرتبطٍ بوصفةٍ يصرف مكوّناتِه** — ومن هنا لأنّ
+        // ‏كلَّ بيعٍ يمرّ بهذا المسار: نقطةُ البيع والفاتورة معاً. **فالعطلُ يُغلق صنفاً
+        // ‏لا حالةً**، ولا يعتمد على أن يتذكّر أحدٌ ضغطَ زرّ.
+        //
+        // ‏والأطباقُ **أصنافٌ خدمية**، فلا تدخل `issueLines` أعلاه ولا تُصرف مرّتين.
+        await new Hospitality.KitchenIssueService(db).IssueForSoldProductsAsync(
+            invoice.CompanyId, invoice.InvoiceDate,
+            [.. invoice.Lines.Where(l => l.ProductId is not null)
+                .Select(l => (ProductId: l.ProductId!.Value, Quantity: l.Quantity))],
+            $"SalesInvoice:{invoiceNumber}", ct: ct);
     }
 
 

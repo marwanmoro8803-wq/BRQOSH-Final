@@ -752,5 +752,7 @@
   "＋ موظف جديد": "＋ New Employee",
   "＋ وثيقة تأمين": "＋ Insurance Policy",
   "＋ وحدة": "＋ Unit",
-  "＋ وحدة قياس": "＋ Unit of Measure"
+  "＋ وحدة قياس": "＋ Unit of Measure",
+  "الصرف": "Issue",
+  "صنف البيع (خدمي) — وبه يصير صرف الوصفة آلياً عند كل بيع": "Sale item (service) — links the recipe so every sale issues it automatically"
 }

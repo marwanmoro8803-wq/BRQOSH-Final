@@ -18,7 +18,8 @@ namespace Brqosh.Desktop.Views.Pages;
 /// </summary>
 public partial class MenuItemsPage : UserControl
 {
-    public record Row(long Id, string Code, string NameAr, string Section, decimal SalePrice, int Components);
+    public record Row(long Id, string Code, string NameAr, string Section, decimal SalePrice,
+        int Components, string LinkState);
 
     public record ComponentRow(string ProductName, decimal Quantity);
 
@@ -44,16 +45,29 @@ public partial class MenuItemsPage : UserControl
             .ToListAsync();
 
         var rows = items.Select(m => new Row(m.Id, m.Code, m.NameAr, SectionText(m.Section),
-            m.SalePrice, m.Components.Count)).ToList();
+            m.SalePrice, m.Components.Count,
+            m.SaleProductId is null ? "يدويّ" : "آليّ")).ToList();
 
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);
 
         var withoutRecipe = rows.Count(r => r.Components == 0);
-        SummaryText.Text = withoutRecipe == 0
-            ? $"أصناف القائمة: {rows.Count:N0} · كلُّها بوصفات."
-            : $"أصناف القائمة: {rows.Count:N0} · ⚠️ بلا وصفة: {withoutRecipe:N0} — "
-              + "وبيعُها لا يصرف مخزوناً ولا يُقيّد تكلفة، فيظهر الفرق عجزَ جردٍ آخرَ السنة.";
+        var unlinked = rows.Count(r => r.Components > 0 && r.LinkState == "يدويّ");
+
+        // ‏**والفجوتان مختلفتان**: «بلا وصفة» لا يعرف النظامُ ماذا يصرف، **و«يدويّ» يعرف
+        // ‏ولا يُصرف إلّا إن تذكّر أحدٌ زرَّ الصرف**. والثانيةُ أخفى: الوصفةُ مبنيّةٌ فيظنّها
+        // ‏المالكُ عاملة.
+        SummaryText.Text = withoutRecipe == 0 && unlinked == 0
+            ? $"أصناف القائمة: {rows.Count:N0} · كلُّها بوصفاتٍ مربوطةٍ بالبيع — والصرفُ آليّ."
+            : $"أصناف القائمة: {rows.Count:N0}"
+              + (withoutRecipe > 0
+                  ? $" · ⚠️ بلا وصفة: {withoutRecipe:N0} — وبيعُها لا يصرف مخزوناً ولا يُقيّد تكلفة،"
+                    + " فيظهر الفرق عجزَ جردٍ آخرَ السنة."
+                  : "")
+              + (unlinked > 0
+                  ? $" · ⚠️ بوصفةٍ غيرِ مربوطةٍ بصنف بيع: {unlinked:N0} — وصرفُها يدويٌّ يعتمد"
+                    + " على أن يتذكّر أحدٌ ضغطَ الزرّ."
+                  : "");
 
         if (rows.Count > 0 && Grid.SelectedItem is null) Grid.SelectedIndex = 0;
         else await ReloadComponentsAsync();

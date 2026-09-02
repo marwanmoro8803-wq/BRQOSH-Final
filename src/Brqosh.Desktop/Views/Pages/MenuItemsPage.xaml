@@ -48,6 +48,7 @@
                         <DataGridTextColumn Header="القسم" Binding="{Binding Section}" Width="110"/>
                         <DataGridTextColumn Header="السعر" Binding="{Binding SalePrice, StringFormat=N2}" Width="110"/>
                         <DataGridTextColumn Header="المكونات" Binding="{Binding Components}" Width="100"/>
+                        <DataGridTextColumn Header="الصرف" Binding="{Binding LinkState}" Width="90"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>

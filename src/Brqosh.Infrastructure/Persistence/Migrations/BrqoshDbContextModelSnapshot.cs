@@ -1226,6 +1226,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<long?>("SaleProductId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Section")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -1234,6 +1237,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "Code")
+                        .IsUnique();
+
+                    b.HasIndex("CompanyId", "SaleProductId")
                         .IsUnique();
 
                     b.ToTable("menu_items", (string)null);

@@ -2210,6 +2210,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "NameAr" character varying(256) NOT NULL,
                     "Section" character varying(16) NOT NULL,
                     "SalePrice" NUMERIC(18,2) NOT NULL DEFAULT 0,
+                    "SaleProductId" BIGINT NULL,
                     "IsActive" BOOLEAN NOT NULL DEFAULT true
                 );
                 """, ct);
@@ -2224,6 +2225,16 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_items_CompanyId_Code" ON menu_items ("CompanyId", "Code");""", ct);
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_item_components_menu_item_id_ProductId" ON menu_item_components (menu_item_id, "ProductId");""", ct);
+
+            // (CEEF-230 · ط3-٣ج) ‏**والقاعدةُ القائمة تُرقَّع**: الجدولُ أُنشئ قبل الربط،
+            // ‏و<c>CREATE TABLE IF NOT EXISTS</c> لا يمسّ جدولاً موجوداً — **فالعمودُ لا يصل
+            // ‏إلا بترقيعٍ صريح**.
+            await EnsurePgColumnAsync("menu_items", "SaleProductId", "BIGINT NULL", ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_items_CompanyId_SaleProductId" ON menu_items ("CompanyId", "SaleProductId");""", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("menu_items", "SaleProductId", "INTEGER NULL", ct);
         }
 
         // (CEEF-230 · ط3-٢) ‏المرضى وشركاتُ التأمين والوثائقُ والزيارات.

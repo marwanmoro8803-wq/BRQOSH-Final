@@ -48,6 +48,19 @@ public partial class MenuItemDialog : Window
             ProductColumn.ItemsSource = products
                 .Select(p => new ProductOption(p.Id, $"{p.Code} — {p.NameAr}"))
                 .ToList();
+
+            // ‏**والخدميّةُ وحدَها تُعرض**: الطبقُ لا يُخزَّن، وربطُه بمخزنيٍّ يخصم التكلفةَ
+            // ‏مرّتين. **والحصرُ في القائمة يمنع الخطأ قبل أن يُرفض** — والحارسُ خلفه باقٍ.
+            var services = await db.Products.AsNoTracking()
+                .Where(p => p.CompanyId == AppServices.CompanyId
+                            && p.Type == Brqosh.Domain.Inventory.ProductType.Service)
+                .OrderBy(p => p.NameAr)
+                .Select(p => new { p.Id, p.Code, p.NameAr })
+                .ToListAsync();
+
+            SaleProductBox.ItemsSource = services
+                .Select(p => new ProductOption(p.Id, $"{p.Code} — {p.NameAr}"))
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -70,9 +83,15 @@ public partial class MenuItemDialog : Window
             foreach (var row in _rows.Where(r => r.ProductId > 0 && r.Quantity > 0m))
                 item.AddComponent(row.ProductId, row.Quantity);
 
-            await using var db = AppServices.CreateDb();
-            db.MenuItems.Add(item);
-            await db.SaveChangesAsync();
+            var saleProductId = (SaleProductBox.SelectedItem as ProductOption)?.Id;
+            item.LinkSaleProduct(saleProductId);
+
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<Brqosh.Infrastructure.Hospitality.KitchenIssueService>()
+                .EnsureSaleProductLinkableAsync(AppServices.CompanyId, saleProductId);
+
+            facade.Db.MenuItems.Add(item);
+            await facade.Db.SaveChangesAsync();
             DialogResult = true;
         }
         catch (Exception ex)

@@ -44,6 +44,13 @@
             </StackPanel>
         </Grid>
 
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" Margin="0,64,0,0">
+            <TextBlock Text="صنف البيع (خدمي) — وبه يصير صرف الوصفة آلياً عند كل بيع"
+                       Style="{StaticResource FieldLabel}"/>
+            <ComboBox x:Name="SaleProductBox" FontSize="14" DisplayMemberPath="Label"
+                      SelectedValuePath="Id"/>
+        </StackPanel>
+
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ComponentsGrid" AutoGenerateColumns="False" CanUserAddRows="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">

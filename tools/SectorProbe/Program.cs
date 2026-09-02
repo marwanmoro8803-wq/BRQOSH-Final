@@ -714,20 +714,30 @@ static class ModuleProbes
             var before = await new InventoryService(c.Db)
                 .GetOnHandAsync(c.CompanyId, c.Product.Id, warehouse.Id);
 
+            // ‏**والمقيسُ بيعٌ لا صرفٌ يدويّ**: الزرُّ يعمل لمَن يضغطه، **والمطعمُ يبيع
+            // ‏مئةَ طبقٍ في الساعة ولا أحدَ يضغط**. فقياسُ الصرف يُخضّر مساراً لا يسلكه
+            // ‏أحد، **ويترك المسارَ الحقيقيَّ بلا قياس**.
+            var dish = Product.Create(c.CompanyId, "PRB-DISH", "طبقُ المسبار", "حبة",
+                ProductType.Service, salePrice: 40m);
+            c.Db.Products.Add(dish);
+            await c.Db.SaveChangesAsync();
+
             var item = Brqosh.Domain.Hospitality.MenuItem.Create(c.CompanyId, "PRB-M1",
                 "طبقُ المسبار", MenuSection.Main, 40m);
             item.AddComponent(c.Product.Id, 2m);
+            item.LinkSaleProduct(dish.Id);
             c.Db.MenuItems.Add(item);
             await c.Db.SaveChangesAsync();
 
-            await new KitchenIssueService(c.Db).IssueForSalesAsync(
-                c.CompanyId, new DateOnly(2026, 3, 1), [(item.Id, 3m)], "SectorProbe:Kitchen");
+            var invoice = SalesInvoice.CreateDraft(c.CompanyId, c.Customer.Id, new DateOnly(2026, 3, 1));
+            invoice.AddLine("طبقُ المسبار", 3m, 40m, productId: dish.Id);
+            await new SalesInvoicePostingService(c.Db).PostAsync(invoice);
 
             var after = await new InventoryService(c.Db)
                 .GetOnHandAsync(c.CompanyId, c.Product.Id, warehouse.Id);
 
             ProbeContext.Expect(before - after == 6m,
-                $"الوصفةُ لم تصرف مكوّناتِها: قبل {before:N2} وبعد {after:N2}، والمنتظر نقصُ 6.00.");
+                $"بيعُ الطبق لم يصرف وصفتَه: قبل {before:N2} وبعد {after:N2}، والمنتظر نقصُ 6.00.");
         }),
 
         // ─ اللوجستيات: المحصَّلُ التزامٌ لا إيراد ─
