@@ -118,13 +118,40 @@ public sealed record CashFlowForecastWeek(
     DateOnly WeekEnd,
     decimal ProjectedInflows,
     decimal ProjectedOutflows,
-    decimal NetCashFlow);
+    decimal NetCashFlow,
+
+    /// <summary>
+    /// (CEEF-230 · ط4-٣ج) <b>الرصيدُ المتوقَّع آخرَ الأسبوع — وهو الجوابُ المطلوب.</b>
+    ///
+    /// <para><b>وداخلٌ وخارجٌ بلا رصيدٍ لا يقولان شيئاً</b>: المالكُ لا يسأل «كم يدخل»
+    /// بل <b>«هل أستطيع الدفع»</b> — وذاك لا يُجاب إلا برصيدٍ تراكميّ.</para>
+    /// </summary>
+    decimal ProjectedBalance = 0m);
 
 public sealed record CashFlowForecastResult(
     DateOnly AsOfDate,
     IReadOnlyList<CashFlowForecastWeek> Weeks,
     decimal TotalProjectedInflows,
-    decimal TotalProjectedOutflows);
+    decimal TotalProjectedOutflows,
+
+    /// <summary>النقدُ المتاح اليوم — <b>وبغيره لا معنى لرصيدٍ متوقَّع</b>.</summary>
+    decimal OpeningBalance = 0m,
+
+    /// <summary>
+    /// ما يستحقّ <b>بعد الأفق</b> — مُعلَنٌ لا مطويّ.
+    /// </summary>
+    /// <remarks>
+    /// <b>وحشرُه في الأسبوع الأخير يُظهر ذيلَ الأفق مليئاً بمالٍ يصل بعد سنة</b> —
+    /// وهو أسوأُ من إسقاطه: <b>يُطمئن كذباً</b>.
+    /// </remarks>
+    decimal InflowsBeyondHorizon = 0m,
+    decimal OutflowsBeyondHorizon = 0m,
+
+    /// <summary>أدنى رصيدٍ متوقَّع — <b>وهو ما يُقاس به خطرُ العجز</b>.</summary>
+    decimal LowestProjectedBalance = 0m,
+
+    /// <summary>أوّلُ أسبوعٍ يصير الرصيدُ فيه سالباً — و<c>null</c> إن لم يقع.</summary>
+    DateOnly? FirstShortfallOn = null);
 
 public interface ICashFlowForecastService
 {

@@ -34,6 +34,28 @@ public class Supplier : ISoftDeletable
         CreatedAtUtc = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// (CEEF-230 · ط4-٣ج) <b>مهلةُ السداد بالأيام — وبها وحدَها يصير التنبّؤ تنبّؤاً.</b>
+    ///
+    /// <para><b>وبغيرها لا يعرف النظامُ متى يُتوقَّع المال</b>، فيُعرض كلُّ مفتوحٍ
+    /// «مستحقّاً الآن» — <b>وذاك ليس تنبّؤاً بل صورةً للحاضر</b>.</para>
+    ///
+    /// <para><b>وصفرُها يعني نقداً</b>: الاستحقاقُ يومَ الفاتورة.</para>
+    /// </summary>
+    public int PaymentTermDays { get; private set; }
+
+    /// <summary>يضبط مهلةَ السداد.</summary>
+    public void SetPaymentTerms(int days)
+    {
+        if (days < 0)
+            throw new Domain.Accounting.AccountingException("مهلة السداد لا تكون سالبة.");
+        if (days > 365)
+            throw new Domain.Accounting.AccountingException(
+                "مهلة السداد تتجاوز سنة — وذاك ليس بيعاً آجلاً بل قرضاً.");
+
+        PaymentTermDays = days;
+    }
+
     public static Supplier Create(long companyId, string nameAr, string vatNumber = "", string phone = "", string address = "")
     {
         if (string.IsNullOrWhiteSpace(nameAr))

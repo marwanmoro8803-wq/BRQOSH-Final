@@ -2315,6 +2315,18 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("menu_items", "SaleProductId", "INTEGER NULL", ct);
         }
 
+        // (CEEF-230 · ط4-٣ج) ‏مهلةُ السداد — وبها يصير التنبّؤ تنبّؤاً.
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("customers", "PaymentTermDays", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsurePgColumnAsync("suppliers", "PaymentTermDays", "INTEGER NOT NULL DEFAULT 0", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("customers", "PaymentTermDays", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsureSqliteColumnAsync("suppliers", "PaymentTermDays", "INTEGER NOT NULL DEFAULT 0", ct);
+        }
+
         // (CEEF-230 · ط3-٤ج) ‏أثرُ تتبّع الشحنة — سندُ التسليم.
         if (isPg)
         {

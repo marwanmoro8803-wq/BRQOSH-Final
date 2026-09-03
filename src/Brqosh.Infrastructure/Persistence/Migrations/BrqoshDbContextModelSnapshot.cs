@@ -2881,6 +2881,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<int>("PaymentTermDays")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -3364,6 +3367,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<int>("PaymentTermDays")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Phone")
                         .IsRequired()
