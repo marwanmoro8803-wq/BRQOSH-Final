@@ -3,6 +3,39 @@ using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Logistics;
 
+/// <summary>
+/// نوعُ حدث التتبّع — <b>وهو ما يُجيب «أين شحنتي» ويُثبت التسليم</b>.
+/// </summary>
+public enum ShipmentEventKind
+{
+    /// <summary>استُلمت من المرسِل.</summary>
+    PickedUp = 0,
+
+    /// <summary>وصلت فرزاً أو مستودعَ عبور.</summary>
+    AtHub = 1,
+
+    /// <summary>خرجت للتسليم.</summary>
+    OutForDelivery = 2,
+
+    /// <summary>
+    /// مُحاولةُ تسليمٍ لم تنجح — <b>ولا تُغيّر الحالة</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وتُسجَّل مرّاتٍ</b>: ثلاثُ محاولاتٍ فاشلةٍ هي ما يُبرّر الإرجاع، <b>وبغير
+    /// سجلِّها يبدو الإرجاعُ تقصيراً من الناقل</b> — فيُطالَب بقيمة البضاعة.
+    /// </remarks>
+    DeliveryAttempted = 3,
+
+    /// <summary>سُلِّمت — <b>وهذا هو الحدثُ الذي يُثبت الاستحقاق</b>.</summary>
+    Delivered = 4,
+
+    /// <summary>أُعيدت إلى المرسِل.</summary>
+    Returned = 5,
+
+    /// <summary>أُلغيت.</summary>
+    Cancelled = 6,
+}
+
 /// <summary>حالةُ الشحنة.</summary>
 public enum ShipmentStatus
 {
@@ -69,6 +102,43 @@ public class Shipment : IBranchScoped
 
     public DateTime CreatedAtUtc { get; private set; }
 
+    private readonly List<ShipmentEvent> _events = [];
+
+    /// <summary>
+    /// أثرُ الشحنة — <b>وبه تُجاب «أين شحنتي» ويُثبت التسليم</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>وما كان:</b> الشحنةُ تحمل حالةً واحدةً و<c>DeliveredOn</c>. <b>فالمستلمُ
+    /// يسأل أين شحنتُه فلا يُقال له إلا «في الطريق»</b> — بلا موضعٍ ولا وقتٍ ولا تاريخ.</para>
+    ///
+    /// <para><b>والأخطرُ أثرُه في المال</b>: التسليمُ هو ما يُنشئ التزامَ الدفع عند
+    /// الاستلام (<c>هـ-١٣</c>) ويُستحقّ به أجرُ الشحن. <b>وتسليمٌ يُنكره المستلم لا سندَ
+    /// له</b>: التاجرُ يُطالب بماله، والناقلُ يقول سُلِّمت، <b>ولا شيءَ في النظام يقول
+    /// مَن استلم ومتى وأين</b>. فيُدفع المالُ مرّتين أو يُخسر العميل.</para>
+    ///
+    /// <para><b>وهويّةُ هـ-٢١:</b> <c>الحالةُ = أثرُ آخرِ حدثٍ حاملٍ لحالة</c> — <b>ولا
+    /// تفترقان</b>، لأنّ الانتقالاتِ نفسَها هي التي تُسجّل أحداثَها.</para>
+    /// </remarks>
+    public IReadOnlyList<ShipmentEvent> Events => _events;
+
+    /// <summary>عددُ محاولات التسليم الفاشلة — <b>وهي ما يُبرّر الإرجاع</b>.</summary>
+    public int FailedAttempts => _events.Count(e => e.Kind == ShipmentEventKind.DeliveryAttempted);
+
+    /// <summary>
+    /// مَن استلم الشحنة — و<c>null</c> قبل التسليم.
+    /// </summary>
+    /// <remarks>
+    /// <b>والترشيحُ بنوع الحدث لا تقتله طفرة</b> — <b>وذلك مُصرَّحٌ به لا مطويّ</b>:
+    /// حارسُ <c>RecordScan</c> يمنع المسحَ بعد انتهاء المسار، <b>فحدثُ التسليم هو آخرُ
+    /// الأحداث دائماً</b> وقراءةُ الأخير تُساويه.
+    ///
+    /// <para><b>وأُبقي لأنّه يقول ما يعنيه الحقل</b>: «مَن أخذ الشحنة» لا «آخرُ ما كُتب
+    /// فيها». <b>ولو رُفع حارسُ الانتهاء يوماً لصار الترشيحُ هو ما يمنع أن يُقرأ اسمُ
+    /// موظّفِ فرزٍ سنداً للتسليم.</b></para>
+    /// </remarks>
+    public string? ReceivedBy => _events
+        .LastOrDefault(e => e.Kind == ShipmentEventKind.Delivered)?.ReceivedBy;
+
     // EF Core
     private Shipment()
     {
@@ -124,11 +194,13 @@ public class Shipment : IBranchScoped
             Math.Round(codAmount, 2, MidpointRounding.AwayFromZero));
     }
 
-    public void Dispatch()
+    public void Dispatch(string? location = null)
     {
         if (Status != ShipmentStatus.Created)
             throw new AccountingException("لا تُشحن إلا بوليصةٌ منشأة.");
+
         Status = ShipmentStatus.InTransit;
+        Append(ShipmentEventKind.PickedUp, ShipDate, location, null, null);
     }
 
     /// <summary>
@@ -138,16 +210,26 @@ public class Shipment : IBranchScoped
     /// ولا يُقبض عنها شيء. <b>وافتراضُ التحصيل مع كلّ تسليمٍ يُنشئ التزاماً للتاجر بمالٍ
     /// لم يدخل الصندوق</b> — ثمّ يُورَّد إليه من مال الشركة.</para>
     /// </summary>
-    public void Deliver(DateOnly on)
+    /// <param name="receivedBy">
+    /// <b>مَن استلم — وهو سندُ التسليم.</b>
+    ///
+    /// <para><b>وتسليمٌ بلا اسمِ مستلمٍ لا يُثبَت</b>: يُنكره المستلمُ فيُطالب التاجرُ
+    /// بماله، <b>ولا شيءَ في النظام يقول مَن أخذها</b> — فيُدفع المالُ مرّتين.</para>
+    /// </param>
+    public void Deliver(DateOnly on, string receivedBy, string? location = null)
     {
         if (Status != ShipmentStatus.InTransit && Status != ShipmentStatus.Created)
             throw new AccountingException("لا تُسلَّم إلا شحنةٌ قائمة.");
         if (on < ShipDate)
             throw new AccountingException("تاريخ التسليم قبل تاريخ الشحن.");
+        if (string.IsNullOrWhiteSpace(receivedBy))
+            throw new AccountingException(
+                "اسمُ المستلم مطلوبٌ للتسليم — وتسليمٌ بلا سندٍ يُنكره المستلمُ فيُدفع المالُ مرّتين.");
 
         Status = ShipmentStatus.Delivered;
         DeliveredOn = on;
         CodCollected = CodAmount > 0m;
+        Append(ShipmentEventKind.Delivered, on, location, null, receivedBy.Trim());
     }
 
     /// <summary>
@@ -170,13 +252,16 @@ public class Shipment : IBranchScoped
         // ‏في حارس الحالة أعلاه.
         Status = ShipmentStatus.Returned;
         DeliveredOn = on;
+        Append(ShipmentEventKind.Returned, on, null, null, null);
     }
 
     public void Cancel()
     {
         if (Status == ShipmentStatus.Delivered || Status == ShipmentStatus.Returned)
             throw new AccountingException("شحنةٌ انتهى مسارُها لا تُلغى.");
+
         Status = ShipmentStatus.Cancelled;
+        Append(ShipmentEventKind.Cancelled, ShipDate, null, null, null);
     }
 
     /// <summary>
@@ -185,6 +270,49 @@ public class Shipment : IBranchScoped
     /// <para><b>ولا يُورَّد ما لم يُحصَّل</b> — وتوريدُه يُخرج الالتزامَ مديناً: أصلٌ موهومٌ
     /// في الميزانية لا يقابله حقّ. <b>ولا يُورَّد مرّتين</b> — والثانيةُ خروجُ مالٍ بلا سبب.</para>
     /// </summary>
+    /// <summary>
+    /// يُسجّل مسحاً تشغيلياً — <b>وصولاً لفرزٍ أو خروجاً للتسليم أو محاولةً فاشلة</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>والأحداثُ الحاملةُ للحالة لا تُسجَّل من هنا</b>: التسليمُ والإرجاعُ
+    /// والإلغاءُ تُسجّلها انتقالاتُها. <b>ولو قُبلت يدوياً لَافترق الأثرُ عن الحالة</b> —
+    /// فتُقرأ الشحنةُ «مُسلَّمةً» في التتبّع و«في الطريق» في الحساب، وتكسر <c>هـ-٢١</c>.</para>
+    ///
+    /// <para><b>والأثرُ لا يُكتب إلى الوراء</b>: مسحٌ بتاريخٍ يسبق آخرَ ما سُجّل
+    /// <b>يُعيد كتابة التاريخ</b> — وهو ما يُبطل السندَ الذي بُني هذا الأثرُ ليكونه.</para>
+    /// </remarks>
+    public void RecordScan(ShipmentEventKind kind, DateOnly on, string? location = null,
+        string? note = null)
+    {
+        if (Status is ShipmentStatus.Cancelled or ShipmentStatus.Delivered
+            or ShipmentStatus.Returned)
+            throw new AccountingException(
+                $"شحنةٌ حالتُها «{Status}» لا تُمسَح — ومسارُها انتهى، ومسحٌ بعده يُوهم بحركةٍ لم تقع.");
+
+        if (kind is ShipmentEventKind.Delivered or ShipmentEventKind.Returned
+            or ShipmentEventKind.Cancelled)
+            throw new AccountingException(
+                "التسليمُ والإرجاعُ والإلغاءُ تُسجّلها انتقالاتُها لا المسحُ اليدويّ — "
+                + "وإلا افترق الأثرُ عن الحالة.");
+
+        Append(kind, on, location, note, null);
+    }
+
+    private void Append(ShipmentEventKind kind, DateOnly on, string? location, string? note,
+        string? receivedBy)
+    {
+        var last = _events.Count > 0 ? _events[^1].OccurredOn : (DateOnly?)null;
+        if (last is DateOnly previous && on < previous)
+            throw new AccountingException(
+                $"الحدث في {on:yyyy-MM-dd} يسبق آخرَ ما سُجّل في {previous:yyyy-MM-dd} — "
+                + "والأثرُ لا يُكتب إلى الوراء.");
+
+        _events.Add(new ShipmentEvent(kind, on,
+            string.IsNullOrWhiteSpace(location) ? null : location.Trim(),
+            string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+            receivedBy));
+    }
+
     public void MarkCodRemitted()
     {
         if (!CodCollected)
@@ -200,4 +328,31 @@ public class Shipment : IBranchScoped
     {
         if (BranchId is null) BranchId = branchId;
     }
+}
+
+/// <summary>
+/// حدثُ تتبّعٍ في مسار الشحنة — <b>وهو سندُ التسليم لا زينةُ عرض</b>.
+/// </summary>
+public class ShipmentEvent
+{
+    public long Id { get; private set; }
+    public ShipmentEventKind Kind { get; private set; }
+    public DateOnly OccurredOn { get; private set; }
+    public string? Location { get; private set; }
+    public string? Note { get; private set; }
+
+    /// <summary>مَن استلم — <b>ولا يكون إلا في حدث التسليم</b>.</summary>
+    public string? ReceivedBy { get; private set; }
+
+    internal ShipmentEvent(ShipmentEventKind kind, DateOnly occurredOn, string? location,
+        string? note, string? receivedBy)
+    {
+        Kind = kind;
+        OccurredOn = occurredOn;
+        Location = location;
+        Note = note;
+        ReceivedBy = receivedBy;
+    }
+
+    private ShipmentEvent() { }
 }

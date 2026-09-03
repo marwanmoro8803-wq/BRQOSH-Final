@@ -131,7 +131,7 @@ public class CodSettlementTests : IDisposable
     {
         var shipment = Shipment.Create(1L, "WB-D2", 1L, "مستلم", "الرياض",
             new DateOnly(2026, 3, 1), freightCharge: 25m, codAmount: 900m);
-        shipment.Deliver(new DateOnly(2026, 3, 3));
+        shipment.Deliver(new DateOnly(2026, 3, 3), "مستلم");
         shipment.MarkCodRemitted();
 
         var error = Assert.Throws<AccountingException>(shipment.MarkCodRemitted);
@@ -196,7 +196,7 @@ public class CodSettlementTests : IDisposable
         var shipment = Shipment.Create(1L, "WB-9", 1L, "مستلم", "الرياض",
             new DateOnly(2026, 3, 1), freightCharge: 25m, codAmount: 0m);
 
-        shipment.Deliver(new DateOnly(2026, 3, 3));
+        shipment.Deliver(new DateOnly(2026, 3, 3), "مستلم");
 
         Assert.Equal(ShipmentStatus.Delivered, shipment.Status);
         Assert.False(shipment.CodCollected);
@@ -231,7 +231,7 @@ public class CodSettlementTests : IDisposable
     {
         var shipment = Shipment.Create(1L, "WB-11", 1L, "مستلم", "تبوك",
             new DateOnly(2026, 3, 1), freightCharge: 30m, codAmount: 600m);
-        shipment.Deliver(new DateOnly(2026, 3, 4));
+        shipment.Deliver(new DateOnly(2026, 3, 4), "مستلم");
 
         Assert.Throws<AccountingException>(() => shipment.Return(new DateOnly(2026, 3, 6)));
         Assert.True(shipment.CodCollected);
@@ -255,7 +255,7 @@ public class CodSettlementTests : IDisposable
             var shipment = Shipment.Create(_companyId, waybill, _shipperId, "مستلم", "الرياض",
                 new DateOnly(2026, 3, 1), freightCharge: 25m, codAmount: cod);
             shipment.Dispatch();
-            shipment.Deliver(new DateOnly(2026, 3, 4));
+            shipment.Deliver(new DateOnly(2026, 3, 4), "مستلم");
             _db.Shipments.Add(shipment);
             await _db.SaveChangesAsync();
             ids.Add(shipment.Id);

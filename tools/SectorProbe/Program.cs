@@ -891,7 +891,7 @@ static class ModuleProbes
                 "مستلمُ المسبار", "جدة", new DateOnly(2026, 3, 1),
                 freightCharge: 25m, codAmount: 900m);
             shipment.Dispatch();
-            shipment.Deliver(new DateOnly(2026, 3, 3));
+            shipment.Deliver(new DateOnly(2026, 3, 3), "مستلمُ المسبار");
             c.Db.Shipments.Add(shipment);
             await c.Db.SaveChangesAsync();
 

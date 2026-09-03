@@ -27,6 +27,12 @@
                 <Button x:Name="CollectBtn" DockPanel.Dock="Right" Content="إثبات التحصيل"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnCollect"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <TextBox x:Name="ReceivedByBox" DockPanel.Dock="Right" Width="150"
+                         Style="{StaticResource AppTextBox}" VerticalAlignment="Center"
+                         Margin="0,0,10,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="اسم المستلم" VerticalAlignment="Center"
+                           Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="DeliverBtn" DockPanel.Dock="Right" Content="تسليم"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnDeliver"/>
             </DockPanel>

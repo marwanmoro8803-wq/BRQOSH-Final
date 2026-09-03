@@ -13,6 +13,93 @@ namespace Brqosh.Infrastructure.Persistence;
 /// </summary>
 public class BrqoshSchemaUpdater(BrqoshDbContext db)
 {
+    private readonly List<SchemaStepFailure> _suppressed = [];
+
+    /// <summary>
+    /// (CEEF-231 · ط5-١٠) <b>ما ابتُلع أثناء ترقية المخطّط — ولا يُبتلع بلا أثر.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para><b>ما كان:</b> خمسةَ عشرَ موضعاً في هذا الملفّ تكتب DDL داخل
+    /// <c>try { … } catch { }</c> فارغ. <b>والتسامحُ مقصودٌ ولا يُنزَع</b>: جدولٌ قد
+    /// يُنشئه <c>EnsureCreated</c> بعدُ، وعمودٌ قد يوجد سلفاً، وقاعدةٌ قديمةٌ جدّاً قد
+    /// تنقصها أعمدةٌ يُرقّعها ما بعده.</para>
+    ///
+    /// <para><b>لكنّ فشلاً حقيقياً لا يُميَّز عن ذلك</b>: صلاحيةٌ ناقصة، أو قرصٌ ممتلئ،
+    /// أو صياغةٌ لا يقبلها إصدارُ PostgreSQL. <b>فترقيةُ مخطّطٍ تفشل تُقرأ نجاحاً</b>،
+    /// ويُقلع التطبيق ثمّ يسقط عند أوّل استعلامٍ يمسّ ما لم يُنشأ.</para>
+    ///
+    /// <para><b>فالتسامحُ باقٍ والصمتُ زال.</b> ويُقرأ هذا من شاشة حالة النظام ومن
+    /// الاختبارات، <b>ويُكتب ملفّاً حين لا يكون فارغاً</b>.</para>
+    /// </remarks>
+    public IReadOnlyList<SchemaStepFailure> SuppressedFailures => _suppressed;
+
+    /// <summary>
+    /// (CEEF-231 · ط5-١٠) فشلُ آخرِ ترقيةٍ جرت في هذه العملية — <b>لتقرأه شاشةُ الحالة</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وساكنٌ لأنّ المُرقِّع يُنشأ ويُرمى في كلّ نداء</b> — و<c>DatabaseSchemaService</c>
+    /// يستدعيه من خمسة مواضع. <b>فحقلُ نسخةٍ لا يبلغ شاشةً تُفتح بعد الإقلاع بساعة.</b>
+    /// </remarks>
+    public static IReadOnlyList<SchemaStepFailure> LastRunFailures { get; private set; } = [];
+
+    /// <summary>
+    /// يكتب تقريرَ ما ابتُلع — <b>وحين لا يكون فارغاً وحدَه</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وملفٌّ يُكتب في كلّ إقلاعٍ ولو بلا فشلٍ يُدرَّب المستخدمُ على تجاهله</b> —
+    /// فوجودُه هو الخبر. <b>ولا يرمي أبداً</b>: هذا يجري في مسار الإقلاع، <b>واستثناءٌ
+    /// هنا يمنع تشغيلَ المنشأة لأجل تقرير</b>.
+    /// </remarks>
+    private void WriteReportIfAny()
+    {
+        if (_suppressed.Count == 0) return;
+
+        try
+        {
+            var directory = Path.Combine(BrqoshDataRoot.Path(), "logs");
+            Directory.CreateDirectory(directory);
+
+            var path = Path.Combine(directory, $"schema-{DateTime.Now:yyyy-MM-dd_HHmmss}.log");
+
+            var text = new System.Text.StringBuilder();
+            text.AppendLine("BRQOSH — خطوات ترقية مخطّط ابتُلع فشلُها");
+            text.AppendLine($"الوقت: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            text.AppendLine($"المحرك: {db.Database.ProviderName}");
+            text.AppendLine(new string('─', 70));
+
+            foreach (var failure in _suppressed)
+                text.AppendLine(failure.ToString());
+
+            File.WriteAllText(path, text.ToString(), new System.Text.UTF8Encoding(true));
+        }
+        catch (Exception)
+        {
+            // ‏**ولا يرمي** — تقريرٌ يتعذّر لا يمنع الإقلاع.
+        }
+    }
+
+    /// <summary>
+    /// يُنفّذ خطوةَ مخطّطٍ متسامحة — <b>ويُسجّل فشلَها باسم الخطوة</b>.
+    /// </summary>
+    /// <param name="step">
+    /// اسمُ الخطوة. <b>وهو ما يُضيّق البحث من خمسةَ عشرَ موضعاً إلى واحد</b> — ورسالةُ
+    /// المحرّك وحدَها تقول «relation does not exist» ولا تقول أيّ خطوةٍ طلبتها.
+    /// </param>
+    private async Task<bool> TrySchemaSqlAsync(string step, string sql, CancellationToken ct)
+    {
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(sql, ct);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // ‏**ولا يُرمى** — التسامحُ هو السلوكُ المقصود منذ بناء هذا الملفّ،
+            // ‏**وتغييرُه هنا يُسقط إقلاعَ كلّ قاعدةٍ قائمة**. والتسجيلُ وحده ما أُضيف.
+            _suppressed.Add(new SchemaStepFailure(step, ex.GetType().Name, ex.Message));
+            return false;
+        }
+    }
     public async Task ApplyAsync(CancellationToken ct = default)
     {
         var isPg = db.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
@@ -81,6 +168,14 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // بأثر رجعيّ عمداً: تصنيف مبيعات وردية مغلقة يحتاج بيانات لم تُحفظ حينها،
         // والافتراض الكاذب أسوأ من الصفر الصريح.
         await EnsurePosCashSalesColumnAsync(isPg, ct);
+
+        // (CEEF-231 · ط5-١٠) ‏**وما ابتُلع يُسجَّل ولا يُنسى.**
+        //
+        // ‏والتسامحُ باقٍ — لا يُرمى شيءٌ هنا. **والصمتُ وحده ما زال**: كان فشلُ خطوةٍ
+        // ‏لا يُميَّز عن نجاحها، **فتُقلع القاعدةُ ثمّ تسقط عند أوّل استعلامٍ يمسّ ما
+        // ‏لم يُنشأ**.
+        LastRunFailures = _suppressed.AsReadOnly();
+        WriteReportIfAny();
     }
 
     private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)
@@ -369,20 +464,18 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("companies", "PrintFontFamily", "TEXT NOT NULL DEFAULT 'Tahoma'", ct);
         await EnsureSqliteColumnAsync("bank_accounts", "CurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("construction_projects", "EstimatedTotalCost", "REAL NULL", ct);
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE app_users SET MustChangePasswordOnNextLogin = 0 WHERE MustChangePasswordOnNextLogin IS NULL", ct);
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE companies SET CostingMethod = 'WeightedAverage' WHERE CostingMethod IS NULL", ct);
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE companies SET BaseCurrencyCode = 'SAR' WHERE BaseCurrencyCode IS NULL OR BaseCurrencyCode = ''", ct);
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE companies SET FunctionalCurrencyCode = 'SAR' WHERE FunctionalCurrencyCode IS NULL OR FunctionalCurrencyCode = ''", ct);
-            await db.Database.ExecuteSqlRawAsync(
-                "UPDATE construction_projects SET EstimatedTotalCost = 0 WHERE EstimatedTotalCost IS NULL", ct);
-        }
-        catch { /* */ }
+        // ‏**وكلُّ تعبئةٍ خطوةٌ باسمها** — ودفعةٌ في `try` واحدٍ تُسقط ما بعد أوّل فشلٍ
+        // ‏فيها صامتاً، **فتبقى أعمدةٌ بلا قيمةٍ افتراضية ولا يُعرف أيُّها**.
+        await TrySchemaSqlAsync("Backfill.MustChangePassword",
+            "UPDATE app_users SET MustChangePasswordOnNextLogin = 0 WHERE MustChangePasswordOnNextLogin IS NULL", ct);
+        await TrySchemaSqlAsync("Backfill.CostingMethod",
+            "UPDATE companies SET CostingMethod = 'WeightedAverage' WHERE CostingMethod IS NULL", ct);
+        await TrySchemaSqlAsync("Backfill.BaseCurrency",
+            "UPDATE companies SET BaseCurrencyCode = 'SAR' WHERE BaseCurrencyCode IS NULL OR BaseCurrencyCode = ''", ct);
+        await TrySchemaSqlAsync("Backfill.FunctionalCurrency",
+            "UPDATE companies SET FunctionalCurrencyCode = 'SAR' WHERE FunctionalCurrencyCode IS NULL OR FunctionalCurrencyCode = ''", ct);
+        await TrySchemaSqlAsync("Backfill.EstimatedTotalCost",
+            "UPDATE construction_projects SET EstimatedTotalCost = 0 WHERE EstimatedTotalCost IS NULL", ct);
         await EnsureBranchesTableAsync(isPg: false, ct);
         await EnsureInventoryBalancesTableAsync(isPg: false, ct);
         await EnsureFifoAndAllocationTablesAsync(isPg: false, ct);
@@ -445,8 +538,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE UNIQUE INDEX IF NOT EXISTS "IX_company_groups_Code" ON company_groups (Code);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* */ }
+        await TrySchemaSqlAsync("EnsureCompanyPlatformAsync", sql, ct);
 
         if (isPg)
         {
@@ -493,8 +585,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               CREATE INDEX IF NOT EXISTS ix_exchange_rates_lookup
                   ON exchange_rates (CompanyId, FromCurrencyCode, ToCurrencyCode, EffectiveDate);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* */ }
+        await TrySchemaSqlAsync("EnsureExchangeRatesTableAsync", sql, ct);
     }
 
     private async Task EnsureIntercompanyColumnsAsync(bool isPg, CancellationToken ct)
@@ -532,8 +623,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               CREATE UNIQUE INDEX IF NOT EXISTS "IX_intercompany_account_maps_CompanyGroupId_AccountCode"
                   ON intercompany_account_maps (CompanyGroupId, AccountCode);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* */ }
+        await TrySchemaSqlAsync("EnsureIntercompanyAccountMapsTableAsync", sql, ct);
     }
 
     private async Task EnsureBillingPlatformTablesAsync(bool isPg, CancellationToken ct)
@@ -577,8 +667,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE UNIQUE INDEX IF NOT EXISTS "IX_tenant_subscriptions_TenantId" ON tenant_subscriptions (TenantId);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* */ }
+        await TrySchemaSqlAsync("EnsureBillingPlatformTablesAsync", sql, ct);
 
         await SeedDefaultBillingPlansAsync(ct);
     }
@@ -972,8 +1061,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   CreatedAtUtc TEXT NOT NULL
               );
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* EnsureCreated may create later */ }
+        await TrySchemaSqlAsync("EnsureFifoAndAllocationTablesAsync", sql, ct);
 
         await EnsureGoodsReceiptAndDebitNoteTablesAsync(isPg, ct);
     }
@@ -1005,8 +1093,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               CREATE UNIQUE INDEX IF NOT EXISTS "IX_domain_events_EventId" ON domain_events (EventId);
               CREATE INDEX IF NOT EXISTS ix_domain_events_company_occurred ON domain_events (CompanyId, OccurredAtUtc);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* EnsureCreated may create later */ }
+        await TrySchemaSqlAsync("EnsureDomainEventsTableAsync", sql, ct);
 
         // أعمدة طابور Outbox على القواعد القائمة (ع-D2، CEEF-204).
         if (isPg)
@@ -1023,15 +1110,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         }
 
         // الأحداث السابقة تُعتبر مُرسَلة — الطابور للجديد فقط، لا لإعادة إرسال التاريخ.
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(
-                isPg
-                    ? """UPDATE domain_events SET "DispatchedAtUtc" = "OccurredAtUtc" WHERE "DispatchedAtUtc" IS NULL"""
-                    : "UPDATE domain_events SET DispatchedAtUtc = OccurredAtUtc WHERE DispatchedAtUtc IS NULL",
-                ct);
-        }
-        catch { /* الأعمدة قد تُنشأ لاحقاً عبر EnsureCreated */ }
+        await TrySchemaSqlAsync("Backfill.DomainEventsDispatched",
+            isPg
+                ? """UPDATE domain_events SET "DispatchedAtUtc" = "OccurredAtUtc" WHERE "DispatchedAtUtc" IS NULL"""
+                : "UPDATE domain_events SET DispatchedAtUtc = OccurredAtUtc WHERE DispatchedAtUtc IS NULL",
+            ct);
     }
 
     private async Task EnsureReportSnapshotsTableAsync(bool isPg, CancellationToken ct)
@@ -1063,8 +1146,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE INDEX IF NOT EXISTS ix_report_snapshots_company_type ON report_snapshots (CompanyId, ReportType, CapturedAtUtc);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* EnsureCreated may create later */ }
+        await TrySchemaSqlAsync("EnsureReportSnapshotsTableAsync", sql, ct);
     }
 
     private async Task EnsureBranchesTableAsync(bool isPg, CancellationToken ct)
@@ -1094,8 +1176,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               CREATE UNIQUE INDEX IF NOT EXISTS "IX_branches_CompanyId_Code" ON branches (CompanyId, Code);
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* */ }
+        await TrySchemaSqlAsync("EnsureBranchesTableAsync", sql, ct);
     }
 
     private async Task EnsureGoodsReceiptAndDebitNoteTablesAsync(bool isPg, CancellationToken ct)
@@ -1185,8 +1266,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   ProductId INTEGER NULL
               );
               """;
-        try { await db.Database.ExecuteSqlRawAsync(sql, ct); }
-        catch { /* */ }
+        await TrySchemaSqlAsync("EnsureGoodsReceiptAndDebitNoteTablesAsync", sql, ct);
     }
 
     private async Task EnsureInventoryBalancesTableAsync(bool isPg, CancellationToken ct)
@@ -1215,14 +1295,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                   ON inventory_balances (CompanyId, WarehouseId, ProductId);
               """;
 
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(sql, ct);
-        }
-        catch
-        {
-            // الجدول قد يُنشأ عبر EnsureCreated
-        }
+        await TrySchemaSqlAsync("EnsureInventoryBalancesTableAsync", sql, ct);
     }
 
     private async Task EnsureWorkflowTablesAsync(bool isPg, CancellationToken ct)
@@ -1321,14 +1394,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               """;
 
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(sql, ct);
-        }
-        catch
-        {
-            // قد يُنشأ عبر EnsureCreated
-        }
+        await TrySchemaSqlAsync("EnsureWorkflowTablesAsync", sql, ct);
     }
 
     private async Task EnsureBankStatementTablesAsync(bool isPg, CancellationToken ct)
@@ -1379,30 +1445,20 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               );
               """;
 
-        try
-        {
-            await db.Database.ExecuteSqlRawAsync(sql, ct);
-        }
-        catch
-        {
-            // قد يُنشأ عبر EnsureCreated
-        }
+        await TrySchemaSqlAsync("EnsureBankStatementTablesAsync", sql, ct);
     }
 
     private async Task BackfillSoftDeleteAsync(string table, bool isPg, CancellationToken ct)
     {
         SchemaSqlGuard.ValidateTable(table);
-        try
-        {
-            var sql = isPg
-                ? $"""UPDATE "{table}" SET "DeletedAtUtc" = NOW() AT TIME ZONE 'UTC' WHERE "IsActive" = false AND "DeletedAtUtc" IS NULL"""
-                : $"UPDATE {table} SET DeletedAtUtc = datetime('now') WHERE IsActive = 0 AND DeletedAtUtc IS NULL";
-            await db.Database.ExecuteSqlRawAsync(sql, ct);
-        }
-        catch
-        {
-            // الجدول قد لا يحتوي IsActive بعد في قواعد قديمة جداً
-        }
+
+        var sql = isPg
+            ? $"""UPDATE "{table}" SET "DeletedAtUtc" = NOW() AT TIME ZONE 'UTC' WHERE "IsActive" = false AND "DeletedAtUtc" IS NULL"""
+            : $"UPDATE {table} SET DeletedAtUtc = datetime('now') WHERE IsActive = 0 AND DeletedAtUtc IS NULL";
+
+        // ‏**واسمُ الجدول جزءٌ من اسم الخطوة** — فالدالّةُ تُستدعى لكلّ جدولٍ يحمل
+        // ‏الحذفَ الناعم، **واسمٌ واحدٌ لا يقول أيُّها فشل**.
+        await TrySchemaSqlAsync($"BackfillSoftDelete[{table}]", sql, ct);
     }
 
     private async Task EnsureDocumentTotalColumnsAsync(bool isPg, CancellationToken ct)
@@ -2245,6 +2301,24 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         else
         {
             await EnsureSqliteColumnAsync("menu_items", "SaleProductId", "INTEGER NULL", ct);
+        }
+
+        // (CEEF-230 · ط3-٤ج) ‏أثرُ تتبّع الشحنة — سندُ التسليم.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS shipment_events (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    shipment_id BIGINT NOT NULL
+                        REFERENCES shipments("Id") ON DELETE CASCADE,
+                    "Kind" character varying(20) NOT NULL DEFAULT 'PickedUp',
+                    "OccurredOn" DATE NOT NULL,
+                    "Location" character varying(128) NULL,
+                    "Note" character varying(256) NULL,
+                    "ReceivedBy" character varying(128) NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_shipment_events_shipment_id_OccurredOn" ON shipment_events (shipment_id, "OccurredOn");""", ct);
         }
 
         // (CEEF-230 · ط3-١ب و ط3-٣د و ط3-٤ب) ‏الصيانةُ والإكرامياتُ ورحلاتُ التوصيل.

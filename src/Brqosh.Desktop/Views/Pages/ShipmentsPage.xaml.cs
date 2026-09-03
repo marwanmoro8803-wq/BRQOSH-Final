@@ -88,7 +88,9 @@ public partial class ShipmentsPage : UserControl
         {
             await using var db = AppServices.CreateDb();
             var shipment = await db.Shipments.SingleAsync(s => s.Id == row.Id);
-            shipment.Deliver(DateOnly.FromDateTime(DateTime.Today));
+            // ‏**واسمُ المستلم سندُ التسليم** — وتسليمٌ بلا سندٍ يُنكره المستلم،
+            // ‏فيُطالب التاجرُ بماله ولا شيءَ يقول مَن أخذها.
+            shipment.Deliver(DateOnly.FromDateTime(DateTime.Today), ReceivedByBox.Text ?? "");
             await db.SaveChangesAsync();
             await ReloadAsync();
         }
