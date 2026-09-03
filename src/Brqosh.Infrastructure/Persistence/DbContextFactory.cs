@@ -28,7 +28,23 @@ public static class BrqoshDbContextFactory
         switch (provider)
         {
             case DatabaseProvider.PostgreSql:
-                builder.UseNpgsql(connectionString);
+            // (CEEF-231 · ط5-٧) ‏**إعادةُ المحاولة على الأعطال العابرة — وكانت الآليةُ
+            // ‏مبنيّةً وخاملة.**
+            //
+            // ‏`UnitOfWork.ExecuteInTransactionAsync` يستدعي `CreateExecutionStrategy()`
+            // ‏منذ بنائه — **ويحصل على `NpgsqlExecutionStrategy` الذي لا يُعيد المحاولة
+            // ‏أبداً**، لأنّ `EnableRetryOnFailure` لم يُستدعَ في أيّ موضع. فالسباكةُ
+            // ‏قائمةٌ والأثرُ صفر.
+            //
+            // ‏**وأثرُه في الميدان**: ومضةُ شبكةٍ أو إعادةُ تشغيل خادمٍ أثناء ترحيل فاتورة
+            // ‏**تخرج خطأً صلباً في وجه المستخدم** — والمعاملةُ ارتدّت فالبياناتُ سليمة،
+            // ‏لكنّ عملَه ضاع ولا يعرف لماذا.
+            //
+            // ‏**وثلاثُ محاولاتٍ لا أكثر**: عطلٌ مستمرٌّ يجب أن يظهر، **وإعادةٌ بلا حدٍّ
+            // ‏تُحوّل انقطاعاً إلى تعليقٍ صامت**. والمهلةُ خمسُ ثوانٍ — أطولُ من ومضة،
+            // ‏وأقصرُ من صبر المستخدم.
+                builder.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(
+                    maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null));
                 break;
             case DatabaseProvider.Sqlite:
                 builder.UseSqlite(connectionString);

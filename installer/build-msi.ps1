@@ -21,10 +21,30 @@ if (-not (Get-Command wix -ErrorAction SilentlyContinue)) {
 }
 
 $WxsPath = Join-Path $PSScriptRoot "brqosh.wxs"
-$WixObj = Join-Path $Root "dist\brqosh.wixobj"
+
+# (CEEF-231 - t5-5) رقم الإصدار من مصدر واحد.
+#
+# كان مثبتا هنا (1.0.0.0) وفي التجميعات لا شيء - فالمثبت يقول شيئا والتطبيق آخر.
+# وأخطر من ذلك: MajorUpgrade يعتمد على رقم الـMSI، فإصدار يشحن بلا تحرير هذا السطر
+# بيد لا يرقي تثبيتا قائما - ينصب جنبه أو يرفض.
+$PropsPath = Join-Path $Root "Directory.Build.props"
+if (-not (Test-Path $PropsPath)) {
+    Write-Host "Directory.Build.props مفقود - ولا رقم إصدار يشتق منه." -ForegroundColor Red
+    exit 1
+}
+
+$VersionMatch = Select-String -Path $PropsPath -Pattern "<BrqoshVersion>([^<]+)</BrqoshVersion>"
+if (-not $VersionMatch) {
+    Write-Host "BrqoshVersion غير موجود في Directory.Build.props." -ForegroundColor Red
+    exit 1
+}
+
+$ProductVersion = "$($VersionMatch.Matches[0].Groups[1].Value).0"
+Write-Host "الإصدار: $ProductVersion" -ForegroundColor Cyan
 
 wix build $WxsPath `
     -d PublishDir=$PublishDir `
+    -d ProductVersion=$ProductVersion `
     -o $MsiOut
 
 Write-Host "MSI: $MsiOut" -ForegroundColor Green

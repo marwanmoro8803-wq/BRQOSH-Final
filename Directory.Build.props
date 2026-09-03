@@ -1,0 +1,25 @@
+<Project>
+
+  <!--
+    (CEEF-231 · ط5-٥) ‏مصدرُ الحقيقة الوحيد لرقم الإصدار.
+
+    ‏**ما كان:** الرقمُ مثبَّتٌ في `installer/brqosh.wxs` وحدَه (`1.0.0.0`)، **والتجميعاتُ
+    ‏بلا رقمٍ مُعلَن** — فتحمل `0.0.0.0` الافتراضيّ. فالمثبِّتُ يقول شيئاً والتطبيقُ يقول
+    ‏آخر، **ولا يستطيع فحصُ التحديث أن يعرف ما المُثبَّت**.
+
+    ‏**وترقيةُ الإصدار تُكتب هنا وحدَها** — والمثبِّتُ يقرؤه، وفحصُ التحديث يقارن به.
+    ‏**ورقمان لشيءٍ واحد يفترقان عند أوّل إصدار.**
+  -->
+  <PropertyGroup>
+    <BrqoshVersion>1.0.0</BrqoshVersion>
+
+    <Version>$(BrqoshVersion)</Version>
+    <AssemblyVersion>$(BrqoshVersion).0</AssemblyVersion>
+    <FileVersion>$(BrqoshVersion).0</FileVersion>
+    <InformationalVersion>$(BrqoshVersion)</InformationalVersion>
+
+    <Company>BRQOSH</Company>
+    <Product>BRQOSH ERP</Product>
+  </PropertyGroup>
+
+</Project>

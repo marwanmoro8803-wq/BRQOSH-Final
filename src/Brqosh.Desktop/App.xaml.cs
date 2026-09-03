@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using Brqosh.Application.Setup;
 using Brqosh.Desktop.Views;
@@ -15,18 +15,37 @@ public partial class App : System.Windows.Application
 {
     private readonly ISetupStateStore _setupStore = new JsonSetupStateStore();
 
+    /// <summary>
+    /// (CEEF-231 · ط5-٦) سطرُ مسار السجلّ — <b>ويُطوى إن تعذّرت كتابتُه</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>ووعدٌ بسجلٍّ لم يُكتب أسوأُ من الصمت</b>: يُرسل الدعمُ المستخدمَ إلى ملفٍّ
+    /// لا وجودَ له، فيضيع وقتُ الطرفين.
+    /// </remarks>
+    private static string CrashHint(string? path) =>
+        path is null ? string.Empty : $"\n\nسُجّل التفصيل في:\n{path}";
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         Ui.UiLocalizationHost.Register();
 
+        // (CEEF-231 · ط5-٦) ‏**والعطلُ يُكتب على القرص قبل أن يُعرض.**
+        //
+        // ‏كان المعالجان يعرضان `ex.Message` **ولا يكتبان حرفاً**. فمنشأةٌ يقع عندها
+        // ‏عطلٌ تقول للدعم «ظهرت رسالة» — **ولا أثرَ لِما وقع**: لا مكدّس، ولا إصدار،
+        // ‏ولا محرّك قاعدة. **فيُطلب منها إعادةُ العطل** وهي تمسك دفاترَها الحقيقية.
         DispatcherUnhandledException += (_, args) =>
         {
+            var path = Brqosh.Infrastructure.Operations.CrashLog.Write(
+                args.Exception, "DispatcherUnhandledException");
+
             var detail = args.Exception.InnerException is null
                 ? args.Exception.Message
                 : $"{args.Exception.Message}\n\n{args.Exception.InnerException.Message}";
+
             UiDialog.Show(
-                $"خطأ غير متوقع:\n{detail}",
+                $"خطأ غير متوقع:\n{detail}" + CrashHint(path),
                 "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
@@ -35,11 +54,29 @@ public partial class App : System.Windows.Application
         {
             if (args.ExceptionObject is Exception ex)
             {
+                var path = Brqosh.Infrastructure.Operations.CrashLog.Write(
+                    ex, "AppDomain.UnhandledException");
+
                 UiDialog.Show(
-                    $"خطأ حرج:\n{ex.Message}",
+                    $"خطأ حرج:\n{ex.Message}" + CrashHint(path),
                     "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         };
+
+        // (CEEF-231 · ط5-٦) ‏**واستثناءُ مهمّةٍ لم يُنتظَر كان يمرّ صامتاً تماماً.**
+        //
+        // ‏فكلُّ `async void` في الشاشات — وهي كلُّ معالجات الأزرار — **يُنهي المهمّةَ
+        // ‏بلا مراقب** إن لم يُلتقط. **ولا يظهر شيء**: لا رسالةَ ولا سجلّ، والزرُّ لا
+        // ‏يفعل شيئاً ولا يُقال لماذا.
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Brqosh.Infrastructure.Operations.CrashLog.Write(
+                args.Exception, "TaskScheduler.UnobservedTaskException");
+
+            // ‏**ويُعلَّم مُشاهَداً فلا يُسقط العملية** — وقد سُجّل.
+            args.SetObserved();
+        };
+
 
         var setup = _setupStore.Load();
         string? adminUsername = null;

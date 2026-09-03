@@ -110,6 +110,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Operations.BackupService>();
         // (CEEF-231 · ط5-٤) ‏تكرارُ النسخة خارج الجهاز.
         services.AddScoped<Operations.OffsiteBackupService>();
+        // (CEEF-231 · ط5-٥) ‏فحصُ قناة التحديث.
+        services.AddScoped<Operations.UpdateCheckService>();
         services.AddScoped<BankTransferService>();
         services.AddScoped<Retail.PosSaleService>();
         services.AddScoped<Security.AuditService>();
