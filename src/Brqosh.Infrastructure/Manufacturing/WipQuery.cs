@@ -4,6 +4,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Manufacturing;
 
+/// <summary>
+/// (CEEF-230 · ط6-٨) <b>الإنتاجُ تحت التنفيذ — وكانت الشاشةُ تسقط بقائمةِ موادٍ محذوفة.</b>
+///
+/// <para><b>وكان <c>bomMap[o.BomId]</c> بلا حارس</b>: مُرشِّحُ الحذف الناعم يُخفي قائمةَ
+/// المواد، <b>وأمرُ الإنتاج المُطلَق يبقى</b> — فيرمي القاموسُ <c>KeyNotFoundException</c>
+/// <b>وتسقط الشاشةُ كلُّها</b>، لا صفٌّ واحد.</para>
+///
+/// <para><b>وهي حالةٌ واقعةٌ على قواعدَ قائمة</b>: التعبئةُ التي أُوقفت في <c>م0-١٣</c>
+/// <b>كانت قد جرت على كلّ قاعدةٍ قبل إيقافها</b> — فكلُّ قائمةِ موادٍ أُوقفت قبلها تحمل
+/// تاريخَ حذفٍ إلى الأبد.</para>
+///
+/// <para><b>والأمرُ يبقى مرئياً باسمٍ بديل</b> ولا يُخفى: <b>إخفاؤه يُخفي بضاعةً في
+/// المصنع</b> — وهي قائمةٌ تُقرأ لمعرفة ما تحت التشغيل، فنقصُ سطرٍ منها أخطرُ من سطرٍ
+/// ناقص الاسم.</para>
+/// </summary>
 public class WipQuery(BrqoshDbContext db)
 {
     public record WipRow(long WorkOrderId, string? OrderNumber, string BomName, string ProductName,
@@ -27,9 +42,12 @@ public class WipQuery(BrqoshDbContext db)
 
         return orders.Select(o =>
         {
-            var bom = bomMap[o.BomId];
-            return new WipRow(o.Id, o.OrderNumber, bom.NameAr,
-                products.GetValueOrDefault(bom.FinishedProductId, "—"),
+            // ‏**والقائمةُ قد تكون محذوفةً حذفاً ناعماً والأمرُ باقياً** — فلا يُفهرس
+            // ‏القاموسُ مباشرةً، **وسطرٌ باسمٍ بديلٍ خيرٌ من شاشةٍ لا تفتح**.
+            var bom = bomMap.GetValueOrDefault(o.BomId);
+            return new WipRow(o.Id, o.OrderNumber,
+                bom?.NameAr ?? "قائمة موادٍ محذوفة",
+                bom is null ? "—" : products.GetValueOrDefault(bom.FinishedProductId, "—"),
                 o.PlannedQuantity, o.ProducedQuantity,
                 WorkOrder.StatusLabel(o.Status), o.Status);
         }).ToList();
