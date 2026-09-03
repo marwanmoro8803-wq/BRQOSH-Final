@@ -76,7 +76,8 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 db.DebitNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
                 "DN", note.NoteDate.Year, note.CompanyId);
 
-            var entry = note.Post(noteNumber, purchases, vatInput, payable, inventoryReduction, inventory, purchases);
+            var entry = note.Post(noteNumber, purchases, vatInput, payable, inventoryReduction, inventory, purchases,
+                invoice.VatDeductible);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(note.CompanyId, note.NoteDate, token);
             entry.Post(entryNumber);
 

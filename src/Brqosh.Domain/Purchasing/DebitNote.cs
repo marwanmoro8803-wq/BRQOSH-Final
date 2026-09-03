@@ -81,9 +81,19 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
         (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
     }
 
+    /// <summary>
+    /// (CEEF-234) <paramref name="vatDeductible"/> يجب أن يطابق شرط الفاتورة الأصلية
+    /// (<see cref="PurchaseInvoice.VatDeductible"/>) — <b>لا قيمةً مستقلّة</b>.
+    ///
+    /// <para><b>والعطل الذي يمنعه:</b> فاتورةٌ من موردٍ غير مسجَّل لا تخصم ضريبتها أصلاً —
+    /// <c>PurchaseInvoice.Post</c> يرسملها ضمن المشتريات ولا يُدين <c>1111</c> بشيء. فإشعارُ
+    /// مدينٍ عليها كان **يُدائن <c>1111</c> دائماً** — يخفّض حساباً لم يُزَد فيه قط، فيفتح
+    /// رصيداً وهمياً لا يقابله شيء، ويُخالف الإقرارَ الذي يستثني هذه الحالة أصلاً
+    /// (<c>VatReturnQuery.DebitNotesDeductibleVat</c>).</para>
+    /// </summary>
     public JournalEntry Post(string noteNumber, Account purchasesOrInventory, Account vatInput,
         Account payable, decimal inventoryReduction = 0m, Account? inventoryAccount = null,
-        Account? purchasesExpense = null)
+        Account? purchasesExpense = null, bool vatDeductible = true)
     {
         EnsureDraft();
         if (_lines.Count == 0) throw new AccountingException("إشعار المدين بلا سطور.");
@@ -100,17 +110,19 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
         // تخفيض ذمة المورد
         entry.AddLine(payable, this.GrandTotal(), 0m, "تخفيض ذمة المورد");
 
-        var nonInv = Subtotal - inventoryReduction;
         if (inventoryReduction > 0)
         {
             if (inventoryAccount is null)
                 throw new AccountingException("حساب المخزون مطلوب لتخفيض أصناف مخزنية.");
             entry.AddLine(inventoryAccount, 0m, inventoryReduction, "تخفيض مخزون — إشعار مدين");
         }
+
+        // غيرُ قابلةٍ للخصم: الضريبةُ رسمِلت في التكلفة أصلاً، فتخفيضها يتبع تخفيضَ التكلفة لا 1111
+        var nonInv = (vatDeductible ? Subtotal : this.GrandTotal()) - inventoryReduction;
         if (nonInv > 0)
             entry.AddLine(purchasesExpense ?? purchasesOrInventory, 0m, nonInv, "تخفيض مشتريات/مصروف");
 
-        if (VatAmount > 0)
+        if (vatDeductible && VatAmount > 0)
             entry.AddLine(vatInput, 0m, VatAmount, "تخفيض ضريبة المدخلات 15%");
 
         NoteNumber = noteNumber.Trim();

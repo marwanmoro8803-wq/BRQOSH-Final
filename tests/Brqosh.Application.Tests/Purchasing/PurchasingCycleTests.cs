@@ -82,6 +82,36 @@ public class PurchasingCycleTests : IDisposable
         Assert.DoesNotContain(entry.Lines, l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.VatInput);
     }
 
+    /// <summary>
+    /// (CEEF-234) <b>العطل:</b> إشعارُ مدينٍ على فاتورةٍ من موردٍ غير مسجَّل كان يُدائن
+    /// <c>1111</c> بضريبة السطر رغم أن الفاتورة الأصلية لم تُدِن <c>1111</c> بريالٍ واحد
+    /// — فيفتح رصيداً وهمياً لا يقابله شيء، ويُخالف <c>VatReturnQuery</c> الذي يستثني هذه
+    /// الحالة أصلاً. والإصلاح: التخفيضُ كلُّه (وعاءً وضريبة) يذهب لحساب المشتريات كما دخل.
+    /// </summary>
+    [Fact]
+    public async Task DebitNote_NonDeductibleOriginalInvoice_DoesNotCreditVatInput()
+    {
+        await SetupAsync();
+
+        var invoice = PurchaseInvoice.CreateDraft(_companyId, _supplierId, new DateOnly(2026, 7, 2), "SUP-773", vatDeductible: false);
+        invoice.AddLine("بضاعة", 1m, 1000m); // 1000 + 150
+        var postedInvoice = await new PurchaseInvoicePostingService(_db).PostAsync(invoice);
+
+        var note = DebitNote.CreateDraft(_companyId, _supplierId, postedInvoice.Id, new DateOnly(2026, 7, 10), "مرتجع جزئي");
+        note.AddLine("مرتجع", 1m, 200m); // 200 + 30
+        var postedNote = await new DebitNotePostingService(_db).PostAsync(note);
+
+        var entry = await _db.JournalEntries.SingleAsync(e => e.Id == postedNote.JournalEntryId);
+        Assert.True(entry.IsBalanced);
+        Assert.DoesNotContain(entry.Lines, l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.VatInput);
+        Assert.Equal(230m, entry.Lines.Single(l => l.AccountCode == "5102").Credit); // 200 + 30، لا 200 وحدها
+        Assert.Equal(230m, entry.Lines.Single(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.AccountsPayable).Debit);
+
+        // ولا الفاتورةُ الأصليةُ مسّت 1111 (اختبارٌ آخر يثبته) — فرصيدُ الحساب لهذه المنشأة صفرٌ تماماً
+        var invoiceEntry = await _db.JournalEntries.SingleAsync(e => e.Id == postedInvoice.JournalEntryId);
+        Assert.DoesNotContain(invoiceEntry.Lines, l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.VatInput);
+    }
+
     [Fact]
     public async Task DuplicateSupplierReference_IsRejected()
     {
