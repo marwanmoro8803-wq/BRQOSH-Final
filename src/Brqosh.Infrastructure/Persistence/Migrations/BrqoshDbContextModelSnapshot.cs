@@ -222,6 +222,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<bool>("IsEntityLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsIntercompany")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -4652,6 +4657,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
+                            b1.Property<string>("CurrencyCode")
+                                .HasMaxLength(3)
+                                .HasColumnType("character varying(3)");
+
                             b1.Property<decimal>("Debit")
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
@@ -4659,6 +4668,14 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                             b1.Property<string>("Description")
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)");
+
+                            b1.Property<decimal?>("ExchangeRate")
+                                .HasPrecision(18, 6)
+                                .HasColumnType("numeric(18,6)");
+
+                            b1.Property<decimal?>("ForeignAmount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)");
 
                             b1.Property<long>("journal_entry_id")
                                 .HasColumnType("bigint");

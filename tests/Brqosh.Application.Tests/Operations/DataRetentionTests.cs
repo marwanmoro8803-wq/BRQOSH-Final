@@ -177,18 +177,25 @@ public class DataRetentionTests : IDisposable
     /// كلَّه، <b>ومنشأةٌ تريد إيقافَ التقليم تكتب صفراً</b>.</para>
     /// </summary>
     [Fact]
-    public async Task ZeroMeansDoNotPrune()
+    public async Task ZeroMeansDoNotPrune_ForEveryKind()
     {
         await SetupAsync();
 
+        // ‏**والأصنافُ الثلاثةُ معاً عمداً.** وقياسُ صنفٍ واحدٍ يترك الآخرَين بلا حارس —
+        // ‏**وقد قِيس ذلك بطفرتين نجتا**: نُزع حدُّ الصفر عن اللقطات وعن سجلّ الدخول
+        // ‏فمرّ الاختبارُ في الحالين، لأنّه لا يُمرّر صفراً إلّا للأحداث.
         _db.StoredDomainEvents.Add(StoredEvent(AsOf.AddDays(-3650), dispatched: true));
+        _db.ReportSnapshots.Add(Snapshot(AsOf.AddDays(-3650)));
+        _db.LoginAuditEntries.Add(LoginAudit(AsOf.AddDays(-3650)));
         await _db.SaveChangesAsync();
 
         var result = await new DataRetentionService(_db)
-            .PruneAsync(_companyId, new RetentionPolicy(DispatchedEventDays: 0), AsOf);
+            .PruneAsync(_companyId, new RetentionPolicy(0, 0, 0), AsOf);
 
-        Assert.Equal(0, result.DispatchedEvents);
+        Assert.Equal(0, result.Total);
         Assert.Equal(1, await _db.StoredDomainEvents.CountAsync());
+        Assert.Equal(1, await _db.ReportSnapshots.CountAsync());
+        Assert.Equal(1, await _db.LoginAuditEntries.CountAsync());
     }
 
     /// <summary>

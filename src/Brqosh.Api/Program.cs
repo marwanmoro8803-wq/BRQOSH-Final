@@ -200,19 +200,25 @@ app.MapGet("/health/live", () => Results.Ok(new
 app.MapGet("/health/ready", async (BrqoshDbContext db, CancellationToken ct) =>
 {
     var dbOk = false;
+    string? dbError = null;
     try
     {
         dbOk = await db.Database.CanConnectAsync(ct);
     }
-    catch
+    catch (Exception ex)
     {
-        // readiness probe — connectivity failure is reported in payload
+        // (CEEF-231 · O-36) ‏**مسبارُ الجاهزية لا يسقط بسقوط القاعدة** — وهذا التسامحُ
+        // ‏يبقى. **لكنّ «unavailable» بلا سببٍ يُرسل المشغّلَ إلى السجلّات وهو يقرأ
+        // ‏الردَّ نفسَه**: كلمةُ مرورٍ خاطئة، أو شهادةٌ منتهية، أو مضيفٌ لا يُحلّ — ثلاثتُها
+        // ‏تُقرأ سواءً، وأوّلُ دقيقةٍ في العطل هي أثمنُها.
+        dbError = ex.GetBaseException().Message;
     }
 
     var payload = new
     {
         status = dbOk ? "ok" : "degraded",
         database = dbOk ? "ok" : "unavailable",
+        databaseError = dbError,
         utc = DateTime.UtcNow,
         service = ServiceName,
         version = ServiceVersion,

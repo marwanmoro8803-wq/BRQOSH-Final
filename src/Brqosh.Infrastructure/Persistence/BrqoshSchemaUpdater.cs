@@ -2115,6 +2115,40 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
+        // (CEEF-231 · O-32) ‏علامةُ «على مستوى المنشأة» — والافتراضُ `false`،
+        // ‏فقيدٌ قائمٌ يبقى كما هو.
+        if (await TableExistsAsync("journal_entries", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("journal_entries", "IsEntityLevel",
+                    "BOOLEAN NOT NULL DEFAULT FALSE", ct);
+            else
+                await EnsureSqliteColumnAsync("journal_entries", "IsEntityLevel",
+                    "INTEGER NOT NULL DEFAULT 0", ct);
+        }
+
+        // (CEEF-231 · O-34) ‏مذكرةُ العملة على سطر القيد — **لاغيةٌ لكلّ سطرٍ قائم**،
+        // ‏فالعمودُ يقبل الفراغ ولا افتراضَ له. **وافتراضُ 'SAR' هنا كذبٌ على الماضي**:
+        // ‏يجعل قيوداً رُحّلت بلا مذكرةٍ تبدو موثَّقةً بعملةٍ لم يُدخلها أحد.
+        if (await TableExistsAsync("journal_entry_lines", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("journal_entry_lines", "CurrencyCode",
+                    "character varying(3) NULL", ct);
+                await EnsurePgColumnAsync("journal_entry_lines", "ExchangeRate",
+                    "NUMERIC(18,6) NULL", ct);
+                await EnsurePgColumnAsync("journal_entry_lines", "ForeignAmount",
+                    "NUMERIC(18,2) NULL", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("journal_entry_lines", "CurrencyCode", "TEXT NULL", ct);
+                await EnsureSqliteColumnAsync("journal_entry_lines", "ExchangeRate", "TEXT NULL", ct);
+                await EnsureSqliteColumnAsync("journal_entry_lines", "ForeignAmount", "TEXT NULL", ct);
+            }
+        }
+
         if (await TableExistsAsync("sales_invoices", isPg, ct))
         {
             if (isPg)

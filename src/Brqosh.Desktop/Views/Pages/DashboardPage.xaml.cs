@@ -83,9 +83,12 @@ public partial class DashboardPage : UserControl
             forecast = await scope.ServiceProvider.GetRequiredService<ICashFlowForecastService>()
                 .ForecastAsync(AppServices.CompanyId);
         }
-        catch
+        catch (Exception ex)
         {
-            // fallback to KPI-only insights panel
+            // (CEEF-231 · O-36) ‏**التدهورُ إلى لوحةِ المؤشّرات وحدَها يبقى** — فشاشةٌ
+            // ‏تسقط لتحليلٍ اختياريٍّ أسوأُ من شاشةٍ بلا تحليل. **لكنّ الابتلاعَ الصامتَ
+            // ‏كان يجعل عطلاً دائماً يُقرأ «لا توجد رؤى اليوم»**، فلا يُبلَّغ عنه أبداً.
+            Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "DashboardPage.FinancialIntelligence");
         }
 
         RenderExecutive(k, intel, forecast);

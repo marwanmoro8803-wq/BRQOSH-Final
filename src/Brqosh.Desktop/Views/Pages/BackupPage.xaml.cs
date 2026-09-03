@@ -110,6 +110,119 @@ public partial class BackupPage : UserControl
         }
     }
 
+    /// <summary>
+    /// (CEEF-231 · ط5-١١) يُقدّر ما سيُحذف — <b>ولا يحذف</b>.
+    /// </summary>
+    private async void OnPreviewRetention(object sender, RoutedEventArgs e)
+    {
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
+        try
+        {
+            var policy = ReadPolicy();
+            using var facade = new DesktopAccountingFacade();
+
+            var preview = await facade.GetService<DataRetentionService>()
+                .PreviewAsync(AppServices.CompanyId, policy, DateOnly.FromDateTime(DateTime.Today));
+
+            RetentionResultText.Text = Describe(preview, "سيُحذف");
+            Show(preview.Total == 0
+                ? "لا شيءَ يستحقّ التقليم بهذه المدد."
+                : $"معاينةٌ فقط — لم يُحذف شيء. المجموع {preview.Total} صفّاً.");
+        }
+        catch (Exception ex)
+        {
+            Show(ex.Message, isError: true);
+        }
+    }
+
+    /// <summary>
+    /// يُنفّذ التقليم — <b>بعد معاينةٍ تُعرَض في نصّ التأكيد نفسِه</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وحذفٌ بلا معاينةٍ قرارٌ لا رجعةَ فيه يُتّخذ بنقرة</b>. فالمعاينةُ تُشغَّل هنا
+    /// ولو شغّلها المستخدمُ قبلَ قليل: <b>الأرقامُ في نصّ التأكيد هي أرقامُ هذه اللحظة</b>،
+    /// لا أرقامُ شاشةٍ قد تكون بائتة.
+    /// </remarks>
+    private async void OnPruneRetention(object sender, RoutedEventArgs e)
+    {
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
+        try
+        {
+            var policy = ReadPolicy();
+            var asOf = DateOnly.FromDateTime(DateTime.Today);
+
+            using var facade = new DesktopAccountingFacade();
+            var service = facade.GetService<DataRetentionService>();
+
+            var preview = await service.PreviewAsync(AppServices.CompanyId, policy, asOf);
+
+            if (preview.Total == 0)
+            {
+                RetentionResultText.Text = Describe(preview, "سيُحذف");
+                Show("لا شيءَ يستحقّ التقليم بهذه المدد.");
+                return;
+            }
+
+            // ‏**والتفصيلُ يُعرض على الشاشة قبل الحوار، ونصُّ الحوار حرفيٌّ واحد.**
+            // ‏فنصٌّ مركَّبٌ برقمٍ لا يُطابَق في سجلّ الترجمة ككلّ — **فيبقى عربياً في
+            // ‏واجهةٍ إنجليزية**، وهو ما يقيسه `DialogLocalizationTests`. والأرقامُ
+            // ‏مقروءةٌ في السطر أعلاه، **والتحذيرُ الذي لا رجعةَ فيه في الحوار**.
+            RetentionResultText.Text = Describe(preview, "سيُحذف");
+
+            var confirm = UiDialog.Show(
+                "سيُحذف نهائياً ما هو معروضٌ في الشاشة خلف هذه الرسالة. ولا يُمَسّ سجلُّ التدقيق ولا الأحداثُ المعلَّقةُ في الطابور. لا رجعةَ في هذه العملية — هل أنت متأكّد؟",
+                "تقليم البيانات القديمة", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                MessageBoxResult.No);
+
+            if (confirm != MessageBoxResult.Yes)
+            {
+                Show("أُلغي التقليم.");
+                return;
+            }
+
+            var result = await service.PruneAsync(AppServices.CompanyId, policy, asOf);
+
+            RetentionResultText.Text = Describe(result, "حُذف");
+            Show($"تمّ التقليم — {result.Total} صفّاً.");
+        }
+        catch (Exception ex)
+        {
+            Show(ex.Message, isError: true);
+        }
+    }
+
+    /// <summary>
+    /// يقرأ المدد — <b>وفراغٌ أو نصٌّ غيرُ رقمٍ يُرفض ولا يُقرأ صفراً</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وصفرٌ مقروءٌ من فراغٍ أخطرُ التباسٍ ممكن</b>: الخدمةُ تقرأ الصفرَ «لا تُقلَّم»،
+    /// <b>والمستخدمُ الذي مسح الحقلَ يظنّ أنّه ألغى الحدَّ</b>. فالفرقُ بين النيّتين
+    /// لا يُخمَّن.
+    /// </remarks>
+    private RetentionPolicy ReadPolicy() => new(
+        ReadDays(EventDaysBox.Text, "أحداث الطابور المرسلة"),
+        ReadDays(SnapshotDaysBox.Text, "لقطات التقارير"),
+        ReadDays(LoginDaysBox.Text, "سجل محاولات الدخول"));
+
+    private static int ReadDays(string? text, string field)
+    {
+        if (!int.TryParse((text ?? string.Empty).Trim(), out var days) || days < 0)
+            throw new Brqosh.Domain.Accounting.AccountingException(
+                $"مدّةُ الحفظ لـ«{field}» عددُ أيّامٍ صحيحٌ غيرُ سالب — والصفرُ يعني «لا تُقلَّم».");
+
+        return days;
+    }
+
+    private static string Describe(RetentionResult r, string verb) => string.Join(
+        Environment.NewLine,
+        $"· أحداث الطابور المرسلة: {verb} {r.DispatchedEvents}",
+        $"· لقطات التقارير: {verb} {r.ReportSnapshots}",
+        $"· سجل محاولات الدخول: {verb} {r.LoginAudits}");
+
     private void OnOpenFolder(object sender, RoutedEventArgs e)
     {
         Directory.CreateDirectory(BackupFolder);

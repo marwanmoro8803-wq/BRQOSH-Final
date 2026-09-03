@@ -25,11 +25,34 @@ public static class OutboxDispatchHook
         try
         {
             await handler(db, ct);
+
+            // ‏**والنجاحُ يمحو الأثر** — وإلّا بقي عطلٌ أُصلح معروضاً في شاشة الحالة
+            // ‏إلى أن يُغلق التطبيق، **فيُبحث عن سببٍ لم يعد قائماً**.
+            LastFailure = null;
         }
-        catch
+        catch (Exception ex)
         {
-            // الإرسال الخارجي لا يُفشل عملية محاسبية ملتزمة بالفعل.
-            // الأحداث غير المُرسَلة تبقى بعلامة IsPendingDispatch لإعادة المحاولة.
+            // ‏**التسامحُ يبقى ولا يُنزَع**: الإرسالُ الخارجيّ لا يُفشل عمليةً محاسبيةً
+            // ‏التُزمت بالفعل، والأحداثُ غير المُرسَلة تبقى معلَّقةً لإعادة المحاولة.
+            //
+            // ‏(CEEF-231 · O-36) **لكنّ الابتلاعَ الصامتَ كان يُخفي عطلاً دائماً**:
+            // ‏نقطةُ استقبالٍ ماتت، أو شهادةٌ انتهت، أو مفتاحٌ بُدِّل — فيتراكم الطابورُ
+            // ‏شهوراً و**لا سطرَ واحدٌ يقول لماذا**. والقِدَمُ في الطابور علامةُ عطلٍ لا
+            // ‏علامةُ انتهاء (انظر `DataRetentionService`).
+            LastFailure = ex.GetBaseException().Message;
+            Operations.CrashLog.Write(ex, "OutboxDispatchHook.OnCommitted");
         }
     }
+
+    /// <summary>
+    /// آخرُ سببِ فشلٍ في تفريغ الطابور — <b>لشاشة حالة النظام</b>، و<c>null</c> إن لم يقع.
+    /// </summary>
+    /// <remarks>
+    /// <b>وهو أثرٌ في الذاكرة لا سجلٌّ</b>: السجلُّ على القرص في <c>CrashLog</c>، وهذا
+    /// <b>لتُقرأ الحالةُ من الشاشة بلا فتح ملفّ</b>.
+    /// </remarks>
+    public static string? LastFailure { get; private set; }
+
+    /// <summary>يمحو الأثرَ — <b>للاختبارات وحدَها</b>، فحالةٌ ساكنةٌ تتسرّب بينها.</summary>
+    internal static void ResetFailureForTests() => LastFailure = null;
 }

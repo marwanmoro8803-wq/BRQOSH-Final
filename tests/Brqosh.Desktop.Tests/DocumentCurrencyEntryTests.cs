@@ -109,6 +109,54 @@ public class DocumentCurrencyEntryTests
             + string.Join("\n  ", stale));
     }
 
+    /// <summary>
+    /// (CEEF-231 · O-34) <b>وكلُّ شاشةٍ تعرض حقلَ عملةٍ تقرؤه — والاتجاهُ الثاني للقاعدة.</b>
+    ///
+    /// <para>الحارسُ أعلاه يمشي من النطاق إلى الشاشة، <b>فلا يرى حقلاً أُضيف إلى شاشةٍ
+    /// لا يحمل مستندُها <c>SetCurrency</c></b> — كشاشة القيد اليدويّ، <b>وعملتُه مذكرةٌ
+    /// على السطر لا خاصيّةٌ على الرأس</b>. وهذا يمشي من الشاشة إلى الشيفرة.</para>
+    ///
+    /// <para><b>وحقلٌ يُعرض ولا يُقرأ أسوأُ من غيابه</b>: يُدخل المحاسبُ «USD» ويرى
+    /// الحقلَ مملوءاً <b>ويُرحَّل القيدُ بالأرقام كأنّها ريالات</b> — وهو خطأٌ لا يظهر
+    /// في ميزانٍ لأنّه متوازن.</para>
+    /// </summary>
+    [Fact]
+    public void EveryDialogThatShowsACurrencyField_ReadsIt()
+    {
+        var root = FindRepoDirectory("src/Brqosh.Desktop");
+        if (root is null) return;   // ‏المصادرُ غيرُ متاحةٍ في هذا التشغيل.
+
+        var decorative = new List<string>();
+
+        foreach (var markupPath in Directory.EnumerateFiles(root, "*.xaml", SearchOption.AllDirectories))
+        {
+            if (markupPath.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") ||
+                markupPath.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+                continue;
+
+            if (!File.ReadAllText(markupPath).Contains("x:Name=\"CurrencyBox\"", StringComparison.Ordinal))
+                continue;
+
+            var codePath = markupPath + ".cs";
+            if (!File.Exists(codePath))
+            {
+                decorative.Add($"{Path.GetFileName(markupPath)} — بلا شيفرةٍ خلفية.");
+                continue;
+            }
+
+            var source = Regex.Replace(File.ReadAllText(codePath), @"/\*.*?\*/", " ", RegexOptions.Singleline);
+            source = Regex.Replace(source, @"//.*?$", " ", RegexOptions.Multiline);
+
+            if (!source.Contains("CurrencyBox", StringComparison.Ordinal))
+                decorative.Add($"{Path.GetFileName(markupPath)} — يعرض حقلَ عملةٍ ولا يقرؤه.");
+        }
+
+        Assert.True(decorative.Count == 0,
+            "شاشاتٌ تعرض حقلَ عملةٍ ولا تقرؤه — فيُدخل المستخدمُ عملةً ويُرحَّل المستندُ "
+            + "بأرقامها كأنّها ريالات، وهو خطأٌ متوازنٌ لا يكشفه ميزان:\n  "
+            + string.Join("\n  ", decorative));
+    }
+
     /// <summary>وسمُ الشاشة — <b>وفيه يُعلَن الحقل</b>.</summary>
     private static string? DialogMarkup(string dialog)
     {

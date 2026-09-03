@@ -98,6 +98,42 @@ public partial class JournalEntryDialog : Window
         Dispatcher.BeginInvoke(UpdateTotals);
     }
 
+    /// <summary>
+    /// (CEEF-231 · O-34) يقرأ عملةَ المعاملة وسعرَها — <b>والريالُ يعني «لا مذكرة»</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وسعرٌ لا يُقرأ يُرفض ولا يُقرأ واحداً</b>: صفرٌ أو نصٌّ يُبتلع صامتاً يُرحّل
+    /// القيدَ بأرقام العملة الأجنبية كأنّها ريالات — <b>وهو خطأٌ لا يظهر في ميزانٍ لأنّه
+    /// متوازن</b>، ولا يُكتشف إلا بمطابقةِ حسابٍ بنكيٍّ بعد شهور.
+    /// </remarks>
+    private (string Code, decimal Rate)? ReadCurrency()
+    {
+        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
+        if (code.Length == 0) code = "SAR";
+        if (code == "SAR") return null;
+
+        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var rate) || rate <= 0m)
+            throw new AccountingException($"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
+
+        return (code, rate);
+    }
+
+    /// <summary>
+    /// يُحدّث الإجماليات عند تغيّر العملة أو السعر.
+    /// </summary>
+    /// <remarks>
+    /// <b>والحارسُ ليس زينة</b>: <c>TextChanged</c> يقع أثناء <c>InitializeComponent</c>
+    /// حين يُضبط <c>Text="SAR"</c> في الوسم، <b>وعناصرُ الإجماليات تُبنى بعد الحقل</b> —
+    /// فتُقرأ فارغةً ويسقط الحوارُ قبل أن يُعرض.
+    /// </remarks>
+    private void OnCurrencyChanged(object sender, TextChangedEventArgs e)
+    {
+        if (TranslationText is null || TotalDebitText is null) return;
+        UpdateTotals();
+    }
+
     private void UpdateTotals()
     {
         var debit = _rows.Sum(r => r.Debit);
@@ -114,6 +150,30 @@ public partial class JournalEntryDialog : Window
         {
             BalanceText.Text = $"الفرق: {Math.Abs(debit - credit):N2}";
             BalanceText.Foreground = System.Windows.Media.Brushes.Red;
+        }
+
+        // ‏**والمترجَمُ يُعرض قبل الترحيل لا بعده** — فمن يُدخل بعملةٍ أجنبيةٍ يرى
+        // ‏بالريال ما سيدخل الدفتر، **ولا يكتشف السعرَ الخاطئ من كشف حسابٍ بعد شهر**.
+        try
+        {
+            if (ReadCurrency() is (string code, decimal rate))
+            {
+                TranslationText.Text =
+                    $"= {Math.Round(debit * rate, 2, MidpointRounding.AwayFromZero):N2} ريال "
+                    + $"({code} × {rate:N4})";
+                TranslationText.Foreground = System.Windows.Media.Brushes.DimGray;
+                TranslationText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                TranslationText.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (AccountingException ex)
+        {
+            TranslationText.Text = ex.Message;
+            TranslationText.Foreground = System.Windows.Media.Brushes.Red;
+            TranslationText.Visibility = Visibility.Visible;
         }
     }
 
@@ -134,11 +194,27 @@ public partial class JournalEntryDialog : Window
             var entry = JournalEntry.CreateDraft(AppServices.CompanyId, entryDate, DescriptionBox.Text);
 
             var accountById = _postableAccounts.ToDictionary(a => a.Id);
+            var currency = ReadCurrency();
+
             foreach (var row in _rows.Where(r => r.AccountId is not null || r.Debit != 0 || r.Credit != 0))
             {
                 if (row.AccountId is null || !accountById.TryGetValue(row.AccountId.Value, out var account))
                     throw new AccountingException("اختر الحساب لكل سطر في القيد.");
-                entry.AddLine(account, row.Debit, row.Credit, row.Description, row.CostCenterId);
+
+                if (currency is not (string code, decimal rate))
+                {
+                    entry.AddLine(account, row.Debit, row.Credit, row.Description, row.CostCenterId);
+                    continue;
+                }
+
+                // ‏**المُدخَلُ بعملة المعاملة، والمُرحَّلُ بالريال** — والمذكرةُ تحفظ الأصلَ والسعر.
+                var foreign = row.Debit + row.Credit;
+                var functional = Math.Round(foreign * rate, 2, MidpointRounding.AwayFromZero);
+
+                entry.AddLine(account,
+                    row.Debit > 0 ? functional : 0m,
+                    row.Credit > 0 ? functional : 0m,
+                    row.Description, row.CostCenterId, code, rate, foreign);
             }
 
             if (IntercompanyCheck.IsChecked == true)

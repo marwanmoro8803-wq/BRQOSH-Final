@@ -112,6 +112,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Operations.OffsiteBackupService>();
         // (CEEF-231 · ط5-٥) ‏فحصُ قناة التحديث.
         services.AddScoped<Operations.UpdateCheckService>();
+        // (CEEF-231 · ط5-١١) ‏تقليمُ ما يجوز — **ولا يمسّ سجلَّ التدقيق ولا المعلَّق في الطابور**.
+        services.AddScoped<Operations.DataRetentionService>();
         services.AddScoped<BankTransferService>();
         services.AddScoped<Retail.PosSaleService>();
         services.AddScoped<Security.AuditService>();

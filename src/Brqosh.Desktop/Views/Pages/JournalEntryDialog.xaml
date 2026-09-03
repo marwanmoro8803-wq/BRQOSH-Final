@@ -25,6 +25,8 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="180"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="110"/>
+                <ColumnDefinition Width="130"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
@@ -33,6 +35,20 @@
             <StackPanel Grid.Column="1">
                 <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="DescriptionBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+
+            <!-- (CEEF-231 · O-34) عملةُ المعاملة وسعرُها. والمبالغُ في الجدول تُقرأ بهذه
+                 العملة، ويُرحَّل القيدُ بالريال بعد الترجمة — فالدفترُ النظاميُّ بالريال
+                 ولا يُقاس ميزانٌ بعملتين. -->
+            <StackPanel Grid.Column="2" Margin="12,0,0,0">
+                <TextBlock Text="عملة المعاملة" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR"
+                         TextChanged="OnCurrencyChanged"/>
+            </StackPanel>
+            <StackPanel Grid.Column="3" Margin="12,0,0,0">
+                <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="RateBox" Style="{StaticResource AppTextBox}" Text="1"
+                         TextChanged="OnCurrencyChanged"/>
             </StackPanel>
         </Grid>
 
@@ -82,6 +98,8 @@
                 <TextBlock x:Name="TotalCreditText" Text="0.00" Margin="8,0,32,0" FontWeight="Bold"
                            Foreground="{StaticResource PrimaryBrush}"/>
                 <TextBlock x:Name="BalanceText" FontWeight="Bold"/>
+                <TextBlock x:Name="TranslationText" Margin="32,0,0,0" FontWeight="SemiBold"
+                           Visibility="Collapsed"/>
             </StackPanel>
         </Border>
 

@@ -96,15 +96,29 @@ public sealed class UpdateCheckService
     {
         var installed = InstalledVersion;
 
-        if (string.IsNullOrWhiteSpace(manifestPath) || !File.Exists(manifestPath))
+        if (string.IsNullOrWhiteSpace(manifestPath))
             return new UpdateCheckResult(UpdateStatus.NoChannel, installed, null, null,
                 "لا بيانَ إصدارٍ في المصدر — قناةُ التحديث لم تُهيَّأ.");
+
+        string json;
+        try
+        {
+            json = await ReadChannelAsync(manifestPath, ct);
+        }
+        catch (ChannelUnavailableException ex)
+        {
+            // ‏**وانقطاعُ القناة ليس تلاعباً** — والفرقُ بينهما هو ما يجب أن يراه المالك.
+            return new UpdateCheckResult(UpdateStatus.NoChannel, installed, null, null, ex.Message);
+        }
+        catch (AccountingException ex)
+        {
+            return new UpdateCheckResult(UpdateStatus.Untrusted, installed, null, null, ex.Message);
+        }
 
         SignedUpdateManifest? signed;
         try
         {
-            signed = JsonSerializer.Deserialize<SignedUpdateManifest>(
-                await File.ReadAllTextAsync(manifestPath, ct));
+            signed = JsonSerializer.Deserialize<SignedUpdateManifest>(json);
         }
         catch (JsonException ex)
         {
@@ -150,7 +164,7 @@ public sealed class UpdateCheckService
         string stagingDirectory, CancellationToken ct = default)
     {
         var signed = JsonSerializer.Deserialize<SignedUpdateManifest>(
-            await File.ReadAllTextAsync(manifestPath, ct))
+            await ReadChannelAsync(manifestPath, ct))
             ?? throw new AccountingException("بيانُ الإصدار فارغ.");
 
         if (!Verify(signed))
@@ -185,6 +199,95 @@ public sealed class UpdateCheckService
         File.Move(staging, target);
 
         return target;
+    }
+
+    /// <summary>
+    /// (CEEF-231 · O-33) <b>ناقلٌ يُحقن للاختبار — و<c>null</c> يعني الشبكةَ الحقيقية.</b>
+    /// </summary>
+    /// <remarks>
+    /// <b>واختبارٌ يضرب شبكةً حقيقيةً ليس اختباراً</b>: يمرّ حين تعمل ويسقط حين تنقطع،
+    /// <b>فيُدرَّب قارئُه على تجاهله</b>.
+    /// </remarks>
+    internal HttpMessageHandler? Transport { get; init; }
+
+    /// <summary>القناةُ غيرُ متاحةٍ الآن — <b>وهو غيرُ «مُلاعَبٌ بها»</b>.</summary>
+    internal sealed class ChannelUnavailableException(string message) : Exception(message);
+
+    /// <summary>حدُّ حجم البيان — <b>و256 كيلوبايت أضعافُ أضعافِ ما يلزمه</b>.</summary>
+    /// <remarks>
+    /// <b>ونقطةٌ تبثّ بلا نهايةٍ تستنزف الذاكرة</b> قبل أن يبلغ التحقّقُ من التوقيع
+    /// سطرَه الأوّل — <b>فالحدُّ يسبق القراءةَ لا يتبعها</b>.
+    /// </remarks>
+    private const int ManifestByteCap = 256 * 1024;
+
+    /// <summary>
+    /// يقرأ بيانَ الإصدار من مسارِ ملفٍّ أو من <c>https://</c> — <b>ولا ثالثَ لهما</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>و<c>http://</c> يُرفض ولا يُرقّى صامتاً إلى <c>https</c>.</b> والتوقيعُ يحمي
+    /// المحتوى، <b>لكنّ القناةَ المكشوفة تُمكّن من حجب التحديث</b>: يُخدَم بيانٌ قديمٌ
+    /// موقَّعٌ صحيحاً فيبقى العميلُ على إصدارٍ فيه ثغرةٌ أُصلحت، <b>وهو بعينه ما بُني
+    /// رفضُ التراجع لمنعه</b>. ورفعُ العنوان إلى https من عند البرنامج <b>يُخفي عن
+    /// المالك أنّ قناتَه مكشوفة</b>.
+    /// </remarks>
+    private async Task<string> ReadChannelAsync(string source, CancellationToken ct)
+    {
+        if (source.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            throw new AccountingException(
+                "قناةُ التحديث على http غيرِ مُعمّى — والعنوانُ يُصحَّح إلى https ولا يُرقّى تلقائياً. "
+                + "فقناةٌ مكشوفةٌ تُمكّن من حجب تحديثٍ أمنيٍّ بخدمة بيانٍ قديمٍ توقيعُه صحيح.");
+
+        if (!source.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!File.Exists(source))
+                throw new ChannelUnavailableException(
+                    "لا بيانَ إصدارٍ في المصدر — قناةُ التحديث لم تُهيَّأ.");
+
+            return await File.ReadAllTextAsync(source, ct);
+        }
+
+        using var client = Transport is null ? new HttpClient() : new HttpClient(Transport, disposeHandler: false);
+        client.Timeout = TimeSpan.FromSeconds(20);
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync(source, HttpCompletionOption.ResponseHeadersRead, ct);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            // ‏**انقطاعُ شبكةٍ ليس تلاعباً** — ومنشأةٌ خلف جدارٍ ناريٍّ ترى هذا كلَّ يوم.
+            throw new ChannelUnavailableException($"تعذّر بلوغُ قناة التحديث — {ex.Message}");
+        }
+
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+                throw new ChannelUnavailableException(
+                    $"قناةُ التحديث ردّت {(int)response.StatusCode} — ولا بيانَ يُقرأ.");
+
+            if (response.Content.Headers.ContentLength is long declared && declared > ManifestByteCap)
+                throw new AccountingException(
+                    $"بيانُ الإصدار أكبرُ من الحدّ ({declared} بايت) — وبيانٌ سليمٌ لا يبلغ عُشرَ ذلك.");
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            using var buffer = new MemoryStream();
+
+            // ‏**والحدُّ يُطبَّق على المقروء لا على المُعلَن** — فترويسةُ طولٍ كاذبةٌ
+            // ‏أو غائبةٌ لا تُلزم أحداً.
+            var chunk = new byte[8192];
+            int read;
+            while ((read = await stream.ReadAsync(chunk, ct)) > 0)
+            {
+                if (buffer.Length + read > ManifestByteCap)
+                    throw new AccountingException(
+                        "بيانُ الإصدار تجاوز الحدَّ أثناء القراءة — ونقطةٌ تبثّ بلا نهايةٍ لا تُقرأ.");
+
+                buffer.Write(chunk, 0, read);
+            }
+
+            return Encoding.UTF8.GetString(buffer.ToArray());
+        }
     }
 
     /// <summary>

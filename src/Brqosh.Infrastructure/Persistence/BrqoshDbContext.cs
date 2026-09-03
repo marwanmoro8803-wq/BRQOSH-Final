@@ -238,6 +238,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(e => e.WorkflowInstanceId);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(16);
             entity.Property(e => e.BranchId);
+            // (CEEF-231 · O-32) ‏قيدٌ على مستوى المنشأة — **والافتراضُ `false`**، فلا
+            // ‏يتغيّر حرفٌ في قيدٍ قائم.
+            entity.Property(e => e.IsEntityLevel).HasDefaultValue(false);
             // فهرس الاستعلام الأساسي: قيود شركة خلال فترة — جاهز للـ partitioning لاحقاً
             entity.HasIndex(e => new { e.CompanyId, e.EntryDate });
             entity.HasIndex(e => new { e.CompanyId, e.BranchId });
@@ -253,6 +256,12 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Description).HasMaxLength(512);
                 lines.Property(l => l.Debit).HasPrecision(18, 2);
                 lines.Property(l => l.Credit).HasPrecision(18, 2);
+                // (CEEF-231 · O-34) ‏**مذكرةُ العملة — والمبلغان أعلاه بالعملة الوظيفية دائماً.**
+                // ‏فالدفترُ النظاميُّ بالريال، والمذكرةُ تحفظ أصلَ المعاملة وسعرَ ترجمتها.
+                // ‏**وكلُّها لاغيةٌ للسطر الريالي** — فلا يتغيّر حرفٌ في قيدٍ قائم.
+                lines.Property(l => l.CurrencyCode).HasMaxLength(3);
+                lines.Property(l => l.ExchangeRate).HasPrecision(18, 6);
+                lines.Property(l => l.ForeignAmount).HasPrecision(18, 2);
                 lines.HasIndex(l => l.AccountId);
                 // (CEEF-230 · ط1-٧) ‏فهرسٌ لمركز التكلفة — **وبلا مفتاحٍ أجنبيّ عمداً**:
                 // ‏المركزُ يُوقَف حذفاً ناعماً، والمفتاحُ إمّا يمنع إيقافَه أو يترك المرجعَ
@@ -1815,8 +1824,13 @@ public class BrqoshDbContext : DbContext
     /// </summary>
     private async Task StampJournalEntryBranchesAsync(CancellationToken ct)
     {
+        // (CEEF-231 · O-32) ‏**والمُعلَنُ على مستوى المنشأة يُتخطّى** — الإقفالُ السنويُّ
+        // ‏إجراءٌ على الشخصية الاعتبارية، **وفرعُ الجلسة صدفةٌ لا معنى**. فوسمُه يُسند
+        // ‏حقوقَ ملكيةِ المنشأة كلِّها إلى الفرع الذي صادف أن يكون مختاراً حين ضُغط الزرّ.
         var unstamped = ChangeTracker.Entries<Brqosh.Domain.Accounting.JournalEntry>()
-            .Where(e => e.State == EntityState.Added && e.Entity.BranchId is null)
+            .Where(e => e.State == EntityState.Added
+                        && e.Entity.BranchId is null
+                        && !e.Entity.IsEntityLevel)
             .Select(e => e.Entity)
             .ToList();
 

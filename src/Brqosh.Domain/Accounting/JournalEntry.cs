@@ -51,6 +51,30 @@ public class JournalEntry : IBranchScoped
     /// <summary>الشركة المقابلة في معاملة بين الشركات.</summary>
     public long? CounterpartyCompanyId { get; private set; }
 
+    /// <summary>
+    /// (CEEF-231 · O-32) <b>قيدٌ على مستوى المنشأة — لا فرعَ له بحكم طبيعته.</b>
+    ///
+    /// <para><b>وليس هذا نقصَ بيانات.</b> الإقفالُ السنويُّ إجراءٌ نظاميٌّ على الشخصية
+    /// الاعتبارية، <b>والفرعُ بُعدٌ إداريٌّ لا كيانٌ يُقفل</b>. فوسمُه بفرعٍ يُسند حقوقَ
+    /// ملكيةِ المنشأة كلِّها إلى فرعٍ واحد — <b>وهو الفرعُ الذي صادف أن يكون مختاراً في
+    /// جلسة المحاسب</b>، لا فرعٌ له معنى.</para>
+    /// </summary>
+    public bool IsEntityLevel { get; private set; }
+
+    /// <summary>
+    /// يُعلن القيدَ على مستوى المنشأة — <b>فلا يوسمه واسمُ الفروع</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>ويُعلَن قبل الحفظ لا بعده</b>: الوسمُ يقع في <c>SaveChanges</c>، وما وُسم
+    /// لا يُنزع — <c>AssignBranch</c> يرفض المرحَّل، <b>والقيدُ الوحيدُ في العام الذي
+    /// يجب ألّا يُوسَم هو الذي يُوسَم أوّلاً</b>.
+    /// </remarks>
+    public void MarkEntityLevel()
+    {
+        EnsureDraft("إعلان القيد على مستوى المنشأة");
+        IsEntityLevel = true;
+    }
+
     public IReadOnlyList<JournalLine> Lines => _lines.AsReadOnly();
 
     public decimal TotalDebit => _lines.Sum(l => l.Debit);
@@ -191,7 +215,21 @@ public class JournalEntry : IBranchScoped
         }
     }
 
-    public void AddLine(Account account, decimal debit, decimal credit, string? lineDescription = null, long? costCenterId = null)
+    /// <summary>
+    /// يُضيف سطراً — <b>والمبلغان بالعملة الوظيفية دائماً</b>.
+    /// </summary>
+    /// <remarks>
+    /// (CEEF-231 · O-34) <b>ووسائطُ العملة مذكرةٌ لا مبلغٌ ثانٍ</b>: تحفظ أصلَ المعاملة
+    /// وسعرَ ترجمتها، <b>ولا تدخل الميزانَ</b>. وهويّةُ <b>هـ-٢٥</b> تربطها بالمبلغ
+    /// المُرحَّل: <c>round(ForeignAmount × ExchangeRate, 2) = Debit + Credit</c>.
+    ///
+    /// <para><b>وبغير هذا القيد تصير المذكرةُ كذبةً موثَّقة</b>: مبلغٌ أجنبيٌّ وسعرٌ لا
+    /// يُنتجان ما رُحِّل، <b>فيُراجَع القيدُ بعد سنةٍ فيُقرأ خطأً في الترجمة وهو خطأٌ في
+    /// المذكرة</b> — أو العكس، وهو أسوأ.</para>
+    /// </remarks>
+    public void AddLine(Account account, decimal debit, decimal credit, string? lineDescription = null,
+        long? costCenterId = null, string? currencyCode = null, decimal? exchangeRate = null,
+        decimal? foreignAmount = null)
     {
         EnsureDraft("إضافة سطر");
 
@@ -205,7 +243,49 @@ public class JournalEntry : IBranchScoped
             throw new AccountingException("سطر القيد يجب أن يحمل مبلغاً مديناً أو دائناً.");
         EnsureHalalaScale(debit, credit);
 
-        _lines.Add(new JournalLine(account.Id, account.Code, debit, credit, lineDescription?.Trim(), costCenterId));
+        var currency = NormalizeCurrencyMemo(currencyCode, exchangeRate, foreignAmount, debit + credit);
+
+        _lines.Add(new JournalLine(account.Id, account.Code, debit, credit, lineDescription?.Trim(), costCenterId,
+            currency.Code, currency.Rate, currency.Amount));
+    }
+
+    /// <summary>
+    /// يتحقّق من مذكرة العملة ويُطبّعها — <b>أو يرفضها</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>ونصفُ مذكرةٍ مرفوضٌ كذلك</b>: عملةٌ بلا سعرٍ لا تُترجم، وسعرٌ بلا عملةٍ لا يعني
+    /// شيئاً. <b>وسكوتٌ عن النصف يُنتج سطراً يبدو موثَّقاً وليس كذلك</b>.
+    /// </remarks>
+    private static (string? Code, decimal? Rate, decimal? Amount) NormalizeCurrencyMemo(
+        string? currencyCode, decimal? exchangeRate, decimal? foreignAmount, decimal functionalAmount)
+    {
+        var code = currencyCode?.Trim().ToUpperInvariant();
+
+        if (string.IsNullOrEmpty(code))
+        {
+            if (exchangeRate is not null || foreignAmount is not null)
+                throw new AccountingException(
+                    "سعرُ الصرف أو المبلغ الأجنبيّ بلا رمز عملة — والمذكرةُ الناقصة لا تُقرأ.");
+
+            return (null, null, null);
+        }
+
+        if (code.Length != 3)
+            throw new AccountingException($"رمزُ العملة '{code}' غيرُ صالح — ثلاثةُ أحرفٍ حسب ISO 4217.");
+        if (exchangeRate is not > 0m)
+            throw new AccountingException($"سعرُ صرف {code} يجب أن يكون موجباً.");
+        if (foreignAmount is not > 0m)
+            throw new AccountingException($"المبلغُ بعملة {code} يجب أن يكون موجباً.");
+
+        // ‏هـ-٢٥: المُرحَّلُ هو المترجَم — **لا رقمٌ ثالثٌ مستقلّ**.
+        var translated = Math.Round(foreignAmount.Value * exchangeRate.Value, 2, MidpointRounding.AwayFromZero);
+        if (translated != functionalAmount)
+            throw new AccountingException(
+                $"المبلغُ المُرحَّل {functionalAmount:N2} لا يساوي ترجمةَ {foreignAmount:N2} {code} "
+                + $"بسعر {exchangeRate:N6} وهي {translated:N2} — والمذكرةُ التي تخالف القيدَ أسوأُ من غيابها.");
+
+        return (code, Math.Round(exchangeRate.Value, 6, MidpointRounding.AwayFromZero),
+            Math.Round(foreignAmount.Value, 2, MidpointRounding.AwayFromZero));
     }
 
     /// <summary>
@@ -287,11 +367,26 @@ public class JournalEntry : IBranchScoped
     }
 }
 
-/// <summary>سطر في قيد اليومية — طرف واحد فقط (مدين أو دائن).</summary>
+/// <summary>
+/// سطر في قيد اليومية — طرف واحد فقط (مدين أو دائن).
+///
+/// <para>(CEEF-231 · O-34) <b>و<c>Debit</c>/<c>Credit</c> بالعملة الوظيفية دائماً</b> —
+/// فالدفترُ النظاميُّ بالريال، <b>ولا يُقاس ميزانٌ بعملتين</b>. والحقولُ الثلاثةُ أدناه
+/// <b>مذكرةٌ تحفظ الأصل</b>: بأيّ عملةٍ وقعت المعاملة، وبأيّ سعرٍ تُرجمت.</para>
+///
+/// <para><b>وبغيرها يُكتب مبلغُ الريال وحدَه</b>، فيستحيل بعد شهرٍ معرفةُ أنّ الألفَ
+/// كانت مئتي دولارٍ بسعر ٣٫٧٥ — <b>ولا يُراجَع سعرٌ لا أثرَ له</b>.</para>
+/// </summary>
+/// <param name="CurrencyCode">رمزُ عملة المعاملة — <c>null</c> يعني العملةَ الوظيفية.</param>
+/// <param name="ExchangeRate">سعرُ الصرف المستعمَل في الترجمة — <b>محفوظٌ لا مُعاد حسابه</b>.</param>
+/// <param name="ForeignAmount">المبلغُ بعملة المعاملة — <b>موجبٌ دائماً</b>، والطرفُ يُقرأ من المدين/الدائن.</param>
 public record JournalLine(
     long AccountId,
     string AccountCode,
     decimal Debit,
     decimal Credit,
     string? Description,
-    long? CostCenterId);
+    long? CostCenterId,
+    string? CurrencyCode = null,
+    decimal? ExchangeRate = null,
+    decimal? ForeignAmount = null);

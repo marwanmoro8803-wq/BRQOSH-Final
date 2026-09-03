@@ -53,6 +53,12 @@ internal static class SchemaSqlGuard
         "NUMERIC(9,4) NOT NULL DEFAULT 0",
         // (CEEF-230 · ط1-٤) ‏سعرُ الصرف — افتراضُه واحدٌ لا صفر: صفرٌ يُصفّر كلَّ مبلغ.
         "NUMERIC(18,6) NOT NULL DEFAULT 1",
+        // (CEEF-231 · O-34) ‏مذكرةُ العملة على سطر القيد — **لاغيةٌ بلا افتراض**.
+        // ‏و`'SAR'` افتراضاً كذبٌ على الماضي: يجعل قيوداً رُحّلت بلا مذكرةٍ تبدو موثَّقةً
+        // ‏بعملةٍ لم يُدخلها أحد.
+        "character varying(3) NULL",
+        "NUMERIC(18,6) NULL",
+        "NUMERIC(18,2) NULL",
     };
 
     private static readonly HashSet<string> AllowedSqliteTypes = new(StringComparer.OrdinalIgnoreCase)

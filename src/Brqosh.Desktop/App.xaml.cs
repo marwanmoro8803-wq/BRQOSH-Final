@@ -261,9 +261,13 @@ public partial class App : System.Windows.Application
             var path = Path.Combine(Path.GetTempPath(), "brqosh-uitest-last.txt");
             File.WriteAllText(path, $"{DateTime.UtcNow:u}\n{message}");
         }
-        catch
+        catch (Exception ex)
         {
-            /* ignore */
+            // (CEEF-231 · O-36) ‏**هذا الابتلاعُ مقصودٌ ويبقى**: الكاتبُ نفسُه أداةُ
+            // ‏تشخيص، **وسقوطُ التطبيق لأنّ ملفَّ تشخيصٍ تعذّرت كتابتُه عبثٌ**.
+            // ‏والسببُ يُكتب ولا يُترك «ignore» — فبيانُ النيّة هو الفرقُ بين تسامحٍ
+            // ‏مقصودٍ وسهوٍ نُسي.
+            System.Diagnostics.Debug.WriteLine($"UI diag write failed: {ex.Message}");
         }
     }
 }

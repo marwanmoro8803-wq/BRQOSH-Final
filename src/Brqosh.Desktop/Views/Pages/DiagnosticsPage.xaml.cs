@@ -85,6 +85,12 @@ public partial class DiagnosticsPage : UserControl
                 ? "لا شيء"
                 : $"{schema.Count} — أولها: {schema[0].Step}"));
 
+        // (CEEF-231 · O-36) ‏**وطابورُ الأحداث المعلَّقة وسببُ آخر فشلٍ فيه.**
+        // ‏فالتسامحُ في `OutboxDispatchHook` مقصود، **والصمتُ عنه كان يجعل نقطةَ استقبالٍ
+        // ‏ماتت منذ شهورٍ تُقرأ «كلُّ شيءٍ على ما يرام»** — والطابورُ يتراكم بلا سطرٍ يقول لماذا.
+        rows.Add(new InfoRow("آخر فشل في تفريغ الطابور",
+            OutboxDispatchHook.LastFailure ?? "لا شيء"));
+
         _rows = rows;
         Grid.ItemsSource = _rows;
         UiTestAutomation.PublishGridCount(Grid, _rows.Count);
