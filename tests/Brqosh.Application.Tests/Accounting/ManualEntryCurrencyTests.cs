@@ -130,6 +130,19 @@ public class ManualEntryCurrencyTests : IDisposable
         Assert.Throws<AccountingException>(() =>
             entry.AddLine(cash, 750m, 0m, null, null, "USD", 0m, 200m));
 
+        // ‏**وهاتان أخرجتهما طفرتان نجتا.** نُزع فحصُ السعر فمرّ الاختبار، ونُزع فحصُ
+        // ‏المبلغ فمرّ كذلك — **لأنّ كلَّ حالةٍ كانت يُمسكها فحصٌ آخرُ قبله**. فحارسٌ
+        // ‏يقيس أربعَ حالاتٍ مجتمعةً لا يقيس أربعةَ حرّاس، **ولا يُعرف أيُّها ميّت**.
+        //
+        // ‏فتُعزل كلُّ حالةٍ إلى ما ينقصها وحدَه: عملةٌ ومبلغٌ **بلا سعر**، وعملةٌ
+        // ‏وسعرٌ **بلا مبلغ**. وبغيرِ فحصهما تُقرأ `Nullable.Value` على فراغٍ
+        // ‏فيُرمى استثناءٌ ليس `AccountingException` — **ورسالةٌ لا يفهمها محاسب**.
+        Assert.Throws<AccountingException>(() =>
+            entry.AddLine(cash, 750m, 0m, null, null, "USD", null, 200m));
+
+        Assert.Throws<AccountingException>(() =>
+            entry.AddLine(cash, 750m, 0m, null, null, "USD", 3.75m, null));
+
         Assert.Empty(entry.Lines);
     }
 
