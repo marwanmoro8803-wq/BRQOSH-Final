@@ -72,19 +72,22 @@ catch (Exception ex)
 
 static (DatabaseProvider Provider, string ConnectionString) ResolveConnection()
 {
-    var configPath = Path.Combine(
-        Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json");
-    if (File.Exists(configPath))
+    // (CEEF-236) ‏عبر `DatabaseConfigFile` لا بقراءةٍ خام — المعالجُ يكتب السلسلةَ محميّةً بـDPAPI،
+    // ‏والقراءةُ الخام كانت تُعيد `BRQOSH1:…` فتسقط الأداةُ إلى SQLite **بصمت** وتُعيد تعيين كلمةِ
+    // ‏مرورٍ في قاعدةٍ غير قاعدة المنشأة، فيظنّ المشغّلُ أنه أصلح شيئاً.
+    try
     {
-        try
-        {
-            var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(configPath));
-            var provider = json.RootElement.GetProperty("Provider").GetString() ?? "sqlite";
-            var cs = json.RootElement.GetProperty("ConnectionString").GetString() ?? "";
-            if (provider.Equals("postgresql", StringComparison.OrdinalIgnoreCase) && cs.Length > 0)
-                return (DatabaseProvider.PostgreSql, cs);
-        }
-        catch { /* fall through */ }
+        var config = DatabaseConfigFile.Load();
+        if (config is not null
+            && config.Provider.Equals(DatabaseConfigFile.PostgresProvider, StringComparison.OrdinalIgnoreCase)
+            && config.ConnectionString.Length > 0)
+            return (DatabaseProvider.PostgreSql, config.ConnectionString);
+    }
+    catch (InvalidOperationException ex)
+    {
+        // ‏ملفٌّ لا يُفكّ (حسابٌ آخر أو تلف) — يُقال ولا يُسقَط على قاعدةٍ أخرى بصمت.
+        Console.Error.WriteLine(ex.Message);
+        Environment.Exit(3);
     }
 
     return (DatabaseProvider.Sqlite, $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}");

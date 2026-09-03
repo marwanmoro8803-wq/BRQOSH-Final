@@ -32,8 +32,16 @@ if (!File.Exists(configPath))
     return 1;
 }
 
-var config = JsonSerializer.Deserialize<DbConfig>(File.ReadAllText(configPath))!;
-var provider = config.Provider.Equals("postgresql", StringComparison.OrdinalIgnoreCase)
+// (CEEF-236) ‏عبر `DatabaseConfigFile` لا بقراءةٍ خام: السلسلةُ صارت تُكتب محميّةً بـDPAPI،
+// ‏والقراءةُ الخام تُعيد `BRQOSH1:…`. **وهذه الأداةُ هي الخطوةُ ٦ في كتيّب التنصيب** — فلو بقيت
+// ‏خاماً لأخفق أوّلُ تدقيقٍ يُطلب من مُركّبٍ اتبع الكتيّب حرفاً.
+var config = DatabaseConfigFile.Load();
+if (config is null)
+{
+    Console.WriteLine("FAIL: database.json غير صالح — شغّل البرنامج أولاً.");
+    return 1;
+}
+var provider = config.Provider.Equals(DatabaseConfigFile.PostgresProvider, StringComparison.OrdinalIgnoreCase)
     ? DatabaseProvider.PostgreSql
     : DatabaseProvider.Sqlite;
 var cs = provider == DatabaseProvider.Sqlite
@@ -343,4 +351,3 @@ static async Task EnsureUiAuditUserAsync(BrqoshDbContext db, long companyId)
         : $"[PASS] تحقق دخول «{auditUser}» ({verified.DisplayNameAr})");
 }
 
-file record DbConfig(string Provider, string ConnectionString);

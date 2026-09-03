@@ -295,24 +295,20 @@ static string Mask(string? s) =>
 
 static (DatabaseProvider, string) ResolveConnection()
 {
-    var cfgPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "database.json");
-    if (File.Exists(cfgPath))
+    // (CEEF-236) ‏عبر `DatabaseConfigFile` لا بقراءةٍ خام — السلسلةُ تُكتب محميّةً بـDPAPI الآن،
+    // ‏والقراءةُ الخام كانت تُعيد `BRQOSH1:…` فتقع الأداةُ على SQLite وتُنتج «دليلَ طباعة» من
+    // ‏قاعدةٍ فارغة.
+    try
     {
-        try
+        var config = DatabaseConfigFile.Load();
+        if (config is not null && !string.IsNullOrWhiteSpace(config.ConnectionString))
         {
-            using var doc = JsonDocument.Parse(File.ReadAllText(cfgPath));
-            var p = doc.RootElement.GetProperty("Provider").GetString();
-            var cs = doc.RootElement.GetProperty("ConnectionString").GetString();
-            if (!string.IsNullOrWhiteSpace(cs))
-            {
-                return p?.Contains("postgres", StringComparison.OrdinalIgnoreCase) == true
-                    ? (DatabaseProvider.PostgreSql, cs)
-                    : (DatabaseProvider.Sqlite, cs);
-            }
+            return config.Provider.Contains("postgres", StringComparison.OrdinalIgnoreCase)
+                ? (DatabaseProvider.PostgreSql, config.ConnectionString)
+                : (DatabaseProvider.Sqlite, config.ConnectionString);
         }
-        catch { /* يقع على SQLite الافتراضية أدناه */ }
     }
+    catch (InvalidOperationException) { /* يقع على SQLite الافتراضية أدناه */ }
 
     return (DatabaseProvider.Sqlite, "Data Source=" + BrqoshDbContextFactory.DefaultSqlitePath());
 }

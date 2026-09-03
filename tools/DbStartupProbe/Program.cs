@@ -3,9 +3,13 @@ using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
-var json = File.ReadAllText(Path.Combine(
-    Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json"));
-var cs = System.Text.Json.JsonDocument.Parse(json).RootElement.GetProperty("ConnectionString").GetString()!;
+// (CEEF-236) ‏عبر `DatabaseConfigFile` لا بقراءةٍ خام: معالجُ التهيئة صار يكتب سلسلةَ الاتصال
+// ‏**محميّةً بـDPAPI**، والقراءةُ الخام تُعيد `BRQOSH1:…` فتفشل بـ«Format of the initialization
+// ‏string does not conform». والقارئُ يقبل الصريحَ كما كان، فملفٌّ قديمٌ لا ينكسر.
+var config = DatabaseConfigFile.Load()
+    ?? throw new InvalidOperationException(
+        $"لا يوجد ملفّ اتصال صالح: {DatabaseConfigFile.Path()} — شغّل معالج التهيئة أولاً.");
+var cs = config.ConnectionString;
 
 Console.WriteLine("=== BRQOSH DB Startup Probe ===");
 Console.WriteLine($"Connection: {cs.Split(';').FirstOrDefault(s => s.StartsWith("Host"))}");

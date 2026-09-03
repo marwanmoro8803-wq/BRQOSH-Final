@@ -102,8 +102,12 @@ public static class AppServices
                 !config.Provider.Equals("postgresql", StringComparison.OrdinalIgnoreCase) ||
                 string.IsNullOrWhiteSpace(config.ConnectionString))
             {
+                // (CEEF-236 · ت-٣) الرسالةُ تُسمّي المخرجَ: المعالجُ يكتب الملفَّ الآن؛ والكتابةُ باليد
+                // بديلٌ موثَّقٌ لا الطريقُ الوحيد.
                 throw new InvalidOperationException(
-                    "وضع الإنتاج يتطلب PostgreSQL — عيّن Provider=postgresql في %APPDATA%\\BRQOSH\\database.json");
+                    "وضع الإنتاج يتطلب PostgreSQL ولا يوجد ملف اتصال صالح.\n" +
+                    $"المسار: {DatabaseConfigFile.Path()}\n" +
+                    "أعد تشغيل معالج التهيئة لإدخال بيانات الاتصال، أو أنشئ الملف يدوياً كما في docs/postgres-production.md §2.");
             }
 
             _provider = DatabaseProvider.PostgreSql;
@@ -196,38 +200,15 @@ public static class AppServices
         return _infrastructureServices!.CreateScope();
     }
 
+    /// <summary>
+    /// (CEEF-236 · ت-٣) القراءةُ والكتابةُ صارتا في <see cref="DatabaseConfigFile"/> — فمعالجُ
+    /// التهيئة يكتب الملفَّ محميّاً من الموضع الذي يقرؤه التطبيق، لا نسخةً ثانيةً من المنطق.
+    /// (CEEF-206) سلسلةُ الاتصال تُقبل مشفّرةً بـDPAPI أو صريحةً (توافقٌ مع الملفّات القائمة)،
+    /// وملفٌّ محميٌّ بحساب مستخدمٍ آخر يرمي بعبارةٍ صريحةٍ لا يُسقط التشغيلَ بصمتٍ على قاعدةٍ خاطئة.
+    /// </summary>
     private static DatabaseConfig? LoadDatabaseConfigFile()
     {
-        var configPath = Path.Combine(
-            Brqosh.Infrastructure.Persistence.BrqoshDataRoot.Path(), "database.json");
-        if (!File.Exists(configPath))
-            return null;
-
-        try
-        {
-            var config = JsonSerializer.Deserialize<DatabaseConfig>(File.ReadAllText(configPath));
-            if (config is null)
-                return null;
-
-            // (CEEF-206) سلسلة الاتصال قد تحمل كلمة مرور PostgreSQL الإنتاجية. تُقبل مشفّرة
-            // بـ DPAPI أو صريحة (توافق مع الملفات القائمة) — Unprotect يمرّر غير المشفّر كما هو.
-            // DPAPI مناسب هنا تحديداً لأن الملف محلي يقرؤه مستخدم الجهاز نفسه؛ وهو غير مناسب
-            // لأسرار تُخزَّن في قاعدة مشتركة (تصير غير قابلة للفك من جهاز آخر).
-            return config with
-            {
-                ConnectionString = LocalSecretProtector.Unprotect(config.ConnectionString),
-            };
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-        catch (CryptographicException)
-        {
-            // مشفَّرة بملف تعريف مستخدم آخر — لا تُسقط التشغيل بصمت على قاعدة خاطئة.
-            throw new InvalidOperationException(
-                "تعذّر فكّ تشفير سلسلة الاتصال في database.json — أُنشئت على حساب مستخدم آخر. " +
-                "أعد ضبط الاتصال من هذا الحساب.");
-        }
+        var entry = DatabaseConfigFile.Load();
+        return entry is null ? null : new DatabaseConfig(entry.Provider, entry.ConnectionString);
     }
 }
