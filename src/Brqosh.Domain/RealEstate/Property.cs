@@ -48,6 +48,34 @@ public class Property : IBranchScoped
     public string? DeedNumber { get; private set; }
 
     public bool IsActive { get; private set; } = true;
+
+    /// <summary>
+    /// (CEEF-232 · ع-١) <b>الأصلُ الثابتُ الذي يُمثّل هذا العقار — و<c>null</c> يعني عقاراً
+    /// لا قيمةَ دفتريّةَ له في النظام.</b>
+    ///
+    /// <para><b>وكان العقارُ بلا تكلفةٍ ولا عمرٍ إنتاجيٍّ ولا ربطٍ بأصل</b>، و<c>FixedAsset</c>
+    /// بلا <c>PropertyId</c> — <b>و<c>DepreciationService</c> يُهلك صفوفَ الأصول وحدَها</b>.
+    /// فمحفظةٌ عقاريّةٌ كاملةٌ <b>لا تُهلَك بريالٍ واحد</b>: يُعترف بإيراد الإيجار كلِّه
+    /// <b>بلا مقابلٍ من استهلاك المبنى</b>، فيُعلَن ربحٌ أكبرُ من الحقّ كلَّ سنة
+    /// <b>وتُدفع عليه زكاةٌ ويُوزَّع</b> — ثمّ يُباع المبنى فتظهر «خسارةُ استبعاد» هي
+    /// إهلاكُ سنواتٍ لم يُقيَّد.</para>
+    ///
+    /// <para><b>ولم يُبنَ محرّكُ إهلاكٍ ثانٍ للعقار</b>: الرابطُ يُدخله في المحرّك القائم —
+    /// <b>ومحرّكان لقاعدةٍ واحدةٍ يفترقان يوماً</b>.</para>
+    /// </summary>
+    public long? FixedAssetId { get; private set; }
+
+    /// <summary>يربط العقارَ بأصلٍ ثابت — <b>ولا يُبدَّل ربطٌ قائم</b>.</summary>
+    public void LinkFixedAsset(long fixedAssetId)
+    {
+        if (fixedAssetId <= 0)
+            throw new AccountingException("رقم الأصل الثابت غير صالح.");
+        if (FixedAssetId is not null)
+            throw new AccountingException("العقار مرتبطٌ بأصلٍ ثابتٍ مسبقاً.");
+
+        FixedAssetId = fixedAssetId;
+    }
+
     public DateTime CreatedAtUtc { get; private set; }
 
     // EF Core

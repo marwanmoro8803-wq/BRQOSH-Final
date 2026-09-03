@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using System.Globalization;
@@ -389,6 +389,14 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("companies", "LogoFilePath", "character varying(512) NULL", ct);
         await EnsurePgColumnAsync("companies", "PrintFontFamily", "character varying(64) NOT NULL DEFAULT 'Tahoma'", ct);
         await EnsurePgColumnAsync("bank_accounts", "CurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+
+        // (CEEF-232 · ل-١) ‏ربطُ فاتورة أجرة الشحن — **ولاغٍ افتراضاً**، فشحناتٌ سابقةٌ
+        // ‏لم تُفوتَر تبقى غيرَ مفوترة، ولا يُكذَب على الماضي بربطٍ لم يقع.
+        await EnsurePgColumnAsync("shipments", "FreightInvoiceId", "BIGINT NULL", ct);
+
+        // (CEEF-232 · ع-١) ‏ربطُ العقار بأصلٍ ثابتٍ يُهلَك — **ولاغٍ افتراضاً**، فعقاراتٌ
+        // ‏قائمةٌ تبقى بلا قيمةٍ دفتريّة حتى يربطها المحاسبُ بعلمه.
+        await EnsurePgColumnAsync("properties", "FixedAssetId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("construction_projects", "EstimatedTotalCost", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
         await EnsureBranchesTableAsync(isPg: true, ct);
         await EnsureInventoryBalancesTableAsync(isPg: true, ct);
@@ -2240,6 +2248,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "DeliveredOn" DATE NULL,
                     "CodCollected" BOOLEAN NOT NULL DEFAULT false,
                     "CodRemitted" BOOLEAN NOT NULL DEFAULT false,
+                    "FreightInvoiceId" BIGINT NULL,
                     "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
                 """, ct);
@@ -2654,6 +2663,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Address" character varying(512) NOT NULL,
                     "DeedNumber" character varying(64) NULL,
                     "IsActive" BOOLEAN NOT NULL DEFAULT true,
+                    "FixedAssetId" BIGINT NULL,
                     "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 );
                 """, ct);

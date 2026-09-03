@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
@@ -140,6 +140,9 @@ public partial class MaintenanceOrdersPage : UserControl
     {
         MaintenanceKind.Preventive => "دورية",
         MaintenanceKind.Corrective => "إصلاحية",
+        // ‏(CEEF-232 · ع-٢) **والتجديدُ الرأسماليُّ يُسمّى صراحةً** — فصنفٌ يُرحَّل خلافاً
+        // ‏لبقيّة الأصناف يجب أن يُرى في الجدول، **وإلّا رُسمِل ما ظُنّ أنّه صيانة**.
+        MaintenanceKind.CapitalImprovement => "تجديد رأسمالي",
         _ => "تلف مستأجر",
     };
 

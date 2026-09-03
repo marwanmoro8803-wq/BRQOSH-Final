@@ -35,6 +35,26 @@ public class CreditNoteAndReceiptTests : IDisposable
         _connection.Dispose();
     }
 
+    /// <summary>
+    /// (CEEF-232 · ج-١) رصيدُ حسابٍ نظاميٍّ في الأستاذ — <b>من القيود المُرحَّلة وحدَها</b>.
+    ///
+    /// <para><b>وبه يُقاس الدفترُ المساعد بدل أن يُقاس بعددٍ مكتوب</b>: العددُ المكتوب
+    /// يُصحَّح كلّما تغيّر المنتج فيبقى الاختبارُ أخضرَ أبداً، <b>والأستاذُ لا يُجامل</b>.</para>
+    /// </summary>
+    private async Task<decimal> ControlAccountBalanceAsync(long companyId, string code)
+    {
+        var accountId = await _db.Accounts
+            .Where(a => a.CompanyId == companyId && a.Code == code)
+            .Select(a => a.Id)
+            .SingleAsync();
+
+        return await _db.JournalEntries
+            .Where(e => e.CompanyId == companyId && e.Status == JournalEntryStatus.Posted)
+            .SelectMany(e => e.Lines)
+            .Where(l => l.AccountId == accountId)
+            .SumAsync(l => (decimal?)(l.Debit - l.Credit)) ?? 0m;
+    }
+
     private async Task<SalesInvoice> SetupWithInvoiceAsync()
     {
         var company = await new DatabaseInitializer(_db)
@@ -159,8 +179,26 @@ public class CreditNoteAndReceiptTests : IDisposable
         await new ProgressBillingPostingService(_db).PostAsync(billing);
 
         var balance = await new CustomerBalanceQuery(_db).ForCustomerAsync(company.Id, customer.Id);
-        Assert.Equal(115_000m, balance.Invoiced);
-        Assert.Equal(115_000m, balance.Balance);
+
+        // ‏(CEEF-232 · ج-١) ‏**وكان المتوقَّعُ هنا ١١٥٬٠٠٠ — وهو `GrandTotal` لا الذمّة.**
+        // ‏والمستخلصُ يُرحَّل على حسابين (`ProgressBilling.Post`): الصافي وضريبتُه على
+        // ‏`1104`، **والمحتجزُ على `1114`**. فكان الاختبارُ يُثبّت العطلَ لا يكشفه.
+        //
+        // ‏**والرقمُ لا يُكتب حرفاً بعد اليوم**: يُقرأ من الأستاذ نفسِه، فإن انحرف أحدُهما
+        // ‏عن الآخر سقط الاختبارُ **مهما كانت قيمةُ المستخلص** — وهي هويّةُ هـ-١.
+        var receivableInLedger = await ControlAccountBalanceAsync(
+            company.Id, SaudiChartOfAccounts.SystemCodes.AccountsReceivable);
+        var retentionInLedger = await ControlAccountBalanceAsync(
+            company.Id, SaudiChartOfAccounts.SystemCodes.RetentionReceivable);
+
+        Assert.Equal(105_000m, receivableInLedger);   // ‏٩٠٬٠٠٠ صافياً + ١٥٬٠٠٠ ضريبةً
+        Assert.Equal(10_000m, retentionInLedger);     // ‏والمحتجزُ ليس ذمّةً مدينة
+
+        Assert.Equal(receivableInLedger, balance.Invoiced);
+        Assert.Equal(receivableInLedger, balance.Balance);
+
+        // ‏**والمجموعُ يبقى `GrandTotal`** — فلا ريالَ ضاع، بل نُسب إلى حسابه.
+        Assert.Equal(115_000m, receivableInLedger + retentionInLedger);
 
         var statement = await new CustomerBalanceQuery(_db).StatementAsync(company.Id, customer.Id);
         Assert.Single(statement);

@@ -90,7 +90,9 @@ public class FixedAssetDisposalTests : IDisposable
         Assert.Equal(16_000m, (await AccountTotalsAsync(entry.Id, "5215")).Debit);   // الخسارة
         Assert.Equal(120_000m, (await AccountTotalsAsync(entry.Id, "1203")).Credit); // التكلفة كاملةً
         Assert.Equal(24_000m, (await AccountTotalsAsync(entry.Id, "1207")).Debit);   // إقفال المجمّع
-        Assert.Equal(80_000m, (await AccountTotalsAsync(entry.Id, "1101")).Debit);   // العائد
+        // ‏(CEEF-232 · ض-٢) ‏والنقدُ صار المقابلَ **زائد ضريبتَه** — فبيعُ الأصل توريدٌ خاضع.
+        // ‏والخسارةُ أعلاه لم تتغيّر بريال: **الضريبةُ أمانةٌ تُورَّد لا مصروفٌ ولا إيراد**.
+        Assert.Equal(92_000m, (await AccountTotalsAsync(entry.Id, "1101")).Debit);   // ‏العائد + ١٥٪
         Assert.False(asset.IsActive);
     }
 
@@ -222,7 +224,9 @@ public class FixedAssetDisposalTests : IDisposable
             .PostDisposalAsync(asset, saleProceeds: 100_000.005m, new DateOnly(2026, 1, 15), "admin");
 
         Assert.True(entry.IsBalanced);
-        Assert.Equal(100_000.01m, (await AccountTotalsAsync(entry.Id, "1101")).Debit);
+        // ‏(CEEF-232 · ض-٢) ‏١٠٠٬٠٠٠٫٠١ مقابلاً + ١٥٬٠٠٠٫٠٠ ضريبةً — **والتقريبُ يقع على
+        // ‏الضريبة كذلك**: ١٥٠٠٠٫٠٠١٥ تُقرَّب قبل أن تُجمع، فلا يدخل القيدَ كسرُ هللة.
+        Assert.Equal(115_000.01m, (await AccountTotalsAsync(entry.Id, "1101")).Debit);
         Assert.Equal(19_999.99m, (await AccountTotalsAsync(entry.Id, "5215")).Debit);
     }
 

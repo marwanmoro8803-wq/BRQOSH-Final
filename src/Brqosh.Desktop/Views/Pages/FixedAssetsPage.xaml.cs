@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Assets;
@@ -109,7 +110,7 @@ public partial class FixedAssetsPage : UserControl
         if (Grid.SelectedItem is not AssetRow row) return;
 
         var dialog = new TextInputDialog("استبعاد أصل ثابت",
-            $"عائد البيع/الخردة للأصل {row.NameAr} (0 إن لم يوجد):", "0")
+            $"عائد البيع/الخردة للأصل {row.NameAr} — قبل الضريبة (0 إن لم يوجد):", "0")
             { Owner = Window.GetWindow(this) };
         if (dialog.ShowDialog() != true)
             return;
@@ -132,12 +133,24 @@ public partial class FixedAssetsPage : UserControl
             ? $"ربح متوقّع {gainLoss:N2}"
             : $"خسارة متوقّعة {-gainLoss:N2}";
 
+        // (CEEF-232 · ض-٢) ‏والمقبوضُ يُعرض معه — **فهو ما سيُودَع في الصندوق**، والمستخدم
+        // ‏يُطابق التأكيدَ بما في يده لا بما في الدفتر. **وعرضُ المقابل وحدَه يجعله يظنّ
+        // ‏نقصاً في القيد** حين يجد في يده أكثرَ ممّا أُقرّ به.
+        //
+        // ‏(ض-٤) **والنسبةُ تُقرأ من حال المنشأة لا تُكتب ثابتةً** — وإلّا وعد التأكيدُ
+        // ‏منشأةً غيرَ مسجَّلةٍ بضريبةٍ لا تُقيَّد، **فيختلف ما على الشاشة عمّا في القيد**
+        // ‏وهو أسوأ من الخطأ نفسِه: يُفقد الثقةَ في كلّ تأكيدٍ بعده.
+        var vatRate = await ResolveDisposalVatRateAsync();
+        var vat = Math.Round(proceeds * vatRate, 2, MidpointRounding.AwayFromZero);
+
         if (UiDialog.Show(
                 $"استبعاد الأصل {row.NameAr}؟\n\n" +
                 $"التكلفة: {row.AcquisitionCost:N2}\n" +
                 $"مجمّع الإهلاك: {row.AccumulatedDepreciation:N2}\n" +
                 $"القيمة الدفترية: {row.BookValue:N2}\n" +
-                $"عائد البيع: {proceeds:N2}\n" +
+                $"عائد البيع (قبل الضريبة): {proceeds:N2}\n" +
+                $"ضريبة القيمة المضافة: {vat:N2}\n" +
+                $"المقبوض: {proceeds + vat:N2}\n" +
                 $"⟵ {verdict}",
                 "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
@@ -182,5 +195,21 @@ public partial class FixedAssetsPage : UserControl
         {
             UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    /// <summary>
+    /// (CEEF-232 · ض-٤) نسبةُ ضريبة الاستبعاد كما ستُقيَّد فعلاً — <b>لا كما يُفترض</b>.
+    ///
+    /// <para><b>والمصدرُ واحدٌ مع خدمة الترحيل:</b> رقمٌ ضريبيٌّ من خمسةَ عشرَ رقماً.
+    /// <b>وقاعدتان لنسبةٍ واحدة تفترقان يوماً</b> — فتُعرض نسبةٌ ويُقيَّد غيرُها.</para>
+    /// </summary>
+    private static async Task<decimal> ResolveDisposalVatRateAsync()
+    {
+        using var facade = new DesktopAccountingFacade();
+        var vatNumber = await facade.Db.Companies
+            .Select(c => c.VatRegistrationNumber)
+            .FirstOrDefaultAsync();
+
+        return (vatNumber ?? "").Trim().Length == 15 ? VatCalculator.SaudiVatRate : 0m;
     }
 }

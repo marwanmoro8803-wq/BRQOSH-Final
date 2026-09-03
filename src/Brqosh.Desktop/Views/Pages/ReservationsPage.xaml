@@ -1,4 +1,4 @@
-<UserControl x:Class="Brqosh.Desktop.Views.Pages.ReservationsPage"
+﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.ReservationsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -29,6 +29,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="CheckInBtn" DockPanel.Dock="Right" Content="إنزال النزيل"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnCheckIn"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DepositBtn" DockPanel.Dock="Right" Content="قبض عربون"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnTakeDeposit"/>
             </DockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">

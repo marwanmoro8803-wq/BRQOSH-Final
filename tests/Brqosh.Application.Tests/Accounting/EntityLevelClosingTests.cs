@@ -164,6 +164,43 @@ public class EntityLevelClosingTests : IDisposable
         Assert.Throws<AccountingException>(entry.MarkEntityLevel);
     }
 
+    /// <summary>
+    /// <b>والعكسُ يرث الإعلانَ — وإلّا عاد العطلُ من الباب المقابل.</b>
+    ///
+    /// <para><b>وهذا نصفُ الإغلاق الذي يُنسى دائماً</b>: يُحرَس المسارُ الأماميُّ ويُترك
+    /// نظيرُه. فعكسُ إقفالٍ سنويٍّ يُنشئ قيداً جديداً، <b>وقيدٌ جديدٌ بلا إعلانٍ يوسمه
+    /// واسمُ الفروع بفرع الجلسة</b> — فيبقى الأصلُ بلا فرعٍ ويحمل عكسُه فرعاً، <b>ولا
+    /// يتوازن البُعدان أبداً</b>.</para>
+    /// </summary>
+    [Fact]
+    public async Task ReversingAnEntityLevelEntry_StaysEntityLevel()
+    {
+        await SetupAsync();
+
+        await InvoiceInBranchAsync(_riyadhId, 6_000m);
+
+        BranchSessionContext.PreferredBranchId = _jeddahId;
+        await new YearEndCloseService(_db).CloseYearAsync(_companyId, Year, "admin");
+
+        var closing = await _db.JournalEntries
+            .SingleAsync(e => e.CompanyId == _companyId
+                              && e.SourceDocument == $"YearEndClose:{Year}");
+
+        var reversal = closing.CreateReversal(new DateOnly(Year, 12, 31));
+        reversal.Post("JE-REV-EL");
+        _db.JournalEntries.Add(reversal);
+        await _db.SaveChangesAsync();
+
+        var stored = await _db.JournalEntries.AsNoTracking()
+            .SingleAsync(e => e.EntryNumber == "JE-REV-EL");
+
+        Assert.True(stored.IsEntityLevel,
+            "العكسُ لم يرث الإعلانَ — فوسمه واسمُ الفروع، وعاد عطلُ O-32 من الباب المقابل.");
+
+        Assert.True(stored.BranchId is null,
+            $"وُسم عكسُ الإقفال بالفرع {stored.BranchId} — والأصلُ بلا فرع، فلا يتوازن البُعدان.");
+    }
+
     // ── تهيئة ───────────────────────────────────────────────────────────────
 
     private async Task<SalesInvoice> InvoiceInBranchAsync(long branchId, decimal amount)

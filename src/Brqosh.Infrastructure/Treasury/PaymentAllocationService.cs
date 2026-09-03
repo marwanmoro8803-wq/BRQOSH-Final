@@ -54,14 +54,21 @@ public class PaymentAllocationService(BrqoshDbContext db)
 
         foreach (var b in billings)
         {
+            // (CEEF-232 · ج-٤) ‏**والمستخلصُ يُخصَّص عليه بذمّتِه لا بإجماليّه.**
+            //
+            // ‏فالمحتجزُ يُرحَّل على `1114` لا على `1104` (`ProgressBilling.Post`)، **ولا
+            // ‏يُطالَب به قبل انقضاء مدّته**. ‏وكانت شاشةُ التخصيص تعرض `GrandTotal`:
+            // ‏**فعميلٌ سدّد ذمّتَه كاملةً يبقى عليه «متبقٍّ» بمقدار المحتجز**، فيُطارَد
+            // ‏به ويُرفض إقفالُ المستند — **وتُخالف الشاشةُ الدفترَ المساعد بعد ج-١**.
+            var receivable = b.NetBillableAmount + b.VatAmount;
             var remaining = await RemainingAsync(companyId, PaymentAllocationDocumentType.ProgressBilling,
-                b.Id, b.GrandTotal, ct);
+                b.Id, receivable, ct);
             if (remaining > 0.009m)
             {
                 result.Add(new OpenDocumentBalance(
                     PaymentAllocationDocumentType.ProgressBilling, b.Id,
                     b.BillingNumber ?? b.Id.ToString(), b.BillingDate,
-                    b.GrandTotal, b.GrandTotal - remaining, remaining));
+                    receivable, receivable - remaining, remaining));
             }
         }
 
@@ -304,8 +311,21 @@ public class PaymentAllocationService(BrqoshDbContext db)
                 (await db.SalesInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == documentId, ct)).GrandTotal(),
             PaymentAllocationDocumentType.PurchaseInvoice =>
                 (await db.PurchaseInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == documentId, ct)).GrandTotal(),
+            // (CEEF-232 · ج-٤) ‏والسقفُ هو الذمّةُ لا الإجماليّ — **وإلّا قُبِل تخصيصٌ يتجاوز ما على العميل**.
             PaymentAllocationDocumentType.ProgressBilling =>
-                (await db.ProgressBillings.SingleAsync(b => b.CompanyId == companyId && b.Id == documentId, ct)).GrandTotal,
+                ReceivablePortionOf(await db.ProgressBillings
+                    .SingleAsync(b => b.CompanyId == companyId && b.Id == documentId, ct)),
             _ => throw new AccountingException("نوع مستند التخصيص غير مدعوم."),
         };
+
+    /// <summary>
+    /// (CEEF-232 · ج-٤) ما بلغ حسابَ الذمم من المستخلص — <b>ويُحسب بعد التحقّق لا داخله</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>و<c>NetBillableAmount</c> و<c>VatAmount</c> محسوبتان في النطاق لا عمودان في
+    /// المخطَّط</b> — فإسقاطُهما داخل <c>Select</c> لا يُترجَم إلى SQL <b>ويسقط عند التشغيل
+    /// لا عند البناء</b>. ولذلك يُقرأ الكيانُ ثمّ يُحسب، وهو اصطلاحُ <c>CustomerBalanceQuery</c> نفسُه.
+    /// </remarks>
+    private static decimal ReceivablePortionOf(ProgressBilling billing) =>
+        billing.NetBillableAmount + billing.VatAmount;
 }

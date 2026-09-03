@@ -40,7 +40,29 @@ public class PayrollPostingService(BrqoshDbContext db)
                     db, run.CompanyId, SaudiChartOfAccounts.SystemCodes.EmployeeAdvances, token)
                 : null;
 
-            var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances, advances);
+            // (CEEF-232 · م-١) ‏**ومراكزُ تكلفةِ الموظّفين تُقرأ فيُفكَّك بها مصروفُ الأجر.**
+            //
+            // ‏وكان `Employee.CostCenterId` مُخزَّناً في المخطَّط **و`AssignCostCenter` بلا
+            // ‏مستدعٍ واحد**، وقيدُ الرواتب سطرٌ مُجمَّعٌ بلا بُعد. **فالميزانُ سليمٌ وكلُّ
+            // ‏قائمةِ مركزِ تكلفةٍ تُسقط أكبرَ بنودها** — والأجرُ عادةً أكبرُ المصروفات.
+            //
+            // ‏**ولا يُقرأ إلا لموظّفي هذه الدورة** — فقاعدةٌ فيها ألفُ موظّفٍ لا تُحمَّل
+            // ‏كلُّها لدورةٍ فيها عشرة.
+            var employeeIds = run.Lines
+                .Where(l => l.EmployeeId != null)
+                .Select(l => l.EmployeeId!.Value)
+                .Distinct()
+                .ToList();
+
+            var costCenters = employeeIds.Count == 0
+                ? null
+                : await db.Employees
+                    .Where(e => e.CompanyId == run.CompanyId && employeeIds.Contains(e.Id))
+                    .Select(e => new { e.Id, e.CostCenterId })
+                    .ToDictionaryAsync(e => e.Id, e => e.CostCenterId, token);
+
+            var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances, advances,
+                costCenters);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(run.CompanyId, run.PayDate);
             entry.Post(entryNumber);
 

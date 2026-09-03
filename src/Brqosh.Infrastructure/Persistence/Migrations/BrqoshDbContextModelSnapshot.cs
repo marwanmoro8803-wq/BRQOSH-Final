@@ -1988,6 +1988,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<long?>("FreightInvoiceId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("Pieces")
                         .HasColumnType("integer");
 
@@ -3100,6 +3103,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<string>("DeedNumber")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<long?>("FixedAssetId")
+                        .HasColumnType("bigint");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");

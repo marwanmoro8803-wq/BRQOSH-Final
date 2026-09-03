@@ -1,4 +1,4 @@
-<Window x:Class="Brqosh.Desktop.Views.Pages.MaintenanceOrderDialog"
+﻿<Window x:Class="Brqosh.Desktop.Views.Pages.MaintenanceOrderDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="أمر صيانة جديد" Height="560" Width="880"
@@ -41,6 +41,7 @@
                     <ComboBoxItem Content="دورية"/>
                     <ComboBoxItem Content="إصلاحية"/>
                     <ComboBoxItem Content="تلف مستأجر"/>
+                    <ComboBoxItem Content="تجديد رأسمالي"/>
                 </ComboBox>
             </StackPanel>
             <StackPanel Grid.Column="3">

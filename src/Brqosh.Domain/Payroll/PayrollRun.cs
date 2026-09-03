@@ -181,8 +181,20 @@ public class PayrollRun : IBranchScoped
     public decimal TotalAllowances =>
         _lines.Sum(l => l.HousingAllowance + l.TransportAllowance + l.OtherAllowance);
 
+    /// <param name="employeeCostCenters">
+    /// (CEEF-232 · م-١) مركزُ تكلفةِ كلِّ موظّف — <b>وبه تُفكَّك مصروفاتُ الأجر على مراكزها</b>.
+    ///
+    /// <para><b>وكان الحقلُ موجوداً ولا يقرؤه أحد:</b> <c>Employee.CostCenterId</c> مُخزَّنٌ
+    /// في المخطَّط <b>و<c>AssignCostCenter</c> بلا مستدعٍ واحد</b>، وقيدُ الرواتب سطرٌ
+    /// مُجمَّعٌ بلا بُعد. <b>فالميزانُ سليمٌ وكلُّ قائمةِ مركزِ تكلفةٍ تُسقط أكبرَ بنودها</b> —
+    /// إذ <c>CostCenterStatementQuery</c> يُرشّح على <c>CostCenterId</c> في السطر.</para>
+    ///
+    /// <para><b>ومَن لا مركزَ له يبقى في سطرٍ بلا بُعد</b> — لا يُنسب إلى مركزٍ بالتخمين.
+    /// <b>واختياريٌّ في التوقيع</b>: مستدعٍ لا يُمرّره يسلك السلوكَ القديم حرفاً.</para>
+    /// </param>
     public JournalEntry Post(Account salariesExpense, Account gosiExpense, Account salariesPayable,
-        Account gosiPayable, Account? allowancesExpense = null, Account? advancesReceivable = null)
+        Account gosiPayable, Account? allowancesExpense = null, Account? advancesReceivable = null,
+        IReadOnlyDictionary<long, long?>? employeeCostCenters = null)
     {
         if (Status != PayrollRunStatus.Draft)
             throw new AccountingException("الدورة مرحّلة مسبقاً.");
@@ -202,15 +214,20 @@ public class PayrollRun : IBranchScoped
         // ‏اختياريٌّ في التوقيع: مستدعٍ لا يُمرّره يسلك السلوكَ القديم حرفاً.
         if (allowancesExpense is not null && TotalAllowances > 0m)
         {
-            entry.AddLine(salariesExpense, TotalBasic, 0m, "مصروف رواتب");
-            entry.AddLine(allowancesExpense, TotalAllowances, 0m, "بدلات السكن والانتقال");
+            AddExpense(entry, salariesExpense, l => l.BasicSalary, "مصروف رواتب", employeeCostCenters);
+            AddExpense(entry, allowancesExpense,
+                l => l.HousingAllowance + l.TransportAllowance + l.OtherAllowance,
+                "بدلات السكن والانتقال", employeeCostCenters);
         }
         else
         {
-            entry.AddLine(salariesExpense, TotalGross, 0m, "مصروف رواتب");
+            AddExpense(entry, salariesExpense,
+                l => l.BasicSalary + l.HousingAllowance + l.TransportAllowance + l.OtherAllowance,
+                "مصروف رواتب", employeeCostCenters);
         }
         if (TotalGosiEmployer > 0)
-            entry.AddLine(gosiExpense, TotalGosiEmployer, 0m, "تأمينات اجتماعية — صاحب عمل");
+            AddExpense(entry, gosiExpense, l => l.GosiEmployer,
+                "تأمينات اجتماعية — صاحب عمل", employeeCostCenters);
         entry.AddLine(salariesPayable, 0m, TotalNet, "رواتب مستحقة");
 
         // (CEEF-230 · ط2-٥) ‏**والاستقطاعُ يُعفي السُّلفةَ لا يُنقص المصروف.**
@@ -233,6 +250,57 @@ public class PayrollRun : IBranchScoped
 
         Status = PayrollRunStatus.Posted;
         return entry;
+    }
+
+    /// <summary>
+    /// (CEEF-232 · م-١) يُضيف مصروفَ أجرٍ <b>مفكَّكاً على مراكز التكلفة</b> — أو سطراً
+    /// واحداً حين لا خريطةَ ولا مركز.
+    /// </summary>
+    /// <remarks>
+    /// <b>والمجموعُ لا يتغيّر بريال</b>: التفكيكُ يوزّع المبلغَ نفسَه على أبعادٍ، فلا
+    /// تتحرّك قائمةُ الدخل ولا ينكسر توازن. <b>والصفرُ لا يُضاف سطراً</b> — ومركزٌ لا
+    /// موظّفَ له في هذا الشهر لا يُذكر.
+    ///
+    /// <para><b>والترتيبُ ثابتٌ بالمعرّف</b>: قيدٌ يُعاد توليدُه يُخرج السطورَ بالترتيب
+    /// نفسِه، <b>ولولا ذلك اختلف رقمُ السطر بين تشغيلين</b> فتعذّرت المقارنة.</para>
+    /// </remarks>
+    private void AddExpense(JournalEntry entry, Account account,
+        Func<PayrollLine, decimal> amountOf, string description,
+        IReadOnlyDictionary<long, long?>? employeeCostCenters)
+    {
+        var total = Math.Round(_lines.Sum(amountOf), 2, MidpointRounding.AwayFromZero);
+        if (total <= 0m) return;
+
+        if (employeeCostCenters is null || employeeCostCenters.Count == 0)
+        {
+            entry.AddLine(account, total, 0m, description);
+            return;
+        }
+
+        var buckets = _lines
+            .GroupBy(l => l.EmployeeId is long id && employeeCostCenters.TryGetValue(id, out var cc)
+                ? cc
+                : null)
+            .Select(g => (CostCenterId: g.Key,
+                          Amount: Math.Round(g.Sum(amountOf), 2, MidpointRounding.AwayFromZero)))
+            .Where(b => b.Amount != 0m)
+            .OrderBy(b => b.CostCenterId ?? long.MaxValue)
+            .ToList();
+
+        // ‏**وفرقُ التقريب يُحمَل على أكبر وعاء** — فمجموعُ الأوعية المقرَّبة قد يخالف
+        // ‏المجموعَ المقرَّب بهللة، **وهللةٌ واحدةٌ تُسقط القيدَ كلَّه** عند حارس التوازن.
+        var drift = total - buckets.Sum(b => b.Amount);
+        if (drift != 0m && buckets.Count > 0)
+        {
+            var largest = buckets
+                .Select((b, i) => (b, i))
+                .OrderByDescending(x => Math.Abs(x.b.Amount))
+                .First().i;
+            buckets[largest] = (buckets[largest].CostCenterId, buckets[largest].Amount + drift);
+        }
+
+        foreach (var (costCenterId, amount) in buckets)
+            entry.AddLine(account, amount, 0m, description, costCenterId);
     }
 
     public void LinkJournal(long journalEntryId) => JournalEntryId = journalEntryId;

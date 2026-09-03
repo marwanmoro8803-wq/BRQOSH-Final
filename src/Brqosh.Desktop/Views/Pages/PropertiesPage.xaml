@@ -1,4 +1,4 @@
-<UserControl x:Class="Brqosh.Desktop.Views.Pages.PropertiesPage"
+﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.PropertiesPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -23,6 +23,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="AddUnitBtn" DockPanel.Dock="Right" Content="＋ وحدة"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAddUnit"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="LinkAssetBtn" DockPanel.Dock="Right" Content="ربط بأصل ثابت"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnLinkFixedAsset"/>
             </DockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">

@@ -96,6 +96,11 @@
                     <TextBlock Text="الآيبان — يلزم لملف حماية الأجور" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="IbanBox" Style="{StaticResource AppTextBox}" MaxLength="24"/>
                 </StackPanel>
+
+                <StackPanel Margin="0,0,0,12">
+                    <TextBlock Text="مركز التكلفة — وبه يظهر الأجر في قائمة المركز" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="CostCenterBox" FontSize="14" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 

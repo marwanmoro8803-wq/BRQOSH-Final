@@ -1,10 +1,11 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Hospitality;
 using Brqosh.Infrastructure.Hospitality;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -34,7 +35,8 @@ public partial class ReservationsPage : UserControl
                 (AddBtn, PermissionService.CanPost),
                 (CheckInBtn, PermissionService.CanPost),
                 (AccrueBtn, PermissionService.CanPost),
-                (CheckOutBtn, PermissionService.CanPost));
+                (CheckOutBtn, PermissionService.CanPost),
+                (DepositBtn, PermissionService.CanPost));
             await ReloadAsync();
         };
     }
@@ -163,4 +165,44 @@ public partial class ReservationsPage : UserControl
         ReservationStatus.NoShow => "لم يحضر",
         _ => status.ToString(),
     };
+
+    /// <summary>
+    /// (CEEF-232 · ح-١) <b>قبضُ عربون — والمالُ يُقيَّد التزاماً لا إيراداً.</b>
+    ///
+    /// <para><b>وكان لا مسارَ له أصلاً</b>: لا حقلَ عربونٍ على الحجز، ولا خدمة، ولا زرّ —
+    /// <b>وحسابُ الدفعات المقدَّمة كاتبُه الوحيد خدمةُ المقاولات</b>. فالعربونُ إمّا
+    /// <b>مالٌ في الصندوق بلا قيد</b>، أو يُقبض بسند قبضٍ <b>فيُطفئ ذمّةً لم تنشأ بعد</b>
+    /// ويُعترف بإيرادِ إقامةٍ لم تقع.</para>
+    /// </summary>
+    private async void OnTakeDeposit(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row) return;
+
+        var dialog = new TextInputDialog("قبض عربون", "مبلغ العربون:", "0")
+            { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        if (!NumericInput.TryParse(dialog.Value, out var amount) || amount <= 0)
+        {
+            UiFeedback.ShowWarning("أدخل مبلغاً موجباً.");
+            return;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<ReservationDepositService>().TakeAsync(
+                AppServices.CompanyId, row.Id, amount,
+                DateOnly.FromDateTime(DateTime.Today), SecurityContext.ResolveUsername());
+
+            await ReloadAsync();
+            UiDialog.Show("قُبض العربون وقُيّد التزاماً.", $"{amount:N2}",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
 }

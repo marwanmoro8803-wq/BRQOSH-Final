@@ -1,4 +1,4 @@
-<UserControl x:Class="Brqosh.Desktop.Views.Pages.ShipmentsPage"
+﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.ShipmentsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -26,6 +26,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="CollectBtn" DockPanel.Dock="Right" Content="إثبات التحصيل"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnCollect"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="BillFreightBtn" DockPanel.Dock="Right" Content="فوترة الأجور"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnBillFreight"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <TextBox x:Name="ReceivedByBox" DockPanel.Dock="Right" Width="150"
                          Style="{StaticResource AppTextBox}" VerticalAlignment="Center"

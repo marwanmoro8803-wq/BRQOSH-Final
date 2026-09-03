@@ -345,12 +345,42 @@ public class JournalEntry : IBranchScoped
             throw new AccountingException("تاريخ القيد العكسي لا يسبق تاريخ القيد الأصلي.");
 
         var reversal = new JournalEntry(CompanyId, reversalDate, $"قيد عكسي للقيد رقم {EntryNumber}", SourceDocument);
+
+        // (CEEF-231 · O-32) ‏**والعكسُ يرث «على مستوى المنشأة»** — وإلّا وسمه واسمُ
+        // ‏الفروع بفرع الجلسة. **فعكسُ إقفالٍ سنويٍّ يُعيد العطلَ نفسَه من الباب
+        // ‏المقابل**: يبقى القيدُ الأصليُّ بلا فرعٍ وتُسند أرباحُ المنشأة كلُّها إلى
+        // ‏فرعٍ في عكسه، والفرقُ لا يظهر في قائمة الدخل لأنّها تستثني الإقفال.
+        reversal.IsEntityLevel = IsEntityLevel;
+
+        // (CEEF-232 · O-32ب) ‏**والفرعُ يُورَث كذلك — وهو النصفُ الذي بقي مفتوحاً.**
+        //
+        // ‏فالعكسُ يُضاف بفرعٍ فارغ، **و`BrqoshDbContext` يسم كلَّ مُضافٍ بفرع الجلسة**.
+        // ‏فعكسُ قيدِ الرياض من جلسةٍ في جدّة **يُنزل الدائنَ في جدّة والمدينَ في الرياض** —
+        // ‏فيظهر في `BranchProfitabilityQuery` ربحٌ في فرعٍ وخسارةٌ في آخر، **وكلاهما وهم**،
+        // ‏ولا يشكو الميزانُ لأنّ القيد متوازنٌ على مستوى المنشأة.
+        reversal.BranchId = BranchId;
+
+        // (CEEF-232 · O-32ج) ‏**ووسمُ ما بين الشركات يُورَث — وإلّا نجا العكسُ من الاستبعاد.**
+        //
+        // ‏فـ`IntercompanyEliminationHelper` يختار على `IsIntercompany` ويشمل المعكوسَ عمداً.
+        // ‏**فيُستبعد الأصلُ عند التوحيد ولا يُستبعد عكسُه**: بيعٌ بين شركتين بمئة ألفٍ عُكس
+        // ‏يترك **مئةَ ألفٍ إيراداً وهمياً** في قائمة الدخل الموحَّدة وميزان المراجعة —
+        // ‏ويُوزَّع عليه ربحٌ لم يقع خارج المجموعة.
+        reversal.IsIntercompany = IsIntercompany;
+        reversal.CounterpartyCompanyId = CounterpartyCompanyId;
+
         foreach (var line in _lines)
         {
+            // (CEEF-231 · O-34) ‏**ومذكرةُ العملة تُنقل كما هي — ولا تُعكَس.**
+            // ‏فالمعكوسُ هو الطرفُ لا العملة: سطرٌ قيمتُه ٢٠٠ دولارٍ بسعر ٣٫٧٥ يُعكَس
+            // ‏بمئتي دولارٍ بالسعر نفسِه. **وإسقاطُها يُنتج عكساً بلا أصل** — يُقرأ بعد
+            // ‏سنةٍ «٧٥٠ ريالاً» ولا يُعرف أنّه ردُّ معاملةٍ دولارية، **فتُراجَع الترجمةُ
+            // ‏على نصفها**. وهي هويّةُ هـ-٢٥ نفسُها مطبَّقةً على الطرف المقابل.
             reversal._lines.Add(new JournalLine(
                 line.AccountId, line.AccountCode,
                 Debit: line.Credit, Credit: line.Debit,
-                line.Description, line.CostCenterId));
+                line.Description, line.CostCenterId,
+                line.CurrencyCode, line.ExchangeRate, line.ForeignAmount));
         }
 
         Status = JournalEntryStatus.Reversed;

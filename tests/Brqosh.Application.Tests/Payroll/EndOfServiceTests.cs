@@ -241,6 +241,143 @@ public class EndOfServiceTests : IDisposable
             "عُكس مخصّصُ موظّفٍ انتهت خدمتُه ولم تُصفَّ مستحقّاتُه.");
     }
 
+    // ── (CEEF-232 · ر-١) التصفية — الطرفُ الذي كان مفقوداً ──────────────────
+
+    /// <summary>
+    /// <b>القياسُ الحاكم (ر-١): التصفيةُ تُبرئ المخصّص وتُنشئ المستحقّ.</b>
+    ///
+    /// <para><b>وكان المستودعُ لا يملك مساراً واحداً يُنقص <c>2202</c>:</b> الخدمةُ الوحيدةُ
+    /// <c>RunMonthlyAsync</c> تبني ولا تُبرئ. <b>فالالتزامُ ينمو بلا حدّ</b> ويحمل مستحقّاتِ
+    /// مَن غادروا منذ سنوات، <b>ومستحقُّ الموظّف يُدفع خارجَ الدفاتر أو لا يُدفع</b>.</para>
+    ///
+    /// <para>أربعُ سنواتٍ بأجرِ 10,000 وإنهاءٌ من صاحب العمل ⟵ <b>المستحقُّ 20,000</b>،
+    /// <b>والمخصّصُ يُبرَأ بها كاملةً</b> ويصير الرصيدُ صفراً.</para>
+    /// </summary>
+    [Fact]
+    public async Task Settlement_RelievesTheProvision_AndRaisesThePayable()
+    {
+        await SetupAsync();
+        var employee = await EmployeeAsync("E-9", "1099999999",
+            hire: new DateOnly(2022, 1, 1), wage: 10_000m);
+
+        await new EndOfServiceAccrualService(_db)
+            .RunMonthlyAsync(_companyId, new DateOnly(2026, 1, 1), "admin");
+
+        employee.Terminate(new DateOnly(2026, 1, 1));
+        await _db.SaveChangesAsync();
+
+        var result = await new EndOfServiceSettlementService(_db).SettleAsync(
+            _companyId, employee.Id, EndOfServiceReason.EmployerTermination,
+            new DateOnly(2026, 1, 5), "admin");
+
+        Assert.Equal(20_000m, result.Benefit);
+        Assert.Equal(0m, result.Adjustment);
+
+        // ‏**والمخصّصُ أُبرئ** — والرصيدُ دائنُ الطبيعة فالصفرُ إبراءٌ تامّ.
+        Assert.Equal(0m, await BalanceAsync("2202"));
+
+        // ‏**والمستحقُّ صار على «رواتب مستحقة»** — يخرج بسند صرفٍ له دورتُه،
+        // ‏لا من الصندوق بباب ثانٍ.
+        Assert.Equal(-20_000m, await BalanceAsync("2108"));
+    }
+
+    /// <summary>
+    /// <b>والاستقالةُ تُصفَّى بسُلَّمها — والفائضُ يعود إلى المصروف لا إلى الأرباح.</b>
+    ///
+    /// <para><b>وهنا يظهر لماذا يُسأل عن السبب عند التصفية وحدَها:</b> التخصيصُ يجهل كيف
+    /// ستنتهي الخدمة فيحتاط بالكامل (20,000)، <b>والمستقيلُ بعد أربع سنواتٍ يستحقّ الثلث</b>
+    /// (المادة 85) — <b>6,666.67</b>. والفرقُ 13,333.33 <b>مخصّصٌ زائدٌ يُردّ إلى المصروف</b>.</para>
+    ///
+    /// <para><b>وإدخالُه في الإيرادات يُضخّم أرباحَ سنةٍ باستقالةِ موظّف</b> — ويُوزَّع
+    /// ويُزكّى على ربحٍ لم يقع.</para>
+    /// </summary>
+    [Fact]
+    public async Task AResignation_SettlesOnItsScale_AndReturnsTheExcessToExpense()
+    {
+        await SetupAsync();
+        var employee = await EmployeeAsync("E-10", "1010101010",
+            hire: new DateOnly(2022, 1, 1), wage: 10_000m);
+
+        await new EndOfServiceAccrualService(_db)
+            .RunMonthlyAsync(_companyId, new DateOnly(2026, 1, 1), "admin");
+        var expenseBefore = await BalanceAsync("5219");
+
+        employee.Terminate(new DateOnly(2026, 1, 1));
+        await _db.SaveChangesAsync();
+
+        var result = await new EndOfServiceSettlementService(_db).SettleAsync(
+            _companyId, employee.Id, EndOfServiceReason.Resignation,
+            new DateOnly(2026, 1, 5), "admin");
+
+        Assert.Equal(6_666.67m, result.Benefit);
+        Assert.Equal(13_333.33m, result.Adjustment);
+
+        Assert.Equal(0m, await BalanceAsync("2202"));
+        Assert.Equal(-6_666.67m, await BalanceAsync("2108"));
+
+        // ‏**والفائضُ خُصم من المصروف نفسِه** — لا من حسابِ إيراد.
+        Assert.Equal(expenseBefore - 13_333.33m, await BalanceAsync("5219"));
+    }
+
+    /// <summary>
+    /// <b>والتخصيصُ التالي لا يُعيد بناءَ ما أُبرئ — وهذا شرطُ الإغلاق لا تتمّتُه.</b>
+    ///
+    /// <para><b>وبغيره تُبطل الخدمةُ الشهريّةُ التصفيةَ في الشهر الذي يليها</b>: ترى
+    /// المخصّصَ ناقصاً فتُعيد بناءه، <b>فيُقيَّد مصروفٌ ثانٍ لمستحقٍّ دُفع</b> ويعود
+    /// الالتزامُ الذي أُبرئ للتوّ — <b>ويبقى الحسابُ ينمو كما كان، والتصفيةُ زينة</b>.</para>
+    /// </summary>
+    [Fact]
+    public async Task TheNextAccrual_DoesNotReprovisionASettledEmployee()
+    {
+        await SetupAsync();
+        var employee = await EmployeeAsync("E-11", "1011111111",
+            hire: new DateOnly(2022, 1, 1), wage: 10_000m);
+
+        var accrual = new EndOfServiceAccrualService(_db);
+        await accrual.RunMonthlyAsync(_companyId, new DateOnly(2026, 1, 1), "admin");
+
+        employee.Terminate(new DateOnly(2026, 1, 1));
+        await _db.SaveChangesAsync();
+
+        await new EndOfServiceSettlementService(_db).SettleAsync(
+            _companyId, employee.Id, EndOfServiceReason.EmployerTermination,
+            new DateOnly(2026, 1, 5), "admin");
+
+        await accrual.RunMonthlyAsync(_companyId, new DateOnly(2026, 2, 28), "admin");
+
+        Assert.Equal(0m, await BalanceAsync("2202"));
+    }
+
+    /// <summary>
+    /// <b>ولا تُصفّى خدمةٌ قائمة، ولا تُصفّى مرّتان.</b>
+    ///
+    /// <para><b>والأولى تُسقط التزاماً ما زال ينمو</b>، <b>والثانيةُ تُنشئ مستحقّاً ثانياً
+    /// لحقٍّ واحد</b> وتُدين المخصّصَ بضعف ما فيه — فيصير الحسابُ مديناً، وهو التزامٌ
+    /// بطبيعته.</para>
+    /// </summary>
+    [Fact]
+    public async Task Settlement_RefusesAnActiveEmployee_AndRefusesToRepeat()
+    {
+        await SetupAsync();
+        var employee = await EmployeeAsync("E-12", "1012121212",
+            hire: new DateOnly(2022, 1, 1), wage: 10_000m);
+        var service = new EndOfServiceSettlementService(_db);
+
+        await Assert.ThrowsAsync<AccountingException>(() => service.SettleAsync(
+            _companyId, employee.Id, EndOfServiceReason.EmployerTermination,
+            new DateOnly(2026, 1, 5), "admin"));
+
+        employee.Terminate(new DateOnly(2026, 1, 1));
+        await _db.SaveChangesAsync();
+
+        await service.SettleAsync(_companyId, employee.Id,
+            EndOfServiceReason.EmployerTermination, new DateOnly(2026, 1, 5), "admin");
+
+        await Assert.ThrowsAsync<AccountingException>(() => service.SettleAsync(
+            _companyId, employee.Id, EndOfServiceReason.EmployerTermination,
+            new DateOnly(2026, 1, 6), "admin"));
+    }
+
     // ── تهيئة ───────────────────────────────────────────────────────────────
 
     private async Task<Employee> EmployeeAsync(string code, string nationalId, DateOnly hire, decimal wage)

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
 using Brqosh.Domain.Retail;
+using Brqosh.Infrastructure.Retail;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
@@ -173,10 +174,27 @@ public partial class PosShiftsPage : UserControl
             await facade.GetService<AuditService>().LogAsync(AppServices.CompanyId, SecurityContext.ResolveUsername(),
                 "إغلاق وردية POS", "PosShift", shift.Id.ToString(), $"نقد إغلاق {closing:N2}");
 
+            // (CEEF-232 · ن-١) ‏**والفرقُ يُقيَّد مع الإغلاق لا بزرٍّ ثانٍ.**
+            //
+            // ‏فالمبيعاتُ النقدية تُقيَّد على `1101` بالكامل، **ورصيدُ الصندوق في الأستاذ
+            // ‏هو المتوقَّع لا المعدود**. وكان الإغلاقُ يحسب الفرقَ ويعرضه **ويكتب سجلَّ
+            // ‏تدقيقٍ فقط** — فيُباعد بين الدفتر والدرج إلى الأبد، **ولا يُجدي جردٌ بعده**
+            // ‏إذ لا يُعرف أيُّ ورديّةٍ أحدثت الفارق.
+            //
+            // ‏**وزرٌّ منفصلٌ يُنسى** — وأوّلُ ما يُنسى هو ما لا يمنع المستخدمَ من المضيّ.
+            var variance = await facade.GetService<PosShiftVariancePostingService>()
+                .PostForShiftAsync(AppServices.CompanyId, shift.Id, SecurityContext.ResolveUsername());
+
             if (AppServices.CurrentShiftId == row.Id)
                 AppServices.CurrentShiftId = null;
 
             await ReloadAsync();
+
+            // ‏**والفرقُ يُقال للكاشير عند وقوعه** — والأرقامُ في العنوان، فالنصُّ حرفيّ.
+            if (variance.Difference != 0m)
+                UiDialog.Show("قُيّد فرق نقد الوردية.",
+                    $"{variance.Counted:N2} / {variance.Expected:N2}",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

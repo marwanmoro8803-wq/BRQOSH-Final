@@ -1,6 +1,7 @@
-using Brqosh.Application.Accounting;
+﻿using Brqosh.Application.Accounting;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.RealEstate;
+using Brqosh.Domain.Assets;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
@@ -68,20 +69,56 @@ public class MaintenanceOrderService(BrqoshDbContext db)
             if (order.JournalEntryId is not null)
                 throw new AccountingException("أمرُ الصيانة مُرحَّلٌ سلفاً — ولا يُقيَّد مرّتين.");
 
-            var expense = await SystemAccountProvisioning.EnsureAsync(
-                db, companyId, MaintenanceExpenseCode, token);
+            // (CEEF-232 · ع-٢) ‏**والتجديدُ الذي يزيد في العقار يُرسمَل ولا يُصرَف.**
+            //
+            // ‏وكانت الأصنافُ ثلاثةً كلُّها مصروف، **والخدمةُ تُحمّل `5206` بلا شرط**.
+            // ‏**فتجديدُ برجٍ بأربعمئة ألفٍ يقع في شهرٍ واحد** — يُظهر شهراً خاسراً بلا سببٍ
+            // ‏تشغيليّ **ويحرم السنواتِ التاليةَ من حصّتها**، وهو خرقُ مبدأ المقابلة.
+            //
+            // ‏**ولا رسملةَ بلا أصلٍ مرتبط**: عقارٌ بلا أصلٍ ثابتٍ لا قيمةَ دفتريّةَ له،
+            // ‏**ورسملةٌ إلى العدم تُخفي المصروفَ ولا تُنشئ أصلاً** — فيُرفض الترحيلُ
+            // ‏بسببٍ مكتوب بدل أن يُصرَف بصمتٍ على خلاف ما طلبه المحاسب.
+            var capitalizing = order.Kind == MaintenanceKind.CapitalImprovement;
+
+            FixedAsset? asset = null;
+            if (capitalizing)
+            {
+                var property = await db.Properties
+                    .SingleOrDefaultAsync(p => p.CompanyId == companyId && p.Id == order.PropertyId, token)
+                    ?? throw new AccountingException("العقار غير موجود.");
+
+                if (property.FixedAssetId is not long assetId)
+                    throw new AccountingException(
+                        "لا يُرسمَل تجديدٌ على عقارٍ بلا أصلٍ ثابتٍ مرتبط — اربطْه أوّلاً أو صنّفه صيانةً.");
+
+                asset = await db.FixedAssets
+                    .SingleOrDefaultAsync(a => a.CompanyId == companyId && a.Id == assetId, token)
+                    ?? throw new AccountingException("الأصل الثابت المرتبط بالعقار غير موجود.");
+            }
+
+            var chargeAccount = asset is null
+                ? await SystemAccountProvisioning.EnsureAsync(db, companyId, MaintenanceExpenseCode, token)
+                : await db.Accounts.SingleAsync(
+                    a => a.Id == asset.GlAssetAccountId && a.CompanyId == companyId, token);
+
             var cash = await SystemAccountProvisioning.EnsureAsync(db, companyId, cashAccountCode, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, on, PostingDocumentKind.JournalEntry,
-                accountIds: [expense.Id, cash.Id], ct: token);
+                accountIds: [chargeAccount.Id, cash.Id], ct: token);
 
             var entry = JournalEntry.CreateDraft(companyId, on,
                 $"صيانة {order.OrderNumber} — {order.Description}",
                 sourceDocument: $"MaintenanceOrder:{order.OrderNumber}");
-            entry.AddLine(expense, order.TotalCost, 0m,
-                order.VendorName is null ? "صيانة" : $"صيانة — {order.VendorName}");
+            entry.AddLine(chargeAccount, order.TotalCost, 0m,
+                asset is not null
+                    ? $"رسملة تجديد — {asset.NameAr}"
+                    : order.VendorName is null ? "صيانة" : $"صيانة — {order.VendorName}");
             entry.AddLine(cash, 0m, order.TotalCost, $"دفعُ صيانة {order.OrderNumber}");
+
+            // ‏**وتكلفةُ الأصل تزيد بالمُرسمَل** — وإلّا كان القيدُ على حسابٍ لا يقابله
+            // ‏سجلُّ أصلٍ، **فيُهلَك المبنى على تكلفته القديمة إلى الأبد**.
+            asset?.Capitalize(order.TotalCost);
 
             var number = await new JournalEntryNumberGenerator(db).NextAsync(companyId, on);
             entry.Post(number);

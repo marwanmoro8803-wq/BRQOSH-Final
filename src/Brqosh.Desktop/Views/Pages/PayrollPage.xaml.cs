@@ -23,7 +23,9 @@ public partial class PayrollPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (NewBtn, PermissionService.CanPostAccounting),
                 (PostBtn, PermissionService.CanPostAccounting),
-                (ReverseBtn, PermissionService.CanCancelOrReverse));
+                (ReverseBtn, PermissionService.CanCancelOrReverse),
+                (AccrueEosBtn, PermissionService.CanPostAccounting),
+                (SettleEosBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
     }
@@ -174,6 +176,74 @@ public partial class PayrollPage : UserControl
                 UiDialog.Show("قُيّدت حركة تخصيص مكافأة نهاية الخدمة.",
                     $"{result.Movement:N2} · {result.Employees:N0}",
                     MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-232 · ر-١) <b>تصفيةُ نهاية الخدمة — الطرفُ الذي كان مفقوداً.</b>
+    ///
+    /// <para><b>وكان المستودعُ يبني المخصّصَ ولا يُبرئه</b>: خدمةُ التخصيص وحدَها،
+    /// <b>ولا مسارَ دفعٍ ولا شاشة</b>. فحسابُ <c>2202</c> ينمو بلا حدّ ويحمل مستحقّاتِ
+    /// مَن غادروا منذ سنوات، <b>ومستحقُّ الموظّف يُدفع خارجَ الدفاتر أو لا يُدفع</b> —
+    /// وهو حقٌّ نظاميٌّ لا يسقط.</para>
+    ///
+    /// <para><b>والسببُ يُسأل هنا ولا يُسأل عند التخصيص</b>: التخصيصُ يجهل كيف ستنتهي
+    /// الخدمة <b>فيحتاط بالمستحقّ الكامل</b>، والتصفيةُ تعرف. <b>والفرقُ بين الجوابين
+    /// ثلثا المستحقّ</b> لمن أمضى دون خمس سنوات (المادة 85).</para>
+    /// </summary>
+    private async void OnSettleEndOfService(object sender, RoutedEventArgs e)
+    {
+        var codeDialog = new TextInputDialog("تصفية نهاية الخدمة",
+            "رمز الموظّف المنتهية خدمتُه:", "")
+            { Owner = Window.GetWindow(this) };
+        if (codeDialog.ShowDialog() != true)
+            return;
+
+        var code = (codeDialog.Value ?? "").Trim();
+        if (code.Length == 0)
+        {
+            UiFeedback.ShowWarning("أدخل رمز الموظّف.");
+            return;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var employee = await facade.Db.Employees
+                .FirstOrDefaultAsync(x => x.CompanyId == AppServices.CompanyId && x.Code == code);
+            if (employee is null)
+            {
+                UiFeedback.ShowWarning("لا يوجد موظّف بهذا الرمز.");
+                return;
+            }
+
+            // ‏**والسببُ سؤالٌ صريحٌ لا يُستنتج** — واستنتاجُه يُسقط ثلثي حقٍّ أو يمنحه بغير وجه.
+            //
+            // ‏**والنصُّ حرفيٌّ واسمُ الموظّف في العنوان** — على اصطلاح الصفحة نفسِها في
+            // ‏الأرقام. **ونصٌّ مركَّبٌ لا يبلغه مترجِمٌ ويرفع سقفَ «غير القابل للبحث»**،
+            // ‏وحارسُ `DialogLocalizationTests` يعدّه ويرفض رفعَ السقف.
+            var resigned = UiDialog.Show(
+                "هل انتهت الخدمة بالاستقالة؟ — «نعم» تُطبّق سُلَّم المادة 85.",
+                employee.NameAr, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+            var reason = resigned
+                ? EndOfServiceReason.Resignation
+                : EndOfServiceReason.EmployerTermination;
+
+            var result = await facade.GetService<EndOfServiceSettlementService>().SettleAsync(
+                AppServices.CompanyId, employee.Id, reason,
+                DateOnly.FromDateTime(DateTime.Today), SecurityContext.ResolveUsername());
+
+            await ReloadAsync();
+
+            // ‏**والأرقامُ في العنوان لا في النصّ** — فالنصُّ حرفيٌّ يعدّه حارسُ الترجمة.
+            UiDialog.Show("قُيّدت تصفية مكافأة نهاية الخدمة.",
+                $"{result.Benefit:N2} · {result.Adjustment:N2}",
+                MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

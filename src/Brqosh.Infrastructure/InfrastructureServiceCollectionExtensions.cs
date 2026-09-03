@@ -77,6 +77,7 @@ public static class InfrastructureServiceCollectionExtensions
         // ‏أصلاً**: خدمةٌ مبنيّةٌ ومقيسةٌ في `ط2-٣` **لا يستطيع أحدٌ طلبَها**. فالمخصّصُ
         // ‏النظاميُّ لا يجري، والتزامٌ يتراكم لا يظهر في الميزانية.
         services.AddScoped<Payroll.EndOfServiceAccrualService>();
+        services.AddScoped<Payroll.EndOfServiceSettlementService>();
 
         // (CEEF-230 · ط4-٧) ‏إعادةُ تقييم الذمم بالعملات — إلزامُ المعيار 21.
         services.AddScoped<Accounting.MonetaryRevaluationService>();
@@ -116,6 +117,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Operations.DataRetentionService>();
         services.AddScoped<BankTransferService>();
         services.AddScoped<Retail.PosSaleService>();
+        services.AddScoped<Retail.PosShiftVariancePostingService>();
+        services.AddScoped<Hospitality.ReservationDepositService>();
+        services.AddScoped<Logistics.ShipmentBillingService>();
         services.AddScoped<Security.AuditService>();
         services.AddScoped<DocumentPrintService>();
 

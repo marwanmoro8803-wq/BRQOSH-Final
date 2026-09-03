@@ -190,6 +190,14 @@ public class FolioService(BrqoshDbContext db)
 
             await new SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
 
+            // (CEEF-232 · ح-١) ‏**والعربونُ يُنزَل هنا — داخلَ معاملة المغادرة نفسِها.**
+            //
+            // ‏فمغادرةٌ تنجح وإنزالٌ يفشل **تترك النزيلَ مطالَباً بما دفعه** وتُبقي التزاماً
+            // ‏في `2105` لنزيلٍ رحل. **والفاتورةُ تصدر بكامل الإقامة** — فالعربونُ ليس خصماً
+            // ‏من الثمن بل سدادٌ مقدَّمٌ منه، **والتوريدُ وقع بكامله**.
+            await new ReservationDepositService(db)
+                .ApplyOnCheckOutAsync(companyId, reservation.Id, on, token);
+
             folio.MarkSettled();
             reservation.CheckOut(room, invoice.Id);
             await db.SaveChangesAsync(token);

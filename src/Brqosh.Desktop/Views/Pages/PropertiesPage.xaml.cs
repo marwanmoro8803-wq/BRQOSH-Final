@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
@@ -31,7 +31,8 @@ public partial class PropertiesPage : UserControl
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (AddPropertyBtn, PermissionService.CanPost),
-                (AddUnitBtn, PermissionService.CanPost));
+                (AddUnitBtn, PermissionService.CanPost),
+                (LinkAssetBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
     }
@@ -120,6 +121,63 @@ public partial class PropertiesPage : UserControl
 
         if (new PropertyUnitDialog(property.Id) { Owner = Window.GetWindow(this) }.ShowDialog() == true)
             await ReloadAsync();
+    }
+
+    /// <summary>
+    /// (CEEF-232 · ع-١) <b>ربطُ العقار بأصلٍ ثابت — وبه وحدَه يُهلَك المبنى.</b>
+    ///
+    /// <para><b>وكان العقارُ بلا تكلفةٍ ولا عمرٍ ولا ربط</b>، و<c>DepreciationService</c>
+    /// يُهلك صفوفَ الأصول وحدَها. <b>فمحفظةٌ عقاريّةٌ كاملةٌ لا تُهلَك بريالٍ واحد</b>:
+    /// يُعترف بإيراد الإيجار كلِّه <b>بلا مقابلٍ من استهلاك المبنى</b> — فيُعلَن ربحٌ أكبرُ
+    /// من الحقّ كلَّ سنة، <b>ثمّ تظهر عند البيع «خسارةٌ» هي إهلاكُ سنواتٍ لم يُقيَّد</b>.</para>
+    ///
+    /// <para><b>ولم يُبنَ محرّكُ إهلاكٍ ثانٍ</b>: الرابطُ يُدخل العقارَ في المحرّك القائم —
+    /// <b>ومحرّكان لقاعدةٍ واحدةٍ يفترقان يوماً</b>.</para>
+    /// </summary>
+    private async void OnLinkFixedAsset(object sender, RoutedEventArgs e)
+    {
+        if (PropertiesGrid.SelectedItem is not PropertyRow property)
+        {
+            UiFeedback.ShowWarning("اختر العقار الذي يُربط بأصل.");
+            return;
+        }
+
+        var dialog = new TextInputDialog("ربط بأصل ثابت", "كود الأصل الثابت:", "")
+            { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() != true)
+            return;
+
+        var code = (dialog.Value ?? "").Trim();
+        if (code.Length == 0)
+        {
+            UiFeedback.ShowWarning("أدخل كود الأصل.");
+            return;
+        }
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var asset = await db.FixedAssets
+                .FirstOrDefaultAsync(a => a.CompanyId == AppServices.CompanyId
+                                          && a.Code == code && a.IsActive);
+            if (asset is null)
+            {
+                UiFeedback.ShowWarning("لا يوجد أصلٌ نشطٌ بهذا الكود.");
+                return;
+            }
+
+            var entity = await db.Properties.SingleAsync(p => p.Id == property.Id);
+            entity.LinkFixedAsset(asset.Id);
+            await db.SaveChangesAsync();
+
+            await ReloadAsync();
+            UiDialog.Show("رُبط العقار بأصلٍ ثابت — ويُهلَك من الآن مع دفعة الإهلاك.",
+                asset.NameAr, MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
     }
 
     private static string StatusText(string status) => status switch

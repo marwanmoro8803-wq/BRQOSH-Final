@@ -100,6 +100,32 @@ public class Shipment : IBranchScoped
     /// <summary>هل وُرِّد إلى التاجر؟</summary>
     public bool CodRemitted { get; private set; }
 
+    /// <summary>
+    /// (CEEF-232 · ل-١) <b>فاتورةُ أجرة الشحن — و<c>null</c> يعني أجرةً لم تُفوتَر بعد.</b>
+    ///
+    /// <para><b>وكانت <see cref="FreightCharge"/> تُقرأ للعرض ولحساب ربحيّة الخطّ فقط</b>،
+    /// <b>ولا تُرحَّل إلى الأستاذ أبداً</b>. فتكاليفُ الرحلات على <c>5206</c> والإيرادُ
+    /// خارجَ الدفاتر — <b>وهامشُ الشحنة يطرح مصروفاً مُرحَّلاً من إيرادٍ غيرِ مُرحَّل</b>،
+    /// فلا يُطابق قائمةَ الدخل أبداً، <b>ويظهر القطاعُ خاسراً بكامل أجرته</b>.</para>
+    ///
+    /// <para><b>والربطُ هو ما يمنع الفوترةَ مرّتين</b> — والأجرةُ تُفوتَر مرّةً واحدة.</para>
+    /// </summary>
+    public long? FreightInvoiceId { get; private set; }
+
+    /// <summary>هل فُوتِرت أجرةُ هذه الشحنة؟</summary>
+    public bool IsFreightBilled => FreightInvoiceId is not null;
+
+    /// <summary>يربط فاتورةَ الأجرة — <b>ولا يُبدَّل ربطٌ قائم</b>.</summary>
+    public void LinkFreightInvoice(long invoiceId)
+    {
+        if (invoiceId <= 0)
+            throw new AccountingException("رقم فاتورة الأجرة غير صالح.");
+        if (FreightInvoiceId is not null)
+            throw new AccountingException("أجرةُ هذه الشحنة مفوترةٌ مسبقاً.");
+
+        FreightInvoiceId = invoiceId;
+    }
+
     public DateTime CreatedAtUtc { get; private set; }
 
     private readonly List<ShipmentEvent> _events = [];

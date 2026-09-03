@@ -22,7 +22,48 @@ public partial class EmployeeDialog : Window
     {
         InitializeComponent();
         HireDateBox.SelectedDate = DateTime.Today;
+        Loaded += async (_, _) => await LoadCostCentersAsync();
     }
+
+    /// <summary>
+    /// (CEEF-232 · م-١) مراكزُ التكلفة النشطة — <b>و«بلا مركز» خيارٌ أوّل مقصود</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وكان <c>Employee.CostCenterId</c> عموداً في المخطَّط بلا حقلٍ في أيّ شاشة</b>،
+    /// و<c>AssignCostCenter</c> بلا مستدعٍ واحد. <b>فقيدُ الرواتب يخرج بلا بُعدٍ أبداً</b>
+    /// وتُسقط كلُّ قائمةِ مركزِ تكلفةٍ أكبرَ بنودها.
+    ///
+    /// <para><b>ولا يُفرَض المركزُ إلزاماً</b>: منشأةٌ لا تُمسك مراكزَ تكلفةٍ لا تُمنع من
+    /// إضافة موظّف، <b>ومَن بلا مركزٍ يبقى في سطرٍ بلا بُعد</b> لا يُنسب بالتخمين.</para>
+    /// </remarks>
+    private async Task LoadCostCentersAsync()
+    {
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var centers = await db.CostCenters
+                .Where(c => c.CompanyId == AppServices.CompanyId && c.IsActive)
+                .OrderBy(c => c.NameAr)
+                .Select(c => new CostCenterOption(c.Id, c.NameAr))
+                .ToListAsync();
+
+            CostCenterBox.ItemsSource = new List<CostCenterOption>
+            {
+                new(0L, LocaleManager.T("بلا مركز تكلفة", "No cost center")),
+            }.Concat(centers).ToList();
+
+            CostCenterBox.SelectedValue = _selectedCostCenterId ?? 0L;
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>خيارُ مركزِ تكلفةٍ في القائمة — و<c>Id = 0</c> يعني «بلا مركز».</summary>
+    public record CostCenterOption(long Id, string NameAr);
+
+    private long? _selectedCostCenterId;
 
     public EmployeeDialog(Employee employee) : this()
     {
@@ -45,6 +86,7 @@ public partial class EmployeeDialog : Window
         TransportBox.Text = employee.TransportAllowance.ToString(CultureInfo.InvariantCulture);
         OtherBox.Text = employee.OtherAllowance.ToString(CultureInfo.InvariantCulture);
         IbanBox.Text = employee.Iban ?? string.Empty;
+        _selectedCostCenterId = employee.CostCenterId;
     }
 
     private async void OnSave(object sender, RoutedEventArgs e)
@@ -59,12 +101,16 @@ public partial class EmployeeDialog : Window
             var other = Money(OtherBox.Text, "البدلات الأخرى");
             var iban = string.IsNullOrWhiteSpace(IbanBox.Text) ? null : IbanBox.Text.Trim();
 
+            // ‏(CEEF-232 · م-١) و«بلا مركز» يُخزَّن `null` لا صفراً — **فصفرٌ مفتاحٌ لا وجودَ له**.
+            var costCenterId = CostCenterBox.SelectedValue is long cc && cc > 0 ? cc : (long?)null;
+
             if (_employeeId is long id)
             {
                 var existing = await db.Employees.SingleAsync(x => x.Id == id);
                 existing.Rename(NameBox.Text, JobTitleBox.Text);
                 existing.SetPay(basic, housing, transport, other);
                 existing.SetIban(iban);
+                existing.AssignCostCenter(costCenterId);
             }
             else
             {
@@ -78,6 +124,7 @@ public partial class EmployeeDialog : Window
 
                 employee.SetPay(basic, housing, transport, other);
                 employee.SetIban(iban);
+                employee.AssignCostCenter(costCenterId);
                 db.Employees.Add(employee);
             }
 

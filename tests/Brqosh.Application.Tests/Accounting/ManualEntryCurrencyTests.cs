@@ -205,6 +205,44 @@ public class ManualEntryCurrencyTests : IDisposable
         Assert.Equal("EUR", entry.Lines[1].CurrencyCode);
     }
 
+    /// <summary>
+    /// <b>والعكسُ ينقل المذكرةَ كما هي — والمعكوسُ الطرفُ لا العملة.</b>
+    ///
+    /// <para>سطرٌ قيمتُه مئتا دولارٍ بسعر ٣٫٧٥ <b>يُعكَس بمئتي دولارٍ بالسعر نفسِه</b> —
+    /// مديناً بدل دائن. <b>وإسقاطُ المذكرة يُنتج عكساً بلا أصل</b>: يُقرأ بعد سنةٍ
+    /// «٧٥٠ ريالاً» ولا يُعرف أنّه ردُّ معاملةٍ دولارية، <b>فتُراجَع الترجمةُ على
+    /// نصفها</b> — ويُظنّ فرقُ العملة ربحاً أو خسارةً لا وجودَ لها.</para>
+    /// </summary>
+    [Fact]
+    public async Task ReversingAForeignCurrencyLine_KeepsTheMemo_AndFlipsOnlyTheSide()
+    {
+        await SetupAsync();
+
+        var cash = await AccountAsync(SaudiChartOfAccounts.SystemCodes.CashOnHand);
+        var bank = await AccountAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks);
+
+        var entry = JournalEntry.CreateDraft(_companyId, EntryDate, "تحويلٌ بالدولار");
+        entry.AddLine(cash, 750m, 0m, "قبضٌ نقديّ", null, "USD", 3.75m, 200m);
+        entry.AddLine(bank, 0m, 750m, "سحبٌ من البنك", null, "USD", 3.75m, 200m);
+        entry.Post("JE-CUR-REV");
+
+        var reversal = entry.CreateReversal(EntryDate.AddDays(1));
+
+        Assert.All(reversal.Lines, l =>
+        {
+            Assert.Equal("USD", l.CurrencyCode);
+            Assert.Equal(3.75m, l.ExchangeRate);
+
+            // ‏**والمبلغُ الأجنبيُّ موجبٌ في الطرفين** — فهو قيمةُ المعاملة لا إشارتُها.
+            Assert.Equal(200m, l.ForeignAmount);
+        });
+
+        // ‏**والطرفُ وحدَه انقلب.**
+        Assert.Equal(0m, reversal.Lines[0].Debit);
+        Assert.Equal(750m, reversal.Lines[0].Credit);
+        Assert.Equal(750m, reversal.Lines[1].Debit);
+    }
+
     // ── تهيئة ───────────────────────────────────────────────────────────────
 
     private async Task<Account> AccountAsync(string code) =>

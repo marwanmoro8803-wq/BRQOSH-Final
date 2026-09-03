@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
@@ -31,7 +31,8 @@ public partial class ShipmentsPage : UserControl
                 (AddBtn, PermissionService.CanPost),
                 (DeliverBtn, PermissionService.CanPost),
                 (CollectBtn, PermissionService.CanPostAccounting),
-                (RemitBtn, PermissionService.CanPostAccounting));
+                (RemitBtn, PermissionService.CanPostAccounting),
+                (BillFreightBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
     }
@@ -133,6 +134,42 @@ public partial class ShipmentsPage : UserControl
 
             await ReloadAsync();
             SummaryText.Text = $"وُرِّد {result.CodRemitted:N2} عن {result.Shipments:N0} بوليصة.";
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (CEEF-232 · ل-١) <b>فوترةُ أجور الشحن — الإيرادُ الذي لم يكن يبلغ الأستاذ.</b>
+    ///
+    /// <para><b>وكانت <c>FreightCharge</c> تُقرأ للعرض ولربحيّة الخطّ فقط</b>: تكاليفُ
+    /// الرحلات على <c>5206</c> <b>والإيرادُ خارجَ الدفاتر</b> — فيظهر القطاعُ خاسراً
+    /// بكامل أجرته، <b>وتقريرُ الربحيّة لا يُطابق قائمةَ الدخل أبداً</b>.</para>
+    ///
+    /// <para><b>وفاتورةٌ واحدةٌ للتاجر بسطرٍ لكلّ بوليصة</b> — لا مئةُ فاتورةٍ لمئة شحنة،
+    /// <b>والتفصيلُ يبقى لأنّه موضعُ النزاع</b>.</para>
+    /// </summary>
+    private async void OnBillFreight(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row) return;
+
+        if (UiDialog.Show("فوترة أجور كل الشحنات المستحقّة غير المفوترة لهذا التاجر؟",
+                row.ShipperName, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var result = await facade.GetService<ShipmentBillingService>().BillShipperAsync(
+                AppServices.CompanyId, row.ShipperId, DateOnly.FromDateTime(DateTime.Today));
+
+            await ReloadAsync();
+
+            SummaryText.Text = result.InvoiceId is null
+                ? "لا شحناتٍ مستحقّةَ الفوترة لهذا التاجر."
+                : $"فُوترت أجورٌ بـ{result.Freight:N2} عن {result.Shipments:N0} بوليصة.";
         }
         catch (Exception ex)
         {

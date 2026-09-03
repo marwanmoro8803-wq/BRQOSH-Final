@@ -48,8 +48,12 @@ public record ReceivableAgingRow(
 /// </summary>
 public class ReceivableAgingQuery(BrqoshDbContext db)
 {
+    /// <param name="Type">
+    /// نوعُ المستند للتخصيص الصريح — <c>null</c> لمستندٍ <b>لا يُخصَّص عليه سدادٌ أبداً</b>
+    /// (إفراجُ المحتجز)، فلا يلتقطه <see cref="ApplyExplicit"/> بالخطأ.
+    /// </param>
     private sealed record OpenDocument(DateOnly Date, long DocumentId,
-        PaymentAllocationDocumentType Type, decimal Amount)
+        PaymentAllocationDocumentType? Type, decimal Amount)
     {
         public decimal Remaining { get; set; } = Amount;
     }
@@ -80,6 +84,9 @@ public class ReceivableAgingQuery(BrqoshDbContext db)
             .Where(a => a.CompanyId == companyId && a.AllocationDate <= asOf)
             .ToListAsync(ct);
 
+        var releases = await CustomerBalanceQuery
+            .ReleasedRetentionDocumentsAsync(db, companyId, asOf);
+
         var rows = new List<ReceivableAgingRow>();
 
         foreach (var (customerId, balance) in balances)
@@ -92,9 +99,22 @@ public class ReceivableAgingQuery(BrqoshDbContext db)
                 .Select(i => new OpenDocument(i.InvoiceDate, i.Id,
                     PaymentAllocationDocumentType.SalesInvoice, i.Subtotal + i.VatAmount)));
 
+            // (CEEF-232 · ج-٣) ‏**والمستخلصُ يدخل بذمّتِه لا بإجماليّه.**
+            //
+            // ‏فالرصيدُ أعلاه صار يستبعد المحتجز (ج-١)، **والمستنداتُ هنا كانت تجمع
+            // ‏`GrandTotal`** — والائتمانُ يُشتقّ من الفرق. **فالمحتجزُ يصير سداداً وهمياً
+            // ‏يُطفئ الأقدمَ فالأقدم**: مقاولٌ له مستخلصان بمليونٍ كلٌّ واحتجازُ عشرة بالمئة
+            // ‏يرى خانةَ «أكثر من ٩٠ يوماً» أقلَّ بمئة ألف والخانةَ الجارية أكثرَ بها.
+            // ‏**والمجموعُ يبقى صحيحاً** فتمرّ هويّةُ هـ-١٤ — **والعطلُ في التوزيع وحدَه**،
+            // ‏وهو بالضبط ما يُقرأ منه التقرير: مَن تأخّر، ومنذ متى.
             open.AddRange(billings.Where(b => b.CustomerId == customerId && b.BillingDate <= asOf)
                 .Select(b => new OpenDocument(b.BillingDate, b.Id,
-                    PaymentAllocationDocumentType.ProgressBilling, b.GrandTotal)));
+                    PaymentAllocationDocumentType.ProgressBilling, b.NetBillableAmount + b.VatAmount)));
+
+            // ‏**والمُفرَج عنه يدخل بتاريخ إفراجه** — فهو دَينٌ عمرُه من ذلك اليوم، وقد كان
+            // ‏قبله ضماناً لا يُطالَب به. **وإدخالُه بتاريخ المستخلص يجعله متأخّراً يومَ وُلد.**
+            open.AddRange(releases.Where(r => r.CustomerId == customerId)
+                .Select(r => new OpenDocument(r.Date, r.EntryId, null, r.Amount)));
 
             open = [.. open.OrderBy(d => d.Date).ThenBy(d => d.DocumentId)];
 

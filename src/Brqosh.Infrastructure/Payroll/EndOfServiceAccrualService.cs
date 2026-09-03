@@ -63,7 +63,15 @@ public class EndOfServiceAccrualService(BrqoshDbContext db)
 
             // ‏**ومَن انتهت خدمتُه يبقى في الحساب حتى تُصفَّى مستحقّاتُه**: إسقاطُه فورَ
             // ‏الإيقاف يعكس التزاماً ما زال قائماً ولم يُدفع.
+            //
+            // ‏(CEEF-232 · ر-١) **ومَن صُفّيت مستحقّاتُه يخرج** — وبغير هذا يُبطل التخصيصُ
+            // ‏التصفيةَ في الشهر التالي: **يرى المخصّصَ ناقصاً فيُعيد بناءه**، فيُقيَّد
+            // ‏مصروفٌ ثانٍ لمستحقٍّ دُفع، **ويعود الالتزامُ الذي أُبرئ للتوّ**.
+            var settled = await EndOfServiceSettlementService
+                .SettledEmployeeIdsAsync(db, companyId, asOf, token);
+
             var required = employees
+                .Where(e => !settled.Contains(e.Id))
                 .Where(e => e.IsEmployedOn(asOf) || e.TerminationDate is not null)
                 .Sum(e => EndOfServiceCalculator.BenefitFor(
                     e, e.TerminationDate is DateOnly t && t < asOf ? t : asOf,

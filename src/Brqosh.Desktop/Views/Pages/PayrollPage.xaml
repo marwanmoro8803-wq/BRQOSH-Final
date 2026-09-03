@@ -26,6 +26,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="AccrueEosBtn" DockPanel.Dock="Right" Content="تخصيص مكافأة نهاية الخدمة"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAccrueEndOfService"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="SettleEosBtn" DockPanel.Dock="Right" Content="تصفية نهاية الخدمة"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnSettleEndOfService"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"

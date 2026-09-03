@@ -70,6 +70,29 @@ public class FixedAsset : IBranchScoped
             usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
     }
 
+    /// <summary>
+    /// (CEEF-232 · ع-٢) <b>يُرسمِل تحسيناً على الأصل — فتزيد تكلفتُه ويزيد قسطُه.</b>
+    /// </summary>
+    /// <remarks>
+    /// <b>والقسطُ يُعاد حسابُه على التكلفة الجديدة بالعمر الأصليّ</b> — وهو ما يفعله
+    /// <c>MonthlyDepreciation</c> بالبناء، فلا يلزم تدخّل. <b>والمُهلَك سابقاً لا يُمَسّ</b>:
+    /// التحسينُ يقع اليومَ لا بأثرٍ رجعيّ، <b>وتعديلُ الماضي يُعيد فتحَ سنواتٍ أُقفلت</b>.
+    ///
+    /// <para><b>ولا يُرسمَل على أصلٍ مُستبعَد</b>: أصلٌ خرج من الدفاتر لا تُضاف إليه تكلفة —
+    /// <b>وإضافتُها تُعيد إحياءَ أصلٍ ميّت</b> بقيمةٍ دفتريّةٍ مُختلَقة.
+    /// </para>
+    /// </remarks>
+    public void Capitalize(decimal amount)
+    {
+        if (amount <= 0m)
+            throw new AccountingException("مبلغ الرسملة يجب أن يكون أكبر من صفر.");
+        if (!IsActive)
+            throw new AccountingException("لا تُرسمَل تكلفةٌ على أصلٍ مُستبعَد.");
+
+        AcquisitionCost = Math.Round(
+            AcquisitionCost + amount, 2, MidpointRounding.AwayFromZero);
+    }
+
     public void Rename(string nameAr)
     {
         if (string.IsNullOrWhiteSpace(nameAr))

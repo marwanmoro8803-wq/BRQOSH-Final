@@ -45,7 +45,10 @@ public record VatReturnResult(
     decimal CancelledOutputVat = 0m,
     decimal CancelledInputVat = 0m,
     IReadOnlyList<VatReturnBucket>? SalesByCategory = null,
-    IReadOnlyList<VatReturnBucket>? PurchasesByCategory = null)
+    IReadOnlyList<VatReturnBucket>? PurchasesByCategory = null,
+    // (CEEF-232 · ض-١) ضريبةٌ قُيّدت في الأستاذ بقيدٍ ليس مستنداً محسوباً ولا تسوية.
+    decimal JournalOutputVat = 0m,
+    decimal JournalInputVat = 0m)
 {
     /// <summary>
     /// (CEEF-229 · A-15) المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
@@ -68,8 +71,24 @@ public record VatReturnResult(
 
     /// <summary>المشتريات مفكَّكة حسب الفئة — صافيةً من الإشعارات المدينة. انظر <see cref="Sales"/>.</summary>
     public IReadOnlyList<VatReturnBucket> Purchases => PurchasesByCategory ?? [];
-    public decimal NetOutputVat => OutputVat + ProgressBillingsVat - CreditNotesVat - CancelledOutputVat;
-    public decimal NetDeductibleInputVat => DeductibleInputVat - DebitNotesDeductibleVat - CancelledInputVat;
+    /// <summary>
+    /// (CEEF-232 · ض-١) <b>ضريبةُ المخرجات — من المستندات <u>ومن الأستاذ معاً</u>.</b>
+    ///
+    /// <para><b>وكان الإقرارُ يقرأ المستنداتِ وحدَها.</b> فضريبةٌ قُيّدت على <c>2106</c>
+    /// بقيدٍ لا يحمل أحدَ المستندات الخمسة <b>لا تبلغ الإقرار أبداً</b> — لا في فترتها
+    /// ولا في غيرها. <b>وبيعُ الأصل الثابت توريدٌ خاضعٌ نظاماً وترحيلُه قيدٌ لا فاتورة.</b>
+    /// فيُقدَّم الإقرارُ ناقصاً بضريبةٍ حُصّلت فعلاً، وهي حالةُ المطالبة بالضريبة والغرامة
+    /// معاً عند الفحص.</para>
+    /// </summary>
+    public decimal NetOutputVat =>
+        OutputVat + ProgressBillingsVat - CreditNotesVat - CancelledOutputVat + JournalOutputVat;
+
+    /// <summary>
+    /// (CEEF-232 · ض-١) والمدخلاتُ كذلك — <b>والاتجاهُ هنا في صالح المنشأة</b>: عماها عنه
+    /// يجعلها تدفع ضريبةً خصمُها حقٌّ لها، <b>وهو عطلٌ لا يشتكي منه أحدٌ ويُكلّف مالاً كلَّ ربع</b>.
+    /// </summary>
+    public decimal NetDeductibleInputVat =>
+        DeductibleInputVat - DebitNotesDeductibleVat - CancelledInputVat + JournalInputVat;
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
 
     /// <summary>
@@ -171,6 +190,8 @@ public class VatReturnQuery(BrqoshDbContext db)
 
         var glBalance = await ReadVatNetPayableGlAsync(companyId, to);
 
+        var (journalOutputVat, journalInputVat) = await ReadJournalOnlyVatAsync(companyId, from, to);
+
         // (CEEF-229 · A-15) التفكيك بالفئة — من السطور المحمَّلة أصلاً، بلا استعلام إضافيّ.
         // الإشعارات تُطرح بإشارة سالبة فيصير كل وعاء **صافياً** كما يُقدَّم في الإقرار.
         var salesByCategory = Aggregate(
@@ -199,7 +220,9 @@ public class VatReturnQuery(BrqoshDbContext db)
             CancelledOutputVat: cancelledOutputVat,
             CancelledInputVat: cancelledInputVat,
             SalesByCategory: salesByCategory,
-            PurchasesByCategory: purchasesByCategory);
+            PurchasesByCategory: purchasesByCategory,
+            JournalOutputVat: journalOutputVat,
+            JournalInputVat: journalInputVat);
     }
 
     /// <summary>سطرٌ بإشارة معكوسة — الإشعارات تُطرح من وعائها لا تُفرَد في وعاءٍ خاصّ.</summary>
@@ -215,6 +238,116 @@ public class VatReturnQuery(BrqoshDbContext db)
             ? []
             : [.. LineDocumentTotalsCalculator.ComputeSubtotals(lines)
                    .Select(s => new VatReturnBucket(s.Category, s.TaxableAmount, s.VatAmount))];
+
+    /// <summary>
+    /// (CEEF-232 · ض-١) بادئاتُ المستندات الخمسة التي يقرؤها الإقرارُ أصلاً.
+    ///
+    /// <para><b>وهي مفتاحُ ألّا يُحسب المستندُ مرّتين</b>: فاتورةُ المبيعات تُرحَّل قيداً
+    /// على <c>2106</c> كذلك، <b>فقراءةُ الأستاذ بلا تمييزٍ تُضاعف ضريبةَ كلّ فاتورة</b> —
+    /// ويُقدَّم إقرارٌ بثلاثين ألفاً على مبيعاتِ مئة ألف، وهي نسبةُ ٣٠٪ تردّها الهيئة فوراً.</para>
+    ///
+    /// <para><b>والعكسُ يرث مصدرَ أصله</b> (<c>CreateReversal</c>)، فإلغاءُ فاتورةٍ يبقى
+    /// مستنداً محسوباً — <b>ولا يُعدّ توريداً جديداً بالسالب</b> فوق تسوية الإلغاء المحسوبة.</para>
+    /// </summary>
+    private static readonly string[] CountedDocumentPrefixes =
+    [
+        "SalesInvoice:", "CreditNote:", "ProgressBilling:", "PurchaseInvoice:", "DebitNote:",
+    ];
+
+    /// <summary>
+    /// (CEEF-232 · ض-١) <b>الضريبةُ التي قُيّدت في الأستاذ ولم يحملها مستندٌ محسوب.</b>
+    ///
+    /// <para><b>والتمييزُ الحاكم — وبغيره ينكسر الإقرارُ في الاتجاه المقابل:</b> قيدُ
+    /// <b>التسوية</b> ينقل الضريبةَ من <c>2106</c> إلى <c>2107</c> <b>وليس توريداً</b>.
+    /// فعدُّه مخرجاتٍ سالبةً <b>يُفرّغ الإقرارَ من ضريبته كلِّها</b> — ويُقدَّم بلا ريالٍ
+    /// على منشأةٍ باعت بمئة ألف. <b>والقاعدة: قيدٌ يمسّ حسابَ صافي الضريبة تسويةٌ لا توريد.</b></para>
+    ///
+    /// <para><b>والإشارةُ بطبيعة الحساب لا باصطلاح</b>: المخرجاتُ التزامٌ فالدائنُ يزيدها،
+    /// والمدخلاتُ أصلٌ فالمدينُ يزيدها. <b>وقيدٌ يعكس توريداً يُنقص كليهما بالإشارة نفسِها</b>.</para>
+    /// </summary>
+    private async Task<(decimal OutputVat, decimal InputVat)> ReadJournalOnlyVatAsync(
+        long companyId, DateOnly from, DateOnly to)
+    {
+        var vatAccounts = await db.Accounts
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(a => a.CompanyId == companyId
+                        && (a.Code == SaudiChartOfAccounts.SystemCodes.VatOutput
+                            || a.Code == SaudiChartOfAccounts.SystemCodes.VatInput
+                            || a.Code == SaudiChartOfAccounts.SystemCodes.VatNetPayable))
+            .Select(a => new { a.Id, a.Code })
+            .ToListAsync();
+        if (vatAccounts.Count == 0)
+            return (0m, 0m);
+
+        var outputId = vatAccounts
+            .FirstOrDefault(a => a.Code == SaudiChartOfAccounts.SystemCodes.VatOutput)?.Id;
+        var inputId = vatAccounts
+            .FirstOrDefault(a => a.Code == SaudiChartOfAccounts.SystemCodes.VatInput)?.Id;
+        var netId = vatAccounts
+            .FirstOrDefault(a => a.Code == SaudiChartOfAccounts.SystemCodes.VatNetPayable)?.Id;
+        if (outputId is null && inputId is null)
+            return (0m, 0m);
+
+        var candidates = await db.JournalEntries
+            .WhereReportable(companyId, from, to)
+            .Where(e => e.SourceDocument == null
+                        || !CountedDocumentPrefixes.Any(pfx => e.SourceDocument.StartsWith(pfx)))
+            // (CEEF-232 · ض-٣) ‏وزوجُ العكس يُستبعد **بطرفيه معاً** لا يُترك ليتقاصّ.
+            // ‏فالأصلُ المعكوس حالتُه `Reversed`، والعكسُ يُشار إليه بـ`ReversalEntryId`.
+            .Where(e => e.Status != JournalEntryStatus.Reversed
+                        && !db.JournalEntries.Any(x => x.ReversalEntryId == e.Id))
+            .Select(e => new
+            {
+                TouchesNetVat = netId != null && e.Lines.Any(l => l.AccountId == netId),
+                Lines = e.Lines
+                    .Where(l => l.AccountId == outputId || l.AccountId == inputId)
+                    .Select(l => new { l.AccountId, l.Debit, l.Credit })
+                    .ToList(),
+            })
+            .ToListAsync();
+
+        var outputVat = 0m;
+        var inputVat = 0m;
+        foreach (var entry in candidates)
+        {
+            if (entry.TouchesNetVat)
+                continue;
+
+            // (CEEF-232 · ض-٣) ‏الحركةُ تُجمع **على مستوى القيد** ثمّ يُحكم عليها — لا سطراً سطراً.
+            var entryOutput = 0m;
+            var entryInput = 0m;
+            foreach (var line in entry.Lines)
+            {
+                if (line.AccountId == outputId)
+                    entryOutput += line.Credit - line.Debit;
+                else
+                    entryInput += line.Debit - line.Credit;
+            }
+
+            // (CEEF-232 · ض-٣) ‏**والنقصُ لا يُقرأ توريداً سالباً — بل تسوية.**
+            //
+            // ‏وهذا هو نصفُ البند الذي كاد يقلب نفعَه ضرراً: **حارسُ `2107` لم يكن يحرس شيئاً**،
+            // ‏فلا كاتبَ لهذا الحساب في المستودع كلِّه (‏`SystemAccountCoverageTests`‏ يقولها نصّاً).
+            // ‏والتسويةُ الوحيدةُ التي يعرفها المنتجُ فعلاً هي `مدين 2106 / دائن البنك` — بلا
+            // ‏مستندٍ محسوب، وبلا مساسٍ بـ`2107`. **فكانت تُقرأ مخرجاتٍ سالبة**: منشأةٌ باعت بمئة
+            // ‏ألفٍ ثمّ سدّدت ضريبةَ الربع تُقدّم إقرارَها التالي **منقوصاً بخمسةَ عشرَ ألفاً** —
+            // ‏وهو عينُ العطل الذي جاء البندُ ليُغلقه، مقلوباً.
+            //
+            // ‏**والزيادةُ وحدَها توريد**: توريدٌ بلغ الأستاذَ بلا مستندٍ لا يكون إلّا زيادةً في
+            // ‏الالتزام. وكلُّ نقصٍ إمّا سدادٌ للهيئة أو عكسُ قيدٍ — **والعكسُ استُبعد بطرفيه
+            // ‏أعلاه**، فلم يبقَ للنقص إلّا السداد.
+            //
+            // ‏**والباقي المعلوم:** تصحيحٌ يدويٌّ يُنقص توريداً يُهمَل، فيُقدَّم الإقرارُ **زائداً**
+            // ‏لا ناقصاً. وهو خطأٌ في جانب المنشأة لا جانب الهيئة، **وطريقُه الصحيح إشعارٌ دائن**
+            // ‏لا قيدٌ يدويّ — وهو مستندٌ محسوبٌ أصلاً.
+            if (entryOutput > 0m) outputVat += entryOutput;
+            if (entryInput > 0m) inputVat += entryInput;
+        }
+
+        return (Math.Round(outputVat, 2, MidpointRounding.AwayFromZero),
+                Math.Round(inputVat, 2, MidpointRounding.AwayFromZero));
+    }
 
     /// <summary>رصيد حساب صافي الضريبة — <c>null</c> إذا لم يوجد الحساب أو لا حركة عليه.</summary>
     private async Task<decimal?> ReadVatNetPayableGlAsync(long companyId, DateOnly asOf)

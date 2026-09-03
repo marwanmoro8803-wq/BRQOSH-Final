@@ -3,7 +3,10 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Treasury;
+using Brqosh.Infrastructure.Construction;
+using Brqosh.Infrastructure.Hospitality;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Reporting;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Sales;
@@ -66,6 +69,188 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         return customerId is long cid ? q.Where(n => n.CustomerId == cid) : q;
     }
 
+    /// <summary>
+    /// (CEEF-232 · ج-١) <b>ما بلغ حسابَ الذمم من المستخلص — لا إجماليَّه.</b>
+    ///
+    /// <para><b>والمستخلصُ يُرحَّل على حسابين:</b> الصافي وضريبتُه على <c>1104</c>،
+    /// <b>والمحتجزُ على <c>1114</c></b> — وهو الصواب، فالمحتجزُ ضمانُ تنفيذٍ لا يُطالَب
+    /// به قبل انقضاء مدّته. <b>وكان الدفترُ المساعد يجمع <c>GrandTotal</c></b>، فتنكسر
+    /// هويّةُ <c>هـ-١</c> بمقدار المحتجز في كلّ مستخلص.</para>
+    ///
+    /// <para><b>والأثرُ بالأرقام:</b> مقاولٌ يُخرج مئةَ مليونٍ باحتجاز عشرة بالمئة يرى
+    /// <b>عشرةَ ملايينَ ذمّةً لا وجودَ لها في الأستاذ</b> — تُقرأ سيولةً قادمة، وتظهر في
+    /// أعمار الديون <b>فيُطارَد بها عميلٌ لا يدين بها</b>، وتُقفل السنةُ على أصلٍ مُعلَنٍ
+    /// مرّتين.</para>
+    ///
+    /// <para><b>والضريبةُ تبقى كاملةً</b>: الاحتجازُ تأجيلُ قبضٍ لا خصمٌ من الثمن،
+    /// <b>والتوريدُ وقع بكامل قيمة الأعمال</b>.</para>
+    /// </summary>
+    private static decimal ReceivablePortionOf(ProgressBilling billing) =>
+        billing.NetBillableAmount + billing.VatAmount;
+
+    /// <summary>
+    /// بادئةُ مصدر قيد إفراج المحتجز — <b>وهي مشتركةٌ بين جانبَي العميل والمقاول من الباطن</b>،
+    /// فالنوعُ يُقرأ من المقطع الثالث (<c>RetentionRelease:{projectId}:{(int)type}</c>).
+    /// </summary>
+    private const string CustomerRetentionReleasePrefix = "RetentionRelease:";
+
+    /// <summary>إفراجُ محتجزٍ واحدٌ لعميل — بتاريخه ورقم قيده ومبلغِ سطر الذمم منه.</summary>
+    internal readonly record struct RetentionReleaseDocument(
+        long CustomerId, long EntryId, DateOnly Date, string EntryNumber, decimal Amount);
+
+    /// <summary>
+    /// (CEEF-232 · ج-١) <b>والمحتجزُ المُفرَج عنه يعود ذمّةً — وهذا هو الطرفُ الذي يُنسى.</b>
+    ///
+    /// <para><b>فالإفراجُ يُحوّل <c>1114 ⟵ 1104</c> بقيدٍ لا مستندَ له</b>، ودفترُ العملاء
+    /// يُبنى من المستندات. <b>فاستبعادُ المحتجز عند الفوترة بلا إدخاله عند الإفراج يكسر
+    /// الهويّةَ في الاتجاه المقابل</b> — ويصير العميلُ مدينَ الأستاذ بريءَ الدفتر،
+    /// <b>وهو أسوأ من الأوّل: مالٌ مستحقٌّ لا يُطالِب به أحد</b>.</para>
+    ///
+    /// <para><b>ولا يُقرأ القيدُ بمبلغه بل بسطر الذمم منه</b>: القيدُ طرفان، <b>وجمعُ
+    /// الطرفين يُضاعف الإفراج</b>. والعميلُ يُبلَغ من المشروع لا من القيد — فلا حقلَ عميلٍ
+    /// على القيد أصلاً.</para>
+    /// </summary>
+    private static async Task<decimal> ReleasedRetentionAsync(
+        BrqoshDbContext db, long companyId, long customerId, DateOnly? asOf = null)
+    {
+        var byCustomer = await ReleasedRetentionByCustomerAsync(db, companyId, asOf, customerId);
+        return byCustomer.GetValueOrDefault(customerId);
+    }
+
+    /// <summary>المُفرَج عنه لكلّ عميل — <see cref="ReleasedRetentionAsync"/>.</summary>
+    private static async Task<IReadOnlyDictionary<long, decimal>> ReleasedRetentionByCustomerAsync(
+        BrqoshDbContext db, long companyId, DateOnly? asOf = null, long? customerId = null)
+    {
+        var totals = new Dictionary<long, decimal>();
+        foreach (var release in await ReleasedRetentionDocumentsAsync(db, companyId, asOf, customerId))
+            totals[release.CustomerId] = totals.GetValueOrDefault(release.CustomerId) + release.Amount;
+
+        return totals;
+    }
+
+    /// <summary>
+    /// (CEEF-232 · ج-٢) <b>الإفراجاتُ مفردةً بتواريخها — لا مجموعاً واحداً.</b>
+    ///
+    /// <para><b>والمجموعُ وحدَه لا يكفي لقارئَين اثنين:</b> <b>كشفُ الحساب</b> يحتاج سطراً
+    /// بتاريخه وإلّا خالف رأسُه سطورَه، <b>وتقريرُ الأعمار</b> يحتاج تاريخاً ليُعمِّر عليه —
+    /// <b>والمحتجزُ المُفرَج عنه دَينٌ عمرُه من يوم الإفراج لا من يوم المستخلص</b>، فقد كان
+    /// إلى ذلك اليوم ضماناً لا مطالبةً.</para>
+    /// </summary>
+    internal static async Task<IReadOnlyList<RetentionReleaseDocument>> ReleasedRetentionDocumentsAsync(
+        BrqoshDbContext db, long companyId, DateOnly? asOf = null, long? customerId = null)
+    {
+        var projects = await db.ConstructionProjects
+            .Where(p => p.CompanyId == companyId && p.CustomerId != null
+                        && (customerId == null || p.CustomerId == customerId))
+            .Select(p => new { p.Id, CustomerId = p.CustomerId!.Value })
+            .ToDictionaryAsync(p => p.Id, p => p.CustomerId);
+        if (projects.Count == 0)
+            return [];
+
+        var receivableAccountId = await db.Accounts
+            .Where(a => a.CompanyId == companyId
+                        && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsReceivable)
+            .Select(a => (long?)a.Id)
+            .FirstOrDefaultAsync();
+        if (receivableAccountId is null)
+            return [];
+
+        var entries = await db.JournalEntries
+            .WhereReportable(companyId, to: asOf)
+            .Where(e => e.SourceDocument != null
+                        && e.SourceDocument.StartsWith(CustomerRetentionReleasePrefix))
+            .Select(e => new
+            {
+                e.Id,
+                e.SourceDocument,
+                e.EntryDate,
+                e.EntryNumber,
+                Amount = e.Lines
+                    .Where(l => l.AccountId == receivableAccountId)
+                    .Sum(l => l.Debit - l.Credit),
+            })
+            .ToListAsync();
+
+        var releases = new List<RetentionReleaseDocument>();
+        foreach (var entry in entries)
+        {
+            // (CEEF-232 · ج-٢) ‏**والنوعُ يُقرأ من المصدر لا يُفترض من الحساب.**
+            // ‏فـ`RetentionReleaseService` يكتب البادئةَ نفسَها **لجانبَي العميل والمقاول
+            // ‏من الباطن معاً** (`RetentionRelease:{projectId}:{(int)type}`). ‏وكان التمييزُ
+            // ‏متروكاً لمُرشِّح سطر الذمم — **وهو ينجو بالصفر لا بالاستبعاد**: إفراجُ مقاولٍ
+            // ‏من الباطن يدخل بمبلغٍ صفريّ، **فيُنشئ للعميل مفتاحاً في القاموس** يدخل اتّحادَ
+            // ‏الأرصدة ويُظهر عميلاً برصيدٍ صفريٍّ في تقارير لا شأن له بها.
+            var parts = entry.SourceDocument!.Split(':');
+            if (parts.Length < 3
+                || !long.TryParse(parts[1], out var projectId)
+                || !int.TryParse(parts[2], out var type)
+                || type != (int)RetentionReleaseType.CustomerRelease)
+                continue;
+            if (!projects.TryGetValue(projectId, out var owner))
+                continue;
+
+            releases.Add(new RetentionReleaseDocument(
+                owner, entry.Id, entry.EntryDate, entry.EntryNumber ?? "", entry.Amount));
+        }
+
+        return releases;
+    }
+
+    /// <summary>
+    /// (CEEF-232 · ح-٢) <b>وعربونُ الحجز المُنزَل يُنقص الذمّة — في الدفتر كما في الأستاذ.</b>
+    ///
+    /// <para><b>وهو الفخُّ نفسُه الذي وقع فيه المحتجز (ج-١):</b> الإنزالُ قيدٌ لا مستند
+    /// (<c>مدين 2105 / دائن 1104</c>)، <b>ودفترُ العملاء يُبنى من المستندات</b>. فتنقص
+    /// ذمّةُ النزيل في الأستاذ ولا تنقص في دفتره — <b>فيُطالَب بما سدّده مقدَّماً</b>،
+    /// ويظهر في أعمار الديون وكشف الحساب مديناً بالعربون إلى الأبد.</para>
+    ///
+    /// <para><b>ولا يُقرأ القيدُ بمبلغه بل بسطر الذمم منه</b> — والنزيلُ يُبلَغ من الحجز
+    /// لا من القيد، فلا حقلَ عميلٍ على القيد.</para>
+    /// </summary>
+    private static async Task<IReadOnlyDictionary<long, decimal>> AppliedDepositsByCustomerAsync(
+        BrqoshDbContext db, long companyId, DateOnly? asOf = null, long? customerId = null)
+    {
+        var receivableAccountId = await db.Accounts
+            .Where(a => a.CompanyId == companyId
+                        && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsReceivable)
+            .Select(a => (long?)a.Id)
+            .FirstOrDefaultAsync();
+        if (receivableAccountId is null)
+            return new Dictionary<long, decimal>();
+
+        var guests = await db.Reservations
+            .Where(r => r.CompanyId == companyId
+                        && (customerId == null || r.GuestCustomerId == customerId))
+            .Select(r => new { r.Id, r.GuestCustomerId })
+            .ToDictionaryAsync(r => r.Id, r => r.GuestCustomerId);
+        if (guests.Count == 0)
+            return new Dictionary<long, decimal>();
+
+        var entries = await db.JournalEntries
+            .WhereReportable(companyId, to: asOf)
+            .Where(e => e.SourceDocument != null
+                        && e.SourceDocument.StartsWith(ReservationDepositService.AppliedPrefix))
+            .Select(e => new
+            {
+                e.SourceDocument,
+                Amount = e.Lines
+                    .Where(l => l.AccountId == receivableAccountId)
+                    .Sum(l => l.Credit - l.Debit),
+            })
+            .ToListAsync();
+
+        var totals = new Dictionary<long, decimal>();
+        foreach (var entry in entries)
+        {
+            var tail = entry.SourceDocument![ReservationDepositService.AppliedPrefix.Length..];
+            if (!long.TryParse(tail, out var reservationId)) continue;
+            if (!guests.TryGetValue(reservationId, out var guest)) continue;
+            totals[guest] = totals.GetValueOrDefault(guest) + entry.Amount;
+        }
+
+        return totals;
+    }
+
     public async Task<CustomerBalance> ForCustomerAsync(long companyId, long customerId)
     {
         var invoiced = await ArSalesInvoices(db, companyId, customerId).SumGrandTotalAsync();
@@ -73,7 +258,9 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         var billings = (await db.ProgressBillings
             .Where(b => b.CompanyId == companyId && b.CustomerId == customerId && b.Status == ProgressBillingStatus.Posted)
             .ToListAsync())
-            .Sum(b => b.GrandTotal);
+            .Sum(ReceivablePortionOf);
+
+        var retentionReleased = await ReleasedRetentionAsync(db, companyId, customerId);
 
         var credited = await ArCreditNotes(db, companyId, customerId).SumGrandTotalAsync();
 
@@ -94,7 +281,11 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                         && ReceivedChequeCreditStatuses.Contains(c.Status))
             .SumAsync(c => (decimal?)c.Amount) ?? 0m;
 
-        return new CustomerBalance(customerId, invoiced + billings, credited, received);
+        // ‏(CEEF-232 · ح-٢) ‏**والعربونُ المُنزَل سدادٌ** — يُنقص الذمّة كسند القبض.
+        received += (await AppliedDepositsByCustomerAsync(db, companyId, null, customerId))
+            .GetValueOrDefault(customerId);
+
+        return new CustomerBalance(customerId, invoiced + billings + retentionReleased, credited, received);
     }
 
     /// <summary>
@@ -123,7 +314,9 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                         && (asOf == null || b.BillingDate <= asOf))
             .ToListAsync())
             .GroupBy(b => b.CustomerId)
-            .ToDictionary(g => g.Key, g => g.Sum(b => b.GrandTotal));
+            .ToDictionary(g => g.Key, g => g.Sum(ReceivablePortionOf));
+
+        var retentionReleased = await ReleasedRetentionByCustomerAsync(db, companyId, asOf);
 
         var credited = await ArCreditNotes(db, companyId)
             .Where(n => asOf == null || n.NoteDate <= asOf)
@@ -150,6 +343,8 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
             })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
+        var appliedDeposits = await AppliedDepositsByCustomerAsync(db, companyId, asOf);
+
         var chequeReceived = await db.Cheques
             .Where(c => c.CompanyId == companyId && c.CustomerId != null
                         && c.Type == ChequeType.Received
@@ -161,14 +356,18 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
 
         var all = invoiced.Keys
             .Union(billings.Keys)
+            .Union(retentionReleased.Keys)
             .Union(credited.Keys)
             .Union(received.Keys)
+            .Union(appliedDeposits.Keys)
             .Union(chequeReceived.Keys);
 
         return all.ToDictionary(id =>
             id,
             id => invoiced.GetValueOrDefault(id) + billings.GetValueOrDefault(id)
+                  + retentionReleased.GetValueOrDefault(id)
                   - credited.GetValueOrDefault(id) - received.GetValueOrDefault(id)
+                  - appliedDeposits.GetValueOrDefault(id)
                   - chequeReceived.GetValueOrDefault(id));
     }
 
@@ -192,15 +391,26 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         foreach (var b in await db.ProgressBillings
             .Where(b => b.CompanyId == companyId && b.CustomerId == customerId && b.Status == ProgressBillingStatus.Posted)
             .ToListAsync())
-            rows.Add((b.BillingDate, b.BillingNumber ?? "", "مستخلص أعمال", b.GrandTotal, 0m));
+            rows.Add((b.BillingDate, b.BillingNumber ?? "", "مستخلص أعمال", ReceivablePortionOf(b), 0m));
 
         foreach (var b in await db.ProgressBillings
             .Where(b => b.CompanyId == companyId && b.CustomerId == customerId && b.Status == ProgressBillingStatus.Cancelled)
             .ToListAsync())
         {
             await AppendCancellationRowAsync(rows, b.BillingDate, b.BillingNumber ?? "", "مستخلص أعمال",
-                b.GrandTotal, 0m, b.JournalEntryId);
+                ReceivablePortionOf(b), 0m, b.JournalEntryId);
         }
+
+        // (CEEF-232 · ج-٢) ‏**والمُفرَج عنه سطرٌ في الكشف — وإلّا خالف الرأسُ سطورَه.**
+        //
+        // ‏فالرصيدُ يضمّه (`ForCustomerAsync`)، **والكشفُ كان لا يعرفه**: عميلٌ أُفرج عن
+        // ‏محتجزِه يُطالَب برقمٍ في رأس الكشف **لا يجد له في سطوره أصلاً**. وهي عينُ العلّة
+        // ‏التي أُغلقت في `م0-٩` من الجهة المقابلة — **وأوّلُ ما يفحصه العميل جمعُ الأعمدة**،
+        // ‏فإن لم يُطابق فَقَد الثقةَ في الرقمين معاً وصار كلُّ تحصيلٍ تفاوضاً.
+        //
+        // ‏**وجانبُ المورّدين يفعلها أصلاً** (`SupplierBalanceQuery`) — فالنقصُ كان هنا وحدَه.
+        foreach (var release in await ReleasedRetentionDocumentsAsync(db, companyId, asOf: null, customerId))
+            rows.Add((release.Date, release.EntryNumber, "إفراج محتجز", release.Amount, 0m));
 
         // (CEEF-229 · م0-٩) كشف الحساب يتبع الرصيد: إشعار نقطة البيع لا يمسّ الذمم فلا يظهر فيه.
         // وإلا اختلف الرصيد الجاري في الكشف عن الرصيد في رأسه — وهو أوّل ما يفحصه العميل.
