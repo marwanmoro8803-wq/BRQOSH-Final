@@ -35,7 +35,17 @@ Thumbs.db
 Desktop.ini
 
 # Build output / توزيع (ثنائيات كبيرة — لا تُرتكب)
-dist/
+dist/*
+
+# استثناءٌ ضيّق: أدلّةُ الإغلاق المُنتقاة تُرتَّب لتبقى مقروءةً من main وحدَه.
+# (CEEF-235) كان MASTER.md يُشير إلى dist/live-ui-sector-walkthrough/ ولا يجدها قارئُ
+# المستودع — فالدليلُ الذي لا يُرتَّب يموت مع شجرة العمل التي أنتجته. والاستثناءُ مفتوحٌ
+# لمجلّداتٍ مُسمّاةٍ بعينها لا لـ dist/evidence كلِّها: أربعةُ سكربتات تكتب فيها مخرجاتٍ
+# متجدّدة (i18n-coverage-audit · run-hot-path-bench · agent-skill-regression ·
+# install-verify-toolchain) ولا يُراد تتبّعُها.
+!dist/evidence/
+dist/evidence/*
+!dist/evidence/CEEF-235/
 
 # مواد مستوردة أجنبية ليست جزءاً من المنتج
 system_prompts_leaks-main/
