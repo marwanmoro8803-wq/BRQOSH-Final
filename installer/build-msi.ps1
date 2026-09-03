@@ -15,7 +15,10 @@ Write-Host "=== BRQOSH MSI Build ===" -ForegroundColor Cyan
 & (Join-Path $Root "installer\publish.ps1")
 
 if (-not (Get-Command wix -ErrorAction SilentlyContinue)) {
-    Write-Host "WiX CLI غير مثبت. ثبّت بـ: dotnet tool install --global wix" -ForegroundColor Yellow
+    # (CEEF-234) v7+ يتوقف عند بناءٍ أول برسالة WIX7015 تطلب قبول "Open Source
+    # Maintenance Fee" (OSMF) — قرارٌ ماليّ/تعاقديّ لا يُتّخذ من سكربت بناء. فالإصدارُ
+    # المثبَّت هنا مثبَّتٌ صراحةً (v5)، وهو ما بُني به هذا المُثبِّت وقيس عليه.
+    Write-Host "WiX CLI غير مثبت. ثبّت بـ: dotnet tool install --global wix --version 5.0.2" -ForegroundColor Yellow
     Write-Host "ثم أعد تشغيل: installer\build-msi.ps1" -ForegroundColor Yellow
     exit 1
 }

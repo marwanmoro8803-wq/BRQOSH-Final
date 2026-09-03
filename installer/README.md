@@ -27,7 +27,9 @@
 ## 2. تثبيت MSI
 
 ```powershell
-dotnet tool install --global wix   # مرة واحدة لبناة الحزمة
+# مرة واحدة لبناة الحزمة — ثبّت v5 صراحةً: v7+ يرفض البناء بلا قبول رسوم
+# صيانة (Open Source Maintenance Fee EULA)، وهو قرارٌ لا يُتّخذ آلياً.
+dotnet tool install --global wix --version 5.0.2
 .\installer\publish.ps1
 .\installer\build-msi.ps1
 ```

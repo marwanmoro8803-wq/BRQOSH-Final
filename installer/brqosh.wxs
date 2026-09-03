@@ -4,8 +4,7 @@
   Build: installer\build-msi.ps1
   Requires: WiX Toolset v4+ (wix CLI)
 -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="BRQOSH ERP"
            Manufacturer="BRQOSH"
            Version="$(var.ProductVersion)"
@@ -15,6 +14,27 @@
 
     <MajorUpgrade DowngradeErrorMessage="إصدار أحدث مثبت بالفعل." />
     <MediaTemplate EmbedCab="yes" />
+
+    <!--
+      (CEEF-234 · T-07) فحصُ .NET 9 Desktop Runtime قبل التثبيت.
+
+      وقياسٌ على جهازٍ حيٍّ صحّح الخطّةَ نفسَها: المسار الذي كانت الملاحظةُ السابقة
+      تفترضه (SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx) **فارغٌ فعلاً** —
+      والتسجيلُ الحقيقيُّ لمثبِّت وقت-تشغيل .NET (32-بت رغم أنه يُنصِّب ثنائياتٍ 64-بت)
+      يقع تحت WOW6432Node. فحُرست الحالتان معاً لا واحدةً بالتخمين.
+
+      ولا يُقارَن رقمُ إصدارٍ محدَّد (كـ«9.0.17»): كلُّ رقعةٍ تالية (9.0.18 وما بعدها)
+      تُسجَّل باسم قيمةٍ جديد، فمطابقةُ رقمٍ ثابتٍ **تُرفض بعد أوّل رقعة** — أسوأُ من
+      غياب الفحص لأنها ترفض تثبيتاً صحيحاً. فالشرطُ وجودُ المفتاح لا قيمةٌ بعينها:
+      يمنع الحالة الموثَّقة (جهازٌ بلا أيّ Desktop Runtime يُثبَّت عليه التطبيقُ فيفشل
+      لاحقاً بصمت) دون أن يرفض إصداراتٍ مستقبليةً من 9.x.
+    -->
+    <Property Id="DOTNETDESKTOPDIR" Secure="yes">
+      <DirectorySearch Id="DotNetDesktopAppDir" Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" />
+    </Property>
+
+    <Launch Condition="DOTNETDESKTOPDIR"
+        Message="يتطلّب BRQOSH .NET Desktop Runtime 9 أو أحدث. نزّله من https://dotnet.microsoft.com/download/dotnet/9.0 ثم أعد المحاولة." />
 
     <Feature Id="MainFeature" Title="BRQOSH ERP" Level="1">
       <ComponentGroupRef Id="PublishComponents" />
