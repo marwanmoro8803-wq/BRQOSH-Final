@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Payroll;
@@ -37,7 +37,25 @@ public class PayrollLine
     /// </summary>
     public decimal AdvanceDeduction { get; private set; }
 
+    /// <summary>
+    /// (CEEF-233 · ز-٦) <b>خصمُ الغياب بلا أجر — وهو <u>ليس</u> كخصم السُّلفة.</b>
+    ///
+    /// <para><b>والفرقُ جوهريّ لا شكليّ:</b> السُّلفةُ <b>سدادُ دَينٍ</b> — المصروفُ وقع
+    /// كاملاً والموظّفُ استحقّ أجرَه كلَّه. <b>أمّا الغيابُ بلا أجرٍ فأجرٌ لم يُستحقّ</b>:
+    /// العملُ لم يقع، <b>فالمصروفُ نفسُه ينقص</b>.</para>
+    ///
+    /// <para><b>وخصمُه من الصافي وحدَه يُبقي مصروفَ الرواتب مُضخَّماً</b> بأجرِ أيّامٍ لم
+    /// تُعمَل، <b>ويُنشئ التزاماً تجاه الموظّف لم يُدفع له</b> — فيقفل الشهرُ برواتبَ
+    /// مستحقّةٍ لا صاحبَ لها.</para>
+    /// </summary>
+    public decimal AbsenceDeduction { get; private set; }
+
+    /// <summary><b>والمستحقُّ بعد خصم أيّام الغياب</b> — فهو ما عُمل فعلاً.</summary>
     public decimal GrossPay =>
+        BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance - AbsenceDeduction;
+
+    /// <summary><b>والأجرُ الكامل قبل الغياب</b> — يُعرض في القسيمة ليُرى الخصم.</summary>
+    public decimal FullGrossPay =>
         BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
 
     /// <summary><b>والصافي بعد التأمينات والسُّلفة معاً</b> — وكلاهما يخرج من جيب الموظّف.</summary>
@@ -53,9 +71,10 @@ public class PayrollLine
 
     internal PayrollLine(string employeeName, decimal basic, decimal housing, decimal transport,
         decimal gosiEmployee, decimal gosiEmployer, long? employeeId = null, decimal other = 0m,
-        decimal advanceDeduction = 0m)
+        decimal advanceDeduction = 0m, decimal absenceDeduction = 0m)
     {
         AdvanceDeduction = advanceDeduction;
+        AbsenceDeduction = absenceDeduction;
         EmployeeId = employeeId;
         OtherAllowance = other;
         EmployeeName = employeeName;
@@ -88,6 +107,9 @@ public class PayrollRun : IBranchScoped
     /// <summary>(CEEF-230 · ط2-٥) مجموعُ أقساط السُّلَف — <b>وهو ما يُعفي حسابَ 1116</b>.</summary>
     public decimal TotalAdvanceDeduction => _lines.Sum(l => l.AdvanceDeduction);
 
+    /// <summary>(CEEF-233 · ز-٦) مجموعُ خصم الغياب — <b>وهو يُنقص المصروف لا يُعفي حساباً</b>.</summary>
+    public decimal TotalAbsenceDeduction => _lines.Sum(l => l.AbsenceDeduction);
+
     private PayrollRun()
     {
         PeriodCode = null!;
@@ -107,7 +129,8 @@ public class PayrollRun : IBranchScoped
 
     public void AddLine(string employeeName, decimal basic, decimal housing = 0m, decimal transport = 0m,
         decimal gosiEmployee = 0m, decimal gosiEmployer = 0m,
-        long? employeeId = null, decimal other = 0m, decimal advanceDeduction = 0m)
+        long? employeeId = null, decimal other = 0m, decimal advanceDeduction = 0m,
+        decimal absenceDeduction = 0m)
     {
         if (Status != PayrollRunStatus.Draft)
             throw new AccountingException("لا يمكن تعديل دورة مرحّلة.");
@@ -128,7 +151,21 @@ public class PayrollRun : IBranchScoped
             Math.Round(gosiEmployer, 2, MidpointRounding.AwayFromZero),
             employeeId,
             Math.Round(other, 2, MidpointRounding.AwayFromZero),
-            Math.Round(advanceDeduction, 2, MidpointRounding.AwayFromZero)));
+            Math.Round(advanceDeduction, 2, MidpointRounding.AwayFromZero),
+            Math.Round(absenceDeduction, 2, MidpointRounding.AwayFromZero)));
+
+        // (CEEF-233 · ز-٦) ‏**وغيابٌ يتجاوز الأجرَ يُرفض** — فأجرٌ سالبٌ ليس خصماً بل
+        // ‏مطالبةٌ للموظّف، **ولا يُنشئها غياب**. وهو حارسٌ مستقلٌّ عن حارس الصافي أدناه:
+        // ‏**الصافي قد يبقى موجباً وأجرُ الشهر سالبٌ** لو كان الخصمُ أكبرَ من الأجر
+        // ‏والتأميناتُ صفراً — فيُقيَّد مصروفُ رواتبَ سالب.
+        if (_lines[^1].GrossPay < 0m)
+        {
+            var attempted = _lines[^1];
+            _lines.RemoveAt(_lines.Count - 1);
+            throw new AccountingException(
+                $"غيابُ «{employeeName.Trim()}» {absenceDeduction:N2} يتجاوز أجرَه "
+                + $"{attempted.FullGrossPay:N2} — ولا يكون أجرُ الشهر سالباً.");
+        }
 
         // (CEEF-230 · ط2-٥) ‏**واستقطاعٌ يبتلع الصافيَ يُرفض.**
         //
@@ -153,7 +190,8 @@ public class PayrollRun : IBranchScoped
     /// ورقةٍ خارجية كلَّ شهر. <b>وهنا تُحسب من الأجر الخاضع والجنسية والنِّسَب المُخزَّنة</b>
     /// — فلا تُنسى، ولا تُنسخ خطأً، ولا تختلف بين موظّفٍ وآخر بلا سبب.</para>
     /// </summary>
-    public void AddEmployee(Employee employee, GosiPolicy policy, decimal advanceDeduction = 0m)
+    public void AddEmployee(Employee employee, GosiPolicy policy, decimal advanceDeduction = 0m,
+        decimal absenceDeduction = 0m)
     {
         ArgumentNullException.ThrowIfNull(employee);
         ArgumentNullException.ThrowIfNull(policy);
@@ -171,7 +209,7 @@ public class PayrollRun : IBranchScoped
 
         AddLine(employee.NameAr, employee.BasicSalary, employee.HousingAllowance,
             employee.TransportAllowance, gosi.Employee, gosi.Employer,
-            employee.Id, employee.OtherAllowance, advanceDeduction);
+            employee.Id, employee.OtherAllowance, advanceDeduction, absenceDeduction);
     }
 
     /// <summary>الأساسيُّ وحده — وهو ما يذهب إلى حساب الرواتب والأجور.</summary>

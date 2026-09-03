@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
@@ -570,8 +570,18 @@ public class GeneratedDocumentsConformTests : IDisposable
         var recorded = TimeOnly.FromDateTime(
             document.GeneratedAtUtc + TimeSpan.FromHours(3));
 
-        Assert.True(Math.Abs((declared.ToTimeSpan() - recorded.ToTimeSpan()).TotalSeconds) <= 1,
-            $"الوقتُ المعلن {declared:HH:mm:ss} لا يطابق لحظةَ التوليد المسجَّلة {recorded:HH:mm:ss}.");
+        // ‏(CEEF-233 · ظ-١) **والمطابقةُ إلى الثانية، لا بتسامحٍ يُخفي قراءتين.**
+        //
+        // ‏كان التسامحُ ثانيةً واحدة **وكان الاختبارُ يسقط نحو ثلثِ التشغيلات**: المولّدُ
+        // ‏يقرأ الساعةَ ويشتقّ منها `IssueTime`، **والكيانُ يقرؤها مرّةً ثانيةً** لـ
+        // ‏`GeneratedAtUtc`. فمتى وقعت القراءتان على طرفَي ثانيةٍ اختلف المعلَنُ عن المسجَّل —
+        // ‏**والمعلَنُ مقطوعُ الكسر فيبلغ الفارقُ ثانيتين فيتجاوز التسامح**.
+        //
+        // ‏**واختبارٌ يسقط ثلثَ الوقت أسوأ من غيابه**: يُعلَّم الفريقُ إهمالَ الأحمر
+        // ‏فيفوته الأحمرُ الحقيقيّ. **وأُصلح المنتجُ لا التسامح** — تُمرَّر لحظةٌ واحدة،
+        // ‏فصارت المطابقةُ حتميّةً كما وَعَد تعليقُ المولّد.
+        Assert.Equal(declared.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+            recorded.ToString("HH:mm:ss", CultureInfo.InvariantCulture));
 
         // ‏(ب) ورمزُ QR يقول اللحظةَ نفسها — لا لحظةً أخرى تفصلها ساعات.
         var qrStamp = ZatcaSignatureVerifier.ReadQrTimestamp(document.QrTlvBase64!);

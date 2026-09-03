@@ -2762,6 +2762,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("payroll_lines", "AdvanceDeduction",
                 "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
 
+            // (CEEF-233 · ز-٦) ‏خصمُ الغياب بلا أجر — **ويُنقص المصروف لا الصافيَ وحدَه**.
+            await EnsurePgColumnAsync("payroll_lines", "AbsenceDeduction",
+                "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS employee_advances (
                     "Id" BIGSERIAL PRIMARY KEY,
@@ -2781,6 +2785,27 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_employee_advances_CompanyId_AdvanceNumber" ON employee_advances ("CompanyId", "AdvanceNumber");""", ct);
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_employee_advances_CompanyId_EmployeeId_Status" ON employee_advances ("CompanyId", "EmployeeId", "Status");""", ct);
+
+            // (CEEF-233 · ز-٢) ‏طلباتُ الإجازة والغياب.
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS leave_requests (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "BranchId" BIGINT NULL,
+                    "EmployeeId" BIGINT NOT NULL,
+                    "RequestNumber" character varying(32) NOT NULL,
+                    "Type" character varying(16) NOT NULL DEFAULT 'Annual',
+                    "FromDate" DATE NOT NULL,
+                    "ToDate" DATE NOT NULL,
+                    "Status" character varying(16) NOT NULL DEFAULT 'Pending',
+                    "Reason" character varying(256) NULL,
+                    "DecidedOn" DATE NULL,
+                    "DecidedBy" character varying(64) NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_leave_requests_CompanyId_RequestNumber" ON leave_requests ("CompanyId", "RequestNumber");""", ct);
+            await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_leave_requests_CompanyId_EmployeeId_Status" ON leave_requests ("CompanyId", "EmployeeId", "Status");""", ct);
         }
         else
         {
@@ -2788,6 +2813,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("payroll_lines", "OtherAllowance",
                 "TEXT NOT NULL DEFAULT '0'", ct);
             await EnsureSqliteColumnAsync("payroll_lines", "AdvanceDeduction",
+                "TEXT NOT NULL DEFAULT '0'", ct);
+            await EnsureSqliteColumnAsync("payroll_lines", "AbsenceDeduction",
                 "TEXT NOT NULL DEFAULT '0'", ct);
         }
 

@@ -1,4 +1,4 @@
-namespace Brqosh.Domain.Accounting;
+﻿namespace Brqosh.Domain.Accounting;
 
 /// <summary>تعريف حساب في القالب الجاهز — يُحوَّل إلى Account عند إنشاء الشركة.</summary>
 public record SeedAccount(
@@ -106,6 +106,10 @@ public static class SaudiChartOfAccounts
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
         new("2202", "مخصص مكافأة نهاية الخدمة", "End of Service Benefits Provision", AccountType.Liability, "22", IsGroup: false),
 
+        // (CEEF-233 · ز-٣) ‏مخصّصُ الإجازات — **التزامٌ يتراكم يوماً بيوم** (المادة 109)،
+        // ‏ويُدفع نقداً عند انتهاء الخدمة عمّا لم يُستعمل (المادة 111).
+        new("2203", "مخصص الإجازات", "Leave Provision", AccountType.Liability, "22", IsGroup: false, IsSystem: true),
+
         // ============ 3 — حقوق الملكية ============
         new("3", "حقوق الملكية", "Equity", AccountType.Equity, null, IsGroup: true),
         new("3101", "رأس المال", "Share Capital", AccountType.Equity, "3", IsGroup: false, IsSystem: true),
@@ -166,6 +170,8 @@ public static class SaudiChartOfAccounts
         new("5218", "خسائر فروق عملة محققة", "Realized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         // (CEEF-230 · ط2-٣) ‏مصروفُ المكافأة — يقابل المخصّصَ 2202 الذي كان بلا كاتب.
         new("5219", "مصروف مكافأة نهاية الخدمة", "End of Service Benefit Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
+        // (CEEF-233 · ز-٣) ‏مصروفُ الإجازات — يقابل المخصّصَ 2203.
+        new("5220", "مصروف الإجازات", "Leave Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>
@@ -196,6 +202,10 @@ public static class SaudiChartOfAccounts
 
         /// <summary>(CEEF-230 · ط2-٥) سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.</summary>
         public const string EmployeeAdvances = "1116";
+
+        /// <summary>(CEEF-233 · ز-٣) مخصّصُ الإجازات ومصروفُها.</summary>
+        public const string LeaveProvision = "2203";
+        public const string LeaveExpense = "5220";
         public const string FxAdjustmentPayable = "2115";
         public const string RetentionPayableSubcontractors = "2110";
         public const string ContractRevenue = "4104";

@@ -1,4 +1,4 @@
-using Brqosh.Domain.Modules;
+﻿using Brqosh.Domain.Modules;
 
 namespace UiAudit;
 
@@ -115,6 +115,7 @@ internal static class NavKeyModuleMap
         ["budget_variance"] = ModuleKey.GeneralLedger,
         ["payslips"] = ModuleKey.Payroll,
         ["employee_advances"] = ModuleKey.Payroll,
+        ["leave_requests"] = ModuleKey.Payroll,
         ["wage_protection"] = ModuleKey.Payroll,
     };
 

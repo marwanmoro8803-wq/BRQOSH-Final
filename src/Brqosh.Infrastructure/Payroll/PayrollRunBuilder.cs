@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Payroll;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -125,6 +125,15 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         var run = PayrollRun.CreateDraft(companyId, year, month, payDate);
         var advances = new EmployeeAdvanceService(db);
 
+        // (CEEF-233 · ز-٦) ‏**وأيّامُ الغياب بلا أجرٍ تُقرأ هنا لا تُدخَل يدوياً.**
+        //
+        // ‏**وخصمٌ يُترك للمستخدم يُنسى**: الموظّفُ غاب شهراً بلا أجر ويقبض راتبَه كاملاً
+        // ‏لأنّ أحداً لم يكتب الخصم. **والسجلُّ موجودٌ ومعتمَد** — فالقراءةُ منه أوثقُ من
+        // ‏ذاكرةِ محاسب، **وهي اللحظةُ نفسُها التي تُقرأ فيها أقساطُ السُّلَف**.
+        var monthStart = new DateOnly(year, month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var unpaidDays = await UnpaidLeaveDaysAsync(companyId, monthStart, monthEnd, ct);
+
         foreach (var employee in eligible)
         {
             var gosi = policy.ContributionFor(employee);
@@ -132,7 +141,16 @@ public class PayrollRunBuilder(BrqoshDbContext db)
             var room = employee.GrossPay - gosi.Employee;
             var deduction = Math.Max(0m, Math.Min(due, room));
 
-            run.AddEmployee(employee, policy, Math.Round(deduction, 2, MidpointRounding.AwayFromZero));
+            var absence = unpaidDays.TryGetValue(employee.Id, out var days)
+                ? LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, days)
+                : 0m;
+
+            // ‏**ولا يتجاوز الخصمُ أجرَ الشهر** — فغيابُ الشهر كلِّه يُصفّر الأجر ولا يُسالبه.
+            absence = Math.Min(absence, employee.GrossPay);
+
+            run.AddEmployee(employee, policy,
+                Math.Round(deduction, 2, MidpointRounding.AwayFromZero),
+                Math.Round(absence, 2, MidpointRounding.AwayFromZero));
         }
 
         return run;
@@ -157,5 +175,37 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         db.GosiPolicies.Add(policy);
         await db.SaveChangesAsync(ct);
         return policy;
+    }
+
+    /// <summary>
+    /// (CEEF-233 · ز-٦) أيّامُ الغياب بلا أجرٍ <b>الواقعةُ داخل الشهر</b> لكلّ موظّف.
+    /// </summary>
+    /// <remarks>
+    /// <b>والتقاطعُ يُحسب لا مدّةُ الطلب كلُّها</b>: إجازةٌ بلا أجرٍ تمتدّ من ٢٥ مارس إلى
+    /// ٥ أبريل <b>تُخصم سبعةَ أيّامٍ من مارس وخمسةً من أبريل</b> — وخصمُ الاثني عشر من
+    /// مارس يُصفّر أجراً لم يُغَب كلُّه، <b>وخصمُها مرّتين يُخصم أربعةً وعشرين عن اثني عشر</b>.
+    /// </remarks>
+    private async Task<Dictionary<long, decimal>> UnpaidLeaveDaysAsync(
+        long companyId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var requests = await db.LeaveRequests
+            .Where(r => r.CompanyId == companyId
+                        && r.Status == LeaveStatus.Approved
+                        && r.Type == LeaveType.Unpaid
+                        && r.FromDate <= to && from <= r.ToDate)
+            .ToListAsync(ct);
+
+        var days = new Dictionary<long, decimal>();
+        foreach (var r in requests)
+        {
+            var start = r.FromDate > from ? r.FromDate : from;
+            var end = r.ToDate < to ? r.ToDate : to;
+            var overlap = end.DayNumber - start.DayNumber + 1;
+            if (overlap <= 0) continue;
+
+            days[r.EmployeeId] = days.GetValueOrDefault(r.EmployeeId) + overlap;
+        }
+
+        return days;
     }
 }

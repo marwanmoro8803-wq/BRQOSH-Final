@@ -1,4 +1,4 @@
-using Brqosh.Domain.Modules;
+﻿using Brqosh.Domain.Modules;
 
 namespace Brqosh.Desktop.Navigation;
 
@@ -173,6 +173,7 @@ public static class NavigationCatalog
             new("payroll", "دورات الرواتب"),
             new("payslips", "قسائم الرواتب"),
             new("employee_advances", "سلف الموظفين"),
+            new("leave_requests", "الإجازات والغياب"),
             new("wage_protection", "ملف حماية الأجور"),
         ]),
 
@@ -295,6 +296,7 @@ public static class NavigationCatalog
         ["gosi_policy"] = "GOSI Rates",
         ["payslips"] = "Payslips",
         ["employee_advances"] = "Employee Advances",
+        ["leave_requests"] = "Leave & Absence",
         ["wage_protection"] = "Wage Protection File",
         ["company_settings"] = "Company Settings",
         ["backup"] = "Backup & Restore",

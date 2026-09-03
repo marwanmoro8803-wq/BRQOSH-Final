@@ -1,4 +1,4 @@
-using Brqosh.Domain.Crm;
+﻿using Brqosh.Domain.Crm;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using Brqosh.Domain.Reporting;
@@ -92,6 +92,9 @@ public class BrqoshDbContext : DbContext
     public DbSet<Visit> Visits => Set<Visit>();
     public DbSet<Brqosh.Domain.Payroll.EmployeeAdvance> EmployeeAdvances =>
         Set<Brqosh.Domain.Payroll.EmployeeAdvance>();
+    // (CEEF-233 · ز-٢) ‏طلباتُ الإجازة والغياب — **والمستندُ الذي يُشتقّ منه الرصيدُ والخصم**.
+    public DbSet<Brqosh.Domain.Payroll.LeaveRequest> LeaveRequests =>
+        Set<Brqosh.Domain.Payroll.LeaveRequest>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
     public DbSet<Domain.RealEstate.MaintenanceOrder> MaintenanceOrders =>
         Set<Domain.RealEstate.MaintenanceOrder>();
@@ -756,6 +759,20 @@ public class BrqoshDbContext : DbContext
             entity.Property(a => a.BranchId);
             entity.HasIndex(a => new { a.CompanyId, a.AdvanceNumber }).IsUnique();
             entity.HasIndex(a => new { a.CompanyId, a.EmployeeId, a.Status });
+        });
+
+        // (CEEF-233 · ز-٢) ‏طلباتُ الإجازة.
+        modelBuilder.Entity<Brqosh.Domain.Payroll.LeaveRequest>(entity =>
+        {
+            entity.ToTable("leave_requests");
+            entity.Property(r => r.RequestNumber).HasMaxLength(32).IsRequired();
+            entity.Property(r => r.Reason).HasMaxLength(256);
+            entity.Property(r => r.DecidedBy).HasMaxLength(64);
+            entity.Property(r => r.Type).HasConversion<string>().HasMaxLength(16);
+            entity.Property(r => r.Status).HasConversion<string>().HasMaxLength(16);
+            entity.Property(r => r.BranchId);
+            entity.HasIndex(r => new { r.CompanyId, r.RequestNumber }).IsUnique();
+            entity.HasIndex(r => new { r.CompanyId, r.EmployeeId, r.Status });
         });
 
         // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
@@ -1673,6 +1690,7 @@ public class BrqoshDbContext : DbContext
             {
                 lines.ToTable("payroll_lines");
                 lines.Property(l => l.AdvanceDeduction).HasPrecision(18, 2);
+                lines.Property(l => l.AbsenceDeduction).HasPrecision(18, 2);
                 lines.WithOwner().HasForeignKey("payroll_run_id");
                 lines.Property<long>("id");
                 lines.HasKey("id");

@@ -1,4 +1,4 @@
-using Brqosh.Domain.Accounting;
+﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 namespace Brqosh.Domain.Zatca;
 
@@ -50,10 +50,26 @@ public class ZatcaEInvoiceDocument : IBranchScoped
         XmlFilePath = null!;
     }
 
+    /// <param name="generatedAtUtc">
+    /// (CEEF-233 · ظ-١) <b>لحظةُ التوليد — تُمرَّر ولا تُقرأ هنا.</b>
+    ///
+    /// <para><b>وكان الكيانُ يقرأ <c>DateTime.UtcNow</c> بنفسه</b>، والمولّدُ قد قرأها
+    /// قبلَه ليشتقّ منها <c>IssueTime</c> ووسمَ QR. <b>فقراءتان لا واحدة</b> — ومتى وقعتا
+    /// على طرفَي ثانيةٍ <b>أعلن المستندُ لحظةً وسجّل أخرى</b>.</para>
+    ///
+    /// <para><b>وهو خللُ امتثالٍ لا خللُ اختبار:</b> فاتورةُ ضريبةٍ إلكترونيّة <b>وقتُها
+    /// المعلن جزءٌ من مستندها المُوقَّع</b>، ورمزُ QR يحمله. <b>ومستندٌ يقول لحظتين
+    /// يُنازَع فيه عند الفحص</b> — والفرقُ ثانيةٌ اليومَ وقد يصير أكثرَ على جهازٍ محمَّل.</para>
+    ///
+    /// <para><b>وتعليقُ المولّد كان يَعِد بهذا صراحةً</b> — «تُؤخذ مرّةً واحدة ويُشتقّ منها
+    /// الطرفان، فيستحيل اختلافُهما بناءً» — <b>والوعدُ لم يكن محقَّقاً</b>: الكيانُ لم يكن
+    /// يقبلها فيقرؤها لنفسه. <b>أخرجه اضطرابُ اختبارٍ يسقط ثلثَ الوقت</b>، لا قراءةُ شيفرة.</para>
+    /// </param>
     public static ZatcaEInvoiceDocument Create(
         long companyId, ZatcaDocumentType documentType, long sourceDocumentId,
         string invoiceNumber, Guid invoiceUuid, int icv, string previousHash, string invoiceHash,
-        ZatcaTransmissionMode mode, string qrTlv, string xmlPath, string? signedXmlPath)
+        ZatcaTransmissionMode mode, string qrTlv, string xmlPath, string? signedXmlPath,
+        DateTime? generatedAtUtc = null)
     {
         var status = mode == ZatcaTransmissionMode.Reporting
             ? ZatcaComplianceStatus.ReadyToReport
@@ -74,8 +90,8 @@ public class ZatcaEInvoiceDocument : IBranchScoped
             QrTlvBase64 = qrTlv,
             XmlFilePath = xmlPath,
             SignedXmlFilePath = signedXmlPath,
-            GeneratedAtUtc = DateTime.UtcNow,
-            LastStatusAtUtc = DateTime.UtcNow,
+            GeneratedAtUtc = generatedAtUtc ?? DateTime.UtcNow,
+            LastStatusAtUtc = generatedAtUtc ?? DateTime.UtcNow,
         };
     }
 

@@ -1,4 +1,4 @@
-using Brqosh.Application.Tests.TestSupport;
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
@@ -271,6 +271,14 @@ public class SystemAccountCoverageTests : IDisposable
         // ‏في كلّ منشأةٍ لها موظّفون، **فهو من صلب دورة المحلّ لا استثناءٍ منها**. وحسابُ
         // ‏المخصّص `2202` كان في الشجرة بلا كاتبٍ منذ اليوم الأوّل.
         await new EndOfServiceAccrualService(_db)
+            .RunMonthlyAsync(companyId, new DateOnly(2026, 5, 31), "admin");
+
+        // ── تخصيصُ الإجازات — التزامٌ يتراكم كلَّ يومٍ كذلك ─────────────────
+        //
+        // ‏(CEEF-233 · ز-٣) ‏وأُضيف إلى الدورة للسبب نفسِه: **رصيدُ الإجازات دَينٌ نقديٌّ
+        // ‏بنصّ المادة 111** يقع في كلّ منشأةٍ لها موظّفون. وحسابا `2203` و`5220`
+        // ‏**أُنشئا في هذه الحملة**، فلولا كاتبٌ لهما لكانا في الشجرة بلا حركةٍ من يومهما.
+        await new LeaveAccrualService(_db)
             .RunMonthlyAsync(companyId, new DateOnly(2026, 5, 31), "admin");
 
         // ── إقفالُ السنة ───────────────────────────────────────────────────

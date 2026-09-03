@@ -1,4 +1,4 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace Brqosh.Desktop.Navigation;
 
@@ -87,6 +87,7 @@ public static class PageFactory
         ["budget_variance"] = () => new Views.Pages.BudgetVariancePage(),
         ["payslips"] = () => new Views.Pages.PayslipsPage(),
         ["employee_advances"] = () => new Views.Pages.EmployeeAdvancesPage(),
+        ["leave_requests"] = () => new Views.Pages.LeaveRequestsPage(),
         ["wage_protection"] = () => new Views.Pages.WageProtectionPage(),
         ["projects"] = () => new Views.Pages.ProjectsPage(),
         ["contracts"] = () => new Views.Pages.ContractsPage(),

@@ -1,4 +1,4 @@
-using Brqosh.Application.Tests.TestSupport;
+﻿using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Payroll;
@@ -278,7 +278,14 @@ public class EndOfServiceTests : IDisposable
 
         // ‏**والمستحقُّ صار على «رواتب مستحقة»** — يخرج بسند صرفٍ له دورتُه،
         // ‏لا من الصندوق بباب ثانٍ.
-        Assert.Equal(-20_000m, await BalanceAsync("2108"));
+        //
+        // ‏(CEEF-233 · ز-٥) ‏**ويحمل الحسابُ شقّين لا شقّاً**: المكافأةَ وبدلَ الإجازة
+        // ‏(المادة 111). **وكان هذا الاختبارُ يقيس تصفيةً ناقصة** — موظّفٌ خدم أربع سنواتٍ
+        // ‏ولم يأخذ إجازةً واحدة **يستحقّ أجرَ أربعةٍ وثمانين يوماً نقداً**، ولا يسقط بطول
+        // ‏تركه. **فالرقمُ لم يتغيّر بخطأٍ بل بإكمال.**
+        Assert.Equal(84m, Math.Round(result.UnusedLeaveDays));
+        Assert.Equal(28_000m, result.LeavePay);
+        Assert.Equal(-(result.Benefit + result.LeavePay), await BalanceAsync("2108"));
     }
 
     /// <summary>
@@ -313,7 +320,12 @@ public class EndOfServiceTests : IDisposable
         Assert.Equal(13_333.33m, result.Adjustment);
 
         Assert.Equal(0m, await BalanceAsync("2202"));
-        Assert.Equal(-6_666.67m, await BalanceAsync("2108"));
+
+        // ‏(CEEF-233 · ز-٥) ‏**وبدلُ الإجازة لا يتأثّر بسبب الانتهاء** — سُلَّمُ المادة 85
+        // ‏يخصّ المكافأةَ وحدَها. **والمستقيلُ يأخذ أجرَ إجازته كاملاً** كمن أُنهيت خدمتُه،
+        // ‏فهي أجرُ أيّامٍ عمِلها ولم يستريحها.
+        Assert.Equal(28_000m, result.LeavePay);
+        Assert.Equal(-(result.Benefit + result.LeavePay), await BalanceAsync("2108"));
 
         // ‏**والفائضُ خُصم من المصروف نفسِه** — لا من حسابِ إيراد.
         Assert.Equal(expenseBefore - 13_333.33m, await BalanceAsync("5219"));

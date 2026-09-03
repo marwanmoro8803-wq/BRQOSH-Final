@@ -1,4 +1,4 @@
-using Brqosh.Application;
+﻿using Brqosh.Application;
 using Brqosh.Application.Accounting;
 using Brqosh.Application.Intelligence;
 using Brqosh.Application.MasterData;
@@ -78,6 +78,9 @@ public static class InfrastructureServiceCollectionExtensions
         // ‏النظاميُّ لا يجري، والتزامٌ يتراكم لا يظهر في الميزانية.
         services.AddScoped<Payroll.EndOfServiceAccrualService>();
         services.AddScoped<Payroll.EndOfServiceSettlementService>();
+        services.AddScoped<Payroll.LeaveRequestService>();
+        services.AddScoped<Payroll.LeaveAccrualService>();
+        services.AddScoped<Payroll.LeaveBalanceQuery>();
 
         // (CEEF-230 · ط4-٧) ‏إعادةُ تقييم الذمم بالعملات — إلزامُ المعيار 21.
         services.AddScoped<Accounting.MonetaryRevaluationService>();

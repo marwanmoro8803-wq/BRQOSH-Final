@@ -430,9 +430,11 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var signedPath = signedBytes is not null ? SaveXml(companyId, number, signedBytes, signed: true) : null;
         var xmlPath = SaveXml(companyId, number, xmlBytes, signed: false);
 
+        // ‏(CEEF-233 · ظ-١) **واللحظةُ المقروءةُ أعلاه تُمرَّر — فلا يقرؤها الكيانُ ثانيةً.**
+        // ‏وبها يستحيل أن يُعلن المستندُ لحظةً ويُسجّل أخرى، **بناءً لا بحارس**.
         var doc = ZatcaEInvoiceDocument.Create(
             companyId, docType, sourceId, number, uuid, icv, previousHash, invoiceHash,
-            mode, qr, xmlPath, signedPath);
+            mode, qr, xmlPath, signedPath, generatedAtUtc);
 
         db.ZatcaEInvoiceDocuments.Add(doc);
         await db.SaveChangesAsync();

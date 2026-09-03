@@ -1,0 +1,54 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.LeaveRequestsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الإجازات والغياب" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="رصيد الإجازات التزام يتراكم كل يوم — ويدفع نقدا عند انتهاء الخدمة"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="AddBtn" Content="＋ طلب إجازة" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ApproveBtn" DockPanel.Dock="Right" Content="اعتماد"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnApprove"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="RejectBtn" DockPanel.Dock="Right" Content="رفض"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnReject"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="AccrueBtn" DockPanel.Dock="Right" Content="تخصيص الإجازات"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnAccrue"/>
+            </DockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      GridLinesVisibility="Horizontal">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="رقم الطلب" Binding="{Binding RequestNumber}" Width="130"/>
+                    <DataGridTextColumn Header="الموظف" Binding="{Binding EmployeeName}" Width="*"/>
+                    <DataGridTextColumn Header="النوع" Binding="{Binding TypeText}" Width="120"/>
+                    <DataGridTextColumn Header="من" Binding="{Binding FromDate}" Width="110"/>
+                    <DataGridTextColumn Header="إلى" Binding="{Binding ToDate}" Width="110"/>
+                    <DataGridTextColumn Header="الأيام" Binding="{Binding Days}" Width="80"/>
+                    <DataGridTextColumn Header="الرصيد المتاح" Binding="{Binding BalanceDays, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusText}" Width="110"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>

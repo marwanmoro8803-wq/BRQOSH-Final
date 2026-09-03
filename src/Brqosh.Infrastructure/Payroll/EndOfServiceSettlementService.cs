@@ -1,4 +1,4 @@
-using Brqosh.Application.Accounting;
+﻿using Brqosh.Application.Accounting;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Payroll;
 using Brqosh.Infrastructure.Accounting;
@@ -12,7 +12,8 @@ namespace Brqosh.Infrastructure.Payroll;
 /// حصيلةُ تصفيةٍ واحدة — <b>والمستحقُّ غيرُ المخصَّص</b>، والفرقُ يعود إلى المصروف.
 /// </summary>
 public record EndOfServiceSettlementResult(
-    long EmployeeId, decimal Provisioned, decimal Benefit, decimal Adjustment, long JournalEntryId);
+    long EmployeeId, decimal Provisioned, decimal Benefit, decimal Adjustment, long JournalEntryId,
+    decimal UnusedLeaveDays = 0m, decimal LeavePay = 0m);
 
 /// <summary>
 /// (CEEF-232 · ر-١) <b>تصفيةُ نهاية الخدمة — الطرفُ الذي يُبرئ المخصّص.</b>
@@ -53,6 +54,10 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
     /// <summary>رواتبُ مستحقّة — <b>مخرجُ المال الوحيد في الرواتب</b>.</summary>
     private const string PayableCode = "2108";
 
+    /// <summary>(CEEF-233 · ز-٥) مخصّصُ الإجازات ومصروفُها — لبدل الإجازة (المادة 111).</summary>
+    private const string LeaveProvisionCode = "2203";
+    private const string LeaveExpenseCode = "5220";
+
     public async Task<EndOfServiceSettlementResult> SettleAsync(
         long companyId, long employeeId, EndOfServiceReason reason,
         DateOnly settlementDate, string username, CancellationToken ct = default)
@@ -88,9 +93,40 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
 
             var adjustment = Math.Round(provisioned - benefit, 2, MidpointRounding.AwayFromZero);
 
+            // (CEEF-233 · ز-٥) ‏**وبدلُ الإجازة يُدفع مع المكافأة — المادة 111.**
+            //
+            // ‏**وهذا هو الشقُّ الذي كان مفقوداً**: مَن انتهت خدمتُه وله رصيدُ إجازاتٍ
+            // ‏غيرُ مستعمل **يستحقّ أجرَه نقداً**، ولا يسقط بطول تركه. **وتصفيةٌ تُبرئ
+            // ‏مخصّصَ المكافأة وتترك مخصّصَ الإجازات قائماً** تُبقي التزاماً خالداً تجاه
+            // ‏موظّفٍ رحل، **وتدفع له ناقصاً فيُطالِب**.
+            var leaveBalance = await new LeaveBalanceQuery(db)
+                .ForEmployeeAsync(companyId, employeeId, termination, token);
+
+            var unusedDays = Math.Max(0m, leaveBalance.BalanceDays);
+            var leavePay = LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, unusedDays);
+
+            // ‏**ولا يُدان المخصّصُ بأكثر ممّا فيه.**
+            //
+            // ‏فحسابُ `2203` **مجمَّعٌ لا مفرَّدٌ بالموظّف**، وقد لا يكون التخصيصُ الشهريُّ
+            // ‏شُغِّل أصلاً. **وإدانتُه بالبدل كاملاً تجعل التزاماً يصير مديناً** — ورصيدٌ
+            // ‏مدينٌ على حساب التزامٍ يُقرأ في الميزانيّة **أصلاً موجباً لا وجودَ له**.
+            //
+            // ‏**وما زاد عن المخصَّص مصروفُ الفترة**: هو أجرُ إجازةٍ لم يُحتَط لها،
+            // ‏**ويقع في السنة التي انكشف فيها** — وهو عينُ ما يفعله شقُّ المكافأة أعلاه
+            // ‏حين يعجز مخصّصُها.
+            var leaveProvisionAvailable = -await new LeaveAccrualService(db)
+                .ProvisionBalanceAsync(companyId, settlementDate, token);
+
+            var leaveProvisioned = Math.Max(0m, Math.Min(leavePay, leaveProvisionAvailable));
+            var leaveShortfall = Math.Round(leavePay - leaveProvisioned, 2, MidpointRounding.AwayFromZero);
+
             var expense = await SystemAccountProvisioning.EnsureAsync(db, companyId, ExpenseCode, token);
             var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, ProvisionCode, token);
             var payable = await SystemAccountProvisioning.EnsureAsync(db, companyId, PayableCode, token);
+            var leaveProvision = await SystemAccountProvisioning.EnsureAsync(
+                db, companyId, LeaveProvisionCode, token);
+            var leaveExpense = await SystemAccountProvisioning.EnsureAsync(
+                db, companyId, LeaveExpenseCode, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, settlementDate, PostingDocumentKind.JournalEntry,
@@ -112,6 +148,17 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
             else if (adjustment < 0m)
                 entry.AddLine(expense, -adjustment, 0m, "عجز مخصص — تصفية نهاية خدمة");
 
+            // ‏**وبدلُ الإجازة سطران**: إبراءُ مخصّصها، ومستحقٌّ يُضاف إلى رواتب مستحقّة.
+            if (leavePay > 0m)
+            {
+                if (leaveProvisioned > 0m)
+                    entry.AddLine(leaveProvision, leaveProvisioned, 0m, "إبراء مخصص الإجازات");
+                if (leaveShortfall > 0m)
+                    entry.AddLine(leaveExpense, leaveShortfall, 0m, "عجز مخصص الإجازات");
+
+                entry.AddLine(payable, 0m, leavePay, "بدل إجازة — المادة 111");
+            }
+
             if (entry.Lines.Count == 0)
                 throw new AccountingException("لا مستحقّ ولا مخصّص لهذا الموظّف — لا قيدَ للتصفية.");
 
@@ -123,11 +170,12 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
             await FinancialPostingSupport.AuditPostAsync(
                 db, companyId, "EndOfServiceSettlement", employee.Code,
                 reason: "تصفية مكافأة نهاية الخدمة",
-                details: $"المخصَّص {provisioned:N2} · المستحقّ {benefit:N2} · الفرق {adjustment:N2}",
+                details: $"المخصَّص {provisioned:N2} · المستحقّ {benefit:N2} · الفرق {adjustment:N2}"
+                       + $" · بدل إجازة {leavePay:N2} عن {unusedDays:N2} يوماً",
                 ct: token);
 
             return new EndOfServiceSettlementResult(
-                employeeId, provisioned, benefit, adjustment, entry.Id);
+                employeeId, provisioned, benefit, adjustment, entry.Id, unusedDays, leavePay);
         }, ct);
     }
 
