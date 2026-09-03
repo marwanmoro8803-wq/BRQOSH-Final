@@ -550,6 +550,7 @@
   "خصم سداد مبكر (مكتسب)": "Early-payment discount (earned)",
   "خصم على المستند": "Document Discount",
   "خطأ اتصال": "Connection error",
+  "خطوات مخطط ابتُلع فشلها": "Schema steps whose failure was swallowed",
   "دائن الموردين (بدلاً من الصندوق)": "Accounts payable (instead of cash)",
   "داخل وخارج لكل حساب — والمركز الموحد في العنوان": "Inflows and outflows per account — with the consolidated position in the header",
   "داكن": "Dark",

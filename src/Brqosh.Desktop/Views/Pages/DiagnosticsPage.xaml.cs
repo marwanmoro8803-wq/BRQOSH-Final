@@ -77,6 +77,14 @@ public partial class DiagnosticsPage : UserControl
 
         rows.Add(new InfoRow("سجلات أعطال محفوظة", CrashLogCount().ToString()));
 
+        // (CEEF-231 · ط5-١٠) ‏**وخطواتُ ترقيةِ مخطّطٍ ابتُلع فشلُها** — والتسامحُ مقصود،
+        // ‏**والصمتُ عنه كان يجعل ترقيةً فاشلةً تُقرأ نجاحاً**.
+        var schema = BrqoshSchemaUpdater.LastRunFailures;
+        rows.Add(new InfoRow("خطوات مخطط ابتُلع فشلها",
+            schema.Count == 0
+                ? "لا شيء"
+                : $"{schema.Count} — أولها: {schema[0].Step}"));
+
         _rows = rows;
         Grid.ItemsSource = _rows;
         UiTestAutomation.PublishGridCount(Grid, _rows.Count);

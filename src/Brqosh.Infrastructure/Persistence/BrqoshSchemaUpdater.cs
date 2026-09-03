@@ -85,6 +85,18 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// اسمُ الخطوة. <b>وهو ما يُضيّق البحث من خمسةَ عشرَ موضعاً إلى واحد</b> — ورسالةُ
     /// المحرّك وحدَها تقول «relation does not exist» ولا تقول أيّ خطوةٍ طلبتها.
     /// </param>
+    /// <summary>
+    /// (CEEF-231 · ط5-١٠) مَنفذُ قياسٍ للمُجمِّع — <b>وفرعُ الفشل لا يُبلَغ من الخارج</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وترقيةُ قاعدةٍ سليمةٍ لا تُفشل خطوة</b>، <b>وقاعدةٌ فارغةٌ تماماً تُسقط
+    /// <c>ApplyAsync</c> نفسَه</b> عند مسارٍ غيرِ متسامحٍ قبل أن تبلغ المُجمِّع. فبلا
+    /// هذا المَنفذ <b>يبقى فرعُ التسجيل بلا قياس</b> — وقد أخرجت هذه الحملةُ ثلاثَ
+    /// طفراتٍ نجت لهذا السبب بعينه.
+    /// </remarks>
+    internal Task<bool> TrySchemaSqlForTests(string step, string sql, CancellationToken ct) =>
+        TrySchemaSqlAsync(step, sql, ct);
+
     private async Task<bool> TrySchemaSqlAsync(string step, string sql, CancellationToken ct)
     {
         try
