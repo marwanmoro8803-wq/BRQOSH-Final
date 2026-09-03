@@ -1,4 +1,5 @@
-using System.Windows;
+﻿using System.Windows;
+using Brqosh.Desktop.Ui;
 using Brqosh.Application.Setup;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Security;
@@ -18,6 +19,15 @@ public partial class SetupWizardWindow : Window
     {
         _store = store;
         InitializeComponent();
+        // (CEEF-232 · و-١) ‏**والإرشادُ يُشتقّ من السياسة لا يُكتب بجانبها.**
+        //
+        // ‏كان مكتوباً «٨ أحرف على الأقل» في شاشتين، **و`PasswordPolicy.MinLength` اثنتا عشرة**.
+        // ‏**فيُرفض المستخدمُ بشرطٍ لم يُقَل له**: يكتب ثمانيةً كما أُمر فتردّه الشاشة —
+        // ‏وأخرجه تشغيلٌ حيٌّ للمعالج لا قراءةُ شيفرة، **إذ كلا النصّين صحيحٌ نحوياً**.
+        // ‏وشاشةُ تغيير كلمة المرور **يمرّ بها كلُّ مستخدمٍ في أوّل دخول**.
+        PolicyHintText.Text = LocaleManager.T(
+            $"{PasswordPolicy.MinLength} حرفاً على الأقل، مع حرف كبير وصغير ورقم ورمز خاص.",
+            $"At least {PasswordPolicy.MinLength} characters, with upper and lower case, a digit and a symbol.");
         Loaded += OnLoaded;
         ProfileCombo.SelectionChanged += (_, _) => UpdateTemplatePreview();
     }

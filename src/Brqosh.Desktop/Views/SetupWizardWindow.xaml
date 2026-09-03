@@ -1,4 +1,4 @@
-<Window x:Class="Brqosh.Desktop.Views.SetupWizardWindow"
+﻿<Window x:Class="Brqosh.Desktop.Views.SetupWizardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="BRQOSH — إعداد النظام"
@@ -99,7 +99,7 @@
                                Style="{StaticResource FieldLabel}" Margin="0,16,0,6"/>
                     <PasswordBox x:Name="AdminPasswordConfirmBox" Style="{StaticResource AppPasswordBox}"/>
 
-                    <TextBlock Text="8 أحرف على الأقل، حرف ورقم — لا تستخدم كلمات مرور افتراضية."
+                    <TextBlock x:Name="PolicyHintText"
                                FontSize="12" Foreground="{StaticResource TextMutedBrush}"
                                Margin="0,8,0,0"/>
                 </StackPanel>
