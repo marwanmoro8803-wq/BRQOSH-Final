@@ -504,6 +504,21 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
+            // (CEEF-231 · ط5-٨) ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
+            //
+            // ‏‏متوسّطُ التكلفة المرجّح يُقرأ ثمّ يُكتب في خمسة مسارات ترحيل. ‏**فترحيلان متزامنان يقرآن المتوسطَ نفسَه ويكتبان قيمتين**، والثاني يمحو ‏الأوّل — **فتُقيَّد تكلفةُ مبيعاتٍ بمتوسّطٍ لم يشهد شراءً وقع فعلاً**، ‏وينفصل الدفترُ المساعد عن الأستاذ فرقاً دائماً.
+            //
+            // ‏و`xmin` عمودٌ نظاميٌّ في PostgreSQL يتغيّر مع كلّ تحديثٍ للصف، **فيُحوّل
+            // ‏الفسادَ الصامتَ إلى `DbUpdateConcurrencyException` صريح** — و`UnitOfWork`
+            // ‏يردّه رسالةً مفهومةً بعد ارتدادٍ كامل. **ولا يُعاد تلقائياً**: السياقُ يحمل
+            // ‏كياناتٍ بائتة، وإعادةُ ترحيلٍ بحالةٍ بائتةٍ أخطرُ من خطأٍ يُعيده المستخدم.
+            if (Database.IsNpgsql())
+                entity.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasColumnType("xid")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
+
             entity.ToTable("products");
             entity.Property(p => p.Code).HasMaxLength(32).IsRequired();
             entity.Property(p => p.NameAr).HasMaxLength(256).IsRequired();
@@ -561,6 +576,21 @@ public class BrqoshDbContext : DbContext
         // (CEEF-230 · ط1-٣) ‏رصيدُ الدفعة — تفصيلٌ لرصيد المخزون تربطه به الهويّةُ هـ-٩.
         modelBuilder.Entity<StockBatch>(entity =>
         {
+            // (CEEF-231 · ط5-٨) ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
+            //
+            // ‏‏`ApplyDelta` يقرأ الكمّيةَ ثمّ يكتبها. **فبيعان متزامنان من دفعةٍ ‏واحدة يُنقصانها مرّةً لا مرّتين** — فيبقى في الدفاتر دواءٌ خرج، ‏**ويُصرف من دفعةٍ فرغت**.
+            //
+            // ‏و`xmin` عمودٌ نظاميٌّ في PostgreSQL يتغيّر مع كلّ تحديثٍ للصف، **فيُحوّل
+            // ‏الفسادَ الصامتَ إلى `DbUpdateConcurrencyException` صريح** — و`UnitOfWork`
+            // ‏يردّه رسالةً مفهومةً بعد ارتدادٍ كامل. **ولا يُعاد تلقائياً**: السياقُ يحمل
+            // ‏كياناتٍ بائتة، وإعادةُ ترحيلٍ بحالةٍ بائتةٍ أخطرُ من خطأٍ يُعيده المستخدم.
+            if (Database.IsNpgsql())
+                entity.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasColumnType("xid")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
+
             entity.ToTable("stock_batches");
             entity.Property(b => b.BatchNumber).HasMaxLength(64).IsRequired();
             entity.Property(b => b.Quantity).HasPrecision(18, 4);
@@ -954,6 +984,20 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(s => new { s.CompanyId, s.ShipperCustomerId, s.CodCollected, s.CodRemitted });
             entity.HasIndex(s => new { s.CompanyId, s.Status });
             entity.HasIndex(s => new { s.CompanyId, s.BranchId });
+            // (CEEF-230 · ط3-٤ج) ‏أثرُ الشحنة — **سندُ التسليم لا زينةُ عرض**.
+            entity.OwnsMany(sh => sh.Events, ev =>
+            {
+                ev.ToTable("shipment_events");
+                ev.WithOwner().HasForeignKey("shipment_id");
+                ev.HasKey(e => e.Id);
+                ev.Property(e => e.Kind).HasConversion<string>().HasMaxLength(20);
+                ev.Property(e => e.Location).HasMaxLength(128);
+                ev.Property(e => e.Note).HasMaxLength(256);
+                ev.Property(e => e.ReceivedBy).HasMaxLength(128);
+                ev.HasIndex("shipment_id", "OccurredOn");
+            });
+
+            entity.Navigation(sh => sh.Events).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
@@ -1637,6 +1681,21 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<InventoryCostLayer>(entity =>
         {
+            // (CEEF-231 · ط5-٨) ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
+            //
+            // ‏‏`Consume` يقرأ `RemainingQuantity` ثمّ يكتبها. **فصرفان ‏متزامنان من الطبقة نفسِها يمرّان كلاهما** — يُستهلك أكثرُ ممّا فيها، ‏**وتخرج بضاعةٌ بتكلفةٍ لا وجودَ لها**.
+            //
+            // ‏و`xmin` عمودٌ نظاميٌّ في PostgreSQL يتغيّر مع كلّ تحديثٍ للصف، **فيُحوّل
+            // ‏الفسادَ الصامتَ إلى `DbUpdateConcurrencyException` صريح** — و`UnitOfWork`
+            // ‏يردّه رسالةً مفهومةً بعد ارتدادٍ كامل. **ولا يُعاد تلقائياً**: السياقُ يحمل
+            // ‏كياناتٍ بائتة، وإعادةُ ترحيلٍ بحالةٍ بائتةٍ أخطرُ من خطأٍ يُعيده المستخدم.
+            if (Database.IsNpgsql())
+                entity.Property<uint>("xmin")
+                    .HasColumnName("xmin")
+                    .HasColumnType("xid")
+                    .ValueGeneratedOnAddOrUpdate()
+                    .IsConcurrencyToken();
+
             entity.ToTable("inventory_cost_layers");
             entity.Property(l => l.OriginalQuantity).HasPrecision(18, 4);
             entity.Property(l => l.RemainingQuantity).HasPrecision(18, 4);

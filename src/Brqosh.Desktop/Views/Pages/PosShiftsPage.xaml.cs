@@ -12,8 +12,34 @@ namespace Brqosh.Desktop.Views.Pages;
 
 public partial class PosShiftsPage : UserControl
 {
+    /// <summary>
+    /// (CEEF-231 · ط5-٩) صفُّ ورديةٍ — <b>وفيه فرقُ الدرج</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>وكان <c>ExpectedCash</c> و<c>CashDifference</c> يُحسبان في النطاق ولا يقرؤهما
+    /// أحد</b> — الاختباراتُ وحدَها. <b>فوردةٌ تُغلق بعجزٍ مئتين لا يظهر شيء</b>، ويتكرّر
+    /// شهراً ولا يُكتشف. <b>وحسابٌ يُجرى ولا يُعرض ليس رقابةً بل وهمُها.</b>
+    /// </remarks>
     public record ShiftRow(long Id, string CashierName, string OpenedAt, string ClosedAt,
-        decimal OpeningCash, decimal TotalSales, int TransactionCount, string StatusAr, PosShiftStatus Status);
+        decimal OpeningCash, decimal TotalSales, int TransactionCount, string StatusAr,
+        PosShiftStatus Status, decimal ExpectedCash, decimal? ClosingCash, decimal? CashDifference)
+    {
+        /// <summary>
+        /// نصُّ الفرق — <b>و«—» للمفتوحة</b>.
+        /// </summary>
+        /// <remarks>
+        /// <b>وصفرٌ لوردةٍ لم تُغلق كذبٌ صغير</b>: يُقرأ «مطابقة» وهي لم تُعدّ بعد.
+        /// <b>والإشارةُ تُكتب صراحةً</b> — فـ«200-» يُقرأ في واجهةٍ عربيةٍ بالتباساتٍ
+        /// معروفة، و«عجز 200» لا يلتبس.
+        /// </remarks>
+        public string CashDifferenceText => CashDifference switch
+        {
+            null => "—",
+            0m => "مطابقة",
+            < 0m => $"عجز {Math.Abs(CashDifference.Value):N2}",
+            _ => $"زيادة {CashDifference.Value:N2}",
+        };
+    }
 
     public PosShiftsPage()
     {
@@ -41,12 +67,24 @@ public partial class PosShiftsPage : UserControl
             s.OpenedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
             s.ClosedAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—",
             s.OpeningCash, s.TotalSales, s.TransactionCount,
-            s.Status == PosShiftStatus.Open ? "مفتوحة" : "مغلقة", s.Status)).ToList();
+            s.Status == PosShiftStatus.Open ? "مفتوحة" : "مغلقة", s.Status,
+            s.ExpectedCash,
+            s.Status == PosShiftStatus.Closed ? s.ClosingCash : null,
+            s.Status == PosShiftStatus.Closed ? s.CashDifference : null)).ToList();
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);
         var open = shifts.Count(s => s.Status == PosShiftStatus.Open);
         var sales = shifts.Sum(s => s.TotalSales);
-        ShiftSummaryText.Text = $"ورديات: {shifts.Count} · مفتوحة: {open} · إجمالي مبيعات: {sales:N2} ر.س";
+        // ‏**والعجزُ هو الخبر** — لا المجموع. فوردياتٌ كثيرةٌ بعجزٍ صغيرٍ متكرّر
+        // ‏**أخطرُ من واحدةٍ بعجزٍ كبير**: الأولى نمطٌ والثانية حادثة.
+        var closed = shifts.Where(s => s.Status == PosShiftStatus.Closed).ToList();
+        var short_ = closed.Where(s => s.CashDifference < 0m).ToList();
+
+        ShiftSummaryText.Text =
+            $"ورديات: {shifts.Count} · مفتوحة: {open} · إجمالي مبيعات: {sales:N2} ر.س"
+            + (short_.Count > 0
+                ? $" · ورديات بعجز: {short_.Count} بمجموع {Math.Abs(short_.Sum(s => s.CashDifference)):N2}"
+                : closed.Count > 0 ? " · ولا عجزَ في أي وردية مغلقة." : string.Empty);
     }
 
     private async void OnOpenShift(object sender, RoutedEventArgs e)

@@ -1,0 +1,64 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.BudgetDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="موازنة" Width="1040" Height="660"
+        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="موازنة سنوية" Style="{StaticResource PageTitleText}" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="1" Text="سطر لكل حساب وشهر — وما لم يُخطط يظهر في التقرير إنفاقا بلا خطة"
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,0,14"/>
+
+        <Grid Grid.Row="2" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                <TextBlock Text="الرمز *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                <TextBlock Text="اسم الموازنة *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="السنة *" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="YearBox" Style="{StaticResource AppTextBox}"/>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridComboBoxColumn x:Name="AccountColumn" Header="الحساب" Width="*"
+                                            SelectedValueBinding="{Binding AccountCode}"
+                                            DisplayMemberPath="Label" SelectedValuePath="Code"/>
+                    <DataGridTextColumn Header="الشهر (1-12)" Binding="{Binding Month}" Width="120"/>
+                    <DataGridTextColumn Header="المبلغ المخطط" Binding="{Binding Amount, StringFormat=N2}" Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <DockPanel Grid.Row="4" Margin="0,14,0,0">
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13"
+                       FontWeight="SemiBold" Visibility="Collapsed" TextWrapping="Wrap"/>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9"
+                        Click="OnSave" IsDefault="True"/>
+                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0"
+                        Padding="24,9" Click="OnCancel" IsCancel="True"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

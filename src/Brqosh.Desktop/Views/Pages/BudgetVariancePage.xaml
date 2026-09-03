@@ -17,8 +17,14 @@
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             Style="{StaticResource ToolbarPrimaryGroup}">
-                    <Button x:Name="RunBtn" Content="عرض" Style="{StaticResource PrimaryButton}"
-                            Padding="24,9" Click="OnRun"/>
+                    <Button x:Name="NewBtn" Content="＋ موازنة" Style="{StaticResource PrimaryButton}"
+                            Padding="20,9" Click="OnNew"/>
+                    <Button x:Name="EditBtn" Content="تعديل" Style="{StaticResource SecondaryButton}"
+                            Margin="8,0,0,0" Padding="20,9" Click="OnEdit"/>
+                    <Button x:Name="ApproveBtn" Content="اعتماد" Style="{StaticResource SecondaryButton}"
+                            Margin="8,0,0,0" Padding="20,9" Click="OnApprove"/>
+                    <Button x:Name="RunBtn" Content="عرض" Style="{StaticResource SecondaryButton}"
+                            Margin="8,0,0,0" Padding="20,9" Click="OnRun"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="14"

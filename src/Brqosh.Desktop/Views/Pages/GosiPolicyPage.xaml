@@ -1,0 +1,75 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.GosiPolicyPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="نسب التأمينات الاجتماعية" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="النسب تتغير بقرار الهيئة — والمنشأة تملكها لا البرنامج"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Style="{StaticResource ToolbarPrimaryGroup}">
+                    <Button x:Name="SaveBtn" Content="حفظ النسب" Style="{StaticResource PrimaryButton}"
+                            Padding="24,9" Click="OnSave"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" VerticalAlignment="Top">
+            <StackPanel Margin="4">
+                <TextBlock Text="الأجر الخاضع = الأساسي + بدل السكن، محصورا بين الحد والسقف. وبدل النقل خارجه."
+                           Style="{StaticResource FieldLabel}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="حصة الموظف السعودي %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="SaudiEmployeeBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="حصة صاحب العمل عن السعودي %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="SaudiEmployerBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="حصة الموظف الوافد %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NonSaudiEmployeeBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="حصة صاحب العمل عن الوافد %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NonSaudiEmployerBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="الحد الأدنى للأجر الخاضع" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="FloorBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="سقف الأجر الخاضع" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="CapBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

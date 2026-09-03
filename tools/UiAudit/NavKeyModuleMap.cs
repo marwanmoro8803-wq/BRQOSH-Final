@@ -51,6 +51,8 @@ internal static class NavKeyModuleMap
         ["receivable_aging"] = ModuleKey.Sales,
         ["payable_aging"] = ModuleKey.Purchasing,
         ["branch_profitability"] = ModuleKey.GeneralLedger,
+        ["gosi_policy"] = ModuleKey.Payroll,
+        ["diagnostics"] = ModuleKey.GeneralLedger,
         ["cash_flow_forecast"] = ModuleKey.Treasury,
         ["insurance_payers"] = ModuleKey.Healthcare,
         ["sales_quotations"] = ModuleKey.Sales,

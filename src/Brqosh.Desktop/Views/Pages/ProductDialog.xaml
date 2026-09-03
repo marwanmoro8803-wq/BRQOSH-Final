@@ -35,6 +35,20 @@
                 <TextBox x:Name="BarcodeBox" Style="{StaticResource AppTextBox}"/>
             </StackPanel>
         </Grid>
+        <!-- (CEEF-231 · ط1-٣د) نمطُ التتبّع — و`SetTracking` كان بلا مستدعٍ في الواجهة
+             كلِّها. فصنفٌ لا يُعلَّم متتبَّعاً من الشاشة لا تُدخَل له دفعة، ولا صلاحية،
+             ولا يصلح لصرف الأقدم انتهاءً — وكلُّ ما بُني من دفعاتٍ وصيدليةٍ ومطبخٍ
+             خلف بابٍ لا مفتاحَ له. -->
+        <TextBlock Text="التتبّع" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="TrackingCombo" FontSize="14" Padding="10,8" SelectedIndex="0" Margin="0,0,0,4">
+            <ComboBoxItem Content="بلا تتبع"/>
+            <ComboBoxItem Content="بالدفعة والصلاحية"/>
+            <ComboBoxItem Content="بالرقم التسلسلي"/>
+        </ComboBox>
+        <TextBlock x:Name="TrackingHint" Style="{StaticResource FieldLabel}" TextWrapping="Wrap"
+                   Margin="0,0,0,10"
+                   Text="لا يُغيَّر نمط التتبع وللصنف رصيد قائم — صفِّ الرصيد بجرد أولا."/>
+
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>

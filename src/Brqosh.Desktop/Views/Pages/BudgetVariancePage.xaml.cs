@@ -51,13 +51,95 @@ public partial class BudgetVariancePage : UserControl
 
         if (budgets.Count == 0)
         {
-            SummaryText.Text = "لا موازناتٍ بعد — والانحراف لا يُحسب بلا خطة.";
+            SummaryText.Text = "لا موازناتٍ بعد — أنشِئْ واحدةً من «＋ موازنة».";
             RunBtn.IsEnabled = false;
+            EditBtn.IsEnabled = false;
+            ApproveBtn.IsEnabled = false;
+            Grid.ItemsSource = null;
             return;
         }
 
+        RunBtn.IsEnabled = true;
+        EditBtn.IsEnabled = true;
+        ApproveBtn.IsEnabled = true;
+
         BudgetBox.SelectedIndex = 0;
         await RunAsync();
+    }
+
+    /// <summary>
+    /// (CEEF-231 · ط1-٦ب) <b>إنشاءُ موازنة — وكانت الشاشةُ تقرأ ولا تكتب.</b>
+    ///
+    /// <para><b>ولا موضعَ في المستودع كلِّه كان يُنشئ موازنةً</b> إلا الاختبارات — فتفتح
+    /// هذه الشاشةُ على قائمةٍ فارغةٍ إلى الأبد، <b>والمنشأةُ ترى ميزةً تُعلَن ولا تُستعمل</b>.</para>
+    /// </summary>
+    private async void OnNew(object sender, RoutedEventArgs e)
+    {
+        if (new BudgetDialog { Owner = Window.GetWindow(this) }.ShowDialog() == true)
+            await LoadBudgetsAsync();
+    }
+
+    private async void OnEdit(object sender, RoutedEventArgs e)
+    {
+        if (BudgetBox.SelectedItem is not BudgetOption option)
+        {
+            UiFeedback.ShowWarning("اختر موازنةً أولاً.");
+            return;
+        }
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var budget = await db.Budgets.SingleAsync(b => b.Id == option.Id);
+
+            if (new BudgetDialog(budget) { Owner = Window.GetWindow(this) }.ShowDialog() == true)
+                await LoadBudgetsAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// يعتمد الموازنةَ أو يُعيد فتحَها — <b>والزرُّ واحدٌ يقرأ الحالة</b>.
+    /// </summary>
+    /// <remarks>
+    /// <b>والاعتمادُ يُجمّدها عن التعديل</b> — وهو ما يجعلها خطّةً لا مسوّدة. <b>وإعادةُ
+    /// الفتح تُبطل اعتماداً وُقّع</b>، فتُطلب صراحةً ولا تقع ضمناً عند أوّل تعديل.
+    /// </remarks>
+    private async void OnApprove(object sender, RoutedEventArgs e)
+    {
+        if (BudgetBox.SelectedItem is not BudgetOption option)
+        {
+            UiFeedback.ShowWarning("اختر موازنةً أولاً.");
+            return;
+        }
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var budget = await db.Budgets.SingleAsync(b => b.Id == option.Id);
+
+            if (budget.Status == Brqosh.Domain.Accounting.BudgetStatus.Draft)
+            {
+                budget.Approve();
+                await db.SaveChangesAsync();
+                UiFeedback.ShowInfo("اعتُمدت الموازنة — ولا تُعدَّل حتى تُعاد مفتوحة.");
+            }
+            else
+            {
+                budget.Reopen();
+                await db.SaveChangesAsync();
+                UiFeedback.ShowInfo("أُعيدت الموازنة مسوّدةً — وبطل اعتمادُها.");
+            }
+
+            await LoadBudgetsAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
     }
 
     private async void OnRun(object sender, RoutedEventArgs e) => await RunAsync();

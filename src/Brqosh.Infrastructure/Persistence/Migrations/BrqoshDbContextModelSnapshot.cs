@@ -1573,6 +1573,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("WarehouseId")
                         .HasColumnType("bigint");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "BranchId");
@@ -1644,6 +1650,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "Code")
@@ -1686,6 +1698,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<long>("WarehouseId")
                         .HasColumnType("bigint");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -5175,6 +5193,52 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Navigation("Expenses");
 
                     b.Navigation("Shipments");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Logistics.Shipment", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Logistics.ShipmentEvent", "Events", b1 =>
+                        {
+                            b1.Property<long>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("Id"));
+
+                            b1.Property<string>("Kind")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)");
+
+                            b1.Property<string>("Location")
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<string>("Note")
+                                .HasMaxLength(256)
+                                .HasColumnType("character varying(256)");
+
+                            b1.Property<DateOnly>("OccurredOn")
+                                .HasColumnType("date");
+
+                            b1.Property<string>("ReceivedBy")
+                                .HasMaxLength(128)
+                                .HasColumnType("character varying(128)");
+
+                            b1.Property<long>("shipment_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("shipment_id", "OccurredOn");
+
+                            b1.ToTable("shipment_events", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("shipment_id");
+                        });
+
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Manufacturing.BillOfMaterials", b =>

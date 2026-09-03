@@ -39,6 +39,12 @@
                     <DataGridTextColumn Header="نقد افتتاحي" Binding="{Binding OpeningCash, StringFormat=N2}" Width="110"/>
                     <DataGridTextColumn Header="المبيعات" Binding="{Binding TotalSales, StringFormat=N2}" Width="110"/>
                     <DataGridTextColumn Header="المعاملات" Binding="{Binding TransactionCount}" Width="90"/>
+                    <!-- (CEEF-231 · ط5-٩) نقد الدرج المتوقع والفعلي وفرقهما — وكان الفرق
+                         يُحسب في النطاق ولا يراه أحد. ووردية تُغلق بعجز مئتين لا يظهر
+                         شيء، فيتكرر شهرا ولا يُكتشف. -->
+                    <DataGridTextColumn Header="نقد متوقع" Binding="{Binding ExpectedCash, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="نقد فعلي" Binding="{Binding ClosingCash, StringFormat=N2}" Width="110"/>
+                    <DataGridTextColumn Header="الفرق" Binding="{Binding CashDifferenceText}" Width="120"/>
                     <DataGridTextColumn Header="الحالة" Binding="{Binding StatusAr}" Width="90"/>
                 </DataGrid.Columns>
             </DataGrid>
