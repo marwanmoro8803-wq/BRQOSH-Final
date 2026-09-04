@@ -10,12 +10,16 @@ dotnet publish (Join-Path $Root "src\Brqosh.Desktop\Brqosh.Desktop.csproj") `
     -c Release -r win-x64 --self-contained false `
     -o $OutDir -p:PublishSingleFile=false
 
-$rootBat = Get-ChildItem -LiteralPath $Root -Filter "*.bat" -File |
-    Where-Object { $_.Name -ne "BRQOSH-Production.bat" } |
-    Select-Object -First 1
-if ($rootBat) {
-    Copy-Item -LiteralPath $rootBat.FullName -Destination $OutDir -ErrorAction SilentlyContinue
-}
+# (CEEF-236 - t-8) The repo-root .bat is NOT shipped.
+#
+# This block copied the first *.bat from the repo root into the publish folder, which
+# <Files Include="$(var.PublishDir)\**" /> then harvested into the MSI. That file is
+# تشغيل-برقوش.bat - a DEVELOPER launcher running `dotnet run -c Debug` against
+# "%~dp0src\Brqosh.Desktop\Brqosh.Desktop.csproj". On a client machine there is no src
+# tree and no SDK, so the shortcut fails with a confusing error - and it advertises a
+# Debug path inside Program Files. Measured: dist/BRQOSH/تشغيل-برقوش.bat was present.
+#
+# The production launcher below is written explicitly and is the only .bat that ships.
 # (CEEF-229 - m0-12) Authoritative environment marker.
 # Harvested by <Files Include="$(var.PublishDir)\**" /> so it lands in Program Files,
 # which a standard user cannot write to. AppEnvironmentConfig reads it and refuses to be

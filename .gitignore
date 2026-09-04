@@ -46,6 +46,8 @@ dist/*
 !dist/evidence/
 dist/evidence/*
 !dist/evidence/CEEF-235/
+!dist/evidence/CEEF-236-prodboot/
+!dist/evidence/CEEF-236-rk/
 
 # مواد مستوردة أجنبية ليست جزءاً من المنتج
 system_prompts_leaks-main/

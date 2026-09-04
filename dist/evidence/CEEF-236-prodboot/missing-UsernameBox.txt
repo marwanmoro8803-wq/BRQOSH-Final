@@ -1,0 +1,25 @@
+                             | Text             | BRQOSH
+                             | Text             | نظام تخطيط موارد المؤسسة
+                             | Text             | محاسبة · مقاولات · تصنيع · نقاط بيع
+                             | Text             | فوترة إلكترونية متوافقة مع هيئة الزكاة والضريبة
+                             | Text             | تقارير مالية احترافية وتحليل الأداء
+                             | Text             | إدارة المخزون والمستودعات المتعددة
+                             | Text             | © BRQOSH ERP — جميع الحقوق محفوظة
+                             | Pane             | 
+LoginTabButton               | Button           | تسجيل الدخول
+                             | Text             | تسجيل الدخول
+RegisterTabButton            | Button           | طلب حساب مستخدم
+                             | Text             | طلب حساب مستخدم
+                             | Text             | مرحباً بعودتك
+                             | Text             | سجّل دخولك للمتابعة
+                             | Text             | اسم المستخدم
+LoginUsername                | Edit             | اسم المستخدم
+                             | Text             | كلمة المرور
+PasswordBox                  | Edit             | كلمة المرور
+LoginPasswordReveal          | Button           | 
+RememberMeBox                | CheckBox         | تذكرني
+                             | Text             | تذكرني
+                             | Button           | نسيت كلمة المرور؟
+LoginSubmit                  | Button           | تسجيل الدخول
+                             | Text             | تسجيل الدخول
+EnvironmentFooterText        | Text             | BRQOSH ERP v4
