@@ -49,7 +49,9 @@ Write-Host "== BRQOSH security static scan =="
 function Get-SourceFiles {
     $roots = @($SourceRoot, "scripts", "tools", "installer", ".github") | Where-Object { Test-Path $_ }
     Get-ChildItem -Path $roots -Recurse -File -Include *.cs,*.xaml,*.json,*.csproj,*.ps1,*.psm1,*.sh,*.yml,*.yaml,*.bat,*.wxs |
-        Where-Object { $_.FullName -notmatch '[\/](bin|obj|\.venv|node_modules|TestResults)[\/]' } |
+        # ‏‏[\\/] لا [\/]: مساراتُ ويندوز بشرطةٍ خلفيّة، والصنفُ ذو الشرطة الأمامية
+        # ‏وحدَها **لا يُطابق شيئاً هنا** — فتوسيعي حوّل استثناءً عاملاً إلى استثناءٍ ميّت.
+        Where-Object { $_.FullName -notmatch '[\\/](bin|obj|\.venv|node_modules|TestResults)[\\/]' } |
         # ‏الماسحُ لا يمسح نفسَه: أنماطُه تحوي بالتعريف ما يبحث عنه (‏admin123‎).
         Where-Object { $_.Name -ne 'security-static-scan.ps1' }
 }
@@ -77,10 +79,26 @@ if ($adminPairHits.Count -gt 0) {
 
 # 2) List likely hardcoded secrets (warning / informational)
 # (CEEF-236 - m-25) Broadened: a credential is rarely named exactly "password".
+# (CEEF-236 - m-25/m-30) Broadened, then corrected: the leading [A-Za-z_]* constrained nothing
+# (Select-String is unanchored, so it backtracks to zero width) and matched "pass" as a substring -
+# `compass = "CognitiveQa/COMPASS.yaml"` was reported as a possible secret.  anchors the token.
+# (CEEF-236 - m-25/m-30) Two shapes, because one misses half the ground:
+#   1) a SHELL/PS VARIABLE whose name contains pass/pwd/secret/token anywhere - $pgPass,
+#      $GuestPassword. A  anchor alone misses these (no boundary inside "pgPass").
+#   2) a PLAIN assignment to a credential-named key - password=, secret=, api_key=.
+#      Anchored with  so `compass = "CognitiveQa/COMPASS.yaml"` is not a secret.
+# The first shape is what 59bdb5d actually committed; the second is the classic form.
+#
+# DELIBERATE TRADE, measured: shape 1 also hits identifiers that merely contain the token,
+# e.g. $bypass = "always-on". That noise is accepted because the alternative - anchoring with
+#  - makes the pattern miss $pgPass, which is the exact literal that walked past this gate
+# and got committed. In an informational bucket a false positive costs a glance; a false
+# negative costs a published credential. Verified cases: $pgPass HIT, $GuestPassword HIT,
+# password= HIT, api_key= HIT, compass="..." MISS, probePass (no $) MISS.
 $passwordPatterns = @(
-    "(?i)[A-Za-z_]*(pass(word|wd)?|pwd)\s*=\s*['`"][^'`"]{4,}['`"]",
-    "(?i)[A-Za-z_]*(api[_-]?key|secret|token)\s*=\s*['`"][^'`"]{8,}['`"]",
-    "(?i)(superpassword|--password)\s+['`"][^'`"]{4,}['`"]"
+    "(?i)\\x24[A-Za-z_]*(pass(word|wd)?|pwd|secret|token)[A-Za-z_]*\\s*=\\s*['`"][^'`"]{4,}['`"]",
+    "(?i)\\b(password|passwd|pwd|secret|token|api[_-]?key)\\s*=\\s*['`"][^'`"]{4,}['`"]",
+    "(?i)(superpassword|--password)\\s+['`"][^'`"]{4,}['`"]"
 )
 foreach ($pattern in $passwordPatterns) {
     $hits = @($sourceFiles | Select-String -Pattern $pattern)

@@ -117,7 +117,15 @@ public partial class App : System.Windows.Application
             {
                 AppServices.LoadDatabaseConfig();
                 await AppServices.EnsureDatabaseReachableAsync();
-                problem = connectionWasRepaired ? await DescribeIdentityProblemAsync(setup!) : null;
+                // (CEEF-236 · م-٢٩) ‏**والسؤالُ يُطرح على كلّ تركيبٍ قائم، لا على المُصلَح وحدَه.**
+                //
+                // ‏كان الشرطُ `connectionWasRepaired` — فملفُّ اتصالٍ **يُكتب باليد** (وكتيّبُنا
+                // ‏يدلّ عليه، والقارئُ يقبل الصريحَ غيرَ المحميّ) أو جذرُ بياناتٍ منسوخٌ من محطّةٍ
+                // ‏أخرى يمرّ من أوّل مرّةٍ بلا سؤال — **فيبقى ضررُ م-٢٠ قائماً من البابِ الآخر**.
+                var isFreshInstall = adminUsername is not null;
+                problem = isFreshInstall
+                    ? null
+                    : await DescribeIdentityProblemAsync(setup!, refuseVirgin: connectionWasRepaired);
                 if (problem is null)
                     break;
             }
@@ -240,7 +248,7 @@ public partial class App : System.Windows.Application
     /// <para><b>ومسكونةٌ بغيرِ منشأتنا ⟵ سؤالٌ صريح</b> يُسمّي الاسمَين، فقد يكون التغييرُ مقصوداً
     /// (منشأةٌ أُعيدت تسميتُها) — لكنّه لا يمرّ صامتاً.</para>
     /// </summary>
-    private static async Task<string?> DescribeIdentityProblemAsync(SetupState setup)
+    private async Task<string?> DescribeIdentityProblemAsync(SetupState setup, bool refuseVirgin)
     {
         DatabaseIdentity identity;
         try
@@ -253,10 +261,15 @@ public partial class App : System.Windows.Application
             return $"تعذّر فحصُ محتوى القاعدة:\n{ex.Message}";
         }
 
+        // ‏**والعذراءُ تُرفض بعد إصلاحِ اتصالٍ فقط.** فاتصالٌ حُمِّل من ملفٍّ قائمٍ ونجح قد يكون
+        // ‏أوّلَ إقلاعٍ بعد معالجٍ اكتمل ثمّ سقط التطبيقُ قبل التهيئة — ورفضُه يُقفل التركيبَ على
+        // ‏صاحبه. أمّا سلسلةٌ كُتبت في نافذة الإنقاذ فالفراغُ فيها يعني اسماً خاطئاً.
         if (identity.IsVirgin)
-            return "هذه القاعدة لا تحمل دفاتر BRQOSH." + "\n\n"
-                 + "تصحيحُ الاتصال لا يُنشئ دفاتر جديدة — فالأرجح أنّ اسم القاعدة أو الخادم غير صحيح. "
-                 + "راجع اسم القاعدة (قد يكون غير الاسم الافتراضي) ثم أعد المحاولة.";
+            return refuseVirgin
+                ? "هذه القاعدة لا تحمل دفاتر BRQOSH." + "\n\n"
+                  + "تصحيحُ الاتصال لا يُنشئ دفاتر جديدة — فالأرجح أنّ اسم القاعدة أو الخادم غير صحيح. "
+                  + "راجع اسم القاعدة (قد يكون غير الاسم الافتراضي) ثم أعد المحاولة."
+                : null;
 
         if (!identity.Matches(setup.CompanyName, setup.VatRegistrationNumber))
         {
@@ -270,10 +283,34 @@ public partial class App : System.Windows.Application
                     + "\n\n"
                     + "المتابعة تعني الترحيل على دفاتر المنشأة الأولى. هل تريد المتابعة؟",
                 "BRQOSH — تنبيه: دفاتر منشأة أخرى",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                // (CEEF-236 · م-٢٧) ‏**الافتراضُ «لا».** بلا هذا الوسيط يُصيّر WPF الزرَّ الأوّل
+                // ‏(نعم) هو المُركَّز، فيكفي ضغطُ Enter وسط سلسلةِ حواراتِ إقلاعٍ لتُنفَّذ DDL على
+                // ‏قاعدةِ منشأةٍ أخرى حيّة. والعُرفُ قائمٌ في المستودع: `BackupPage` تُمرّر `No` في
+                // ‏تأكيدَيها اللذَين لا رجعةَ فيهما.
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
 
             if (answer != MessageBoxResult.Yes)
                 return "لم تُقبل القاعدة — اختر قاعدة هذه المنشأة.";
+
+            // (CEEF-236 · م-٢٨) ‏**وقبولٌ يُسجَّل، وإلا تكرّر الاتهامُ أبداً.**
+            //
+            // ‏الهويّةُ المتوقَّعةُ تُقرأ من `setup.json`، ويُكتب في موضعٍ واحدٍ هو معالجُ التهيئة.
+            // ‏و«إعدادات المنشأة» تُغيّر `Company.NameAr` و`VatRegistrationNumber` في القاعدة
+            // ‏**ولا تمسّ الملفّ** — فمن صحّح خطأً مطبعياً في اسم منشأته يُتَّهم بعد أشهرٍ بأنّ
+            // ‏قاعدتَه «تحمل دفاتر منشأة أخرى»، والاسمان اسمُه هو. فبعد قبولٍ صريحٍ تُحدَّث اللقطة.
+            try
+            {
+                _setupStore.Save(setup with
+                {
+                    CompanyName = identity.CompanyName ?? setup.CompanyName,
+                    VatRegistrationNumber = identity.VatNumber ?? setup.VatRegistrationNumber,
+                });
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // ‏تعذّر تحديثُ اللقطة لا يمنع المتابعة — يُسجَّل ويُمضى.
+                Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "SetupStateSyncAfterIdentityConfirm");
+            }
         }
 
         return null;

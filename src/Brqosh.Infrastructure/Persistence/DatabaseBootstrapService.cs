@@ -66,12 +66,42 @@ public class DatabaseBootstrapService(BrqoshDbContext db)
                 ? new DatabaseIdentity(SchemaPresent: true, null, null, null)
                 : new DatabaseIdentity(true, company.Id, company.NameAr, company.VatRegistrationNumber);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (IsMissingSchema(ex))
         {
             // ‏جدولُ الشركات غيرُ موجود ⟵ قاعدةٌ بلا مخطَّط BRQOSH. وهذا **ليس خطأً** هنا،
             // ‏بل الجوابُ نفسُه: عذراءُ. والتمييزُ بين «فارغة» و«بلا مخطَّط» يهمّ المستدعي.
             return new DatabaseIdentity(SchemaPresent: false, null, null, null);
         }
+    }
+
+    /// <summary>
+    /// (CEEF-236 · م-٢٦) <b>«لا أستطيع القراءة» ليست «لا دفاترَ هنا».</b>
+    ///
+    /// <para>كان المُرشِّح <c>ex is not OperationCanceledException</c> — أي <b>كلُّ</b> إخفاق:
+    /// صلاحيّةٌ ناقصة (<c>42501</c>) · مهلةٌ · انقطاعُ شبكةٍ بعد استنفاد إعادة المحاولة. فتُعلَن
+    /// القاعدةُ «عذراء»، ويُقال للمشغّل <b>«هذه القاعدة لا تحمل دفاتر BRQOSH … راجع اسم القاعدة»</b>
+    /// ودفاترُه فيها كاملة. <b>وهو ما يقع بالضبط بعد استعادةٍ بـ<c>pg_restore</c></b>: الجداولُ
+    /// تُصبح مملوكةً لـ<c>postgres</c> ولا يُمنح دورُ التطبيق <c>SELECT</c>، فيُنصح صاحبُ الدفاتر
+    /// المستعادةِ توّاً بأن يُغيّر اسمَ القاعدة — وهو الفعلُ الذي أُنشئ هذا الحارسُ ليمنعه.
+    /// والاستثناءُ يُبتلع بلا سجلٍّ، فلا يبقى للدعم أثر.</para>
+    ///
+    /// <para><b>والأطرف:</b> الرسالةُ الصادقة كانت مكتوبةً سلفاً في <c>DescribeIdentityProblemAsync</c>
+    /// («تعذّر فحصُ محتوى القاعدة: …») — <b>وهذا المُرشِّحُ الواسعُ هو ما جعلها غيرَ قابلةٍ للوصول</b>.
+    /// فبتضييقه تصير مسلوكةً بلا سطرٍ جديد.</para>
+    /// </summary>
+    private static bool IsMissingSchema(Exception? ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+        {
+            // PostgreSQL: undefined_table · invalid_schema_name
+            if (e is Npgsql.PostgresException pg && pg.SqlState is "42P01" or "3F000")
+                return true;
+            // SQLite: يُطابَق بالنصّ تفادياً لاعتمادٍ على تجميعة المزوّد في هذه الطبقة.
+            if (e.GetType().Name == "SqliteException"
+                && e.Message.Contains("no such table", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 }
 

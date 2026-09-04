@@ -32,10 +32,16 @@ $ErrorActionPreference = "Stop"
 
 function Resolve-Share {
     if ($Share -and (Test-Path $Share)) { return $Share }
-    # ‏‏`\\vboxsvr\rk` أوّلاً — والأقراصُ بعده، وقد يكون أحدُها قرصَ التنصيب لا المشترك،
-    # ‏فيُشترط وجودُ سكربت الضيف نفسِه معه لا الحزمةِ وحدَها.
-    foreach ($c in @("\\vboxsvr\rk", "E:\", "F:\", "G:\", "D:\")) {
-        if ((Test-Path (Join-Path $c "BRQOSH-Setup.msi")) -and (Test-Path (Join-Path $c "rk-guest.ps1"))) { return $c }
+    # ‏(CEEF-236 · م-٣١) **تعدادٌ لا تخمين.** كانت القائمةُ مكتوبةً بالحدس (E: F: G: D:)،
+    # ‏و`--automount` في VirtualBox ركّب المشتركَ على **`Z:`** — فلم يجده السكربتُ أصلاً.
+    # ‏ويُشترط وجودُ السكربت مع الحزمة، فلا يُلتقط قرصُ تنصيبٍ يحمل ملفّاً بالاسم نفسِه.
+    $candidates = @("\\vboxsvr\rk") + (
+        Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue |
+            Sort-Object Name | ForEach-Object { $_.Name + ":\" })
+    foreach ($c in $candidates) {
+        try {
+            if ((Test-Path (Join-Path $c "BRQOSH-Setup.msi")) -and (Test-Path (Join-Path $c "rk-guest.ps1"))) { return $c }
+        } catch { }
     }
     throw "لم يُعثر على المجلّد المشترك الذي يحمل BRQOSH-Setup.msi"
 }
@@ -132,6 +138,17 @@ function Install-Brqosh {
     $exe = "$env:ProgramFiles\BRQOSH\Brqosh.Desktop.exe"
     Add-Finding -Check "الملفُّ التنفيذيُّ مُنصَّب" -Expected $exe `
         -Actual $(if (Test-Path $exe) { "موجود" } else { "غائب" }) -Ok (Test-Path $exe)
+
+    # ‏(CEEF-236 · م-٣٢) **الشجرةُ الخطأ تُقاس صراحةً، لا يُستدلّ عليها من غياب الصحيحة.**
+    # ‏أوّلُ تشغيلٍ لهذه المرحلة على آلةٍ نظيفة أخرج «الملفُّ التنفيذيّ غائب» و«علامةُ السجلّ
+    # ‏فارغة» — والسببُ حزمةٌ بُنيت 32-بت فأعاد MSI توجيهَ ProgramFiles64Folder إلى
+    # ‏Program Files (x86) والسجلَّ إلى WOW6432Node. الصفّان أدناه يُسمّيان ذلك بالاسم.
+    $exe86 = "${env:ProgramFiles(x86)}\BRQOSH\Brqosh.Desktop.exe"
+    Add-Finding -Check "(م-٣٢) لا شيءَ في شجرة 32-بت" -Expected "غائب" `
+        -Actual $(if (Test-Path $exe86) { "موجود — الحزمةُ 32-بت" } else { "غائب" }) -Ok (-not (Test-Path $exe86))
+    $reg86 = (Get-ItemProperty "HKLM:\Software\WOW6432Node\BRQOSH" -Name "environment" -ErrorAction SilentlyContinue).environment
+    Add-Finding -Check "(م-٣٢) لا علامةَ سجلٍّ في WOW6432Node" -Expected "غائبة" `
+        -Actual $(if ($reg86) { "موجودة ($reg86) — الحزمةُ 32-بت" } else { "غائبة" }) -Ok (-not $reg86)
 
     # ‏(CEEF-228) المُنصِّب يُعلن الإنتاجَ بنطاق الجهاز — يُقاس لا يُفترض.
     $machineEnv = [Environment]::GetEnvironmentVariable("BRQOSH_ENV", "Machine")
