@@ -1,4 +1,4 @@
-using Brqosh.Application.Setup;
+﻿using Brqosh.Application.Setup;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -107,7 +107,8 @@ public static class AppServices
                 throw new InvalidOperationException(
                     "وضع الإنتاج يتطلب PostgreSQL ولا يوجد ملف اتصال صالح.\n" +
                     $"المسار: {DatabaseConfigFile.Path()}\n" +
-                    "أعد تشغيل معالج التهيئة لإدخال بيانات الاتصال، أو أنشئ الملف يدوياً كما في docs/postgres-production.md §2.");
+                    "أدخل بيانات الاتصال في شاشة «إعدادات الاتصال بقاعدة البيانات» التي ستظهر الآن، " +
+                    "أو أنشئ الملف يدوياً كما في docs/postgres-production.md §2.");
             }
 
             _provider = DatabaseProvider.PostgreSql;

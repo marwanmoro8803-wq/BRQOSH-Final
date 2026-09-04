@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     (CEEF-236 · ر-ك) يبني آلةً افتراضيةً نظيفةً لإثبات الإقلاع الإنتاجيّ من المُنصِّب.
 
@@ -20,7 +20,9 @@ param(
     [string]$Iso = "D:\brqosh-vm\win11-ent-eval-25h2-x64-en-us.iso",
     [string]$ShareHostPath = "D:\brqosh-vm\share",
     [string]$GuestUser = "brqosh",
-    [string]$GuestPassword = "Rk!Pilot2026",
+    # ‏(CEEF-236 · مراجعة) لا كلمةَ مرورٍ ثابتةٍ في المستودع — تُمرَّر أو تُولَّد لكلّ آلة،
+    # ‏وتُكتب في ملفٍّ مجاورٍ للآلة لا في المجلّد المشترك الذي يُنسخ إلى شجرة الأدلّة.
+    [string]$GuestPassword = "",
     [int]$MemoryMB = 8192,
     [int]$Cpus = 4,
     [int]$DiskMB = 65536
@@ -29,6 +31,10 @@ param(
 $ErrorActionPreference = "Stop"
 $vb = "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
 if (-not (Test-Path $vb)) { throw "VBoxManage غير موجود: $vb" }
+
+if ([string]::IsNullOrWhiteSpace($GuestPassword)) {
+    $GuestPassword = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 18 | ForEach-Object { [char]$_ }) + "!aA1"
+}
 
 function Invoke-VBox {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Args)

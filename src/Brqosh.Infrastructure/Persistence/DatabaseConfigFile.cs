@@ -135,6 +135,26 @@ public static class DatabaseConfigFile
     /// أن يكتب المُشغّلُ كلمةَ المرور في المعالج: تُبنى السلسلةُ من الحقول الخمسة فيسقط ما ليس
     /// منها، ويمرّ اختبارُ الاتصال فلا يُنبَّه أحد.</para>
     /// </summary>
+    /// <summary>
+    /// (CEEF-236 · م-٢٢) كلمةُ المرور من سلسلةٍ قائمة — <b>لتُحمَل عند إعادة البناء لا لتُعرض</b>.
+    ///
+    /// <para>تغييرُ اشتراط التشفير وحدَه كان يستوجب إعادةَ كتابتها، والشاشةُ نفسُها تقول «اترك
+    /// كلمة المرور فارغةً للإبقاء عليه». ولا تُعاد إلى أيّ حقلٍ ولا تُعرض — تُمرَّر إلى
+    /// <see cref="BuildPostgresConnectionString"/> ثمّ تُحمى على القرص كسابقتها.</para>
+    /// </summary>
+    public static string ReadPassword(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString)) return "";
+        try
+        {
+            return new NpgsqlConnectionStringBuilder(connectionString).Password ?? "";
+        }
+        catch (ArgumentException)
+        {
+            return "";
+        }
+    }
+
     public static SslMode ReadSslMode(string? connectionString, SslMode fallback = SslMode.Require)
     {
         if (string.IsNullOrWhiteSpace(connectionString))

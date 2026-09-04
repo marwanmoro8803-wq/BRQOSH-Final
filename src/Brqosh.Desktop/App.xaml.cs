@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Windows;
 using Brqosh.Application.Setup;
 using Brqosh.Desktop.Views;
@@ -105,25 +105,56 @@ public partial class App : System.Windows.Application
         // ‏بإصلاح ت-٣ نفسِه، إذ لم يكن شيءٌ قبله يُنتج سلسلةً محميّة.
         //
         // ‏فتُعرض الآن `DatabaseConnectionWindow` — اللوحةُ نفسُها التي في المعالج — ويُعاد التحميل.
+        // ‏(CEEF-236 · م-٢٠) **واتصالٌ يُصلَح لا يُصدَّق على هويّته.** اختبارُ الاتصال يُثبت
+        // ‏البلوغَ لا الهويّة، وما بعده كان يُهيّئ بلا سؤال: قاعدةٌ فارغةٌ ⟵ أربعون هجرةً
+        // ‏وشركةٌ جديدة فيها، وقاعدةٌ فيها منشأةٌ أخرى ⟵ **تُتبنّى ويُرحَّل على دفترِ غيرِه**.
+        // ‏فيُسأل بعد كلّ إصلاحٍ: أهذه قاعدةُ هذا التركيب؟
+        var connectionWasRepaired = false;
         while (true)
         {
+            string? problem;
             try
             {
                 AppServices.LoadDatabaseConfig();
                 await AppServices.EnsureDatabaseReachableAsync();
-                break;
+                problem = connectionWasRepaired ? await DescribeIdentityProblemAsync(setup!) : null;
+                if (problem is null)
+                    break;
             }
             catch (Exception ex)
             {
-                var recovery = new DatabaseConnectionWindow(
-                    $"تعذّر الاتصال بقاعدة البيانات:\n{ex.Message}\n\n" +
-                    "صحّح بيانات الاتصال أدناه — الدفاتر في الخادم لا تُمسّ.");
-                if (recovery.ShowDialog() != true)
-                {
-                    Shutdown();
-                    return;
-                }
+                problem = $"تعذّر الاتصال بقاعدة البيانات:\n{ex.Message}";
             }
+
+            // (CEEF-236 · م-٢١) ‏**وبناءُ نافذة الإنقاذ نفسُه محروس.** مُنشئُها يقرأ الملفَّ
+            // ‏الذي أعطبَ الإقلاعَ للتوّ — فإن رمى، بقيت العمليةُ حيّةً بلا نافذةٍ ولا سبيلَ
+            // ‏إلى إغلاقها (‏ShutdownMode=OnExplicitShutdown‎). فيُقال العطلُ ويُغلَق صراحةً.
+            bool? repaired;
+            try
+            {
+                var recovery = new DatabaseConnectionWindow(
+                    problem + "\n\nصحّح بيانات الاتصال أدناه — الدفاتر في الخادم لا تُمسّ.");
+                repaired = recovery.ShowDialog();
+            }
+            catch (Exception windowEx)
+            {
+                // ‏**نصٌّ حرفيٌّ لا مركَّب** — فيبلغه المترجِم. والتفصيلُ (الاستثناءُ ومساره)
+                // ‏مكتوبٌ في سجلّ الأعطال أصلاً، فلا يُفقد شيءٌ بجعل الرسالة قابلةً للترجمة.
+                // ‏وحارسُ `TheUntranslatableRemainder` عضّ هنا: رفعُ سقفه كان أسهلَ وأكذب.
+                Brqosh.Infrastructure.Operations.CrashLog.Write(windowEx, "DatabaseConnectionWindow");
+                UiDialog.Show(
+                    "تعذّر فتح شاشة إعدادات الاتصال. احذف ملف الاتصال database.json من مجلد BRQOSH في APPDATA ثم أعد التشغيل — التفصيل في سجل الأعطال.",
+                    "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+                return;
+            }
+
+            if (repaired != true)
+            {
+                Shutdown();
+                return;
+            }
+            connectionWasRepaired = true;
         }
 
         // (ع-D3، CEEF-202): أعلِم المستخدم إن عمل على قاعدة غير التي هيّأها — قبل أن يُدخل أي بيانات.
@@ -196,6 +227,56 @@ public partial class App : System.Windows.Application
         main.Show();
         main.Activate();
         main.Focus();
+    }
+
+    /// <summary>
+    /// (CEEF-236 · م-٢٠) يصف سببَ رفضِ قاعدةٍ اختِيرت من نافذة الإنقاذ — أو <c>null</c> إن قُبلت.
+    ///
+    /// <para><b>عذراءُ ⟵ رفضٌ قاطع.</b> بعد إصلاحِ اتصالٍ لا يجوز أن يُنشأ مخطَّطٌ جديد: التركيبُ
+    /// له دفاترُ قائمةٌ بالتعريف، فقاعدةٌ فارغةٌ تعني اسماً خاطئاً — والاسمُ الافتراضيُّ في الشاشة
+    /// <c>brqosh</c> بينما دفاترُ المنشأة قد تكون في <c>brqosh_prod</c>. والإنشاءُ الصامتُ يترك
+    /// المشغّلَ أمام نظامٍ فارغٍ يظنّ معه أنّ دفاترَه ضاعت، ويُلوّث قاعدةً أجنبيّةً بأربعين هجرة.</para>
+    ///
+    /// <para><b>ومسكونةٌ بغيرِ منشأتنا ⟵ سؤالٌ صريح</b> يُسمّي الاسمَين، فقد يكون التغييرُ مقصوداً
+    /// (منشأةٌ أُعيدت تسميتُها) — لكنّه لا يمرّ صامتاً.</para>
+    /// </summary>
+    private static async Task<string?> DescribeIdentityProblemAsync(SetupState setup)
+    {
+        DatabaseIdentity identity;
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            identity = await facade.GetService<DatabaseBootstrapService>().InspectAsync();
+        }
+        catch (Exception ex)
+        {
+            return $"تعذّر فحصُ محتوى القاعدة:\n{ex.Message}";
+        }
+
+        if (identity.IsVirgin)
+            return "هذه القاعدة لا تحمل دفاتر BRQOSH." + "\n\n"
+                 + "تصحيحُ الاتصال لا يُنشئ دفاتر جديدة — فالأرجح أنّ اسم القاعدة أو الخادم غير صحيح. "
+                 + "راجع اسم القاعدة (قد يكون غير الاسم الافتراضي) ثم أعد المحاولة.";
+
+        if (!identity.Matches(setup.CompanyName, setup.VatRegistrationNumber))
+        {
+            var answer = UiDialog.Show(
+                "القاعدة المختارة تحمل دفاتر منشأة أخرى:" + "\n\n"
+                    + $"في القاعدة: {identity.CompanyName}"
+                    + (string.IsNullOrWhiteSpace(identity.VatNumber) ? "" : $" (ضريبي {identity.VatNumber})")
+                    + "\n"
+                    + $"في هذا التركيب: {setup.CompanyName}"
+                    + (string.IsNullOrWhiteSpace(setup.VatRegistrationNumber) ? "" : $" (ضريبي {setup.VatRegistrationNumber})")
+                    + "\n\n"
+                    + "المتابعة تعني الترحيل على دفاتر المنشأة الأولى. هل تريد المتابعة؟",
+                "BRQOSH — تنبيه: دفاتر منشأة أخرى",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (answer != MessageBoxResult.Yes)
+                return "لم تُقبل القاعدة — اختر قاعدة هذه المنشأة.";
+        }
+
+        return null;
     }
 
     /// <summary>دخول آلي للتدقيق FlaUI فقط — BRQOSH_UITEST=1 (لا يُفعَّل في التشغيل العادي).</summary>

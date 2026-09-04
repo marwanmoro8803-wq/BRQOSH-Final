@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,7 +33,12 @@ public partial class DatabaseConnectionPanel : UserControl
     /// يُهيّئ اللوحة: يخفي خيارَ SQLite في الإنتاج، ويملأ الحقولَ من ملفٍّ قائمٍ إن وُجد.
     /// وملفٌّ لا يُفكّ يُعرض سببُه هنا ولا يُسقط الشاشة — <b>فهذه الشاشةُ نفسُها هي علاجُه</b>.
     /// </summary>
-    public void Initialize(bool isProduction)
+    /// <param name="showLoadError">
+    /// (CEEF-236 · م-٢٤) هل تعرض اللوحةُ سببَ تعذّرِ قراءة الملفّ؟ نافذةُ الإنقاذ تعرضه سلفاً
+    /// في صدرها، <b>فكانت الفقرةُ نفسُها تُطبع مرّتين على شاشةٍ واحدة</b> — تكرارٌ يُوهم أنّهما
+    /// عطلان. تُمرَّر <c>false</c> من هناك، وتبقى <c>true</c> في المعالج حيث لا يعرضها أحدٌ غيرُها.
+    /// </param>
+    public void Initialize(bool isProduction, bool showLoadError = true)
     {
         _isProduction = isProduction;
         UseSqliteBox.Visibility = isProduction ? Visibility.Collapsed : Visibility.Visible;
@@ -43,10 +48,19 @@ public partial class DatabaseConnectionPanel : UserControl
         {
             existing = DatabaseConfigFile.Load();
         }
-        catch (InvalidOperationException ex)
+        // (CEEF-236 · م-٢١) ‏**الملفُّ الذي لا يُقرأ هو سببُ وجود هذه الشاشة** — فلا يجوز أن
+        // ‏يُسقطها. كان المُرشِّح `InvalidOperationException` وحدَه، و`Load` قد يرمي `IOException`
+        // ‏(عاملُ نسخٍ احتياطيّ أو مضادُّ فيروساتٍ يُمسك الملفَّ، أو مجلّدٌ مُوجَّهٌ إلى شبكةٍ تتقطّع)
+        // ‏أو `UnauthorizedAccessException`. ولأنّ هذا المُنشئَ يُستدعى **من داخل كتلة catch** في
+        // ‏`App.OnStartup`، كان الاستثناءُ يخرج من `OnStartup` كلِّها ويترك عمليةً بلا نافذة.
+        catch (Exception ex) when (ex is InvalidOperationException or IOException
+                                      or UnauthorizedAccessException or CryptographicException)
         {
-            LoadErrorText.Text = ex.Message;
-            LoadErrorText.Visibility = Visibility.Visible;
+            if (showLoadError)
+            {
+                LoadErrorText.Text = ex.Message;
+                LoadErrorText.Visibility = Visibility.Visible;
+            }
         }
 
         if (existing is not null
@@ -148,7 +162,7 @@ public partial class DatabaseConnectionPanel : UserControl
         var password = PgPasswordBox.Password;
         if (password.Length == 0)
         {
-            if (_existingPostgres is not null
+            var sameTarget = _existingPostgres is not null
                 && DatabaseConfigFile.TryParsePostgres(_existingPostgres.ConnectionString,
                     out var oldHost, out var oldPort, out var oldDb, out var oldUser)
                 && string.Equals(oldHost, host, StringComparison.OrdinalIgnoreCase)
@@ -156,10 +170,22 @@ public partial class DatabaseConnectionPanel : UserControl
                 && string.Equals(oldDb, database, StringComparison.Ordinal)
                 // ‏أسماءُ أدوار PostgreSQL حسّاسةٌ لحالة الأحرف — والمقارنةُ المتساهلة تُعيد استعمالَ
                 // ‏سلسلةٍ باسمٍ غيرِ الذي كُتب في الحقل.
-                && string.Equals(oldUser, username, StringComparison.Ordinal)
-                && SameStrictness(existingSslMode, sslMode))
+                && string.Equals(oldUser, username, StringComparison.Ordinal);
+
+            if (sameTarget && SameStrictness(existingSslMode, sslMode))
+                return _existingPostgres!.ConnectionString;
+
+            // (CEEF-236 · م-٢٢) ‏**تغييرُ اشتراط التشفير وحدَه لا يستوجب إعادةَ كتابة كلمة المرور.**
+            //
+            // ‏هي في الملفّ سلفاً — والشاشةُ نفسُها تقول «اترك كلمة المرور فارغةً للإبقاء عليه».
+            // ‏وكان الرفضُ يقع بالضبط حين يفعل المشغّلُ ما أمرته به رسالةُ المسبار («أزل اشتراط
+            // ‏التشفير من الشاشة») بعد أن أُطفئ ssl على الخادم: يُرفض برسالةٍ **تُشير إلى الحقل
+            // ‏الخطأ**، وهو نمطُ «رسالةٌ تُشخّص سبباً غيرَ السبب» بعينه.
+            if (sameTarget)
             {
-                return _existingPostgres.ConnectionString;
+                var carried = DatabaseConfigFile.ReadPassword(_existingPostgres!.ConnectionString);
+                if (!string.IsNullOrEmpty(carried))
+                    return DatabaseConfigFile.BuildPostgresConnectionString(host, port, database, username, carried, sslMode);
             }
 
             error = LocaleManager.T("كلمة مرور قاعدة البيانات مطلوبة.", "The database password is required.");
@@ -216,12 +242,17 @@ public partial class DatabaseConnectionPanel : UserControl
     {
         if (!RequiresPostgres)
         {
-            // ‏اختار قاعدةً محلية وثمّة ملفٌّ يُشير إلى PostgreSQL — يُكتب المزوّدُ صريحاً كي لا يُقلع
-            // ‏التطبيقُ على قاعدةٍ غير التي اختارها للتوّ.
-            return _existingPostgres is null
-                ? null
-                : SaveOrDescribe(DatabaseConfigFile.SqliteProvider,
-                    $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}");
+            // (CEEF-236 · م-٢٣) ‏**«لم أكتب شيئاً» لا يجوز أن يُقرأ «حُفظ».**
+            //
+            // ‏كان الحفظُ يُتخطّى حين `_existingPostgres is null` ويُعيد `null` — و`null` هي
+            // ‏إشارةُ النجاح. فنافذةُ الإنقاذ تُغلق بـ`DialogResult=true`، وحلقةُ الإقلاع تُعيد
+            // ‏قراءةَ الملفّ **التالف نفسِه**، فتفشل، فتُعرض النافذةُ من جديد — **دورةٌ لا تنتهي
+            // ‏إلا بالإغلاق**. وهو مسارٌ مسلوك: ملفٌّ محميٌّ بحسابٍ آخر خارجَ الإنتاج يجعل
+            // ‏`_existingPostgres` فارغاً بالضبط.
+            //
+            // ‏فيُكتب المزوّدُ صريحاً دائماً — ويُستبدل به الملفُّ الذي لا يُقرأ.
+            return SaveOrDescribe(DatabaseConfigFile.SqliteProvider,
+                $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}");
         }
 
         var connectionString = TryBuildConnectionString(out var error);

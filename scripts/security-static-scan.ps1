@@ -1,4 +1,4 @@
-# Static security scan for BRQOSH — fails CI on critical findings in src/.
+﻿# Static security scan for BRQOSH — fails CI on critical findings in src/.
 #
 # (CEEF-229 . م2-6) WHAT THIS SCRIPT CAN AND CANNOT PROVE — read before adding a check here.
 #
@@ -37,9 +37,21 @@ function Add-Warning([string]$Message) { $warnings.Add($Message) }
 
 Write-Host "== BRQOSH security static scan =="
 
+# (CEEF-236 - m-25) The gate looked at src/ only.
+#
+# Measured: 59bdb5d added a PostgreSQL superuser password and a VM account password to
+# scripts/ops/, and this scan still reported PASS - which the same campaign then cited as
+# security evidence. Deploy, backup and installer scripts are exactly where real credentials
+# accumulate, and none of them were ever read.
+#
+# Two widenings: the roots below, and the pattern list in section 2 - a variable named
+# $pgPass was invisible to a pattern anchored on the literal token "password".
 function Get-SourceFiles {
-    Get-ChildItem -Path $SourceRoot -Recurse -File -Include *.cs,*.xaml,*.json,*.csproj |
-        Where-Object { $_.FullName -notmatch "\\bin\\|\\obj\\" }
+    $roots = @($SourceRoot, "scripts", "tools", "installer", ".github") | Where-Object { Test-Path $_ }
+    Get-ChildItem -Path $roots -Recurse -File -Include *.cs,*.xaml,*.json,*.csproj,*.ps1,*.psm1,*.sh,*.yml,*.yaml,*.bat,*.wxs |
+        Where-Object { $_.FullName -notmatch '[\/](bin|obj|\.venv|node_modules|TestResults)[\/]' } |
+        # ‏الماسحُ لا يمسح نفسَه: أنماطُه تحوي بالتعريف ما يبحث عنه (‏admin123‎).
+        Where-Object { $_.Name -ne 'security-static-scan.ps1' }
 }
 
 # 1) Hard fail: default admin credentials in application source
@@ -64,11 +76,11 @@ if ($adminPairHits.Count -gt 0) {
 }
 
 # 2) List likely hardcoded secrets (warning / informational)
+# (CEEF-236 - m-25) Broadened: a credential is rarely named exactly "password".
 $passwordPatterns = @(
-    'password\s*=\s*["''][^"'']{3,}["'']',
-    'Password\s*=\s*["''][^"'']{3,}["'']',
-    'api[_-]?key\s*=\s*["''][^"'']{8,}["'']',
-    'secret\s*=\s*["''][^"'']{8,}["'']'
+    "(?i)[A-Za-z_]*(pass(word|wd)?|pwd)\s*=\s*['`"][^'`"]{4,}['`"]",
+    "(?i)[A-Za-z_]*(api[_-]?key|secret|token)\s*=\s*['`"][^'`"]{8,}['`"]",
+    "(?i)(superpassword|--password)\s+['`"][^'`"]{4,}['`"]"
 )
 foreach ($pattern in $passwordPatterns) {
     $hits = @($sourceFiles | Select-String -Pattern $pattern)

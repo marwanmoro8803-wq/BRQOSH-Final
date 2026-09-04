@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using Brqosh.Application.Setup;
 
 namespace Brqosh.Desktop.Views;
@@ -30,7 +30,8 @@ public partial class DatabaseConnectionWindow : Window
     {
         InitializeComponent();
         ReasonText.Text = reason;
-        ConnectionPanel.Initialize(AppEnvironmentConfig.IsProduction);
+        // ‏السببُ معروضٌ في صدر النافذة (ReasonText) — فلا تُكرّره اللوحةُ تحته.
+        ConnectionPanel.Initialize(AppEnvironmentConfig.IsProduction, showLoadError: false);
     }
 
     private async void OnSave(object sender, RoutedEventArgs e)

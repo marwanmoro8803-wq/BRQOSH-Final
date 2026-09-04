@@ -91,6 +91,23 @@ function Save-ElementTree { param($Scope, [string]$Name)
     } catch { }
 }
 
+function Wait-ForEitherWindow { param([string]$Expected, [string]$Unwanted, $Process, [int]$TimeoutSeconds)
+    # ‏**الحكمُ إيجابيّ لا مستنتَجٌ من غياب.** «لم تظهر نافذةُ التفعيل خلال ٢٥ ثانية» يصدق
+    # ‏أيضاً حين لا يكون التطبيقُ قد بلغها بعد، أو حين سقط قبلها — فيُكتب PASS لرفضٍ واقع.
+    # ‏فيُنتظر ما يجب أن يظهر، ويُراقَب معه ما يجب ألّا يظهر، وموتُ العملية إخفاقٌ مُسمّى.
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $bad = $AE::RootElement.FindFirst($TS::Children,
+            (New-Object System.Windows.Automation.PropertyCondition($AE::NameProperty, $Unwanted)))
+        if ($null -ne $bad) { return @{ Outcome = "unwanted"; Window = $bad } }
+        $good = $AE::RootElement.FindFirst($TS::Children,
+            (New-Object System.Windows.Automation.PropertyCondition($AE::NameProperty, $Expected)))
+        if ($null -ne $good) { return @{ Outcome = "expected"; Window = $good } }
+        if ($null -ne $Process -and $Process.HasExited) { return @{ Outcome = "exited"; Window = $null } }
+        Start-Sleep -Milliseconds 500
+    }
+    return @{ Outcome = "timeout"; Window = $null }
+}
 function Find-ById { param($Scope, [string]$Id, [int]$TimeoutSeconds = 0)
     # ‏**انتظارٌ للعنصر لا افتراضُ حضوره.** النافذةُ قد تُوجَد وشجرةُ عناصرها لم تكتمل بعد،
     # ‏فيعود null ثمّ يسقط الاستدعاءُ بـ«method on a null-valued expression» — رسالةٌ لا
@@ -112,10 +129,24 @@ function Find-ByName { param($Scope, [string]$Name)
 function Set-TextBoxValue { param($Element, [string]$Value)
     $Element.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($Value)
 }
-function Set-PasswordValue { param($Element, [string]$Value)
-    # PasswordBox لا يدعم ValuePattern عمداً (أمن) — تركيزٌ ثمّ محاكاةُ لوحة مفاتيح.
-    $Element.SetFocus(); Start-Sleep -Milliseconds 250
-    [System.Windows.Forms.SendKeys]::SendWait($Value); Start-Sleep -Milliseconds 200
+function ConvertTo-SendKeys { param([string]$Value)
+    # ‏SendKeys يُفسّر + ^ % ~ ( ) { } [ ] — وكلمةُ مرورٍ فيها أيٌّ منها تُرسَل مشوَّهةً
+    # ‏أو تُفسَّر اختصاراً. الهروبُ بلفّ كلٍّ منها بقوسَين معقوفَين.
+    $sb = New-Object System.Text.StringBuilder
+    foreach ($c in $Value.ToCharArray()) {
+        if ('+^%~(){}[]'.Contains($c)) { [void]$sb.Append('{').Append($c).Append('}') }
+        else { [void]$sb.Append($c) }
+    }
+    return $sb.ToString()
+}
+
+function Set-PasswordValue { param($Element, [string]$Value, $Window = $null)
+    # ‏PasswordBox لا يدعم ValuePattern عمداً (أمن) — تركيزٌ ثمّ محاكاةُ لوحة مفاتيح.
+    # ‏**والتقديمُ شرط**: بلا نافذةٍ في المقدّمة يُخفق SetFocus صامتاً وتُرسَل كلمةُ المرور
+    # ‏إلى النافذة النشطة أياً كانت — وقد وقع هذا فعلاً مع لصق الترخيص (٤ محارف من ٦٩٧).
+    if ($null -ne $Window) { Set-WindowForeground $Window }
+    $Element.SetFocus(); Start-Sleep -Milliseconds 300
+    [System.Windows.Forms.SendKeys]::SendWait((ConvertTo-SendKeys $Value)); Start-Sleep -Milliseconds 250
 }
 function Invoke-Button { param($Element)
     $Element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
@@ -233,8 +264,8 @@ try {
 
     Set-TextBoxValue (Find-ById $wiz "CompanyNameBox" 20) $company
     Set-TextBoxValue (Find-ById $wiz "AdminUsernameBox" 20) $adminUser
-    Set-PasswordValue (Find-ById $wiz "AdminPasswordBox" 20) $adminPass
-    Set-PasswordValue (Find-ById $wiz "AdminPasswordConfirmBox" 20) $adminPass
+    Set-PasswordValue (Find-ById $wiz "AdminPasswordBox" 20) $adminPass $wiz
+    Set-PasswordValue (Find-ById $wiz "AdminPasswordConfirmBox" 20) $adminPass $wiz
 
     # ‏خانةُ SQLite يجب أن تكون **مخفيّةً** في الإنتاج — قياسٌ لا افتراض.
     $sqliteBox = Find-ById $wiz "UseSqliteBox"
@@ -246,7 +277,7 @@ try {
     Set-TextBoxValue (Find-ById $wiz "PgPortBox" 20) "$PgPort"
     Set-TextBoxValue (Find-ById $wiz "PgDatabaseBox" 20) $dbName
     Set-TextBoxValue (Find-ById $wiz "PgUserBox" 20) $PgUser
-    Set-PasswordValue (Find-ById $wiz "PgPasswordBox" 20) $pgPassword
+    Set-PasswordValue (Find-ById $wiz "PgPasswordBox" 20) $pgPassword $wiz
 
     # ── (أ) اشتراطُ TLS على خادمٍ بلا ssl ⟵ سببٌ مسمّى ───────────────────────
     $tlsBox = Find-ById $wiz "RequireTlsBox" 20
@@ -332,7 +363,7 @@ try {
         -Expected "$($signed.Length) محرفاً" -Actual "$($pasted.Length) محرفاً" -Ok $pasteOk
     Save-WindowShot $lic "03-license-activation"
     if ($pasteOk) {
-        Invoke-Button (Find-ByName $lic "تفعيل الترخيص")
+        Invoke-Button (Find-ById $lic "ActivateButton" 20)
         Start-Sleep -Seconds 3
         $stillOpen = $null -ne (Find-WindowByName -Name "تفعيل ترخيص BRQOSH" -TimeoutSeconds 3)
         $licErr = if ($stillOpen) { (Find-ById $lic "ErrorText").Current.Name } else { "" }
@@ -348,12 +379,18 @@ try {
         $licState = [ordered]@{ CompanyName = $company; MachineId = $machineId; SignedLicenseJson = $signed }
         ($licState | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath (Join-Path $dataRoot "license.json") -Encoding UTF8
         $app = Start-App -DataRoot $dataRoot
-        $reopened = Find-WindowByName -Name "تفعيل ترخيص BRQOSH" -TimeoutSeconds 25
+        $race = Wait-ForEitherWindow -Expected "BRQOSH — تسجيل الدخول" `
+            -Unwanted "تفعيل ترخيص BRQOSH" -Process $app -TimeoutSeconds 180
+        $verdict = switch ($race.Outcome) {
+            "expected" { "بلغ شاشةَ الدخول — الترخيصُ مقبول" }
+            "unwanted" { "أُعيدت نافذةُ التفعيل — الترخيصُ مرفوض" }
+            "exited"   { "أُغلق التطبيقُ قبل أن يبلغ شاشةَ الدخول" }
+            default    { "لم يبلغ شاشةَ الدخول خلال ١٨٠ ثانية" }
+        }
         Add-Finding -Check "(ت-١) المفتاحُ المُضمَّن يقبل ترخيصَ المورِّد على جذرٍ نظيفٍ في الإنتاج" `
-            -Expected "لا تُعاد نافذةُ التفعيل" `
-            -Actual $(if ($null -ne $reopened) { "أُعيدت — الترخيصُ مرفوض" } else { "لم تُعد — الترخيصُ مقبول" }) `
-            -Ok ($null -eq $reopened)
-        if ($null -ne $reopened) { throw "أُوقف: الترخيصُ رُفض بعد كتابة المخزن." }
+            -Expected "يبلغ شاشةَ الدخول بلا إعادةِ نافذة التفعيل" `
+            -Actual $verdict -Ok ($race.Outcome -eq "expected")
+        if ($race.Outcome -ne "expected") { throw "أُوقف: $verdict" }
     }
 
     # ── الدخول ───────────────────────────────────────────────────────────────
@@ -363,7 +400,7 @@ try {
     Set-WindowForeground $login
     Start-Sleep -Seconds 2
     Set-TextBoxValue (Find-ById $login "LoginUsername" 30) $adminUser
-    Set-PasswordValue (Find-ById $login "PasswordBox" 30) $adminPass
+    Set-PasswordValue (Find-ById $login "PasswordBox" 30) $adminPass $login
     Save-WindowShot $login "04-login"
     # ‏«تسجيل الدخول» اسمٌ يحمله زرّان (تبويبٌ وإرسال) — يُقصد الإرسالُ بمعرّفه.
     Invoke-Button (Find-ById $login "LoginSubmit" 30)
@@ -373,9 +410,9 @@ try {
     if ($null -ne $chg) {
         Add-Finding -Check "تغييرُ كلمة المرور إلزاميٌّ في أوّل دخول" -Expected "يُطلب" -Actual "طُلب" -Ok $true
         Set-WindowForeground $chg
-        Set-PasswordValue (Find-ById $chg "CurrentPasswordBox" 30) $adminPass
-        Set-PasswordValue (Find-ById $chg "NewPasswordBox" 30) $newPass
-        Set-PasswordValue (Find-ById $chg "ConfirmPasswordBox" 30) $newPass
+        Set-PasswordValue (Find-ById $chg "CurrentPasswordBox" 30) $adminPass $chg
+        Set-PasswordValue (Find-ById $chg "NewPasswordBox" 30) $newPass $chg
+        Set-PasswordValue (Find-ById $chg "ConfirmPasswordBox" 30) $newPass $chg
         Save-WindowShot $chg "05-password-change"
         Invoke-Button (Find-ByName $chg "حفظ والمتابعة")
     } else {
@@ -422,7 +459,10 @@ try {
     }
     if ($fails -gt 0) {
         Write-Host "=== FAIL: $fails فحصاً خالف المتوقَّع ==="
+        $global:LASTEXITCODE = 1
+        exit 1
     } else {
         Write-Host "=== PASS — وهذا ليس ر-ك: لم يُقَس المُنصِّبُ ولا جهازٌ بلا .NET 9 ==="
+        exit 0
     }
 }

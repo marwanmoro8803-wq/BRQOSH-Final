@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     (CEEF-236 · ر-ك) يُنفَّذ **داخل** الآلة الافتراضية النظيفة — من المُنصِّب إلى الصدفة.
 
@@ -21,31 +21,51 @@
 param(
     [ValidateSet("NoDotnet", "Dotnet", "Install", "Postgres", "All")]
     [string]$Stage = "All",
-    [string]$Share = ""
+    [string]$Share = "",
+    # ‏(CEEF-236 · مراجعة) كلمةُ مرور PostgreSQL **لا تُثبَّت في المستودع**: تُمرَّر أو تُولَّد
+    # ‏لكلّ تشغيلة. كانت `RkPg!2026` حرفيّةً في الشيفرة، فمن قرأ المستودعَ ملك مستخدمَ
+    # ‏postgres الأعلى في كلّ آلةٍ بُنيت بهذا الكتيّب.
+    [string]$PgPassword = ""
 )
 
 $ErrorActionPreference = "Stop"
 
 function Resolve-Share {
     if ($Share -and (Test-Path $Share)) { return $Share }
-    foreach ($c in @("\\vboxsvr\rk", "E:\", "D:\", "F:\")) {
-        if (Test-Path (Join-Path $c "BRQOSH-Setup.msi")) { return $c }
+    # ‏‏`\\vboxsvr\rk` أوّلاً — والأقراصُ بعده، وقد يكون أحدُها قرصَ التنصيب لا المشترك،
+    # ‏فيُشترط وجودُ سكربت الضيف نفسِه معه لا الحزمةِ وحدَها.
+    foreach ($c in @("\\vboxsvr\rk", "E:\", "F:\", "G:\", "D:\")) {
+        if ((Test-Path (Join-Path $c "BRQOSH-Setup.msi")) -and (Test-Path (Join-Path $c "rk-guest.ps1"))) { return $c }
     }
     throw "لم يُعثر على المجلّد المشترك الذي يحمل BRQOSH-Setup.msi"
 }
 $share = Resolve-Share
 $work = "C:\rk"
 New-Item -ItemType Directory -Force -Path $work | Out-Null
-$csv = Join-Path $share "rk-findings.csv"
+# ‏**ملفُّ نتائجَ لكلّ تشغيلة.** ملفٌّ واحدٌ يُلحَق به يخلط تشغيلةً قاست T-07 على جهازٍ بلا
+# ‏.NET بتشغيلةٍ تاليةٍ تقول إنّ القياسَ لم يعد صالحاً — ويخرج الاثنان معاً كدليلٍ واحد
+# ‏لا يميّز القارئُ أيَّهما أنتج أيَّ صفّ.
+$runId = Get-Date -Format "yyyyMMdd-HHmmss"
+$csv = Join-Path $share "rk-findings-$runId.csv"
+$script:failCount = 0
 
 function Add-Finding {
     param([string]$Check, [string]$Expected, [string]$Actual, [bool]$Ok)
+    if (-not $Ok) { $script:failCount++ }
     $row = [pscustomobject]@{
-        Time = (Get-Date -Format "HH:mm:ss"); Check = $Check
+        Run = $runId; Time = (Get-Date -Format "HH:mm:ss"); Check = $Check
         Expected = $Expected; Actual = $Actual; Result = $(if ($Ok) { "PASS" } else { "FAIL" })
     }
     $row | Export-Csv -LiteralPath $csv -NoTypeInformation -Encoding UTF8 -Append
     Write-Host "[$(if($Ok){'OK  '}else{'FAIL'})] $Check — $Actual"
+}
+
+function Invoke-Stage {
+    param([string]$Name, [scriptblock]$Body)
+    # ‏**إجهاضُ مرحلةٍ يُكتب صفّاً، لا يُترك فراغاً.** بلا هذا تسقط المرحلةُ فتغيب صفوفُها
+    # ‏كلُّها من الدليل، ويبدو الملفُّ كأنّ تلك الفحوصَ لم تُطلَب أصلاً.
+    try { & $Body }
+    catch { Add-Finding -Check "المرحلة «$Name» اكتملت" -Expected "بلا إجهاض" -Actual $_.Exception.Message -Ok $false }
 }
 
 function Test-DotnetDesktop {
@@ -84,9 +104,12 @@ function Invoke-NoDotnetGate {
 function Install-DotnetDesktop {
     Write-Host "=== ٢) .NET 9 Desktop Runtime ==="
     if (Test-DotnetDesktop) { Add-Finding "‏.NET 9 حاضر" "موجود" "كان موجوداً" $true; return }
+    # ‏النسخةُ المُهيّأةُ في المشترك أوّلاً — تنزيلٌ من داخل الضيف سببُ إخفاقٍ كاملٍ إن
+    # ‏تعثّرت الشبكة في منتصف المراحل، والملفُّ نفسُه من المصدر الرسميّ نفسِه.
     $exe = Join-Path $work "windowsdesktop-runtime-9-x64.exe"
+    $staged = Join-Path $share "windowsdesktop-runtime-9-x64.exe"
+    if ((Test-Path $staged) -and -not (Test-Path $exe)) { Copy-Item $staged $exe -Force }
     if (-not (Test-Path $exe)) {
-        # ‏رابطُ مايكروسوفت الرسميّ الثابت لأحدث رقعةٍ من 9.0
         Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile $exe -UseBasicParsing
     }
     $p = Start-Process $exe -Wait -PassThru -ArgumentList "/install", "/quiet", "/norestart"
@@ -122,9 +145,14 @@ function Install-Brqosh {
 # ── ٤) PostgreSQL بـssl=on ───────────────────────────────────────────────────
 function Install-Postgres {
     Write-Host "=== ٤) PostgreSQL بـTLS ==="
-    $pgPass = "RkPg!2026"
+    $pgPass = if ([string]::IsNullOrWhiteSpace($PgPassword)) {
+        # ‏تُولَّد لهذه التشغيلة وحدَها، وتُكتب في المشترك بملفٍّ مستقلٍّ يُحذف بعد الاستعمال.
+        -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 20 | ForEach-Object { [char]$_ }) + "!aA1"
+    } else { $PgPassword }
     $installer = Join-Path $work "postgresql-x64.exe"
     if (-not (Test-Path "$env:ProgramFiles\PostgreSQL\17\bin\psql.exe")) {
+        $stagedPg = Join-Path $share "postgresql-x64.exe"
+        if ((Test-Path $stagedPg) -and -not (Test-Path $installer)) { Copy-Item $stagedPg $installer -Force }
         if (-not (Test-Path $installer)) {
             Invoke-WebRequest -UseBasicParsing -OutFile $installer `
                 -Uri "https://get.enterprisedb.com/postgresql/postgresql-17.6-1-windows-x64.exe"
@@ -138,38 +166,80 @@ function Install-Postgres {
     $pgRoot = "$env:ProgramFiles\PostgreSQL\17"
     $dataDir = "$pgRoot\data"
 
-    # ‏شهادةٌ ذاتيّةُ التوقيع — يكفي لإثبات أنّ القناة مشفّرةٌ فعلاً (‏Require لا VerifyFull‎).
-    $openssl = "$pgRoot\bin\openssl.exe"
-    if ((Test-Path $openssl) -and -not (Test-Path "$dataDir\server.crt")) {
-        & $openssl req -new -x509 -days 365 -nodes -text `
-            -out "$dataDir\server.crt" -keyout "$dataDir\server.key" -subj "/CN=brqosh-rk" 2>&1 | Out-Null
-        icacls "$dataDir\server.key" /inheritance:r /grant:r "NT AUTHORITY\NetworkService:(R)" 2>&1 | Out-Null
+    # ‏شهادةٌ ذاتيّةُ التوقيع — تكفي لإثبات أنّ القناة مشفّرةٌ فعلاً (‏Require لا VerifyFull‎).
+    #
+    # ‏**ولا تُولَّد هنا:** بناءُ EnterpriseDB لويندوز **لا يشحن openssl.exe** — قيس على
+    # ‏نسختَي 16 و17 على المُضيف فالملفُّ غيرُ موجود. وكان التوليدُ يُتخطّى بصمت ثمّ يُكتب
+    # ‏ssl = on بلا شهادة، **فيرفض الخادمُ الإقلاعَ أصلاً** وتسقط المرحلةُ بلا سببٍ مفهوم.
+    # ‏فتُهيَّأ الشهادةُ على المُضيف وتُنسخ من المشترك.
+    # ‏(وفحصُ صلاحيّات ملفّ المفتاح في PostgreSQL محصورٌ بغير ويندوز — ifndef WIN32.)
+    foreach ($f in @("server.crt", "server.key")) {
+        $src = Join-Path $share $f
+        if ((Test-Path $src) -and -not (Test-Path "$dataDir\$f")) { Copy-Item $src "$dataDir\$f" -Force }
     }
-    if (Test-Path "$dataDir\postgresql.conf") {
+    $haveCert = (Test-Path "$dataDir\server.crt") -and (Test-Path "$dataDir\server.key")
+    Add-Finding -Check "شهادةُ TLS مُهيّأةٌ في مجلّد البيانات" -Expected "server.crt + server.key" `
+        -Actual $(if ($haveCert) { "موجودتان" } else { "غائبتان — لن يُفعَّل ssl" }) -Ok $haveCert
+    if ($haveCert -and (Test-Path "$dataDir\postgresql.conf")) {
         $conf = Get-Content "$dataDir\postgresql.conf" -Raw
         if ($conf -notmatch "(?m)^\s*ssl\s*=\s*on") {
             Add-Content "$dataDir\postgresql.conf" "`nssl = on`nssl_cert_file = 'server.crt'`nssl_key_file = 'server.key'`n"
         }
-        Restart-Service postgresql-x64-17 -Force -ErrorAction SilentlyContinue
+        # ‏**إعادةُ التشغيل تُقاس.** ابتلاعُها بـSilentlyContinue يعني أنّ خادماً رفض الإقلاعَ
+        # ‏بعد `ssl = on` يمرّ صامتاً، ثمّ يُنسَب الإخفاقُ إلى psql بعده.
+        $svc = Get-Service postgresql-x64-17 -ErrorAction SilentlyContinue
+        if ($null -eq $svc) {
+            Add-Finding -Check "خدمةُ PostgreSQL موجودة" -Expected "postgresql-x64-17" -Actual "غير موجودة" -Ok $false
+            return
+        }
+        try { Restart-Service postgresql-x64-17 -Force -ErrorAction Stop } catch { }
         Start-Sleep -Seconds 8
+        $svc.Refresh()
+        $running = $svc.Status -eq 'Running'
+        Add-Finding -Check "الخادمُ يُقلع بعد تفعيل ssl" -Expected "Running" -Actual "$($svc.Status)" -Ok $running
+        if (-not $running) { return }
     }
+    # ‏**المقارنةُ بالمساواة لا بالاحتواء، ورمزُ الخروج يُفحص.** `-match "on"` يصدق على
+    # ‏«connection ... failed» أيضاً (فيها «on»)، و`2>&1` مع ErrorActionPreference=Stop
+    # ‏يحوّل stderr إلى إنهاءٍ قاطعٍ قبل أن يُكتب أيُّ صفّ.
     $env:PGPASSWORD = $pgPass
-    $ssl = (& "$pgRoot\bin\psql.exe" -h localhost -p 5432 -U postgres -d postgres -tAc "show ssl;" 2>&1) -join ""
-    Add-Finding -Check "PostgreSQL يقدّم TLS داخل الآلة" -Expected "on" -Actual "$($ssl.Trim())" -Ok ($ssl -match "on")
+    $ssl = (& "$pgRoot\bin\psql.exe" -h localhost -p 5432 -U postgres -d postgres -tAc "show ssl;" 2>$null | Out-String).Trim()
+    $sslOk = ($LASTEXITCODE -eq 0) -and ($ssl -eq "on")
+    Add-Finding -Check "PostgreSQL يقدّم TLS داخل الآلة" -Expected "on" `
+        -Actual $(if ($LASTEXITCODE -ne 0) { "psql أخفق (exit=$LASTEXITCODE)" } else { $ssl }) -Ok $sslOk
 
-    & "$pgRoot\bin\psql.exe" -h localhost -p 5432 -U postgres -d postgres -tAc "CREATE DATABASE brqosh_rk;" 2>&1 | Out-Null
+    & "$pgRoot\bin\psql.exe" -h localhost -p 5432 -U postgres -d postgres -tAc "CREATE DATABASE brqosh_rk;" 2>$null | Out-Null
+
+    # ‏**كلمةُ المرور لا تُكتب على القرص.** المجلّدُ المشترك يُنسخ إلى شجرة الأدلّة، وقد
+    # ‏فُتح استثناءٌ لها في .gitignore — فالكتابةُ هنا ارتكابُ سرٍّ بعد خطوتين.
     Set-Content -LiteralPath (Join-Path $share "pg-info.txt") -Encoding UTF8 `
-        -Value "host=localhost`nport=5432`ndb=brqosh_rk`nuser=postgres`npassword=$pgPass"
+        -Value "host=localhost`nport=5432`ndb=brqosh_rk`nuser=postgres`n# كلمة المرور تُمرَّر بـ-PgPassword ولا تُكتب هنا"
+    Set-Content -LiteralPath (Join-Path $work "pg-secret.txt") -Encoding UTF8 -Value $pgPass
+    Write-Host "كلمةُ مرور PostgreSQL لهذه التشغيلة: C:\rk\pg-secret.txt (داخل الآلة، لا في المشترك)"
 }
 
 switch ($Stage) {
-    "NoDotnet" { Invoke-NoDotnetGate }
-    "Dotnet"   { Install-DotnetDesktop }
-    "Install"  { Install-Brqosh }
-    "Postgres" { Install-Postgres }
-    "All"      { Invoke-NoDotnetGate; Install-DotnetDesktop; Install-Brqosh; Install-Postgres }
+    "NoDotnet" { Invoke-Stage "NoDotnet" { Invoke-NoDotnetGate } }
+    "Dotnet"   { Invoke-Stage "Dotnet"   { Install-DotnetDesktop } }
+    "Install"  { Invoke-Stage "Install"  { Install-Brqosh } }
+    "Postgres" { Invoke-Stage "Postgres" { Install-Postgres } }
+    "All"      {
+        Invoke-Stage "NoDotnet" { Invoke-NoDotnetGate }
+        Invoke-Stage "Dotnet"   { Install-DotnetDesktop }
+        Invoke-Stage "Install"  { Install-Brqosh }
+        Invoke-Stage "Postgres" { Install-Postgres }
+    }
 }
 
 Write-Host ""
 Write-Host "النتائج: $csv"
 if (Test-Path $csv) { Import-Csv $csv | Format-Table -AutoSize }
+
+# ‏**حكمٌ صريحٌ ورمزُ خروج.** بلا هذا يخرج السكربتُ بصفرٍ مهما أخفق، فتقرؤه أيُّ أتمتةٍ نجاحاً.
+Write-Host ""
+if ($script:failCount -gt 0) {
+    Write-Host "=== FAIL: $($script:failCount) فحصاً خالف المتوقَّع في التشغيلة $runId ==="
+    exit 1
+}
+Write-Host "=== PASS: كلُّ فحوص التشغيلة $runId مرّت ==="
+exit 0
