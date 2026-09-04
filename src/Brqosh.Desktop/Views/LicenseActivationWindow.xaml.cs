@@ -8,9 +8,12 @@ public partial class LicenseActivationWindow : Window
 {
     public bool LicenseActivated { get; private set; }
 
+    private readonly string _companyName;
+
     public LicenseActivationWindow(string companyName)
     {
         InitializeComponent();
+        _companyName = companyName;
         MachineIdBox.Text = LicenseService.MachineId();
         CompanyBox.Text = companyName;
         KeyBox.Text = LicenseStore.Load()?.SignedLicenseJson ?? "";
@@ -18,8 +21,10 @@ public partial class LicenseActivationWindow : Window
 
     private void OnActivate(object sender, RoutedEventArgs e)
     {
-        var company = CompanyBox.Text.Trim();
-        var machineId = MachineIdBox.Text.Trim();
+        // ‏الاسمُ من ملفّ الإعداد لا من الحقل: الإقلاعُ التالي يتحقّق به، فلو خالفه المحفوظُ
+        // ‏هنا نجح التفعيلُ ثمّ رُفض الإقلاع.
+        var company = _companyName.Trim();
+        var machineId = LicenseService.MachineId();
         var signedJson = KeyBox.Text.Trim();
 
         // (CEEF-236 · ت-١) ‏**الرسالةُ تُسمّي السبب.** كانت كلُّ الإخفاقات تقول «ترخيص غير صالح

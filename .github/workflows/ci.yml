@@ -23,6 +23,20 @@ jobs:
       - name: Build Release
         run: dotnet build Brqosh.sln -c Release --no-restore
 
+      # (CEEF-236 · م-١٩) أدواتُ التشغيل خارج Brqosh.sln، فلم تكن تُبنى في أيّ بوّابة.
+      # ومراجعةٌ عدائيّة أخرجت أنّ أربعاً منها انكسرت بتغييرٍ في Infrastructure ولم يشتكِ شيء —
+      # ومنها FullScenarioAudit وهي خطوةٌ في كتيّب التنصيب. فتُبنى الآن، ويعضّ البناءُ وحدَه.
+      - name: Build ops tools
+        shell: pwsh
+        run: |
+          $failed = @()
+          Get-ChildItem tools -Filter *.csproj -Recurse | ForEach-Object {
+              Write-Host "== $($_.FullName)"
+              dotnet build $_.FullName -c Release --nologo
+              if ($LASTEXITCODE -ne 0) { $failed += $_.Name }
+          }
+          if ($failed.Count -gt 0) { throw "فشل بناء أدوات: $($failed -join ', ')" }
+
       - name: Security static scan
         shell: pwsh
         run: ./scripts/security-static-scan.ps1

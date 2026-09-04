@@ -70,6 +70,18 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO brqosh_app;
 
 لا تستخدم مستخدم `postgres` من التطبيق.
 
+**وفعّل TLS على الخادم قبل تشغيل المعالج** — خطوةُ ④ تشترطه افتراضاً، فبدونه يُخفق «اختبار
+الاتصال» برسالةٍ تُسمّي السبب ولا يُكمل المعالج:
+
+```
+# postgresql.conf
+ssl = on
+ssl_cert_file = 'server.crt'
+ssl_key_file  = 'server.key'
+```
+
+(‏وخادمٌ على الجهاز نفسِه يجوز فيه إزالةُ الاشتراط من الشاشة بدل تفعيل TLS.)
+
 ---
 
 ## 4. `pg_hba.conf` و TLS
@@ -94,6 +106,10 @@ hostssl brqosh brqosh_app 10.0.0.0/8 scram-sha-256
 |-------|--------|
 | `scripts/backup-postgres.ps1` | `pg_dump -Fc` |
 | `scripts/restore-postgres.ps1` | `pg_restore` |
+
+> **(CEEF-236) من أين تأتي `-ConnectionString`؟** من بيانات الاتصال التي أُدخلت في خطوة ④
+> نفسِها. **ولا تُقرأ من `database.json`** — صارت السلسلةُ فيه محميّةً بـDPAPI ولا تُفكّ إلا
+> بالتطبيق على حساب المستخدم نفسِه. احفظها في مخزن أسرار التشغيل عند إعداد المهمّة المجدولة.
 
 **هدف RTO:** استعادة كاملة لأحدث نسخة خلال **&lt; 4 ساعات**.  
 **تمرين شهري:** نفّذ restore على قاعدة اختبار ووثّق التاريخ في سجل التشغيل.

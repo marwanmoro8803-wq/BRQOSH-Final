@@ -308,7 +308,14 @@ static (DatabaseProvider, string) ResolveConnection()
                 : (DatabaseProvider.Sqlite, config.ConnectionString);
         }
     }
-    catch (InvalidOperationException) { /* يقع على SQLite الافتراضية أدناه */ }
+    catch (InvalidOperationException ex)
+    {
+        // (CEEF-236 · م-١٥) ‏**لا سقوطَ صامتٌ على قاعدةٍ أخرى.** كان الالتقاطُ يُمرّر إلى SQLite
+        // ‏الافتراضية فتخرج «أدلّةُ طباعة» من قاعدةٍ فارغة بحالة نجاح — وهو بعينه ما يزعم التعليقُ
+        // ‏أعلاه منعَه.
+        Console.Error.WriteLine($"FAIL: {ex.Message}");
+        Environment.Exit(3);
+    }
 
     return (DatabaseProvider.Sqlite, "Data Source=" + BrqoshDbContextFactory.DefaultSqlitePath());
 }

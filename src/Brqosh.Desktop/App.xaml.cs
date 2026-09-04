@@ -96,18 +96,34 @@ public partial class App : System.Windows.Application
             adminPassword = wizard.AdminPassword;
         }
 
-        try
+        // (CEEF-236 · م-١٣) ‏**ملفُّ اتصالٍ لا يُقرأ لم يعد يعني تركيباً ميّتاً.**
+        //
+        // ‏كان الإخفاقُ هنا يعرض رسالةً ثمّ `Shutdown()` — **والرسالةُ تصف علاجاً لا سبيلَ إليه**:
+        // ‏معالجُ التهيئة يُبنى تحت `!setup.IsCompleted` وحدَه ولا شيءَ يمسح العلَم. فمتى تلف
+        // ‏`database.json` أو حُذف أو **خُتم بحساب مستخدمٍ آخر** صار كلُّ إقلاعٍ يعرض الرسالةَ
+        // ‏نفسَها ويُغلق — **والدفاترُ سليمةٌ في PostgreSQL طوال ذلك**. وصار الطريقُ مسلوكاً
+        // ‏بإصلاح ت-٣ نفسِه، إذ لم يكن شيءٌ قبله يُنتج سلسلةً محميّة.
+        //
+        // ‏فتُعرض الآن `DatabaseConnectionWindow` — اللوحةُ نفسُها التي في المعالج — ويُعاد التحميل.
+        while (true)
         {
-            AppServices.LoadDatabaseConfig();
-            await AppServices.EnsureDatabaseReachableAsync();
-        }
-        catch (Exception ex)
-        {
-            UiDialog.Show(
-                $"تعذر تهيئة قاعدة البيانات:\n{ex.Message}",
-                "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
-            Shutdown();
-            return;
+            try
+            {
+                AppServices.LoadDatabaseConfig();
+                await AppServices.EnsureDatabaseReachableAsync();
+                break;
+            }
+            catch (Exception ex)
+            {
+                var recovery = new DatabaseConnectionWindow(
+                    $"تعذّر الاتصال بقاعدة البيانات:\n{ex.Message}\n\n" +
+                    "صحّح بيانات الاتصال أدناه — الدفاتر في الخادم لا تُمسّ.");
+                if (recovery.ShowDialog() != true)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
         }
 
         // (ع-D3، CEEF-202): أعلِم المستخدم إن عمل على قاعدة غير التي هيّأها — قبل أن يُدخل أي بيانات.

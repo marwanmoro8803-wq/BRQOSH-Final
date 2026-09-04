@@ -1,6 +1,7 @@
 <Window x:Class="Brqosh.Desktop.Views.SetupWizardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Brqosh.Desktop.Views.Controls"
         Title="BRQOSH — إعداد النظام"
         Width="900" Height="760"
         MinWidth="800" MinHeight="680"
@@ -108,95 +109,13 @@
             <!--
               (CEEF-236 · ت-٣) قاعدةُ البيانات تُدخَل من هنا لا بتأليف database.json باليد:
               في الإنتاج كان التطبيقُ يرمي إن غاب الملفُّ ولا شاشةٌ تكتبه، فأوّلُ إقلاعٍ عند
-              العميل كان يشترط محرّرَ نصوصٍ وكلمةَ مرورٍ صريحة. تُجرَّب البياناتُ قبل المتابعة
-              ثمّ تُحفظ محميّةً (DPAPI). وخيارُ SQLite يظهر خارجَ الإنتاج وحدَه.
+              العميل كان يشترط محرّرَ نصوصٍ وكلمةَ مرورٍ صريحة. واللوحةُ مشتركةٌ مع
+              DatabaseConnectionWindow فلا يتكرّر منطقُ التحقّق والحفظ في موضعَين.
             -->
             <TextBlock Style="{StaticResource FormSectionTitle}" Text="④ قاعدة البيانات"/>
 
             <Border Style="{StaticResource ContentCard}" Padding="28,24">
-                <StackPanel>
-                    <TextBlock Text="تُحفظ الدفاتر على خادم PostgreSQL. تُجرَّب بيانات الاتصال قبل المتابعة، ثم تُحفظ محميّةً على هذا الجهاز — لا كلمة مرور صريحة على القرص."
-                               FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
-                               TextWrapping="Wrap" Margin="0,0,0,12"/>
-
-                    <CheckBox x:Name="UseSqliteBox"
-                              Content="قاعدة محلية مؤقتة (SQLite) — للتطوير والتجربة فقط"
-                              Margin="0,0,0,12"
-                              Checked="OnDatabaseModeChanged" Unchecked="OnDatabaseModeChanged"/>
-
-                    <StackPanel x:Name="PostgresPanel">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="3*"/>
-                                <ColumnDefinition Width="16"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="الخادم *" Style="{StaticResource FieldLabel}"/>
-                                <TextBox x:Name="PgHostBox" Style="{StaticResource AppTextBox}" Text="localhost"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="المنفذ *" Style="{StaticResource FieldLabel}"/>
-                                <TextBox x:Name="PgPortBox" Style="{StaticResource AppTextBox}" Text="5432"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="اسم القاعدة *" Style="{StaticResource FieldLabel}" Margin="0,16,0,6"/>
-                        <TextBox x:Name="PgDatabaseBox" Style="{StaticResource AppTextBox}" Text="brqosh"/>
-
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="16"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="مستخدم القاعدة *" Style="{StaticResource FieldLabel}"/>
-                                <TextBox x:Name="PgUserBox" Style="{StaticResource AppTextBox}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="كلمة مرور القاعدة *" Style="{StaticResource FieldLabel}"/>
-                                <PasswordBox x:Name="PgPasswordBox" Style="{StaticResource AppPasswordBox}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <CheckBox x:Name="RequireTlsBox"
-                                  Content="اشتراط اتصال مشفّر (TLS) بالخادم"
-                                  IsChecked="True"
-                                  Margin="0,16,0,0"/>
-                        <TextBlock Text="أزل الاشتراط فقط إذا كان الخادم على هذا الجهاز نفسه. على شبكة، الاتصال غير المشفّر يكشف كلمة المرور والدفاتر."
-                                   FontSize="12" Foreground="{StaticResource TextMutedBrush}"
-                                   TextWrapping="Wrap" Margin="0,4,0,0"/>
-
-                        <TextBlock x:Name="ExistingConfigHint"
-                                   FontSize="12" Foreground="{StaticResource TextMutedBrush}"
-                                   TextWrapping="Wrap" Margin="0,8,0,0"
-                                   Visibility="Collapsed"/>
-
-                        <!--
-                          نصُّ الحالة في Grid لا في StackPanel أفقيّ: الأفقيُّ يمنح الطفلَ عرضاً
-                          غيرَ محدود، فـ TextWrapping لا يعمل وتُقتطع رسالةُ الخطأ الطويلة — وهي
-                          أطولُ ما يُعرض هنا وأحوجُه إلى القراءة.
-                        -->
-                        <Grid Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Button x:Name="TestConnectionBtn"
-                                    Grid.Column="0"
-                                    Content="اختبار الاتصال"
-                                    VerticalAlignment="Top"
-                                    Style="{StaticResource SecondaryButton}"
-                                    Click="OnTestConnection"/>
-                            <TextBlock x:Name="ConnectionStatusText"
-                                       Grid.Column="1"
-                                       FontSize="12.5" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="14,0,0,0"
-                                       TextWrapping="Wrap"/>
-                        </Grid>
-                    </StackPanel>
-                </StackPanel>
+                <controls:DatabaseConnectionPanel x:Name="ConnectionPanel"/>
             </Border>
 
             <TextBlock x:Name="ErrorText"

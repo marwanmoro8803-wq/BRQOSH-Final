@@ -146,6 +146,11 @@ public class DatabaseConfigFileTests
     [Fact]
     public void ACorruptProtectedString_ThrowsANamedError_NotARawFormatException()
     {
+        // (CEEF-236 · م-١٧) ‏الحمايةُ DPAPI ويندوزيّة؛ وعلى غيرها يُعيد `Unprotect` فراغاً بلا رمي.
+        // ‏فالحارسُ يُقاس حيث يعمل — وشقيقُه في هذا الملفّ محروسٌ كذلك، وكان هذا وحدَه بلا حارس.
+        if (!OperatingSystem.IsWindows())
+            return;
+
         var path = TempPath();
         try
         {
@@ -159,6 +164,38 @@ public class DatabaseConfigFileTests
         {
             Cleanup(path);
         }
+    }
+
+    /// <summary>
+    /// (CEEF-236 · م-١٨) <b>مسبارُ الاتصال — أوّلُ قياسٍ له.</b>
+    ///
+    /// <para>كان <c>TestPostgresAsync</c> بلا اختبارٍ واحد رغم أنّ الوثيقة تزعم «لا سطرٌ في
+    /// Infrastructure بلا اختبار»، <b>وفيه ستّةُ فروعِ التقاطٍ منها تعيينُ <c>28000</c> الذي
+    /// أُصلح بيدٍ في هذه الحملة نفسِها</b> — فلو عاد الخطأُ لبقيت الحزمةُ خضراء.</para>
+    ///
+    /// <para>وهذا يقيس الفروعَ التي لا تحتاج خادماً: سلسلةٌ غيرُ صالحة، ومضيفٌ لا يُبلَغ.
+    /// وفروعُ <c>SQLSTATE</c> تحتاج خادماً حيّاً وتبقى مُعلَنةً غيرَ مقيسة.</para>
+    /// </summary>
+    [Fact]
+    public async Task TestPostgres_OnAnInvalidConnectionString_FailsWithANamedReason()
+    {
+        var probe = await DatabaseConfigFile.TestPostgresAsync("Data Source=not-a-postgres-string");
+
+        Assert.False(probe.Ok);
+        Assert.False(string.IsNullOrWhiteSpace(probe.Message));
+        Assert.Null(probe.ServerVersion);
+    }
+
+    [Fact]
+    public async Task TestPostgres_OnAnUnreachableHost_FailsWithoutThrowing()
+    {
+        // ‏عنوانٌ محجوزٌ للتوثيق (RFC 5737) لا يُبلَغ — والمهلةُ خمسُ ثوانٍ في المسبار نفسِه.
+        var cs = DatabaseConfigFile.BuildPostgresConnectionString("192.0.2.1", 5432, "brqosh", "app", "pw");
+
+        var probe = await DatabaseConfigFile.TestPostgresAsync(cs);
+
+        Assert.False(probe.Ok);
+        Assert.False(string.IsNullOrWhiteSpace(probe.Message));
     }
 
     [Fact]
