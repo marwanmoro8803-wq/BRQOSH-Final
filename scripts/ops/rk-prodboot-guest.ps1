@@ -41,7 +41,13 @@ New-Item -ItemType Directory -Force -Path $out, $outShare | Out-Null
 $dataRoot = Join-Path $work "data"          # جذرُ بياناتٍ معزولٌ فارغ — لا %APPDATA%
 New-Item -ItemType Directory -Force -Path $dataRoot | Out-Null
 
-$dbName    = "brqosh_prodboot_$stamp"
+# ‏(CEEF-236 · ر-ك · م-٣٩) **اسمٌ لا يحتاج اقتباساً أصلاً.**
+# ‏الطابعُ `yyyyMMdd-HHmmss` يحمل شرطةً، فلزم `"..."` في SQL — **وPowerShell 5.1
+# ‏ينزع علاماتِ الاقتباس عند تمرير الوسيط لبرنامجٍ أصليّ**، فيصل إلى psql:
+# ‏  CREATE DATABASE brqosh_prodboot_20260905-013702;
+# ‏  ERROR: syntax error at or near "-"
+# ‏فالشرطةُ تُبدّل شُرطةً سفليّةً في اسم القاعدة وحده، فيصير مُعرِّفاً مشروعاً بلا اقتباس.
+$dbName    = "brqosh_prodboot_" + ($stamp -replace '-', '_')
 $company   = "منشأة الإقلاع الإنتاجي"
 $adminUser = "prodadmin"
 $adminPass = "ProdBoot!2026x"
@@ -177,9 +183,25 @@ function Stop-Stray {
     Start-Sleep -Milliseconds 400
 }
 $psqlExe = "$env:ProgramFiles\PostgreSQL\17\bin\psql.exe"
-function Invoke-Psql { param([string]$Database, [string]$Sql)
+# ‏(CEEF-236 · ر-ك · م-٣٨) **‏`2>&1` تحت `$ErrorActionPreference = "Stop"` يقتل السكربت.**
+#
+# ‏في Windows PowerShell 5.1 يُغلَّف كلُّ سطرِ خطأٍ من برنامجٍ أصليّ في `ErrorRecord`، ومع
+# ‏`Stop` يصير **خطأً مُنهياً** — لا تحذيراً. فسطرُ إشعارٍ واحدٌ من `psql` يُسقط التشغيلةَ كلَّها.
+# ‏وقد وقع فعلاً: ماتت التشغيلةُ بعد الصفّ السادس مباشرةً، **بلا صفٍّ ولا رسالة** — لأنّ
+# ‏النداءَ كان خارجَ `try` أيضاً. فالتفضيلُ يُخفَّض هنا محلّيّاً، والحكمُ من رمز الخروج.
+function Invoke-Psql { param([string]$Database, [string]$Sql, [switch]$AllowFailure)
     $env:PGPASSWORD = $PgPassword
-    & $psqlExe -h $PgHost -p $PgPort -U $PgUser -d $Database -tAc $Sql 2>&1
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $out = & $psqlExe -h $PgHost -p $PgPort -U $PgUser -d $Database -tAc $Sql 2>&1
+        $code = $LASTEXITCODE
+    } finally { $ErrorActionPreference = $prev }
+    $text = ($out | ForEach-Object { "$_" }) -join "`n"
+    if ($code -ne 0 -and -not $AllowFailure) {
+        throw "psql خرج بـ$code على [$Sql]: $text"
+    }
+    return $text
 }
 function Start-App {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -213,10 +235,12 @@ if (-not (Test-Path $psqlExe)) { throw "لا psql — شغّل rk-guest.ps1 -Sta
 
 $serverSsl = (Invoke-Psql -Database "postgres" -Sql "show ssl;" | Out-String).Trim()
 Add-Finding -Check "الخادمُ يقدّم TLS (show ssl)" -Expected "on" -Actual $serverSsl -Ok ($serverSsl -eq "on")
-Invoke-Psql -Database "postgres" -Sql "CREATE DATABASE `"$dbName`";" | Out-Null
-
 $app = $null
 try {
+    # ‏(م-٣٨) داخل الحارس، لا قبله: كلُّ ما يمكن أن يُخفق يجب أن يُخرج صفَّ إخفاقٍ لا صمتاً.
+    Invoke-Psql -Database "postgres" -Sql "CREATE DATABASE $dbName;" | Out-Null
+    Add-Finding -Check "قاعدةُ القياس أُنشئت على الخادم" -Expected $dbName -Actual "أُنشئت" -Ok $true
+
     Stop-Stray
     $app = Start-App
 
