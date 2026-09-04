@@ -1,4 +1,4 @@
-# Ops — Supreme holistic gate M16: build + test + supreme audit + perception + Shura
+﻿# Ops — Supreme holistic gate M16: build + test + supreme audit + perception + Shura
 param(
     [string]$TargetSource = "CognitiveQa",
     [switch]$SkipShura,

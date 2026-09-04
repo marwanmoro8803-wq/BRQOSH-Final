@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   نسخة احتياطية مخصصة (custom format) لقاعدة PostgreSQL الخاصة بـ BRQOSH.
@@ -38,7 +38,7 @@ $outFile = Join-Path $OutputDir "brqosh_${db}_$stamp.dump"
 
 $env:PGPASSWORD = $pass
 try {
-    Write-Host "Backing up $db@$hostName:$port → $outFile" -ForegroundColor Cyan
+    Write-Host "Backing up $db@${hostName}:$port → $outFile" -ForegroundColor Cyan
     & $PgDumpPath -h $hostName -p $port -U $user -d $db -Fc -f $outFile
     if ($LASTEXITCODE -ne 0) { throw "pg_dump failed with exit $LASTEXITCODE" }
     Write-Host "OK: $outFile ($([math]::Round((Get-Item $outFile).Length/1MB, 2)) MB)" -ForegroundColor Green

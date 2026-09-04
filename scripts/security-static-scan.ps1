@@ -46,6 +46,8 @@ Write-Host "== BRQOSH security static scan =="
 #
 # Two widenings: the roots below, and the pattern list in section 2 - a variable named
 # $pgPass was invisible to a pattern anchored on the literal token "password".
+$selfPath = (Resolve-Path -LiteralPath $PSCommandPath).Path
+
 function Get-SourceFiles {
     $roots = @($SourceRoot, "scripts", "tools", "installer", ".github") | Where-Object { Test-Path $_ }
     Get-ChildItem -Path $roots -Recurse -File -Include *.cs,*.xaml,*.json,*.csproj,*.ps1,*.psm1,*.sh,*.yml,*.yaml,*.bat,*.wxs |
@@ -53,7 +55,10 @@ function Get-SourceFiles {
         # ‏وحدَها **لا يُطابق شيئاً هنا** — فتوسيعي حوّل استثناءً عاملاً إلى استثناءٍ ميّت.
         Where-Object { $_.FullName -notmatch '[\\/](bin|obj|\.venv|node_modules|TestResults)[\\/]' } |
         # ‏الماسحُ لا يمسح نفسَه: أنماطُه تحوي بالتعريف ما يبحث عنه (‏admin123‎).
-        Where-Object { $_.Name -ne 'security-static-scan.ps1' }
+        # ‏**بالمسار الكامل لا بالاسم المجرّد**: استثناءُ الاسم يُخفي أيّ ملفٍّ
+        # ‏يُسمّى كذلك في أيّ جذرٍ مفحوص — فيكفي وضعُ الأسرار في
+        # ‏installer/security-static-scan.ps1 لتمرّ بلا قراءة.
+        Where-Object { $_.FullName -ne $selfPath }
 }
 
 # 1) Hard fail: default admin credentials in application source
@@ -81,30 +86,79 @@ if ($adminPairHits.Count -gt 0) {
 # (CEEF-236 - m-25) Broadened: a credential is rarely named exactly "password".
 # (CEEF-236 - m-25/m-30) Broadened, then corrected: the leading [A-Za-z_]* constrained nothing
 # (Select-String is unanchored, so it backtracks to zero width) and matched "pass" as a substring -
-# `compass = "CognitiveQa/COMPASS.yaml"` was reported as a possible secret.  anchors the token.
+# `compass = "CognitiveQa/COMPASS.yaml"` was reported as a possible secret. \b anchors the token.
 # (CEEF-236 - m-25/m-30) Two shapes, because one misses half the ground:
 #   1) a SHELL/PS VARIABLE whose name contains pass/pwd/secret/token anywhere - $pgPass,
-#      $GuestPassword. A  anchor alone misses these (no boundary inside "pgPass").
+#      $GuestPassword. A \b anchor alone misses these (no boundary inside "pgPass").
 #   2) a PLAIN assignment to a credential-named key - password=, secret=, api_key=.
-#      Anchored with  so `compass = "CognitiveQa/COMPASS.yaml"` is not a secret.
+#      Anchored with \b so `compass = "CognitiveQa/COMPASS.yaml"` is not a secret.
 # The first shape is what 59bdb5d actually committed; the second is the classic form.
 #
 # DELIBERATE TRADE, measured: shape 1 also hits identifiers that merely contain the token,
 # e.g. $bypass = "always-on". That noise is accepted because the alternative - anchoring with
-#  - makes the pattern miss $pgPass, which is the exact literal that walked past this gate
+# \b - makes the pattern miss $pgPass, which is the exact literal that walked past this gate
 # and got committed. In an informational bucket a false positive costs a glance; a false
-# negative costs a published credential. Verified cases: $pgPass HIT, $GuestPassword HIT,
-# password= HIT, api_key= HIT, compass="..." MISS, probePass (no $) MISS.
+# negative costs a published credential.
+# ‏(م-٣٤) وكان هنا سطرٌ يقول «Verified cases: $pgPass HIT …» — **ولم يكن صحيحاً**:
+# ‏الأنماطُ كانت ميّتةً يومَ كُتِب ذاك السطر. فلا تُكتب هنا حالاتٌ «متحقَّقٌ منها» باليد:
+# ‏$patternSelfTest أدناه يُجريها في كلّ تشغيل، ويُسقِط البوّابة إن اختلفت نتيجة.
 $passwordPatterns = @(
-    "(?i)\\x24[A-Za-z_]*(pass(word|wd)?|pwd|secret|token)[A-Za-z_]*\\s*=\\s*['`"][^'`"]{4,}['`"]",
-    "(?i)\\b(password|passwd|pwd|secret|token|api[_-]?key)\\s*=\\s*['`"][^'`"]{4,}['`"]",
-    "(?i)(superpassword|--password)\\s+['`"][^'`"]{4,}['`"]"
+    '(?i)\x24(env:)?[A-Za-z0-9_]*(pass(word|wd)?|pwd|secret|token)[A-Za-z0-9_]*\s*=\s*[''"][^''"]{3,}[''"]',
+    '(?i)\b(password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*[''"][^''"]{3,}[''"]',
+    '(?i)-{1,2}(super)?(password|pwd|secret|token)\s+[''"][^''"]{3,}[''"]',
+    # ‏سلسلةُ اتّصالٍ لا إسنادٌ في C#‏: يلزم مقطعُ Host/Server قبلها على السطر نفسه،
+    # ‏وإلا طابق `passwordBox.Password = plainBox.Text;` وهو ليس سرّاً.
+    '(?i)\b(host|server|data source)\s*=\s*[^;]{1,64};[^\r\n]{0,200}?\bpassword\s*=\s*[^;\s''"{}$%]{3,}',
+    '(?i)ConvertTo-SecureString\s+[''"][^''"]{3,}[''"]',
+    '(?i)Id="[^"]*(password|secret|key)[^"]*"\s+Value="[^"]{3,}"',
+    '(?i)^\s*[A-Za-z0-9_]*(password|secret|token|api[_-]?key)\s*:\s*[^\s#]{3,}$'
 )
+
+# ‏(CEEF-236 · م-٣٤) **اختبارٌ ذاتيٌّ للأنماط — ونمطٌ ميّت يُسقِط البوّابة لا يمرّ منها.**
+#
+# ‏الجولةُ السابقة كتبت الأنماط في سلاسل PowerShell مزدوجةِ الاقتباس بشرطتين
+# ‏خلفيّتين — والشرطةُ الخلفيّة ليست مهرباً في PowerShell، فصار النمطُ يطلب شرطةً حرفيّةً
+# ‏في المصدر. فماتت الأنماطُ الثلاثة جميعاً، وظلّ الماسحُ يقول PASS، واستُشهِد به
+# ‏في جدولِ جاهزيّةِ الإطلاق. والنتيجةُ الخضراء تبدو واحدةً سواءٌ فُحِص الشيءُ فلم يُوجد،
+# ‏أم لم يُفحص أصلاً.
+$patternSelfTest = @(
+    @{ Line = '$pgPass = "Hunter22!"'; Expect = $true }
+    @{ Line = 'password = "Hunter22!"'; Expect = $true }
+    @{ Line = 'api_key="sk-live-abcdef"'; Expect = $true }
+    @{ Line = '$env:PGPASSWORD = "Hunter22"'; Expect = $true }
+    @{ Line = 'Host=db;Password=Hunter22!;Database=x'; Expect = $true }
+    @{ Line = '  default_password: "Hunter22!"'; Expect = $true }
+    @{ Line = 'compass = "CognitiveQa/COMPASS.yaml"'; Expect = $false }
+    @{ Line = '$tokenizer = "ws"'; Expect = $false }
+)
+foreach ($case in $patternSelfTest) {
+    $matched = $false
+    foreach ($pattern in $passwordPatterns) { if ($case.Line -match $pattern) { $matched = $true } }
+    if ($matched -ne $case.Expect) {
+        Add-Failure ("pattern self-test: السطر [$($case.Line)] منتظَر $($case.Expect) والناتج $matched")
+    }
+}
+
+# ‏قائمةُ السماح: ما لا يطابق مدخلاً هنا يُسقِط البوّابة، لا يُكتب للعلم وحسب.
+$secretAllowlist = @(
+    @{ Pattern = 'Database=brqosh_design;Username=postgres;Password=design'
+       Reason  = 'مصنعُ EF وقتَ التصميم: قاعدةٌ محلّيّةٌ على المنفذ 5433 تُولّد منها الهجراتُ على جهازِ المطوِّر؛ لا تُشحن ولا تُستعمل وقتَ التشغيل.' }
+    @{ Pattern = 'ProdBoot!2026'
+       Reason  = 'كلمةُ حسابٍ يُنشئُه مِسبارُ الإقلاع الإنتاجيّ داخل آلةٍ افتراضيّةٍ تُتلف بعده؛ لا تصل عميلاً.' }
+    @{ Pattern = 'UiAudit9!'
+       Reason  = 'كلمةُ حسابِ اختبارٍ لمنصّةِ تدقيقِ الواجهة، بديلٌ احتياطيٌّ لـ BRQOSH_TEST_PASSWORD؛ لا تُستعمل في إنتاج.' }
+)
+
 foreach ($pattern in $passwordPatterns) {
     $hits = @($sourceFiles | Select-String -Pattern $pattern)
     foreach ($hit in $hits) {
         $rel = $hit.Path.Replace((Get-Location).Path + [IO.Path]::DirectorySeparatorChar, "")
-        $findings.Add("possible secret ($pattern): $rel`:$($hit.LineNumber)")
+        $allowed = @($secretAllowlist | Where-Object { $hit.Line -match [regex]::Escape($_.Pattern) })
+        if ($allowed.Count -gt 0) {
+            $findings.Add("possible secret (مسموح: $($allowed[0].Reason)): $rel`:$($hit.LineNumber)")
+        } else {
+            Add-Failure "possible secret ($pattern): $rel`:$($hit.LineNumber)"
+        }
     }
 }
 

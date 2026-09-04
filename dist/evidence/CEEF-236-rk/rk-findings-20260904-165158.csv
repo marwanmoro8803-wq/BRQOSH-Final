@@ -1,0 +1,4 @@
+﻿"Run","Time","Check","Expected","Actual","Result"
+"20260904-165158","16:52:00","شهادةُ TLS مُهيّأةٌ في مجلّد البيانات","server.crt + server.key","موجودتان","PASS"
+"20260904-165158","16:52:29","الخادمُ يُقلع بعد تفعيل ssl","Running","Running","PASS"
+"20260904-165158","16:52:32","المرحلة «Postgres» اكتملت","بلا إجهاض","psql: error: connection to server at ""localhost"" (::1), port 5432 failed: FATAL:  password authentication failed for user ""postgres""","FAIL"

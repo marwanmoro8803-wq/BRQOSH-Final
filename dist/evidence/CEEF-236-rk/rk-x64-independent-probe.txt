@@ -1,0 +1,7 @@
+﻿app64=True
+app32=False
+reg64=production
+reg32=
+files=58
+unins64=1
+unins32=0

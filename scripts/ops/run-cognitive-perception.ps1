@@ -1,4 +1,4 @@
-# Ops — Supreme cognitive perception gate (M15)
+﻿# Ops — Supreme cognitive perception gate (M15)
 # Build + test + audit + verify COGNITIVE_PERCEPTION.md
 
 param(

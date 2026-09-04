@@ -1,0 +1,4 @@
+﻿elevated=True
+alter exit=0 out=ALTER ROLE
+verify exit=0 ssl=on
+RESULT=OK

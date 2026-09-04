@@ -6,9 +6,28 @@ $ZipPath = Join-Path $Root "dist\BRQOSH-portable.zip"
 
 Write-Host "=== BRQOSH Publish ===" -ForegroundColor Cyan
 
+# (CEEF-236 · ر-ك · م-٣٣) شجرةُ النشر تُمسح قبل النشر، وخروجُ dotnet يُفحص.
+#
+# ‏`dotnet publish` كان يُستدعى بلا فحصِ `$LASTEXITCODE`، و`$ErrorActionPreference = "Stop"`
+# ‏**لا يوقف برنامجاً أصليّاً يخرج بغير الصفر** — يوقف الأخطاءَ غيرَ المُنهية لـ PowerShell وحدَها.
+# ‏فبناءٌ فاشل كان يمضي: تُكتب علامةُ البيئة وملفُّ التشغيل فوق شجرةِ نشرٍ **قديمة**، ثمّ
+# ‏يحصدها WiX — فتخرج حزمةٌ خضراءُ الظاهر تحمل ثنائيّاتِ الأمس ورقمَ إصدارِ اليوم.
+# ‏والمسحُ المسبق يمنع الحصادَ من بقايا نشرٍ سابق حتى لو تعطّل النشرُ في منتصفه.
+if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
+
 dotnet publish (Join-Path $Root "src\Brqosh.Desktop\Brqosh.Desktop.csproj") `
     -c Release -r win-x64 --self-contained false `
     -o $OutDir -p:PublishSingleFile=false
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "dotnet publish فشل (exit=$LASTEXITCODE) — لا حزمةَ تُبنى من شجرةٍ ناقصة." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
+$publishedExe = Join-Path $OutDir "Brqosh.Desktop.exe"
+if (-not (Test-Path $publishedExe)) {
+    Write-Host "النشرُ انتهى بلا Brqosh.Desktop.exe — شجرةٌ ناقصة." -ForegroundColor Red
+    exit 1
+}
 
 # (CEEF-236 - t-8) The repo-root .bat is NOT shipped.
 #

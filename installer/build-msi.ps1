@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     بناء MSI لـ BRQOSH باستخدام WiX Toolset v4+.
@@ -12,7 +12,15 @@ $MsiOut = Join-Path $Root "dist\BRQOSH-Setup.msi"
 Write-Host "=== BRQOSH MSI Build ===" -ForegroundColor Cyan
 
 # 1. Publish portable
+# ‏(CEEF-236 · م-٣٣) خروجُ النشر يُفحص: `&` على سكربتٍ لا يرفع استثناءً حين يخرج
+# ‏ذاك السكربت بغير الصفر، و`$ErrorActionPreference = "Stop"` **لا يوقف برنامجاً
+# ‏أصليّاً فاشلاً**. فبلا هذا يمضي البناءُ فوق شجرةِ نشرٍ قديمة، فتخرج حزمةٌ
+# ‏خضراءُ الظاهر تحمل ثنائيّاتِ الأمس ورقمَ إصدارِ اليوم.
 & (Join-Path $Root "installer\publish.ps1")
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "publish.ps1 أخفق (exit=$LASTEXITCODE) — لا MSI يُبنى." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
 
 if (-not (Get-Command wix -ErrorAction SilentlyContinue)) {
     # (CEEF-234) v7+ يتوقف عند بناءٍ أول برسالة WIX7015 تطلب قبول "Open Source

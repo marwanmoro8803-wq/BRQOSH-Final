@@ -1,4 +1,4 @@
-# System 78 — AiCouncil pytest / compileall verify
+﻿# System 78 — AiCouncil pytest / compileall verify
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $aiDir = Join-Path $repoRoot "AiCouncil"

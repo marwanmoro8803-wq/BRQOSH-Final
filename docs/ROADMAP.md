@@ -416,7 +416,7 @@ Pagination · Hijri · API · FIFO · multi-branch · BI · AI · cloud HA · mu
 | 1 | MSI على VM نظيفة | `installer/` + قائمة تحقق | ✅ سكربتات؛ إثبات VM ميداني عند التشغيل |
 | 2 | دليل تركيب كامل | `installer/README.md` | ✅ 6 أقسام |
 | 3 | PostgreSQL hardening | `docs/postgres-production.md` | ✅ + منع EnsureCreated في الإنتاج |
-| 4 | backup/restore | `scripts/backup-postgres.ps1` · `restore-postgres.ps1` | ✅ RTO &lt; 4h موثَّق |
+| 4 | backup/restore | `scripts/backup-postgres.ps1` · `restore-postgres.ps1` | ⚠️ **صُحّح 2026-09-04 (م-٣٦):** كان ✅ على سكربتين **لا يُحلَّلان أصلاً** (`"$hostName:$port"` يُقرأ مرجعَ متغيّرٍ ذا نطاق، وبلا BOM تحت 5.1). أُصلحا وشُغّلا؛ **وRTO &lt; 4h يبقى هدفاً موثّقاً لا رقماً مقيساً** — لا تمرينَ استعادةٍ مُسجّل |
 | 5 | UX: إخفاء أزرار RBAC | تنقل + أزرار ترحيل/إلغاء | ✅ |
 | 6 | Toast notifications | `UiFeedback` v2 | ✅ |
 | 7 | Pagination تقارير | Audit · فواتير · JE · GL | ✅ |

@@ -1,4 +1,4 @@
-# v14 skills consolidation — remove redundant stubs and duplicate layers
+﻿# v14 skills consolidation — remove redundant stubs and duplicate layers
 $ErrorActionPreference = "Stop"
 $SkillsBase = (Resolve-Path (Join-Path $PSScriptRoot "..\..\.cursor\skills")).Path
 $removed = 0

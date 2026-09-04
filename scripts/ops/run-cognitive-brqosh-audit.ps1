@@ -1,4 +1,4 @@
-# Ops — audit sibling BRQOSH repo when BRQOSH_ROOT or ../BRQOSH exists
+﻿# Ops — audit sibling BRQOSH repo when BRQOSH_ROOT or ../BRQOSH exists
 param(
     [string]$BrqoshRoot = "",
     [int]$MaxSteps = 15,

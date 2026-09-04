@@ -1,4 +1,4 @@
-# Fix mojibake from add-cloud-code-skill-footers.ps1 UTF-8 write
+﻿# Fix mojibake from add-cloud-code-skill-footers.ps1 UTF-8 write
 $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $files = Get-ChildItem (Join-Path $repoRoot ".cursor\skills") -Recurse -Filter "SKILL.md"

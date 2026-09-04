@@ -35,13 +35,30 @@ function Resolve-Share {
     # ‏(CEEF-236 · م-٣١) **تعدادٌ لا تخمين.** كانت القائمةُ مكتوبةً بالحدس (E: F: G: D:)،
     # ‏و`--automount` في VirtualBox ركّب المشتركَ على **`Z:`** — فلم يجده السكربتُ أصلاً.
     # ‏ويُشترط وجودُ السكربت مع الحزمة، فلا يُلتقط قرصُ تنصيبٍ يحمل ملفّاً بالاسم نفسِه.
+    # ‏(CEEF-236 · م-٣٥) **ويُشترط أن يكون قابلاً للكتابة.** الحزمةُ تُسلَّم للضيف
+    # ‏على قرصٍ ضوئيٍّ (`.viso`) يظهر عادةً على `E:`، والمجلّدُ المشترك على `Z:`،
+    # ‏والقرصان يحملان الملفَّين معاً. فالترتيبُ الأبجديّ يختار `E:`، ثمّ يرمي
+    # ‏أوّلُ `Export-Csv` على وسيطٍ للقراءة فقط — ومن داخل `Invoke-Stage` يرمي
+    # ‏مرّتين، فتنتهي التشغيلةُ بلا صفٍّ واحد ولا سطرِ حكم، فتُقرأ كأنّ الضيف تجمّد.
     $candidates = @("\\vboxsvr\rk") + (
         Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue |
             Sort-Object Name | ForEach-Object { $_.Name + ":\" })
+    $readOnly = @()
     foreach ($c in $candidates) {
         try {
-            if ((Test-Path (Join-Path $c "BRQOSH-Setup.msi")) -and (Test-Path (Join-Path $c "rk-guest.ps1"))) { return $c }
+            if (-not ((Test-Path (Join-Path $c "BRQOSH-Setup.msi")) -and
+                      (Test-Path (Join-Path $c "rk-guest.ps1")))) { continue }
+            $probe = Join-Path $c ("rk-write-probe-" + [guid]::NewGuid().ToString("N") + ".tmp")
+            try {
+                [IO.File]::WriteAllText($probe, "probe")
+                Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+                return $c
+            } catch { $readOnly += $c }
         } catch { }
+    }
+    if ($readOnly.Count -gt 0) {
+        throw ("المواضعُ التي تحمل الحزمة للقراءة فقط (" + ($readOnly -join ", ") +
+                ") — ولا موضعَ كتابةٍ تُكتب فيه النتائج. مرِّر -Share بمجلّدٍ مشترك.")
     }
     throw "لم يُعثر على المجلّد المشترك الذي يحمل BRQOSH-Setup.msi"
 }
@@ -71,7 +88,17 @@ function Invoke-Stage {
     # ‏**إجهاضُ مرحلةٍ يُكتب صفّاً، لا يُترك فراغاً.** بلا هذا تسقط المرحلةُ فتغيب صفوفُها
     # ‏كلُّها من الدليل، ويبدو الملفُّ كأنّ تلك الفحوصَ لم تُطلَب أصلاً.
     try { & $Body }
-    catch { Add-Finding -Check "المرحلة «$Name» اكتملت" -Expected "بلا إجهاض" -Actual $_.Exception.Message -Ok $false }
+    catch {
+        # ‏(CEEF-236 · م-٣٥) وإن عجزت كتابةُ الصفّ نفسُها، فلتُطبَع على الأقلّ؛
+        # ‏وإلا أخفى عطلُ الدليل العطلَ المُقاس وخرجت التشغيلةُ صامتةً.
+        $reason = $_.Exception.Message
+        try { Add-Finding -Check "المرحلة «$Name» اكتملت" -Expected "بلا إجهاض" -Actual $reason -Ok $false }
+        catch {
+            $script:failCount++
+            Write-Host "[FAIL] المرحلة «$Name» — $reason"
+            Write-Host "[FAIL] وتعذّر تسجيلُ الصفّ: $($_.Exception.Message)"
+        }
+    }
 }
 
 function Test-DotnetDesktop {

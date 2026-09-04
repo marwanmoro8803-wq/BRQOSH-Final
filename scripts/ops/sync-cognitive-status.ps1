@@ -1,4 +1,4 @@
-# Ops — Sync CognitiveQa STATUS.yaml test count (M16)
+﻿# Ops — Sync CognitiveQa STATUS.yaml test count (M16)
 param(
     [switch]$DryRun,
     [int]$TestCount = 0

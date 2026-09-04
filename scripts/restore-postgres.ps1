@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   استعادة نسخة pg_dump -Fc إلى قاعدة PostgreSQL (محرك التجربة/التعافي).
@@ -37,7 +37,7 @@ try {
     if ($Clean) { $args += "--clean"; $args += "--if-exists" }
     $args += $DumpFile
 
-    Write-Host "Restoring $DumpFile → $db@$hostName:$port" -ForegroundColor Cyan
+    Write-Host "Restoring $DumpFile → $db@${hostName}:$port" -ForegroundColor Cyan
     & $PgRestorePath @args
     if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 1) {
         # pg_restore may return 1 for non-fatal warnings
