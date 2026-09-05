@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Brqosh.Domain.Security;
 using Brqosh.Infrastructure.Persistence;
@@ -40,6 +40,12 @@ public class UserAuthService(BrqoshDbContext db)
     public async Task<AppUser?> AuthenticateAsync(long companyId, string username, string password, string? totpCode = null)
     {
         var normalized = username.Trim().ToLowerInvariant();
+
+        // ‏(CEEF-237 · ت-٦) **القفلُ يُفرَض هنا لا في النافذة.**
+        // ‏كان يُفرَض في LoginWindow وحدَها وفي ذاكرة العملية — فإعادةُ التشغيل تمحوه،
+        // ‏وأيُّ مسارٍ آخر يستدعي هذه الخدمة لم يكن يمرّ بقفلٍ أصلاً.
+        await new PersistentLoginLockout(db).ThrowIfLockedAsync(companyId, normalized);
+
         var user = await db.AppUsers
             .FirstOrDefaultAsync(u => u.CompanyId == companyId
                 && u.Username == normalized
@@ -55,6 +61,8 @@ public class UserAuthService(BrqoshDbContext db)
         {
             if (string.IsNullOrWhiteSpace(totpCode) || !TotpMfaService.ValidateCode(user.MfaSecret!, totpCode))
             {
+                // ‏(ت-٦) وإخفاقُ رمز MFA يُحسب كإخفاقِ كلمة مرور — وكان لا يُحسب أصلاً،
+                // ‏فمن ملك كلمةَ المرور استطاع تخمينَ الرمز بلا حدّ.
                 await new LoginAuditService(db).LogAsync(companyId, normalized, false, "رمز MFA غير صحيح");
                 return null;
             }

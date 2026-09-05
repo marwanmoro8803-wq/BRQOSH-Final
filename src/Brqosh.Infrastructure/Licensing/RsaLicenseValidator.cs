@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -83,11 +83,18 @@ public static class RsaLicenseValidator
         return Convert.ToBase64String(rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
     }
 
-    public static bool TryValidate(string companyName, string machineId, string licenseJson, out LicensePayload? payload)
-        => Validate(companyName, machineId, licenseJson, out payload) == LicenseVerdict.Valid;
+    public static bool TryValidate(string companyName, string machineId, string licenseJson,
+        out LicensePayload? payload, string? alsoAcceptMachineId = null)
+        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId) == LicenseVerdict.Valid;
 
     /// <summary>يُعيد <see cref="LicenseVerdict.Valid"/> مع الحمولة، أو أوّلَ سببٍ للرفض بالترتيب: الشكل، المنشأة، الجهاز، الصلاحية، مفتاح الثقة، التوقيع.</summary>
-    public static LicenseVerdict Validate(string companyName, string machineId, string licenseJson, out LicensePayload? payload)
+    /// <param name="alsoAcceptMachineId">
+    /// (CEEF-237 · ت-٥) معرّفٌ بديلٌ مقبولٌ لهذا الجهاز — يُمرَّر عند الانتقال من الصيغة
+    /// القديمة إلى <c>MachineGuid</c> ليبقى ترخيصٌ صدر سابقاً صالحاً. <b>افتراضُه العدم</b>،
+    /// فالسلوكُ لا يتّسع إلا حيث يُطلَب ذلك صراحةً.
+    /// </param>
+    public static LicenseVerdict Validate(string companyName, string machineId, string licenseJson,
+        out LicensePayload? payload, string? alsoAcceptMachineId = null)
     {
         payload = null;
 
@@ -130,7 +137,16 @@ public static class RsaLicenseValidator
         if (!string.Equals(inner.CompanyName.Trim(), companyName.Trim(), StringComparison.Ordinal))
             return LicenseVerdict.CompanyMismatch;
 
-        if (!string.Equals(inner.MachineId.Trim(), machineId.Trim(), StringComparison.OrdinalIgnoreCase))
+        // ‏(CEEF-237 · ت-٥) يُقبل المعرّفُ المطلوب، **أو معرّفٌ بديلٌ يُمرَّر صراحةً**.
+        //
+        // ‏وأوّلُ محاولةٍ هنا كانت تقبل ضمناً أيَّ معرّفٍ لهذا الجهاز — **فترخيصٌ مربوطٌ
+        // ‏بهذا الجهاز صار يُقبل ولو سُئل عن جهازٍ آخر**. وأمسك ذلك اختبارٌ قائم
+        // ‏(`Verdicts_NameTheActualReason`)، والاختبارُ كان على حقّ: الرباطُ يجب أن يكون
+        // ‏بالجهاز المسؤول عنه لا بالصندوق الذي يعمل عليه المُتحقّق.
+        var candidates = new List<string> { machineId.Trim() };
+        if (!string.IsNullOrWhiteSpace(alsoAcceptMachineId)) candidates.Add(alsoAcceptMachineId.Trim());
+
+        if (!candidates.Any(id => string.Equals(inner.MachineId.Trim(), id, StringComparison.OrdinalIgnoreCase)))
             return LicenseVerdict.MachineMismatch;
 
         if (inner.ExpiresUtc < DateTime.UtcNow)
