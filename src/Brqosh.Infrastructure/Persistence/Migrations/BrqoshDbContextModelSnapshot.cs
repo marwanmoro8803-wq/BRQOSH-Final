@@ -17,7 +17,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.18")
+                .HasAnnotation("ProductVersion", "9.0.19")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -4511,6 +4511,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("ClearedXmlFilePath")
+                        .HasColumnType("text");
 
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");

@@ -36,6 +36,13 @@ public class ZatcaEInvoiceDocument : IBranchScoped
     public string? SignedXmlFilePath { get; private set; }
     public string? ZatcaResponseJson { get; private set; }
 
+    /// <summary>
+    /// (CEEF-237 · ز-٢) <b>المستندُ المُخلَّص كما أعادته الهيئة — لا نسختُنا الموقَّعة محلياً.</b>
+    /// في التخليص (B2B) تُعيد الهيئةُ فاتورةً موقَّعةً بختمها، <b>وهي الوثيقةُ النظاميّةُ التي
+    /// تُسلَّم للمشتري</b>. وبلا حفظِها كان المشتري يستلم نسختَنا المحليّة.
+    /// </summary>
+    public string? ClearedXmlFilePath { get; private set; }
+
     public DateTime GeneratedAtUtc { get; private set; }
     public DateTime? SubmittedAtUtc { get; private set; }
     public DateTime LastStatusAtUtc { get; private set; }
@@ -100,6 +107,21 @@ public class ZatcaEInvoiceDocument : IBranchScoped
         ComplianceStatus = newStatus;
         ZatcaResponseJson = responseJson;
         SubmittedAtUtc = DateTime.UtcNow;
+        LastStatusAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// (CEEF-237 · ز-٢) تسجيلُ مسارِ المستند المُخلَّص العائد من الهيئة.
+    /// <b>يُستدعى بعد <c>MarkSubmitted</c> وحدَه</b> — فلا مستندَ مخلَّصٌ لفاتورةٍ لم تُقبَل.
+    /// </summary>
+    public void AttachClearedXml(string clearedXmlPath)
+    {
+        if (string.IsNullOrWhiteSpace(clearedXmlPath))
+            throw new ArgumentException("مسارُ المستند المُخلَّص فارغ.", nameof(clearedXmlPath));
+        if (ComplianceStatus != ZatcaComplianceStatus.Cleared)
+            throw new InvalidOperationException(
+                $"لا يُرفَق مستندٌ مخلَّصٌ لفاتورةٍ حالتُها {ComplianceStatus}.");
+        ClearedXmlFilePath = clearedXmlPath;
         LastStatusAtUtc = DateTime.UtcNow;
     }
 

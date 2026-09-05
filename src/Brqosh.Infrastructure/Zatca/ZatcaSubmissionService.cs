@@ -153,14 +153,100 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
             throw new AccountingException($"رفضت الهيئة المستند: {response.StatusCode}");
         }
 
+        // (CEEF-237 · ز-٢) ‏**حالةُ الهيئة تُقرأ، لا تُفترض من رمز HTTP.**
+        //
+        // ‏كان أيُّ 2xx يُعلّم الفاتورة Cleared/Reported. **والهيئةُ تردّ 200 ومعها
+        // ‏`clearanceStatus: NOT_CLEARED`** (أو `reportingStatus: NOT_REPORTED`) حين ترفض
+        // ‏المحتوى وتقبل الطلب — فكانت فاتورةٌ مرفوضةٌ تُخزَّن «مخلَّصة»، ويُسلَّم المشتري
+        // ‏مستنداً لا سندَ له، ولا يظهر الخللُ إلا في مطابقةِ الهيئة بعد شهور.
+        var verdict = ReadAuthorityVerdict(body, doc.TransmissionMode);
+        if (!verdict.Accepted)
+        {
+            doc.MarkRejected(body);
+            await db.SaveChangesAsync();
+            throw new AccountingException(
+                $"لم تقبل الهيئةُ المستند: {verdict.Status}"
+                + (verdict.Reason is null ? "" : $" — {verdict.Reason}"));
+        }
+
         doc.MarkSubmitted(
             doc.TransmissionMode == ZatcaTransmissionMode.Reporting
                 ? ZatcaComplianceStatus.Reported
                 : ZatcaComplianceStatus.Cleared,
             body);
+
+        // ‏وفي التخليص تُعيد الهيئةُ الفاتورةَ مختومةً — **وهي ما يُسلَّم للمشتري**.
+        if (doc.TransmissionMode == ZatcaTransmissionMode.Clearance)
+        {
+            var cleared = ReadClearedInvoice(body);
+            if (cleared is not null)
+            {
+                var clearedPath = Path.Combine(
+                    Path.GetDirectoryName(xmlPath)!,
+                    Path.GetFileNameWithoutExtension(xmlPath) + ".cleared.xml");
+                await File.WriteAllBytesAsync(clearedPath, cleared);
+                doc.AttachClearedXml(clearedPath);
+            }
+        }
+
         await db.SaveChangesAsync();
         return doc;
     }
+
+    /// <summary>حكمُ الهيئة كما ورد في جسم الردّ — لا كما يُستنتج من رمز HTTP.</summary>
+    internal readonly record struct AuthorityVerdict(bool Accepted, string Status, string? Reason);
+
+    internal static AuthorityVerdict ReadAuthorityVerdict(string body, ZatcaTransmissionMode mode)
+    {
+        JsonElement root;
+        try { root = JsonDocument.Parse(body).RootElement; }
+        catch (JsonException)
+        {
+            // ‏ردٌّ ليس JSON بعد 2xx: لا يُفترض قبولاً.
+            return new AuthorityVerdict(false, "ردٌّ غيرُ مقروء", Truncate(body, 200));
+        }
+
+        var field = mode == ZatcaTransmissionMode.Reporting ? "reportingStatus" : "clearanceStatus";
+        var status = root.TryGetProperty(field, out var s) ? s.GetString() ?? "" : "";
+
+        // ‏غيابُ الحقل نفسِه إخفاقٌ مُعلَن: لا يُقرأ صمتُ الهيئة قبولاً.
+        if (string.IsNullOrWhiteSpace(status))
+            return new AuthorityVerdict(false, $"{field} غائب", FirstMessage(root));
+
+        var accepted = status.Equals("CLEARED", StringComparison.OrdinalIgnoreCase)
+                    || status.Equals("REPORTED", StringComparison.OrdinalIgnoreCase);
+        return new AuthorityVerdict(accepted, status, accepted ? null : FirstMessage(root));
+    }
+
+    private static string? FirstMessage(JsonElement root)
+    {
+        foreach (var name in new[] { "errorMessages", "warningMessages" })
+        {
+            if (root.TryGetProperty(name, out var arr) && arr.ValueKind == JsonValueKind.Array
+                && arr.GetArrayLength() > 0)
+            {
+                var first = arr[0];
+                return first.TryGetProperty("message", out var m) ? m.GetString() : first.ToString();
+            }
+        }
+        return null;
+    }
+
+    /// <summary>الفاتورةُ المختومة من الهيئة (base64) إن وُجدت.</summary>
+    internal static byte[]? ReadClearedInvoice(string body)
+    {
+        try
+        {
+            var root = JsonDocument.Parse(body).RootElement;
+            if (!root.TryGetProperty("clearedInvoice", out var el)) return null;
+            var b64 = el.GetString();
+            return string.IsNullOrWhiteSpace(b64) ? null : Convert.FromBase64String(b64);
+        }
+        catch (Exception e) when (e is JsonException or FormatException) { return null; }
+    }
+
+    private static string Truncate(string value, int max) =>
+        value.Length <= max ? value : value[..max] + "…";
 
     private static AuthenticationHeaderValue ParseAuth(string token)
     {
