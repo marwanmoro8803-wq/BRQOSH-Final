@@ -82,6 +82,30 @@ if ($adminPairHits.Count -gt 0) {
     }
 }
 
+# ‏(CEEF-237 · م-٣٧ب) **‏بايتاتُ تحكّمٍ في المصدر — عطلٌ عضّ ثلاثَ مرّات.**
+#
+# ‏كتابةُ نصٍّ فيه `\b` عبر أداةٍ وسيطةٍ تُحوّله بايتَ 0x08 حقيقياً. وقع في كتلة تعليقٍ
+# ‏في هذا الملفّ نفسِه (م-٣٧)، ثمّ في `.github/workflows/ci.yml` حيث **أبطل YAML كلَّه**.
+# ‏والبايتُ لا يُرى في محرّر، ويُخفي ما قبله في الطرفيّة، ولا يجده بحثٌ عن `\b`.
+# ‏فليُمنع شحنُه: أيُّ محرفِ تحكّمٍ عدا التبويب والسطر يُسقط البوّابة.
+$controlCharHits = @()
+foreach ($file in $sourceFiles) {
+    $bytes = [IO.File]::ReadAllBytes($file.FullName)
+    for ($i = 0; $i -lt $bytes.Length; $i++) {
+        $b = $bytes[$i]
+        # ‏قائمةٌ ضيّقةٌ عمداً: 0x1F مثلاً **يُستعمل قصداً** فاصلَ حقولٍ في تقنين
+        # ‏بصمة سجلّ التدقيق، ومنعُه يكسر شيئاً صحيحاً. والمقصودُ هنا ما لا معنى له
+        # ‏في مصدرٍ أبداً: الفراغُ الخلفيّ (0x08) الذي وقع ثلاثَ مرّات، والعادم،
+        # ‏وفاصلُ الصفحة، ونهايةُ الملفّ في DOS.
+        if ($b -eq 0x00 -or $b -eq 0x08 -or $b -eq 0x0C -or $b -eq 0x1A) {
+            $rel = $file.FullName.Replace((Get-Location).Path + [IO.Path]::DirectorySeparatorChar, "")
+            $controlCharHits += ("{0} عند البايت {1}: 0x{2:X2}" -f $rel, $i, $b)
+            break
+        }
+    }
+}
+foreach ($hit in $controlCharHits) { Add-Failure "control character in source: $hit" }
+
 # 2) List likely hardcoded secrets (warning / informational)
 # (CEEF-236 - m-25) Broadened: a credential is rarely named exactly "password".
 # (CEEF-236 - m-25/m-30) Broadened, then corrected: the leading [A-Za-z_]* constrained nothing
@@ -143,6 +167,8 @@ foreach ($case in $patternSelfTest) {
 $secretAllowlist = @(
     @{ Pattern = 'Database=brqosh_design;Username=postgres;Password=design'
        Reason  = 'مصنعُ EF وقتَ التصميم: قاعدةٌ محلّيّةٌ على المنفذ 5433 تُولّد منها الهجراتُ على جهازِ المطوِّر؛ لا تُشحن ولا تُستعمل وقتَ التشغيل.' }
+    @{ Pattern = 'PGPASSWORD = ''root'''
+       Reason  = 'كلمةُ postgres الموثّقة على صورة windows-latest من GitHub؛ تُستعمل مرّةً واحدةً لتبديلها بمولَّدةٍ على عدّاءٍ يُتلف بعد التشغيلة.' }
     @{ Pattern = 'ProdBoot!2026'
        Reason  = 'كلمةُ حسابٍ يُنشئُه مِسبارُ الإقلاع الإنتاجيّ داخل آلةٍ افتراضيّةٍ تُتلف بعده؛ لا تصل عميلاً.' }
     @{ Pattern = 'UiAudit9!'

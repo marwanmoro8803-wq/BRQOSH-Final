@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -9,6 +9,26 @@ on:
 jobs:
   build-test:
     runs-on: windows-latest
+
+    # (CEEF-237 · ج-٢) ‏**خادمُ PostgreSQL — وبدونه لا تحرس هذه البوّابةُ شيئاً.**
+    #
+    # ‏`[PostgresFact]` يتخطّى حين لا يجد خادماً. ولم تكن هنا خدمةٌ ولا `BRQOSH_REQUIRE_PG`،
+    # ‏**فاثنان وعشرون اختباراً كانت تُتخطّى في كلّ تشغيلة** — وهي بالضبط ما يحرس صحّة الدفتر
+    # ‏عند التزاحم: الفتراتُ المالية · إقفالُ السنة · تكلفةُ المخزون · التكاليفُ المُحمَّلة ·
+    # ‏الجردُ · **ترقيمُ المستندات** · سلسلةُ التدقيق · الخزينةُ وقفلُها · قفلُ ICV ·
+    # ‏تطابقُ المزوّدَين · النسخُ والاستعادة. أي أنّ الأخضرَ كان يعني «لم يُفحص» لا «فُحص فنجا».
+    #
+    # ‏و`windows-latest` لا يشغّل حاويات لينكس، فلا `services:` هنا: يُشغَّل الخادمُ
+    # ‏المُثبَّت على الصورة صراحةً في خطوةٍ أولى.
+
+    env:
+      BRQOSH_PG_HOST: localhost
+      BRQOSH_PG_PORT: "5432"
+      # ‏لا كلمةَ مرورٍ مكتوبةً هنا: تُولَّد في الخطوة أدناه وتُصدَّر إلى GITHUB_ENV.
+      # ‏(‏وبوّابةُ الأسرار نفسُها أمسكت النسخةَ الأولى المكتوبة — فهذا فعلُ الحارس لا التفافٌ عليه.)
+      # ‏**غيابُ الخادم يصير فشلاً لا تخطّياً** — وهذا ما يجعل البوّابةَ بوّابة.
+      BRQOSH_REQUIRE_PG: "1"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -16,6 +36,29 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
+
+      # (CEEF-237 · ج-٢) تشغيلُ PostgreSQL المُثبَّت على عدّاء ويندوز وضبطُ كلمة المرور.
+      - name: Start PostgreSQL
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $svc = Get-Service -Name 'postgresql*' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $svc) { throw 'لا خدمةَ PostgreSQL على العدّاء — والبوّابةُ تشترطها.' }
+          Start-Service $svc.Name
+          $bin = (Get-ChildItem 'C:\Program Files\PostgreSQL' -Directory |
+                  Sort-Object Name -Descending | Select-Object -First 1).FullName + '\bin'
+          # ‏كلمةُ postgres على صورة windows-latest هي 'root' — فإن تغيّرت، تسقط الخطوةُ
+          # ‏برسالةٍ تُسمّي الافتراض بدل أن يُتخطّى الفحصُ صامتاً.
+          $env:PGPASSWORD = 'root'
+          $generated = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray()).TrimEnd('=')
+          & "$bin\psql.exe" -U postgres -h localhost -p 5432 -c `
+            "ALTER USER postgres PASSWORD '$generated';"
+          if ($LASTEXITCODE -ne 0) { throw "تعذّر ضبطُ كلمة مرور postgres (exit=$LASTEXITCODE)." }
+          "BRQOSH_PG_PASSWORD=$generated" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $env:PGPASSWORD = $generated
+          $v = & "$bin\psql.exe" -U postgres -h localhost -p 5432 -tAc 'select version();'
+          if ($LASTEXITCODE -ne 0) { throw 'الخادمُ لا يقبل الاتصالَ بعد الضبط.' }
+          Write-Host "PostgreSQL جاهز: $v"
 
       - name: Restore
         run: dotnet restore Brqosh.sln
@@ -53,10 +96,26 @@ jobs:
           BRQOSH_TEST: "1"
         run: >
           dotnet test Brqosh.sln -c Release --no-build --verbosity normal
+          --logger "trx;LogFileName=results.trx"
           -p:XUnitParallelizeAssembly=false
           --collect:"XPlat Code Coverage"
           --results-directory TestResults
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      # (CEEF-237 · ج-٢) ‏**صفرُ متخطًّى شرطٌ لا زينة.**
+      # ‏لولا هذا لعاد التخطّي صامتاً بأيّ تغييرٍ في البيئة، وعاد الأخضرُ يعني «لم يُفحص».
+      - name: Assert nothing was skipped
+        shell: pwsh
+        run: |
+          $trx = Get-ChildItem TestResults -Recurse -Filter *.trx -ErrorAction SilentlyContinue
+          $skipped = 0
+          foreach ($f in $trx) {
+            $x = [xml](Get-Content $f.FullName)
+            $skipped += [int]($x.TestRun.ResultSummary.Counters.notExecuted)
+          }
+          if ($trx.Count -eq 0) { throw 'لا ملفَّ نتائج (.trx) — لا يمكن إثباتُ عدم التخطّي.' }
+          if ($skipped -gt 0) { throw "‏$skipped اختباراً تُخطّى — والبوّابةُ تشترط صفراً." }
+          Write-Host 'صفرُ متخطًّى.'
 
       # (CEEF-229 · م2-٣) بوابة واحدة مُلزِمة، تدمج تقارير cobertura كلَّها اتّحاداً وتحكم
       # لكل تجميعة بعتبتها. حُذفت الخطوة «المعلوماتية» الثانية: كانت هي **الصادقة الوحيدة**

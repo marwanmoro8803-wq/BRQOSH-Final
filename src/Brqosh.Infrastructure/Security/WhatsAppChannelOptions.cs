@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Brqosh.Infrastructure.Security;
@@ -57,7 +57,9 @@ public sealed record WhatsAppChannelOptions
 
             return new WhatsAppChannelOptions
             {
-                AccessToken = file.AccessToken ?? "",
+                // ‏(CEEF-237 · ت-٧) يُفَكُّ ما كان محميّاً، ويمرّ ما كان صريحاً كما هو —
+                // ‏فملفٌّ قديمٌ لا يتوقّف عن العمل، ويُعاد حفظُه محميّاً عند أوّل كتابة.
+                AccessToken = LocalSecretProtector.Unprotect(file.AccessToken ?? ""),
                 PhoneNumberId = file.PhoneNumberId ?? "",
                 ApiVersion = file.ApiVersion ?? "v21.0",
                 TemplateName = file.TemplateName ?? "brqosh_otp",
@@ -80,7 +82,11 @@ public sealed record WhatsAppChannelOptions
         Directory.CreateDirectory(dir);
         var file = new WhatsAppConfigFile
         {
-            AccessToken = options.AccessToken,
+            // ‏(CEEF-237 · ت-٧) **الرمزُ يُحفَظ محميّاً كسائر الأسرار.**
+            // ‏كان يُكتب صريحاً في %APPDATA%\BRQOSH\whatsapp.json بينما أسرارُ ZATCA
+            // ‏وقاعدةِ البيانات محميّةٌ بـDPAPI — ورمزُ Meta يُرسل رسائلَ باسم المنشأة
+            // ‏ويصلح لانتحالها، فهو ليس أدنى منها خطراً.
+            AccessToken = LocalSecretProtector.Protect(options.AccessToken),
             PhoneNumberId = options.PhoneNumberId,
             ApiVersion = options.ApiVersion,
             TemplateName = options.TemplateName,

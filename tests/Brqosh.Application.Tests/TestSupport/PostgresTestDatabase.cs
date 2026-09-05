@@ -1,4 +1,4 @@
-using Brqosh.Infrastructure.Persistence;
+﻿using Brqosh.Infrastructure.Persistence;
 using Npgsql;
 
 namespace Brqosh.Application.Tests.TestSupport;
@@ -25,8 +25,27 @@ public static class PostgresTestDatabase
     /// <summary>متغيّرُ بيئةٍ يحوّل التخطّي إلى فشل — لبوّابةٍ تدّعي حراسة الإنتاج.</summary>
     public const string RequireEnvironmentVariable = "BRQOSH_REQUIRE_PG";
 
-    private const string Host = "localhost";
-    private const int Port = 5433;
+    /// <summary>
+    /// (CEEF-237 · ج-٢) <b>مصادرُ الاتصال تقبل متغيّرَ بيئة — وبدونها لا تعمل هذه الحزمةُ في CI أبداً.</b>
+    ///
+    /// <para>كانت كلمةُ المرور تُقرأ من <c>%APPDATA%\BRQOSH\pg_password.txt</c> وحدَه، وهو
+    /// ملفٌّ لا يوجد على عدّاءِ CI ولا يجوز أن يوجد. <b>فكلُّ اختبارٍ موسومٍ
+    /// <c>[PostgresFact]</c> كان يُتخطّى هناك بالتصميم</b> — اثنان وعشرون اختباراً تحرس
+    /// تزاحمَ الفترات وإقفالَ السنة وتكلفةَ المخزون <b>وترقيمَ المستندات</b> وسلسلةَ التدقيق
+    /// والخزينةَ والنسخَ والاستعادة. <b>أي أنّ البوّابة لم تكن تحرس مسارَ الإنتاج أصلاً.</b></para>
+    ///
+    /// <para>والملفُّ يبقى المصدرَ الأوّل لجهاز المطوّر — فلا يتغيّر شيءٌ عنده.</para>
+    /// </summary>
+    public const string HostEnvironmentVariable = "BRQOSH_PG_HOST";
+    public const string PortEnvironmentVariable = "BRQOSH_PG_PORT";
+    public const string PasswordEnvironmentVariable = "BRQOSH_PG_PASSWORD";
+
+    private static string Host =>
+        Environment.GetEnvironmentVariable(HostEnvironmentVariable) is { Length: > 0 } h ? h : "localhost";
+
+    private static int Port =>
+        int.TryParse(Environment.GetEnvironmentVariable(PortEnvironmentVariable), out var p) ? p : 5433;
+
     private const string User = "postgres";
 
     private static readonly Lazy<string?> CachedPassword = new(ReadPassword);
@@ -36,12 +55,17 @@ public static class PostgresTestDatabase
 
     private static string? ReadPassword()
     {
+        // ‏متغيّرُ البيئة أوّلاً: هو الطريقُ الوحيد على CI، ولا يترك سرّاً على القرص.
+        if (Environment.GetEnvironmentVariable(PasswordEnvironmentVariable) is { Length: > 0 } fromEnv)
+            return fromEnv;
+
         try
         {
             return File.Exists(PasswordPath) ? File.ReadAllText(PasswordPath).Trim() : null;
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            // ‏ملفٌّ موجودٌ لا يُقرأ ليس «لا خادم» — لكنّ التمييزَ يقع في SkipReason لا هنا.
             return null;
         }
     }
@@ -71,7 +95,8 @@ public static class PostgresTestDatabase
         {
             if (IsAvailable) return null;
             if (Environment.GetEnvironmentVariable(RequireEnvironmentVariable) == "1") return null;
-            return $"PostgreSQL غير متاح على {Host}:{Port} (أو لا يوجد {PasswordPath}). "
+            return $"PostgreSQL غير متاح على {Host}:{Port} "
+                 + $"(لا {PasswordEnvironmentVariable} ولا {PasswordPath}). "
                  + $"اضبط {RequireEnvironmentVariable}=1 ليصير غيابُه فشلاً بدل تخطٍّ.";
         }
     }
