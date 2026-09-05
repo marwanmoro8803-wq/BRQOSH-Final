@@ -1,5 +1,6 @@
-using Brqosh.Application.Setup;
+﻿using Brqosh.Application.Setup;
 using Microsoft.EntityFrameworkCore;
+using Brqosh.Infrastructure.Operations;
 
 namespace Brqosh.Infrastructure.Persistence;
 
@@ -98,6 +99,13 @@ public class DatabaseSchemaService(BrqoshDbContext db)
             }
             catch (Exception ex) when (IsIgnorableSchemaConflict(ex) || ex is InvalidOperationException)
             {
+                // ‏(CEEF-237 · ت-١١) **الابتلاعُ يُسجَّل — وكان صامتاً تماماً.**
+                //
+                // ‏سقوطُ `MigrateAsync` هنا يعني أنّ هجرةً لم تُطبَّق ولم يُكتب صفُّ تاريخها،
+                // ‏**فتُعاد المحاولةُ عند كلّ إقلاعٍ إلى الأبد**، ولا تُطبَّق أيُّ هجرةٍ بعدها.
+                // ‏والمُرقِّعُ يستر الأثرَ فيبدو كلُّ شيءٍ سليماً — حتى يُضاف عمودٌ جديدٌ فلا يصل.
+                // ‏فالسببُ يُكتب في سجلّ الأعطال: لا يُوقف الإقلاع، ولا يُنسى.
+                CrashLog.Write(ex, "schema-migrate-fallback");
                 await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
                 return;
             }

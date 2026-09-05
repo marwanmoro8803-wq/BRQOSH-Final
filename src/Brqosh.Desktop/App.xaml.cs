@@ -4,6 +4,7 @@ using Brqosh.Application.Setup;
 using Brqosh.Desktop.Views;
 using Brqosh.Domain.Security;
 using Brqosh.Infrastructure.Licensing;
+using Brqosh.Infrastructure.Operations;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Setup;
 using Microsoft.EntityFrameworkCore;
@@ -195,6 +196,17 @@ public partial class App : System.Windows.Application
             Shutdown();
             return;
         }
+
+        // ‏(CEEF-237 · ت-١٢) رجوعُ الساعة يُسجَّل قبل حكم الصلاحية — **ولا يُوقف العمل**.
+        // ‏فساعةٌ تُصحَّح بعد بطاريّةِ لوحةٍ فارغة تصرف عميلاً صادقاً عن دفاتره، والضررُ من
+        // ‏إغلاقٍ خاطئ أكبرُ من الضرر من تمديدٍ يُكتشف. والقرارُ للمالك لا لهذه الطبقة.
+        var clock = ClockRollbackDetector.Observe();
+        if (clock.RolledBack)
+            CrashLog.Write(
+                new InvalidOperationException(
+                    $"ساعةُ الجهاز رجعت {clock.Backwards!.Value.TotalDays:N0} يوماً "
+                    + $"عن أحدثِ وقتٍ رآه التطبيق ({clock.HighWaterUtc:u})."),
+                "clock-rollback");
 
         if (!LicenseStore.ValidateForCompany(setup!.CompanyName, setup.CompletedAtUtc))
         {
