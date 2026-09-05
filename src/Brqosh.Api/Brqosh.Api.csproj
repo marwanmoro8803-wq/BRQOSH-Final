@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\Brqosh.Application\Brqosh.Application.csproj" />
@@ -17,5 +17,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+
+  <ItemGroup>
+    <!-- ‏(CEEF-237 · ت-١٠) اختبارُ تقليم قاموس حدّ المعدّل يقرأ حالةً داخليّة. -->
+    <InternalsVisibleTo Include="Brqosh.Api.Tests" />
+  </ItemGroup>
+
 </Project>
-
+
