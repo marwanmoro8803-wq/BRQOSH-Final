@@ -307,6 +307,7 @@ public static partial class UiBilingualRegistry
         ["اسم مركز التكلفة"] = "Cost center name",
         ["اسم مستخدم المدير مطلوب (3 أحرف على الأقل)."] = "Administrator username is required (at least 3 characters).",
         ["اشتراط اتصال مشفّر (TLS) بالخادم"] = "Require an encrypted (TLS) connection to the server",
+        ["اضغط لفتح شاشة النسخ الاحتياطي"] = "Open the backup screen",
         ["اطلب شهادة الامتثال أولاً."] = "Request the compliance certificate first.",
         ["اعتماد"] = "Approve",
         ["اعتماد الأمر"] = "Approve order",

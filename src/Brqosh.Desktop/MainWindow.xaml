@@ -280,10 +280,22 @@
                 <Border Grid.Column="1" Width="1" Background="#1E293B"
                         Margin="16,3"/>
 
-                <TextBlock Grid.Column="2" x:Name="StatusSessionText"
-                           Text="الجلسة نشطة"
-                           FontSize="11" Foreground="{StaticResource StatusBarTextBrush}"
-                           VerticalAlignment="Center" Margin="16,0,0,0"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusSessionText"
+                               Text="الجلسة نشطة"
+                               FontSize="11" Foreground="{StaticResource StatusBarTextBrush}"
+                               VerticalAlignment="Center" Margin="16,0,0,0"/>
+
+                    <!-- ‏(CEEF-237 · ت-٤) شارةُ آخرِ نسخةٍ احتياطيّة — تُرى ولا تُطلَب.
+                         ‏كان النسخُ زرّاً لا يُذكّر أحداً بنفسه، فتمرّ أسابيعُ بلا نسخة. -->
+                    <Border x:Name="StatusBackupBadge" Visibility="Collapsed"
+                            Background="#7F1D1D" CornerRadius="3" Padding="7,1"
+                            Margin="16,0,0,0" VerticalAlignment="Center"
+                            ToolTip="اضغط لفتح شاشة النسخ الاحتياطي">
+                        <TextBlock x:Name="StatusBackupText" FontSize="11"
+                                   Foreground="#FEE2E2" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
 
                 <TextBlock Grid.Column="3"
                            Text="BRQOSH ERP"

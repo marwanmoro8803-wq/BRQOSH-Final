@@ -114,6 +114,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Operations.BackupService>();
         // (CEEF-231 · ط5-٤) ‏تكرارُ النسخة خارج الجهاز.
         services.AddScoped<Operations.OffsiteBackupService>();
+        services.AddScoped<Operations.BackupScheduleService>();
         // (CEEF-231 · ط5-٥) ‏فحصُ قناة التحديث.
         services.AddScoped<Operations.UpdateCheckService>();
         // (CEEF-231 · ط5-١١) ‏تقليمُ ما يجوز — **ولا يمسّ سجلَّ التدقيق ولا المعلَّق في الطابور**.

@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.IO;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,6 +14,8 @@ using Brqosh.Desktop.Themes;
 using Brqosh.Desktop.Views;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Modules;
+using Brqosh.Infrastructure.Operations;
+using Brqosh.Infrastructure.Persistence;
 using Brqosh.Domain.Security;
 using Brqosh.Infrastructure.Intelligence;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +28,8 @@ public partial class MainWindow : Window
     private SetupState _setup;
     private readonly Dictionary<string, Button> _navButtons = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer _idleTimer;
+    private readonly DispatcherTimer _backupTimer;
+    private bool _backupRunning;
     private string _activePageKey = "dashboard";
     private bool _branchBinding;
     private bool _companyBinding;
@@ -55,6 +60,19 @@ public partial class MainWindow : Window
         _idleTimer.Tick += (_, _) => CheckGlobalIdle();
         _idleTimer.Start();
         Closed += (_, _) => _idleTimer.Stop();
+
+        // ‏(CEEF-237 · ت-٤) النسخُ الاحتياطيّ يقع من نفسِه.
+        //
+        // ‏كان مستدعي BackupService الوحيد زرّاً في شاشة، والكتيّبُ يَعِد بنسخةٍ يوميّة —
+        // ‏فمنشأةٌ لم يضغط أحدٌ زرَّها شهراً ثمّ تلف قرصُها تفقد دفاترَها كلَّها.
+        // ‏والفاصلُ نصفُ ساعةٍ لا يومٌ عمداً: جهازٌ يُطفأ مساءً ويُشغَّل صباحاً لا يبلغ
+        // ‏مؤقّتاً بأربعٍ وعشرين ساعة أبداً، والاستحقاقُ يُقاس بعمر آخرِ ملفٍّ لا بعدّاد.
+        _backupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
+        _backupTimer.Tick += async (_, _) => await RunScheduledBackupAsync();
+        _backupTimer.Start();
+        Closed += (_, _) => _backupTimer.Stop();
+        _ = RunScheduledBackupAsync();
+        StatusBackupBadge.MouseLeftButtonUp += (_, _) => Navigate("backup", NavTitleFor("backup"));
 
         BindUserHeader();
         BindStatusBar();
@@ -662,5 +680,49 @@ public partial class MainWindow : Window
                 },
             },
         };
+    }
+
+    /// <summary>مجلّدُ النسخ — هو نفسُه الذي تقرأه شاشةُ النسخ وتكتب فيه.</summary>
+    private static string BackupFolder => Path.Combine(BrqoshDataRoot.Path(), "backups");
+
+    /// <summary>
+    /// (CEEF-237 · ت-٤) ينسخ إن حان الوقت، ويُحدّث الشارة. <b>ولا يرمي أبداً</b>:
+    /// مؤقّتٌ يرمي في WPF يُسقط التطبيق، <b>ونسخةٌ فاشلة أهونُ من دفترٍ يُغلق</b>.
+    /// </summary>
+    private async Task RunScheduledBackupAsync()
+    {
+        if (_backupRunning) return;   // ‏تشغيلةٌ طويلةٌ لا تُستدعى فوق نفسها.
+        _backupRunning = true;
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var isPg = facade.Db.Database.IsNpgsql();
+            var outcome = await facade.GetService<BackupScheduleService>()
+                .RunIfDueAsync(BackupFolder, isPg);
+            ShowBackupBadge(outcome.State);
+        }
+        catch (Exception ex)
+        {
+            // ‏قاعدةٌ مقطوعةٌ أو إعدادٌ ناقص: تُعرض الحالةُ من الملفّات وحدَها.
+            CrashLog.Write(ex, "scheduled-backup");
+            // ‏وحتى لو تعذّرت قراءةُ الحالة، لا يُبتلع الفشل: تُعرض الشارةُ بأشدّ حالاتها.
+            try
+            {
+                ShowBackupBadge(BackupScheduleService.ReadState(BackupFolder));
+            }
+            catch (Exception badgeEx) when (badgeEx is IOException or UnauthorizedAccessException
+                                                or ArgumentException or NotSupportedException)
+            {
+                CrashLog.Write(badgeEx, "backup-badge");
+                ShowBackupBadge(new BackupScheduleState(null, null, IsDue: true, IsOverdue: true));
+            }
+        }
+        finally { _backupRunning = false; }
+    }
+
+    private void ShowBackupBadge(BackupScheduleState state)
+    {
+        StatusBackupText.Text = state.Badge;
+        StatusBackupBadge.Visibility = state.IsOverdue ? Visibility.Visible : Visibility.Collapsed;
     }
 }
