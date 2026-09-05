@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    ‏مُصدِّرُ تراخيص برقوش — **مستقلٌّ عن المنتج قصداً**.
+
+    ‏لا `ProjectReference` هنا ولا حزمةَ NuGet واحدة: البرنامجُ يُشحن إلى جهاز المورِّد الذي
+    ‏قد لا يملك المستودعَ ولا الـSDK. ولو رجع إلى `Brqosh.Infrastructure` لَصار شحنُه يعني
+    ‏شحنَ نصف المنتج، **ولَصار تغييرٌ في المنتج يكسر أداةَ الإصدار صامتاً**.
+
+    ‏وثمنُ الاستقلال: نسخةٌ من قواعد التحقّق في `LicenseCore.cs`. وهذا الثمنُ يُدفع في
+    ‏`SelfTest.cs` — يقيس النسخةَ بمتّجهاتٍ تُسقطها إن فارقت المنتج، فلا تفترق صامتة.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>BrqoshLicenseIssuer</AssemblyName>
+    <RootNamespace>Brqosh.VendorIssuer</RootNamespace>
+    <ApplicationTitle>BRQOSH — مُصدِّر التراخيص</ApplicationTitle>
+
+    <!-- ‏نشرٌ مستقلٌّ بملفٍّ واحد. ‏`PublishTrimmed` **لا يُفعَّل**: WPF لا يُقصّ. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!--
+      ‏الضغطُ مُطفأ عمداً: فحصُ التسريب في `SelfTest` يمسح بايتات الملفّ الناتج بحثاً عن
+      ‏«BEGIN PRIVATE KEY»، **والضغطُ يُعميه** فيقول «نظيف» عن حزمةٍ فيها المفتاح.
+    -->
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+</Project>

@@ -1,6 +1,7 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Brqosh.Infrastructure.Licensing;
+using Brqosh.Infrastructure.Persistence;
 
 if (args.Length == 0)
 {
@@ -21,8 +22,11 @@ static int PrintUsage()
         BRQOSH License Issuer
         ---------------------
         gen-keys [outputDir]     — إنشاء زوج مفاتيح RSA (خاص + عام)
+                                   الافتراضيّ: %APPDATA%\BRQOSH\vendor-signing
                                    ⚠ المفتاح العام لا يعمل إلا بلصقه في EmbeddedLicenseKeys
                                      وإعادة بناء المنتج — ويُبطل كلَّ ترخيصٍ صادرٍ قبله.
+                                   ⚠ لا يستبدل ملفَّ مفتاحٍ قائماً، ويرفض الكتابةَ في جذر
+                                     بيانات المنتج (هناك يصير المفتاحُ مرساةَ ثقةٍ بلا قصد).
         sign <company> <machineId> <privateKey.pem> [days]
                                    اسمُ المنشأة يجب أن يطابق ما في معالج التهيئة حرفاً بحرف.
         """);
@@ -31,18 +35,79 @@ static int PrintUsage()
 
 static int GenKeys(string[] args)
 {
-    var dir = args.Length > 1 ? args[1] : Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH");
-    Directory.CreateDirectory(dir);
+    // (CEEF-236 · مراجعةٌ لاحقة) ‏**فعلٌ كان يُتلف مفتاحَ التوقيع ويزرع مرساةَ ثقةٍ بلا قصد.**
+    //
+    // ‏كان الافتراضيُّ **جذرَ بيانات المنتج نفسَه**، فوقع عطلان:
+    //
+    // ‏① `license-public.pem` في الجذر هو **مرساةُ ثقةٍ بديلةٌ تُقرأ خارج الإنتاج**
+    // ‏   (‏`EmbeddedLicenseKeys.ReadDataRootFile`‎). فمن ولّد زوجاً للتجربة استبدل مرساةَ
+    // ‏   جهازه بلا أن يدري: صار بناءُ التطويرِ يثق بمفتاحه هو، **فتُقبل عنده تراخيصُ لا يقبلها
+    // ‏   أحدٌ غيره** — ويُشحن ظنّاً أنّ المسارَ مقيس.
+    //
+    // ‏② والأشدّ: `File.WriteAllText` على `license-private.pem` **يستبدل الملفَّ صامتاً**.
+    // ‏   ومفتاحُ المورِّد الخاصُّ لا نسخةَ له في المنتج: إتلافُه يعني أنّ كلَّ ترخيصٍ جديدٍ
+    // ‏   يحتاج ثابتاً جديداً في المنتج وبناءً جديداً، **وذلك يُبطل كلَّ ترخيصٍ صادرٍ قبله**.
+    // ‏   أمرٌ من كلمتين بلا وسائطَ كان يكفي.
+    //
+    // ‏فصار: الافتراضيُّ مجلّدَ التوقيع لا الجذر، **والجذرُ نفسُه مرفوض**، **ولا يُستبدل ملفٌّ
+    // ‏قائمٌ أبداً** (ولا `--force`: خيارٌ يُتلف مفتاحاً لا يُوضع في متناول يدٍ مستعجلة)،
+    // ‏والعامُّ يحمل بصمتَه في اسمه فلا يُخلط بملفّ المرساة ولو نُسخ.
+    var dataRoot = BrqoshDataRoot.Path();
+    var dir = args.Length > 1 ? args[1] : Path.Combine(dataRoot, "vendor-signing");
+
+    var resolved = Path.TrimEndingDirectorySeparator(Path.GetFullPath(dir));
+    if (string.Equals(resolved, Path.TrimEndingDirectorySeparator(Path.GetFullPath(dataRoot)),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"مرفوض: {resolved} هو جذرُ بيانات المنتج.");
+        Console.Error.WriteLine("‏`license-public.pem` هناك يُقرأ كمرساةِ ثقةٍ بديلةٍ خارج الإنتاج، فيثق هذا الجهازُ بمفتاحك أنت.");
+        Console.Error.WriteLine($"استعمل مجلّداً آخر — الافتراضيّ: {Path.Combine(dataRoot, "vendor-signing")}");
+        return 2;
+    }
+
+    Directory.CreateDirectory(resolved);
 
     using var rsa = RSA.Create(2048);
     var privatePem = rsa.ExportPkcs8PrivateKeyPem();
     var publicPem = rsa.ExportSubjectPublicKeyInfoPem();
+    var keyFingerprint = Convert.ToHexString(SHA256.HashData(rsa.ExportSubjectPublicKeyInfo()));
 
-    var privatePath = Path.Combine(dir, "license-private.pem");
-    var publicPath = Path.Combine(dir, "license-public.pem");
+    var privatePath = Path.Combine(resolved, "license-private.pem");
+    var publicPath = Path.Combine(resolved, $"license-public-{keyFingerprint[..16]}.pem");
+
+    foreach (var existing in new[] { privatePath, publicPath })
+    {
+        if (!File.Exists(existing))
+            continue;
+
+        Console.Error.WriteLine($"مرفوض: {existing} موجودٌ سلفاً — ولن يُستبدل.");
+        Console.Error.WriteLine("مفتاحُ توقيعٍ يُتلَف لا يُستعاد، وكلُّ ترخيصٍ صادرٍ به يموت معه.");
+        Console.Error.WriteLine("انقل القديمَ إلى مكانٍ آمنٍ بيدك ثمّ أعد المحاولة، أو مرّر مجلّداً آخر.");
+        return 3;
+    }
+
     File.WriteAllText(privatePath, privatePem);
     File.WriteAllText(publicPath, publicPem);
+
+    // ‏قراءةٌ بعد الكتابة: كتابةٌ ناقصةٌ (قرصٌ ممتلئ، مضادُّ فيروسات) تُكتشف الآن لا بعد
+    // ‏شهورٍ حين يُطلب توقيعٌ بمفتاحٍ لا يُستورد.
+    try
+    {
+        using var reread = RSA.Create();
+        reread.ImportFromPem(File.ReadAllText(privatePath));
+        var probe = reread.SignData("brqosh"u8.ToArray(), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+        using var publicOnly = RSA.Create();
+        publicOnly.ImportFromPem(File.ReadAllText(publicPath));
+        if (!publicOnly.VerifyData("brqosh"u8.ToArray(), probe, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1))
+            throw new CryptographicException("الملفّان المكتوبان ليسا زوجاً.");
+    }
+    catch (Exception ex) when (ex is CryptographicException or ArgumentException or IOException)
+    {
+        Console.Error.WriteLine($"الزوجُ كُتب ولا يُستعمل: {ex.Message}");
+        Console.Error.WriteLine($"احذف {privatePath} و{publicPath} وأعد المحاولة.");
+        return 4;
+    }
 
     Console.WriteLine($"Private: {privatePath}");
     Console.WriteLine($"Public:  {publicPath}");
@@ -54,8 +119,7 @@ static int GenKeys(string[] args)
     // ‏**لا يُقرأ هذا الملفُّ في الإنتاج البتّة** — المرساةُ الوحيدة ثابتٌ مُجمَّع. فمن ولّد زوجاً
     // ‏جديداً ووقّع به ظنّاً أنّ الملفَّ يكفي، رُفض كلُّ ترخيصٍ أصدره على كلّ جهاز، **والرسالةُ
     // ‏تلوم ملفَّ الترخيص لا البناءَ المخالف**. فيُقال ذلك هنا، حيث يقع الخطأ.
-    var fingerprint = Convert.ToHexString(
-        SHA256.HashData(rsa.ExportSubjectPublicKeyInfo()));
+    var fingerprint = keyFingerprint;
     Console.WriteLine();
     Console.WriteLine($"بصمة المفتاح العام (SHA-256 · SPKI): {fingerprint}");
     Console.WriteLine();
