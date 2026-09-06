@@ -1,4 +1,5 @@
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Shared;
 
 namespace Brqosh.Domain.Companies;
 
@@ -19,7 +20,7 @@ public class IntercompanyAccountMap
         if (companyGroupId <= 0)
             throw new AccountingException("معرّف المجموعة مطلوب.");
         var code = (accountCode ?? "").Trim();
-        if (code.Length == 0 || !code.All(char.IsDigit))
+        if (code.Length == 0 || !code.All(AsciiDigits.Is))
             throw new AccountingException("رمز الحساب يجب أن يكون أرقاماً فقط.");
 
         return new IntercompanyAccountMap

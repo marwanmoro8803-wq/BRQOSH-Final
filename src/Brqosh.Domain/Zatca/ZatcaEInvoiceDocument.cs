@@ -102,12 +102,35 @@ public class ZatcaEInvoiceDocument : IBranchScoped
         };
     }
 
-    public void MarkSubmitted(ZatcaComplianceStatus newStatus, string? responseJson)
+    /// <summary>
+    /// (م-٢ · ن-٠٥) <b>«مخلَّصة» تلزمها نسخةٌ مخلَّصةٌ على القرص — والنطاقُ يفرض ذلك لا الانضباط.</b>
+    ///
+    /// <para><b>العطل:</b> كان <c>SubmitCoreAsync</c> يستدعي هذه أوّلاً بحالة <c>Cleared</c>،
+    /// ثمّ يكتب الملفَّ على القرص. فرميةُ كتابةٍ — قرصٌ ممتلئ أو صلاحيةٌ مفقودة — تترك الكيانَ
+    /// مطفَّراً في المتعقّب؛ ويلتقط <c>ZatcaAutoSubmissionHelper</c> الرميةَ فيحفظ <b>الكيانَ
+    /// نفسَه</b> (خريطةُ هويّة EF). فتُخزَّن الفاتورةُ «مخلَّصة» <b>بلا مستندٍ مخلَّص</b>،
+    /// وتُدهَس استجابةُ الهيئة بملاحظتنا، ويُغلق بابُ إعادة المحاولة.</para>
+    ///
+    /// <para><b>وأُصلح الترتيبُ في المستدعي</b> — يُكتب الملفُّ ثمّ تُطفَّر الحالة. <b>لكنّ
+    /// ترتيباً يمكن إعادتُه ليس ضماناً</b>: سطران يُبدَّلان في مراجعةٍ عابرةٍ يُعيدان العطل
+    /// بلا أن يشتكيَ شيء. فالشرطُ هنا يجعل الحالةَ الكاذبةَ <b>غيرَ قابلةٍ للتعبير</b>.</para>
+    ///
+    /// <para>و<c>clearedXmlPath</c> إلزاميٌّ متى كانت الحالةُ <see cref="ZatcaComplianceStatus.Cleared"/>
+    /// — أي في التخليص وحدَه. أمّا الإبلاغ (<c>Reported</c>) فلا تُعيد الهيئةُ فيه مستنداً.</para>
+    /// </summary>
+    public void MarkSubmitted(ZatcaComplianceStatus newStatus, string? responseJson, string? clearedXmlPath = null)
     {
+        if (newStatus == ZatcaComplianceStatus.Cleared && string.IsNullOrWhiteSpace(clearedXmlPath))
+            throw new InvalidOperationException(
+                "لا تُعلَن فاتورةٌ «مخلَّصة» بلا مستندٍ مخلَّصٍ مكتوبٍ على القرص — "
+                + "اكتب المستندَ أوّلاً ثمّ مرّر مسارَه.");
+
         ComplianceStatus = newStatus;
         ZatcaResponseJson = responseJson;
         SubmittedAtUtc = DateTime.UtcNow;
         LastStatusAtUtc = DateTime.UtcNow;
+
+        if (clearedXmlPath is not null) AttachClearedXml(clearedXmlPath);
     }
 
     /// <summary>

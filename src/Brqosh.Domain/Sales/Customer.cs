@@ -1,3 +1,4 @@
+using Brqosh.Domain.Shared;
 ﻿namespace Brqosh.Domain.Sales;
 
 /// <summary>عميل — طرف الذمم المدينة؛ الرقم الضريبي مطلوب للفاتورة الضريبية (B2B).</summary>
@@ -74,7 +75,7 @@ public class Customer : ISoftDeletable
             throw new ArgumentException("اسم العميل مطلوب.", nameof(nameAr));
 
         var vat = (vatNumber ?? string.Empty).Trim();
-        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
+        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(AsciiDigits.Is)))
             throw new ArgumentException("الرقم الضريبي للعميل يجب أن يتكون من 15 رقماً.", nameof(vatNumber));
 
         return new Customer(companyId, nameAr.Trim(), vat, (phone ?? "").Trim(), (address ?? "").Trim());
@@ -113,7 +114,7 @@ public class Customer : ISoftDeletable
         if (string.IsNullOrWhiteSpace(nameAr))
             throw new ArgumentException("اسم العميل مطلوب.", nameof(nameAr));
         var vat = (vatNumber ?? string.Empty).Trim();
-        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
+        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(AsciiDigits.Is)))
             throw new ArgumentException("الرقم الضريبي للعميل يجب أن يتكون من 15 رقماً.", nameof(vatNumber));
 
         NameAr = nameAr.Trim();

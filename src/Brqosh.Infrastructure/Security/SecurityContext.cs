@@ -48,11 +48,39 @@ public static class SecurityContext
         return "system";
     }
 
+    // ‏(م-٢ · ن-٢٦) ‏**قوائمُ منعٍ لا سماح — وقيمةٌ خارج التعداد ليست على قائمة أحد.**
+    //
+    // ‏كانت الحرّاسُ الثلاثةُ تسأل «أليس Viewer؟» و«أليس Viewer أو Cashier؟». وذلك يحمي
+    // ‏ما دامت القيمُ أربعاً معروفة. لكنّ `Enum.TryParse<UserRole>` **يقبل السلاسل الرقميّة**،
+    // ‏فترويسةُ `X-Api-Role: 99` تُنتج `(UserRole)99` — وهي ليست `Viewer` ولا `Cashier`
+    // ‏ولا `null`، **فتمرّ من الثلاثة جميعاً**.
+    //
+    // ‏مِجسٌّ منفَّذ بنسخٍ حرفيّةٍ من الدالّتين (‏exit=0):
+    // ‏  X-Api-Role=Viewer         ⟸ 3   CanPost=False CanPostAccounting=False CanCancel=False
+    // ‏  X-Api-Role=Administrator  ⟸ 3   (التسميةُ لا تُصعّد — التضييقُ يعمل)
+    // ‏  X-Api-Role=99             ⟸ 99  **CanPost=True  CanPostAccounting=True  CanCancel=True**
+    // ‏  X-Api-Role=2147483647     ⟸ …   **مثلُها**
+    //
+    // ‏والصامدُ الوحيد `EnsureAdministrator` — لأنّه وحدَه كان **فحصَ مساواة**، أي قائمةَ سماح.
+    //
+    // ‏فصارت الثلاثةُ قوائمَ سماحٍ صريحة. والسلوكُ للأدوار الأربعة المعروفة **لم يتغيّر
+    // ‏حرفاً**؛ ما تغيّر أنّ ما ليس دوراً معروفاً يُرفض بدل أن يُقبل. وهذا هو الفرقُ بين
+    // ‏«‏من نمنعه؟» و«‏من نسمح له؟»: الأولى تنسى ما لم يخطر ببالها، والثانية لا تستطيع.
+    //
+    // ‏(‏ومُنع المصدرُ كذلك: `ApiSecuritySettings` صار يرفض قيمةً خارج التعداد عند التحليل،
+    // ‏في موضعَيه معاً. فالدفاعُ طبقتان — لأنّ المصدرَ قد يُضاف له ثالثٌ يوماً.)
+
+    private static readonly UserRole[] CanPostRoles =
+        [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier];
+
+    private static readonly UserRole[] AccountingRoles =
+        [UserRole.Administrator, UserRole.Accountant];
+
     public static void EnsureCanPost()
     {
         if (CurrentRole is null)
             throw new AccountingException("لا يوجد مستخدم مسجّل — الترحيل مرفوض.");
-        if (CurrentRole is UserRole.Viewer)
+        if (!CanPostRoles.Contains(CurrentRole.Value))
             throw new AccountingException("لا تملك صلاحية الترحيل أو الإلغاء.");
     }
 
@@ -60,7 +88,7 @@ public static class SecurityContext
     {
         if (CurrentRole is null)
             throw new AccountingException("لا يوجد مستخدم مسجّل — العملية المحاسبية مرفوضة.");
-        if (CurrentRole is UserRole.Viewer or UserRole.Cashier)
+        if (!AccountingRoles.Contains(CurrentRole.Value))
             throw new AccountingException("لا تملك صلاحية العمليات المحاسبية المتقدمة.");
     }
 
@@ -68,7 +96,7 @@ public static class SecurityContext
     {
         if (CurrentRole is null)
             throw new AccountingException("لا يوجد مستخدم مسجّل — الإلغاء أو العكس مرفوض.");
-        if (CurrentRole is UserRole.Viewer or UserRole.Cashier)
+        if (!AccountingRoles.Contains(CurrentRole.Value))
             throw new AccountingException("لا تملك صلاحية الإلغاء أو العكس.");
     }
 

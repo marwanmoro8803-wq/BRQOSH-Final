@@ -169,25 +169,41 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
                 + (verdict.Reason is null ? "" : $" — {verdict.Reason}"));
         }
 
-        doc.MarkSubmitted(
-            doc.TransmissionMode == ZatcaTransmissionMode.Reporting
-                ? ZatcaComplianceStatus.Reported
-                : ZatcaComplianceStatus.Cleared,
-            body);
-
-        // ‏وفي التخليص تُعيد الهيئةُ الفاتورةَ مختومةً — **وهي ما يُسلَّم للمشتري**.
+        // ‏(م-٢ · ن-٠٥) ‏**الترتيبُ هو الإصلاح: يُكتب الملفُّ على القرص قبل أن تُطفَّر الحالة.**
+        //
+        // ‏كان `MarkSubmitted(Cleared)` يسبق `File.WriteAllBytesAsync`. فإن رمت الكتابةُ —
+        // ‏قرصٌ ممتلئ، أو مجلّدٌ فقد صلاحيةَ الكتابة، أو مشاركةُ شبكةٍ انقطعت — لم يُنفَّذ
+        // ‏`SaveChangesAsync` **هنا**، لكنّ الكيانَ صار `Cleared` في المتعقّب.
+        //
+        // ‏ثمّ تصعد الرميةُ إلى `ZatcaAutoSubmissionHelper` فيلتقطها ويستدعي
+        // ‏`RecordSubmissionFailure` ثمّ `SaveChangesAsync` — **على الكيان المطفَّر نفسِه**،
+        // ‏لأنّ خريطةَ هويّة EF تُعيد المثيلَ ذاته. فتُحفَظ ثلاثةُ أخطاءٍ معاً:
+        // ‏  · الفاتورةُ «مخلَّصة» **بلا مستندٍ مخلَّص** — والمُخلَّصُ هو ما يُسلَّم للمشتري
+        // ‏  · وملاحظتُنا تدهس **ردَّ الهيئة** المحفوظَ في `body`
+        // ‏  · وبابُ إعادة المحاولة يُغلق: `Cleared` ليست حالةً يلتقطها إرسالٌ لاحق
+        //
+        // ‏وبالترتيب الجديد، رميةُ القرص تترك المستندَ في `ReadyToClear` — وهو بالضبط ما
+        // ‏يعِد به تعليقُ المُساعد: «‏المستند يبقى بحالته فيلتقطه إرسالٌ لاحق».
+        string? clearedPath = null;
         if (doc.TransmissionMode == ZatcaTransmissionMode.Clearance)
         {
             var cleared = ReadClearedInvoice(body);
             if (cleared is not null)
             {
-                var clearedPath = Path.Combine(
+                clearedPath = Path.Combine(
                     Path.GetDirectoryName(xmlPath)!,
                     Path.GetFileNameWithoutExtension(xmlPath) + ".cleared.xml");
                 await File.WriteAllBytesAsync(clearedPath, cleared);
-                doc.AttachClearedXml(clearedPath);
             }
         }
+
+        // ‏نداءٌ واحدٌ ذرّيٌّ: الحالةُ والمسارُ معاً، والنطاقُ يرفض إحداهما بلا الأخرى.
+        doc.MarkSubmitted(
+            doc.TransmissionMode == ZatcaTransmissionMode.Reporting
+                ? ZatcaComplianceStatus.Reported
+                : ZatcaComplianceStatus.Cleared,
+            body,
+            clearedPath);
 
         await db.SaveChangesAsync();
         return doc;

@@ -1,4 +1,5 @@
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Shared;
 
 namespace Brqosh.Domain.Companies;
 
@@ -78,9 +79,9 @@ public record NationalAddress(
             Require(CountryCode, "رمز الدولة");
 
             // تنبيهات لا موانع — انظر حدّ التحقق في وصف النوع.
-            if (BuildingNumber.Length > 0 && (BuildingNumber.Length != 4 || !BuildingNumber.All(char.IsDigit)))
+            if (BuildingNumber.Length > 0 && (BuildingNumber.Length != 4 || !BuildingNumber.All(AsciiDigits.Is)))
                 problems.Add("رقم المبنى يُتوقَّع أن يكون أربع خانات رقمية.");
-            if (PostalZone.Length > 0 && (PostalZone.Length != 5 || !PostalZone.All(char.IsDigit)))
+            if (PostalZone.Length > 0 && (PostalZone.Length != 5 || !PostalZone.All(AsciiDigits.Is)))
                 problems.Add("الرمز البريدي يُتوقَّع أن يكون خمس خانات رقمية.");
 
             return problems;

@@ -1,6 +1,7 @@
 ﻿using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
+using Brqosh.Domain.Shared;
 
 namespace Brqosh.Domain.Companies;
 
@@ -87,7 +88,7 @@ public class Company
             throw new ArgumentException("اسم المنشأة مطلوب.", nameof(nameAr));
 
         var vat = (vatRegistrationNumber ?? string.Empty).Trim();
-        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
+        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(AsciiDigits.Is)))
             throw new ArgumentException("الرقم الضريبي يجب أن يتكون من 15 رقماً.", nameof(vatRegistrationNumber));
 
         return new Company(nameAr.Trim(), vat, profile);
@@ -117,7 +118,7 @@ public class Company
             throw new ArgumentException("اسم المنشأة مطلوب.", nameof(nameAr));
 
         var vat = (vatRegistrationNumber ?? string.Empty).Trim();
-        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
+        if (vat.Length > 0 && (vat.Length != 15 || !vat.All(AsciiDigits.Is)))
             throw new ArgumentException("الرقم الضريبي يجب أن يتكون من 15 رقماً.", nameof(vatRegistrationNumber));
 
         NameAr = nameAr.Trim();

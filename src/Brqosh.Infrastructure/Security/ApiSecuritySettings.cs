@@ -40,23 +40,51 @@ public static class ApiSecuritySettings
     /// التشغيل — كما هو المفتاح — كي لا يمنع الترقية تركيباً قائماً؛ الرفض المسمَّى أوضح من
     /// خدمةٍ لا تُقلع.</para>
     /// </summary>
+    /// <summary>
+    /// (م-٢ · ن-٢٦) <b>تحليلٌ يرفض ما ليس دوراً معرَّفاً.</b>
+    ///
+    /// <para><c>Enum.TryParse&lt;UserRole&gt;</c> <b>يقبل السلاسل الرقميّة</b>: «99» يُنتج
+    /// <c>(UserRole)99</c> و<c>TryParse</c> يُعيد <c>true</c>. ولا يُصلح ذلك <c>Enum.IsDefined</c>
+    /// وحدَه إن جاء بعد الاستعمال — فيُدمج هنا في موضعٍ واحد.</para>
+    ///
+    /// <para>وموضعا التحليل كلاهما مُحصَّن: هذا (متغيّرُ البيئة — خطأٌ مطبعيٌّ من مُشغِّل)،
+    /// و<see cref="NarrowByRequest"/> (ترويسةُ الطلب — مُدخلٌ من الخارج).</para>
+    /// </summary>
     public static UserRole ResolveApiRole(bool isProduction)
     {
         var raw = Environment.GetEnvironmentVariable(ApiRoleEnv);
-        if (!string.IsNullOrWhiteSpace(raw) && Enum.TryParse<UserRole>(raw.Trim(), ignoreCase: true, out var configured))
+        if (TryParseDefinedRole(raw, out var configured))
             return configured;
 
         return isProduction ? UserRole.Viewer : UserRole.Administrator;
     }
 
     /// <summary>
+    /// تحليلُ دورٍ <b>معرَّفٍ في التعداد</b> — لا رقماً يقبله <c>TryParse</c> صامتاً.
+    /// </summary>
+    private static bool TryParseDefinedRole(string? raw, out UserRole role)
+    {
+        role = default;
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        if (!Enum.TryParse<UserRole>(raw.Trim(), ignoreCase: true, out var parsed)) return false;
+        if (!Enum.IsDefined(parsed)) return false;   // ‏«99» يجتاز TryParse ويسقط هنا.
+        role = parsed;
+        return true;
+    }
+
+    /// <summary>
     /// الدور الفعّال للطلب: المضبوط خادمياً، ما لم تطلب الترويسة دوراً <b>أقلّ</b> امتيازاً.
     /// وترتيب <see cref="UserRole"/> تنازليّ (Administrator=0 … Viewer=3)، فالأكبر أقلّ امتيازاً.
     /// </summary>
+    /// <remarks>
+    /// (م-٢ · ن-٢٦) <b>ترويسةٌ برقمٍ خارج التعداد كانت تُوسّع الدور لا تُضيّقه.</b>
+    /// <c>X-Api-Role: 99</c> ⟸ <c>(UserRole)99</c>، وهو أكبرُ من المضبوط فيُعاد «تضييقاً» —
+    /// <b>ثمّ يمرّ من حرّاس المنع الثلاثة لأنّه ليس على قائمة أحد</b>. فالتحليلُ الآن
+    /// يشترط دوراً معرَّفاً، والحرّاسُ صاروا قوائمَ سماح: طبقتان لا واحدة.
+    /// </remarks>
     public static UserRole NarrowByRequest(UserRole configured, string? requestedRole)
     {
-        if (string.IsNullOrWhiteSpace(requestedRole)
-            || !Enum.TryParse<UserRole>(requestedRole.Trim(), ignoreCase: true, out var requested))
+        if (!TryParseDefinedRole(requestedRole, out var requested))
             return configured;
 
         return requested > configured ? requested : configured;

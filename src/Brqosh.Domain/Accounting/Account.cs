@@ -1,3 +1,4 @@
+using Brqosh.Domain.Shared;
 namespace Brqosh.Domain.Accounting;
 
 /// <summary>
@@ -61,7 +62,7 @@ public class Account : ISoftDeletable
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new AccountingException("رقم الحساب مطلوب.");
-        if (!code.All(char.IsDigit))
+        if (!code.All(AsciiDigits.Is))
             throw new AccountingException($"رقم الحساب يجب أن يكون أرقاماً فقط: '{code}'.");
         if (string.IsNullOrWhiteSpace(nameAr))
             throw new AccountingException("اسم الحساب العربي مطلوب.");

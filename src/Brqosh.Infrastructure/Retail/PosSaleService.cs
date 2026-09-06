@@ -92,14 +92,20 @@ public class PosSaleService(BrqoshDbContext db)
         var zatcaDoc = await ZatcaPostingOrchestrator.SubmitAfterCommitAsync(
             db, companyId, ZatcaDocumentType.SalesInvoice, invoice.Id, ct);
 
-        string? zatcaMessage = zatcaDoc?.ComplianceStatus switch
-        {
-            ZatcaComplianceStatus.Reported => "تم الإبلاغ للهيئة (محاكاة)",
-            ZatcaComplianceStatus.Cleared => "تم الاعتماد (محاكاة)",
-            ZatcaComplianceStatus.Accepted => "مقبول",
-            null => null,
-            _ => "تم الإرسال",
-        };
+        // ‏(م-٢ · ن-٠٤) ‏**جدولُ تسمياتٍ رابعٌ كان يكذب في الاتجاهين — وحُذف.**
+        //
+        // ‏كان هنا `switch` يُطبع على إيصال العميل:
+        // ‏  Reported ⟸ «تم الإبلاغ للهيئة **(محاكاة)**»   ← وهو النجاحُ الحقيقيّ، يُوسَم محاكاةً
+        // ‏  Cleared  ⟸ «تم الاعتماد **(محاكاة)**»         ← كذلك
+        // ‏  _        ⟸ «تم الإرسال»                       ← يبتلع **Rejected** و**SimulatedLocally**
+        //
+        // ‏فالفاتورةُ التي رفضتها الهيئةُ تُطبع للعميل «تم الإرسال»، والتي أُبلغت فعلاً
+        // ‏تُطبع «(محاكاة)». **والاتجاهان كلاهما خطأ في مستندٍ ضريبيّ.**
+        //
+        // ‏و`NameAr()` في `ZatcaEnums` هو الجدولُ الصادق: يُسمّي كلَّ حالةٍ باسمها،
+        // ‏و«محاكاة محلية — لم يُرسل للهيئة» صريحةٌ فيه. **وكان موجوداً ولا يُستدعى هنا.**
+        // ‏فحُذف الرابعُ وبقي الأوّل — لا جدولان لشيءٍ واحدٍ يفترقان.
+        string? zatcaMessage = zatcaDoc?.ComplianceStatus.NameAr();
 
         return new PosSaleResult(invoice, shiftId, zatcaDoc, zatcaMessage);
     }
