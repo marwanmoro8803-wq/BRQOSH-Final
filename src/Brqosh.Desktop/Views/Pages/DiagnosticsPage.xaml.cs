@@ -187,10 +187,16 @@ public partial class DiagnosticsPage : UserControl
         }
     }
 
-    private static string Version() =>
-        Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3)
-        ?? typeof(DiagnosticsPage).Assembly.GetName().Version?.ToString(3)
-        ?? "غير معروف";
+    // ‏(م-١ · ن-٣٧) ‏شاشةُ التشخيص هي ما يقرؤه الفنّيُّ في المكالمة — فتُظهر البصمة
+    // ‏لا الرقمَ المُدوَّر. `AssemblyVersion` واحدٌ لكلّ بناءٍ من الإصدار نفسِه؛
+    // ‏و`InformationalVersion` يحمل الالتزامَ فيُجيب «أيُّ كودٍ يعمل هنا؟».
+    private static string Version()
+    {
+        var entry = Assembly.GetEntryAssembly() ?? typeof(DiagnosticsPage).Assembly;
+        var informational = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informational)) return informational;
+        return entry.GetName().Version?.ToString(3) ?? "غير معروف";
+    }
 
     private static string Safe(Func<string> read)
     {

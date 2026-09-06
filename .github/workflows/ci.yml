@@ -63,8 +63,13 @@ jobs:
       - name: Restore
         run: dotnet restore Brqosh.sln
 
+      # (م-١ · ن-٠١) ‏**عدّادُ التشغيلة هو ما يجعل كلَّ بناءٍ إصداراً مختلفاً.**
+      #
+      # ‏بدونه يبقى `BrqoshBuildNumber` صفراً فيشحن كلُّ بناءٍ بـ`1.0.0` — وهو العطلُ
+      # ‏نفسُه الذي جعل الترقيةَ مستحيلة. والحقلُ الثالث هو ما يُرفع لأنّ Windows
+      # ‏Installer يقارن ثلاثةَ حقولٍ ويُهمل الرابع.
       - name: Build Release
-        run: dotnet build Brqosh.sln -c Release --no-restore
+        run: dotnet build Brqosh.sln -c Release --no-restore -p:BrqoshBuildNumber=${{ github.run_number }}
 
       # (CEEF-236 · م-١٩) أدواتُ التشغيل خارج Brqosh.sln، فلم تكن تُبنى في أيّ بوّابة.
       # ومراجعةٌ عدائيّة أخرجت أنّ أربعاً منها انكسرت بتغييرٍ في Infrastructure ولم يشتكِ شيء —

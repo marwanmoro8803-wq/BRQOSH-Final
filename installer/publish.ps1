@@ -1,4 +1,15 @@
 ﻿#Requires -Version 5.1
+<#
+.PARAMETER BuildNumber
+  ‏(م-١ · ن-٠١) ‏الحقلُ الثالث من رقم الإصدار. الافتراضُ `0` = بناءٌ محلّيّ لا يدّعي
+  ‏أنّه إصدار. وفي CI يُمرَّر عدّادُ التشغيلة فيصير كلُّ بناءٍ إصداراً مميَّزاً.
+
+  ‏**ولا يكفي ضبطُ `-p:BrqoshBuildNumber` قبل استدعاء هذا السكربت**: هو يُشغّل
+  ‏`dotnet publish` بنفسه، فالخاصّيّةُ يجب أن تصله كمُعامل لا كأثرٍ جانبيّ — وقد
+  ‏وقع ذلك فعلاً: نُشر بـ7 ثمّ أعاد `build-msi.ps1` النشرَ بـ0 فدهس الرقم.
+#>
+param([int]$BuildNumber = 0)
+
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $OutDir = Join-Path $Root "dist\BRQOSH"
@@ -15,9 +26,10 @@ Write-Host "=== BRQOSH Publish ===" -ForegroundColor Cyan
 # ‏والمسحُ المسبق يمنع الحصادَ من بقايا نشرٍ سابق حتى لو تعطّل النشرُ في منتصفه.
 if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 
+Write-Host "رقمُ البناء: $BuildNumber" -ForegroundColor DarkGray
 dotnet publish (Join-Path $Root "src\Brqosh.Desktop\Brqosh.Desktop.csproj") `
     -c Release -r win-x64 --self-contained false `
-    -o $OutDir -p:PublishSingleFile=false
+    -o $OutDir -p:PublishSingleFile=false -p:BrqoshBuildNumber=$BuildNumber
 if ($LASTEXITCODE -ne 0) {
     Write-Host "dotnet publish فشل (exit=$LASTEXITCODE) — لا حزمةَ تُبنى من شجرةٍ ناقصة." -ForegroundColor Red
     exit $LASTEXITCODE

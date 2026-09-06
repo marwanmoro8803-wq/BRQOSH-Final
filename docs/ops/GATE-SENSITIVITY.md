@@ -43,6 +43,8 @@ pwsh ./scripts/ops/verify-gates.ps1 -Only coverage-stale
 | `zero-tests` | `run-external-gates` | `total=0` — صفرُ تنفيذٍ برمزِ نجاح |
 | `runner-propagates` | `run-external-gates` | استدعاءُ الماسح بلا غلاف |
 | `probe-requires-pg` | `SchemaCoverageProbe` | خادمٌ غائبٌ تحت `BRQOSH_REQUIRE_PG=1` |
+| `shipped-version` | `build-msi` | رقمُ إصدارٍ مُسجَّلٌ مشحوناً سلفاً |
+| `upgrade-no-advance` | `verify-upgrade-path` | حزمةٌ مقابل نفسِها — الإصدارُ لا يتقدّم |
 
 ## عهدان يلتزمهما السكربت
 

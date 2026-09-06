@@ -4,6 +4,8 @@
     بناء MSI لـ BRQOSH باستخدام WiX Toolset v4+.
     يتطلب: wix (dotnet tool install --global wix)
 #>
+param([int]$BuildNumber = 0)
+
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $PublishDir = Join-Path $Root "dist\BRQOSH"
@@ -16,7 +18,7 @@ Write-Host "=== BRQOSH MSI Build ===" -ForegroundColor Cyan
 # ‏ذاك السكربت بغير الصفر، و`$ErrorActionPreference = "Stop"` **لا يوقف برنامجاً
 # ‏أصليّاً فاشلاً**. فبلا هذا يمضي البناءُ فوق شجرةِ نشرٍ قديمة، فتخرج حزمةٌ
 # ‏خضراءُ الظاهر تحمل ثنائيّاتِ الأمس ورقمَ إصدارِ اليوم.
-& (Join-Path $Root "installer\publish.ps1")
+& (Join-Path $Root "installer\publish.ps1") -BuildNumber $BuildNumber
 if ($LASTEXITCODE -ne 0) {
     Write-Host "publish.ps1 أخفق (exit=$LASTEXITCODE) — لا MSI يُبنى." -ForegroundColor Red
     exit $LASTEXITCODE
@@ -38,20 +40,48 @@ $WxsPath = Join-Path $PSScriptRoot "brqosh.wxs"
 # كان مثبتا هنا (1.0.0.0) وفي التجميعات لا شيء - فالمثبت يقول شيئا والتطبيق آخر.
 # وأخطر من ذلك: MajorUpgrade يعتمد على رقم الـMSI، فإصدار يشحن بلا تحرير هذا السطر
 # بيد لا يرقي تثبيتا قائما - ينصب جنبه أو يرفض.
-$PropsPath = Join-Path $Root "Directory.Build.props"
-if (-not (Test-Path $PropsPath)) {
-    Write-Host "Directory.Build.props مفقود - ولا رقم إصدار يشتق منه." -ForegroundColor Red
+# ‏(م-١ · ن-٠١) ‏**الإصدارُ يُقرأ من الثنائيّة المنشورة، لا من ملفّ الخصائص بتعبيرٍ نمطيّ.**
+#
+# ‏كان يُستخرج بـ`Select-String` من `<BrqoshVersion>`. وذلك يكسر لسببين:
+# ‏  ١) صار الرقمُ مركّباً (`$(BrqoshVersionPrefix).$(BrqoshBuildNumber)`)، فالتعبيرُ
+# ‏     النمطيُّ يلتقط **نصَّ التعبير** لا قيمتَه.
+# ‏  ٢) وأعمقُ: الملفُّ يقول ما **يُفترض** أن يكون، والثنائيّةُ تقول ما **كان**. فلو
+# ‏     نُشرت الشجرةُ بخصائصَ مختلفة، شحنت الحزمةُ رقماً لا يطابق ما بداخلها — وهو
+# ‏     بالضبط العطلُ الذي جاءت هذه المرحلةُ لإغلاقه.
+#
+# ‏فالمصدرُ الآن `Brqosh.Desktop.exe` المنشورُ نفسُه: رقمُه هو رقمُ الحزمة بالتعريف.
+$MainExe = Join-Path $PublishDir "Brqosh.Desktop.exe"
+if (-not (Test-Path $MainExe)) {
+    Write-Host "لا ثنائيّةً منشورةً في $PublishDir — لا رقمَ إصدارٍ يُقرأ." -ForegroundColor Red
     exit 1
 }
 
-$VersionMatch = Select-String -Path $PropsPath -Pattern "<BrqoshVersion>([^<]+)</BrqoshVersion>"
-if (-not $VersionMatch) {
-    Write-Host "BrqoshVersion غير موجود في Directory.Build.props." -ForegroundColor Red
+$FileVersion = (Get-Item $MainExe).VersionInfo.FileVersion
+if ($FileVersion -notmatch '^\d+\.\d+\.\d+') {
+    Write-Host "FileVersion غيرُ مفهوم: '$FileVersion'." -ForegroundColor Red
     exit 1
 }
 
-$ProductVersion = "$($VersionMatch.Matches[0].Groups[1].Value).0"
-Write-Host "الإصدار: $ProductVersion" -ForegroundColor Cyan
+# ‏ثلاثةُ حقولٍ لا أربعة: Windows Installer يُهمل الرابع في المقارنة، فحملُه يُوهم
+# ‏باختلافٍ لا وجودَ له عنده.
+$ProductVersion = ($FileVersion -split '\.')[0..2] -join '.'
+$InformationalVersion = (Get-Item $MainExe).VersionInfo.ProductVersion
+Write-Host "الإصدار: $ProductVersion   (البصمة: $InformationalVersion)" -ForegroundColor Cyan
+
+# ‏(م-١ · ن-٠١) ‏**بوّابةُ بناءٍ ترفض إصداراً سبق شحنُه.**
+#
+# ‏`AllowSameVersionUpgrades` يُنقذ الترقيةَ حين يتساوى الرقمان، لكنّه لا يجعل التساويَ
+# ‏صحيحاً: إصداران بالرقم نفسِه لا يُميَّزان في «إضافة وإزالة البرامج» ولا في سجلّ عطل
+# ‏ولا في بلاغِ عميل. فالتساوي يُمنع هنا، ويُنقذ هناك.
+$Ledger = Join-Path $PSScriptRoot "shipped-versions.txt"
+if (Test-Path $Ledger) {
+    $shipped = @(Get-Content $Ledger | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
+    if ($shipped -contains $ProductVersion) {
+        Write-Host "الإصدار $ProductVersion مُسجَّلٌ مشحوناً في $Ledger." -ForegroundColor Red
+        Write-Host "ارفع BrqoshVersionPrefix أو مرّر BrqoshBuildNumber مختلفاً — ولا تشحن رقمين متطابقين." -ForegroundColor Red
+        exit 1
+    }
+}
 
 # (CEEF-236 · ر-ك · م-٣٢) ‏**‏-arch x64 — والحزمةُ كانت تُبنى ٣٢-بت بالافتراض.**
 #
@@ -96,4 +126,49 @@ if ($template -notmatch '^x64;') {
 }
 Write-Host "Template (arch;lang) = $template" -ForegroundColor Green
 
+# ‏(م-١ · ن-٣٩) ‏**تحقّقُ ICE — كان يُتخطّى، والحزمةُ تسقط فيه بأربعة أخطاء.**
+#
+# ‏`wix build` لا يُشغّل ICE افتراضياً، فشُحنت حزمةٌ تحمل `ICE30` أربع مرّات:
+# ‏`Brqosh.Desktop.exe` مُثبَّتٌ بمكوّنين — المُعلَنُ صراحةً والمُحصودُ آلياً — و«‏This
+# ‏breaks component reference counting». وعدُّ المراجع هو ما يقرّر ما يبقى وما يُحذف
+# ‏عند الترقية والإزالة، فالخطأُ في صميم قناة التسليم لا في زينتها.
+Write-Host "تحقّقُ ICE..." -ForegroundColor Yellow
+$iceLog = Join-Path $Root "dist\ice-validation.txt"
+& wix msi validate $MsiOut > $iceLog 2>&1
+$iceExit = $LASTEXITCODE
+$iceErrors = @(Select-String -Path $iceLog -Pattern 'error WIX\d+' -ErrorAction SilentlyContinue)
+if ($iceExit -ne 0 -or $iceErrors.Count -gt 0) {
+    Write-Host "تحقّقُ ICE سقط ($($iceErrors.Count) خطأ · exit=$iceExit) — انظر $iceLog" -ForegroundColor Red
+    $iceErrors | Select-Object -First 5 | ForEach-Object { Write-Host "   $($_.Line.Trim())" -ForegroundColor Red }
+    Remove-Item $MsiOut -Force -ErrorAction SilentlyContinue
+    exit 1
+}
+$iceWarn = @(Select-String -Path $iceLog -Pattern 'warning WIX\d+' -ErrorAction SilentlyContinue)
+Write-Host "تحقّقُ ICE: صفرُ أخطاء · $($iceWarn.Count) تحذيراً" -ForegroundColor Green
+
+# ‏(م-١ · ن-١٢) ‏**خُطّافُ التوقيع — والشهادةُ تبعيّةٌ خارجيّة.**
+#
+# ‏الحزمةُ اليومَ `NotSigned`: كلُّ تنصيبٍ يُظهر تحذيرَ SmartScreen، ولا سبيلَ للعميل
+# ‏إلى التمييز بين حزمتنا وحزمةٍ مُحرَّفة. والتوقيعُ يلزمه شهادةُ توقيعِ كودٍ لا يملكها
+# ‏سكربتُ بناء — فالخُطّافُ هنا والقرارُ هناك.
+#
+# ‏وضبطُ `BRQOSH_SIGNING_PFX` يُشغّله. وغيابُه **يُعلَن** ولا يُبتلع: حزمةٌ غيرُ موقّعةٍ
+# ‏تخرج ومعها سطرٌ يقول إنّها كذلك، فلا تُشحن على أنّها موقّعة.
+$pfx = $env:BRQOSH_SIGNING_PFX
+if ($pfx -and (Test-Path $pfx)) {
+    $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending | Select-Object -First 1
+    if (-not $signtool) { Write-Host "BRQOSH_SIGNING_PFX مضبوطٌ ولا signtool — أُسقط البناء." -ForegroundColor Red; exit 1 }
+    & $signtool.FullName sign /f $pfx /p $env:BRQOSH_SIGNING_PASSWORD `
+        /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $MsiOut
+    if ($LASTEXITCODE -ne 0) { Write-Host "التوقيع أخفق (exit=$LASTEXITCODE)." -ForegroundColor Red; exit 1 }
+    $sig = Get-AuthenticodeSignature $MsiOut
+    if ($sig.Status -ne 'Valid') { Write-Host "التوقيع بعد التنفيذ: $($sig.Status) — أُسقط البناء." -ForegroundColor Red; exit 1 }
+    Write-Host "موقَّعة: $($sig.SignerCertificate.Subject)" -ForegroundColor Green
+}
+else {
+    Write-Host "غيرُ موقَّعة — لا BRQOSH_SIGNING_PFX. (ن-١٢ · تبعيّةٌ خارجيّة: شهادةُ توقيع كود)" -ForegroundColor Yellow
+}
+
 Write-Host "MSI: $MsiOut" -ForegroundColor Green
+Write-Host "‏لتسجيل هذا الإصدار مشحوناً: أضف '$ProductVersion' إلى installer\shipped-versions.txt" -ForegroundColor DarkGray

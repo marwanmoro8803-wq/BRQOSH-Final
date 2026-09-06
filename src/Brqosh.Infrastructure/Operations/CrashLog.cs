@@ -119,10 +119,24 @@ public static class CrashLog
         }
     }
 
-    private static string Version() =>
-        Assembly.GetEntryAssembly()?.GetName().Version?.ToString()
-        ?? typeof(CrashLog).Assembly.GetName().Version?.ToString()
-        ?? "غير معروف";
+    /// <summary>
+    /// (م-١ · ن-٣٧) <b>هويّةُ النسخة — من البصمة لا من الرقم المُدوَّر.</b>
+    ///
+    /// <para><c>AssemblyVersion</c> يُدوَّر عمداً (‏<c>1.0.42.0</c>) ولا يحمل ما يُميّز بناءً
+    /// من بناء. و<c>InformationalVersion</c> يحمل بصمةَ الالتزام كاملةً عبر SourceLink
+    /// (‏<c>1.0.42+64922842…</c>) — <b>وهي الوحيدةُ التي تُجيب «أيُّ كودٍ يعمل عند هذا
+    /// العميل؟»</b>، وهو أوّلُ سؤالٍ في كلّ مكالمةِ دعم.</para>
+    ///
+    /// <para>والسقوطُ إلى <c>AssemblyVersion</c> مقصودٌ لا كسول: تجميعةٌ بُنيت بلا SourceLink
+    /// تُعطي رقماً بلا بصمة، وذلك خيرٌ من «غير معروف».</para>
+    /// </summary>
+    private static string Version()
+    {
+        var entry = Assembly.GetEntryAssembly() ?? typeof(CrashLog).Assembly;
+        var informational = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informational)) return informational;
+        return entry.GetName().Version?.ToString() ?? "غير معروف";
+    }
 
     private static string SafeDataRoot()
     {

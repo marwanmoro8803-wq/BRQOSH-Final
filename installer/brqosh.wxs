@@ -8,11 +8,34 @@
   <Package Name="BRQOSH ERP"
            Manufacturer="BRQOSH"
            Version="$(var.ProductVersion)"
-           UpgradeCode="A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+           UpgradeCode="E2D301B7-5EA4-4B64-990C-69A7E30CD174"
            Scope="perMachine"
            Compressed="yes">
 
-    <MajorUpgrade DowngradeErrorMessage="إصدار أحدث مثبت بالفعل." />
+    <!--
+      (م-١ · ن-٠١) ‏**الترقيةُ فوق تنصيبٍ قائمٍ لم تكن تقع — ولا يُقال.**
+
+      ‏مقروءٌ من جدول `Upgrade` في الحزمة المشحونة قبل هذا الإصلاح:
+        صفُّ الترقية : VersionMax='1.0.0.0'  VersionMaxInclusive=False ⟸ المدى (−∞, 1.0.0.0)
+        صفُّ التنزيل : VersionMin='1.0.0.0'  VersionMinInclusive=False ⟸ المدى (1.0.0.0, +∞)
+      ‏فإصدارٌ مُثبَّتٌ بـ`1.0.0.0` **خارجَ المدَيين معاً**: لا يُكشف ترقيةً ولا تنزيلاً،
+      ‏فلا يُزال القديمُ ولا يُمنع الجديد. و`ProductCode` يتولّد كلَّ بناء، فيُسجَّل
+      ‏**منتجٌ ثانٍ جنبَ الأوّل**، وتبقى ثنائيّاتُ الأمس تعمل. بلا رسالةٍ واحدة.
+
+      ‏**والعلاجُ طبقتان، لأنّ واحدةً منهما لا تكفي:**
+
+      ‏(١) `AllowSameVersionUpgrades="yes"` يجعل `VersionMaxInclusive` صحيحاً، فيُكشف
+      ‏     إصدارٌ **مساوٍ** ويُزال قبل التثبيت. وهذا يُنقذ حتى لو نُسي رفعُ الرقم.
+      ‏(٢) وترقيمٌ **يتغيّر فعلاً** لكلّ بناء — انظر `Directory.Build.props`. والحقلُ
+      ‏     الثالث هو ما يُرفع، لا الرابع: قواعدُ Windows Installer تقارن ثلاثةَ حقولٍ
+      ‏     فقط من `ProductVersion`، فرفعُ الرابع وحدَه لا يُنتج إصداراً مختلفاً عندها.
+
+      ‏ولمّا صار الإصدارُ يُكشف، يعمل `RemoveExistingProducts` قبل التثبيت — فتُحذف
+      ‏الملفّاتُ القديمةُ وتُكتب الجديدةُ من الصفر، **ولا تنطبق قاعدةُ «لا تستبدل ملفّاً
+      ‏مساويَ الإصدار» التي كانت تُبقي الثنائيّاتِ القديمة في السيناريو جنباً-إلى-جنب**.
+    -->
+    <MajorUpgrade DowngradeErrorMessage="إصدار أحدث مثبت بالفعل."
+                  AllowSameVersionUpgrades="yes" />
     <MediaTemplate EmbedCab="yes" />
 
     <!--
@@ -53,9 +76,26 @@
     <StandardDirectory Id="DesktopFolder" />
 
     <ComponentGroup Id="PublishComponents" Directory="INSTALLFOLDER">
-      <Component Id="MainExecutable" Guid="B1C2D3E4-F5A6-7890-BCDE-F12345678901">
-        <File Id="BrqoshExe" Source="$(var.PublishDir)\Brqosh.Desktop.exe" KeyPath="yes" />
-      </Component>
+      <!--
+        (م-١ · ن-٣٩) ‏**حُذف المكوّنُ `MainExecutable` — كان يُركِّب الملفَّ مرّةً ثانية.**
+
+        ‏كان يُعلن `Brqosh.Desktop.exe` صراحةً، و`Files Include="**"` أدناه يحصد الشجرةَ
+        ‏كلَّها **بما فيها ذلك الملفّ**. فيُثبَّت الواحدُ بمكوّنين، وهو ما يقوله `ICE30`
+        ‏حرفاً: «‏installed … by two different components. **This breaks component
+        ‏reference counting**» — أربعَ مرّاتٍ في الحزمة المشحونة.
+
+        ‏**وعدُّ المراجع ليس تفصيلاً هنا:** هو ما يقرّر أيُّ ملفٍّ يبقى وأيُّه يُحذف عند
+        ‏الترقية والإزالة — وهو موضوعُ هذه المرحلة بعينها. فمكوّنان يدّعيان ملفّاً واحداً
+        ‏يجعلان سلوكَ الإزالة غيرَ محدَّد.
+
+        ‏والحذفُ آمنٌ ومُتحقَّقٌ منه: بحثٌ على المستودع كلِّه عن `MainExecutable` و`BrqoshExe`
+        ‏(‏`.wxs` · `.wxi` · `.ps1`) أعاد **تعريفَه وحدَه وصفرَ مراجع** — لا `ComponentRef`
+        ‏ولا `Feature` ولا اختصارٌ يشير إليه. والاختصاران يستهدفان المسارَ نصّاً
+        ‏(`[INSTALLFOLDER]Brqosh.Desktop.exe`) لا مكوّناً، فلا يتأثّران.
+
+        ‏(‏وجُرِّب أوّلاً `Exclude` على `Files` فرفضه مخطّطُ WiX 5: `WIX0004 … unexpected
+        ‏attribute 'Exclude'`. والحذفُ أصحُّ على أيّ حال — المكوّنُ زائدٌ لا مُكرَّرٌ فحسب.)
+      -->
       <Files Include="$(var.PublishDir)\**" />
 
       <!--
@@ -63,7 +103,7 @@
         الافتراض في الكود صار الإنتاج، وهذا العنصر تعزيز صريح: قبله لم يكن المثبِّت
         يضبط BRQOSH_ENV إطلاقاً، والاختصاران يشغّلان exe مباشرةً لا BRQOSH-Production.bat.
       -->
-      <Component Id="ProductionEnvironment" Guid="E4F5A6B7-C8D9-0123-EF01-345678901234">
+      <Component Id="ProductionEnvironment" Guid="C0F9F2C1-9D92-41B0-9A3C-BCE7C004CFC9">
         <Environment Id="BrqoshEnvProduction"
                      Name="BRQOSH_ENV"
                      Value="production"
@@ -76,7 +116,7 @@
       </Component>
     </ComponentGroup>
 
-    <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="C2D3E4F5-A6B7-8901-CDEF-123456789012">
+    <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="1D61A9D9-12E1-4B25-9250-4884E30D9CE0">
       <Shortcut Id="StartMenuShortcutLink"
                 Name="BRQOSH"
                 Description="نظام محاسبة BRQOSH"
@@ -86,7 +126,7 @@
       <RegistryValue Root="HKCU" Key="Software\BRQOSH" Name="installed" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
-    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="D3E4F5A6-B7C8-9012-DEF0-234567890123">
+    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="1CCBDF32-D131-47D7-A5DC-FFA03E99F0CA">
       <Shortcut Id="DesktopShortcutLink"
                 Name="BRQOSH"
                 Description="نظام محاسبة BRQOSH"

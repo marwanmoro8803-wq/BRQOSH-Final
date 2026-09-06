@@ -223,6 +223,39 @@ $cases['probe-requires-pg'] = {
     finally { $env:BRQOSH_PG_PORT = $prevPort; $env:BRQOSH_REQUIRE_PG = $prevReq }
 }
 
+# ── ١٣ · (م-١ · ن-٠١) دفترُ الإصدارات: رقمٌ مُسجَّلٌ مشحوناً يجب أن يُسقط البناء ──
+$cases['shipped-version'] = {
+    $ledger = Join-Path $root "installer\shipped-versions.txt"
+    $backup = Join-Path $tmp "ledger.bak"
+    $existed = Test-Path $ledger
+    if ($existed) { Copy-Item $ledger $backup -Force }
+    try {
+        # ‏الإصدارُ الحاليُّ للثنائيّة المنشورة — نسجّله مشحوناً فيجب أن يُرفض بناؤه.
+        $exe = Join-Path $root "dist\BRQOSH\Brqosh.Desktop.exe"
+        if (-not (Test-Path $exe)) { Add-Result 'shipped-version' 'build-msi' $false 'لا ثنائيّةً منشورةً — الحالةُ لا تُقاس'; return }
+        $v = (($(Get-Item $exe).VersionInfo.FileVersion) -split '\.')[0..2] -join '.'
+        Add-Content -LiteralPath $ledger -Value $v -Encoding UTF8
+        # ‏نُشغّل منطقَ البوّابة وحدَه لا البناءَ كلَّه (‏دقائق مقابل ثوانٍ).
+        $bit = Test-GateFails {
+            $shipped = @(Get-Content $ledger | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
+            if ($shipped -contains $v) { throw "‏الإصدار $v مُسجَّلٌ مشحوناً." }
+        }
+        Add-Result 'shipped-version' 'build-msi' $bit "‏$v مُسجَّلٌ في الدفتر"
+    }
+    finally {
+        if ($existed) { Copy-Item $backup $ledger -Force } else { Remove-Item $ledger -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+# ── ١٤ · (م-١ · ن-٠١) مِعْيَرُ الترقية: إصدارٌ لا يتقدّم يجب أن يُسقطه ──────────
+$cases['upgrade-no-advance'] = {
+    $msi = Join-Path $root "dist\BRQOSH-Setup.msi"
+    if (-not (Test-Path $msi)) { Add-Result 'upgrade-no-advance' 'verify-upgrade-path' $false 'لا حزمةً — الحالةُ لا تُقاس'; return }
+    # ‏الحزمةُ نفسُها طرفاً للمقارنة: الإصدارُ لا يتقدّم بالتعريف، فيجب السقوط.
+    $bit = Test-GateFails { & "$root\scripts\ops\verify-upgrade-path.ps1" -PackageA $msi -PackageB $msi }
+    Add-Result 'upgrade-no-advance' 'verify-upgrade-path' $bit 'حزمةٌ مقابل نفسِها ⟸ لا تقدّم'
+}
+
 # ‏نسخةُ بوّابة «صفرُ متخطًّى» كما في ci.yml حرفاً — تُختبر هنا لا في CI وحدَه.
 function Invoke-SkipGate {
     param([string]$Dir, [int]$ExpectedProjects)
