@@ -208,13 +208,38 @@ public partial class App : System.Windows.Application
                     + $"عن أحدثِ وقتٍ رآه التطبيق ({clock.HighWaterUtc:u})."),
                 "clock-rollback");
 
-        if (!LicenseStore.ValidateForCompany(setup!.CompanyName, setup.CompletedAtUtc))
+        // ‏(م-٣ · ن-٣٥) ‏**يُقاس الترخيصُ على الاسم المُرخَّص لا على المعروض.**
+        //
+        // ‏كان يُقاس على `setup.CompanyName` — **وهو الحقلُ الذي يُعيد هذا الملفُّ نفسُه
+        // ‏كتابتَه** أدناه من هويّة القاعدة بعد قبول المالك. فتصحيحُ خطأٍ مطبعيٍّ في اسم
+        // ‏المنشأة كان **يُقفل الإنتاجَ عند الإقلاع التالي** برسالة «الترخيص لمنشأة أخرى».
+        //
+        // ‏ولم يُفكَّ الرباط: `CompanyMismatch` ما زال يقع، والمتغيّرُ أنّ المقيسَ عليه ثابت.
+        var licensedName = setup!.LicensedCompanyName ?? setup.CompanyName;
+
+        if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc))
         {
-            var license = new LicenseActivationWindow(setup.CompanyName);
+            var license = new LicenseActivationWindow(licensedName);
             if (license.ShowDialog() != true)
             {
                 Shutdown();
                 return;
+            }
+        }
+
+        // ‏ويُثبَّت الاسمُ **بعد قبولٍ ناجحٍ وحدَه** — فلا يُثبَّت اسمٌ لم يُقبل به ترخيصٌ قطّ.
+        // ‏ومرّةً واحدة: تنصيبٌ قائمٌ يسبق هذا الحقل يُثبَّت عند أوّل إقلاعٍ بعد الترقية.
+        if (setup.LicensedCompanyName is null)
+        {
+            setup = setup with { LicensedCompanyName = licensedName };
+            try
+            {
+                _setupStore.Save(setup);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // ‏تعذّرُ التثبيت لا يمنع الدخول — الترخيصُ قُبل بالفعل. ويُسجَّل ليُرى.
+                CrashLog.Write(ex, "license-name-freeze");
             }
         }
 
