@@ -42,8 +42,17 @@ public static class CrashLog
         {
             System.IO.Directory.CreateDirectory(Directory);
 
+            // ‏(م-٣ · ن-٣٣) ‏**الاسمُ كان يدهس نفسَه — فبلاغاتٌ تضيع بلا أثر.**
+            //
+            // ‏كان `crash-{ثانية}-{خيط}.log`، و`WriteAllText` يقصّ الموجود. فعطلان في
+            // ‏الثانية الواحدة على الخيط نفسِه ⟵ **ملفٌّ واحد**، والأوّلُ — وهو غالباً
+            // ‏السببُ الجذريّ — يُمحى بالذي تلاه. فأُضيفت أجزاءُ الثانية.
+            //
+            // ‏**والسياقُ في الاسم شرطٌ للحصّة أدناه**، لا زينة: بغيره لا يُعرف أيُّ الملفّات
+            // ‏من عطلٍ متكرّرٍ واحدٍ وأيُّها من أعطالٍ مختلفة.
             var path = Path.Combine(Directory,
-                $"crash-{DateTime.Now:yyyy-MM-dd_HHmmss}-{Environment.CurrentManagedThreadId}.log");
+                $"crash-{DateTime.Now:yyyy-MM-dd_HHmmss.fff}{ContextSeparator}{Slug(context)}"
+                + $"{ContextSeparator}{Environment.CurrentManagedThreadId}.log");
 
             File.WriteAllText(path, Compose(exception, context), new UTF8Encoding(true));
 
@@ -99,16 +108,45 @@ public static class CrashLog
     /// <b>وسجلٌّ ينمو بلا حدٍّ يملأ قرصَ المستخدم</b> — وعطلٌ يتكرّر كلَّ ثانيةٍ يكتب
     /// ألوفاً في دقائق. <b>والأحدثُ هو المفيد</b>: أوّلُ الأعطال يُشخَّص من آخرِ وقوعه.
     /// </remarks>
+    private const string ContextSeparator = "__";
+
+    /// <summary>حصّةُ كلّ سياق — فلا يبتلع عطلٌ متكرّرٌ الأدلّةَ كلَّها.</summary>
+    private const int PerContextLimit = 5;
+
+    /// <summary>الحدُّ الكلّيّ — يحرس القرص.</summary>
+    private const int TotalLimit = 30;
+
+    /// <summary>
+    /// (م-٣ · ن-٣٣) <b>حصّةٌ لكلّ سياقٍ ثمّ حدٌّ كلّيّ — وكان الحدُّ الكلّيُّ وحدَه.</b>
+    ///
+    /// <para><b>العطل:</b> <c>Skip(30)</c> على الأحدث فالأقدم، <b>بلا حدٍّ لكلّ سياق</b>.
+    /// فعطلٌ يتكرّر — إخفاقُ إرسالٍ دوريّ، أو ناشرُ أحداثٍ يرمي في كلّ ترحيل — يكتب ثلاثين
+    /// سجلاً <b>ويمحو كلَّ عطلٍ سبقه</b>، بما فيه السببُ الجذريُّ الذي أنتجه.</para>
+    ///
+    /// <para><b>وتصحيحُ صياغة البند:</b> قيل «يمحو دليلَ الجلسة في ثوانٍ»، <b>وذلك غيرُ
+    /// دقيقٍ حسابيّاً</b>: الاسمُ القديم بدقّة الثانية كان يدهس نفسَه، فثلاثون ملفّاً تلزمها
+    /// ثلاثون ثانيةً لا ثوانٍ. <b>والدهسُ عطلٌ ثانٍ كان يستر الأوّل</b> — وقد أُصلح أعلاه،
+    /// وبإصلاحه <b>صار المحوُ ممكناً فعلاً</b>. فالطبقتان تلزمان معاً.</para>
+    ///
+    /// <para><b>ولمَ الحصّةُ لا الحدُّ الزمنيّ:</b> حدٌّ زمنيٌّ يحرس القديمَ ويترك الفيضانَ
+    /// يملأ القرص؛ والحصّةُ تحدّ <b>الفيضانَ نفسَه</b> فتُبقي مكاناً لأعطالٍ مختلفة —
+    /// وتنوّعُ الأسباب هو ما يُشخِّص، لا عددُ نسخِ سببٍ واحد.</para>
+    /// </summary>
     private static void Prune()
     {
         try
         {
-            var stale = new DirectoryInfo(Directory)
-                .GetFiles("crash-*.log")
-                .OrderByDescending(f => f.LastWriteTimeUtc)
-                .Skip(30);
+            var files = new DirectoryInfo(Directory).GetFiles("crash-*.log");
 
-            foreach (var file in stale)
+            var keep = files
+                .GroupBy(ContextOf, StringComparer.OrdinalIgnoreCase)
+                .SelectMany(g => g.OrderByDescending(f => f.LastWriteTimeUtc).Take(PerContextLimit))
+                .OrderByDescending(f => f.LastWriteTimeUtc)
+                .Take(TotalLimit)
+                .Select(f => f.FullName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in files.Where(f => !keep.Contains(f.FullName)))
             {
                 try { file.Delete(); } catch (IOException) { }
             }
@@ -117,6 +155,35 @@ public static class CrashLog
         {
             // ‏تنظيفٌ يفشل لا يمنع كتابةَ السجلّ — وهو الغرضُ الأصليّ.
         }
+    }
+
+    /// <summary>
+    /// السياقُ من اسم الملفّ. <b>وملفٌّ بالاسم القديم يُنسب إلى سياقٍ فارغ</b> — فتجتمع
+    /// ملفّاتُ ما قبل الترقية في حصّةٍ واحدة، وذلك مقصود: لا تُعرف سياقاتُها.
+    /// </summary>
+    private static string ContextOf(FileInfo file)
+    {
+        var parts = Path.GetFileNameWithoutExtension(file.Name)
+            .Split(ContextSeparator, StringSplitOptions.None);
+        return parts.Length >= 3 ? parts[1] : string.Empty;
+    }
+
+    /// <summary>
+    /// اسمُ ملفٍّ آمنٌ من السياق. <b>والسياقُ نصٌّ يُمرّره المستدعي</b>، وقد يحمل مسافةً أو
+    /// شرطةً مائلةً أو محرفاً لا يقبله نظامُ الملفّات — فيُقصر على ما يصلح، ويُحدَّد طولُه.
+    /// </summary>
+    private static string Slug(string? context)
+    {
+        if (string.IsNullOrWhiteSpace(context)) return "unknown";
+
+        var sb = new StringBuilder(context.Length);
+        foreach (var ch in context.Trim())
+        {
+            if (sb.Length >= 40) break;
+            sb.Append(char.IsAsciiLetterOrDigit(ch) || ch is '-' or '.' ? ch : '-');
+        }
+
+        return sb.Length == 0 ? "unknown" : sb.ToString();
     }
 
     /// <summary>

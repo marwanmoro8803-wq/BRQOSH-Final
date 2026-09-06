@@ -45,6 +45,14 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// ‏(م-٣ · ن-٠٩) ‏**وصلُ نشرِ أحداث النطاق — صريحاً لا أثراً جانبيّاً في مصنعٍ كسول.**
+//
+// ‏كان `DomainEventHub.Current` و`OutboxDispatchHook.Wire` يُضبطان داخل مصنعِ
+// ‏`IDomainEventPublisher`، و`AddSingleton<T>(factory)` لا يعمل حتى يُطلب النوع.
+// ‏**ولم يطلبه أحدٌ في الإنتاج** — فبقي الناشرُ ذاكريّاً، **والصندوقُ الصادر
+// ‏والـwebhooks لا يعملان**، ولا شيءَ يشتكي.
+app.Services.WireDomainEventPublishing();
+
 var isProduction = app.Environment.IsProduction();
 var apiKey = builder.Configuration[ApiSecuritySettings.ApiKeyEnv]
              ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ApiKeyEnv);

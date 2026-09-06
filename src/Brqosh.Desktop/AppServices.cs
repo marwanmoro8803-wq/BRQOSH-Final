@@ -130,13 +130,25 @@ public static class AppServices
         WireDomainEventPersistence();
     }
 
-    /// <summary>يربط DomainEventHub بناشر يحفظ الأحداث في قاعدة البيانات.</summary>
+    /// <summary>
+    /// يربط <c>DomainEventHub</c> بناشرٍ يحفظ الأحداث في قاعدة البيانات.
+    ///
+    /// <para>(م-٣ · ن-٠٩) <b>وكان اسمُها يَعِد بما لا تفعل.</b> بنت الحاويةَ ولم تطلب
+    /// <c>IDomainEventPublisher</c> قطّ — والوصلُ كان أثراً جانبيّاً في مصنعٍ <b>كسول</b>،
+    /// فلم يعمل. فبقي <c>DomainEventHub.Current</c> على الناشر الذاكريّ، <b>والصندوقُ
+    /// الصادر والـwebhooks لا يعملان في سطح المكتب إطلاقاً</b> — وتقول الشاشةُ «لا شيء»
+    /// فيُقرأ الصمتُ سلامة.</para>
+    ///
+    /// <para><b>وأخطرُ ما فيه أنّ الاسمَ والتعليقَ كانا صادقين عن النيّة</b>، فلا يشكّ من
+    /// يقرأ. والوصلُ الآن نداءٌ صريحٌ في السطر الأخير.</para>
+    /// </summary>
     public static void WireDomainEventPersistence()
     {
         _infrastructureServices?.Dispose();
         var services = new ServiceCollection();
         services.AddBrqoshInfrastructure(_connectionString, _provider == DatabaseProvider.PostgreSql);
         _infrastructureServices = services.BuildServiceProvider();
+        _infrastructureServices.WireDomainEventPublishing();
     }
 
     public static async Task EnsureDatabaseReachableAsync()

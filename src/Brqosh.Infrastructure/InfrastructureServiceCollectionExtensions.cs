@@ -209,21 +209,45 @@ public static class InfrastructureServiceCollectionExtensions
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
+        // ‏(م-٣ · ن-٠٩) ‏**المصنعُ يبني ولا يَصِل — والوصلُ صار خطوةً صريحةً تُستدعى.**
+        //
+        // ‏كان هذا المصنعُ يضبط `DomainEventHub.Current` ويصل `OutboxDispatchHook` **من
+        // ‏داخله**. و`AddSingleton<T>(factory)` كسولٌ: لا يعمل حتى يُطلب `IDomainEventPublisher`.
+        // ‏**ولا يطلبه أحدٌ في الإنتاج** — مقيسٌ بمسحٍ على المستودع: الطالبُ الوحيد ملفُّ
+        // ‏اختبار. فيبقى `DomainEventHub.Current` على `InMemoryDomainEventPublisher`،
+        // ‏**والصندوقُ الصادر (outbox) والـwebhooks لا يعملان**، والشاشةُ تقول «لا شيء»
+        // ‏فيُقرأ الصمتُ سلامة.
+        //
+        // ‏**وأثرٌ جانبيٌّ في مصنعِ حقنٍ هو الفخُّ نفسُه**: يعمل متى طُلب، ولا يعمل متى لم
+        // ‏يُطلب، **ولا شيءَ في التوقيع يقول ذلك**. فصار المصنعُ بناءً محضاً، والوصلُ
+        // ‏<see cref="WireDomainEventPublishing"/> — دالّةً باسمها يُستدعيها المُضيف.
         services.AddSingleton<IDomainEventPublisher>(sp =>
-        {
-            var publisher = new PersistingDomainEventPublisher(
+            new PersistingDomainEventPublisher(
                 sp.GetRequiredService<IServiceScopeFactory>(),
-                sp.GetRequiredService<IWebhookDispatcher>());
-            DomainEventHub.Current = publisher;
+                sp.GetRequiredService<IWebhookDispatcher>()));
 
-            // Outbox (ع-D2، CEEF-204): تفريغ الطابور بعد الالتزام حصراً.
-            // يُوصَل هنا لأن UnitOfWork ساكن بلا حاوية حقن — نفس نمط DomainEventHub.
-            OutboxDispatchHook.Wire((db, ct) =>
-                new OutboxDispatcher(sp.GetRequiredService<IWebhookDispatcher>())
-                    .DispatchPendingAsync(db, ct));
+        return services;
+    }
 
-            return publisher;
-        });
+    /// <summary>
+    /// (م-٣ · ن-٠٩) <b>يصل نشرَ أحداث النطاق بالحاوية — ويجب أن يُستدعى مرّةً عند الإقلاع.</b>
+    ///
+    /// <para><c>DomainEventHub</c> و<c>OutboxDispatchHook</c> ساكنان: تنشر عليهما خدماتٌ
+    /// تُنشأ بـ<c>new Service(db)</c> خارج الحقن — <b>وهي أغلبُ خدمات هذا النظام</b>. فلا
+    /// بدّ من ربطهما بالحاوية صراحةً، ولا يجوز أن يقع ذلك أثراً جانبيّاً في مصنعٍ كسول.</para>
+    ///
+    /// <para><b>وبلا هذا النداء يعمل النظامُ كلُّه ولا يصل حدثٌ واحد</b> — ولا يشتكي شيء.</para>
+    /// </summary>
+    public static IServiceProvider WireDomainEventPublishing(this IServiceProvider services)
+    {
+        DomainEventHub.Current = services.GetRequiredService<IDomainEventPublisher>();
+
+        // Outbox (ع-D2، CEEF-204): تفريغ الطابور بعد الالتزام حصراً.
+        // ‏ويُوصَل هنا لأن `UnitOfWork` ساكنٌ بلا حاوية حقن — نفسُ نمط `DomainEventHub`.
+        OutboxDispatchHook.Wire((db, ct) =>
+            new OutboxDispatcher(services.GetRequiredService<IWebhookDispatcher>())
+                .DispatchPendingAsync(db, ct));
+
         return services;
     }
 }
