@@ -292,6 +292,11 @@ Write-Host ""
 
 # ‏(بصمةُ ما قبل) ‏السؤالُ ليس «أنظيفةٌ الشجرة؟» — قد تكون متّسخةً بعملٍ جارٍ مشروع —
 # ‏بل «**هل لوّثتُها أنا؟**». فتُلتقط الحالةُ قبل الزرع وتُقارَن بعد الإزالة.
+# ‏ويُحدَّث الفهرسُ قبل الالتقاطين معاً — فبصمتان بمعيارين مختلفين تُنتجان فرقاً وهميّاً
+# ‏في أيّ من الاتجاهين. (‏انظر شرحَ `update-index --refresh` عند بصمة ما بعد.)
+& git update-index --refresh *> $null
+$global:LASTEXITCODE = 0
+
 $treeBefore = (& git status --porcelain | Sort-Object) -join "`n"
 
 $toRun = if ($Only) { @($Only) } else { $cases.Keys | Sort-Object }
@@ -309,6 +314,18 @@ $blind = @($results | Where-Object { -not $_.Bites })
 Write-Host ("‏عضّت: {0} · عمياء: {1} · المجموع: {2}" -f ($results.Count - $blind.Count), $blind.Count, $results.Count)
 
 # ‏شرطٌ ثانٍ لا يقلّ أهميّة: سكربتُ فحصٍ يُلوّث الشجرة أسوأُ من ألّا يوجد.
+#
+# ‏(م-٤) ‏**ويُحدَّث فهرسُ git قبل الالتقاط — وإلّا كذب هذا الشرطُ نفسُه.**
+# ‏فحالاتٌ تُعيد ملفّاً إلى محتواه بـ`Copy-Item`، والبايتاتُ نفسُها **بطابعِ وقتٍ جديد**.
+# ‏وgit يحتفظ بذاكرةِ `stat` في الفهرس، فيرى الطابعَ اختلف ويُعلن الملفَّ معدَّلاً قبل أن
+# ‏يُقارن المحتوى. **فأبلغ المِرفاسُ فشلاً كاذباً** بينما `git diff` يقول لا تغيير —
+# ‏وبوّابةٌ تكذب هي عينُ ما وُجد هذا السكربتُ ليكشفه.
+#
+# ‏و`update-index --refresh` يُقارن المحتوى ويمحو الاتّساخَ الوهميّ. ورمزُ خروجه غيرُ صفرٍ
+# ‏حين يجد ما يُحدّثه — وهو **حالةٌ متوقَّعةٌ لا فشل**، فيُبتلع عمداً.
+& git update-index --refresh *> $null
+$global:LASTEXITCODE = 0
+
 $treeAfter = (& git status --porcelain | Sort-Object) -join "`n"
 if ($treeAfter -ne $treeBefore) {
     Write-Host "‏[FAIL] الشجرةُ تغيّرت بفعل الفحص — قارِن:" -ForegroundColor Red
