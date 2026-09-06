@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
@@ -29,8 +28,7 @@ public partial class DepositReturnDialog : Window
     {
         try
         {
-            if (!decimal.TryParse((ForfeitedBox.Text ?? "").Trim(), NumberStyles.Number,
-                    CultureInfo.InvariantCulture, out var forfeited))
+            if (!NumericInput.TryParse(ForfeitedBox.Text, out var forfeited))
                 throw new AccountingException($"المخصوم غير صالح — ووردَ «{ForfeitedBox.Text}».");
 
             Forfeited = forfeited;

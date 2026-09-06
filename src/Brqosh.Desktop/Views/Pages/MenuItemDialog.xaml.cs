@@ -74,7 +74,7 @@ public partial class MenuItemDialog : Window
         {
             ComponentsGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
-            if (!decimal.TryParse((PriceBox.Text ?? "").Trim(), out var price))
+            if (!NumericInput.TryParse(PriceBox.Text, out var price))
                 throw new AccountingException($"سعر البيع غير صالح — ووردَ «{PriceBox.Text}».");
 
             var item = Brqosh.Domain.Hospitality.MenuItem.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text,

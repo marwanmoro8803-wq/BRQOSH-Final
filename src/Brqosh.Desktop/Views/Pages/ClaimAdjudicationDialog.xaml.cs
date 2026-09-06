@@ -131,8 +131,7 @@ public partial class ClaimAdjudicationDialog : Window
 
     private static decimal ParseAmount(string text, string visitNumber, string field)
     {
-        if (decimal.TryParse((text ?? "").Trim(), NumberStyles.Number,
-                CultureInfo.InvariantCulture, out var value))
+        if (NumericInput.TryParse(text, out var value))
             return value;
 
         throw new AccountingException($"مبلغ «{field}» غير صالح في زيارة {visitNumber}.");

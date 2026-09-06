@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
@@ -99,8 +98,7 @@ public partial class MonetaryRevaluationPage : UserControl
             foreach (var row in _rows)
             {
                 if (string.IsNullOrWhiteSpace(row.ClosingRate)) continue;
-                if (!decimal.TryParse(row.ClosingRate.Trim(), NumberStyles.Number,
-                        CultureInfo.InvariantCulture, out var rate))
+                if (!NumericInput.TryParse(row.ClosingRate, out var rate))
                     throw new Brqosh.Domain.Accounting.AccountingException(
                         $"سعر إقفال «{row.CurrencyCode}» غير صالح — ووردَ «{row.ClosingRate}».");
 

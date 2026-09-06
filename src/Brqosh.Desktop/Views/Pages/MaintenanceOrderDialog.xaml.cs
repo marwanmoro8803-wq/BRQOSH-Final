@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Ui;
@@ -128,8 +127,7 @@ public partial class MaintenanceOrderDialog : Window
 
     private static decimal ParseAmount(string? text, string field)
     {
-        if (decimal.TryParse((text ?? "").Trim(), NumberStyles.Number,
-                CultureInfo.InvariantCulture, out var value))
+        if (NumericInput.TryParse(text, out var value))
             return value;
 
         throw new AccountingException($"مبلغ «{field}» غير صالح.");

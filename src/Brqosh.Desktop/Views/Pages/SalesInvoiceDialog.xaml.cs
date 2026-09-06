@@ -163,7 +163,7 @@ public partial class SalesInvoiceDialog : Window
     /// لا يُلتفّ عليه.
     /// </remarks>
     private decimal DocumentDiscount() =>
-        decimal.TryParse(DocumentDiscountBox.Text, out var value) && value > 0m ? value : 0m;
+        NumericInput.TryParsePositive(DocumentDiscountBox.Text, out var value) ? value : 0m;
 
     private void UpdateTotals()
     {
@@ -290,9 +290,7 @@ public partial class SalesInvoiceDialog : Window
         if (code.Length == 0) code = "SAR";
         if (code == "SAR") return;
 
-        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+        if (!NumericInput.TryParse(RateBox.Text, out var rate))
             throw new Brqosh.Domain.Accounting.AccountingException(
                 $"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
 

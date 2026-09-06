@@ -146,9 +146,7 @@ public partial class PurchaseInvoiceDialog : Window
         if (code.Length == 0) code = "SAR";
         if (code == "SAR") return;
 
-        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+        if (!NumericInput.TryParse(RateBox.Text, out var rate))
             throw new Brqosh.Domain.Accounting.AccountingException(
                 $"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
 

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
@@ -32,7 +31,7 @@ public partial class RoomDialog : Window
     }
 
     private static decimal Number(string text, string field) =>
-        decimal.TryParse((text ?? "").Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
+        NumericInput.TryParse(text, out var value)
             ? value
             : throw new AccountingException($"قيمة «{field}» غير صالحة — ووردت «{text}».");
 

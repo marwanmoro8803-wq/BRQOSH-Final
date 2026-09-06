@@ -100,7 +100,7 @@ public partial class ReservationDialog : Window
     }
 
     private static decimal Number(string text, string field) =>
-        decimal.TryParse((text ?? "").Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
+        NumericInput.TryParse(text, out var value)
             ? value
             : throw new AccountingException($"قيمة «{field}» غير صالحة — ووردت «{text}».");
 

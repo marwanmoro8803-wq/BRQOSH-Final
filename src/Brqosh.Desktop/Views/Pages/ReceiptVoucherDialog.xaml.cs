@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -225,9 +224,7 @@ public partial class ReceiptVoucherDialog : Window
         if (code.Length == 0) code = "SAR";
         if (code == "SAR") return null;
 
-        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture, out var rate))
+        if (!NumericInput.TryParse(RateBox.Text, out var rate))
             throw new AccountingException($"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
 
         return (code, rate);
@@ -240,7 +237,7 @@ public partial class ReceiptVoucherDialog : Window
     /// <b>والحراسةُ في النطاق عند الترحيل</b> — وهو الموضعُ الذي لا يُلتفّ عليه.
     /// </remarks>
     private decimal SettlementDiscount() =>
-        decimal.TryParse(SettlementDiscountBox.Text, out var value) && value > 0m ? value : 0m;
+        NumericInput.TryParsePositive(SettlementDiscountBox.Text, out var value) ? value : 0m;
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {

@@ -148,10 +148,7 @@ public partial class MenuItemsPage : UserControl
 
         try
         {
-            if (!decimal.TryParse((ServingsBox.Text ?? "").Trim(),
-                    System.Globalization.NumberStyles.Number,
-                    System.Globalization.CultureInfo.InvariantCulture, out var servings)
-                || servings <= 0m)
+            if (!NumericInput.TryParsePositive(ServingsBox.Text, out var servings))
                 throw new Brqosh.Domain.Accounting.AccountingException(
                     $"عدد الحصص غير صالح — ووردَ «{ServingsBox.Text}».");
 

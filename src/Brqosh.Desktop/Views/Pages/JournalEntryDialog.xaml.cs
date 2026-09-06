@@ -112,9 +112,7 @@ public partial class JournalEntryDialog : Window
         if (code.Length == 0) code = "SAR";
         if (code == "SAR") return null;
 
-        if (!decimal.TryParse((RateBox.Text ?? "").Trim(),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture, out var rate) || rate <= 0m)
+        if (!NumericInput.TryParsePositive(RateBox.Text, out var rate))
             throw new AccountingException($"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
 
         return (code, rate);

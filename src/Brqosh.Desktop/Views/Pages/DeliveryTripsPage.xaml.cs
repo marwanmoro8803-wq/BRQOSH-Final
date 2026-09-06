@@ -155,9 +155,7 @@ public partial class DeliveryTripsPage : UserControl
     /// </summary>
     private decimal ParseAmount()
     {
-        if (decimal.TryParse((AmountBox.Text ?? "").Trim(),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture, out var value))
+        if (NumericInput.TryParse(AmountBox.Text, out var value))
             return value;
 
         throw new Brqosh.Domain.Accounting.AccountingException(

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
@@ -72,8 +71,7 @@ public partial class EmployeeAdvanceDialog : Window
 
     private static decimal Parse(string? text, string field)
     {
-        if (decimal.TryParse((text ?? "").Trim(), NumberStyles.Number,
-                CultureInfo.InvariantCulture, out var value))
+        if (NumericInput.TryParse(text, out var value))
             return value;
 
         throw new AccountingException($"قيمة «{field}» غير صالحة.");

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
@@ -15,8 +14,7 @@ public partial class UnitOfMeasureDialog : Window
     {
         try
         {
-            if (!decimal.TryParse((FactorBox.Text ?? "").Trim(), NumberStyles.Number,
-                    CultureInfo.InvariantCulture, out var factor))
+            if (!NumericInput.TryParse(FactorBox.Text, out var factor))
                 throw new AccountingException($"معامل التحويل غير صالح — ووردَ «{FactorBox.Text}».");
 
             var unit = UnitOfMeasure.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text,

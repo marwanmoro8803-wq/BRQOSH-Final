@@ -139,7 +139,7 @@ public partial class EmployeeDialog : Window
 
     /// <summary><b>ورقمٌ لا يُقرأ يُسمّى حقلَه</b> — فلا يبحث المستخدم عن الخطأ في أربعة حقول.</summary>
     private static decimal Money(string text, string field) =>
-        decimal.TryParse((text ?? "").Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
+        NumericInput.TryParse(text, out var value)
             ? value
             : throw new AccountingException($"قيمة «{field}» غير صالحة — ووردت «{text}».");
 

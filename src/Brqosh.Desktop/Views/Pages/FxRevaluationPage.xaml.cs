@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
@@ -121,7 +120,7 @@ public partial class FxRevaluationPage : UserControl
     }
 
     private static decimal Parse(string? text) =>
-        decimal.TryParse((text ?? "").Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var v)
+        NumericInput.TryParse(text, out var v)
             ? v
             : 0m;
 }
