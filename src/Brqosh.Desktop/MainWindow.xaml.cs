@@ -699,7 +699,18 @@ public partial class MainWindow : Window
             var isPg = facade.Db.Database.IsNpgsql();
             var outcome = await facade.GetService<BackupScheduleService>()
                 .RunIfDueAsync(BackupFolder, isPg);
-            ShowBackupBadge(outcome.State);
+
+            // ‏(ن-٤١) ‏**السببُ يُقرأ — وكان يُحسب ويُعاد ويُرمى.**
+            //
+            // ‏`BackupScheduleService` يَعِد في تعليقه: «الفشلُ لا يُبتلع… **لكنّ الإخفاق
+            // ‏يُعاد ليُعرض لا ليُنسى**». وكان هذا السطرُ يقرأ `outcome.State` وحدَه —
+            // ‏**والمستدعي الوحيد**. فيُحسب السببُ ويُعاد ويُسقَط، والمالكُ يرى شارةَ
+            // ‏«تأخّر النسخ» **ولا يعرف لماذا**: أقرصٌ ممتلئ؟ أم `pg_dump` مفقود؟ أم
+            // ‏صلاحيّةُ مجلّد؟ — والفرقُ بينها هو الفرقُ بين إصلاحٍ في دقيقةٍ وبلاغِ دعم.
+            if (outcome.Failure is { Length: > 0 } failure)
+                CrashLog.Write(new InvalidOperationException(failure), "scheduled-backup-failed");
+
+            ShowBackupBadge(outcome.State, outcome.Failure);
         }
         catch (Exception ex)
         {
@@ -720,9 +731,25 @@ public partial class MainWindow : Window
         finally { _backupRunning = false; }
     }
 
-    private void ShowBackupBadge(BackupScheduleState state)
+    /// <param name="failure">
+    /// (ن-٤١) سببُ إخفاقِ آخرِ محاولةٍ — <b>يُعرض تلميحاً وتُشعَل الشارةُ له</b>.
+    ///
+    /// <para><b>وإشعالُ الشارة شرطٌ لا زينة:</b> محاولةٌ تُخفق اليوم لا تجعل النسخَ
+    /// «متأخّراً» فوراً — فآخرُ نسخةٍ ناجحةٍ قد تكون أمس. <b>فبلا هذا يبقى الإخفاقُ
+    /// مخفيّاً حتى يمرّ حدُّ التأخّر</b>، وتكون المنشأةُ بلا نسخةٍ أيّاماً وهي تظنّ
+    /// نفسَها مجدولة.</para>
+    /// </param>
+    private void ShowBackupBadge(BackupScheduleState state, string? failure = null)
     {
         StatusBackupText.Text = state.Badge;
-        StatusBackupBadge.Visibility = state.IsOverdue ? Visibility.Visible : Visibility.Collapsed;
+
+        var failed = failure is { Length: > 0 };
+        StatusBackupBadge.Visibility = state.IsOverdue || failed
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+        StatusBackupBadge.ToolTip = failed
+            ? $"‏أخفقت آخرُ محاولةِ نسخٍ احتياطيّ: {failure}"
+            : null;
     }
 }
