@@ -52,7 +52,11 @@ param(
 
     # يقبله المستدعون القدامى (run-external-gates.ps1) ويُطبَّق على المجموع الكلّي المدموج.
     # 52.78% مقيسة يوم 2026-08-29 بخمس تجميعات — وكانت 68.55% بأربع.
-    [double]$MinimumLineRate = 0.52
+    [double]$MinimumLineRate = 0.52,
+
+    # ‏(م-٠ · ن-١٤) نافذةُ الحداثة: تقاريرُ تشغيلةٍ واحدةٍ تُكتب في دقائق. والقيمةُ سخيّةٌ
+    # ‏عمداً (حزمةُ Application وحدَها ‏9 دقائق) — فالمقصودُ منعُ **يوم** لا منعُ دقيقة.
+    [int]$StaleToleranceMinutes = 45
 )
 
 $ErrorActionPreference = "Stop"
@@ -60,6 +64,28 @@ $ErrorActionPreference = "Stop"
 $files = @(Get-ChildItem -Path $ResultsDir -Recurse -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue)
 if ($files.Count -eq 0) {
     Write-Error "No coverage.cobertura.xml under $ResultsDir. Run: dotnet test Brqosh.sln --collect:`"XPlat Code Coverage`" --results-directory $ResultsDir"
+    exit 1
+}
+
+# ‏(م-٠ · ن-١٤) ‏**اتّحادُ الأسطر بلا فحصِ حداثة يجعل الرقمَ سقفاً لا يمكن أن ينزل.**
+#
+# ‏الدمجُ اتّحادٌ: سطرٌ مغطّى إن أصابه **أيُّ** تقرير. وهذا صحيحٌ داخل التشغيلة الواحدة،
+# ‏وكارثةٌ عبر التشغيلات: تقريرٌ من كودٍ سابقٍ يُبقي أسطراً «مغطّاة» بعد حذف اختبارها.
+#
+# ‏قِيس: تقريرٌ قديم بـ90% فوق قياسٍ حديثٍ بـ5% ⟸ البوّابة أعلنت **PASS 90%**. وعلى
+# ‏جهاز المطوّر تراكم أربعون تقريراً من يومين، فالرقمُ المحلّيُّ **لا يمكن أن ينحدر**.
+#
+# ‏والحدُّ زمنيٌّ لا عدديّ: تقاريرُ تشغيلةٍ واحدةٍ تُكتب في دقائق، فما شذَّ عن أحدثِها
+# ‏بأكثرَ من النافذة ليس منها. وCI عدّاءٌ نظيفٌ فلا يتأثّر — المستفيدُ هو القياسُ المحلّيّ.
+$newest = ($files | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).LastWriteTimeUtc
+$cutoff = $newest.AddMinutes(-$StaleToleranceMinutes)
+$stale = @($files | Where-Object { $_.LastWriteTimeUtc -lt $cutoff })
+if ($stale.Count -gt 0) {
+    $oldest = ($stale | Sort-Object LastWriteTimeUtc | Select-Object -First 1)
+    Write-Error ("‏$($stale.Count) من $($files.Count) تقريرِ تغطيةٍ أقدمُ من أحدثِها بأكثرَ من " +
+        "$StaleToleranceMinutes دقيقة (أقدمُها $($oldest.LastWriteTimeUtc.ToString('u')) مقابل " +
+        "$($newest.ToString('u'))). ‏والدمجُ اتّحادٌ، فتقريرٌ بائتٌ يرفع الرقمَ بلا سببٍ في الكود. " +
+        "‏احذف `$ResultsDir قبل القياس، أو ارفع -StaleToleranceMinutes عمداً.")
     exit 1
 }
 

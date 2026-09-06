@@ -37,16 +37,47 @@ const string TestDb = "brqosh_schemaprobe";
 var systemColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     { "xmin", "xmax", "cmin", "cmax", "ctid", "tableoid" };
 
+// ‏(م-٠ · ن-٠٧) ‏**المسبارُ كان يُتخطّى صامتاً على كلّ آلةٍ ليست جهازَ المطوّر — ووصلُه
+// ‏بـCI بهذه الحال كان سيُنتج بوّابةً خضراءَ لا تفحص شيئاً.**
+//
+// ‏كان يقرأ كلمةَ المرور من `%APPDATA%\BRQOSH\pg_password.txt` **وحدَه** ويُثبّت المنفذ
+// ‏5433. وعلى عدّاء CI لا وجودَ للملفّ، والخادمُ على 5432 — فيطبع `[SKIP]` **ويخرج
+// ‏بصفر**. وهذا بعينه العطلُ الذي جاء المسبارُ ليمنعه في المخطّط: أخضرُ يعني «لم يُفحص».
+//
+// ‏فالمصادرُ الآن كما في `PostgresTestDatabase` حرفاً بحرف — متغيّرُ البيئة أوّلاً ثمّ
+// ‏الملفّ — و`BRQOSH_REQUIRE_PG=1` **يحوّل التخطّي إلى فشل**، وهو ما تضبطه البوّابة.
+const string HostEnv = "BRQOSH_PG_HOST";
+const string PortEnv = "BRQOSH_PG_PORT";
+const string PasswordEnv = "BRQOSH_PG_PASSWORD";
+const string RequireEnv = "BRQOSH_REQUIRE_PG";
+
+var pgHost = Environment.GetEnvironmentVariable(HostEnv) is { Length: > 0 } envHost ? envHost : "localhost";
+var pgPort = int.TryParse(Environment.GetEnvironmentVariable(PortEnv), out var parsedPort) ? parsedPort : 5433;
+var pgRequired = Environment.GetEnvironmentVariable(RequireEnv) == "1";
+
 var pwPath = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "pg_password.txt");
-if (!File.Exists(pwPath))
+var pw = Environment.GetEnvironmentVariable(PasswordEnv) is { Length: > 0 } envPw
+    ? envPw
+    : File.Exists(pwPath) ? (await File.ReadAllTextAsync(pwPath)).Trim() : null;
+
+// ‏مصنعُ سلاسل الاتصال: موضعٌ واحدٌ يحمل المضيفَ والمنفذ، فلا يعود أحدُهما مُثبَّتاً في أربعة مواضع.
+string Conn(string database) =>
+    $"Host={pgHost};Port={pgPort};Database={database};Username=postgres;Password={pw}";
+
+if (pw is null)
 {
-    Console.WriteLine($"[SKIP] لا يوجد {pwPath} — يتطلب المسبار PostgreSQL محلياً مهيّأً.");
+    var missing = $"لا {PasswordEnv} ولا {pwPath} — لا اعتمادَ لـPostgreSQL.";
+    if (pgRequired)
+    {
+        Console.WriteLine($"[FAIL] {missing} و{RequireEnv}=1 يجعل الغيابَ فشلاً لا تخطّياً.");
+        return 1;
+    }
+    Console.WriteLine($"[SKIP] {missing}");
     return 0;
 }
 
-var pw = (await File.ReadAllTextAsync(pwPath)).Trim();
-var admin = $"Host=localhost;Port=5433;Database=postgres;Username=postgres;Password={pw}";
+var admin = Conn("postgres");
 
 try
 {
@@ -59,13 +90,18 @@ try
 }
 catch (Exception ex)
 {
+    if (pgRequired)
+    {
+        Console.WriteLine($"[FAIL] تعذّر الاتصال بـ PostgreSQL على {pgHost}:{pgPort} — {ex.Message}");
+        return 1;
+    }
     Console.WriteLine($"[SKIP] تعذر الاتصال بـ PostgreSQL: {ex.Message}");
     return 0;
 }
 
-Console.WriteLine($"[OK] أُنشئت قاعدة اختبار نظيفة: {TestDb}");
+Console.WriteLine($"[OK] أُنشئت قاعدة اختبار نظيفة: {TestDb} على {pgHost}:{pgPort}");
 
-var cs = $"Host=localhost;Port=5433;Database={TestDb};Username=postgres;Password={pw}";
+var cs = Conn(TestDb);
 await using var db = BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, cs);
 
 AppEnvironmentConfig.ForceForTests(AppEnvironment.Production);
@@ -277,7 +313,7 @@ if (problems == 0)
     Console.WriteLine("[PASS] المخطط الذي تحصل عليه قاعدة إنتاجٍ نظيفة يطابق النموذج:");
     Console.WriteLine("       الجداول والأعمدة والأنواع وقابليةُ الإفراغ وقيودُ التفرّد.");
     Console.WriteLine();
-    return await ProveUpgradePathAsync(pw);
+    return await ProveUpgradePathAsync(Conn);
 }
 
 Console.WriteLine("[FAIL] المخطط الإنتاجيّ يخالف ما يتوقّعه الكود:");
@@ -296,11 +332,13 @@ return 4;
 // ‏42701، فيبتلعها IsIgnorableSchemaConflict ولا يُكتب صفُّ التاريخ — فتبقى السلسلة عالقةً
 // ‏عند تلك الهجرة، ولا تُطبَّق أيّ هجرةٍ بعدها أبداً، وكلّ ذلك بلا رسالةٍ واحدة.
 // ‏فهذه المرحلة تعيد بناء تلك الحالة بعينها وتسأل: هل سُجّلت الهجرة الجديدة فعلاً؟
-static async Task<int> ProveUpgradePathAsync(string password)
+// ‏(م-٠ · ن-٠٧) ‏تأخذ **مصنعَ سلاسل الاتصال** لا كلمةَ المرور: الدالّةُ `static` فلا تلتقط
+// ‏المضيفَ والمنفذَ من المستوى العلويّ، وتمريرُ كلمةِ المرور وحدَها كان يُبقيهما مُثبَّتَين هنا.
+static async Task<int> ProveUpgradePathAsync(Func<string, string> conn)
 {
     const string UpgradeDb = "brqosh_upgradeprobe";
-    var adminCs = $"Host=localhost;Port=5433;Database=postgres;Username=postgres;Password={password}";
-    var upgradeCs = $"Host=localhost;Port=5433;Database={UpgradeDb};Username=postgres;Password={password}";
+    var adminCs = conn("postgres");
+    var upgradeCs = conn(UpgradeDb);
 
     await using (var c = new NpgsqlConnection(adminCs))
     {
