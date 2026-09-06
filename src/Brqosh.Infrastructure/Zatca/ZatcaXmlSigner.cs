@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Numerics;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
 using System.Text;
@@ -59,7 +60,7 @@ public static class ZatcaXmlSigner
 
         // 3. بيانات IssuerSerial من الشهادة الفعلية
         var issuerName = cert.IssuerName.Name ?? "CN=ZATCA";
-        var serialNumber = cert.SerialNumber ?? "0";
+        var serialNumber = DecimalSerialNumber(cert);
 
         // (CEEF-229 · Z-2) **يُغرَس الهيكلُ أوّلاً، ثمّ يُقنَّن كلُّ شيءٍ من داخل المستند.**
         //
@@ -387,6 +388,56 @@ public static class ZatcaXmlSigner
         using var ms = new MemoryStream(xmlBytes);
         doc.Load(ms);
         return doc;
+    }
+
+    /// <summary>
+    /// (م-٣ · ن-٣٤) <b>الرقمُ التسلسليُّ عدداً عشريّاً — وكان يُكتب سداسيّاً عشرَ.</b>
+    ///
+    /// <para><c>ds:X509SerialNumber</c> نوعُه <c>xsd:integer</c> في XMLDSig، أي <b>عددٌ
+    /// عشريّ</b>. و<c>X509Certificate2.SerialNumber</c> يعيد نصّاً <b>سداسيّاً عشرَ</b>
+    /// (<c>"00B55714FF722C35F3"</c>)، وكان يُكتب كما هو داخل <c>IssuerSerial</c>. والمرجعُ
+    /// عند الهيئة جافا، و<c>X509Certificate.getSerialNumber()</c> فيها تقرأ عددَ DER —
+    /// <b>فما نكتبه وما تقرؤه ليسا الشيءَ نفسَه</b>.
+    /// </para>
+    ///
+    /// <para><b>والقراءةُ من البايتات لا من النصّ ولا من <c>GetSerialNumber()</c></b>:
+    /// الأخيرةُ <b>صغيرةُ النهاية</b> فتعكس العدد. مقيسٌ على .NET 9 في هذا المشروع:
+    /// <code>
+    /// SerialNumber        = 00B55714FF722C35F3   (18 محرفاً)
+    /// SerialNumberBytes   = 00B55714FF722C35F3   (9 بايت)
+    /// GetSerialNumber()   = F3352C72FF1457B500   (معكوسة)
+    /// </code>
+    /// </para>
+    ///
+    /// <para><b>وحشوةُ DER حاضرةٌ في الطرفين</b> — البايتُ <c>00</c> يتصدّر متى كان أعلى بتٍّ
+    /// مضبوطاً، لأنّ عددَ DER <b>مُوقَّع</b> والرقمُ التسلسليُّ موجبٌ بنصّ RFC 5280. ولذلك
+    /// <c>isUnsigned: false</c> هي القراءةُ الأمينة — وهي عينُ ما تقرؤه جافا. <b>وقِيس أنّ
+    /// الطرقَ الأربع تتطابق</b> (موقَّعة · غيرُ موقَّعة · <c>Parse(hex)</c> · <c>Parse("0"+hex)</c>)
+    /// لأنّ الحشوةَ تمنع تصدُّرَ بايتٍ سالب. <b>فادّعاءُ «نصفُ الشهادات تخرج سالبةً» باطلٌ
+    /// بالقياس</b> — وقد ورد في تصميمٍ سابقٍ لهذا الإصلاح فسقط عند القياس.
+    /// </para>
+    ///
+    /// <para><b>ولا يُبتلع رقمٌ غائب.</b> كان السطرُ <c>?? "0"</c> يكتب صفراً — <b>وهو رقمٌ
+    /// تسلسليٌّ لا وجودَ له</b> يُوقَّع عليه ويُسلَّم. وشهادةٌ بلا رقمٍ لا تصلح للتوقيع أصلاً،
+    /// فتُرمى <see cref="ZatcaSigningException"/> ويلتقطها <see cref="TrySignWithResult"/>
+    /// فيبقى المستندُ غيرَ موقَّعٍ بدل أن يكون موقَّعاً بكذب. <b>و<c>BigInteger</c> على مدًى
+    /// فارغٍ يعيد صفراً كذلك</b> — فالحارسُ يسبقه ولا يعتمد عليه.
+    /// </para>
+    ///
+    /// <para><b>وحدودُ هذا الإصلاح تُقال:</b> يُغلق عنصراً واحداً داخل <c>SignedProperties</c>.
+    /// <b>ولا تحقّقَ مخطّطيّاً (XSD) في المستودع إطلاقاً</b> — مقيسٌ ببحثٍ لم يُعِد ملفَّ
+    /// <c>.xsd</c> واحداً — فلا يُقال إنّ الفاتورة «صارت تجتاز التحقّق».
+    /// </para>
+    /// </summary>
+    private static string DecimalSerialNumber(X509Certificate2 cert)
+    {
+        var bytes = cert.SerialNumberBytes.Span;
+        if (bytes.IsEmpty)
+            throw new ZatcaSigningException(
+                "شهادةُ التوقيع بلا رقمٍ تسلسليّ — ولا يُوقَّع مستندٌ ضريبيٌّ برقمٍ مُختلَق.");
+
+        return new BigInteger(bytes, isUnsigned: false, isBigEndian: true)
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 }
 

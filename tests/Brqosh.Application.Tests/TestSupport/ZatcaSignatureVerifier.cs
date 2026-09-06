@@ -49,13 +49,32 @@ public static class ZatcaSignatureVerifier
     }
 
     /// <summary>يولّد شهادة EC P-256 صالحة للتوقيع — بديلُ شهادة الهيئة في الاختبار.</summary>
-    public static (string CertPath, string KeyPath) CreateSigningCertificate(string directory)
+    /// <param name="serialNumber">
+    /// (م-٣ · ن-٣٤) <b>رقمٌ تسلسليٌّ معلومٌ — وبدونه لا يكون كناريُّ الرقم حتميّاً.</b>
+    ///
+    /// <para><c>CreateSelfSigned</c> يسحب رقماً <b>عشوائيّاً</b>، واحتمالُ خلوّه من كلّ حرفٍ
+    /// سداسيٍّ نحو ١ من ٢٠٠٠ لكلّ تشغيل. <b>فاختبارٌ يشترط «كلُّها أرقامٌ عشريّة» يمرّ على
+    /// الكود المعطوب في تلك الحالة</b> — وهي نافذةُ اضطرابٍ حيّة لا نظريّة، إذ تُولَّد شهادةٌ
+    /// جديدةٌ لكلّ مثيلِ اختبار. فيُمرَّر الرقمُ صريحاً ليُصاب المحكُّ في كلّ تشغيل.</para>
+    /// </param>
+    public static (string CertPath, string KeyPath) CreateSigningCertificate(
+        string directory, byte[]? serialNumber = null)
     {
         Directory.CreateDirectory(directory);
         using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         var request = new CertificateRequest("CN=BRQOSH Test Signer, O=BRQOSH", ecdsa, HashAlgorithmName.SHA256);
-        using var cert = request.CreateSelfSigned(
-            DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(1));
+
+        var notBefore = DateTimeOffset.UtcNow.AddDays(-1);
+        var notAfter = DateTimeOffset.UtcNow.AddYears(1);
+
+        // ‏والمفتاحُ يُصدَّر من `ecdsa` مباشرةً، فلا يلزم أن تحمل الشهادةُ مفتاحاً خاصّاً —
+        // ‏ولذلك يصلح `Create` الذي يقبل رقماً تسلسليّاً ولا يُرجع مفتاحاً.
+        using var cert = serialNumber is null
+            ? request.CreateSelfSigned(notBefore, notAfter)
+            : request.Create(
+                request.SubjectName,
+                X509SignatureGenerator.CreateForECDsa(ecdsa),
+                notBefore, notAfter, serialNumber);
 
         var certPath = Path.Combine(directory, "signer.crt.pem");
         var keyPath = Path.Combine(directory, "signer.key.pem");
