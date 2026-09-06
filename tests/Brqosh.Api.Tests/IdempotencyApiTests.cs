@@ -47,6 +47,6 @@ public class IdempotencyApiTests : IClassFixture<ApiTestFixture>
         var secondBody = await second.Content.ReadAsStringAsync();
 
         Assert.Equal(firstBody, secondBody);
-        Assert.Single(WebhookSubscriptionRegistry.List());
+        Assert.Single(WebhookSubscriptionRegistry.ListAll());
     }
 }

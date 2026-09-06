@@ -7,6 +7,7 @@ using Brqosh.Api.Idempotency;
 using Brqosh.Api.Middleware;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
+using Brqosh.Domain.Security;
 using Brqosh.Infrastructure;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Companies;
@@ -660,16 +661,49 @@ app.MapGet("/api/v1/intelligence/financial", async (
     return Results.Ok(report);
 });
 
+// (م-٣ · ن-٢٧) ‏**المساران كانا بلا حارسِ صلاحيّةٍ ولا مستأجر — وسائرُ الملفّ يحرس.**
+//
+// ‏‏`MapGet` كان `() => Results.Ok(WebhookSubscriptionRegistry.List())`: لا وسيطَ ولا سياق،
+// ‏فيُعيد **قائمةَ العمليّة كلَّها** لأيّ حاملِ مفتاح — أي **عناوينَ وجهةٍ سجّلها مستأجرون
+// ‏آخرون**، وهي عناوينُ أنظمتِهم الداخليّة. وهذا كشفٌ **بالغٌ اليوم**.
+//
+// ‏و`MapPost` معاملاه `(WebhookSubscribeRequest, IWebHostEnvironment)` — لا `SecurityContext`
+// ‏ولا `TenantContext`. فيُزرع **هدفُ تسليمٍ خارجيٌّ** بلا صلاحيّة. وأثرُه مؤجَّلٌ لا معدوم:
+// ‏التسليمُ لا يقع اليوم لأنّ `OutboxDispatchHook` غيرُ موصول (بند ن-٠٩)، **فالاشتراكُ
+// ‏المزروعُ يصير حيّاً في اللحظة التي يُوصَل فيها**.
+//
+// ‏**وتصحيحٌ لصياغة البند:** «حاملُ مفتاحٍ بدور Viewer يشترك» ليس تصعيداً — `NarrowByRequest`
+// ‏تُضيّق ولا تُوسّع، فصاحبُ الترويسة يملك المفتاحَ الأقوى ويُقيّد نفسَه طوعاً. **والعطلُ
+// ‏الدائمُ عكسُه**: مضيفٌ يُضبَط `BRQOSH_API_ROLE=Viewer`، أو يُترك في الإنتاج فيسقط إلى
+// ‏`Viewer` انغلاقاً، **يزرع الهدفَ رغم ذلك** — لأنّ المسارين لا يسألان `SecurityContext` أصلاً.
+IResult? RejectWebhookAdministration()
+{
+    // ‏(١) عزلُ المستأجر — العرفُ نفسُه المستعمَل في عشرة مسارات في هذا الملفّ.
+    if (TenantContext.EnforceTenantIsolation && TenantContext.CurrentTenantId is null)
+        return Results.Json(new { error = "tenant_forbidden" }, statusCode: StatusCodes.Status403Forbidden);
+
+    // ‏(٢) ثمّ الدور — **قائمةُ سماحٍ لا قائمةُ منع**، وهو الدرسُ المقيسُ في ن-٢٦: قائمةُ
+    // ‏المنع تنسى ما لم يخطر ببالها، وقائمةُ السماح لا تستطيع.
+    if (SecurityContext.CurrentRole != UserRole.Administrator)
+        return Results.Json(new { error = "webhook_admin_required" }, statusCode: StatusCodes.Status403Forbidden);
+
+    return null;
+}
+
 app.MapGet("/api/v1/webhooks/subscriptions", () =>
-    Results.Ok(WebhookSubscriptionRegistry.List()));
+    RejectWebhookAdministration()
+        ?? Results.Ok(WebhookSubscriptionRegistry.ListForTenant(TenantContext.CurrentTenantId)));
 
 app.MapPost("/api/v1/webhooks/subscriptions", (WebhookSubscribeRequest body, IWebHostEnvironment env) =>
 {
+    if (RejectWebhookAdministration() is { } reject) return reject;
+
     try
     {
         var sub = WebhookSubscriptionRegistry.Register(
             body.EventType,
             body.TargetUrl,
+            tenantId: TenantContext.CurrentTenantId,
             allowInsecureLocal: env.IsDevelopment());
         return Results.Created($"/api/v1/webhooks/subscriptions/{sub.Id}", sub);
     }
