@@ -32,23 +32,62 @@ public sealed class BackupService(BrqoshDbContext db)
     /// منتصف معاملة، أو يُهمل ملفَّ <c>-wal</c> فيسقط ما لم يُدمَج بعد — وهي نسخةٌ تبدو
     /// سليمةً ولا تُفتح.</para>
     /// </summary>
+    /// <summary>
+    /// (م-٣ · ن-٣١) <b>لاحقةُ الملفّ المرحليّ — وهي نصفُ العلاج، بنيةً لا فحصاً.</b>
+    ///
+    /// <para><c>NewestBackupUtc</c> يبحث بنمطَي <c>brqosh_*.dump</c> و<c>brqosh_*.db</c>.
+    /// واسمٌ ينتهي بـ<c>.partial</c> <b>لا يُطابق أيّاً منهما</b> — فبقايا محاولةٍ مقطوعةٍ
+    /// تصير <b>غيرَ معدودةٍ بالتصميم</b>، لا بفحصٍ يُنسى أو يُخفَّف.</para>
+    /// </summary>
+    private const string StagingSuffix = ".partial";
+
     public async Task<BackupResult> CreateAsync(string targetPath, CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(targetPath)
             ?? throw new AccountingException("مسارُ النسخة الاحتياطية بلا مجلّد."));
 
-        if (db.Database.IsNpgsql())
-            await DumpPostgresAsync(targetPath, ct);
-        else
-            await VacuumSqliteAsync(targetPath, ct);
+        // ‏(م-٣ · ن-٣١) ‏**تُكتب النسخةُ جانباً، وتُثبَت، ثمّ تُنقل باسمها.**
+        //
+        // ‏كانت تُكتب في مكانها مباشرةً. و`RunAsync` يرمي عند رمزِ خروجٍ غيرِ صفر —
+        // ‏**لكنّ ما كتبه `pg_dump` قبل أن يفشل يبقى على القرص**. ثمّ يقرؤه
+        // ‏`BackupScheduleService.NewestBackupUtc` فيجده أكبرَ من صفر ويعدّه نسخة،
+        // ‏**فيُطفئ إنذارَ «تأخّر النسخ» إلى الأبد** — والمنشأةُ تظنّ نفسَها محميّةً
+        // ‏بملفٍّ لا يُستعاد. **وهو أسوأُ من غياب النسخة، إذ يمنع الشكوى.**
+        //
+        // ‏وتعليقُ `NewestBackupUtc` نفسُه كان يعترف بالخطر — «بقايا محاولةٍ مقطوعةٍ قد
+        // ‏تبقى في المجلّد فتُوهم بحماية» — ثمّ يحرس `Length == 0` وحدَه.
+        var staging = targetPath + StagingSuffix;
 
-        var info = new FileInfo(targetPath);
-        if (!info.Exists || info.Length == 0)
-            throw new AccountingException(
-                $"النسخةُ الاحتياطية لم تُكتب أو خرجت فارغة: {targetPath}");
+        try
+        {
+            if (File.Exists(staging)) File.Delete(staging);
 
-        return new BackupResult(targetPath, info.Length,
-            db.Database.IsNpgsql() ? "PostgreSQL" : "SQLite");
+            if (db.Database.IsNpgsql())
+                await DumpPostgresAsync(staging, ct);
+            else
+                await VacuumSqliteAsync(staging, ct);
+
+            var info = new FileInfo(staging);
+            if (!info.Exists || info.Length == 0)
+                throw new AccountingException(
+                    $"النسخةُ الاحتياطية لم تُكتب أو خرجت فارغة: {targetPath}");
+
+            // ‏**والحجمُ ليس دليلاً.** يُسأل المحرّكُ نفسُه: أتقرأ هذا الملفَّ أم لا؟
+            await VerifyAsync(staging, ct);
+
+            File.Move(staging, targetPath, overwrite: true);
+
+            var promoted = new FileInfo(targetPath);
+            return new BackupResult(targetPath, promoted.Length,
+                db.Database.IsNpgsql() ? "PostgreSQL" : "SQLite");
+        }
+        finally
+        {
+            // ‏لا يبقى نصفُ نسخةٍ على القرص بحالٍ — نجحت العمليةُ أم أخفقت.
+            try { if (File.Exists(staging)) File.Delete(staging); }
+            catch (IOException) { /* ‏تنظيفٌ لا يُبدّل حكمَ العملية */ }
+            catch (UnauthorizedAccessException) { /* ‏كذلك */ }
+        }
     }
 
     /// <summary>
@@ -62,10 +101,49 @@ public sealed class BackupService(BrqoshDbContext db)
         if (!File.Exists(backupPath))
             throw new AccountingException($"ملفُّ النسخة الاحتياطية غير موجود: {backupPath}");
 
+        // ‏(م-٣ · ن-٣٢) ‏**يُقرأ الملفُّ قبل أن تُتلَف القاعدة، لا بعدها.**
+        //
+        // ‏`pg_restore --clean --if-exists` **يحذف قبل أن يكتب**. فلو كان الملفُّ مقطوعاً
+        // ‏لسقط في منتصف الطريق **وقد أُتلفت القاعدةُ أصلاً** — أي أنّ محاولةَ التعافي من
+        // ‏عطلٍ تُنتج عطلاً أكبر، ولا طريقَ رجوع.
+        //
+        // ‏**ولا يُضاف `--exit-on-error` إلى الأمر المتلِف:** إيقافُه عند أوّل خطأٍ يترك
+        // ‏القاعدةَ **نصفَ مستعادة**، وذلك أسوأُ من إتمامٍ يُبلّغ أخطاءه. فالحارسُ يقع
+        // ‏**قبل** الإتلاف لا داخلَه.
+        await VerifyAsync(backupPath, ct);
+
         if (db.Database.IsNpgsql())
             await RestorePostgresAsync(backupPath, ct);
         else
             await RestoreSqliteAsync(backupPath, ct);
+    }
+
+    /// <summary>
+    /// (م-٣ · ن-٣٢) <b>يتحقّق أنّ ملفَّ نسخةٍ يُقرأ — بلا لمسِ قاعدةٍ حيّة.</b>
+    ///
+    /// <para><b>البند:</b> لم يكن في الكود المشحون ما يتحقّق أنّ نسخةً تُستعاد،
+    /// <b>واستدعاءُ <c>pg_restore</c> الوحيد متلِفٌ فوق القاعدة الحيّة</b>
+    /// (<c>--clean --if-exists</c> على <c>--dbname</c> من سلسلة الاتصال نفسِها).
+    /// فلا سبيلَ لاختبار نسخةٍ إلّا بتدمير الإنتاج — <b>فلا تُختبَر أبداً</b>، وتبقى
+    /// «النسخةُ الاحتياطيّة» أمنيةً حتى يوم الحاجة.</para>
+    ///
+    /// <para><b>و<c>pg_restore --list</c> يقرأ فهرسَ الأرشيف ولا يتّصل بخادمٍ إطلاقاً</b> —
+    /// فيكشف المقطوعَ والتالفَ وما ليس أرشيفاً أصلاً. وهو ما يُميّز «ملفٌّ أكبرُ من صفر»
+    /// عن «أرشيفٌ يُقرأ».</para>
+    ///
+    /// <para><b>وحدُّه مُعلَن:</b> يُثبت سلامةَ الفهرس وبنيةِ الأرشيف. <b>ولا يُثبت أنّ كلّ
+    /// صفٍّ فيه سليم</b> — ذلك يلزمه استعادةٌ فعليّةٌ إلى قاعدةٍ منفصلة، وهي هويّةُ ح-٦
+    /// المقيسة في <c>BackupRestoreIdentityTests</c>.</para>
+    /// </summary>
+    public async Task VerifyAsync(string backupPath, CancellationToken ct = default)
+    {
+        if (!File.Exists(backupPath))
+            throw new AccountingException($"ملفُّ النسخة الاحتياطية غير موجود: {backupPath}");
+
+        if (db.Database.IsNpgsql())
+            await VerifyPostgresArchiveAsync(backupPath, ct);
+        else
+            await VerifySqliteFileAsync(backupPath, ct);
     }
 
     // ── PostgreSQL ───────────────────────────────────────────────────────────
@@ -103,6 +181,70 @@ public sealed class BackupService(BrqoshDbContext db)
     }
 
     // ── SQLite ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// <c>pg_restore --list</c> — يقرأ فهرسَ الأرشيف ولا يتّصل بخادم. ولا يُمرَّر
+    /// <c>--dbname</c> ولا مضيفٌ ولا كلمةُ مرور: <b>ما لا يُمرَّر لا يُتلَف</b>.
+    /// </summary>
+    private static async Task VerifyPostgresArchiveAsync(string backupPath, CancellationToken ct)
+    {
+        var tool = PgToolLocator.Find("pg_restore", out var searched)
+            ?? throw new AccountingException(BuildToolMissingMessage("pg_restore", searched));
+
+        try
+        {
+            await RunAsync(tool.Path, ["--list", backupPath], password: null, "pg_restore --list", ct);
+        }
+        catch (AccountingException ex)
+        {
+            throw new AccountingException(
+                $"ملفُّ النسخة الاحتياطية لا يُقرأ أرشيفاً صالحاً: {backupPath}"
+                + " — ولا يُستعاد ما لا يُقرأ. والاستعادةُ لم تبدأ، فالقاعدةُ الحاليّة سليمة. "
+                + ex.Message, ex);
+        }
+    }
+
+    /// <summary>
+    /// <c>PRAGMA integrity_check</c> على الملفّ نفسِه.
+    ///
+    /// <para><b>والتجميعُ مُعطَّلٌ صراحةً</b> (<c>Pooling=False</c>) مع تفريغِ التجمّع بعده:
+    /// اتصالٌ مُجمَّعٌ يُبقي مقبضَ الملفّ مفتوحاً بعد التخلّص منه، <b>فيفشل <c>File.Move</c>
+    /// التالي على ويندوز</b> برميةِ مشاركة. <b>وهو عطلٌ لا يظهر على لينكس</b> فيمرّ في CI
+    /// ويسقط عند العميل — وقد رُصد في تصميمٍ سابقٍ لهذا الإصلاح قبل كتابته.</para>
+    /// </summary>
+    private static async Task VerifySqliteFileAsync(string backupPath, CancellationToken ct)
+    {
+        var connectionString = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+        {
+            DataSource = backupPath,
+            Mode = Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly,
+            Pooling = false,
+        }.ToString();
+
+        string? verdict;
+        try
+        {
+            await using var connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString);
+            await connection.OpenAsync(ct);
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA integrity_check";
+            verdict = (await command.ExecuteScalarAsync(ct))?.ToString();
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException ex)
+        {
+            throw new AccountingException(
+                $"ملفُّ النسخة الاحتياطية لا يُفتح قاعدةً صالحة: {backupPath} — {ex.Message}", ex);
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        }
+
+        if (!string.Equals(verdict, "ok", StringComparison.OrdinalIgnoreCase))
+            throw new AccountingException(
+                $"فحصُ سلامة النسخة الاحتياطية ردّ «{verdict}» لا «ok»: {backupPath}");
+    }
 
     private async Task VacuumSqliteAsync(string targetPath, CancellationToken ct)
     {
@@ -160,7 +302,17 @@ public sealed class BackupService(BrqoshDbContext db)
         using var process = Process.Start(info)
             ?? throw new AccountingException($"تعذّر تشغيل {label}.");
 
-        var stderr = await process.StandardError.ReadToEndAsync(ct);
+        // ‏(م-٣ · ن-٣٢) ‏**يُستنزف المجريان معاً — وإلّا تجمّدت الأداةُ في حاجز الأنبوب.**
+        //
+        // ‏كان `stdout` مُعاد التوجيه **ولا يُقرأ أبداً**. ومرّ ذلك سليماً لأنّ
+        // ‏`pg_dump --file=` يكتب في ملفّ و`pg_restore --clean` لا يُخرج شيئاً يُذكر.
+        // ‏**لكنّ `pg_restore --list` يكتب فهرسَ الأرشيف كلَّه في `stdout`**: يمتلئ الحاجز،
+        // ‏فتتوقّف الأداةُ عن الكتابة، ولا تخرج، ولا يعود `ReadToEndAsync` على `stderr`.
+        // ‏**جمودٌ تامّ** — رُصد بتشغيلٍ علق، لا بقراءةِ شيفرة.
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
+        var stderrTask = process.StandardError.ReadToEndAsync(ct);
+        await Task.WhenAll(stdoutTask, stderrTask);
+        var stderr = await stderrTask;
         await process.WaitForExitAsync(ct);
 
         if (process.ExitCode != 0)
