@@ -117,6 +117,18 @@ public class JournalPostingService(BrqoshDbContext db)
 
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
+            // ‏(م-٢ · ن-٠٢/ن-٠٣) ‏**حاجزُ الدفتر أوّلاً — وهذا الموضعُ هو المصبُّ الوحيد.**
+            //
+            // ‏سبعٌ وثلاثون خدمةَ ترحيلٍ تكتب في `JournalEntries`، **وكلُّها بلا استثناء**
+            // ‏تمرّ من هنا: تسعَ عشرةَ تستدعي هذا التابعَ رأساً، والثمانيَ عشرةَ الباقيةَ
+            // ‏عبر `FinancialPostingSupport.ValidateAsync` ← `PostingOrchestrator` ←
+            // ‏`SaudiPostingPolicy` ← هذا السطر. **فسطرٌ واحدٌ هنا يحرس الدفترَ كلَّه.**
+            //
+            // ‏ومشترَكٌ لا حصريّ: المرحّلون لا ينتظر بعضُهم بعضاً، ولا يحجبهم إلا إقفالٌ
+            // ‏جارٍ على السنة نفسِها. وهو يُؤخذ **قبل** قفل الفترة — فترتيبُ الأقفال
+            // ‏واحدٌ في كلّ المسارات، والجمودُ المتبادل يمتنع بناءً لا بالحظّ.
+            await LedgerYearLock.AcquireForPostingAsync(db.Database, companyId, date.Year, token);
+
             await DocumentSequenceLock.AcquireAsync(
                 db.Database, companyId, $"PERIOD{date.Month:D2}", date.Year, token);
 

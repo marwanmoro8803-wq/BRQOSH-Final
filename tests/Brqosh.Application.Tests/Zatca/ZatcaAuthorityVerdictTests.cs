@@ -120,10 +120,22 @@ public class ZatcaAuthorityVerdictTests
             xmlPath: "a.xml", signedXmlPath: "a.signed.xml");
 
         // ‏لم تُقبل بعد — فلا مستندَ مخلَّصٌ يُرفَق بها.
-        Assert.Throws<InvalidOperationException>(() => doc.AttachClearedXml("a.cleared.xml"));
+        // ‏(م-٢ · ن-٠٥) **والخطوتان صارتا واحدةً — وهذا الاختبارُ كان يُثبّت القديم.**
+        //
+        // ‏كان يقيس: `MarkSubmitted(Cleared)` ثمّ `AttachClearedXml`. **والسطرُ بينهما هو
+        // ‏النافذةُ نفسُها**: رميةُ كتابةٍ فيها تترك فاتورةً «مخلَّصةً» بلا مستند، وتُحفَظ
+        // ‏كذلك لأنّ خريطةَ هويّة EF تُعيد المثيلَ المطفَّر إلى معالج الرمية. فصار المسارُ
+        // ‏وسيطاً في `MarkSubmitted` نفسِه، وصار `AttachClearedXml` **خاصّاً**.
+        //
+        // ‏وما كان يحرسُه هذا الاختبارُ حقّاً — أنّ حالةً «مخلَّصةً» لا تقوم بلا مستندها —
+        // ‏**أقوى الآن لا أضعف**: صارت الحالةُ الكاذبةُ غيرَ قابلةٍ للتعبير لا غيرَ مقصودة.
+        // ‏وتفصيلُ الطرفين في `ClearedRequiresAClearedDocumentTests`.
+        Assert.Throws<InvalidOperationException>(() =>
+            doc.MarkSubmitted(ZatcaComplianceStatus.Cleared, "{}"));
+        Assert.NotEqual(ZatcaComplianceStatus.Cleared, doc.ComplianceStatus);
 
-        doc.MarkSubmitted(ZatcaComplianceStatus.Cleared, "{}");
-        doc.AttachClearedXml("a.cleared.xml");
+        doc.MarkSubmitted(ZatcaComplianceStatus.Cleared, "{}", "a.cleared.xml");
+        Assert.Equal(ZatcaComplianceStatus.Cleared, doc.ComplianceStatus);
         Assert.Equal("a.cleared.xml", doc.ClearedXmlFilePath);
     }
 }

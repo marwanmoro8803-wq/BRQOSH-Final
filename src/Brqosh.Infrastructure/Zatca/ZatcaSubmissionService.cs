@@ -188,13 +188,31 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
         if (doc.TransmissionMode == ZatcaTransmissionMode.Clearance)
         {
             var cleared = ReadClearedInvoice(body);
-            if (cleared is not null)
-            {
-                clearedPath = Path.Combine(
-                    Path.GetDirectoryName(xmlPath)!,
-                    Path.GetFileNameWithoutExtension(xmlPath) + ".cleared.xml");
-                await File.WriteAllBytesAsync(clearedPath, cleared);
-            }
+
+            // ‏(م-٢ · ن-٠٥ تبعيّة) ‏**بابٌ ثانٍ إلى الحالة الكاذبة — حقلٌ غائبٌ لا رميةُ قرص.**
+            //
+            // ‏تردّ الهيئةُ `clearanceStatus: CLEARED` **وقد لا تحمل `clearedInvoice`** أو
+            // ‏تحمله تالفاً — وهي حالةٌ يغطّيها
+            // ‏`AnAbsentOrCorruptClearedInvoice_ReturnsNothingRatherThanThrowing` صراحةً،
+            // ‏فيعود `ReadClearedInvoice` بـ`null`. وكان المستندُ يُعلَن «مخلَّصاً» **بلا
+            // ‏مستندٍ مخلَّص** — عينَ ما أُغلق من باب رميةِ الكتابة، من بابٍ آخر.
+            //
+            // ‏**ويُرمى هنا لا في النطاق** — وإن كان النطاقُ يرفضها كذلك. فرسالةُ النطاق
+            // ‏موجَّهةٌ إلى من يكتب الكود («اكتب المستندَ أوّلاً ثمّ مرّر مسارَه»)، وهذه ليست
+            // ‏غلطةَ برمجةٍ بل **خبرٌ عن استجابةِ الهيئة يقرؤه مُشغِّل**. و`Describe` في
+            // ‏`ZatcaAutoSubmissionHelper` يُمرّر نصَّ `AccountingException` كما هو ويُلحق
+            // ‏باسمِ النوعِ ما عداه — فالفرقُ بين النوعين فرقُ رسالةٍ تُقرأ ورسالةٍ تُخيف.
+            if (cleared is null)
+                throw new AccountingException(
+                    "قبلت الهيئةُ المستند ولم تُعِد نسخةً مخلَّصة — والنسخةُ المخلَّصةُ هي "
+                    + "الوثيقةُ النظاميّةُ التي تُسلَّم للمشتري. لم تُعلَن الفاتورةُ مخلَّصةً، "
+                    + "وردُّ الهيئة محفوظٌ كما ورد. راجِع الاستجابة قبل إعادة الإرسال — "
+                    + "فقد تكون الفاتورةُ مخلَّصةً لديها.");
+
+            clearedPath = Path.Combine(
+                Path.GetDirectoryName(xmlPath)!,
+                Path.GetFileNameWithoutExtension(xmlPath) + ".cleared.xml");
+            await File.WriteAllBytesAsync(clearedPath, cleared);
         }
 
         // ‏نداءٌ واحدٌ ذرّيٌّ: الحالةُ والمسارُ معاً، والنطاقُ يرفض إحداهما بلا الأخرى.

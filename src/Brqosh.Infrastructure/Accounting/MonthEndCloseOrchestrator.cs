@@ -17,28 +17,43 @@ public sealed class MonthEndCloseOrchestrator(BrqoshDbContext db, ITrialBalanceQ
         string username,
         CancellationToken ct = default)
     {
-        var period = await db.FiscalPeriods.SingleAsync(
-            p => p.CompanyId == companyId && p.Id == periodId, ct);
+        // ‏(م-٢ · ن-٠٣ تبعيّة) ‏**الفحصُ والإقفالُ في معاملةٍ واحدةٍ تحت حاجزِ الدفتر.**
+        //
+        // ‏وكانا منفصلين: يُقرأ ميزانُ المراجعة وتُعدّ التسوياتُ المعلّقة خارجَ أيِّ قفل،
+        // ‏ثمّ يُقفَل. **فالرقمان اللذان يُعيدهما هذا التقرير يصفان لحظةً قد تكون مضت
+        // ‏قبل الإقفال** — وتقريرُ إقفالٍ شهريٍّ يجب أن يصف الحالةَ التي أقفلها لا واحدةً سبقتها.
+        //
+        // ‏و`CloseAsync` ينضمّ إلى هذه المعاملة ويطلب الحاجزَ نفسَه — **والجلسةُ لا تحجب نفسَها**،
+        // ‏وهي فرضيّةٌ مقيسةٌ لا مأخوذةٌ من توثيق (انظر `ASessionHoldingTheExclusiveLock_MayStillTakeItShared`).
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var period = await db.FiscalPeriods.SingleAsync(
+                p => p.CompanyId == companyId && p.Id == periodId, token);
 
-        var rows = await trialBalance.ExecuteAsync(companyId, period.StartDate, period.EndDate, ct);
-        var totalDebit = rows.Sum(r => r.TotalDebit);
-        var totalCredit = rows.Sum(r => r.TotalCredit);
-        var difference = totalDebit - totalCredit;
+            await LedgerYearLock.AcquireForClosingAsync(
+                db.Database, companyId, period.StartDate.Year, token);
 
-        if (Math.Abs(difference) > 0.01m)
-            throw new AccountingException(
-                $"ميزان المراجعة غير متوازن للفترة {period.Code}: فرق {difference:N2}.");
+            var rows = await trialBalance.ExecuteAsync(companyId, period.StartDate, period.EndDate, token);
+            var totalDebit = rows.Sum(r => r.TotalDebit);
+            var totalCredit = rows.Sum(r => r.TotalCredit);
+            var difference = totalDebit - totalCredit;
 
-        var unreconciled = await CountUnreconciledBankLinesAsync(companyId, period.StartDate, period.EndDate, ct);
+            if (Math.Abs(difference) > 0.01m)
+                throw new AccountingException(
+                    $"ميزان المراجعة غير متوازن للفترة {period.Code}: فرق {difference:N2}.");
 
-        await new FiscalPeriodService(db).CloseAsync(companyId, periodId, username, ct);
+            var unreconciled = await CountUnreconciledBankLinesAsync(
+                companyId, period.StartDate, period.EndDate, token);
 
-        return new MonthEndCloseResult(
-            period.Code,
-            true,
-            difference,
-            unreconciled,
-            true);
+            await new FiscalPeriodService(db).CloseAsync(companyId, periodId, username, token);
+
+            return new MonthEndCloseResult(
+                period.Code,
+                true,
+                difference,
+                unreconciled,
+                true);
+        }, ct);
     }
 
     private async Task<int> CountUnreconciledBankLinesAsync(

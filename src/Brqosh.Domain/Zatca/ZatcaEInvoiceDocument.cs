@@ -136,8 +136,14 @@ public class ZatcaEInvoiceDocument : IBranchScoped
     /// <summary>
     /// (CEEF-237 · ز-٢) تسجيلُ مسارِ المستند المُخلَّص العائد من الهيئة.
     /// <b>يُستدعى بعد <c>MarkSubmitted</c> وحدَه</b> — فلا مستندَ مخلَّصٌ لفاتورةٍ لم تُقبَل.
+    ///
+    /// <para>(م-٢ · ن-٠٥) <b>وصار خاصّاً بعد أن كان عامّاً.</b> إذ كان تعليقُه يقول
+    /// «يُستدعى بعد <c>MarkSubmitted</c> وحدَه» — <b>وذلك عُرفٌ لا بنية</b>، وخطوتان
+    /// يفصلهما سطرٌ هما النافذةُ التي أوقعت ن-٠٥ أصلاً. <b>ولم يكن له مستدعٍ إنتاجيٌّ
+    /// واحد</b> خارج هذا النوع — مقيسٌ بمسحٍ على المستودع مع شاهدِ ضبطٍ موجب — فإغلاقُه
+    /// لا يمنع شيئاً قائماً ويمنع ولادةَ خطوتين جديدتين.</para>
     /// </summary>
-    public void AttachClearedXml(string clearedXmlPath)
+    private void AttachClearedXml(string clearedXmlPath)
     {
         if (string.IsNullOrWhiteSpace(clearedXmlPath))
             throw new ArgumentException("مسارُ المستند المُخلَّص فارغ.", nameof(clearedXmlPath));
