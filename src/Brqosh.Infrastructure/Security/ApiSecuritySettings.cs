@@ -20,6 +20,52 @@ public static class ApiSecuritySettings
                || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// (م-٤ · ن-٤٥) <b>عزلُ المستأجرين — قرارٌ ثلاثيُّ القيم، وكان ثنائيّاً يفشل مفتوحاً.</b>
+    ///
+    /// <para><b>العطل:</b> <c>TenantContext.EnforceTenantIsolation</c> خاصّيّةٌ بلا مُهيّئ
+    /// فافتراضُها <c>false</c>، وتُضبط من <c>BRQOSH_SAAS_MODE</c> وحدَه. <b>والمتغيّرُ لا
+    /// يُضبط في أيّ وثيقةٍ ولا سكربتٍ ولا مُنصِّبٍ ولا CI</b> — مقيسٌ ببحثٍ على المستودع
+    /// كلِّه أعاد موضعين: تعليقاً وإعلانَ الثابت. <b>وشاهدُ ضبطٍ موجب:</b> شقيقُه
+    /// <c>BRQOSH_API_KEY</c> يظهر في خمسة ملفّاتِ نشرٍ وتشغيل. فالعزلُ مُطفأٌ في كلّ
+    /// تنصيبٍ قائم، لا «يُنسى أحياناً».</para>
+    ///
+    /// <para><b>وأثرُه أنّ الحارسَ يفشل مفتوحاً:</b> <c>TenantGuard</c> يُعيد <c>true</c> لأيّ
+    /// شركةٍ متى غاب مُعرِّفُ المستأجر. <b>وسردُ الشركات بلا ترويسةٍ يُعيد صفوفَ كلّ
+    /// المستأجرين — ومعها <c>TenantId</c> نفسُه</b>، وهو المفتاحُ الذي يفحصه الحارسُ بعدها.
+    /// فالتسريبُ يُكمل نفسَه.</para>
+    ///
+    /// <para><b>ولمَ لا يُقلب الافتراضُ إلى <c>true</c> ببساطة:</b> مضيفٌ أحاديُّ المنشأة
+    /// يستضيف واجهتَه بنفسه <b>لا يُرسل الترويسةَ اليوم</b>، فقلبٌ أعمى يكسره. ولا يصلح
+    /// الاشتقاقُ من البيانات كذلك: <c>Companies.TenantId</c> فريدٌ لكلّ شركة، <b>فمنشأةٌ
+    /// محلّيّةٌ بشركتين تبدو مستأجرَين</b>.</para>
+    ///
+    /// <para><b>فالقرارُ ثلاثيّ:</b> <c>1</c>/<c>true</c> يفرض · <c>0</c>/<c>false</c> يُعطّل
+    /// <b>صراحةً</b> لمضيفٍ أحاديٍّ مقصود · <b>والغيابُ يفرض في الإنتاج ويُعطّل خارجه</b>.
+    /// وهو عينُ نمطِ <see cref="ResolveApiRole"/>: <b>ما لا يُصرَّح به يفشل مغلقاً حيث يضرّ.</b></para>
+    /// </summary>
+    /// <param name="configured">القيمةُ المقروءةُ من الإعداد أو البيئة — أو <c>null</c> إن غابت.</param>
+    public static bool ResolveTenantIsolation(bool isProduction, string? configured)
+    {
+        if (string.IsNullOrWhiteSpace(configured))
+            return isProduction;
+
+        var raw = configured.Trim();
+
+        if (string.Equals(raw, "1", StringComparison.Ordinal)
+            || string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (string.Equals(raw, "0", StringComparison.Ordinal)
+            || string.Equals(raw, "false", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // ‏قيمةٌ لا تُفهم — خطأٌ مطبعيٌّ من مُشغِّل. **ولا تُقرأ تعطيلاً**: ذلك يجعل
+        // ‏`BRQOSH_SAAS_MODE=yes` يفتح القاعدةَ كلَّها صامتاً. فتُعامَل كالغياب: يُفرض
+        // ‏العزلُ في الإنتاج.
+        return isProduction;
+    }
+
     public const string ApiRoleEnv = "BRQOSH_API_ROLE";
 
     /// <summary>

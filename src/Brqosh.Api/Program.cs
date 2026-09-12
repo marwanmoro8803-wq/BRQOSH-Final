@@ -58,9 +58,18 @@ var apiKey = builder.Configuration[ApiSecuritySettings.ApiKeyEnv]
              ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ApiKeyEnv);
 var provisioningKey = builder.Configuration[ApiSecuritySettings.ProvisioningKeyEnv]
                       ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ProvisioningKeyEnv);
-var saasMode = ApiSecuritySettings.IsSaaSMode()
-               || string.Equals(builder.Configuration[ApiSecuritySettings.SaaSModeEnv], "1", StringComparison.Ordinal)
-               || string.Equals(builder.Configuration[ApiSecuritySettings.SaaSModeEnv], "true", StringComparison.OrdinalIgnoreCase);
+// (م-٤ · ن-٤٥) ‏**عزلُ المستأجرين كان يفشل مفتوحاً — والآن يفشل مغلقاً حيث يضرّ.**
+//
+// ‏كان `saasMode` يصير `true` بقيمةٍ صريحةٍ وحدَها، و`BRQOSH_SAAS_MODE` **لا يُضبط في أيّ
+// ‏وثيقةٍ ولا سكربتٍ ولا مُنصِّبٍ ولا CI** (مقيسٌ ببحثٍ على المستودع أعاد موضعين: تعليقاً
+// ‏وإعلانَ الثابت؛ وشاهدُ ضبطٍ موجب: `BRQOSH_API_KEY` يظهر في خمسة ملفّاتِ نشر). فالعزلُ
+// ‏مُطفأٌ في **كلّ** تنصيبٍ قائم، و`TenantGuard` يُعيد `true` لأيّ شركةٍ متى غاب المُعرِّف.
+//
+// ‏وسردُ الشركات بلا ترويسةٍ كان يُعيد صفوفَ كلّ المستأجرين **ومعها `TenantId` نفسُه** —
+// ‏وهو المفتاحُ الذي يفحصه الحارسُ بعدها. **فالتسريبُ يُكمل نفسَه.**
+var saasModeSetting = builder.Configuration[ApiSecuritySettings.SaaSModeEnv]
+                      ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.SaaSModeEnv);
+var saasMode = ApiSecuritySettings.ResolveTenantIsolation(isProduction, saasModeSetting);
 
 ApiSecuritySettings.EnsureProductionApiKey(apiKey, isProduction);
 ApiSecuritySettings.EnsureProductionProvisioningKey(provisioningKey, isProduction);
@@ -275,7 +284,7 @@ app.MapGet("/api/v1/company-groups", async (BrqoshDbContext db, CancellationToke
 {
     // أمن (ع-A1، CEEF-200): في وضع SaaS، ارفض السرد بلا هوية مستأجر.
     if (TenantContext.EnforceTenantIsolation && TenantContext.CurrentTenantId is null)
-        return Results.StatusCode(StatusCodes.Status403Forbidden);
+        return Results.Json(new { error = "tenant_header_required" }, statusCode: StatusCodes.Status403Forbidden);
 
     var query = db.CompanyGroups.AsQueryable();
     if (TenantContext.CurrentTenantId is not null)
@@ -453,7 +462,7 @@ app.MapGet("/api/v1/companies", async (BrqoshDbContext db, CancellationToken ct)
     // أمن (ع-A1، CEEF-200): في وضع SaaS، ارفض السرد بلا هوية مستأجر —
     // يمنع حامل المفتاح المشترك من سرد كل الشركات بحذف ترويسة X-Tenant-Id.
     if (TenantContext.EnforceTenantIsolation && TenantContext.CurrentTenantId is null)
-        return Results.StatusCode(StatusCodes.Status403Forbidden);
+        return Results.Json(new { error = "tenant_header_required" }, statusCode: StatusCodes.Status403Forbidden);
 
     var query = db.Companies.AsQueryable();
     if (TenantContext.CurrentTenantId is not null)
