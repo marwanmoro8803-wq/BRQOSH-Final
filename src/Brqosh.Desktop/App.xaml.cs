@@ -26,6 +26,29 @@ public partial class App : System.Windows.Application
     private static string CrashHint(string? path) =>
         path is null ? string.Empty : $"\n\nسُجّل التفصيل في:\n{path}";
 
+    /// <summary>
+    /// (م-٤ · ن-١٥) <b>يكتب العطلَ ثمّ يعرضه — مسارُ إبلاغٍ واحدٌ لا اثنان.</b>
+    /// </summary>
+    /// <remarks>
+    /// <b>والتوحيدُ ليس ترتيباً:</b> معالجُ المُرسِل وحارسُ الإقلاع يفعلان الشيءَ نفسَه،
+    /// <b>ونسختان تنزلقان</b> — فيُصلَح أحدُهما ويبقى الآخر يعرض رسالةً بلا سببٍ داخليٍّ
+    /// أو بلا مسارِ سجلّ. <b>وبوّابةُ <c>DialogLocalizationTests</c> تُحصي نصوصَ الحوارات
+    /// غيرَ القابلة للترجمة وتمنع نموَّها</b>، ونداءُ عرضٍ واحدٌ يخدم المسارين يُبقي
+    /// العدَّ حيث كان — <b>فالسقفُ مِرصادٌ يُطاع لا رقمٌ يُرفع</b>.
+    /// </remarks>
+    private static void ReportCrash(Exception ex, string context, string headline)
+    {
+        var path = Brqosh.Infrastructure.Operations.CrashLog.Write(ex, context);
+
+        var detail = ex.InnerException is null
+            ? ex.Message
+            : $"{ex.Message}\n\n{ex.InnerException.Message}";
+
+        UiDialog.Show(
+            $"{headline}\n{detail}" + CrashHint(path),
+            "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -38,30 +61,17 @@ public partial class App : System.Windows.Application
         // ‏ولا محرّك قاعدة. **فيُطلب منها إعادةُ العطل** وهي تمسك دفاترَها الحقيقية.
         DispatcherUnhandledException += (_, args) =>
         {
-            var path = Brqosh.Infrastructure.Operations.CrashLog.Write(
-                args.Exception, "DispatcherUnhandledException");
-
-            var detail = args.Exception.InnerException is null
-                ? args.Exception.Message
-                : $"{args.Exception.Message}\n\n{args.Exception.InnerException.Message}";
-
-            UiDialog.Show(
-                $"خطأ غير متوقع:\n{detail}" + CrashHint(path),
-                "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
+            ReportCrash(args.Exception, "DispatcherUnhandledException", "خطأ غير متوقع:");
             args.Handled = true;
         };
 
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
+            // ‏(م-٤ · ن-١٥) ‏**وكانت هذه النسخةُ تعرض الرسالةَ بلا سببها الداخليّ** —
+            // ‏وأكثرُ ما يبلغ هذا المعالجَ استثناءٌ ملفوف، فالرسالةُ الخارجيّةُ وحدَها
+            // ‏تقول «فشلت العمليّة» ولا تقول لماذا. والمسارُ الموحَّد يُظهر الاثنين.
             if (args.ExceptionObject is Exception ex)
-            {
-                var path = Brqosh.Infrastructure.Operations.CrashLog.Write(
-                    ex, "AppDomain.UnhandledException");
-
-                UiDialog.Show(
-                    $"خطأ حرج:\n{ex.Message}" + CrashHint(path),
-                    "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                ReportCrash(ex, "AppDomain.UnhandledException", "خطأ حرج:");
         };
 
         // (CEEF-231 · ط5-٦) ‏**واستثناءُ مهمّةٍ لم يُنتظَر كان يمرّ صامتاً تماماً.**
@@ -79,199 +89,247 @@ public partial class App : System.Windows.Application
         };
 
 
-        var setup = _setupStore.Load();
-        string? adminUsername = null;
-        string? adminPassword = null;
-
-        if (setup is null || !setup.IsCompleted)
+        // ‏(م-٤ · ن-١٥) **والإقلاعُ كان بلا نهايةٍ حاسمة — فعطلٌ فيه يترك ما لا نافذةَ له.**
+        //
+        // ‏`OnStartup` هو `async void`، و**مُولِّدُ حالته يلتقط كلَّ رميةٍ في الجسم كلِّه —
+        // ‏قبل أوّلِ `await` وبعده** — ثمّ يبعثها عبر `SynchronizationContext.Post`. والسياقُ
+        // ‏هنا سياقُ المُرسِل، فتُسلَّم إلى `DispatcherUnhandledException` و`Handled = true`
+        // ‏يطويها. **ومع `ShutdownMode="OnExplicitShutdown"` لا شيءَ يُنهي العملية**: يرى
+        // ‏المستخدمُ الحوارَ ويضغط «موافق»، **وتبقى العمليّةُ مقيمةً بلا نافذةٍ ولا سبيلَ
+        // ‏إلى إغلاقها** إلّا بمدير المهامّ.
+        //
+        // ‏**ولماذا يفتح هنا لا عند `new MainWindow`:** `_setupStore.Load()` أدناه يفكّ JSON
+        // ‏من القرص، **وهو يرمي على ملفٍّ محجوزٍ أو تالف** — وذلك قبل أوّلِ `await`. وما
+        // ‏قبله لا يُغلَّف عمداً: `base.OnStartup` و`UiLocalizationHost.Register` يجريان
+        // ‏**قبل تسجيل المعالج**، فرميةٌ فيهما تقتل العمليّةَ ولا تُخلّدها.
+        //
+        // ‏**وأخطرُ الصور** عند `new MainWindow`: مؤقّتا الخمول والنسخ يُسلَّحان في بانيها
+        // ‏**قبل** السطر الذي يرمي (`MainWindow.xaml.cs:61` و`:72`) وتنظيفُهما معلَّقٌ على
+        // ‏`Closed` — **حدثٌ لا ترفعه نافذةٌ لم تُعرض** — فتجري نسخةٌ احتياطيّةٌ كلَّ نصفِ
+        // ‏ساعةٍ في عمليّةٍ لا يراها أحدٌ ولا يُغلقها أحد.
+        //
+        // ‏**ولماذا هنا لا داخل المعالج:** عَلَمٌ يُستشار في المعالج لا يُفرّق بين «الإقلاعُ
+        // ‏نفسُه انهار» و«معالجٌ في نافذةٍ مشروطةٍ انهار» — والثاني يجب أن يستمرّ. ونوافذُ
+        // ‏الإقلاع الثلاث **بلا `catch` إطلاقاً**: `SetupWizardWindow:64` و
+        // ‏`DatabaseConnectionWindow:37` (`async void`)، و`LicenseActivationWindow:22`
+        // ‏(`void` متزامن). **ورمياتُها لا تنفكّ عبر `ShowDialog()` إلى هنا**: الأُولَيان
+        // ‏تُبعثان عمليّةَ إرسالٍ منفصلة، والثالثةُ يلتقطها `Dispatcher.WrappedInvoke` في
+        // ‏حلقةِ الحوار المتداخلة. **فالتمييزُ بنيويٌّ لا شرطيّ**، ولذلك بقي الطيُّ كما هو.
+        //
+        // ‏**وبقيّةٌ تُقال صراحةً:** `Shutdown` لا يقتل `pg_dump` ابناً انطلق، فقد يبقى ملفٌّ
+        // ‏مرحليّ — **ولا يُحسب نسخةً** إذ لا يطابق نمطَ `brqosh_*` (ن-٣١).
+        try
         {
-            var wizard = new SetupWizardWindow(_setupStore);
-            var completed = wizard.ShowDialog() == true;
-            if (!completed)
+            var setup = _setupStore.Load();
+            string? adminUsername = null;
+            string? adminPassword = null;
+
+            if (setup is null || !setup.IsCompleted)
             {
-                Shutdown();
-                return;
+                var wizard = new SetupWizardWindow(_setupStore);
+                var completed = wizard.ShowDialog() == true;
+                if (!completed)
+                {
+                    Shutdown();
+                    return;
+                }
+                setup = _setupStore.Load();
+                adminUsername = wizard.AdminUsername;
+                adminPassword = wizard.AdminPassword;
             }
-            setup = _setupStore.Load();
-            adminUsername = wizard.AdminUsername;
-            adminPassword = wizard.AdminPassword;
-        }
 
-        // (CEEF-236 · م-١٣) ‏**ملفُّ اتصالٍ لا يُقرأ لم يعد يعني تركيباً ميّتاً.**
-        //
-        // ‏كان الإخفاقُ هنا يعرض رسالةً ثمّ `Shutdown()` — **والرسالةُ تصف علاجاً لا سبيلَ إليه**:
-        // ‏معالجُ التهيئة يُبنى تحت `!setup.IsCompleted` وحدَه ولا شيءَ يمسح العلَم. فمتى تلف
-        // ‏`database.json` أو حُذف أو **خُتم بحساب مستخدمٍ آخر** صار كلُّ إقلاعٍ يعرض الرسالةَ
-        // ‏نفسَها ويُغلق — **والدفاترُ سليمةٌ في PostgreSQL طوال ذلك**. وصار الطريقُ مسلوكاً
-        // ‏بإصلاح ت-٣ نفسِه، إذ لم يكن شيءٌ قبله يُنتج سلسلةً محميّة.
-        //
-        // ‏فتُعرض الآن `DatabaseConnectionWindow` — اللوحةُ نفسُها التي في المعالج — ويُعاد التحميل.
-        // ‏(CEEF-236 · م-٢٠) **واتصالٌ يُصلَح لا يُصدَّق على هويّته.** اختبارُ الاتصال يُثبت
-        // ‏البلوغَ لا الهويّة، وما بعده كان يُهيّئ بلا سؤال: قاعدةٌ فارغةٌ ⟵ أربعون هجرةً
-        // ‏وشركةٌ جديدة فيها، وقاعدةٌ فيها منشأةٌ أخرى ⟵ **تُتبنّى ويُرحَّل على دفترِ غيرِه**.
-        // ‏فيُسأل بعد كلّ إصلاحٍ: أهذه قاعدةُ هذا التركيب؟
-        var connectionWasRepaired = false;
-        while (true)
-        {
-            string? problem;
+            // (CEEF-236 · م-١٣) ‏**ملفُّ اتصالٍ لا يُقرأ لم يعد يعني تركيباً ميّتاً.**
+            //
+            // ‏كان الإخفاقُ هنا يعرض رسالةً ثمّ `Shutdown()` — **والرسالةُ تصف علاجاً لا سبيلَ إليه**:
+            // ‏معالجُ التهيئة يُبنى تحت `!setup.IsCompleted` وحدَه ولا شيءَ يمسح العلَم. فمتى تلف
+            // ‏`database.json` أو حُذف أو **خُتم بحساب مستخدمٍ آخر** صار كلُّ إقلاعٍ يعرض الرسالةَ
+            // ‏نفسَها ويُغلق — **والدفاترُ سليمةٌ في PostgreSQL طوال ذلك**. وصار الطريقُ مسلوكاً
+            // ‏بإصلاح ت-٣ نفسِه، إذ لم يكن شيءٌ قبله يُنتج سلسلةً محميّة.
+            //
+            // ‏فتُعرض الآن `DatabaseConnectionWindow` — اللوحةُ نفسُها التي في المعالج — ويُعاد التحميل.
+            // ‏(CEEF-236 · م-٢٠) **واتصالٌ يُصلَح لا يُصدَّق على هويّته.** اختبارُ الاتصال يُثبت
+            // ‏البلوغَ لا الهويّة، وما بعده كان يُهيّئ بلا سؤال: قاعدةٌ فارغةٌ ⟵ أربعون هجرةً
+            // ‏وشركةٌ جديدة فيها، وقاعدةٌ فيها منشأةٌ أخرى ⟵ **تُتبنّى ويُرحَّل على دفترِ غيرِه**.
+            // ‏فيُسأل بعد كلّ إصلاحٍ: أهذه قاعدةُ هذا التركيب؟
+            var connectionWasRepaired = false;
+            while (true)
+            {
+                string? problem;
+                try
+                {
+                    AppServices.LoadDatabaseConfig();
+                    await AppServices.EnsureDatabaseReachableAsync();
+                    // (CEEF-236 · م-٢٩) ‏**والسؤالُ يُطرح على كلّ تركيبٍ قائم، لا على المُصلَح وحدَه.**
+                    //
+                    // ‏كان الشرطُ `connectionWasRepaired` — فملفُّ اتصالٍ **يُكتب باليد** (وكتيّبُنا
+                    // ‏يدلّ عليه، والقارئُ يقبل الصريحَ غيرَ المحميّ) أو جذرُ بياناتٍ منسوخٌ من محطّةٍ
+                    // ‏أخرى يمرّ من أوّل مرّةٍ بلا سؤال — **فيبقى ضررُ م-٢٠ قائماً من البابِ الآخر**.
+                    var isFreshInstall = adminUsername is not null;
+                    problem = isFreshInstall
+                        ? null
+                        : await DescribeIdentityProblemAsync(setup!, refuseVirgin: connectionWasRepaired);
+                    if (problem is null)
+                        break;
+                }
+                catch (Exception ex)
+                {
+                    problem = $"تعذّر الاتصال بقاعدة البيانات:\n{ex.Message}";
+                }
+
+                // (CEEF-236 · م-٢١) ‏**وبناءُ نافذة الإنقاذ نفسُه محروس.** مُنشئُها يقرأ الملفَّ
+                // ‏الذي أعطبَ الإقلاعَ للتوّ — فإن رمى، بقيت العمليةُ حيّةً بلا نافذةٍ ولا سبيلَ
+                // ‏إلى إغلاقها (‏ShutdownMode=OnExplicitShutdown‎). فيُقال العطلُ ويُغلَق صراحةً.
+                bool? repaired;
+                try
+                {
+                    var recovery = new DatabaseConnectionWindow(
+                        problem + "\n\nصحّح بيانات الاتصال أدناه — الدفاتر في الخادم لا تُمسّ.");
+                    repaired = recovery.ShowDialog();
+                }
+                catch (Exception windowEx)
+                {
+                    // ‏**نصٌّ حرفيٌّ لا مركَّب** — فيبلغه المترجِم. والتفصيلُ (الاستثناءُ ومساره)
+                    // ‏مكتوبٌ في سجلّ الأعطال أصلاً، فلا يُفقد شيءٌ بجعل الرسالة قابلةً للترجمة.
+                    // ‏وحارسُ `TheUntranslatableRemainder` عضّ هنا: رفعُ سقفه كان أسهلَ وأكذب.
+                    Brqosh.Infrastructure.Operations.CrashLog.Write(windowEx, "DatabaseConnectionWindow");
+                    UiDialog.Show(
+                        "تعذّر فتح شاشة إعدادات الاتصال. احذف ملف الاتصال database.json من مجلد BRQOSH في APPDATA ثم أعد التشغيل — التفصيل في سجل الأعطال.",
+                        "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Shutdown();
+                    return;
+                }
+
+                if (repaired != true)
+                {
+                    Shutdown();
+                    return;
+                }
+                connectionWasRepaired = true;
+            }
+
+
+            // (ع-D3، CEEF-202): أعلِم المستخدم إن عمل على قاعدة غير التي هيّأها — قبل أن يُدخل أي بيانات.
+            if (AppServices.DatabaseFallbackWarning is { } fallbackWarning)
+            {
+                UiDialog.Show(
+                    fallbackWarning,
+                    "BRQOSH — تنبيه: تغيّرت قاعدة البيانات",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
             try
             {
-                AppServices.LoadDatabaseConfig();
-                await AppServices.EnsureDatabaseReachableAsync();
-                // (CEEF-236 · م-٢٩) ‏**والسؤالُ يُطرح على كلّ تركيبٍ قائم، لا على المُصلَح وحدَه.**
-                //
-                // ‏كان الشرطُ `connectionWasRepaired` — فملفُّ اتصالٍ **يُكتب باليد** (وكتيّبُنا
-                // ‏يدلّ عليه، والقارئُ يقبل الصريحَ غيرَ المحميّ) أو جذرُ بياناتٍ منسوخٌ من محطّةٍ
-                // ‏أخرى يمرّ من أوّل مرّةٍ بلا سؤال — **فيبقى ضررُ م-٢٠ قائماً من البابِ الآخر**.
-                var isFreshInstall = adminUsername is not null;
-                problem = isFreshInstall
-                    ? null
-                    : await DescribeIdentityProblemAsync(setup!, refuseVirgin: connectionWasRepaired);
-                if (problem is null)
-                    break;
+                // CEEF-200: التمهيد عبر DI scope (المصنع كان ينشئ الخدمة يدوياً — يكسر حارس DI،
+                // ويشغّل على سياق بلا حارس تدقيق). المزوّد مُهيّأ في LoadDatabaseConfig أعلاه.
+                using var facade = new DesktopAccountingFacade();
+                var result = await facade.GetService<DatabaseBootstrapService>()
+                    .InitializeAsync(setup!.CompanyName, setup.VatRegistrationNumber, setup.Profile,
+                        adminUsername, adminPassword, setup.CountryTemplateId);
+                AppServices.CompanyId = result.CompanyId;
             }
             catch (Exception ex)
             {
-                problem = $"تعذّر الاتصال بقاعدة البيانات:\n{ex.Message}";
-            }
-
-            // (CEEF-236 · م-٢١) ‏**وبناءُ نافذة الإنقاذ نفسُه محروس.** مُنشئُها يقرأ الملفَّ
-            // ‏الذي أعطبَ الإقلاعَ للتوّ — فإن رمى، بقيت العمليةُ حيّةً بلا نافذةٍ ولا سبيلَ
-            // ‏إلى إغلاقها (‏ShutdownMode=OnExplicitShutdown‎). فيُقال العطلُ ويُغلَق صراحةً.
-            bool? repaired;
-            try
-            {
-                var recovery = new DatabaseConnectionWindow(
-                    problem + "\n\nصحّح بيانات الاتصال أدناه — الدفاتر في الخادم لا تُمسّ.");
-                repaired = recovery.ShowDialog();
-            }
-            catch (Exception windowEx)
-            {
-                // ‏**نصٌّ حرفيٌّ لا مركَّب** — فيبلغه المترجِم. والتفصيلُ (الاستثناءُ ومساره)
-                // ‏مكتوبٌ في سجلّ الأعطال أصلاً، فلا يُفقد شيءٌ بجعل الرسالة قابلةً للترجمة.
-                // ‏وحارسُ `TheUntranslatableRemainder` عضّ هنا: رفعُ سقفه كان أسهلَ وأكذب.
-                Brqosh.Infrastructure.Operations.CrashLog.Write(windowEx, "DatabaseConnectionWindow");
+                var detail = ex.InnerException is null
+                    ? ex.Message
+                    : $"{ex.Message}\n—\n{ex.InnerException.Message}";
                 UiDialog.Show(
-                    "تعذّر فتح شاشة إعدادات الاتصال. احذف ملف الاتصال database.json من مجلد BRQOSH في APPDATA ثم أعد التشغيل — التفصيل في سجل الأعطال.",
+                    $"تعذر تهيئة قاعدة البيانات ({AppServices.ActiveProviderLabel}):\n{detail}",
                     "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
                 return;
             }
 
-            if (repaired != true)
+            // ‏(CEEF-237 · ت-١٢) رجوعُ الساعة يُسجَّل قبل حكم الصلاحية — **ولا يُوقف العمل**.
+            // ‏فساعةٌ تُصحَّح بعد بطاريّةِ لوحةٍ فارغة تصرف عميلاً صادقاً عن دفاتره، والضررُ من
+            // ‏إغلاقٍ خاطئ أكبرُ من الضرر من تمديدٍ يُكتشف. والقرارُ للمالك لا لهذه الطبقة.
+            var clock = ClockRollbackDetector.Observe();
+            if (clock.RolledBack)
+                CrashLog.Write(
+                    new InvalidOperationException(
+                        $"ساعةُ الجهاز رجعت {clock.Backwards!.Value.TotalDays:N0} يوماً "
+                        + $"عن أحدثِ وقتٍ رآه التطبيق ({clock.HighWaterUtc:u})."),
+                    "clock-rollback");
+
+            // ‏(م-٣ · ن-٣٥) ‏**يُقاس الترخيصُ على الاسم المُرخَّص لا على المعروض.**
+            //
+            // ‏كان يُقاس على `setup.CompanyName` — **وهو الحقلُ الذي يُعيد هذا الملفُّ نفسُه
+            // ‏كتابتَه** أدناه من هويّة القاعدة بعد قبول المالك. فتصحيحُ خطأٍ مطبعيٍّ في اسم
+            // ‏المنشأة كان **يُقفل الإنتاجَ عند الإقلاع التالي** برسالة «الترخيص لمنشأة أخرى».
+            //
+            // ‏ولم يُفكَّ الرباط: `CompanyMismatch` ما زال يقع، والمتغيّرُ أنّ المقيسَ عليه ثابت.
+            var licensedName = setup!.LicensedCompanyName ?? setup.CompanyName;
+
+            if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc))
+            {
+                var license = new LicenseActivationWindow(licensedName);
+                if (license.ShowDialog() != true)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
+
+            // ‏ويُثبَّت الاسمُ **بعد قبولٍ ناجحٍ وحدَه** — فلا يُثبَّت اسمٌ لم يُقبل به ترخيصٌ قطّ.
+            // ‏ومرّةً واحدة: تنصيبٌ قائمٌ يسبق هذا الحقل يُثبَّت عند أوّل إقلاعٍ بعد الترقية.
+            if (setup.LicensedCompanyName is null)
+            {
+                setup = setup with { LicensedCompanyName = licensedName };
+                try
+                {
+                    _setupStore.Save(setup);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    // ‏تعذّرُ التثبيت لا يمنع الدخول — الترخيصُ قُبل بالفعل. ويُسجَّل ليُرى.
+                    CrashLog.Write(ex, "license-name-freeze");
+                }
+            }
+
+            if (await TryEnterWithUiTestAuthAsync(setup))
+                return;
+
+            var login = new LoginWindow();
+            if (login.ShowDialog() != true || login.AuthenticatedUser is null)
             {
                 Shutdown();
                 return;
             }
-            connectionWasRepaired = true;
-        }
 
-        // (ع-D3، CEEF-202): أعلِم المستخدم إن عمل على قاعدة غير التي هيّأها — قبل أن يُدخل أي بيانات.
-        if (AppServices.DatabaseFallbackWarning is { } fallbackWarning)
-        {
-            UiDialog.Show(
-                fallbackWarning,
-                "BRQOSH — تنبيه: تغيّرت قاعدة البيانات",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
+            if (login.AuthenticatedUser.MustChangePasswordOnNextLogin)
+            {
+                var change = new PasswordChangeWindow(login.AuthenticatedUser);
+                if (change.ShowDialog() != true || change.UpdatedUser is null)
+                {
+                    Shutdown();
+                    return;
+                }
+                login.AuthenticatedUser = change.UpdatedUser;
+            }
 
-        try
-        {
-            // CEEF-200: التمهيد عبر DI scope (المصنع كان ينشئ الخدمة يدوياً — يكسر حارس DI،
-            // ويشغّل على سياق بلا حارس تدقيق). المزوّد مُهيّأ في LoadDatabaseConfig أعلاه.
-            using var facade = new DesktopAccountingFacade();
-            var result = await facade.GetService<DatabaseBootstrapService>()
-                .InitializeAsync(setup!.CompanyName, setup.VatRegistrationNumber, setup.Profile,
-                    adminUsername, adminPassword, setup.CountryTemplateId);
-            AppServices.CompanyId = result.CompanyId;
+            AppServices.CurrentUser = login.AuthenticatedUser;
+
+            var main = new MainWindow(setup!);
+            MainWindow = main;
+            main.Closed += (_, _) => Shutdown();
+            main.Show();
+            main.Activate();
+            main.Focus();
         }
         catch (Exception ex)
         {
-            var detail = ex.InnerException is null
-                ? ex.Message
-                : $"{ex.Message}\n—\n{ex.InnerException.Message}";
-            UiDialog.Show(
-                $"تعذر تهيئة قاعدة البيانات ({AppServices.ActiveProviderLabel}):\n{detail}",
-                "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
-            Shutdown();
-            return;
-        }
-
-        // ‏(CEEF-237 · ت-١٢) رجوعُ الساعة يُسجَّل قبل حكم الصلاحية — **ولا يُوقف العمل**.
-        // ‏فساعةٌ تُصحَّح بعد بطاريّةِ لوحةٍ فارغة تصرف عميلاً صادقاً عن دفاتره، والضررُ من
-        // ‏إغلاقٍ خاطئ أكبرُ من الضرر من تمديدٍ يُكتشف. والقرارُ للمالك لا لهذه الطبقة.
-        var clock = ClockRollbackDetector.Observe();
-        if (clock.RolledBack)
-            CrashLog.Write(
-                new InvalidOperationException(
-                    $"ساعةُ الجهاز رجعت {clock.Backwards!.Value.TotalDays:N0} يوماً "
-                    + $"عن أحدثِ وقتٍ رآه التطبيق ({clock.HighWaterUtc:u})."),
-                "clock-rollback");
-
-        // ‏(م-٣ · ن-٣٥) ‏**يُقاس الترخيصُ على الاسم المُرخَّص لا على المعروض.**
-        //
-        // ‏كان يُقاس على `setup.CompanyName` — **وهو الحقلُ الذي يُعيد هذا الملفُّ نفسُه
-        // ‏كتابتَه** أدناه من هويّة القاعدة بعد قبول المالك. فتصحيحُ خطأٍ مطبعيٍّ في اسم
-        // ‏المنشأة كان **يُقفل الإنتاجَ عند الإقلاع التالي** برسالة «الترخيص لمنشأة أخرى».
-        //
-        // ‏ولم يُفكَّ الرباط: `CompanyMismatch` ما زال يقع، والمتغيّرُ أنّ المقيسَ عليه ثابت.
-        var licensedName = setup!.LicensedCompanyName ?? setup.CompanyName;
-
-        if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc))
-        {
-            var license = new LicenseActivationWindow(licensedName);
-            if (license.ShowDialog() != true)
-            {
-                Shutdown();
-                return;
-            }
-        }
-
-        // ‏ويُثبَّت الاسمُ **بعد قبولٍ ناجحٍ وحدَه** — فلا يُثبَّت اسمٌ لم يُقبل به ترخيصٌ قطّ.
-        // ‏ومرّةً واحدة: تنصيبٌ قائمٌ يسبق هذا الحقل يُثبَّت عند أوّل إقلاعٍ بعد الترقية.
-        if (setup.LicensedCompanyName is null)
-        {
-            setup = setup with { LicensedCompanyName = licensedName };
+            // ‏**والإغلاقُ في `finally` عمداً**: لو رمى عرضُ الحوار — وهو وارد؛ نفادُ
+            // ‏الذاكرة يُفشل التخصيصَ الثاني كما أفشل الأوّل — لعادت الرميةُ إلى المعالج
+            // ‏فطواها، **وعُدنا إلى العمليّة الخالدة بلا نافذة** وهي بعينها العلّة.
             try
             {
-                _setupStore.Save(setup);
+                ReportCrash(ex, "OnStartup", "تعذّر تشغيل BRQOSH:");
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            finally
             {
-                // ‏تعذّرُ التثبيت لا يمنع الدخول — الترخيصُ قُبل بالفعل. ويُسجَّل ليُرى.
-                CrashLog.Write(ex, "license-name-freeze");
+                // ‏رمزٌ غيرُ صفريّ: مُطلِقٌ أو مُنصِّبٌ يُفرّق «انهار» عن «أغلقه المستخدم».
+                Shutdown(1);
             }
         }
-
-        if (await TryEnterWithUiTestAuthAsync(setup))
-            return;
-
-        var login = new LoginWindow();
-        if (login.ShowDialog() != true || login.AuthenticatedUser is null)
-        {
-            Shutdown();
-            return;
-        }
-
-        if (login.AuthenticatedUser.MustChangePasswordOnNextLogin)
-        {
-            var change = new PasswordChangeWindow(login.AuthenticatedUser);
-            if (change.ShowDialog() != true || change.UpdatedUser is null)
-            {
-                Shutdown();
-                return;
-            }
-            login.AuthenticatedUser = change.UpdatedUser;
-        }
-
-        AppServices.CurrentUser = login.AuthenticatedUser;
-
-        var main = new MainWindow(setup!);
-        MainWindow = main;
-        main.Closed += (_, _) => Shutdown();
-        main.Show();
-        main.Activate();
-        main.Focus();
     }
 
     /// <summary>
