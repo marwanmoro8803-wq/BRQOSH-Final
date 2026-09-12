@@ -19,7 +19,26 @@ namespace Brqosh.Infrastructure.Operations;
 /// </summary>
 public sealed class BackupService(BrqoshDbContext db)
 {
-    public sealed record BackupResult(string Path, long SizeBytes, string Provider);
+    /// <param name="Pruned">
+    /// (م-٤ · ن-٣٦) عددُ النسخ القديمة التي حُذفت في هذه العمليّة.
+    /// </param>
+    /// <param name="PruneFailures">
+    /// ما تعذّر حذفُه — <b>يُعدّ ولا يُبتلع</b>. فملفٌّ مقفلٌ لا يُسقط النسخةَ التي تمّت،
+    /// <b>لكنّ تكرارَه يعني أنّ التنظيفَ لا يعمل والقرصَ يمتلئ رغم الحدّ</b>.
+    /// </param>
+    public sealed record BackupResult(
+        string Path, long SizeBytes, string Provider, int Pruned = 0, int PruneFailures = 0);
+
+    /// <summary>
+    /// (م-٤ · ن-٣٦) <b>كم نسخةً محلّيّةً تبقى.</b>
+    ///
+    /// <para><b>والعددُ قرارُ مخاطرة لا ذوق:</b> مجلّدُ النسخ والقاعدةُ الحيّة على
+    /// <b>جذر البيانات نفسِه</b> افتراضاً (<c>BrqoshDataRoot</c>) — أي القرصِ نفسِه.
+    /// <b>فمجلّدٌ ينمو بلا حدٍّ يُوقف القاعدةَ التي وُجد ليحميها.</b> وأربعَ عشرةَ نسخةً
+    /// تُبقي أسبوعين من نقاط الاستعادة بجدولٍ يوميّ — وهو ما يكفي لاكتشاف فسادٍ صامتٍ
+    /// والرجوعِ قبله، بلا أن يصير المجلّدُ هو الخطر.</para>
+    /// </summary>
+    internal const int LocalBackupsKept = 14;
 
     /// <summary>
     /// يكتب نسخةً احتياطيةً كاملة إلى <paramref name="targetPath"/>.
@@ -77,9 +96,19 @@ public sealed class BackupService(BrqoshDbContext db)
 
             File.Move(staging, targetPath, overwrite: true);
 
+            // ‏(م-٤ · ن-٣٦) ‏**التنظيفُ بعد الترقية لا قبلها** — وهو مبدأٌ مكتوبٌ في
+            // ‏`OffsiteBackupService`: «تنظيفُ القديم ثمّ فشلُ الجديد **يترك المنشأةَ بلا
+            // ‏نسخةٍ واحدة**». فلا يُحذف شيءٌ حتى تُثبَت الجديدةُ وتُنقل باسمها.
+            //
+            // ‏**وهنا لا في المُجدوِل:** المجلّدُ له **مُنتِجان** — المُجدوِل كلَّ أربعٍ
+            // ‏وعشرين ساعة، وزرُّ النسخ اليدويُّ عند كلّ ضغطة — وكلاهما يكتب باسمٍ يحمل
+            // ‏لحظتَه فلا يُدهَس شيء. **وحدٌّ في المُجدوِل وحدَه يترك الثانيَ بلا حدّ**،
+            // ‏و`CreateAsync` هو المصبُّ الذي يمرّان به معاً.
+            var (pruned, pruneFailures) = PruneOldBackups(targetPath);
+
             var promoted = new FileInfo(targetPath);
             return new BackupResult(targetPath, promoted.Length,
-                db.Database.IsNpgsql() ? "PostgreSQL" : "SQLite");
+                db.Database.IsNpgsql() ? "PostgreSQL" : "SQLite", pruned, pruneFailures);
         }
         finally
         {
@@ -116,6 +145,51 @@ public sealed class BackupService(BrqoshDbContext db)
             await RestorePostgresAsync(backupPath, ct);
         else
             await RestoreSqliteAsync(backupPath, ct);
+    }
+
+    /// <summary>
+    /// (م-٤ · ن-٣٦) يحذف الأقدمَ ويُبقي <see cref="LocalBackupsKept"/>.
+    ///
+    /// <para><b>والامتدادُ جزءٌ من النمط</b> — على سابقة <c>OffsiteBackupService</c>: مجلّدٌ
+    /// يجمع نسخَ قاعدتين لا تُحذف نسخُ إحداهما بتنظيف الأخرى.</para>
+    ///
+    /// <para><b>وإخفاقُ الحذف يُعدّ ولا يُبتلع.</b> ملفٌّ مقفلٌ لا يُسقط نسخةً تمّت —
+    /// <b>لكنّ صمتاً عنه يجعل مجلّداً لا يُنظَّف يبدو منظَّفاً</b>، فيمتلئ القرصُ رغم
+    /// وجود الحدّ. والعددُ يُعاد في الحصيلة ليُرى.</para>
+    /// </summary>
+    private static (int Pruned, int Failed) PruneOldBackups(string targetPath)
+    {
+        var directory = Path.GetDirectoryName(targetPath);
+        var extension = Path.GetExtension(targetPath);
+        if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(extension))
+            return (0, 0);
+
+        var stale = new DirectoryInfo(directory)
+            .GetFiles($"brqosh_*{extension}")
+            .OrderByDescending(f => f.LastWriteTimeUtc)
+            .Skip(LocalBackupsKept)
+            .ToList();
+
+        var pruned = 0;
+        var failed = 0;
+        foreach (var file in stale)
+        {
+            try
+            {
+                file.Delete();
+                pruned++;
+            }
+            catch (IOException)
+            {
+                failed++;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                failed++;
+            }
+        }
+
+        return (pruned, failed);
     }
 
     /// <summary>

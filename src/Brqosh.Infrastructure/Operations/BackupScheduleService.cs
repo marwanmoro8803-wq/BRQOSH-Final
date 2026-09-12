@@ -43,7 +43,14 @@ public sealed class BackupScheduleService(BackupService backups)
     /// <summary>حدُّ الإنذار: بعده تصير الشارةُ تحذيراً لا خبراً.</summary>
     public static readonly TimeSpan OverdueAfter = TimeSpan.FromHours(48);
 
-    public sealed record RunOutcome(bool Ran, string? Path, string? Failure, BackupScheduleState State);
+    /// <param name="Pruned">
+    /// (م-٤ · ن-٣٦) عددُ النسخ القديمة التي حذفتها هذه التشغيلة — <b>يُعاد ليُسجَّل</b>.
+    /// فمُؤقِّتٌ يحذف ملفّاتِ نسخٍ يوميّاً بلا أثرٍ في أيّ مكان هو عينُ شكلِ ن-٤١.
+    /// </param>
+    /// <param name="PruneFailures">ما تعذّر حذفُه — تكرارُه يعني أنّ الحدَّ لا يعمل.</param>
+    public sealed record RunOutcome(
+        bool Ran, string? Path, string? Failure, BackupScheduleState State,
+        int Pruned = 0, int PruneFailures = 0);
 
     /// <summary>امتدادُ ملفّ النسخة حسب المزوّد.</summary>
     private static string ExtensionFor(bool isPostgres) => isPostgres ? "dump" : "db";
@@ -112,7 +119,8 @@ public sealed class BackupScheduleService(BackupService backups)
             var result = await backups.CreateAsync(target, ct);
             return new RunOutcome(
                 Ran: true, Path: result.Path, Failure: null,
-                State: ReadState(backupFolder, interval, nowUtc));
+                State: ReadState(backupFolder, interval, nowUtc),
+                Pruned: result.Pruned, PruneFailures: result.PruneFailures);
         }
         // ‏ومسارٌ غيرُ صالحٍ من الإعدادات لا يُسقط التطبيق: ArgumentException وNotSupportedException
         // ‏يخرجان من Path/Directory على مسارٍ فيه محارفُ ممنوعة أو اسمُ جهازٍ محجوز.

@@ -710,6 +710,19 @@ public partial class MainWindow : Window
             if (outcome.Failure is { Length: > 0 } failure)
                 CrashLog.Write(new InvalidOperationException(failure), "scheduled-backup-failed");
 
+            // ‏(م-٤ · ن-٣٦) ‏**وحذفُ نسخٍ قديمةٍ يُسجَّل** — فمُؤقِّتٌ يحذف ملفّاتِ نسخٍ
+            // ‏احتياطيّةٍ بلا أثرٍ في أيّ مكان هو عينُ شكلِ ن-٤١ الذي أُغلق لتوّه.
+            // ‏و`CrashLog` هو السجلُّ الدائمُ في هذا المنتَج، ويُستعمل للإخطار لا للأعطال
+            // ‏وحدَها (‏سابقة: `clock-rollback`). وحصّةُ السياق (ن-٣٣) تمنع إغراقَه.
+            if (outcome.Pruned > 0 || outcome.PruneFailures > 0)
+                CrashLog.Write(
+                    new InvalidOperationException(
+                        $"تنظيفُ النسخ المحلّيّة: حُذف {outcome.Pruned}"
+                        + (outcome.PruneFailures > 0
+                            ? $"، وتعذّر حذفُ {outcome.PruneFailures} — القرصُ قد يمتلئ رغم الحدّ."
+                            : ".")),
+                    "scheduled-backup-pruned");
+
             ShowBackupBadge(outcome.State, outcome.Failure);
         }
         catch (Exception ex)

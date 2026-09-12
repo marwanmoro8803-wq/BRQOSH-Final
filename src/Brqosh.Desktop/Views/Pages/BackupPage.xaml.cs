@@ -36,8 +36,16 @@ public partial class BackupPage : UserControl
             using var facade = new DesktopAccountingFacade();
             var result = await facade.GetService<BackupService>().CreateAsync(target);
 
+            // ‏(م-٤ · ن-٣٦) ‏وما نُظِّف يُقال — فحذفٌ صامتٌ لملفّات نسخٍ احتياطيّةٍ
+            // ‏يُفزع من يراه لاحقاً، وإخفاقُ الحذف يعني أنّ القرصَ يمتلئ رغم الحدّ.
+            var pruning = result.PruneFailures > 0
+                ? $" · حُذفت {result.Pruned} نسخةً قديمة، وتعذّر حذفُ {result.PruneFailures}"
+                : result.Pruned > 0
+                    ? $" · حُذفت {result.Pruned} نسخةً قديمة"
+                    : "";
+
             Show($"تمّت النسخة: {Path.GetFileName(result.Path)} "
-                 + $"({result.SizeBytes / 1024.0 / 1024.0:N1} ميجابايت) — {result.Provider}");
+                 + $"({result.SizeBytes / 1024.0 / 1024.0:N1} ميجابايت) — {result.Provider}{pruning}");
         }
         catch (Exception ex)
         {
