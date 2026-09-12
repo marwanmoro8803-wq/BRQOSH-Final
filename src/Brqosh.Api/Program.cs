@@ -7,6 +7,7 @@ using Brqosh.Api.Idempotency;
 using Brqosh.Api.Middleware;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
+using Brqosh.Application.Setup;
 using Brqosh.Domain.Security;
 using Brqosh.Infrastructure;
 using Brqosh.Infrastructure.Accounting;
@@ -53,7 +54,22 @@ var app = builder.Build();
 // ‏والـwebhooks لا يعملان**، ولا شيءَ يشتكي.
 app.Services.WireDomainEventPublishing();
 
-var isProduction = app.Environment.IsProduction();
+// (م-٤ · ن-٣٨) ‏**قرارٌ واحدٌ لـ«هل أنا إنتاج؟» — وكان اثنين مختلفَي الثقة.**
+//
+// ‏كان هذا السطرُ يقرأ `ASPNETCORE_ENVIRONMENT` وحدَه — **متغيّرَ عمليّةٍ يضبطه أيُّ مُطلِق**.
+// ‏بينما `ApiSecurityContextMiddleware` يسأل `AppEnvironmentConfig`، وهو مُحصَّن: يقرأ
+// ‏مصدراً رسميّاً على مستوى الجهاز، **ويفشل إلى الإنتاج** عند الغياب، **ولا يُخفَّض
+// ‏بإعلان عمليّة**.
+//
+// ‏**فالعمليّةُ الواحدةُ كانت تحمل جوابين**، وشرطُ المصادقة (`mustAuthenticate` أدناه)
+// ‏يركب الأضعف: مضيفٌ أعلن المُنصِّبُ أنّه إنتاج، ويُطلَق بلا `ASPNETCORE_ENVIRONMENT`،
+// ‏**يعمل بلا مفتاحٍ ولا مصادقة** بينما طبقةُ الصلاحيّات تعامله إنتاجاً. وذلك بعينه
+// ‏الخفضُ الذي أُغلق في حملةٍ سابقة، عائداً من بابٍ آخر.
+//
+// ‏**والجمعُ بـ«أو» لا باختيار أحدهما:** أيُّ مصدرٍ يقول «إنتاج» يُصدَّق، فلا يُخفَّض
+// ‏القرارُ أبداً — والخطأُ في اتجاه التشديد يُكتشف بمفتاحٍ ناقص، وفي اتجاه التساهل
+// ‏لا يُكتشف إلّا بعد الاختراق.
+var isProduction = app.Environment.IsProduction() || AppEnvironmentConfig.IsProduction;
 var apiKey = builder.Configuration[ApiSecuritySettings.ApiKeyEnv]
              ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ApiKeyEnv);
 var provisioningKey = builder.Configuration[ApiSecuritySettings.ProvisioningKeyEnv]

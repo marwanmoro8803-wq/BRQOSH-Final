@@ -31,7 +31,9 @@ public class ApiRoleEscalationTests : IDisposable
     public void Dispose()
     {
         Environment.SetEnvironmentVariable(ApiSecuritySettings.ApiRoleEnv, _savedRole);
-        AppEnvironmentConfig.ResetForTests();
+        // ‏(م-٤ · ن-٣٨) ‏يُعاد إلى **الاختبار** لا إلى علامة الجهاز — فـ`ResetForTests`
+        // ‏تُسقط التجاوزَ فيعود القرارُ إلى المصدر الرسميّ، وهو «إنتاج» على أجهزة النشر.
+        AppEnvironmentConfig.ForceForTests(AppEnvironment.Test);
         SecurityContext.CurrentRole = null;
         SecurityContext.CurrentUsername = null;
     }
