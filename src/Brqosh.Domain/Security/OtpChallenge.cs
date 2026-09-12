@@ -13,6 +13,22 @@ public class OtpChallenge
     public bool IsConsumed { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
+    /// <summary>
+    /// (م-٤ · ن-٢٨) <b>عددُ المحاولات الخاطئة — وكان لا يوجد.</b>
+    ///
+    /// <para><b>العطل:</b> مواضعُ التحقّق الثلاثةُ كانت تقرأ التحدّي وترمي عند عدم
+    /// المطابقة <b>بلا أن تمسّ الصفّ</b>. فالرمزُ من ستّة أرقامٍ يبقى قابلاً للتخمين
+    /// <b>بلا حدٍّ طوالَ عشر دقائق</b> — والمليونُ احتمالٍ ليست حاجزاً حين لا يُعدّ أحدٌ
+    /// المحاولات.</para>
+    ///
+    /// <para><b>وحدُّ هذا العدّاد مُعلَنٌ لا مسكوتٌ عنه:</b> لا رمزَ تزامنٍ على هذا الكيان،
+    /// فمحاولتان خاطئتان <b>متزامنتان تماماً</b> من عمليّتين قد تُسجَّلان واحدةً.
+    /// والمستدعي الإنتاجيُّ الوحيد حوارُ WPF يُسلسل نفسَه بعلَم <c>_busy</c>، فالنافذةُ
+    /// نظريّةٌ على المسار القائم — <b>وتُذكر لأنّ من يفتح مساراً ثانياً غداً يحتاج أن
+    /// يعرفها</b>.</para>
+    /// </summary>
+    public int FailedAttempts { get; private set; }
+
     private OtpChallenge()
     {
         Username = null!;
@@ -43,8 +59,25 @@ public class OtpChallenge
         };
     }
 
+    /// <summary>الحدُّ الأقصى للمحاولات الخاطئة قبل أن يُحرق التحدّي.</summary>
+    public const int MaxFailedAttempts = 5;
+
     public bool IsExpired(DateTime? utcNow = null) =>
         (utcNow ?? DateTime.UtcNow) >= ExpiresAtUtc;
 
     public void Consume() => IsConsumed = true;
+
+    /// <summary>
+    /// (م-٤ · ن-٢٨) يُسجّل محاولةً خاطئة — <b>ويحرق التحدّي عند بلوغ الحدّ</b>.
+    ///
+    /// <para><b>والاستهلاكُ عند النفاد لا مجرّدُ الرفض:</b> عدّادٌ يُحصي ولا يُغلق يُبطئ
+    /// المهاجمَ ولا يوقفه. وبالاستهلاك يُجبَر على طلبِ رمزٍ جديد — وذلك مسارٌ يمرّ
+    /// بمهلةِ إعادةِ إرسالٍ ويُرسل رسالةً إلى صاحب الحساب، <b>فيصير الهجومُ مرئيّاً
+    /// ومكلفاً معاً</b>.</para>
+    /// </summary>
+    public void RecordFailedAttempt()
+    {
+        FailedAttempts++;
+        if (FailedAttempts >= MaxFailedAttempts) IsConsumed = true;
+    }
 }

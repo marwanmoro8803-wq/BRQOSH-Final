@@ -181,6 +181,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // والافتراض الكاذب أسوأ من الصفر الصريح.
         await EnsurePosCashSalesColumnAsync(isPg, ct);
 
+        // ‏(م-٤ · ن-٢٨) ‏عدّادُ المحاولات الخاطئة على تحدّيات الرمز — والصفرُ افتراضٌ صادق:
+        // ‏تحدٍّ قديمٌ لم يُعدّ عليه شيءٌ **لم تقع عليه محاولاتٌ مسجَّلة**، لا أنّها ضاعت.
+        await EnsureOtpAttemptColumnAsync(isPg, ct);
+
         // (CEEF-231 · ط5-١٠) ‏**وما ابتُلع يُسجَّل ولا يُنسى.**
         //
         // ‏والتسامحُ باقٍ — لا يُرمى شيءٌ هنا. **والصمتُ وحده ما زال**: كان فشلُ خطوةٍ
@@ -188,6 +192,25 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏لم يُنشأ**.
         LastRunFailures = _suppressed.AsReadOnly();
         WriteReportIfAny();
+    }
+
+    /// <summary>
+    /// (م-٤ · ن-٢٨) <b>عدّادُ المحاولات الخاطئة — والمخطّطُ من مصدرين فيُضاف في كليهما.</b>
+    ///
+    /// <para>القاعدةُ الجديدةُ تأخذه من النموذج، <b>والقائمةُ لا تأخذه إلّا من هنا</b> —
+    /// وهذا الملفُّ هو ما يجري على قواعد العملاء بعد <c>MigrateAsync</c>. فعمودٌ يُضاف
+    /// إلى النموذج وحدَه <b>يُسقط أوّلَ استعلامٍ على تنصيبٍ قائم</b>، لأنّ EF يبني
+    /// <c>SELECT</c> بكلّ أعمدة النموذج.</para>
+    /// </summary>
+    private async Task EnsureOtpAttemptColumnAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("otp_challenges", isPg, ct))
+            return;
+
+        if (isPg)
+            await EnsurePgColumnAsync("otp_challenges", "FailedAttempts", "INTEGER NOT NULL DEFAULT 0", ct);
+        else
+            await EnsureSqliteColumnAsync("otp_challenges", "FailedAttempts", "INTEGER NOT NULL DEFAULT 0", ct);
     }
 
     private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)

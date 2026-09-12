@@ -3937,6 +3937,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsConsumed")
                         .HasColumnType("boolean");
 

@@ -12,6 +12,13 @@ public class WhatsAppOtpService(
     IWhatsAppNotificationChannel? channel = null)
 {
     private static readonly TimeSpan OtpTtl = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// (م-٤ · ن-٢٨) أقلُّ فاصلٍ بين إرسالين — <b>يحدّ مجموعَ التخمينات</b>.
+    /// ودقيقةٌ واحدة: تكسر حلقةَ «أرسِل ⟵ خمّن خمساً ⟵ أرسِل»، ولا تُعطّل مستخدماً لم
+    /// تصله الرسالة — إذ يبقى رمزُه السابقُ صالحاً عشرَ دقائق.
+    /// </summary>
+    private static readonly TimeSpan ResendCooldown = TimeSpan.FromMinutes(1);
     private readonly IWhatsAppNotificationChannel _channel = channel ?? new InAppOtpNotificationChannel();
 
     public async Task<OtpSendResult> SendRecoveryCodeAsync(
@@ -48,8 +55,7 @@ public class WhatsAppOtpService(
         var challenge = await FindActiveChallengeAsync(companyId, username, purpose, ct)
             ?? throw new AccountingException("الرمز غير صالح أو منتهي الصلاحية.");
 
-        if (!OtpCodeGenerator.Verify(code, challenge.CodeHash))
-            throw new AccountingException("الرمز غير صحيح.");
+        await EnsureCodeMatchesAsync(challenge, code, ct);
     }
 
     public async Task ResetPasswordAsync(
@@ -62,8 +68,7 @@ public class WhatsAppOtpService(
         var challenge = await FindActiveChallengeAsync(companyId, normalized, OtpPurpose.PasswordRecovery, ct)
             ?? throw new AccountingException("الرمز غير صالح أو منتهي الصلاحية.");
 
-        if (!OtpCodeGenerator.Verify(code, challenge.CodeHash))
-            throw new AccountingException("الرمز غير صحيح.");
+        await EnsureCodeMatchesAsync(challenge, code, ct);
 
         var user = await db.AppUsers.IgnoreQueryFilters()
             .SingleAsync(u => u.CompanyId == companyId && u.Username == normalized, ct);
@@ -89,8 +94,7 @@ public class WhatsAppOtpService(
 
         if (!string.Equals(challenge.PhoneE164, phone, StringComparison.Ordinal))
             throw new AccountingException("رقم الجوال لا يطابق الرمز المُرسَل.");
-        if (!OtpCodeGenerator.Verify(code, challenge.CodeHash))
-            throw new AccountingException("الرمز غير صحيح.");
+        await EnsureCodeMatchesAsync(challenge, code, ct);
         if (await db.AppUsers.IgnoreQueryFilters()
                 .AnyAsync(u => u.CompanyId == companyId && u.Username == normalized, ct))
             throw new AccountingException($"اسم المستخدم '{username}' مستخدم مسبقاً.");
@@ -105,23 +109,63 @@ public class WhatsAppOtpService(
         return user;
     }
 
+    /// <summary>
+    /// (م-٤ · ن-٢٨) <b>المطابقةُ تُعدّ — وكانت ترمي بلا أن تمسّ الصفّ.</b>
+    ///
+    /// <para><b>العطل:</b> ثلاثةُ مواضعِ تحقّقٍ — <c>VerifyCodeAsync</c> و<c>ResetPasswordAsync</c>
+    /// و<c>RegisterVerifiedUserAsync</c> — كتبت جميعُها السطرَ نفسَه: تقرأ التحدّي، تُقارن
+    /// الهاش، وترمي. <b>ولا شيءَ يُسجَّل</b>. فرمزٌ من ستّة أرقامٍ يُخمَّن بلا حدٍّ طوالَ
+    /// عشر دقائق.</para>
+    ///
+    /// <para><b>وثلاثُ نسخٍ من شرطِ أمانٍ تفترق في أوّل تعديل</b> — فجُمعت هنا. والرسالةُ
+    /// تفرّق بين «غير صحيح» و«نفدت المحاولات» <b>لأنّ الفرق يعني للمستخدم شيئاً</b>:
+    /// الأولى يُعيد المحاولة، والثانية يطلب رمزاً جديداً.</para>
+    /// </summary>
+    private async Task EnsureCodeMatchesAsync(OtpChallenge challenge, string code, CancellationToken ct)
+    {
+        if (OtpCodeGenerator.Verify(code, challenge.CodeHash)) return;
+
+        // ‏**ويُلتزم قبل الرمي** — فرميةٌ قبل الحفظ تترك العدّادَ في المتعقّب وحدَه،
+        // ‏والسياقُ يُغلق مع الحوار، **فلا يُعدّ شيء**. وهو عينُ نمطِ ن-٠٥.
+        challenge.RecordFailedAttempt();
+        await db.SaveChangesAsync(ct);
+
+        throw new AccountingException(challenge.IsConsumed
+            ? "‏تجاوزتَ عددَ المحاولات المسموح — اطلب رمزاً جديداً."
+            : "الرمز غير صحيح.");
+    }
+
     private async Task<OtpSendResult> SendAsync(
         long companyId, string username, string phoneE164, OtpPurpose purpose, CancellationToken ct)
     {
-        var code = OtpCodeGenerator.Generate();
-        var hash = OtpCodeGenerator.Hash(code);
-
         var stale = await db.OtpChallenges
             .Where(c => c.CompanyId == companyId
                 && c.Username == username
                 && c.Purpose == purpose
                 && !c.IsConsumed)
             .ToListAsync(ct);
-        foreach (var item in stale)
-            item.Consume();
 
-        db.OtpChallenges.Add(OtpChallenge.Create(companyId, username, phoneE164, hash, purpose, OtpTtl));
-        await db.SaveChangesAsync(ct);
+        // ‏(م-٤ · ن-٢٨) ‏**مهلةُ إعادةِ إرسال — تحدّ مجموعَ التخمينات لا تخميناتِ تحدٍّ واحد.**
+        //
+        // ‏عدّادُ المحاولات يُغلق التحدّيَ بعد خمس، **ولا يمنع طلبَ سادسٍ فوراً**:
+        // ‏أرسِل ⟵ خمّن خمساً ⟵ أرسِل. فبلا مهلةٍ يبقى مجموعُ التخمينات بلا سقف، وتُدفع
+        // ‏رسالةٌ مفوترةٌ ويُوقَظ هاتفُ صاحب الحساب في كلّ دورة.
+        var newest = stale
+            .Where(c => !c.IsExpired())
+            .OrderByDescending(c => c.CreatedAtUtc)
+            .FirstOrDefault();
+
+        if (newest is not null)
+        {
+            var waited = DateTime.UtcNow - newest.CreatedAtUtc;
+            if (waited < ResendCooldown)
+                throw new AccountingException(
+                    $"‏أُرسل رمزٌ قبل قليل — انتظر {Math.Ceiling((ResendCooldown - waited).TotalSeconds):N0} ثانيةً "
+                    + "قبل طلب رمزٍ جديد، والرمزُ السابق ما زال صالحاً.");
+        }
+
+        var code = OtpCodeGenerator.Generate();
+        var hash = OtpCodeGenerator.Hash(code);
 
         var message = purpose switch
         {
@@ -132,9 +176,24 @@ public class WhatsAppOtpService(
             _ => throw new ArgumentOutOfRangeException(nameof(purpose)),
         };
 
+        // ‏(م-٤ · ن-٢٨) ‏**يُرسَل أوّلاً، ثمّ يُكتب — وكان العكس.**
+        //
+        // ‏كان الصفُّ يُلتزم ثمّ يُرسَل، والرميةُ عند فشل الإرسال **لا تُرجع ما التُزم**.
+        // ‏فيبقى تحدٍّ حيٌّ لرسالةٍ لم تصل، **وقد استُهلك التحدّي السابقُ معه** — أي أنّ
+        // ‏محاولةً فاشلةً تحرق رمزاً صالحاً بيد المستخدم وتضع مكانه رمزاً لا يعرفه.
+        //
+        // ‏**وليس هذا حالةً نادرة بل الافتراض:** بلا اعتمادات واتساب في الإنتاج يُعيد
+        // ‏`WhatsAppNotificationChannelFactory` قناةً تُرجع `Success=false` دائماً — فكلُّ
+        // ‏ضغطةِ «نسيت كلمة المرور» كانت تُنتج تحدّياً يتيماً حيّاً ثمّ ترمي.
         var send = _channel.SendOtp(phoneE164, message);
         if (!send.Success)
             throw new AccountingException($"تعذر إنشاء رمز التحقق: {send.Error}");
+
+        foreach (var item in stale)
+            item.Consume();
+
+        db.OtpChallenges.Add(OtpChallenge.Create(companyId, username, phoneE164, hash, purpose, OtpTtl));
+        await db.SaveChangesAsync(ct);
 
         return new OtpSendResult(PhoneNumberNormalizer.Mask(phoneE164), send.DevHint);
     }
