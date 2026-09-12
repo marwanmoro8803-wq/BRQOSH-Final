@@ -2,6 +2,7 @@ using Brqosh.Application.Treasury;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Treasury;
@@ -114,6 +115,14 @@ public class ExchangeRateService(BrqoshDbContext db) : IExchangeRateService
         string? source = null,
         CancellationToken ct = default)
     {
+        // ‏(م-٤ · ن-١٦) ‏**طبقةٌ ثانيةٌ في الخدمة — والأولى في المسار.**
+        //
+        // ‏الواجهةُ ترفض بـ403 قبل بلوغ هذا السطر، **وهذا يُغطّي ما لا مسارَ له**: سطحُ
+        // ‏المكتب يستدعي هذه الدالّةَ عبر `FxRateSyncService`، ومن يُضيف مستدعياً غداً
+        // ‏لا يمرّ بحارس الواجهة. **وعرفُ المستودع أن تفحص الخدمةُ بنفسها** — يُطبَّق في
+        // ‏`FxClosingTranslationService:25` — وكان غائباً هنا كلّيّاً.
+        SecurityContext.EnsureCanPostAccounting();
+
         var entity = ExchangeRate.Create(companyId, fromCurrency, toCurrency, effectiveDate, rate, source);
         db.ExchangeRates.Add(entity);
         await db.SaveChangesAsync(ct);

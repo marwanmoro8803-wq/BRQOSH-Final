@@ -83,6 +83,27 @@ async Task<IResult?> RejectTenantCompanyAsync(BrqoshDbContext db, long companyId
     return Results.Json(new { error = "tenant_forbidden" }, statusCode: StatusCodes.Status403Forbidden);
 }
 
+// (م-٤ · ن-١٦) ‏**خمسةُ مساراتِ كتابةٍ كانت بلا حارسِ دورٍ إطلاقاً.**
+//
+// ‏عرفُ المستودع أن تفحص خدماتُ البنية الصلاحيّةَ بنفسها — ويُطبَّق في
+// ‏`FxClosingTranslationService` فعلاً. **لكنّ أربعاً من خمسِ خدماتٍ على مسارات الكتابة
+// ‏لا تذكر `SecurityContext` إطلاقاً**، واثنتان تكتبان عبر `DbContext` مباشرةً في هذا
+// ‏الملفّ بلا خدمةٍ أصلاً. فيُكتب سعرُ صرفٍ، وتُحذف خريطةُ استبعادٍ بينيّة — **وكلتاهما
+// ‏تُغيّر كلَّ تقريرٍ موحَّدٍ بعدها** — بمفتاحٍ دورُه `Viewer`.
+//
+// ‏**ويُرفض هنا بـ403 لا برميةٍ من الخدمة**: لا ربطَ لـ`AccountingException` برمزِ حالةٍ
+// ‏في هذه الواجهة، فرميةُ حارسٍ تخرج **500** — وهي تقول «عطلٌ عندنا» لا «ممنوع».
+// ‏والحارسُ في الخدمة يبقى **طبقةً ثانية** تُغطّي سطحَ المكتب ومن يأتي بعدُ.
+IResult? RejectAccountingWrite()
+{
+    if (SecurityContext.CurrentRole is not UserRole.Administrator and not UserRole.Accountant)
+        return Results.Json(
+            new { error = "accounting_write_forbidden" },
+            statusCode: StatusCodes.Status403Forbidden);
+
+    return null;
+}
+
 app.UseSerilogRequestLogging();
 
 app.Use(async (ctx, next) =>
@@ -343,6 +364,7 @@ app.MapPost("/api/v1/company-groups/{groupId:long}/intercompany-account-maps", a
     if (groupId <= 0) return Results.BadRequest(new { error = "groupId required" });
     if (!await TenantGuard.IsGroupAllowedAsync(db, groupId, ct))
         return Results.Json(new { error = "tenant_forbidden" }, statusCode: StatusCodes.Status403Forbidden);
+    if (RejectAccountingWrite() is { } roleReject) return roleReject;
 
     var map = IntercompanyAccountMap.Create(groupId, accountCode);
     db.IntercompanyAccountMaps.Add(map);
@@ -356,6 +378,7 @@ app.MapDelete("/api/v1/company-groups/{groupId:long}/intercompany-account-maps/{
     if (groupId <= 0) return Results.BadRequest(new { error = "groupId required" });
     if (!await TenantGuard.IsGroupAllowedAsync(db, groupId, ct))
         return Results.Json(new { error = "tenant_forbidden" }, statusCode: StatusCodes.Status403Forbidden);
+    if (RejectAccountingWrite() is { } roleReject) return roleReject;
 
     var code = accountCode.Trim();
     var map = await db.IntercompanyAccountMaps
@@ -467,6 +490,7 @@ app.MapPost("/api/v1/exchange-rates", async (
     if (companyId <= 0) return Results.BadRequest(new { error = "companyId required" });
     var tenantReject = await RejectTenantCompanyAsync(db, companyId, ct);
     if (tenantReject is not null) return tenantReject;
+    if (RejectAccountingWrite() is { } roleReject) return roleReject;
     await service.RecordRateAsync(companyId, fromCurrency, toCurrency, effectiveDate, rate, "api", ct);
     return Results.Ok(new { companyId, fromCurrency, toCurrency, effectiveDate, rate });
 });
@@ -526,6 +550,7 @@ app.MapPost("/api/v1/companies/{companyId:long}/exchange-rates/sync", async (
     if (companyId <= 0) return Results.BadRequest(new { error = "companyId required" });
     var tenantReject = await RejectTenantCompanyAsync(db, companyId, ct);
     if (tenantReject is not null) return tenantReject;
+    if (RejectAccountingWrite() is { } roleReject) return roleReject;
 
     IReadOnlyList<string>? targets = null;
     if (!string.IsNullOrWhiteSpace(currencies))
@@ -645,6 +670,7 @@ app.MapPost("/api/v1/report-snapshots/trial-balance", async (
     if (companyId <= 0) return Results.BadRequest(new { error = "companyId required" });
     var tenantReject = await RejectTenantCompanyAsync(db, companyId, ct);
     if (tenantReject is not null) return tenantReject;
+    if (RejectAccountingWrite() is { } roleReject) return roleReject;
     var snapshot = await service.CaptureTrialBalanceAsync(companyId, from, to, ct);
     return Results.Ok(snapshot);
 });

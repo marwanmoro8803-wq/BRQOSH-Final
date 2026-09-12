@@ -1,3 +1,4 @@
+using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Treasury;
@@ -13,6 +14,10 @@ public class FxRateSyncServiceTests : IDisposable
 
     public FxRateSyncServiceTests()
     {
+        // ‏(م-٤ · ن-١٦) ‏**فاعلٌ مُعلَن** — صار كتابةُ أسعار الصرف واللقطات تلزمها صلاحيّةٌ
+        // ‏محاسبيّة. **ومحاسبٌ لا مدير**: أقلُّ صلاحيّةٍ تكفي، فمرورُ الصنف يُثبت أنّ
+        // ‏المحاسبَ يستطيعها — ولو أُعلن «مدير» في كلّ مكانٍ لما أخبر شيءٌ بشيء.
+        TestActor.Accountant();
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
         _db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()
