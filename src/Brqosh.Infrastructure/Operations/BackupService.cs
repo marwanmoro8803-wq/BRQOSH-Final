@@ -7,6 +7,18 @@ using Npgsql;
 namespace Brqosh.Infrastructure.Operations;
 
 /// <summary>
+/// ‏(م-٥ · ن-٤٤) <b>«تعذّر أن أسأل» ليس «سألتُ فكان فاسداً».</b>
+///
+/// <para>غيابُ <c>pg_restore</c> عطلُ بيئةٍ لا حكمٌ على ملفّ. ولولا تمييزُه لجمعه
+/// <see cref="BackupService.NewestVerifiedAsync"/> مع أحكام الفساد، <b>فقيل للمالك إنّ
+/// نسخَه كلَّها فاسدة</b> — بعدد ما في المجلّد — والسببُ أنّ أداةً غيرُ مُنصَّبة.</para>
+///
+/// <para>ويرث <see cref="AccountingException"/> فلا يكسر ملتقِطاً قائماً.</para>
+/// </summary>
+public sealed class BackupVerifierUnavailableException(string message)
+    : AccountingException(message);
+
+/// <summary>
 /// (CEEF-229 · م3-٢) <b>نسخٌ احتياطيّ واستعادة — وكانا غائبَين عن المنتج كلِّه.</b>
 ///
 /// <para><b>البند:</b> بحثٌ في المستودع عن <c>Backup</c> و<c>Restore</c> و<c>pg_dump</c>
@@ -59,6 +71,12 @@ public sealed class BackupService(BrqoshDbContext db)
     /// تصير <b>غيرَ معدودةٍ بالتصميم</b>، لا بفحصٍ يُنسى أو يُخفَّف.</para>
     /// </summary>
     private const string StagingSuffix = ".partial";
+
+    /// <summary>
+    /// ‏(م-٥ · ن-٤٤) ‏مهلةٌ قبل كنسِ بقيّةٍ مرحليّة — <b>فملفٌّ يُكتب الآن ليس يتيماً</b>.
+    /// وستُّ ساعاتٍ أطولُ من أيّ تفريغٍ واقعيّ، وأقصرُ من أن يبيت اليتيمُ ليلتين.
+    /// </summary>
+    private static readonly TimeSpan StagingOrphanGrace = TimeSpan.FromHours(6);
 
     public async Task<BackupResult> CreateAsync(string targetPath, CancellationToken ct = default)
     {
@@ -170,6 +188,17 @@ public sealed class BackupService(BrqoshDbContext db)
             .Skip(LocalBackupsKept)
             .ToList();
 
+        // ‏(م-٥ · ن-٤٤) **والبقايا المرحليّةُ تُكنَس بالنمط لا بالاسم.**
+        //
+        // ‏ن-٣٦ حدّت المجلّدَ بأربعَ عشرةَ نسخةً لأنّه يشارك القرصَ مع القاعدة الحيّة.
+        // ‏**وملفُّ `.partial` لا يدخل ذلك الحدّ**: لا النمطُ ذو الامتداد يراه، ولا
+        // ‏`NewestBackupUtc` يعدّه — **فهو بحجم نسخةٍ كاملةٍ ولا يُحصيه شيء**. و`finally`
+        // ‏في `CreateAsync` يبتلع فشلَ حذفه، ولا يُنفَّذ أصلاً إن مات المسارُ دون فكّ المكدّس.
+        // ‏فيُكنَس هنا — **حيث يلتقي مُنتِجا المجلّد** — وبمهلةٍ تُجنّب ملفّاً يُكتب الآن.
+        stale.AddRange(new DirectoryInfo(directory)
+            .GetFiles($"brqosh_*{extension}{StagingSuffix}")
+            .Where(f => f.LastWriteTimeUtc < DateTime.UtcNow - StagingOrphanGrace));
+
         var pruned = 0;
         var failed = 0;
         foreach (var file in stale)
@@ -214,11 +243,88 @@ public sealed class BackupService(BrqoshDbContext db)
         if (!File.Exists(backupPath))
             throw new AccountingException($"ملفُّ النسخة الاحتياطية غير موجود: {backupPath}");
 
+        // ‏(م-٥ · ن-٤٤) **ملفٌّ فارغٌ ليس قاعدةً — وSQLite يقول إنّه سليم.**
+        //
+        // ‏مقيس: `PRAGMA integrity_check` على ملفٍّ صفريٍّ يُعيد `ok`، لأنّ SQLite يفتح
+        // ‏الفارغَ قاعدةً فارغةً صحيحة. **وهذا الفحصُ هو الحارسُ الوحيدُ أمام `RestoreAsync`**،
+        // ‏و`RestoreSqliteAsync` ينسخ فوق القاعدة الحيّة بـ`overwrite: true` — **فملفٌّ صفريٌّ
+        // ‏كان يجتاز التحقّقَ ثمّ يمحو الدفترَ**. و`NewestBackupUtc` يُسقط الصفريَّ منذ ن-٣١،
+        // ‏**والفحصُ لم يكن يُسقطه** — فاتّفقا أخيراً.
+        if (new FileInfo(backupPath).Length == 0)
+            throw new AccountingException(
+                $"ملفُّ النسخة الاحتياطية فارغ (صفرُ بايت): {backupPath} — وليس قاعدةً تُستعاد.");
+
         if (db.Database.IsNpgsql())
             await VerifyPostgresArchiveAsync(backupPath, ct);
         else
             await VerifySqliteFileAsync(backupPath, ct);
     }
+
+    /// <summary>
+    /// ‏(م-٥ · ن-٤٤) <b>أحدثُ نسخةٍ <i>أُثبتت</i> — لا أحدثُ ملفٍّ يبدأ اسمُه بـ<c>brqosh_</c>.</b>
+    ///
+    /// <para><b>ما كان:</b> شاشةُ النسخ تختار بـ<c>GetFiles("brqosh_*")</c> — <b>بلا امتداد</b> —
+    /// وتُسلّم ما تجده إلى النقل خارج الجهاز. وهو <b>الموضعُ الوحيدُ في المستودع</b> الذي
+    /// يمسح مجلّدَ النسخ بنمطٍ بلا امتداد؛ وكلُّ موضعٍ آخر يستعمل <c>brqosh_*.dump</c>
+    /// و<c>brqosh_*.db</c>. <b>فنقض ثابتاً أعلنه المستودعُ بنفسه</b> عند
+    /// <see cref="StagingSuffix"/>: «بقايا محاولةٍ مقطوعةٍ تصير غيرَ معدودةٍ <b>بالتصميم</b>».
+    /// وقِيس أنّ النمطَ العاري يلتقط خمسةَ عشرَ صنفاً لا يلتقطها الامتدادان — منها
+    /// <c>.dump.partial</c> و<c>.db-wal</c> و<c>.db-journal</c> و<c>.zip</c> و<c>.tmp</c>.</para>
+    ///
+    /// <para><b>والاسمُ وحدَه لا يكفي</b>: ملفٌّ صحيحُ الامتداد قد يكون فاسدَ المحتوى. فيُضاف
+    /// الفحصُ الذي يملكه المستودعُ أصلاً (<see cref="VerifyAsync"/>)، ويُمشى على الأحدث فالأحدث.</para>
+    ///
+    /// <para><b>وحدُّه مُعلَنٌ ومقيس — ولا يُقرأ أوسعَ ممّا يقيس:</b> على PostgreSQL
+    /// <c>pg_restore --list</c> <b>يقبل بادئةً من الأرشيف طولُها ٠٫٢٪</b> (٣٠٨٣ بايت من
+    /// ١٫٥٨ ميجابايت، رمزُ خروجٍ صفر وفهرسٌ من ٢٤ سطراً) بينما الاستعادةُ الحقيقيّةُ ترفضها
+    /// بـ«could not find block ID … possibly corrupt archive». <b>فهذا يُثبت أنّ الملفَّ
+    /// أرشيفٌ، ولا يُثبت أنّه كامل</b> — وإثباتُ الاكتمال يلزمه استعادةٌ فعليّة (ح-٦).</para>
+    /// </summary>
+    public async Task<string> NewestVerifiedAsync(string backupFolder, CancellationToken ct = default)
+    {
+        var extension = db.Database.IsNpgsql() ? ".dump" : ".db";
+
+        var all = new DirectoryInfo(backupFolder)
+            .GetFiles($"brqosh_*{extension}")
+            .OrderByDescending(f => f.LastWriteTimeUtc)
+            .ToList();
+
+        if (all.Count == 0)
+            throw new AccountingException("لا نسخةَ لنقلها — خُذْ نسخةً أوّلاً.");
+
+        // ‏**والمشيُ محدود.** الفحصُ يقرأ الأرشيفَ كاملاً، فمجلّدٌ فيه أربعَ عشرةَ نسخةً
+        // ‏فاسدةً يُنفق دقائقَ على قرصٍ قبل أن يقول شيئاً. وثلاثةٌ تُغطّي «نسخةُ اليوم
+        // ‏فاسدة» وما قبلها، **وما بعد ذلك عطلٌ يُبلَّغ لا يُلتَفّ عليه**.
+        var examined = all.Take(NewestCandidatesExamined).ToList();
+        var rejected = new List<string>();
+
+        foreach (var file in examined)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                await VerifyAsync(file.FullName, ct);
+                return file.FullName;
+            }
+            catch (BackupVerifierUnavailableException)
+            {
+                // ‏**بيئةٌ لا تُسأل ليست حكماً على البيانات.** ولو ابتُلعت هنا لقيل للمالك
+                // ‏«فُحصت نسخُك وسقطت كلُّها» وسببُها أنّ `pg_restore` غيرُ مُنصَّب.
+                throw;
+            }
+            catch (AccountingException ex)
+            {
+                rejected.Add($"{file.Name} — {ex.Message}");
+            }
+        }
+
+        throw new AccountingException(
+            $"لا نسخةَ صالحةً للنقل — فُحصت أحدثُ {rejected.Count} من {all.Count} وسقطت كلُّها:\n  "
+            + string.Join("\n  ", rejected));
+    }
+
+    /// <summary>‏كم نسخةً تُفحَص قبل الإعلان — انظر <see cref="NewestVerifiedAsync"/>.</summary>
+    internal const int NewestCandidatesExamined = 3;
 
     // ── PostgreSQL ───────────────────────────────────────────────────────────
 
@@ -262,8 +368,11 @@ public sealed class BackupService(BrqoshDbContext db)
     /// </summary>
     private static async Task VerifyPostgresArchiveAsync(string backupPath, CancellationToken ct)
     {
+        // ‏(ن-٤٤) **«تعذّر أن أسأل» ليس «سألتُ فكان فاسداً».** أداةٌ غائبةٌ عطلُ بيئة،
+        // ‏ولو رُميت كـ`AccountingException` لجمعها `NewestVerifiedAsync` حكماً على ملفّ،
+        // ‏فقيل للمالك إنّ نسخَه كلَّها فاسدة — أربعَ عشرةَ مرّةً — والسببُ أنّ الأداةَ غيرُ مُنصَّبة.
         var tool = PgToolLocator.Find("pg_restore", out var searched)
-            ?? throw new AccountingException(BuildToolMissingMessage("pg_restore", searched));
+            ?? throw new BackupVerifierUnavailableException(BuildToolMissingMessage("pg_restore", searched));
 
         try
         {

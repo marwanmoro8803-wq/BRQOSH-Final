@@ -86,16 +86,24 @@ public partial class BackupPage : UserControl
                     "أدخِلْ وجهةً واحدةً على الأقلّ — ونسخةٌ على القرص نفسِه ليست نسخة.");
 
             Directory.CreateDirectory(BackupFolder);
-            var latest = new DirectoryInfo(BackupFolder)
-                .GetFiles("brqosh_*")
-                .OrderByDescending(f => f.LastWriteTimeUtc)
-                .FirstOrDefault()
-                ?? throw new Brqosh.Domain.Accounting.AccountingException(
-                    "لا نسخةَ لنقلها — خُذْ نسخةً أوّلاً.");
 
             using var facade = new DesktopAccountingFacade();
+
+            // ‏(م-٥ · ن-٤٤) **يُنقَل ما أُثبت، لا ما هو أحدث.**
+            //
+            // ‏كان هنا `GetFiles("brqosh_*")` — **بلا امتداد** — ثمّ `FirstOrDefault` على
+            // ‏الأحدث. وهو الموضعُ الوحيدُ في المستودع الذي يمسح المجلّدَ بنمطٍ عارٍ، فيلتقط
+            // ‏خمسةَ عشرَ صنفاً لا يلتقطها `brqosh_*.dump`/`.db` — أخطرُها بقيّةٌ مرحليّةٌ
+            // ‏يتيمةٌ (`.dump.partial`) **تكون دائماً الأحدث**. ثمّ يُطابق النقلُ بصمةَ
+            // ‏المصدر بالوجهة، **فتُثبَت النسخةُ مطابقةً لمصدرٍ فاسد** ويُطبع ✔ لكلّ وجهة.
+            //
+            // ‏والاختيارُ صار في `BackupService` لا هنا: **الشاشةُ لا تُقرّر ما النسخة**،
+            // ‏وأينما نُقل الاختيارُ يُقاس سلوكيّاً بلا واجهةٍ رسوميّةٍ في الطريق.
+            var latest = await facade.GetService<BackupService>()
+                .NewestVerifiedAsync(BackupFolder);
+
             var results = await facade.GetService<OffsiteBackupService>()
-                .ReplicateAsync(latest.FullName, destinations);
+                .ReplicateAsync(latest, destinations);
 
             var lines = results.Select(r => r.Succeeded
                 ? $"✔ {r.Destination} — {r.SizeBytes / 1024.0 / 1024.0:N1} ميجابايت"
