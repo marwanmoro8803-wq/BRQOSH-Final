@@ -45,8 +45,15 @@ public static class AppEnvironmentConfig
     /// كان الافتراض <c>Development</c>، والمثبِّت (<c>installer/brqosh.wxs</c>) لا يضبط المتغير،
     /// واختصارا قائمة ابدأ وسطح المكتب يشيران إلى <c>Brqosh.Desktop.exe</c> مباشرةً — فكل
     /// تركيب حقيقيّ كان يعمل في وضع التطوير. وقيمةٌ افتراضية واحدة كانت تُطفئ حرّاساً
-    /// مكتوبةً وصحيحة: كشفُ رمز OTP على الشاشة (<c>InAppOtpNotificationChannel</c>)، وتجاوزُ
-    /// RBAC بـ<c>BRQOSH_TEST</c> (<c>SecurityContext</c>)، وقبولُ SQLite بدل PostgreSQL.
+    /// مكتوبةً وصحيحة: كشفُ رمز OTP على الشاشة (<c>InAppOtpNotificationChannel</c>)،
+    /// و<b>دورُ الواجهة البرمجيّة الافتراضيّ يصير مديراً بدل مُطّلع</b>
+    /// (<c>ApiSecuritySettings.ResolveApiRole</c>: <c>isProduction ? Viewer : Administrator</c>)،
+    /// وقبولُ SQLite بدل PostgreSQL.
+    ///
+    /// <para>‏(ن-٤٦) <b>وصُحّح هنا ادّعاءٌ بائت:</b> كان السطرُ يقول «تجاوزُ RBAC بـ<c>BRQOSH_TEST</c>
+    /// (<c>SecurityContext</c>)». وقِيس أنّ <c>AutomatedTestBypass</c> <b>لا تصريحَ له في
+    /// <c>src</c> إطلاقاً</b> — حُذف في CEEF-229 · م2-١ — وشاهدُ الضبط أنّ النمطَ نفسَه يجد
+    /// <c>SecurityContext.CurrentRole</c>. فالانحدارُ قائمٌ لكن من البابِ المذكورِ أعلاه.</para>
     ///
     /// التطوير والاختبار يجب أن يُعلنا عن نفسيهما صراحةً: إمّا <c>BRQOSH_ENV</c>، أو
     /// <c>BRQOSH_TEST=1</c> الذي يضبطه harness الاختبارات (انظر <c>test.runsettings</c>
@@ -66,6 +73,13 @@ public static class AppEnvironmentConfig
     ///
     /// <para><b>القاعدة:</b> متى أعلن المصدر الرسميّ إنتاجاً فلا شيء يخفضه. وفيما عدا ذلك
     /// يُحترم إعلان العملية، والافتراض إنتاج.</para>
+    ///
+    /// <para><b>(ن-٤٦) وبندٌ ثالثٌ يُعلَن هنا ولا يُستنتَج من موضع تنفيذه:</b> مصدرٌ رسميٌّ
+    /// <b>لا يُفهَم نصُّه</b> يُقرأ إنتاجاً — <b>لا لأنّه أعلنه، بل لأنّ الأشدَّ هو القراءةُ
+    /// الوحيدةُ المسموحة</b> عند الشكّ. <b>وهو يتقدّم على إعلان العمليّة</b>، لأنّ متغيّرَ
+    /// نطاقِ الجهاز يُورَّث حرفيّاً إلى كتلة بيئة العمليّة: فالنصُّ المعطوبُ نفسُه يصل إلى
+    /// الفرع المتساهل، ولو اكتُفي بإسقاط المصدر الرسميّ لعاد الخفضُ من ذلك الباب.
+    /// انظر <see cref="ParseAuthoritative"/>.</para>
     /// </summary>
     internal static AppEnvironment Decide(AppEnvironment? authoritative, string? processEnv, string? testFlag)
     {
@@ -105,11 +119,13 @@ public static class AppEnvironmentConfig
             {
                 var machine = Environment.GetEnvironmentVariable("BRQOSH_ENV", EnvironmentVariableTarget.Machine);
                 if (!string.IsNullOrWhiteSpace(machine))
-                    return Parse(machine);
+                    return ParseAuthoritative(machine);
             }
-            catch
+            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException)
             {
-                // قراءة نطاق الجهاز قد تُمنع بسياسة — يُسقط هذا المصدر ويُجرَّب الملفّ.
+                // ‏(ن-٤٦) **مضيَّقٌ عمداً**: كان `catch` عارياً، فكان يبتلع أيَّ رميةٍ من
+                // ‏القراءة *أو من التحليل* ويُسقط المصدرَ الرسميَّ صامتاً. والقائمةُ الآن
+                // ‏هي ما يوثّقه السطرُ نفسُه: منعُ سياسةٍ لا عطلُ منطق.
             }
         }
 
@@ -120,21 +136,60 @@ public static class AppEnvironmentConfig
             {
                 var content = File.ReadAllText(marker).Trim();
                 if (!string.IsNullOrWhiteSpace(content))
-                    return Parse(content);
+                    return ParseAuthoritative(content);
             }
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // مجلد تثبيت غير مقروء — لا مصدر رسميّ، ويبقى الافتراض الآمن أدناه.
+            // ‏(ن-٤٦) **مضيَّقٌ عمداً** — انظر الالتقاطَ أعلاه: مجلّدُ تثبيتٍ غيرُ مقروء،
+            // ‏لا عطلُ منطقٍ في التحليل.
         }
 
         return null;
     }
 
+    /// <summary>
+    /// ‏قراءةُ إعلانِ <b>العمليّة</b> — يكتبه المستخدم، ولا يُخفض به تركيبٌ رسميّ.
+    ///
+    /// <para>‏والمجهولُ هنا يبقى تطويراً بقرارٍ قائم: «الخطأُ الإملائيُّ لا يمنح امتيازاً،
+    /// ومن يكتب قيمةً بيده يقصد الخروجَ من الإنتاج» (<c>UnknownValue_IsNotReadAsProduction</c>).
+    /// <b>وذلك صحيحٌ هنا وحدَه</b> — حيث لا مصدرَ رسميّ، فالجهازُ ليس تركيباً مُدارَاً.</para>
+    /// </summary>
     private static AppEnvironment Parse(string raw) => raw.Trim().ToLowerInvariant() switch
     {
         "production" or "prod" => AppEnvironment.Production,
         "test" => AppEnvironment.Test,
         _ => AppEnvironment.Development,
+    };
+
+    /// <summary>
+    /// ‏(م-٥ · ن-٤٦) <b>قراءةُ المصدر الرسميّ — ونصٌّ لا يُفهَم يُقرأ إنتاجاً.</b>
+    ///
+    /// <para><b>ما كان:</b> المصدرُ الرسميُّ كان يمرّ بـ<see cref="Parse"/> نفسِها، ونهايتُها
+    /// <c>_ => Development</c>. <b>فكلُّ رمزٍ لا يعرفه الجدولُ إعلانٌ فاعلٌ بالتطوير</b> —
+    /// في ملفٍّ سياستُه المكتوبة أنّ «الاتجاه المسموح واحد: <b>رفعُ</b> التشدّد لا خفضه».
+    /// وكان الجدولُ **بلا فرعٍ للتطوير أصلاً**: <c>development</c> و<c>dev</c> و<c>staging</c>
+    /// و<c>Productoin</c> تخرج كلُّها من المخرج نفسِه — <b>فلا يُفرَّق إعلانٌ مقصودٌ من غلطة</b>.</para>
+    ///
+    /// <para><b>والطريقُ الحيُّ مقيسٌ ومكتوب:</b> <c>docs/postgres-production.md:13</c>
+    /// و<c>installer/README.md:20</c> يأمران المُشغّلَ أن يكتب بيده
+    /// <c>SetEnvironmentVariable("BRQOSH_ENV", "production", "Machine")</c> — <b>وحرفٌ مقلوبٌ
+    /// هناك كان يخفض التركيبَ كلَّه بلا صوت</b>.</para>
+    ///
+    /// <para><b>ولمَ «إنتاج» لا «كأنّه غائب»:</b> متغيّرُ نطاقِ الجهاز <b>يُورَّث حرفيّاً إلى
+    /// كتلة بيئة العمليّة</b>، فالنصُّ المعطوبُ نفسُه يصل إلى فرع العمليّة المتساهل. فلو
+    /// أُعيد <c>null</c> هنا لصار <c>Decide(null, "Productoin", null)</c> ⟵ <b>تطويراً</b> —
+    /// أي العطلُ نفسُه من بابٍ آخر. <b>فالفشلُ يكون مغلقاً لا محايداً.</b></para>
+    ///
+    /// <para><b>وهذا بندٌ ثالثٌ في السياسة يُعلَن ولا يُستنتَج:</b> مصدرٌ رسميٌّ لا يُفهَم نصُّه
+    /// يُقرأ إنتاجاً — <b>لا لأنّه أعلنه، بل لأنّ الأشدَّ هو القراءةُ الوحيدةُ المسموحة</b>،
+    /// وهو يتقدّم على إعلان العمليّة.</para>
+    /// </summary>
+    internal static AppEnvironment ParseAuthoritative(string raw) => raw.Trim().ToLowerInvariant() switch
+    {
+        "production" or "prod" => AppEnvironment.Production,
+        "test" => AppEnvironment.Test,
+        "development" or "dev" => AppEnvironment.Development,
+        _ => AppEnvironment.Production,
     };
 }

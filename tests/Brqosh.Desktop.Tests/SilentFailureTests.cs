@@ -30,7 +30,15 @@ public class SilentFailureTests
         {
             [@"Brqosh.Application\Setup\AppEnvironment.cs"] =
                 (2, "قراءةُ بيئةِ التشغيل قبل أن يوجد سجلّ — وسياسةُ جهازٍ تمنع القراءة "
-                  + "حالةٌ متوقَّعة، والافتراضُ الآمن مكتوبٌ بعدها."),
+                  + "حالةٌ متوقَّعة، والافتراضُ الآمن مكتوبٌ بعدها. و(ن-٤٦) ضُيّق الالتقاطان "
+                  + "إلى ما يوثّقانه — منعُ سياسةٍ وتعذّرُ قراءةِ مجلّد — فلم يعودا يبتلعان "
+                  + "عطلَ منطقٍ في التحليل."),
+
+            // ‏(ن-٤٦) **إقرارٌ متأخّر لا موضعٌ جديد**: هذا الابتلاعُ قائمٌ منذ كُتب، وكان
+            // ‏مستوراً خلف مُرشِّح `when` الذي لم يكن النمطُ يراه. وسببُه مكتوبٌ في موضعه.
+            [@"Brqosh.Infrastructure\Licensing\ClockRollbackDetector.cs"] =
+                (1, "كتابةُ علامةِ الساعة لا تُسقط الإقلاع — كشفُ رجوعِ الساعة ميزةٌ لا "
+                  + "شرطُ تشغيل، وتعذّرُ الكتابة يُعيد المحاولةَ في التشغيلة التالية."),
 
             [@"Brqosh.Infrastructure\Platform\PersistingDomainEventPublisher.cs"] =
                 (1, "حفظُ سببِ الفشل داخل مُعالِج فشلٍ يُسجّل الأصلَ بعده — "
@@ -64,12 +72,22 @@ public class SilentFailureTests
     [Fact]
     public void NoSilentCatch_AnywhereInSource()
     {
-        var root = FindRepoDirectory("src");
-        if (root is null) return;   // ‏المصادرُ غيرُ متاحةٍ في هذا التشغيل.
+        // ‏(ن-٤٦) **رميةٌ لا تخطٍّ صامت.** كان هنا `if (root is null) return;` — فحارسٌ
+        // ‏لا يجد ما يحرسه كان **يمرّ أخضر**، وهو العرفُ المنقوضُ في هذا المجلّد نفسِه
+        // ‏(`SupplyChainIsPinnedTests`): «حارسٌ لا يجد ما يحرسه يجب أن يسقط، لا أن يمرّ».
+        var root = FindRepoDirectory("src")
+            ?? throw new InvalidOperationException("‏لم يُعثر على مجلّد src — الحارسُ أعمى، ولا يمرّ أعمى.");
 
         // ‏**والالتقاطُ المُنمَّطُ يُحسب**: `catch (IOException) { }` صامتٌ صمتَ
         // ‏`catch { }` سواءً بسواء، **والنمطُ الضيّقُ كان يراه بريئاً**.
-        var silent = new Regex(@"catch\s*(?:\([^)]*\))?\s*\{\s*\}", RegexOptions.Compiled);
+        //
+        // ‏(ن-٤٦) **ومُرشِّحُ `when` ثغرةٌ من الدرجة نفسِها، نجت من التوسيع الأوّل.**
+        // ‏`catch (Exception ex) when (ex is IOException) { }` فيه مجموعتا قوسين، والنمطُ
+        // ‏كان يقبل واحدةً — فلم يُطابق، **فبدا بريئاً**. وقِيس عند التوسيع أنّه كان يستر
+        // ‏**ثلاثةَ مواضع**: اثنان أُضيفا في ن-٤٦ نفسِه، **وواحدٌ قائمٌ لم يُقرّ به قطّ**
+        // ‏(`ClockRollbackDetector`). <b>فتضييقُ الالتقاط لا يُخرجه من الحساب.</b>
+        var silent = new Regex(
+            @"catch\s*(?:\([^)]*\))?\s*(?:when\s*\([^)]*\)\s*)?\{\s*\}", RegexOptions.Compiled);
         var found = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
@@ -109,6 +127,30 @@ public class SilentFailureTests
         Assert.True(problems.Count == 0,
             "ابتلاعُ فشلٍ بلا إقرارٍ ولا تسجيل — والعطلُ يُقرأ نجاحاً حتى يظهر في موضعٍ "
             + "بعيدٍ عن سببه:\n  " + string.Join("\n  ", problems));
+    }
+
+    /// <summary>
+    /// ‏(ن-٤٦) <b>واختبارٌ ذاتيٌّ للنمط — وهو ما لم يكن هنا.</b>
+    ///
+    /// <para>النمطُ وُسّع مرّتين لأنّه كان يرى صيغاً صامتةً بريئة: مرّةً للالتقاط المُنمَّط،
+    /// ومرّةً لمُرشِّح <c>when</c>. <b>ولو كان له اختبارٌ ذاتيٌّ منذ البداية لما لزم توسيعٌ
+    /// ثانٍ بعد سنة</b> — فالصيغُ التي يجب أن تُمسَك تُكتب هنا، وتُمسَك أو يسقط الحارس.</para>
+    /// </summary>
+    [Theory]
+    [InlineData("catch { }", true)]
+    [InlineData("catch {}", true)]
+    [InlineData("catch (IOException) { }", true)]
+    [InlineData("catch (Exception ex) when (ex is IOException) { }", true)]
+    [InlineData("catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)\n{\n}", true)]
+    [InlineData("catch (IOException) { return null; }", false)]
+    [InlineData("catch (Exception ex) when (ex is IOException) { Log(ex); }", false)]
+    [InlineData("catch (Exception) { throw; }", false)]
+    public void TheScanner_SeesEverySilentShape(string snippet, bool shouldBeCaught)
+    {
+        var silent = new Regex(
+            @"catch\s*(?:\([^)]*\))?\s*(?:when\s*\([^)]*\)\s*)?\{\s*\}", RegexOptions.Compiled);
+
+        Assert.Equal(shouldBeCaught, silent.IsMatch(snippet));
     }
 
     /// <summary>
