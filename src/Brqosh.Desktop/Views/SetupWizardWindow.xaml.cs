@@ -127,13 +127,26 @@ public partial class SetupWizardWindow : Window
         AdminUsername = username;
         AdminPassword = password;
 
+        // ‏(م-٥ · ن-٥٠) **الاسمُ الذي قُبل به الترخيصُ يُحمَل ولا يُسقَط.**
+        //
+        // ‏كان يُبنى `SetupState` بلا `LicensedCompanyName`، فيأخذ الوسيطُ الاختياريُّ
+        // ‏`null`. ثمّ يقرأ `App` ‏`LicensedCompanyName ?? CompanyName` — **فيُقاس الترخيصُ
+        // ‏على ما يكتبه المُشغّلُ الآن لا على ما قُبل به**. وهو بابُ ن-٣٥ نفسِه: من أعاد
+        // ‏المعالجَ على تركيبٍ قائمٍ وجد الإنتاجَ مقفلاً «لمنشأةٍ أخرى» — والمنشأةُ منشأتُه.
+        //
+        // ‏والمعالجُ يعمل في حالتين: تركيبٌ بكرٌ (فلا شيءَ يُحمَل)، أو إعدادٌ لم يكتمل
+        // ‏(فيُحمَل ما كان). **والقراءةُ هنا آمنة**: لو كان الملفُّ غيرَ مقروءٍ لما بلغ
+        // ‏التنفيذُ هذه النافذةَ أصلاً — `Load` يرفض قبلها.
+        var carried = _store.Load()?.LicensedCompanyName;
+
         _store.Save(new SetupState(
             IsCompleted: true,
             Profile: summary.BusinessProfile,
             CompanyName: companyName,
             VatRegistrationNumber: vatNumber,
             CompletedAtUtc: DateTime.UtcNow,
-            CountryTemplateId: _templates.DefaultCountryId));
+            CountryTemplateId: _templates.DefaultCountryId,
+            LicensedCompanyName: carried));
 
         DialogResult = true;
         Close();

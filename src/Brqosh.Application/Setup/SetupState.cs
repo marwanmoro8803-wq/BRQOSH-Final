@@ -31,7 +31,8 @@ public record SetupState(
     string VatRegistrationNumber,
     DateTime CompletedAtUtc,
     string CountryTemplateId = "saudi-arabia",
-    string? LicensedCompanyName = null);
+    string? LicensedCompanyName = null,
+    int SchemaVersion = 1);
 
 /// <summary>مخزن حالة الإعداد — التنفيذ الحالي ملف محلي، وسيصبح PostgreSQL في مرحلة قاعدة البيانات.</summary>
 public interface ISetupStateStore
