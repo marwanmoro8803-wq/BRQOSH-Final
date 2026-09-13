@@ -157,6 +157,13 @@ public static class PostgresTestDatabase
         public BrqoshDbContext Db { get; } = db;
 
         /// <summary>
+        /// (م-٤ · ن-١٧) نصُّ الاتصال بقاعدة هذا النطاق — <b>لبناء سياقٍ بلا استراتيجيّة
+        /// إعادةِ محاولة</b>، وهو الطريقُ الوحيد لفتح معاملةٍ بمستوى عزلٍ مختارٍ في اختبار:
+        /// <c>NpgsqlRetryingExecutionStrategy</c> ترفض معاملةً يفتحها المستخدم.
+        /// </summary>
+        public string ConnectionString => ConnectionStringFor(database);
+
+        /// <summary>
         /// (CEEF-229 · م1-١٤ · ح-٢) <b>سياقٌ مستقلٌّ لكلّ كاتب — واتصالٌ مستقلّ معه.</b>
         ///
         /// <para>وهذا شرطُ صدقِ أيّ قياسِ تزامن: سياقان يتشاركان اتصالاً واحداً <b>يتسلسلان</b>،
