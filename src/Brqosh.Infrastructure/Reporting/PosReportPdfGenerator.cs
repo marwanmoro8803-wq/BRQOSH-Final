@@ -42,7 +42,7 @@ public static class PosReportPdfGenerator
                     });
                     foreach (var row in rows)
                     {
-                        table.Cell().Text(row.Date);
+                        table.Cell().Text(PrintText.Ltr(row.Date));
                         table.Cell().AlignCenter().Text(row.Transactions.ToString());
                         table.Cell().AlignCenter().Text($"{row.TotalSales:N2}");
                         table.Cell().AlignCenter().Text($"{row.VatAmount:N2}");

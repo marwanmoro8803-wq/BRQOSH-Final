@@ -1,3 +1,4 @@
+using System.Globalization;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Persistence;
@@ -36,8 +37,18 @@ public class PosReportQuery(BrqoshDbContext db)
         return invoices
             .GroupBy(i => i.InvoiceDate)
             .OrderByDescending(g => g.Key)
+            // ‏(م-٥ · ن-٤٧) **بثقافةٍ صريحة.** هذا النصُّ يُطبع في PDF كما هو
+            // ‏(`PosReportPdfGenerator`) ويُعرض في شبكة نقاط البيع — **فالاستعلامُ هو من
+            // ‏يقرّر التقويم**. وبلا ثقافةٍ يتبع إعدادَ الجهاز: على ثقافةٍ تقويمُها أمُّ
+            // ‏القرى يصير «1447-07-16»، وعلى البوذيّ «2569-01-05».
+            //
+            // ‏**والأصحُّ معماريّاً ألّا يُنسّق الاستعلامُ أصلاً** بل يحمل `DateOnly`
+            // ‏ويُنسّق كلُّ مُستهلِكٍ لنفسه. **ولم يُفعَل هنا عمداً**: الشبكةُ تربط
+            // ‏`{Binding Date}` بلا `StringFormat`، فتحويلُه إلى `DateOnly` **ينقل العطلَ
+            // ‏إلى الشاشة** بدل أن يرفعه. فيُثبَّت النصُّ هنا، ويبقى تصحيحُ الطبقات بنداً
+            // ‏مستقلّاً مع بقيّة سطح المكتب.
             .Select(g => new DailySaleRow(
-                g.Key.ToString("yyyy-MM-dd"),
+                g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 g.Count(),
                 g.Sum(i => i.GrandTotal()),
                 g.Sum(i => i.VatAmount)))

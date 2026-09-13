@@ -189,7 +189,7 @@ public static class FinancialReportPdfGenerator
                     });
                     foreach (var (date, code, name, debit, credit, desc) in rows)
                     {
-                        table.Cell().Text(date.ToString("yyyy-MM-dd"));
+                        table.Cell().Text(PrintText.Date(date));
                         table.Cell().Text(code);
                         table.Cell().Text(name);
                         table.Cell().AlignCenter().Text(debit > 0 ? $"{debit:N2}" : "");

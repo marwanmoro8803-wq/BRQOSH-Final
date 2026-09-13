@@ -87,7 +87,7 @@ public static class StatementPdfGenerator
                     });
                     foreach (var (date, number, type, debit, credit, balance) in rows)
                     {
-                        table.Cell().Text(date.ToString("yyyy-MM-dd"));
+                        table.Cell().Text(PrintText.Date(date));
                         table.Cell().Text(number);
                         table.Cell().Text(type);
                         table.Cell().AlignCenter().Text(debit > 0 ? $"{debit:N2}" : "");
