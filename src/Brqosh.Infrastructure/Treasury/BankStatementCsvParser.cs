@@ -45,19 +45,21 @@ public static class BankStatementCsvParser
             if (cols.Length == 0 || cols.All(string.IsNullOrWhiteSpace))
                 continue;
 
-            var date = ParseDate(Get(cols, dateIdx));
+            GuardAgainstASplitAmount(header, cols, i + 1, amountIdx, debitIdx, creditIdx);
+
+            var date = ParseDate(Get(cols, dateIdx), i + 1);
             var description = Get(cols, descIdx);
             var reference = refIdx >= 0 ? Get(cols, refIdx) : "";
 
             decimal signed;
             if (hasAmount)
             {
-                signed = ParseDecimal(Get(cols, amountIdx));
+                signed = CsvAmountText.ParseCell(Get(cols, amountIdx), i + 1, header[amountIdx]);
             }
             else
             {
-                var debit = ParseDecimal(Get(cols, debitIdx));
-                var credit = ParseDecimal(Get(cols, creditIdx));
+                var debit = CsvAmountText.ParseCell(Get(cols, debitIdx), i + 1, header[debitIdx]);
+                var credit = CsvAmountText.ParseCell(Get(cols, creditIdx), i + 1, header[creditIdx]);
                 signed = debit - credit;
             }
 
@@ -113,24 +115,69 @@ public static class BankStatementCsvParser
         return result.ToArray();
     }
 
-    private static DateOnly ParseDate(string value)
+    /// <summary>
+    /// ‏(ن-٤٨) <b>القاسمةُ نفسُها — وهو نصفُ العطل الذي لا تراه أيُّ قاعدةٍ على الحقل.</b>
+    ///
+    /// <para>فاصلةٌ غيرُ مُقتبَسةٍ داخل مبلغٍ <b>تشقّ الحقلَ عمودَين</b>: مع ترويسة
+    /// <c>Date,Description,Amount</c> يصير الصفُّ <c>2026-07-01,حوالة,1,234.56</c>
+    /// أربعَ خلايا، <b>فيُقرأ المبلغُ 1 ويهبط «234.56» في عمودٍ مُهمَل</b> — نقصٌ ١٢٣٤
+    /// ضعفاً <b>في الصيغة المحلّيّة لا الأجنبيّة</b>.</para>
+    ///
+    /// <para><b>وعدُّ الأعمدة وحدَه لا يكفي</b>: مع ترويسةٍ رباعيّةٍ تحمل <c>Reference</c> —
+    /// وهي ترويسةُ ثلاثٍ من أربع عيّناتٍ في هذا المستودع — يصير العددُ ٤ = ٤ فيمرّ.
+    /// <b>فيُقاس الشكل</b>: مبلغٌ عددٌ صحيحٌ قصير، تتلوه في عمودٍ غيرِ مبلغٍ مجموعةٌ من
+    /// <b>ثلاثِ خاناتٍ بالضبط</b> ثمّ كسرٌ — وتلك بصمةُ مبلغٍ مشقوقٍ لا رقمِ مرجع.</para>
+    ///
+    /// <para><b>وما لا يُغطّى يُقال:</b> صفٌّ رباعيٌّ مرجعُه <i>فعلاً</i> «234.56» يُرفَض
+    /// خطأً — وهو احتمالٌ نادرٌ <b>وصاخب</b>، وكلفتُه إعادةُ تصدير. والكلفةُ المقابلةُ قيدٌ
+    /// مُرحَّلٌ بألفِ ضعفٍ خطأً <b>لا سبيلَ إلى عكسه</b> بعد أن يُرحَّل.</para>
+    /// </summary>
+    private static void GuardAgainstASplitAmount(
+        string[] header, string[] cols, int rowNumber, int amountIdx, int debitIdx, int creditIdx)
     {
-        if (DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
-            return d;
-        if (DateOnly.TryParse(value, out d))
-            return d;
-        throw new AccountingException($"تاريخ غير صالح: {value}");
+        if (cols.Length > header.Length)
+            throw new AccountingException(
+                $"‏السطر {rowNumber} فيه {cols.Length} خليّةً والترويسةُ {header.Length}: "
+                + $"[{string.Join(" | ", cols)}] — "
+                + "‏الأرجحُ فاصلةٌ داخل مبلغٍ بلا اقتباس. اكتب المبلغَ بلا فواصلِ آلاف.");
+
+        foreach (var idx in new[] { amountIdx, debitIdx, creditIdx })
+        {
+            if (idx < 0 || idx + 1 >= cols.Length) continue;
+            if (idx + 1 == amountIdx || idx + 1 == debitIdx || idx + 1 == creditIdx) continue;
+
+            if (CsvAmountText.IsBareInteger(Get(cols, idx))
+                && CsvAmountText.LooksLikeASplitThousandsGroup(Get(cols, idx + 1)))
+            {
+                throw new AccountingException(
+                    $"‏السطر {rowNumber}: [{string.Join(" | ", cols)}] — "
+                    + $"‏يبدو أنّ مبلغَ العمود «{header[idx]}» شقّته فاصلةُ آلافٍ بلا اقتباس. "
+                    + "‏اكتب المبلغَ بلا فواصلِ آلاف.");
+            }
+        }
     }
 
-    private static decimal ParseDecimal(string value)
+    /// <summary>
+    /// ‏(ن-٤٨) <b>تاريخٌ صريحٌ أو رفضٌ باسمِه.</b>
+    ///
+    /// <para><b>ما كان:</b> <c>InvariantCulture</c> نمطُها <c>MM/dd/yyyy</c>، فـ«05/01/2026»
+    /// تُقرأ <b>١ مايو</b> لا ٥ يناير — <b>صامتةً لكلّ يومٍ ≤ ١٢ وصاخبةً لما فوقه</b>.
+    /// وذلك أسوأُ خليط: النصفُ الصاخبُ يُعلّم المُشغّلَ أنّ المحلّلَ يفحص التواريخ.
+    /// ثمّ كان يليها <c>DateOnly.TryParse(value, out d)</c> <b>بلا ثقافة</b> — فالنتيجةُ
+    /// دالّةٌ في إعداداتِ ويندوز: على <c>fa-IR</c> تصير «2026-01-05» ⟵ <b>2647-03-25</b>.</para>
+    ///
+    /// <para><b>والتاريخُ ليس كالمبلغ</b>: خطؤه يعبر حدَّ فترةٍ ماليّةٍ قد تكون مُقفلة.</para>
+    /// </summary>
+    private static DateOnly ParseDate(string value, int rowNumber)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return 0m;
-        var normalized = value.Replace(",", "").Trim();
-        if (decimal.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+        string[] accepted = ["yyyy-MM-dd", "yyyy/MM/dd", "yyyyMMdd"];
+
+        if (DateOnly.TryParseExact(value, accepted, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var d))
             return d;
-        if (decimal.TryParse(normalized, out d))
-            return d;
-        throw new AccountingException($"مبلغ غير صالح: {value}");
+
+        throw new AccountingException(
+            $"‏تاريخٌ غير مقبول في السطر {rowNumber}: «{value}» — الصيغةُ المقبولة "
+            + "‏سنة-شهر-يوم مثل 2026-07-01. و«05/01/2026» لا تقول أيُّهما اليومُ وأيُّهما الشهر.");
     }
 }

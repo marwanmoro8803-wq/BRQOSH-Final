@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Brqosh.Application.Treasury;
@@ -59,7 +60,11 @@ public sealed class FrankfurterFxRateProvider : IFxRateProvider
                 throw new AccountingException(
                     $"لا يتوفر سعر {foreign}→{functional} بتاريخ {asOfDate:yyyy-MM-dd} من Frankfurter.");
 
-            var effective = DateOnly.TryParse(payload.Date, out var parsed)
+            // ‏(ن-٤٨) بثقافةٍ صريحة — انظر `SamaFxRateProvider` للسبب: على `fa-IR` كانت
+            // ‏«2026-01-05» تُقرأ **2647-03-25**، و`ExchangeRateService` ينتقي
+            // ‏`EffectiveDate <= asOfDate` — **فالسعرُ يُكتَب ولا يُرى أبداً**.
+            var effective = DateOnly.TryParse(payload.Date, CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var parsed)
                 ? parsed
                 : asOfDate;
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Brqosh.Application.Treasury;
@@ -52,7 +53,12 @@ public sealed class SamaFxRateProvider : IFxRateProvider
         if (payload is null)
             throw new AccountingException("استجابة SAMA فارغة.");
 
-        var effective = DateOnly.TryParse(payload.Date, out var parsed) ? parsed : asOfDate;
+        // ‏(ن-٤٨) **بثقافةٍ صريحة.** كان `DateOnly.TryParse(payload.Date, out _)` بلا ثقافة،
+        // ‏وتاريخُ الاستجابة **ISO بالعقد** — فالقراءةُ كانت دالّةً في إعدادات ويندوز:
+        // ‏على `ar-SA` — وهي أرجحُ لغاتِ زبائن هذا المنتج — تُرفَض «2026-01-05» فيسقط
+        // ‏التاريخُ صامتاً إلى `asOfDate`، **فيُختَم السعرُ بيومٍ غيرِ يومِه**.
+        var effective = DateOnly.TryParse(payload.Date, CultureInfo.InvariantCulture,
+            DateTimeStyles.None, out var parsed) ? parsed : asOfDate;
         var quotes = new List<FxRateQuote>();
 
         foreach (var target in targetCurrencies)
