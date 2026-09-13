@@ -49,8 +49,16 @@ Write-Host "== BRQOSH security static scan =="
 $selfPath = (Resolve-Path -LiteralPath $PSCommandPath).Path
 
 function Get-SourceFiles {
+    # ‏(م-٤ · ن-١٣) ‏**جذرُ المستودع نفسُه لم يكن مقروءاً، و`*.config` لم يكن ممسوحاً.**
+    #
+    # ‏فملفٌّ في الجذر — و`NuGet.config` أوّلُه — **يولد خارج بصر هذا الماسح**. و
+    # ‏`<packageSourceCredentials>` تُكتب فيه نصّاً صريحاً، **وهي سرٌّ بكلّ معنى الكلمة**.
+    # ‏فالماسحُ كان يحرس كلَّ مكانٍ إلّا الذي يُرجَّح أن يُكتب فيه سرُّ مستودعِ حزم.
+    # ‏ويُمسح الجذرُ بلا `-Recurse` فلا يُكرَّر ما تحته من جذورٍ مذكورةٍ أصلاً.
     $roots = @($SourceRoot, "scripts", "tools", "installer", ".github") | Where-Object { Test-Path $_ }
-    Get-ChildItem -Path $roots -Recurse -File -Include *.cs,*.xaml,*.json,*.csproj,*.ps1,*.psm1,*.sh,*.yml,*.yaml,*.bat,*.wxs |
+    $includes = @("*.cs","*.xaml","*.json","*.csproj","*.ps1","*.psm1","*.sh","*.yml","*.yaml","*.bat","*.wxs","*.config")
+    $rootFiles = Get-ChildItem -Path (Join-Path "." "*") -File -Include $includes
+    @($rootFiles) + @(Get-ChildItem -Path $roots -Recurse -File -Include $includes) |
         # ‏‏[\\/] لا [\/]: مساراتُ ويندوز بشرطةٍ خلفيّة، والصنفُ ذو الشرطة الأمامية
         # ‏وحدَها **لا يُطابق شيئاً هنا** — فتوسيعي حوّل استثناءً عاملاً إلى استثناءٍ ميّت.
         Where-Object { $_.FullName -notmatch '[\\/](bin|obj|\.venv|node_modules|TestResults)[\\/]' } |

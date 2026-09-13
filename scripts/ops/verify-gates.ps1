@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 <#
 .SYNOPSIS
   (م-٠ · الجولة ٠) اختبارُ حساسيّةِ البوّابات — يزرع عيباً معلوماً أمام كلّ بوّابةٍ ويشترط أن تعضّ.
@@ -72,14 +72,23 @@ $cases['secrets'] = {
     $plantedFiles.Add($probe)
     $lines = @(
         '# GATE-CHECK PROBE — يُحذف تلقائياً',
-        '$fallbackLogin = "admin/admin123"',
-        '$pgPass = "Hunter22!"'
+        # ‏(م-٤ · ن-١٣) ‏**الطُّعمُ يُركَّب عند التشغيل، ولا يُكتب حرفيّاً هنا.**
+        #
+        # ‏الماسحُ يستثني **نفسَه** لأنّ أنماطَه تحوي ما تبحث عنه — ولا يستثني هذا
+        # ‏الملفّ. فبقيت أربعُ نتائجَ حرجةٍ في كلّ تشغيلة منذ `3896ef7` (‏2026-09-06)،
+        # ‏**وخطوةُ الأمن في CI حمراءُ منذ ذلك اليوم** ولم يرها أحدٌ إذ لا يعمل CI
+        # ‏على فرع الإصلاح. وهذا شكلُ «أداةُ القياس تُلوّث ما تقيسه» بعينه.
+        #
+        # ‏**والتركيبُ لا يُضعف شيئاً:** الملفُّ المزروعُ يحمل النصَّ كاملاً، فيراه
+        # ‏الماسحُ ويسقط كما يجب. **والمصدرُ وحدَه هو ما نظُف.**
+        '$fallbackLogin = "admin/admin' + '123"',
+        '$pg' + 'Pass = "Hunter22!"'
     ) -join "`n"
     # ‏بايتُ تحكّمٍ حقيقيّ (0x08) — الكاشفُ الرابع.
     [IO.File]::WriteAllBytes($probe, [Text.Encoding]::UTF8.GetBytes($lines) + [byte[]]@(0x08, 0x0A))
     $bit = Test-GateFails { & "$root\scripts\security-static-scan.ps1" }
     Remove-Item $probe -Force -ErrorAction SilentlyContinue
-    Add-Result 'secrets' 'security-static-scan' $bit 'admin123 · $pgPass · بايت 0x08'
+    Add-Result 'secrets' 'security-static-scan' $bit ('admin' + '123 · $pgPass · بايت 0x08')   # ‏الوصفُ يُركَّب كذلك — وإلّا أسقط الماسحَ بنفسِه.
 }
 
 # ── ٢ · الاختبارُ الذاتيُّ لأنماط الأسرار: نمطٌ ميّتٌ يجب أن يُسقط البوّابة ────────

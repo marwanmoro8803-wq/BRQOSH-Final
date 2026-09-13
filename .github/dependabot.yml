@@ -1,0 +1,57 @@
+# ‏(م-٤ · ن-١٣) ‏**المُحدِّثُ هو ما يجعل التثبيتَ ببصمةٍ أماناً لا تجميداً.**
+#
+# ‏بصمةٌ بلا مُحدِّثٍ تُبدّل «الوسمُ يتحرّك تحتي» بـ«الإجراءُ لا يتحرّك أبداً»، **وكلاهما
+# ‏عمًى**. وقِيس أنّ `v4` قناةُ ترقيعٍ حيّة: قمّتُها عند التثبيت `backport fixes to
+# ‏releases-v4 (#2524)` بتاريخ 2026-07-16، تعالج فحصاً غيرَ آمنٍ لطلبات الدمج الخارجيّة.
+# ‏**فلولا هذا الملفّ لكان التثبيتُ قطعاً لتلك القناة.**
+#
+# ‏والمستودعُ لم يكن فيه أيُّ مُحدِّث: `.github/` كان يحوي ملفّاً واحداً هو `ci.yml`.
+version: 2
+
+updates:
+  # ‏سيرُ العمل الحيّ في الجذر.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # ‏والعيّنةُ في `tools/` — خاملةٌ لا تُشغَّل، **لكنّها قالبٌ يُنسَخ**، فقالبٌ متقادمٌ
+  # ‏يُوَرِّث التقادمَ إلى كلّ من نسخه. و`dependabot` يقرأ كلّ مجلّدٍ يُذكَر هنا صراحةً.
+  - package-ecosystem: github-actions
+    directory: /tools/desktop-qa-army
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # ‏(م-٤ · ن-١٣) ‏**وحزمُ NuGet بعد أن ثُبِّتت إصداراتُها بالضبط.**
+  #
+  # ‏كانت إحدى عشرة حزمةً على مدًى عائم (`9.0.*`)، فتُرقّى من نفسِها في كلّ استعادة
+  # ‏**بلا مراجعةٍ ولا أثرٍ في التاريخ**. وبعد التثبيت لا تتحرّك إلّا بطلبٍ يُراجَع —
+  # ‏وهذا هو من يرفعه. **والتثبيتُ بلا هذا يُنتج تقادماً في مكتباتِ تشفيرٍ وقاعدةِ بيانات.**
+  #
+  # ‏ويُجمَّع الطلبُ في واحدٍ لكلّ عائلةٍ: أحدَ عشرَ طلباً أسبوعيّاً لا يُراجَعُ أيٌّ منها.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+    groups:
+      microsoft-extensions:
+        patterns: ["Microsoft.Extensions.*", "System.Security.Cryptography.*"]
+      serilog:
+        patterns: ["Serilog*"]
+      efcore:
+        patterns: ["Microsoft.EntityFrameworkCore*", "Npgsql*"]
+      test:
+        patterns: ["xunit*", "Microsoft.NET.Test.*", "Microsoft.AspNetCore.Mvc.Testing", "coverlet*"]

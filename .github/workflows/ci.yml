@@ -1,10 +1,20 @@
-name: CI
+﻿name: CI
 
 on:
   push:
     branches: [main, master, develop]
   pull_request:
     branches: [main, master, develop]
+
+# ‏(م-٤ · ن-١٣) **صلاحيّاتُ الرمز — والافتراضُ كان مفتوحاً.**
+#
+# ‏بلا هذا المقطع يأخذ `GITHUB_TOKEN` صلاحيّاتِ المستودع الافتراضيّة، وقد تكون
+# ‏`contents: write` على إعداداتٍ قديمة. **وقيس أنّ سيرَ العمل لا يستعمل الرمزَ إطلاقاً**:
+# ‏بحثٌ عن `GITHUB_TOKEN|secrets.|github.token|gh api|gh pr|git push` يُعيد صفراً
+# ‏(‏وشاهدُ ضبطٍ موجب: `env:` يظهر خمسَ مرّات في الملفّ نفسِه). فالقراءةُ تكفي بالبرهان
+# ‏لا بالتقدير. و`upload-artifact` يُصادِق بـ`ACTIONS_RUNTIME_TOKEN` لا بهذا الرمز.
+permissions:
+  contents: read
 
 jobs:
   build-test:
@@ -30,10 +40,31 @@ jobs:
       BRQOSH_REQUIRE_PG: "1"
 
     steps:
-      - uses: actions/checkout@v4
+      # ‏(م-٤ · ن-١٣) ‏**الإجراءاتُ مثبّتةٌ ببصمةٍ لا بوسمٍ متحرّك.**
+      #
+      # ‏الوسمُ `@v4` مؤشّرٌ يملكه صاحبُ الإجراء ويستطيع تحريكَه، **فمستودعٌ مخترَقٌ يُبدّل
+      # ‏ما يجري عندنا دون أن يتغيّر حرفٌ في هذا الملفّ**. والبصمةُ لا تتحرّك.
+      #
+      # ‏**والتثبيتُ وحدَه انحدارٌ لولا `dependabot`:** قِيس أنّ `v4` **قناةُ ترقيعٍ حيّة** —
+      # ‏قمّتُها عند التثبيت رسالتُها `backport fixes to releases-v4 (#2524)` بتاريخ
+      # ‏2026-07-16، وتعالج فحصاً غيرَ آمنٍ لطلبات الدمج الخارجيّة. **فتثبيتٌ بلا مُحدِّثٍ
+      # ‏يُبدّل انجرافاً صامتاً بتقادمٍ صامت** — ولذلك يُشحن `.github/dependabot.yml` في
+      # ‏هذا التغيير نفسِه، وهو ما يجعل البصمةَ قناةً مضبوطةً لا تجميداً.
+      #
+      # ‏**وهذه الأسطرُ متأخّرةٌ ثلاثةَ إصداراتٍ رئيسة** (الأحدثُ v7.0.1 و v6.0.0)، ولم
+      # ‏تُرفَع هنا عمداً: التثبيتُ مسألةُ أمن، والترقيةُ الكبرى مسألةُ سلوك، **وخلطُهما
+      # ‏يُدخل خطرَ ترقيةٍ في تغييرٍ أمنيّ**. يرفعها `dependabot` بطلبٍ يُراجَع.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 — 2026-09-13
+        with:
+          # ‏(م-٤ · ن-١٣) ‏**الاعتمادُ لا يُترك في `.git/config`.**
+          #
+          # ‏`checkout` يكتب رمزَ العمل في إعدادات المستودع افتراضاً، **فأيُّ خطوةِ `run:`
+          # ‏بعده تقرؤه** — وفيها خطواتٌ تُشغّل سكربتاتٍ وأدواتٍ من الشجرة. وقِيس أنّ
+          # ‏سيرَ العمل لا يُجري عمليّةَ git واحدةً بعد الفحص، فالإسقاطُ بلا كلفة.
+          persist-credentials: false
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4 — 2026-09-13
         with:
           dotnet-version: '9.0.x'
 
@@ -179,7 +210,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 — 2026-09-13
         with:
           name: coverage
           path: TestResults/**/coverage.cobertura.xml
