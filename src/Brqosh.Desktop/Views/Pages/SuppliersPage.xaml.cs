@@ -104,7 +104,9 @@ public partial class SuppliersPage : UserControl
     private async void OnToggleInactive(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded) return;
+        // ‏(ن-١٨) **والدورُ شرطٌ هنا لا في `Loaded` وحدَه** — انظر CustomersPage للسبب.
         ReactivateBtn.Visibility = ShowInactiveCheck.IsChecked == true
+                                   && PermissionService.CanPostAccounting(AppServices.CurrentUser)
             ? Visibility.Visible
             : Visibility.Collapsed;
         await ReloadAsync();
@@ -114,6 +116,15 @@ public partial class SuppliersPage : UserControl
     private async void OnReactivate(object sender, RoutedEventArgs e)
     {
         if (SuppliersGrid.SelectedItem is not SupplierRow row) return;
+
+        // ‏(ن-١٨) **الحارسُ عند نقطة الكتابة — وهو الذي يصمد.** ومفتاحُ `suppliers`
+        // ‏[مدير·محاسب] فالثغرةُ هنا كامنةٌ لا حيّة؛ **وتُسَدُّ لأنّ مفتاحَ الشاشة قد
+        // ‏يتّسع غداً** — وعندئذٍ لا يُراجَع هذا الملفُّ ثانيةً.
+        if (!PermissionService.CanPostAccounting(AppServices.CurrentUser))
+        {
+            UiFeedback.ShowWarning(PermissionService.DeniedActionMessage("إعادة التفعيل", "reactivate"));
+            return;
+        }
 
         try
         {

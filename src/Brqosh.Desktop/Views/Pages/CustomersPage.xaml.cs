@@ -103,7 +103,12 @@ public partial class CustomersPage : UserControl
     private async void OnToggleInactive(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded) return;
+        // ‏(ن-١٨) **والدورُ شرطٌ هنا لا في `Loaded` وحدَه.** كان هذا السطرُ يُعيد الزرَّ
+        // ‏مرئيّاً لكلِّ دورٍ عند أوّل ضغطةٍ على «إظهار الموقوف» — **وهي الضغطةُ التي لا
+        // ‏يُبلَغ الزرُّ بدونها**. فحارسٌ يُوضَع في `ApplyActionVisibility` وحدَه **يُدهَس
+        // ‏قبل أن يُستعمَل**، ويبقى مظهرُه في المُراجعة صحيحاً.
         ReactivateBtn.Visibility = ShowInactiveCheck.IsChecked == true
+                                   && PermissionService.CanPostAccounting(AppServices.CurrentUser)
             ? Visibility.Visible
             : Visibility.Collapsed;
         await ReloadAsync();
@@ -113,6 +118,16 @@ public partial class CustomersPage : UserControl
     private async void OnReactivate(object sender, RoutedEventArgs e)
     {
         if (CustomersGrid.SelectedItem is not CustomerRow row) return;
+
+        // ‏(ن-١٨) **الحارسُ عند نقطة الكتابة — وهو الذي يصمد.** الإخفاءُ ليس تخويلاً:
+        // ‏زرُّ الإيقاف مَحروسٌ منذ م2-٢٣ وزرُّ العودة لم يكن، **فكان الصرّافُ يُعيد تفعيل
+        // ‏ما لا يملك إيقافَه** — سقّاطةٌ في الاتجاه الخطأ. و`IsActive` هنا يُغذّي قائمةَ
+        // ‏سند القبض (`CollectableCustomersQuery.cs:44`)، والأثرُ في `ProductsPage` أوسع.
+        if (!PermissionService.CanPostAccounting(AppServices.CurrentUser))
+        {
+            UiFeedback.ShowWarning(PermissionService.DeniedActionMessage("إعادة التفعيل", "reactivate"));
+            return;
+        }
 
         try
         {

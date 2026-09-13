@@ -100,7 +100,9 @@ public partial class ProductsPage : UserControl
     private async void OnToggleInactive(object sender, RoutedEventArgs e)
     {
         if (!IsLoaded) return;
+        // ‏(ن-١٨) **والدورُ شرطٌ هنا لا في `Loaded` وحدَه** — انظر CustomersPage للسبب.
         ReactivateBtn.Visibility = ShowInactiveCheck.IsChecked == true
+                                   && PermissionService.CanPostAccounting(AppServices.CurrentUser)
             ? Visibility.Visible
             : Visibility.Collapsed;
         await ReloadAsync();
@@ -110,6 +112,15 @@ public partial class ProductsPage : UserControl
     private async void OnReactivate(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not Row row) return;
+
+        // ‏(ن-١٨) **الحارسُ عند نقطة الكتابة — وهو الذي يصمد.** و`IsActive` هنا **بوّابةُ
+        // ‏البيع نفسُها** (PosSessionPage:91 · SalesInvoiceDialog:128 · StockMovementDialog:46):
+        // ‏صنفٌ سحبه المحاسبُ من البيع كان الصرّافُ يُعيده إلى نقطة البيع بضغطة.
+        if (!PermissionService.CanPostAccounting(AppServices.CurrentUser))
+        {
+            UiFeedback.ShowWarning(PermissionService.DeniedActionMessage("إعادة التفعيل", "reactivate"));
+            return;
+        }
 
         try
         {

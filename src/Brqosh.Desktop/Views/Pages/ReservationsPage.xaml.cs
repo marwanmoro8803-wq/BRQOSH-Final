@@ -36,7 +36,13 @@ public partial class ReservationsPage : UserControl
                 (CheckInBtn, PermissionService.CanPost),
                 (AccrueBtn, PermissionService.CanPost),
                 (CheckOutBtn, PermissionService.CanPost),
-                (DepositBtn, PermissionService.CanPost));
+                // ‏(ن-١٨) **الزرُّ يُطابق حارسَ خدمتِه**: `ReservationDepositService.cs:46`
+                // ‏هو `EnsureCanPostAccounting` — والصرّافُ يسقط فيه. وكان `CanPost` هنا
+                // ‏يُظهره له، **وهو فرقٌ لم يُرَ لأنّ `reservations` لم يكن في جدول الأدوار
+                // ‏أصلاً فلا صرّافَ يبلغ الشاشة**. فلمّا فُتح المفتاحُ صار الفرقُ زرّاً
+                // ‏يُملأ ثمّ يُرفَض — **عطلٌ صامتٌ يتحوّل إلى زرٍّ ميّتٍ إن لم يُسَوَّ معه**.
+                // ‏وبقيّةُ الأزرار على `FolioService` = `EnsureCanPost` فتبقى كما هي.
+                (DepositBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
     }

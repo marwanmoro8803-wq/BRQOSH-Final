@@ -103,8 +103,14 @@ public class NavigationReachabilityTests
     [Fact]
     public void EveryMenuItem_HasAModuleInTheAuditMap()
     {
+        // ‏(ن-١٨) **كان هنا `if (mapped.Count == 0) return;`** — فحارسٌ لا يجد ما يحرسه
+        // ‏كان **يمرّ أخضر**. وسواءٌ ضاع الملفُّ بإعادة تسميةٍ أو كفَّ النمطُ عن المطابقة،
+        // ‏تُقرأ النتيجةُ براءةً. وقِيس أنّ الملفَّ **موجودٌ وفيه ١٠٦ مدخلاً** — أي أنّ
+        // ‏التخطّي لم يكن يخدم حالةً قائمة، **ولا يملك أن يفعل إلّا سترَ انحدار**.
+        // ‏والعرفُ المكتوب في هذا المجلّد: «رميةٌ لا تخطٍّ صامت» (SupplyChainIsPinnedTests).
         var mapped = AuditMapKeys();
-        if (mapped.Count == 0) return;   // ‏الأداةُ غيرُ مرجعيّةٍ من هذا المشروع.
+        Assert.True(mapped.Count > 0,
+            "‏لم تُقرأ خريطةُ الأداة `tools/UiAudit/NavKeyModuleMap.cs` — الحارسُ أعمى، ولا يمرّ أعمى.");
 
         var missing = CatalogKeys().Where(k => !mapped.Contains(k))
             .OrderBy(k => k, StringComparer.Ordinal).ToList();

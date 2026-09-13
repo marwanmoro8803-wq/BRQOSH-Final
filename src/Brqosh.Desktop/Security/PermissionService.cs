@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Security;
 
 namespace Brqosh.Desktop.Security;
@@ -81,7 +82,110 @@ public static class PermissionService
         ["backup"] = [UserRole.Administrator],
         ["organizations"] = [UserRole.Administrator],
         ["branches"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏(م-٤ط · ن-١٨) ‏**خمسةٌ وثلاثون مفتاحاً كانت غائبةً عن هذا الجدول.**
+        //
+        // ‏و`CanAccess` يسقط إلى `false` عند مفتاحٍ مجهول، و`BuildNavigation` يُسقط
+        // ‏المجموعةَ كلَّها إن خلت (MainWindow.xaml.cs:557) — **بلا رسالة**. فلم تكن
+        // ‏النتيجةُ إخفاءَ خمسٍ وثلاثين شاشةً بل **إطفاءَ أربعِ وحداتٍ كاملة**: العقارات
+        // ‏٠/٣ · الرعاية الصحية ٠/٤ · الضيافة ٠/٤ · اللوجستيات ٠/٢ — لكلِّ من ليس مديراً.
+        // ‏و`ModuleCatalog` يضع كلَّ واحدةٍ منها في المِلفِّ المُسمّى باسمها، **فمستشفًى
+        // ‏يشتري بَرقوش ثمّ يُنشئ محاسباً لا يرى المرضى** — وهو سببُ شرائه.
+        // ‏والرواتبُ هي الحالةُ العامّة: `ModuleKey.Payroll` في المِلفّات الثمانية كلِّها،
+        // ‏والمجموعةُ تُعرَض ١/٧ للمحاسب — **فمن يُشغّل الرواتب لا يفتح سجلَّ الموظفين
+        // ‏ولا قسائمَ الرواتب ولا ملفَّ حماية الأجور الذي يُلزم به النظام**.
+        //
+        // ‏**والقرارُ هنا صريحٌ لكلِّ مفتاح**، وكلُّ إسنادٍ إمّا نقلٌ عن جارٍ مقيسٍ في
+        // ‏المجموعة نفسِها أو عن حارسِ الخدمة التي تقف خلفه. ‏و«للمدير وحدَه» يُكتب
+        // ‏**قراراً** — فمن خارج `CanAccess` لا يُفرَّق المُقرَّرُ للمدير من المنسيّ.
+
+        // ‏المحاسبة العامة — `cost_centers` و`fiscal_periods` مقيسان [مدير·محاسب]،
+        // ‏و`project_profitability` مقيسٌ [مدير·محاسب·مُطّلع]: الربحيّةُ تُقرأ ولا تُكتَب.
+        ["branch_profitability"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
+        ["budget_variance"] = [UserRole.Administrator, UserRole.Accountant],
+        ["cost_center_statement"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏المبيعات والمشتريات — `customer_statement` و`supplier_statement` مقيسان
+        // ‏[مدير·محاسب]، **وأعمارُ الديون كشفُ حسابٍ مُجمَّعٌ لا أكثر**.
+        ["receivable_aging"] = [UserRole.Administrator, UserRole.Accountant],
+        ["recurring_plans"] = [UserRole.Administrator, UserRole.Accountant],
+        ["payable_aging"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏المخزون — `warehouses` و`stock_movements` و`stock_count` مقيسةٌ [مدير·محاسب].
+        // ‏و`products` وحدَه يقبل الصرّاف لأنّه يُقرأ من شاشة البيع؛ **والدفعاتُ ووحداتُ
+        // ‏القياس بياناتُ ضبطٍ لا بيعٍ**، فلا تُمنَح لمن لا يضبطها.
+        ["stock_batches"] = [UserRole.Administrator, UserRole.Accountant],
+        ["units_of_measure"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏الخزينة — `bank_accounts` و`cheques` و`bank_reconciliation` مقيسةٌ [مدير·محاسب]
+        // ‏لأنّها تُرحّل؛ **والمركزُ النقديُّ والتدفّقُ المتوقّع يُقرآن**، فيلحقان
+        // ‏بـ`exchange_rates` المقيسِ [مدير·محاسب·مُطّلع].
+        ["fx_revaluation"] = [UserRole.Administrator, UserRole.Accountant],
+        ["monetary_revaluation"] = [UserRole.Administrator, UserRole.Accountant],
+        ["bank_statements"] = [UserRole.Administrator, UserRole.Accountant],
+        ["cash_position"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
+        ["cash_flow_forecast"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
+
+        // ‏العقارات — لا جارَ في المجموعة، فالنقلُ عن النظير: `contracts` و`work_orders`
+        // ‏مقيسان [مدير·محاسب]، وعقدُ الإيجار وأمرُ الصيانة نظيراهما.
+        ["properties"] = [UserRole.Administrator, UserRole.Accountant],
+        ["leases"] = [UserRole.Administrator, UserRole.Accountant],
+        ["maintenance_orders"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏الرعاية الصحية — **وهنا فُرِّق بالقياس لا بالتشبيه**:
+        // ‏• `visits` **نقلٌ حرفيٌّ** عن `VisitBillingService.cs:48` = `EnsureCanPost`،
+        // ‏  وقائمتُها [مدير·محاسب·صرّاف]؛ وقِيس أنّ شبكةَ الزيارات **لا عمودَ تشخيصٍ
+        // ‏  فيها** (VisitsPage.xaml:35-41) — فهي قائمةُ فوترةٍ لا سجلٌّ سريريّ.
+        // ‏  ومنعُ الصرّافِ منها يجعل تخويلَ الخدمةِ له **غيرَ قابلٍ للبلوغ من الواجهة**.
+        // ‏• `patients` **شُدِّد عمداً**: الشبكةُ تعرض رقمَ الهوية (PatientsPage.xaml:43)
+        // ‏  ومعه تاريخُ الميلاد، **وحمايةُ البيانات الشخصيّة (G-30) لم تبدأ بعد**
+        // ‏  (MARKET_LAUNCH_GAP_ANALYSIS.md:88 · ❌/❌ · P1). فالتوسيعُ قرارُ خصوصيّةٍ
+        // ‏  يملكه المُشغّل، **والتضييقُ يُرجَع عنه بسطرٍ ولا يلزمه حكم**.
+        ["patients"] = [UserRole.Administrator, UserRole.Accountant],
+        ["visits"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],
+        ["insurance_payers"] = [UserRole.Administrator, UserRole.Accountant],
+        ["insurance_claims"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏الضيافة — `reservations` نقلٌ عن `FolioService` (أربعةُ حرّاسِ `EnsureCanPost`
+        // ‏تقبل الصرّاف): الاستقبالُ يُسجّل الدخولَ والخروج. **و`tip_pools` نقلٌ عن
+        // ‏`TipPoolService.cs:52,114` = `EnsureCanPostAccounting`** فلا صرّاف.
+        // ‏و`menu_items` وصفاتٌ كـ`bom`، و`rooms` بياناتُ ضبطٍ كـ`warehouses`.
+        ["rooms"] = [UserRole.Administrator, UserRole.Accountant],
+        ["reservations"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],
+        ["menu_items"] = [UserRole.Administrator, UserRole.Accountant],
+        ["tip_pools"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏اللوجستيات — الرحلةُ والبوليصةُ تُرحّلان (DeliveryTripService · CodSettlementService).
+        ["delivery_trips"] = [UserRole.Administrator, UserRole.Accountant],
+        ["shipments"] = [UserRole.Administrator, UserRole.Accountant],
+
+        // ‏الرواتب — `payroll` مقيسٌ [مدير·محاسب]، **ومن يُشغّل الدورةَ يفتح ما تقوم عليه**.
+        ["employees"] = [UserRole.Administrator, UserRole.Accountant],
+        ["payslips"] = [UserRole.Administrator, UserRole.Accountant],
+        ["employee_advances"] = [UserRole.Administrator, UserRole.Accountant],
+        ["leave_requests"] = [UserRole.Administrator, UserRole.Accountant],
+        ["wage_protection"] = [UserRole.Administrator, UserRole.Accountant],
+        // ‏نسبُ التأمينات إعدادٌ نظاميٌّ يُحرّك كلَّ دورة — كـ`zatca_settings` المقيسِ [مدير].
+        ["gosi_policy"] = [UserRole.Administrator],
+
+        // ‏الأمان والتدقيق — **ثلاثةٌ للمدير وحدَه بقرارٍ مكتوبٍ لا بإغفال**:
+        // ‏`soft_deleted_rows` نقلٌ عن `SoftDeletedRowService.cs:71` = `EnsureAdministrator`
+        // ‏(وجارُه `backup` مقيسٌ [مدير] بسببٍ مكتوب)، و`data_migration` يستورد بياناتٍ
+        // ‏رئيسةً بالجملة كـ`organizations`، و`diagnostics` حالةُ منصّةٍ كـ`platform_events`.
+        ["soft_deleted_rows"] = [UserRole.Administrator],
+        ["data_migration"] = [UserRole.Administrator],
+        ["diagnostics"] = [UserRole.Administrator],
     };
+
+    /// <summary>
+    /// ‏(ن-١٨) <b>المفاتيحُ المُقرَّرة</b> — سطحٌ يُميّز «للمدير وحدَه» من «منسيّ».
+    ///
+    /// <para><b>ولا يُستغنى عنه بحارسٍ سلوكيّ</b>: تسعةُ مداخلَ مشروعةٍ قيمتُها
+    /// <c>[Administrator]</c>، فـ<see cref="CanAccess"/> يُعيد <c>false</c> لكلّ دورٍ
+    /// آخرَ فيها — <b>تماماً كما يفعل بمفتاحٍ لا وجودَ له</b>. فالمُعلَنُ والمنسيُّ
+    /// لا يُفرَّقان من الخارج، ولا اختبارَ سلوكيٌّ يبلغ الفرق.</para>
+    /// </summary>
+    public static IReadOnlyCollection<string> DecidedKeys => ScreenRoles.Keys;
 
     public static bool CanAccess(AppUser? user, string pageKey)
     {
@@ -115,4 +219,14 @@ public static class PermissionService
 
     public static string DeniedMessage(string pageTitle) =>
         $"لا تملك صلاحية الوصول إلى «{pageTitle}».";
+
+    /// <summary>
+    /// ‏(ن-١٨) <b>منعُ إجراءٍ لا منعُ وصول</b> — و<see cref="DeniedMessage"/> يقول
+    /// «الوصول إلى»، فاستعمالُه لزرٍّ يُنتج «لا تملك صلاحية الوصول إلى إعادة التفعيل».
+    ///
+    /// <para>‏و<c>LocaleManager.T</c> لا <c>$"…"</c> وحدَها: النصُّ المركَّب لا يجد
+    /// نفسَه في السجلّ، <b>فيبقى عربيّاً وحيداً في واجهةٍ إنجليزية</b>.</para>
+    /// </summary>
+    public static string DeniedActionMessage(string actionAr, string actionEn) =>
+        LocaleManager.T($"لا تملك صلاحية {actionAr}.", $"You do not have permission to {actionEn}.");
 }
