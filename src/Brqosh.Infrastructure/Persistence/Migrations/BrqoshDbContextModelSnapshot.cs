@@ -5739,8 +5739,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
-                            b1.Property<int>("VatCategory")
-                                .HasColumnType("integer");
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<long>("purchase_request_id")
                                 .HasColumnType("bigint");
@@ -5959,8 +5961,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasColumnType("text");
 
                             b1.Property<string>("TaxExemptionReasonCode")
-                                .HasMaxLength(32)
-                                .HasColumnType("character varying(32)");
+                                .HasColumnType("text");
 
                             b1.Property<string>("UnitCode")
                                 .HasMaxLength(16)
@@ -6171,8 +6172,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(18, 2)
                                 .HasColumnType("numeric(18,2)");
 
-                            b1.Property<int>("VatCategory")
-                                .HasColumnType("integer");
+                            b1.Property<string>("VatCategory")
+                                .IsRequired()
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)");
 
                             b1.Property<long>("sales_quotation_id")
                                 .HasColumnType("bigint");

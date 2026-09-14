@@ -34,8 +34,10 @@ public class SalesOrderService(BrqoshDbContext db)
             throw new Domain.Accounting.AccountingException("يُنشأ الفاتورة من أمر بيع مؤكد فقط.");
 
         var invoice = SalesInvoice.CreateDraft(companyId, order.CustomerId, order.OrderDate);
+        // ‏(م-٥ · ن-٥٢) الثلاثيُّ الضريبيُّ يعبر التحويل — انظر `PurchaseOrderService`.
         foreach (var line in order.Lines)
-            invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId);
+            invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
         await new SalesInvoicePostingService(db).PostAsync(invoice);
         order.MarkInvoiced(invoice.Id);
@@ -53,8 +55,12 @@ public class SalesOrderService(BrqoshDbContext db)
             throw new Domain.Accounting.AccountingException("يُحوَّل عرض سعر مُرسَل أو مقبول فقط.");
 
         var order = SalesOrder.CreateDraft(companyId, quote.CustomerId, DateOnly.FromDateTime(DateTime.Today), quotationId);
+        // ‏(م-٥ · ن-٥٢) **وهذا الموضعُ صار حيّاً بهذا التغيير نفسِه**: عرضُ السعر لم يكن
+        // ‏يقبل فئةً ضريبيّةً أصلاً، فلم يكن ثَمّ ما يسقط. ومتى قبِلها وجب أن تعبر — وإلّا
+        // ‏خُرق مبدأُ سجلّ السطر: «ولا تُتاح إلا حيث تُحوَّل».
         foreach (var line in quote.Lines)
-            order.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId);
+            order.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
         return await ConfirmAsync(order, ct);
     }

@@ -52,7 +52,14 @@ public class PurchaseRequest : IBranchScoped
         return new PurchaseRequest(companyId, supplierId, requestDate, (justification ?? "").Trim());
     }
 
-    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null)
+    /// <summary>
+    /// (م-٥ · ن-٥٢) <b>والفئةُ الضريبيّةُ تُقبَل هنا — وكانت لا تُقبَل.</b> انظر شرحَ
+    /// <c>SalesQuotation.AddLine</c>: العجزُ عن التعبير وعمودُ ن-٥١ العدديّ وجهان لسببٍ واحد،
+    /// <b>والوسيطُ لا يُضاف بلا تمريرِه في <c>PurchaseRequestWorkflowService</c></b>.
+    /// </summary>
+    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
+        Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -60,7 +67,8 @@ public class PurchaseRequest : IBranchScoped
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId,
+            vatCategory, taxExemptionReasonCode, taxExemptionReason));
     }
 
     public void MarkSubmitted(string requestNumber, long workflowInstanceId)

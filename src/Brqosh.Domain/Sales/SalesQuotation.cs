@@ -44,12 +44,28 @@ public class SalesQuotation : ILineDocumentTotals
         return new SalesQuotation(companyId, customerId, quotationDate, quotationDate.AddDays(validDays));
     }
 
-    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null)
+    /// <summary>
+    /// (م-٥ · ن-٥٢) <b>والفئةُ الضريبيّةُ تُقبَل هنا — وكانت لا تُقبَل.</b>
+    ///
+    /// <para>عرضُ السعر وطلبُ الشراء كانا وحدَهما من أصحاب <see cref="SalesInvoiceLine"/>
+    /// التسعة عاجزَين عن التعبير عن فئةٍ ضريبيّة، <b>وهما بعينهما الجدولان اللذان كان عمودُهما
+    /// عدداً صحيحاً</b> (ن-٥١): العمودُ لم يُعلَن نصّاً لأنّ المستندَ لم يحمل المفهومَ أصلاً.
+    /// فالعجزُ والعمودُ وجهان لسببٍ واحد.</para>
+    ///
+    /// <para><b>ولا يُضاف الوسيطُ وحدَه.</b> سجلُّ <c>SalesInvoiceLine</c> يشترط في تعليق
+    /// <c>UnitCode</c> ألّا يُتاح في مستندٍ ما لا يُحوَّل عنه — <b>فالمُصرِّفُ يضمن الغيابَ بلا
+    /// حارسٍ يُنسى</b>. ولذلك يُمرَّر الثلاثيُّ في <c>SalesOrderService.CreateFromQuotationAsync</c>
+    /// في التغيير نفسِه.</para>
+    /// </summary>
+    public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
+        Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
     {
         if (Status != SalesQuotationStatus.Draft)
             throw new AccountingException("لا تُعدَّل عروض الأسعار بعد الإرسال.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
-        var line = new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId);
+        var line = new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId,
+            vatCategory, taxExemptionReasonCode, taxExemptionReason);
         _lines.Add(line);
         RecalculateTotals();
     }
@@ -64,9 +80,22 @@ public class SalesQuotation : ILineDocumentTotals
 
     public void Accept() => Status = SalesQuotationStatus.Accepted;
 
+    /// <summary>
+    /// (م-٥ · ن-٥٢) <b>الأوعيةُ بالفئة — وكانت نسبةً مسمّرةً على الإجمالي.</b>
+    ///
+    /// <para>كان الحسابُ <c>Subtotal * SaudiVatRate</c> — <b>وهو بعينه العطلُ الذي وُجد
+    /// CEEF-207 لإزالته</b> («كانت النسبة 15% مسمّرة في كل المسارات»). ونجا هنا وحدَه لسببٍ
+    /// واحد: <b>عرضُ السعر لم يكن يحمل فئةً ضريبيّةً أصلاً</b>، فالنسبةُ الواحدةُ كانت
+    /// صحيحةً بحكم استحالة غيرها.</para>
+    ///
+    /// <para><b>ومتى صار يحملها صار الحسابُ خطأً حيّاً</b>: عرضٌ فيه سطرٌ معفًى كان يقتبس
+    /// للعميل ضريبةً على ما لا ضريبةَ عليه، <b>ثمّ يتغيّر الإجماليُّ عند التحويل إلى أمر
+    /// بيع</b> — فالعرضُ الذي وقّعه العميلُ ليس الفاتورةَ التي تصله. وهو ما قِيس: ٣٠٠٫٠٠
+    /// في العرض مقابل ١٥٠٫٠٠ في الأمر على الأسطر نفسِها. <b>فالحاسبةُ المشتركةُ هي المرجع</b>،
+    /// كما في أمر البيع والفاتورة.</para>
+    /// </summary>
     private void RecalculateTotals()
     {
-        Subtotal = Math.Round(_lines.Sum(l => l.LineTotal), 2, MidpointRounding.AwayFromZero);
-        VatAmount = Math.Round(Subtotal * SalesInvoice.SaudiVatRate, 2, MidpointRounding.AwayFromZero);
+        (Subtotal, VatAmount) = Accounting.LineDocumentTotalsCalculator.Compute(_lines);
     }
 }

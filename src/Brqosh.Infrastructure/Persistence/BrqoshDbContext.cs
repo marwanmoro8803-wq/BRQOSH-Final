@@ -1112,7 +1112,13 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
-                lines.Property(l => l.TaxExemptionReasonCode).HasMaxLength(32);
+                // ‏(م-٥ · ن-٥١) **ولا سقفَ هنا وحدَه.** كان `HasMaxLength(32)` على هذا المالك
+                // ‏دون الثمانية الآخرين، فصار العمودُ `character varying(32)` هنا و`text` هناك
+                // ‏— **نوعُ CLR واحدٌ ونوعُ التخزين اثنان**، وهو الشقُّ الذي لا تراه مقارنةُ
+                // ‏نوعِ CLR وحدَها. وأثرُه مقيسٌ صغير: رمزُ إعفاءٍ أطولُ من ٣٢ يُقبل على ثمانية
+                // ‏مستنداتٍ ويُرفض بـ22001 هنا. **والتوسيعُ هو الاتّجاه الآمن** — فلا بيانات
+                // ‏تُرفض بعده — أمّا فرضُ السقف على التسعة فثمانيةُ تضييقاتٍ لمكسبٍ أصغر،
+                // ‏وتُترك بنداً مستقلّاً إن أُريد سقفٌ موحّد.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
@@ -1313,6 +1319,10 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // ‏(م-٥ · ن-٥١) **نصّاً كإخوته الثمانية** — وكان عدداً صحيحاً هنا وحدَه
+                // ‏وفي سطور عرض السعر. و`SalesInvoiceLine` نوعٌ واحدٌ يملكه تسعةُ مستندات،
+                // ‏فاستعلامٌ يُكتب لأحدهم يُرمى على الآخر بـ22P02 لا بنتيجةٍ فارغة.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
             entity.Navigation(r => r.Lines)
@@ -1615,6 +1625,8 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
+                // ‏(م-٥ · ن-٥١) **نصّاً كإخوته الثمانية** — انظر تعليق سطور طلب الشراء.
+                lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(q => q.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });

@@ -76,8 +76,10 @@ public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflow
         if (request.BranchId is long branchId)
             po.AssignBranch(branchId);
 
+        // ‏(م-٥ · ن-٥٢) صار حيّاً بهذا التغيير نفسِه — انظر `SalesOrderService`.
         foreach (var line in request.Lines)
-            po.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId);
+            po.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
         db.PurchaseOrders.Add(po);
         await db.SaveChangesAsync(ct);

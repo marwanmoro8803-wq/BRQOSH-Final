@@ -147,6 +147,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // وأسطرُ المستندات مملوكةٌ فتُحمَّل معها دائماً.
         await EnsureExemptionReasonColumnsAsync(isPg, ct);
 
+        // ‏(م-٥ · ن-٥١) تحويلُ الفئة الضريبيّة إلى نصّ — **وهذه وحدَها ترمي إن فشلت**،
+        // ‏لأنّ نجاحاً كاذباً هنا يترك النموذجَ يقرأ نصّاً وقاعدةً تخزّن عدداً.
+        await EnsureVatCategoryIsTextAsync(isPg, ct);
+
         // (CEEF-229 · م2-٢٤) لحظةُ الترحيل — **قبل ترقيعات المزوّد** للسبب نفسه: تلك
         // الترقيعات تُجري استعلامات EF على المستندات، و EF يبني SELECT بكل أعمدة النموذج.
         await EnsurePostedAtColumnsAsync(isPg, ct);
@@ -367,6 +371,117 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         }
     }
 
+    /// <summary>اسمُ الخطوة في سجلّ المبتلَع — ثابتٌ لأنّ شرطَ ما بعدُ يبحث به.</summary>
+    private const string VatCategoryTextStep = "EnsureVatCategoryIsTextAsync";
+
+    /// <summary>
+    /// (م-٥ · ن-٥١) <b>تحويلُ عمود الفئة الضريبيّة من عددٍ صحيحٍ إلى نصّ على قاعدةٍ قائمة.</b>
+    ///
+    /// <para><b>ولمن هذه الخطوة أصلاً:</b> القاعدةُ الحديثةُ تُنشأ بالهجرات فتأتي نصّاً، ولا
+    /// تدخل الحلقةَ إطلاقاً. <b>والقاعدةُ القديمة</b> — <c>coreTableExists &amp;&amp;
+    /// appliedCount == 0</c> في <see cref="DatabaseSchemaService"/> — <b>لا تُطبَّق عليها هجرةٌ
+    /// أبداً</b>: يُستدعى المُرقِّعُ ثمّ يُرجَع. فهذه الخطوةُ هي طريقُ الإصلاح الوحيدُ لتلك
+    /// القواعد، وبدونها يصير كلُّ قراءةٍ لعرض سعرٍ بعد تغيير النموذج
+    /// <c>InvalidCastException</c>.</para>
+    ///
+    /// <para><b>ولا تبتلع.</b> <see cref="TrySchemaSqlAsync"/> يبتلع كلَّ فشلٍ ويُسجّله، وهو
+    /// السلوكُ المقصود لإضافة عمود. <b>لكنّ فشلَ هذا التحويل ليس كفشل إضافة</b>: النموذجُ يصير
+    /// يقول «نصّ» والقاعدةُ تبقى «عدداً»، <b>فيخضرّ الإقلاعُ ثمّ ترمي أوّلُ قراءةٍ في يد
+    /// المستخدم</b> — وذلك أسوأُ من توقّفٍ صريح، لأنّ العطبَ يقع حيث لا إشارةَ عنده. فيُقرأ
+    /// النوعُ <b>بعد</b> المحاولة، ويُرمى إن بقي عدداً، والرسالةُ تحمل SQLSTATE المبتلَع.
+    /// <b>وهذا الرميُ لا يُدرَك إلّا على قاعدةٍ تحتاج التحويلَ ولم تنلْه</b> — أمّا القاعدةُ
+    /// النصّيّةُ أصلاً فلا تدخل الحلقة.</para>
+    ///
+    /// <para><b>و<c>lock_timeout</c> لأنّ <c>ACCESS EXCLUSIVE</c> يحجب من يصطفّ خلفه.</b> بلا
+    /// سقفٍ ينتظر التحويلُ حتّى مهلةِ الأمر الافتراضيّة (٣٠ ثانية) <b>ومعه كلُّ قارئٍ وصل
+    /// بعده</b> — فمحطّةٌ واحدةٌ تُقلع صباحاً تُجمّد عروضَ الأسعار على المكتب كلِّه. وبسقفٍ
+    /// قصيرٍ يصير التزاحمُ <c>55P03</c> فوريّاً، ثمّ يرفعه شرطُ ما بعدُ صريحاً.</para>
+    ///
+    /// <para><b>وموضعُها في الحزمة المبكّرة دفاعيٌّ لا حتميّ</b> — ويُقال بدقّة: قِيس أنّ
+    /// ترقيعات المزوّد <b>لا</b> تقرأ هذه المجموعةَ المملوكة، فالموضعُ المتأخّر كان ليعمل.
+    /// لكنّ هذا الملفّ يحمل عضّةً مسجّلةً بـ<c>42703</c> لعمودٍ وُضع متأخّراً
+    /// (<c>EnsureExemptionReasonColumnsAsync</c> أعلاه)، <b>فالمبكّرُ يُختار لأنّ كلفةَ خطئه
+    /// صفرٌ وكلفةَ خطأ المتأخّر إسقاطُ الإقلاع</b>.</para>
+    /// </summary>
+    private async Task EnsureVatCategoryIsTextAsync(bool isPg, CancellationToken ct)
+    {
+        // ‏SQLite لا يحتاج تحويلاً: قِيس أنّ صفّاً قديماً مخزَّناً عدداً يُقرأ عبر
+        // ‏`Enum.Parse` فيعود `Exempt` — فالقيمةُ محفوظةٌ لا محتملةٌ فقط.
+        if (!isPg) return;
+
+        var names = Enum.GetValues<Brqosh.Domain.Tax.VatCategory>();
+        var whens = string.Join("\n                                   ",
+            names.Select(v => $"WHEN {(int)v} THEN '{v}'"));
+        var known = string.Join(", ", names.Select(v => ((int)v).ToString()));
+
+        var stubborn = new List<string>();
+
+        foreach (var table in VatCategoryLineTables)
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (await PgColumnTypeAsync(table, "VatCategory", ct) is not "integer")
+                continue;
+
+            SchemaSqlGuard.ValidateTable(table);
+
+            // ‏**ما لا اسمَ له يُعدّ قبل أن يُطمَس.** فرعُ ELSE يكتب 'Standard' فوق أيّ قيمةٍ
+            // ‏خارجَ التعداد، **والجملةُ نفسُها تُتلف الدليلَ على أنّ شيئاً كُتب فوقه**. ولا
+            // ‏سبيلَ اليومَ لوجود مثلها، فإن وُجدت فهي خبرٌ يستحقّ أن يُسجَّل لا أن يُبتلع.
+            var unnamed = await db.Database.SqlQueryRaw<int>(
+                $"""SELECT count(*)::int AS "Value" FROM {table} WHERE "VatCategory" NOT IN ({known})""")
+                .SingleAsync(ct);
+
+            if (unnamed > 0)
+                _suppressed.Add(new SchemaStepFailure(
+                    $"{VatCategoryTextStep}:{table}", "UnnamedVatCategoryRows",
+                    $"‏{unnamed} صفّاً يحمل فئةً لا اسمَ لها في التعداد، وكُتب فوقها 'Standard'."));
+
+            await TrySchemaSqlAsync($"{VatCategoryTextStep}:{table}", $"""
+                SET LOCAL lock_timeout = '3s';
+                ALTER TABLE {table} ALTER COLUMN "VatCategory" DROP DEFAULT;
+                ALTER TABLE {table} ALTER COLUMN "VatCategory" TYPE character varying(16)
+                    USING (CASE "VatCategory"
+                                   {whens}
+                                   ELSE '{names[0]}' END);
+                ALTER TABLE {table} ALTER COLUMN "VatCategory" SET DEFAULT '{names[0]}';
+                """, ct);
+
+            // ‏**شرطُ ما بعدُ.** لا يُترك النموذجُ يسبق التخزين.
+            if (await PgColumnTypeAsync(table, "VatCategory", ct) is "integer")
+                stubborn.Add(table);
+        }
+
+        if (stubborn.Count == 0)
+            return;
+
+        var why = string.Join(" · ", _suppressed
+            .Where(f => f.Step.StartsWith(VatCategoryTextStep, StringComparison.Ordinal))
+            .Select(f => $"{f.Step} ⟵ {f.Message}"));
+
+        throw new InvalidOperationException(
+            "‏تعذّر تحويلُ عمود الفئة الضريبيّة إلى نصّ، والنموذجُ يقرؤه نصّاً — "
+            + "**فكلُّ قراءةٍ لمستندٍ من هذه الجداول سترمي**. "
+            + "أعِد التشغيلَ بلا عملاءَ آخرين متّصلين، أو أزِل ما يعتمد على العمود (عرضٌ أو قاعدة). "
+            + $"الجداولُ الباقيةُ عدداً صحيحاً: {string.Join(", ", stubborn)}. السببُ المُسجَّل: {why}");
+    }
+
+    /// <summary>نوعُ عمودٍ على PostgreSQL، أو <c>null</c> إن لم يوجد.</summary>
+    private async Task<string?> PgColumnTypeAsync(string table, string column, CancellationToken ct)
+    {
+        SchemaSqlGuard.ValidateTable(table);
+        SchemaSqlGuard.ValidateColumn(column);
+
+        FormattableString query = $"""
+             SELECT data_type AS "Value"
+             FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = {table} AND column_name = {column}
+             """;
+
+        return await db.Database.SqlQuery<string>(query).SingleOrDefaultAsync(ct);
+    }
+
     private async Task<bool> TableExistsAsync(string table, bool isPg, CancellationToken ct)
     {
         SchemaSqlGuard.ValidateTable(table);
@@ -378,11 +493,25 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         return count > 0;
     }
 
-    /// <summary>جداول أسطر المستندات التي تحمل فئة ضريبية (CEEF-207).</summary>
+    /// <summary>
+    /// جداول أسطر المستندات التي تحمل فئة ضريبية (CEEF-207).
+    ///
+    /// <para>(م-٥ · ن-٥١) <b>كانت ستّةً وهي تسعة.</b> نوعُ السطر <c>SalesInvoiceLine</c> يملكه
+    /// تسعةُ مستندات، <b>وثلاثةٌ منها غابت عن هذه القائمة</b>: عرضُ السعر وطلبُ الشراء
+    /// وخطّةُ الفوترة الدوريّة. وهو درسُ «ثمانيةُ جداولٍ لا واحد» (CEEF-230) نفسُه، طُبِّق على
+    /// <c>BatchNumber</c> و<c>DiscountPercent</c> و<c>UnitCode</c> <b>ولم يُطبَّق هنا</b>.</para>
+    ///
+    /// <para><b>وهذه القائمةُ تقود ثلاثَ دوالّ لا واحدة</b> — يُقال صراحةً كي لا تُعدَّل ظنّاً
+    /// أنّ أثرَها موضعٌ واحد: <see cref="EnsureExemptionReasonColumnsAsync"/> و
+    /// <see cref="EnsureVatCategoryColumnsAsync"/> و<see cref="EnsureVatCategoryIsTextAsync"/>.
+    /// <b>وتوسيعُها قيسَ خاملاً على الأوّلَين</b>: الأعمدةُ الثلاثةُ موجودةٌ أصلاً في الجداول
+    /// الثلاثة المضافة من هجراتها، فـ<c>EnsurePgColumnAsync</c> يتخطّاها.</para>
+    /// </summary>
     private static readonly string[] VatCategoryLineTables =
     [
         "sales_invoice_lines", "credit_note_lines", "purchase_invoice_lines",
         "purchase_order_lines", "debit_note_lines", "sales_order_lines",
+        "sales_quotation_lines", "purchase_request_lines", "recurring_invoice_plan_lines",
     ];
 
     private async Task ApplyPostgreSqlPatchesAsync(CancellationToken ct)
@@ -1816,9 +1945,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
 
             // (CEEF-229 · م2-٩) سطورُ عرض السعر — كان الأبُ يُنشأ وحده والابنُ منسيّاً.
-            // ‏وVatCategory هنا INTEGER لا نصّاً: النموذج لا يُعلن HasConversion<string>()
-            // ‏على هذا الجدول (خلافاً لسطور أمر البيع) — والتفاوت مسجَّلٌ بنداً مفتوحاً،
-            // ‏لكنّ المُرقِّع يتبع النموذجَ كما هو لا كما ينبغي أن يكون.
+            // ‏(م-٥ · ن-٥١) وVatCategory هنا **نصٌّ** كإخوته الثمانية. وكان INTEGER، وتعليقٌ
+            // ‏في موضعه هذا يُسوّغ التفاوتَ بأنّ «المُرقِّعَ يتبع النموذجَ كما هو لا كما ينبغي
+            // ‏أن يكون». **والمبدأُ صحيحٌ وقد بقي**: المُرقِّعُ ما زال يتبع النموذج — لكنّ
+            // ‏النموذجَ نفسَه صار يُعلن `HasConversion<string>()` على هذا الجدول، فتبِعه هذا
+            // ‏السطر. **فالتصحيحُ كان في النموذج، لا في المُرقِّع** — وهذا فرعُ الإنشاء الوحيد
+            // ‏لقاعدةٍ قديمة (`coreTableExists && appliedCount == 0`)، فلا هجرةَ تصلها لتصلحه.
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_quotation_lines (
                     "id" BIGSERIAL PRIMARY KEY,
@@ -1831,7 +1963,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "Quantity" NUMERIC(18,4) NOT NULL,
                     "UnitPrice" NUMERIC(18,2) NOT NULL,
                     "ProductId" BIGINT NULL,
-                    "VatCategory" INTEGER NOT NULL DEFAULT 0,
+                    "VatCategory" character varying(16) NOT NULL DEFAULT 'Standard',
                     -- (CEEF-229 · م1-١ب/الشقّ الثاني) سببُ الإعفاء يُنشأ مع الجدول.
                     -- ‏والفرعُ القديم لا هجرةَ تُنقذه: ما لا يُكتب هنا لا يوجد أبداً.
                     "TaxExemptionReasonCode" text NULL,
@@ -1947,7 +2079,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Quantity REAL NOT NULL,
                     UnitPrice REAL NOT NULL,
                     ProductId INTEGER NULL,
-                    VatCategory INTEGER NOT NULL DEFAULT 0,
+                    VatCategory TEXT NOT NULL DEFAULT 'Standard',
                     TaxExemptionReasonCode TEXT NULL,
                     TaxExemptionReason TEXT NULL
                 );

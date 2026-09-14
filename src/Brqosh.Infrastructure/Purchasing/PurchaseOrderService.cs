@@ -56,8 +56,15 @@ public class PurchaseOrderService(BrqoshDbContext db)
             var invoice = PurchaseInvoice.CreateDraft(companyId, order.SupplierId, invoiceDate,
                 supplierInvoiceReference, vatDeductible);
 
+            // ‏(م-٥ · ن-٥٢) **الثلاثيُّ الضريبيُّ يعبر التحويل.** كان يُمرَّر أربعةُ وسائطَ من
+            // ‏سبعة، فيُعاد تصنيفُ سطرٍ معفًى «أساسيّاً» صامتاً — **وشاشةُ أمر الشراء تعرض
+            // ‏العمودَ فعلاً** (`PurchaseOrderDialog.xaml`، ويُثبّته `VatCategoryUiTests`).
+            // ‏وأثرُه مقيس: ضريبةُ مدخلاتٍ ٣٠٠ حيث قال الأمرُ ١٥٠، ووعاءُ المعفى يختفي من
+            // ‏«المشتريات بالفئة» في الإقرار. والاصطلاحُ الصحيحُ قائمٌ في
+            // ‏`RecurringInvoiceService` منذ CEEF-230.
             foreach (var line in order.Lines)
-                invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId);
+                invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                    line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
             invoice.LinkPurchaseOrder(orderId);
             await new PurchaseInvoicePostingService(db).PostAsync(invoice);
