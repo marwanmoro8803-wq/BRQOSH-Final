@@ -154,7 +154,19 @@ public static class AiAssistantPanelBuilder
         Button sendButton,
         Func<string, Task> onSendAsync)
     {
-        async void Submit()
+        // ‏(م-٥ · ن-٢٤) ‏**`async Task` هنا، و`async void` عند الحدّ المعروف.**
+        //
+        // ‏كانت دالّةً محلّيّةً `async void Submit()` تُستدعى من لامدا متزامنة —
+        // ‏**الشاذُّ الوحيد بين ٣٨٨ موضعاً** تتبع اصطلاحَ WPF بحقّ. وقد قيل إنّ استثناءها
+        // ‏«يُنهي المهمّةَ بلا مراقب»، **والمقيسُ أنّ ذلك غيرُ صحيح**: `onSendAsync` هنا هو
+        // ‏`MainWindow.OnAiQuestionAsync` وهو يلتقط كلَّ استثناءٍ ويعرضه فقاعةً في اللوحة
+        // ‏(‏`MainWindow.xaml.cs:515`)؛ وفوق ذلك يرصد `App.xaml.cs:62`
+        // ‏`DispatcherUnhandledException` فيكتب السجلَّ ويعرض ويضع `Handled = true`.
+        //
+        // ‏**فالتغييرُ محاذاةُ اصطلاحٍ لا إصلاحُ عطل** — ويُقال كذلك: الرميةُ تُسلَّم إلى
+        // ‏الموضع نفسِه قبلَه وبعدَه. وقيمتُه أنّ الملفَّ يكفّ عن أن يكون **الاستثناءَ
+        // ‏الوحيد** من اصطلاحٍ يتبعه المستودعُ كلُّه، فلا يقرأ أحدٌ الشذوذَ قاعدةً.
+        async Task SubmitAsync()
         {
             var text = input.Text.Trim();
             if (string.IsNullOrWhiteSpace(text)) return;
@@ -173,13 +185,13 @@ public static class AiAssistantPanelBuilder
             }
         }
 
-        sendButton.Click += (_, _) => Submit();
-        input.KeyDown += (_, e) =>
+        sendButton.Click += async (_, _) => await SubmitAsync();
+        input.KeyDown += async (_, e) =>
         {
             if (e.Key == Key.Enter)
             {
                 e.Handled = true;
-                Submit();
+                await SubmitAsync();
             }
         };
     }
