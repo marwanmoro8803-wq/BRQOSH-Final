@@ -20,20 +20,18 @@ param(
     [string]$PgHost = "localhost",
     [int]$PgPort = 5432,
     [string]$PgUser = "postgres",
-    [int]$LicenseWaitMinutes = 15
+    [int]$LicenseWaitMinutes = 15,
+    [switch]$KeepDatabase
 )
 
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 
 # ‏(م-٦ · تبعيّةُ ن-٢٢) **لا كلمةَ افتراضيّةً في سكربتِ تشغيل** — كما في شقيقتها
-# ‏`live-production-first-boot.ps1`. **وهذه أسوأُ من شقيقتها بفارقٍ مقيس**: تلك تُسقط
-# ‏قاعدتَها المؤقّتةَ في نهايتها بسطرِ إسقاطٍ صريح، **وهذه لا تُسقطها إطلاقاً** —
-# ‏فيبقى في خادم الآلة الافتراضيّة قاعدةُ `brqosh_prodboot_*` فيها حسابُ مديرٍ بكلمةٍ
-# ‏كانت منشورةً، **بعد انتهاء التشغيلة وإلى الأبد**. *(والتنظيفُ نفسُه بندٌ مفتوحٌ
-# ‏مُعلَنٌ في `docs/OPEN_ITEMS.md` — لم يُحرَّر هنا لأنّ هذا السكربتَ يقود واجهةً في آلةٍ
-# ‏لا تُبلَغ من هنا، وإسقاطُ القاعدة في `finally` يمحو دليلَ التشخيص على تشغيلةٍ فاشلة:
-# ‏قرارٌ للمُشغِّل لا تحريرٌ أعمى.)*
+# ‏`live-production-first-boot.ps1`. وكانت هذه **أسوأَ من شقيقتها بفارقٍ مقيس**: تلك تُسقط قاعدتَها المؤقّتة،
+# ‏وهذه لم تكن تُسقطها إطلاقاً — فتبقى في خادم الآلة الافتراضيّة قاعدةٌ فيها حسابُ مديرٍ بكلمة التشغيلة.
+# ‏**وصارت تُسقطها عند النجاح وتُبقيها عند الفشل** (انظر `finally`): الإسقاطُ الدائمُ يمحو دليلَ التشخيص
+# ‏على تشغيلةٍ فاشلة، والإبقاءُ الدائمُ يترك الحساب — فالنجاحُ يُنظّف، والفشلُ يُبقي ويُسمّي القاعدة.
 # ‏**ويُفحص قبل أيّ أثر**: لا مجلّدَ يُنشأ في `C:\rk` ولا في المشترك، ولا قاعدةَ، ولا تطبيقَ
 # ‏يُشغَّل قبل هذا السطر — فتشغيلةٌ تسقط هنا لا تترك وراءها شيئاً. *(وكان يقع بعد إنشاء ثلاثة
 # ‏مجلّداتٍ، أحدُها في المشترك — كشفته المراجعةُ الخصميّةُ قبل الإيداع.)*
@@ -43,7 +41,7 @@ if ([string]::IsNullOrWhiteSpace($adminPass)) {
 }
 # ‏**وبسياسة كلمة المرور نفسِها** — مرآةٌ لـ`src/Brqosh.Infrastructure/Security/PasswordPolicy.cs`.
 # ‏فكلمةٌ يرفضها المعالجُ كانت تمرّ هنا ثمّ تُرفض **بعد** إنشاء القاعدة وتشغيل التطبيق، فتضيع
-# ‏التشغيلةُ وتبقى القاعدة (وهذا السكربتُ لا يُسقطها). **ولماذا مرآةٌ لا الأصل**: الأصلُ في
+# ‏التشغيلةُ وتبقى القاعدة (فالتشغيلةُ الفاشلةُ تُبقيها للتشخيص — انظر `finally`). **ولماذا مرآةٌ لا الأصل**: الأصلُ في
 # ‏تجميعةِ net9.0 لا تُحمَّل في Windows PowerShell 5.1 الذي يُشغَّل به هذا السكربتُ داخل الضيف.
 # ‏والمرآةُ قد تتأخّر عن الأصل إن تغيّر — **وأسوأُ ذلك تشغيلةٌ ضائعةٌ برسالةٍ صريحة**، وهو ما
 # ‏كان يقع قبل هذا الفحص أصلاً.
@@ -272,9 +270,11 @@ if (-not (Test-Path $psqlExe)) { throw "لا psql — شغّل rk-guest.ps1 -Sta
 $serverSsl = (Invoke-Psql -Database "postgres" -Sql "show ssl;" | Out-String).Trim()
 Add-Finding -Check "الخادمُ يقدّم TLS (show ssl)" -Expected "on" -Actual $serverSsl -Ok ($serverSsl -eq "on")
 $app = $null
+$dbCreated = $false
 try {
     # ‏(م-٣٨) داخل الحارس، لا قبله: كلُّ ما يمكن أن يُخفق يجب أن يُخرج صفَّ إخفاقٍ لا صمتاً.
     Invoke-Psql -Database "postgres" -Sql "CREATE DATABASE $dbName;" | Out-Null
+    $dbCreated = $true
     Add-Finding -Check "قاعدةُ القياس أُنشئت على الخادم" -Expected $dbName -Actual "أُنشئت" -Ok $true
 
     Stop-Stray
@@ -464,6 +464,21 @@ catch {
 }
 finally {
     Stop-Stray
+    # ‏(م-٦ · تبعيّةُ ن-٢٢) **قاعدةُ القياس تُسقَط عند النجاح وتُبقى عند الفشل** — قبل الخلاصة فتظهر فيها.
+    # ‏الإبقاءُ الدائمُ كان يترك حسابَ مديرٍ بكلمة التشغيلة، والإسقاطُ الدائمُ (كشقيقه) يمحو دليلَ التشخيص
+    # ‏على تشغيلةٍ فاشلة. و`-KeepDatabase` يُبقيها في الحالتين كما في شقيقه. **والإسقاطُ يُتحقَّق منه بعده**:
+    # ‏إسقاطٌ يفشل صامتاً يُبقي الحسابَ وخلاصةً تقول PASS — فبقاءُ القاعدة يُسجَّل فحصاً فاشلاً.
+    if ($dbCreated) {
+        if ($KeepDatabase) {
+            Write-Host "أُبقيت قاعدةُ القياس $dbName (-KeepDatabase)."
+        } elseif ($script:fails -gt 0) {
+            Write-Host "أُبقيت قاعدةُ القياس $dbName للتشخيص لأنّ التشغيلةَ فشلت — أسقطها باليد بعد الفحص."
+        } else {
+            Invoke-Psql -Database "postgres" -Sql "DROP DATABASE IF EXISTS $dbName WITH (FORCE);" -AllowFailure | Out-Null
+            $left = (Invoke-Psql -Database "postgres" -Sql "SELECT count(*) FROM pg_database WHERE datname = '$dbName';" -AllowFailure | Out-String).Trim()
+            Add-Finding -Check "قاعدةُ القياس أُسقطت بعد النجاح" -Expected "0" -Actual $left -Ok ($left -eq '0')
+        }
+    }
     Write-Host ""
     Write-Host "=== الخلاصة ($stamp) ==="
     Import-Csv $csvLocal | Format-Table Check, Actual, Result -AutoSize | Out-String -Width 200 | Write-Host
