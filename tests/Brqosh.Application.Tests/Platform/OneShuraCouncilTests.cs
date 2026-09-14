@@ -103,8 +103,15 @@ public class OneShuraCouncilTests
     /// الوثائق لا يُمنَع إلّا ما كان <b>في سياق أمر</b> (<c>dotnet</c> · <c>--project</c> ·
     /// <c>Test-Path</c> · اسمُ المُشغِّل) — فجملةٌ تروي ما كان تمرّ، وسطرٌ يأمر بتشغيله يسقط.</para>
     ///
+    /// <para><b>ثمّ سقط ثانيةً على الشيء نفسِه — و<c>docs/</c> خرج من النطاق.</b> «سياقُ الأمر»
+    /// حيلةٌ نصّيّة، <b>واقتباسُ الكود المحذوف في سجلّ الدروس يحمل <c>Test-Path</c> حرفيّاً</b>
+    /// فيبدو أمراً حيّاً. فصار المسحُ النثريُّ على <c>.cursor/**</c> وحدَه — <b>وهو سطحُ
+    /// تعليمِ الوكلاء، وهناك كان المُخالفُ الأصليّ</b> (<c>dream-team.md</c>) — و<c>docs/</c>
+    /// سطحُ روايةِ التاريخ فلا يُفحص نثرُه. <b>ولا يضيع بذلك سنٌّ واحدة</b>:
+    /// <c>docs/PROJECT-MEMORY.yaml</c> ملفٌّ تنفيذيٌّ فيبقى محروساً بقيمه لا بتعليقاته.</para>
+    ///
     /// <para><b>وحدُّه المعترَفُ به:</b> لا يُميَّز <c>#</c> داخل نصٍّ من <c>#</c> تعليقاً،
-    /// ولا تُفحص صيغةُ المسار في الـJSON بسياقٍ. <b>والحارسُ الأقوى ليس هذا</b> بل
+    /// ولا يُفحص نثرُ <c>docs/</c> إطلاقاً. <b>والحارسُ الأقوى ليس هذا</b> بل
     /// <see cref="OnlyOneShuraCouncilProjectExists"/>: نسخةٌ ثانيةٌ تعود تُسقطه مهما قيل عنها.</para>
     /// </summary>
     [Fact]
@@ -115,6 +122,7 @@ public class OneShuraCouncilTests
 
         var offenders = new List<string>();
         var scanned = 0;
+        var agentProse = 0;
 
         foreach (var folder in folders)
         {
@@ -123,27 +131,23 @@ public class OneShuraCouncilTests
 
             foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
             {
-                var extension = Path.GetExtension(file).ToLowerInvariant();
-                var executable = extension is ".ps1" or ".sh" or ".yml" or ".yaml" or ".json";
-                var documentation = extension is ".md" or ".mdc";
-                if (!executable && !documentation) continue;
+                var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+                if (!IsScanned(relative)) continue;
 
                 scanned++;
-                var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+                if (IsAgentFacingProse(relative)) agentProse++;
 
                 foreach (var (line, number) in File.ReadAllLines(file).Select((l, i) => (l, i + 1)))
-                {
-                    var text = executable ? StripHashComment(line) : line;
-                    if (!text.Contains(Shadow, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (documentation && !IsCommandContext(text)) continue;
-
-                    offenders.Add($"{relative}:{number}  {text.Trim()}");
-                }
+                    if (IsLivePointer(relative, line))
+                        offenders.Add($"{relative}:{number}  {line.Trim()}");
             }
         }
 
-        // ‏شاهدُ ضبط: الماسحُ قرأ ملفّاتٍ فعلاً — **فالصفرُ عن فحصٍ لا عن عمى**.
+        // ‏شاهدا ضبط: الماسحُ قرأ ملفّاتٍ فعلاً، **وبلغ سطحَ تعليم الوكلاء بعينه** — فالصفرُ
+        // ‏عن فحصٍ لا عن عمى. وبلا الثاني يصير تضييقُ النطاق إلى `.cursor/**` إطفاءً صامتاً.
         Assert.True(scanned > 50, $"‏الماسحُ قرأ {scanned} ملفّاً فقط — النطاقُ خطأ، لا المستودعُ نظيف.");
+        Assert.True(agentProse > 10,
+            $"‏لم يبلغ الماسحُ إلّا {agentProse} وثيقةَ وكيلٍ في `.cursor/**` — وهناك كان المُخالفُ الأصليّ.");
 
         Assert.True(offenders.Count == 0,
             $"‏إشارةٌ حيّةٌ إلى «{Shadow}» بعد حذفه — ووثيقةٌ تُرشد وكيلاً إلى مسارٍ محذوف "
@@ -162,27 +166,56 @@ public class OneShuraCouncilTests
         || line.Contains("Test-Path", StringComparison.OrdinalIgnoreCase)
         || line.Contains("run-shura-council", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsExecutable(string relativePath) =>
+        Path.GetExtension(relativePath).ToLowerInvariant()
+            is ".ps1" or ".sh" or ".yml" or ".yaml" or ".json";
+
+    /// <summary>نثرٌ يُقرأ تعليماً لوكيل — وهو <c>.cursor/**</c> وحدَه، لا <c>docs/</c>.</summary>
+    private static bool IsAgentFacingProse(string relativePath) =>
+        Path.GetExtension(relativePath).ToLowerInvariant() is ".md" or ".mdc"
+        && relativePath.StartsWith(".cursor/", StringComparison.Ordinal);
+
+    private static bool IsScanned(string relativePath) =>
+        IsExecutable(relativePath) || IsAgentFacingProse(relativePath);
+
     /// <summary>
-    /// <b>الاختبارُ الذاتيُّ للتمييز — وأوّلُ حالتَيه هما اللتان أسقطتا النسخةَ الأولى.</b>
+    /// <b>القرارُ في دالّةٍ واحدة</b> — يستدعيها المسحُ والاختبارُ الذاتيُّ معاً، فلا يُثبَت
+    /// تمييزٌ غيرُ الذي يعمل.
+    /// </summary>
+    private static bool IsLivePointer(string relativePath, string line)
+    {
+        if (!IsScanned(relativePath)) return false;
+
+        var text = IsExecutable(relativePath) ? StripHashComment(line) : line;
+        if (!text.Contains(Shadow, StringComparison.OrdinalIgnoreCase)) return false;
+
+        return IsExecutable(relativePath) || IsCommandContext(text);
+    }
+
+    /// <summary>
+    /// <b>الاختبارُ الذاتيُّ — ويمرّ بدالّة القرار نفسِها، وكلُّ حالةٍ فيه أسقطت نسخةً.</b>
     /// </summary>
     [Theory]
-    // ‏تعليقٌ يشرح الحذفَ في ملفٍّ تنفيذيّ — **يجب أن يمرّ**:
-    [InlineData("      # ‏كانت نسختان: ShuraCouncil/ و tools/ShuraCouncil/ الأقدم.", true, false)]
-    [InlineData("# ‏كان هنا tools/ShuraCouncil — وهي النسخةُ المحذوفة.", true, false)]
-    // ‏وأمرٌ حيٌّ في ملفٍّ تنفيذيّ — **يجب أن يسقط**:
-    [InlineData("dotnet build tools/ShuraCouncil/ShuraCouncil.csproj -c Release", true, true)]
-    [InlineData("$shuraTool = Join-Path $RepoRoot \"tools/ShuraCouncil/Program.cs\"", true, true)]
-    // ‏وفي الوثائق: روايةُ تاريخٍ تمرّ، وأمرٌ يسقط:
-    [InlineData("وكانت نسخةٌ ثانيةٌ تحت tools/ShuraCouncil حُذفت في ن-٢٠.", false, false)]
-    [InlineData("‏يُشغّل الوكيلُ `dotnet run --project tools/ShuraCouncil`", false, true)]
-    public void ThePointerScannerDiscriminates(string line, bool executable, bool shouldBeCaught)
-    {
-        var text = executable ? StripHashComment(line) : line;
-        var caught = text.Contains(Shadow, StringComparison.OrdinalIgnoreCase)
-                     && (executable || IsCommandContext(text));
-
-        Assert.Equal(shouldBeCaught, caught);
-    }
+    // ‏تعليقٌ يشرح الحذفَ في ملفٍّ تنفيذيّ — **أسقط النسخةَ الأولى**:
+    [InlineData(".github/workflows/ci.yml", "      # ‏كانت نسختان: ShuraCouncil/ و tools/ShuraCouncil/", false)]
+    [InlineData("ShuraCouncil/run-shura-council.ps1", "# ‏كان هنا tools/ShuraCouncil — المحذوفة.", false)]
+    // ‏وسردُ التاريخ في `docs/` مقتبساً الكودَ المحذوف حرفيّاً — **أسقط النسخةَ الثانية**:
+    [InlineData("docs/OPEN_ITEMS.md",
+        "$proj = if (Test-Path \"tools/ShuraCouncil/ShuraCouncil.csproj\") { \"tools/...\" }", false)]
+    [InlineData("docs/OPEN_ITEMS.md", "وكانت نسخةٌ ثانيةٌ تحت tools/ShuraCouncil حُذفت في ن-٢٠.", false)]
+    // ‏وأمرٌ حيٌّ في ملفٍّ تنفيذيّ — يجب أن يسقط:
+    [InlineData("scripts/ops/x.ps1", "dotnet build tools/ShuraCouncil/ShuraCouncil.csproj -c Release", true)]
+    [InlineData("scripts/ops/agent-skill-regression.ps1",
+        "$shuraTool = Join-Path $RepoRoot \"tools/ShuraCouncil/Program.cs\"", true)]
+    [InlineData("docs/PROJECT-MEMORY.yaml", "      - tools/ShuraCouncil", true)]
+    // ‏وتعليمُ وكيلٍ بأمرٍ حيّ — وهو المُخالفُ الأصليّ:
+    [InlineData(".cursor/skills/brqosh-agents/dream-team.md",
+        "**+ Shura:** agent auto-runs `dotnet run --project tools/ShuraCouncil`", true)]
+    // ‏وروايةُ تاريخٍ في وثيقةِ وكيل — تمرّ:
+    [InlineData(".cursor/skills/brqosh-agents/dream-team.md",
+        "وكانت نسخةٌ تحت tools/ShuraCouncil قبل ن-٢٠.", false)]
+    public void ThePointerScannerDiscriminates(string relativePath, string line, bool shouldBeCaught) =>
+        Assert.Equal(shouldBeCaught, IsLivePointer(relativePath, line));
 
     /// <summary>
     /// <b>وCI يبني المحرّكَ الباقي.</b> خطوةُ «بناءُ أدوات التشغيل» تسرد <c>tools</c> بنمطٍ
