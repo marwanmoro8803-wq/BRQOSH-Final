@@ -20,7 +20,7 @@
 | Release/Ops | brqosh-closure | CEEF · gates · evidence |
 
 **+ Meta:** brqosh-analysis/deep-cognition — adversarial review without fatigue  
-**+ Shura:** after SAVE — agent auto-runs `tools/ShuraCouncil` (12 seats · evidence)  
+**+ Shura:** after SAVE — agent auto-runs `ShuraCouncil` (12 seats · evidence)  
 **+ Intelligence:** [council-intelligence-matrix.md](council-intelligence-matrix.md) — 279-leak synthesis map  
 **+ Polyglot:** supreme-programming/polyglot-pitfalls — cross-language in one pass
 

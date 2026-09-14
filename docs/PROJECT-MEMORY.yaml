@@ -184,13 +184,13 @@ entries:
       - analysis workflow
       - agent-protocol
       - CEEF-145/146 consensus
-    how: "tools/ShuraCouncil — 12 مقعد يقرأ أدلة حقيقية (STATUS·security·market·FlaUI·OPEN_ITEMS) + إجماع D1-D7 + exit code؛ run-shura-council.ps1"
-    verify: "dotnet build tools/ShuraCouncil PASS · run-shura-council.ps1 exit 0 · dist/evidence/shura-council/council-*.md"
+    how: "ShuraCouncil — 12 مقعد يقرأ أدلة حقيقية (STATUS·security·market·FlaUI·OPEN_ITEMS) + إجماع D1-D7 + exit code؛ run-shura-council.ps1"
+    verify: "dotnet build ShuraCouncil PASS · run-shura-council.ps1 exit 0 · dist/evidence/shura-council/council-*.md"
     links:
       ceef: "تقارير/CEEF-146_Shura_Council_UI_Audit_Consensus.md"
       rule: ".cursor/rules/brqosh-analysis-closure.mdc"
       files:
-        - "tools/ShuraCouncil/Program.cs"
+        - "ShuraCouncil/Program.cs"
         - "scripts/ops/run-shura-council.ps1"
         - ".cursor/skills/brqosh-analysis/shura-council-protocol.md"
         - "dist/evidence/shura-council/council-20260710-083557.json"
@@ -205,7 +205,7 @@ entries:
       - brqosh-agents
       - ShuraCouncil tool
     how: "brqosh-shura-auto.mdc alwaysApply + council-intelligence-matrix.md + AUTO-SHURA في cortex/harness/session + SeatIntelligenceRegistry"
-    verify: "agent-skill-regression.ps1 PASS · dotnet build tools/ShuraCouncil PASS"
+    verify: "agent-skill-regression.ps1 PASS · dotnet build ShuraCouncil PASS"
     links:
       rule: ".cursor/rules/brqosh-shura-auto.mdc"
       files:
@@ -466,7 +466,7 @@ entries:
     affected:
       - tools/UiAudit
       - tools/FullScenarioAudit
-      - tools/ShuraCouncil
+      - ShuraCouncil
       - Brqosh.Application.Intelligence
     how: "ProfileAuditContext · NavKeyModuleMap · SKIP≠FAIL · nav scroll reset · بذور مقاولات/POS · +14 دليل شاشة · ShuraCouncil parser"
     verify: "dotnet test 497 PASS · CEEF-153 · UiAudit+ShuraCouncil build PASS"

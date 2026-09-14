@@ -213,9 +213,12 @@ if ($shuraBody -notmatch "run-shura-council\.ps1") { Write-Error "brqosh-shura-a
 if ($shuraBody -notmatch "alwaysApply:\s*true") { Write-Error "brqosh-shura-auto.mdc must be alwaysApply" }
 Write-Host "  OK brqosh-shura-auto.mdc (always-on)"
 
-$shuraTool = Join-Path $RepoRoot "tools\ShuraCouncil\Program.cs"
-if (-not (Test-Path $shuraTool)) { Write-Error "Missing tools/ShuraCouncil" }
-Write-Host "  OK tools/ShuraCouncil"
+# ‏(م-٥ · ن-٢٠) كان هنا `tools\ShuraCouncil\Program.cs` — **وهي النسخةُ المحذوفة**.
+# ‏و`$ErrorActionPreference = "Stop"` أعلى الملفّ يجعل `Write-Error` يُنهي النصَّ فعلاً،
+# ‏فتركُ المسار القديم كان يُسقط ما بعده لا يُنبّه فحسب.
+$shuraTool = Join-Path $RepoRoot "ShuraCouncil\Program.cs"
+if (-not (Test-Path $shuraTool)) { Write-Error "Missing ShuraCouncil" }
+Write-Host "  OK ShuraCouncil"
 
 $councilMatrix = Join-Path $SkillsBase "brqosh-agents\council-intelligence-matrix.md"
 if (-not (Test-Path $councilMatrix)) { Write-Error "Missing council-intelligence-matrix.md" }

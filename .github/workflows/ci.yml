@@ -105,14 +105,26 @@ jobs:
       # (CEEF-236 · م-١٩) أدواتُ التشغيل خارج Brqosh.sln، فلم تكن تُبنى في أيّ بوّابة.
       # ومراجعةٌ عدائيّة أخرجت أنّ أربعاً منها انكسرت بتغييرٍ في Infrastructure ولم يشتكِ شيء —
       # ومنها FullScenarioAudit وهي خطوةٌ في كتيّب التنصيب. فتُبنى الآن، ويعضّ البناءُ وحدَه.
+      # ‏(م-٥ · ن-٢٠) ‏**والنمطُ الشاملُ على `tools` هو سببُ أنّ الازدواجَ لم يُرَ.**
+      #
+      # ‏كانت نسختان من مجلس الشورى: `ShuraCouncil/` (محرّك v5 تُسمّيه كلُّ الوثائق) و
+      # ‏`tools/ShuraCouncil/` (نسخةٌ أقدم). **وهذه الخطوةُ تبني ما تحت `tools` وحدَه**،
+      # ‏فكانت تبني الظلَّ في كلّ تشغيلةٍ ولا تبني الأصلَ **أبداً** — بينما مُشغِّلُ الجذر
+      # ‏كان يُفضّل الظلَّ أيضاً. فالازدواجُ لم يكن حشواً: **كان الشيءَ الوحيدَ الذي يُبقي
+      # ‏محرّكاً في CI، وهو يحجب المحرّكَ الحقيقيّ**.
+      #
+      # ‏وبعد حذف الظلّ يصير الأصلُ خارجَ كلّ بناء: ليس تحت `tools/` وليس في `Brqosh.sln`.
+      # ‏فيُسمّى صراحةً هنا، وبوّابةُ `OneShuraCouncilTests` تشترط بقاءَ هذا السطر.
       - name: Build ops tools
         shell: pwsh
         run: |
           $failed = @()
-          Get-ChildItem tools -Filter *.csproj -Recurse | ForEach-Object {
-              Write-Host "== $($_.FullName)"
-              dotnet build $_.FullName -c Release --nologo
-              if ($LASTEXITCODE -ne 0) { $failed += $_.Name }
+          $projects = @(Get-ChildItem tools -Filter *.csproj -Recurse | Select-Object -ExpandProperty FullName)
+          $projects += (Resolve-Path "ShuraCouncil/ShuraCouncil.csproj").Path
+          foreach ($project in $projects) {
+              Write-Host "== $project"
+              dotnet build $project -c Release --nologo
+              if ($LASTEXITCODE -ne 0) { $failed += (Split-Path $project -Leaf) }
           }
           if ($failed.Count -gt 0) { throw "فشل بناء أدوات: $($failed -join ', ')" }
 

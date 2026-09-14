@@ -187,8 +187,59 @@ internal static class EvidenceLoader
         return candidates.FirstOrDefault()?.FullName;
     }
 
-    private static bool HasUiAuditSummary(string text) =>
-        Regex.IsMatch(text, @"===\s*\d+\s*فشل\s*من\s*\d+\s*فحص\s*===");
+    /// <summary>
+    /// (م-٥ · ن-٢٠) <b>مرجعٌ واحدٌ لصيغ سطر الخلاصة — وكانت المعرفةُ مكرّرةً وناقصة.</b>
+    ///
+    /// <para><b>ما كان:</b> ثلاثةُ مواضعَ تعرف الصيغةَ كلٌّ على حدة، <b>وكلُّها تعرف
+    /// الصيغةَ القديمةَ وحدَها</b> — <c>=== N فشل من M فحص ===</c>. <b>والكاتبُ لم يعد
+    /// يكتبها إطلاقاً</b>: <c>tools/UiAudit/UiAuditResult.cs:47,49</c> يكتب
+    /// <c>=== N فشل · P ناجح · S متخطى من T فحص ===</c> أو <c>=== SUCCESS — … ===</c>.</para>
+    ///
+    /// <para><b>وأثرُه صمتٌ لا خطأ:</b> لا تُطابَق الصيغةُ فيسقط القارئ إلى عدّ علامات
+    /// <c>[PASS]</c>/<c>[FAIL]</c> — <b>ويُسقط <c>[SKIP]</c> من المجموع</b> — فيُبلَّغ في
+    /// تقرير حوكمةٍ رقمٌ أصغرُ من الحقيقة بلا شكوى. مقيسٌ على سجلّات حقيقيّة: <b>١٢ من ١٨
+    /// سجلّاً بالصيغة الحديثة</b>، ومنها كلُّ الحديث.</para>
+    ///
+    /// <para>فصارت الصيغُ معروفةً <b>هنا وحدَه</b>، ويشترك فيها الثلاثة. وبوّابةُ
+    /// <c>OneShuraCouncilTests.EverySummaryTheAuditWritesIsReadableByTheCouncil</c> تشتقّ
+    /// صيغَ الكاتب من مصدره وتشترط أن يقرأها هذا الموضع.</para>
+    /// </summary>
+    private static (int total, int pass, int fail, bool found) SummaryLine(string text)
+    {
+        var legacy = Regex.Match(text, @"===\s*(\d+)\s*فشل\s*من\s*(\d+)\s*فحص\s*===");
+        if (legacy.Success)
+        {
+            var fail = int.Parse(legacy.Groups[1].Value);
+            var total = int.Parse(legacy.Groups[2].Value);
+            return (total, total - fail, fail, true);
+        }
+
+        var modern = Regex.Match(text,
+            @"===\s*(\d+)\s*فشل\s*·\s*(\d+)\s*ناجح\s*·\s*(\d+)\s*متخطى\s*من\s*(\d+)\s*فحص\s*===");
+        if (modern.Success)
+            return (int.Parse(modern.Groups[4].Value), int.Parse(modern.Groups[2].Value),
+                    int.Parse(modern.Groups[1].Value), true);
+
+        // ‏وفرعُ النجاح يحمل المجموعَ صراحةً — **فيُقرأ لا يُستنتَج**. والصيغةُ الأقدمُ بلا
+        // ‏مجموعٍ تُستدرك بـ«ناجح + متخطى»، وهما كلُّ شيءٍ حين لا فشلَ البتّة.
+        var success = Regex.Match(text,
+            @"===\s*SUCCESS\s*—\s*(\d+)\s*ناجح\s*·\s*(\d+)\s*متخطى\s*·\s*(\d+)\s*فحص\s*===");
+        if (success.Success)
+            return (int.Parse(success.Groups[3].Value), int.Parse(success.Groups[1].Value), 0, true);
+
+        var successLoose = Regex.Match(text, @"===\s*SUCCESS\s*—\s*(\d+)\s*ناجح");
+        if (successLoose.Success)
+        {
+            var pass = int.Parse(successLoose.Groups[1].Value);
+            var skipped = Regex.Match(text, @"(\d+)\s*متخطى");
+            var skip = skipped.Success ? int.Parse(skipped.Groups[1].Value) : 0;
+            return (pass + skip, pass, 0, true);
+        }
+
+        return (0, 0, 0, false);
+    }
+
+    private static bool HasUiAuditSummary(string text) => SummaryLine(text).found;
 
     private static (int total, int pass, int fail, bool found) ParseUiAuditLog(string? path)
     {
@@ -198,17 +249,16 @@ internal static class EvidenceLoader
         var text = TryReadAllTextShared(path);
         if (text is null)
             return (0, 0, 0, false);
-        var summary = Regex.Match(text, @"===\s*(\d+)\s*فشل\s*من\s*(\d+)\s*فحص\s*===");
-        if (summary.Success)
-        {
-            var fail = int.Parse(summary.Groups[1].Value);
-            var total = int.Parse(summary.Groups[2].Value);
-            return (total, total - fail, fail, true);
-        }
 
+        var summary = SummaryLine(text);
+        if (summary.found)
+            return summary;
+
+        // ‏والمتخطّى يدخل المجموعَ هنا أيضاً: خطوةٌ تُخطَّى **فُحصت** ولم تنجح ولم تفشل،
+        // ‏وإسقاطُها تُصغّر المقامَ فتُكبّر النسبة.
         var pass = Regex.Matches(text, @"\[PASS\]").Count;
         var failCount = Regex.Matches(text, @"\[FAIL\]").Count;
-        var totalCount = pass + failCount;
+        var totalCount = pass + failCount + Regex.Matches(text, @"\[SKIP\]").Count;
         return totalCount > 0 ? (totalCount, pass, failCount, true) : (0, 0, 0, true);
     }
 
@@ -217,10 +267,11 @@ internal static class EvidenceLoader
         var text = TryReadAllTextShared(path);
         if (text is null)
             return 0;
-        var summary = Regex.Match(text, @"===\s*\d+\s*فشل\s*من\s*(\d+)\s*فحص\s*===");
-        if (summary.Success && int.TryParse(summary.Groups[1].Value, out var total))
-            return total;
-        return Regex.Matches(text, @"\[(PASS|FAIL)\]").Count;
+
+        var summary = SummaryLine(text);
+        return summary.found
+            ? summary.total
+            : Regex.Matches(text, @"\[(PASS|FAIL|SKIP)\]").Count;
     }
 
     private static string? TryReadAllTextShared(string path)

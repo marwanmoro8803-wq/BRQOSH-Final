@@ -1,4 +1,4 @@
-# BRQOSH — Run executable Shura Council v2 on a saved CEEF report.
+# BRQOSH — Run the executable Shura Council on a saved CEEF report.
 # Usage:
 #   .\ShuraCouncil\run-shura-council.ps1
 #   .\ShuraCouncil\run-shura-council.ps1 -Source "تقارير/CEEF-145_Live_UI_Audit_Marwan.md"
@@ -10,13 +10,21 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $repoRoot
 
-$proj = if (Test-Path "tools/ShuraCouncil/ShuraCouncil.csproj") {
-    "tools/ShuraCouncil/ShuraCouncil.csproj"
-} else {
-    "ShuraCouncil/ShuraCouncil.csproj"
-}
+# ‏(م-٥ · ن-٢٠) **مشروعٌ واحدٌ يُسمّى، ولا يُختار.**
+#
+# ‏كان هنا `if (Test-Path "tools/ShuraCouncil/ShuraCouncil.csproj")` يُفضّل النسخةَ التي
+# ‏تحت `tools` **متى وُجدت** — وهي موجودة. فكان هذا المُشغِّلُ، وهو مُشغِّلُ الجذر، **يبني
+# ‏غيرَ الجذر ويُشغّله**: نسخةُ الثمانية ملفّاتٍ بدل محرّك v5 ذي المُدقّق الخصميّ
+# ‏والتخصّصات الثمانية والعشرين وبوّابة Supreme. ومقيس: تقاريرُ
+# ‏`dist/evidence/shura-council/` تحمل ختمَ `tools/ShuraCouncil` في ٢٢ تشغيلةً من ٣٠،
+# ‏و`ShuraCouncil/bin` لم يُنشأ قطّ.
+#
+# ‏**واختيارٌ داخل مُشغِّلٍ يعني أنّ وجودَ مجلّدٍ على القرص يُقرّر أيُّ محرّكٍ يحكم** — وهو
+# ‏قرارٌ لا يراه أحدٌ في مراجعة. فالمسارُ مكتوبٌ صريحاً، وبوّابةُ `OneShuraCouncilTests`
+# ‏تُسقط عودةَ أيّ مسارٍ ثانٍ.
+$proj = "ShuraCouncil/ShuraCouncil.csproj"
 
-Write-Host "Building ShuraCouncil v2..." -ForegroundColor Cyan
+Write-Host "Building ShuraCouncil..." -ForegroundColor Cyan
 dotnet build $proj -c Release --nologo -v q
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
