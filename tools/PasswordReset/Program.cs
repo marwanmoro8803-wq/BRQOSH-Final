@@ -1,4 +1,4 @@
-using Brqosh.Infrastructure.Persistence;
+﻿using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +27,17 @@ if (!PasswordPolicy.IsValid(newPassword, out var pwdError))
 }
 
 var (provider, connectionString) = ResolveConnection();
+
+// ‏(م-٦ · ن-٢٢ · تبعيّة) ‏**إذنٌ باسمِ القاعدة قبل أن تُلمس.**
+//
+// ‏هنا سؤالُ تأكيدٍ بالفعل («yes/no») — **لكنّه لا يقول أيَّ قاعدة**: يطبع
+// ‏`Provider=PostgreSql` لا المضيفَ واسمَ القاعدة. ومن أخطأ القاعدةَ **يؤكّد بثقة**،
+// ‏وهو العطلُ الذي كتب `ResolveConnection` تعليقَه أدناه عنه. فالحارسُ يُسمّي الهدف،
+// ‏والسؤالُ يبقى بعده.
+LiveBooksGuard.RequireConsentFor(
+    LiveBooksGuard.DescribeTarget(connectionString, provider == DatabaseProvider.Sqlite),
+    "‏تُغيّر كلمةَ مرور مستخدمٍ في الدفاتر وتُجبره على تغييرها عند أوّل دخول.");
+
 await using var db = BrqoshDbContextFactory.Create(provider, connectionString);
 
 long companyId;

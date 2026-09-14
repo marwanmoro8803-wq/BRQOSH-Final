@@ -212,4 +212,118 @@ public class DatabaseConfigFileTests
         Assert.False(DatabaseConfigFile.TryParsePostgres("Data Source=brqosh.db", out _, out _, out _, out _));
         Assert.False(DatabaseConfigFile.TryParsePostgres(null, out _, out _, out _, out _));
     }
+
+    /// <summary>
+    /// (م-٦ · تبعيّةُ ت-٣) <b>ملفٌّ قديمٌ غيرُ محميٍّ يُرقّى عند أوّل قراءة.</b>
+    ///
+    /// <para><b>الفجوةُ المقيسة:</b> CEEF-236 جعل <c>Save</c> يحمي بـDPAPI، و<c>Load</c>
+    /// يقبل الشكلَين — <b>ولا شيءَ يُرقّي القديم</b>. فتركيبٌ سابقٌ للحماية يُبقي كلمةَ
+    /// مرور PostgreSQL <b>صريحةً على القرص إلى الأبد</b>، ولا شيءَ يُخبر المُشغّلَ.
+    /// وقِيس على جهاز التطوير: <c>%APPDATA%\BRQOSH\database.json</c> بتاريخ ٢٠٢٦-٠٧-٠٦
+    /// <b>بلا بادئة <c>BRQOSH1:</c> وفيه حقلُ <c>Password</c> صريح</b>.</para>
+    /// </summary>
+    [Fact]
+    public void AnUnprotectedLegacyFile_IsUpgradedOnFirstRead()
+    {
+        var path = TempPath();
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        const string connection = "Host=localhost;Port=5433;Database=brqosh;Username=app;Password=PlainSecret123";
+
+        // ‏ملفٌّ قديمٌ كما كان يُكتب قبل الحماية — صريحٌ بلا بادئة.
+        File.WriteAllText(path,
+            "{\"Provider\":\"postgresql\",\"ConnectionString\":\"" + connection + "\"}");
+
+        // ‏شاهدُ ضبط: الملفُّ **صريحٌ فعلاً** قبل القراءة — وإلّا كان الاختبارُ يقيس لا شيء.
+        Assert.Contains("Password=PlainSecret123", File.ReadAllText(path), StringComparison.Ordinal);
+
+        var loaded = DatabaseConfigFile.Load(path);
+
+        // ‏والقراءةُ تُعيد الصريحَ سليماً — فالترقيةُ لا تُفسد ما يقرؤه المُستدعي.
+        Assert.NotNull(loaded);
+        Assert.Equal(connection, loaded!.ConnectionString);
+
+        // ‏**والملفُّ على القرص لم يعد يحمل الكلمةَ صريحة.**
+        var onDisk = File.ReadAllText(path);
+        Assert.DoesNotContain("PlainSecret123", onDisk, StringComparison.Ordinal);
+        Assert.Contains("BRQOSH1:", onDisk, StringComparison.Ordinal);
+
+        // ‏وقراءةٌ ثانيةٌ تُعطي القيمةَ نفسَها — فالترقيةُ مُطاوِعةٌ للتكرار.
+        Assert.Equal(connection, DatabaseConfigFile.Load(path)!.ConnectionString);
+
+        Cleanup(path);
+    }
+
+    /// <summary>
+    /// <b>وملفٌّ محميٌّ أصلاً لا يُمَسّ</b> — شاهدُ ضبطٍ على أنّ الترقيةَ تُميّز، ولا تُعيد
+    /// الكتابةَ في كلّ قراءة.
+    /// </summary>
+    [Fact]
+    public void AnAlreadyProtectedFile_IsLeftUntouched()
+    {
+        var path = TempPath();
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        DatabaseConfigFile.Save(path, "postgresql", "Host=h;Database=d;Username=u;Password=p");
+
+        var before = File.ReadAllText(path);
+        Assert.NotNull(DatabaseConfigFile.Load(path));
+
+        Assert.Equal(before, File.ReadAllText(path));
+
+        Cleanup(path);
+    }
+
+    /// <summary>
+    /// <b>وشرطُ الترقية يوافق ما تفعله الحمايةُ فعلاً — على أيّ منصّة.</b>
+    ///
+    /// <para><b>وهذا اختبارُ عطلٍ أدخلتُه أنا:</b> أوّلُ صياغةٍ للترقية اشترطت
+    /// «غيرُ محميّ» وحدَها. وعلى منصّةٍ بلا DPAPI يُعيد <c>Protect</c> الصريحَ كما هو،
+    /// <b>فلا تُرضى الشرطيّةُ أبداً وتُعيد كلُّ قراءةٍ كتابةَ الملفّ</b> — وعلى مسارٍ للقراءة
+    /// فقط تُسجَّل رسالةُ عطلٍ مع كلّ قراءة.</para>
+    ///
+    /// <para><b>ويُقاس بلا فرعٍ للمنصّة في الاختبار</b>: يُجزَم أنّ <c>ProtectionIsAvailable</c>
+    /// و<c>Protect</c> <b>يقولان الشيءَ نفسَه</b>. فأيُّهما تغيّر وحدَه أسقط الاختبار،
+    /// <b>ويسقط على لينكس كما يسقط على ويندوز</b>.</para>
+    /// </summary>
+    [Fact]
+    public void TheUpgradeConditionAgreesWithWhatProtectionActuallyDoes()
+    {
+        const string plain = "Host=h;Database=d;Username=u;Password=NotASecretHere";
+
+        var protectedForm = Brqosh.Infrastructure.Security.LocalSecretProtector.Protect(plain);
+        var actuallyProtected = Brqosh.Infrastructure.Security.LocalSecretProtector.IsProtected(protectedForm);
+
+        Assert.Equal(Brqosh.Infrastructure.Security.LocalSecretProtector.ProtectionIsAvailable, actuallyProtected);
+
+        // ‏**وشاهدُ ضبط**: القيمةُ تعود سليمةً في الحالتين — فالحمايةُ لا تُفسد ما تحمي،
+        // ‏وغيابُها لا يُفسد ما يمرّ.
+        Assert.Equal(plain, Brqosh.Infrastructure.Security.LocalSecretProtector.Unprotect(protectedForm));
+    }
+
+    /// <summary>
+    /// <b>وملفٌّ قديمٌ ناقصٌ لا ينقلب استثناءً.</b>
+    ///
+    /// <para><b>وهذا انحدارٌ أدخلتُه أنا وكُشف قبل الإيداع:</b> <c>Save</c> يرفض سلسلةَ
+    /// اتّصالٍ فارغةً بـ<c>ArgumentException</c> — <b>وهو خارج التقاط الترقية عمداً</b>
+    /// (فالالتقاطُ للأعطال العارضة لا لخطإ برمجيّ). فلو رقّت الترقيةُ ملفّاً فارغَ السلسلة
+    /// لانقلبت القراءةُ من <b>قيمةٍ فارغةٍ يفحصها المُستدعون</b> — وهم يفحصونها فعلاً:
+    /// <c>PasswordReset</c> بـ<c>Length > 0</c> و<c>PrintEvidence</c> بـ
+    /// <c>IsNullOrWhiteSpace</c> — <b>إلى استثناءٍ يُسقط الأداةَ قبل أن تقول شيئاً</b>.</para>
+    /// </summary>
+    [Fact]
+    public void ALegacyFileWithNoConnectionString_IsReadNotThrown()
+    {
+        var path = TempPath();
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, "{\"Provider\":\"postgresql\",\"ConnectionString\":\"\"}");
+
+        var loaded = DatabaseConfigFile.Load(path);
+
+        Assert.NotNull(loaded);
+        Assert.Equal("", loaded!.ConnectionString);
+
+        // ‏**ولا يُكتب الملفُّ**: لا شيءَ يُحمى، فلا داعيَ لمسّه.
+        Assert.Equal("{\"Provider\":\"postgresql\",\"ConnectionString\":\"\"}", File.ReadAllText(path));
+
+        Cleanup(path);
+    }
 }

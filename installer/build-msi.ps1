@@ -13,6 +13,65 @@ $MsiOut = Join-Path $Root "dist\BRQOSH-Setup.msi"
 
 Write-Host "=== BRQOSH MSI Build ===" -ForegroundColor Cyan
 
+# ‏(م-٦ · ن-١٢) ‏**التوقيعُ صار يشمل الحمولةَ — وكان الحزمةَ وحدَها.**
+#
+# ‏توقيعُ MSI يحمي **قناةَ التسليم**: تحذيرُ SmartScreen، وتحريفُ المُنصِّب أثناء النقل.
+# ‏**ولا يترك أثراً بعد التنصيب** — الحزمةُ تفكّ حمولتَها والحمولةُ تبقى بلا توقيع. فتطبيقٌ
+# ‏مُنصَّبٌ من حزمةٍ موقَّعةٍ تماماً يقول UAC عنه «ناشرٌ غير معروف»، **ولا تستطيع سياسةُ
+# ‏قوائمِ سماحٍ (WDAC/AppLocker) أن تميّزه من ثنائيّةٍ مُستبدَلةٍ في مجلّد التنصيب** —
+# ‏وهو المسارُ الذي يُهاجَم فعلاً، لأنّ المُنصِّبَ يُستعمل مرّةً والملفّاتُ تبقى.
+#
+# ‏**والترتيبُ مُلزِم**: التوقيعُ يُلحق كتلةً بملفّ PE فيتغيّر محتواه وبصمتُه. فتوقيعُ
+# ‏الحمولة **قبل أن يحصدها WiX** — وإلّا حملت الحزمةُ نسخاً غيرَ موقَّعةٍ بينما القرصُ
+# ‏يحمل الموقَّعة، **وهو أسوأُ الحالَين**: يُقاس التوقيعُ على القرص فيُقرأ نجاحاً.
+$SigningPfx = if ($env:BRQOSH_SIGNING_PFX -and (Test-Path $env:BRQOSH_SIGNING_PFX)) { $env:BRQOSH_SIGNING_PFX } else { $null }
+$script:SignTool = $null
+
+function Invoke-BrqoshSign {
+    param(
+        [Parameter(Mandatory)][string[]]$Paths,
+        [Parameter(Mandatory)][string]$What
+    )
+
+    if (-not $SigningPfx) { return }
+
+    $targets = @($Paths | Where-Object { Test-Path $_ })
+    if ($targets.Count -eq 0) {
+        # ‏**شهادةٌ حاضرةٌ وهدفٌ غائبٌ عطلٌ لا تخطٍّ**: صمتٌ هنا يُخرج حزمةً يظنّها بانيها موقّعة.
+        Write-Host "لا هدفَ للتوقيع في «$What» — أُسقط البناء." -ForegroundColor Red
+        exit 1
+    }
+
+    if (-not $script:SignTool) {
+        $script:SignTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+                           Sort-Object FullName -Descending | Select-Object -First 1 | ForEach-Object FullName
+        if (-not $script:SignTool) {
+            Write-Host "BRQOSH_SIGNING_PFX مضبوطٌ ولا signtool — أُسقط البناء." -ForegroundColor Red
+            exit 1
+        }
+    }
+
+    & $script:SignTool sign /f $SigningPfx /p $env:BRQOSH_SIGNING_PASSWORD `
+        /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 @targets
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "توقيعُ «$What» أخفق (exit=$LASTEXITCODE)." -ForegroundColor Red
+        exit 1
+    }
+
+    # ‏**والتحقّقُ بعد التنفيذ هو العضّة**: وسمُ `signtool` في السطر تعليقٌ، وهذا قياس.
+    # ‏ويُفحص **كلُّ** هدفٍ لا أوّلُه — فتوقيعٌ جزئيٌّ يُقرأ نجاحاً، وهو أسوأُ من لا توقيع.
+    foreach ($target in $targets) {
+        $sig = Get-AuthenticodeSignature $target
+        if ($sig.Status -ne 'Valid') {
+            Write-Host "توقيعُ $(Split-Path $target -Leaf): $($sig.Status) — أُسقط البناء." -ForegroundColor Red
+            exit 1
+        }
+    }
+
+    $subject = (Get-AuthenticodeSignature $targets[0]).SignerCertificate.Subject
+    Write-Host "موقَّع — $What ($($targets.Count) ملفّاً): $subject" -ForegroundColor Green
+}
+
 # 1. Publish portable
 # ‏(CEEF-236 · م-٣٣) خروجُ النشر يُفحص: `&` على سكربتٍ لا يرفع استثناءً حين يخرج
 # ‏ذاك السكربت بغير الصفر، و`$ErrorActionPreference = "Stop"` **لا يوقف برنامجاً
@@ -92,6 +151,14 @@ if (Test-Path $Ledger) {
 # ‏**ولم يكشفه بناءٌ ولا اختبارٌ ولا مراجعة** — كشفه تنصيبٌ حيٌّ على آلةٍ نظيفة (CEEF-236 · ر-ك):
 # ‏  C:\Program Files\BRQOSH\Brqosh.Desktop.exe        False
 # ‏  C:\Program Files (x86)\BRQOSH\Brqosh.Desktop.exe  True
+# ‏**الحمولةُ تُوقَّع هنا** — قبل السطر التالي بالضبط، فـ`wix build` يقرأ `$PublishDir`
+# ‏من القرص. وتُختار الثنائيّاتُ التي **نملكها** بنمطٍ لا بقائمةٍ مكتوبةٍ باليد: مشروعٌ
+# ‏جديدٌ يدخل الحزمةَ يدخل التوقيعَ معها، **ولا يُنسى سطرٌ في سكربتٍ لا يقرؤه أحد**.
+$PayloadBinaries = @(Get-ChildItem $PublishDir -File |
+    Where-Object { $_.Name -like 'Brqosh.*' -and $_.Extension -in '.exe', '.dll' } |
+    ForEach-Object FullName)
+Invoke-BrqoshSign -Paths $PayloadBinaries -What "الحمولة"
+
 wix build $WxsPath `
     -arch x64 `
     -d PublishDir=$PublishDir `
@@ -154,19 +221,8 @@ Write-Host "تحقّقُ ICE: صفرُ أخطاء · $($iceWarn.Count) تحذي�
 #
 # ‏وضبطُ `BRQOSH_SIGNING_PFX` يُشغّله. وغيابُه **يُعلَن** ولا يُبتلع: حزمةٌ غيرُ موقّعةٍ
 # ‏تخرج ومعها سطرٌ يقول إنّها كذلك، فلا تُشحن على أنّها موقّعة.
-$pfx = $env:BRQOSH_SIGNING_PFX
-if ($pfx -and (Test-Path $pfx)) {
-    $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
-                Sort-Object FullName -Descending | Select-Object -First 1
-    if (-not $signtool) { Write-Host "BRQOSH_SIGNING_PFX مضبوطٌ ولا signtool — أُسقط البناء." -ForegroundColor Red; exit 1 }
-    & $signtool.FullName sign /f $pfx /p $env:BRQOSH_SIGNING_PASSWORD `
-        /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $MsiOut
-    if ($LASTEXITCODE -ne 0) { Write-Host "التوقيع أخفق (exit=$LASTEXITCODE)." -ForegroundColor Red; exit 1 }
-    $sig = Get-AuthenticodeSignature $MsiOut
-    if ($sig.Status -ne 'Valid') { Write-Host "التوقيع بعد التنفيذ: $($sig.Status) — أُسقط البناء." -ForegroundColor Red; exit 1 }
-    Write-Host "موقَّعة: $($sig.SignerCertificate.Subject)" -ForegroundColor Green
-}
-else {
+Invoke-BrqoshSign -Paths @($MsiOut) -What "الحزمة"
+if (-not $SigningPfx) {
     Write-Host "غيرُ موقَّعة — لا BRQOSH_SIGNING_PFX. (ن-١٢ · تبعيّةٌ خارجيّة: شهادةُ توقيع كود)" -ForegroundColor Yellow
 }
 

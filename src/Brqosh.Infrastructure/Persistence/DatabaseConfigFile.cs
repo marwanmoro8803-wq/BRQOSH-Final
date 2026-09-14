@@ -58,7 +58,36 @@ public static class DatabaseConfigFile
 
         try
         {
-            return new DatabaseConfigEntry(raw.Provider.Trim(), LocalSecretProtector.Unprotect(raw.ConnectionString));
+            var plain = LocalSecretProtector.Unprotect(raw.ConnectionString);
+
+            // ‏(م-٦ · تبعيّةُ ت-٣) **الحمايةُ أُضيفت للكتابة ولم تُهاجَر القراءة.**
+            //
+            // ‏CEEF-236 · ت-٣ جعل `Save` يحمي السلسلةَ بـDPAPI — **و`Load` يقبل الشكلَين**،
+            // ‏وهو صوابٌ لئلّا يُكسَر تركيبٌ قائم. **لكنّ شيئاً لا يُرقّي الملفَّ القديم**:
+            // ‏فتركيبٌ سابقٌ للحماية **يُبقي كلمةَ مرور PostgreSQL صريحةً على القرص إلى
+            // ‏الأبد** ما لم يُعِد المُشغّلُ تشغيل معالج التهيئة — **ولا شيءَ يطلب منه ذلك،
+            // ‏ولا شيءَ يقول له إنّ كلمتَه مكشوفة**. وقِيس على هذه الآلة: ملفٌّ بلا بادئة
+            // ‏`BRQOSH1:` يحمل حقلَ `Password` صريحاً.
+            //
+            // ‏فتُرقّى عند أوّل قراءةٍ ناجحة: **مرّةً واحدةً، ومن الحساب نفسِه الذي يقرأ**
+            // ‏(فـDPAPI بنطاق المستخدم، والحمايةُ من حسابٍ آخر تُنتج ملفّاً لا يُفكّ).
+            // ‏**ولا تُسقط الترقيةُ إقلاعاً**: ملفٌّ للقراءة فقط أو قرصٌ ممتلئ يترك الحالَ
+            // ‏كما هو — والسلسلةُ صالحةٌ بيد القارئ أصلاً.
+            //
+            // ‏**والشرطُ يُصاغ سؤالاً عن الأثر لا عن السبب**: «هل الحمايةُ ستُنتج شيئاً
+            // ‏محميّاً فعلاً؟» — لا «هل نحن على ويندوز؟» ولا «هل السلسلةُ غيرُ فارغة؟».
+            // ‏وذلك يغطّي **كلَّ** سببٍ يمنع الحماية، ومنها اثنان وقعتُ فيهما وأنا أكتب هذا:
+            // ‏  ١) **منصّةٌ بلا DPAPI**: `Protect` يُعيد الصريحَ كما هو، فتبقى الشرطيّةُ
+            // ‏     كاذبةً — **فتُعيد كلُّ قراءةٍ كتابةَ الملفّ إلى الأبد**، وعلى مسارٍ
+            // ‏     للقراءة فقط تُسجَّل رسالةُ عطلٍ مع كلّ قراءة.
+            // ‏  ٢) **سلسلةٌ فارغة**: `Save` يرفضها بـ`ArgumentException` — **وهو خارج
+            // ‏     التقاط الترقية**، فكانت قراءةُ ملفٍّ قديمٍ ناقصٍ تنقلب من قيمةٍ فارغةٍ
+            // ‏     يفحصها المُستدعون إلى استثناءٍ يُسقطهم.
+            if (!LocalSecretProtector.IsProtected(raw.ConnectionString)
+                && LocalSecretProtector.IsProtected(LocalSecretProtector.Protect(plain)))
+                TryUpgradeToProtected(path, raw.Provider.Trim(), plain);
+
+            return new DatabaseConfigEntry(raw.Provider.Trim(), plain);
         }
         catch (CryptographicException)
         {
@@ -75,6 +104,28 @@ public static class DatabaseConfigFile
             throw new InvalidOperationException(
                 "ملفّ الاتصال database.json تالف — تعذّرت قراءة سلسلة الاتصال المحميّة. " +
                 "أعد إدخال بيانات الاتصال من معالج التهيئة.");
+        }
+    }
+
+    /// <summary>
+    /// (م-٦ · تبعيّةُ ت-٣) <b>ترقيةٌ انتهازيّةٌ لملفٍّ قديمٍ غيرِ محميّ.</b>
+    ///
+    /// <para><b>ولا ترمي أبداً</b>: القراءةُ نجحت والسلسلةُ بيد المُستدعي، <b>فإسقاطُ
+    /// الإقلاع لأنّ ترقيةً تجميليّةً تعذّرت عطلٌ أسوأُ ممّا تُصلحه</b>. والفشلُ يُترك
+    /// للمحاولة التالية — والملفُّ يبقى كما كان، لا أسوأ.</para>
+    /// </summary>
+    private static void TryUpgradeToProtected(string path, string provider, string plain)
+    {
+        try
+        {
+            Save(path, provider, plain);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+                                              or CryptographicException)
+        {
+            // ‏**ليس ابتلاعاً صامتاً**: يُسجَّل فيظهر في حزمة الدعم وسجلّ الأعطال، ويُمضى
+            // ‏لأنّ الاتّصالَ نفسَه سليم. **والصامتُ هو ألّا يُعرف أنّ الكلمةَ ما زالت مكشوفة.**
+            Operations.CrashLog.Write(exception, "DatabaseConfigFile.UpgradeToProtected");
         }
     }
 

@@ -1,4 +1,4 @@
-// مولّد أدلّة الطباعة والباركود وExcel (CEEF-226)
+﻿// مولّد أدلّة الطباعة والباركود وExcel (CEEF-226)
 //
 // لا يفحص الكود — **يُنتج المخرجات الحقيقية** من قاعدة المستخدم ثم يفحصها:
 //   • فاتورة مبيعات مرحّلة → PDF + فكّ ترميز TLV لرمز ZATCA ومطابقته ببيانات الفاتورة
@@ -28,6 +28,17 @@ Directory.CreateDirectory(outDir);
 
 var (provider, conn) = ResolveConnection();
 Console.WriteLine($"[..] المزوّد: {provider}");
+
+// ‏(م-٦ · ن-٢٢ · تبعيّة) ‏**إذنٌ باسمِ القاعدة قبل أن تُلمس.**
+//
+// ‏تُقرأ هذه الأداةُ «مُصدِّرَ أدلّة» فيُظنّ أنّها تقرأ. **وهي تكتب**: كلُّ تصديرٍ يمرّ
+// ‏بـ`DocumentPrintService` الذي يستدعي `AuditService.LogAsync` — فيُضاف صفٌّ باسم
+// ‏«print-evidence» إلى `audit_log`، **وهو سجلٌّ مُتسلسلٌ مربوطٌ بالتجزئة**، فالصفُّ
+// ‏يدخل السلسلةَ ولا يُحذف منها بلا كسرِها. وهي تحلّ الاتّصالَ من `DatabaseConfigFile`
+// ‏أي **دفاترَ المُشغِّل** ما لم يُقَل غيرُ ذلك.
+LiveBooksGuard.RequireConsentFor(
+    LiveBooksGuard.DescribeTarget(conn, provider == DatabaseProvider.Sqlite),
+    "‏تكتب صفَّ تدقيقٍ باسم «print-evidence» في سلسلة السجلّ عن كلّ مستندٍ تُصدّره.");
 
 await using var db = BrqoshDbContextFactory.Create(provider, conn);
 if (!await db.Database.CanConnectAsync())
