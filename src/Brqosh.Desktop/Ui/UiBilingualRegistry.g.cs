@@ -1209,6 +1209,7 @@ public static partial class UiBilingualRegistry
         ["فتح المستند المصدر"] = "Open Document Source",
         ["فتح خارجياً"] = "Open externally",
         ["فتح في العارض الخارجي"] = "Open in external viewer",
+        ["حزمة الدعم"] = "Support Bundle",
         ["فتح مجلد السجلات"] = "Open Logs Folder",
         ["فتح مجلّد النسخ"] = "Open backup folder",
         ["فحص الآن"] = "Check now",

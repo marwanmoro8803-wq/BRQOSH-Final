@@ -57,6 +57,7 @@ public static class CrashLog
             File.WriteAllText(path, Compose(exception, context), new UTF8Encoding(true));
 
             Prune();
+            PruneSchemaReports();
             return path;
         }
         catch (Exception)
@@ -132,17 +133,40 @@ public static class CrashLog
     /// يملأ القرص؛ والحصّةُ تحدّ <b>الفيضانَ نفسَه</b> فتُبقي مكاناً لأعطالٍ مختلفة —
     /// وتنوّعُ الأسباب هو ما يُشخِّص، لا عددُ نسخِ سببٍ واحد.</para>
     /// </summary>
-    private static void Prune()
+    /// <summary>
+    /// (م-٥ · ن-٤٣) <b>سقفُ تقارير المخطّط — وكانت بلا سقفٍ إطلاقاً.</b>
+    ///
+    /// <para><c>BrqoshSchemaUpdater</c> يكتب <c>schema-*.log</c> في <b>هذا المجلّد نفسِه</b>،
+    /// <b>ونمطُ التقليم كان <c>crash-*.log</c> وحدَه</b>. فقاعدةٌ فيها خطوةُ ترقيةٍ متسامحةٌ
+    /// تفشل دائماً تكتب ملفّاً <b>كلَّ إقلاع</b> ولا يُمحى شيء — <b>فتُدفن سجلّاتُ الأعطال
+    /// الثلاثون بين مئاتٍ متطابقة</b>، ويفتح الفنّيُّ المجلّدَ ولا يعرف أيُّها الدليل.</para>
+    /// </summary>
+    public const int SchemaReportLimit = 10;
+
+    /// <summary>
+    /// <b>حصّةٌ لكلّ عائلةٍ لا حصّةٌ مشتركة — وهو قرارٌ مقصود.</b>
+    ///
+    /// <para>لو دخلت تقاريرُ المخطّط في الحدّ الكلّيّ نفسِه <b>لأكل الفيضانُ حصّةَ
+    /// الأعطال</b> — وهو بعينه العطلُ الذي أُغلق في م-٣ · ن-٣٣، معكوساً: هناك كان عطلٌ
+    /// متكرّرٌ يطرد أعطالاً مختلفة، وهنا كان ضجيجُ الترقية يطرد الأعطالَ كلَّها.</para>
+    /// </summary>
+    public static void PruneSchemaReports() =>
+        PruneFamily("schema-*.log", perContextLimit: int.MaxValue, totalLimit: SchemaReportLimit);
+
+    private static void Prune() =>
+        PruneFamily("crash-*.log", PerContextLimit, TotalLimit);
+
+    private static void PruneFamily(string pattern, int perContextLimit, int totalLimit)
     {
         try
         {
-            var files = new DirectoryInfo(Directory).GetFiles("crash-*.log");
+            var files = new DirectoryInfo(Directory).GetFiles(pattern);
 
             var keep = files
                 .GroupBy(ContextOf, StringComparer.OrdinalIgnoreCase)
-                .SelectMany(g => g.OrderByDescending(f => f.LastWriteTimeUtc).Take(PerContextLimit))
+                .SelectMany(g => g.OrderByDescending(f => f.LastWriteTimeUtc).Take(perContextLimit))
                 .OrderByDescending(f => f.LastWriteTimeUtc)
-                .Take(TotalLimit)
+                .Take(totalLimit)
                 .Select(f => f.FullName)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

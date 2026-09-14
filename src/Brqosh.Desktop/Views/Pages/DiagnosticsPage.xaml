@@ -20,6 +20,10 @@
                             Style="{StaticResource ToolbarPrimaryGroup}">
                     <Button x:Name="CopyBtn" Content="نسخ التقرير" Style="{StaticResource PrimaryButton}"
                             Padding="20,9" Click="OnCopy"/>
+                    <!-- ‏(م-٥ · ن-٤٢) ‏**حزمةُ الدعم**: ملفٌّ واحدٌ يُرسَل بدل مجلّدٍ يُفتَح
+                         ويُترَك المستخدمُ أمامه ليختار من ثلاثين ملفّاً متشابهاً. -->
+                    <Button x:Name="BundleBtn" Content="حزمة الدعم" Style="{StaticResource SecondaryButton}"
+                            Margin="8,0,0,0" Padding="20,9" Click="OnExportBundle"/>
                     <Button x:Name="LogsBtn" Content="فتح مجلد السجلات" Style="{StaticResource SecondaryButton}"
                             Margin="8,0,0,0" Padding="20,9" Click="OnOpenLogs"/>
                     <Button x:Name="UpdateBtn" Content="فحص التحديث" Style="{StaticResource SecondaryButton}"

@@ -56,7 +56,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
 
         try
         {
-            var directory = Path.Combine(BrqoshDataRoot.Path(), "logs");
+            // ‏(م-٥ · ن-٤٣) ‏**المجلّدُ يُسمّى من مالكه لا يُعاد بناؤه.** كان يُركَّب هنا
+            // ‏حرفيّاً، فبقي التقليمُ في `CrashLog` جاهلاً بهذه العائلة.
+            var directory = Operations.CrashLog.Directory;
             Directory.CreateDirectory(directory);
 
             var path = Path.Combine(directory, $"schema-{DateTime.Now:yyyy-MM-dd_HHmmss}.log");
@@ -71,6 +73,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 text.AppendLine(failure.ToString());
 
             File.WriteAllText(path, text.ToString(), new System.Text.UTF8Encoding(true));
+
+            // ‏**وتُقلَّم عائلتُها فوراً** — ولا يُنتظر عطلٌ ليُشغّل التقليم: قاعدةٌ تفشل
+            // ‏خطوتُها كلَّ إقلاعٍ قد لا تُعطب أبداً، فتنمو التقاريرُ بلا حدٍّ ولا سببَ يمحوها.
+            Operations.CrashLog.PruneSchemaReports();
         }
         catch (Exception)
         {

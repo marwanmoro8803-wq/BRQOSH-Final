@@ -9,6 +9,7 @@ using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Ui;
 using Brqosh.Infrastructure.Operations;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Reporting;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -90,6 +91,16 @@ public partial class DiagnosticsPage : UserControl
         // ‏ماتت منذ شهورٍ تُقرأ «كلُّ شيءٍ على ما يرام»** — والطابورُ يتراكم بلا سطرٍ يقول لماذا.
         rows.Add(new InfoRow("آخر فشل في تفريغ الطابور",
             OutboxDispatchHook.LastFailure ?? "لا شيء"));
+
+        // ‏(م-٥ · ن-٤٢) **ثلاثةُ صفوفٍ كان الدعمُ يسأل عنها ولا تجيب الشاشة.**
+        //
+        // ‏«سجلات أعطال محفوظة: 30» **رقمٌ بلا محتوى**: لا يقول متى وقع آخرُ عطلٍ ولا أين.
+        // ‏و«حجم الدفتر» يُفرّق **بطئاً من ضخامة**، وبلا it يُطارَد عطلُ أداءٍ لا وجودَ له.
+        // ‏و«آخر نسخة» يُفرّق **عطلاً يُستعاد منه من عطلٍ يُفقَد معه العمل**.
+        rows.Add(new InfoRow("آخر عطل مسجّل", Safe(NewestCrashLabel)));
+        rows.Add(new InfoRow("تقارير مخطط محفوظة", SchemaReportCount().ToString()));
+        rows.Add(new InfoRow("حجم الدفتر", Safe(LedgerSizeLabel)));
+        rows.Add(new InfoRow("آخر ملف نسخة", Safe(NewestBackupLabel)));
 
         _rows = rows;
         Grid.ItemsSource = _rows;
@@ -196,6 +207,114 @@ public partial class DiagnosticsPage : UserControl
         var informational = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         if (!string.IsNullOrWhiteSpace(informational)) return informational;
         return entry.GetName().Version?.ToString(3) ?? "غير معروف";
+    }
+
+    private static int SchemaReportCount()
+    {
+        try
+        {
+            return Directory.Exists(CrashLog.Directory)
+                ? Directory.GetFiles(CrashLog.Directory, "schema-*.log").Length
+                : 0;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>أحدثُ عطلٍ باسمه ووقته — <b>والاسمُ يحمل السياق، فيُضيّق البحثَ فوراً</b>.</summary>
+    private static string NewestCrashLabel()
+    {
+        if (!Directory.Exists(CrashLog.Directory))
+            return "لا شيء";
+
+        var newest = new DirectoryInfo(CrashLog.Directory)
+            .GetFiles("crash-*.log")
+            .OrderByDescending(f => f.LastWriteTimeUtc)
+            .FirstOrDefault();
+
+        return newest is null
+            ? "لا شيء"
+            : $"{PrintText.Date(DateOnly.FromDateTime(newest.LastWriteTime))} — {newest.Name}";
+    }
+
+    /// <summary>
+    /// حجمُ الدفتر. <b>ويُقاس لـSQLite من الملفّ</b>؛ وعلى PostgreSQL <b>لا يُدَّعى رقمٌ
+    /// لا يُقاس من هنا</b> — فالقاعدةُ على خادمٍ قد لا يملك التطبيقُ حقَّ سؤاله عن حجمها.
+    /// </summary>
+    private static string LedgerSizeLabel()
+    {
+        var path = Path.Combine(BrqoshDataRoot.Path(), "brqosh.db");
+        if (!File.Exists(path))
+            return "على خادم — يُقاس من الخادم";
+
+        var megabytes = new FileInfo(path).Length / 1024d / 1024d;
+        return $"{megabytes:N1} م.ب";
+    }
+
+    /// <summary>
+    /// آخرُ <b>ملفّ</b> نسخةٍ في المجلّد المحلّيّ — <b>بوقته، فـ«موجودة» لا تكفي</b>.
+    ///
+    /// <para><b>وامتدادان صريحان لا نمطٌ عارٍ.</b> كتبتُ أوّلاً <c>GetFiles("brqosh_*")</c>،
+    /// <b>فأسقطتني بوّابةُ المستودع في دقائق</b>: النمطُ العاري يلتقط <c>.partial</c> و
+    /// <c>-wal</c> و<c>.tmp</c>، <b>والبقيّةُ المرحليّةُ اليتيمةُ تكون دائماً الأحدث</b>.
+    /// وهو درسُ ن-٤٤ مسجَّلاً في <c>BackupPage.xaml.cs:92-99</c> — <b>وقد أمسك كوداً كتبتُه
+    /// بعده بساعات</b>.</para>
+    ///
+    /// <para><b>والعنوانُ يقول «ملفّ» لا «نسخة» عمداً</b>: هذا مسحٌ للقرص لا إثباتٌ للنسخة.
+    /// <b>والإثباتُ عملُ <c>BackupService.NewestVerifiedAsync</c></b>، و«الشاشةُ لا تُقرّر ما
+    /// النسخة» (ن-٤٤). فلا يُعطى المُشغِّلُ طمأنينةً لم تُقَس.</para>
+    /// </summary>
+    private static string NewestBackupLabel()
+    {
+        var folder = Path.Combine(BrqoshDataRoot.Path(), "backups");
+        if (!Directory.Exists(folder))
+            return "لا مجلّد نسخ";
+
+        var directory = new DirectoryInfo(folder);
+        var newest = directory.GetFiles("brqosh_*.dump")
+            .Concat(directory.GetFiles("brqosh_*.db"))
+            .OrderByDescending(f => f.LastWriteTimeUtc)
+            .FirstOrDefault();
+
+        return newest is null
+            ? "لا نسخة"
+            : $"{PrintText.Date(DateOnly.FromDateTime(newest.LastWriteTime))} — {newest.Name} (ملفّ، غير مُثبَت)";
+    }
+
+    /// <summary>
+    /// (م-٥ · ن-٤٢) <b>حزمةُ الدعم — ملفٌّ واحدٌ يُرسَل بدل مجلّدٍ يُفتَح.</b>
+    /// </summary>
+    private void OnExportBundle(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "حزمة دعم|*.zip",
+                FileName = SupportBundle.SuggestedFileName(DateTime.Now),
+            };
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+            var text = new StringBuilder("BRQOSH — حالة النظام");
+            text.AppendLine();
+            foreach (var row in _rows)
+                text.AppendLine($"{row.Label}: {row.Value}");
+
+            var (added, unreadable) = SupportBundle.Create(
+                dialog.FileName, text.ToString(), CrashLog.Directory);
+
+            // ‏**وما تعذّر يُقال** — فحزمةٌ ناقصةٌ يظنّها المُشغِّلُ كاملةً تُضيّع مكالمةً كاملة.
+            UiFeedback.ShowInfo($"أُنشئت حزمةُ الدعم — التقرير و{added} ملفَّ سجلّ. أرسِلْها كما هي."
+                + (unreadable > 0 ? $" (تعذّرت قراءةُ {unreadable} ملفّاً — كانت قيدَ الاستعمال.)" : ""));
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
     }
 
     private static string Safe(Func<string> read)
