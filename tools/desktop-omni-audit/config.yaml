@@ -21,7 +21,8 @@ credentials:
   username_env: "BRQOSH_TEST_USERNAME"
   password_env: "BRQOSH_TEST_PASSWORD"
   default_username: "marwan"
-  default_password: "UiAudit9!"
+  # (م-٥ · ن-٢٢) لا كلمة حرفية هنا — تُقرأ من BRQOSH_TEST_PASSWORD، ولا بديل احتياطي.
+  default_password: ""
 
 audit:
   profile: "Manufacturing"

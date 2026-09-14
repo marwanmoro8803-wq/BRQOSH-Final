@@ -15,7 +15,8 @@ app:
 
 credentials:
   default_username: "marwan"
-  default_password: "UiAudit9!"
+  # (م-٥ · ن-٢٢) لا كلمة حرفية هنا — تُقرأ من BRQOSH_TEST_PASSWORD، ولا بديل احتياطي.
+  default_password: ""
 
 audit:
   profiles: [Retail, Construction, Manufacturing]

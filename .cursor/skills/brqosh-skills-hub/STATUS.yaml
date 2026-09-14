@@ -1,16 +1,14 @@
 ﻿version: v16
-updated: "2026-07-11"
+updated: "2026-07-11"   # ‏(ن-٥٣) ‏لقطةٌ مؤرَّخة — وما بعدها في `docs/OPEN_ITEMS.md`
 
 skills_architecture: "SKILL.md + reference modules; leak corpus grep-only; archive deleted"
 
+# ‏(ن-٥٣) ‏**لا عددَ اختباراتٍ هنا.** كان `total: 511 / failed: 0` — والمقيسُ يومَ الإصلاح
+# ‏**2179**. وهذا ملفٌّ يُحقَن في سياق وكيل، **فرقمٌ بائتٌ فيه يُقرأ واقعاً لا تاريخاً**.
+# ‏والعددُ الحيُّ يطبعه `dotnet test Brqosh.sln`، واللقطةُ المؤرَّخة في `docs/OPEN_ITEMS.md` §3.
 tests:
-  total: 511
-  failed: 0
-  breakdown:
-    Domain: 64
-    Desktop: 123
-    Api: 38
-    Application: 286
+  source: "dotnet test Brqosh.sln"
+  snapshot: "docs/OPEN_ITEMS.md §3"
 
 phase:
   current: "CEEF-158 Shura execution — FlaUI retry 4/6 Manufacturing"

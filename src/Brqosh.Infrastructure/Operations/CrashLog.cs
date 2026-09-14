@@ -26,9 +26,31 @@ namespace Brqosh.Infrastructure.Operations;
 /// </summary>
 public static class CrashLog
 {
+    /// <summary>
+    /// (م-٥ · ن-٥٤) <b>منفذُ عزلٍ للاختبار — لأنّ المجلّدَ عامٌّ على الجهاز.</b>
+    ///
+    /// <para><b>ما كشفه:</b> <c>CrashLogKeepsTheRootCauseTests</c> كان <b>يسقط متقطّعاً في
+    /// الحزمة الكاملة وينجح منفرداً</b>. والآليّةُ مقيسة: هذا المجلّدُ واحدٌ على الجهاز
+    /// تتشاركه كلُّ الاختبارات <b>وكلُّ مشاريع الاختبار — وهي عمليّاتٌ متوازية</b>؛ وقِيس أنّه
+    /// يحمل أثناء التشغيل سجلّاتِ <c>OutboxDispatchHook</c> من صفٍّ آخر. ومع
+    /// <see cref="TotalLimit"/> يُقلَّم ما كتبه الاختبارُ لتوّه، <b>فيسقط على سلوكٍ صحيح</b>.</para>
+    ///
+    /// <para><b>و<c>AsyncLocal</c> لا متغيّرُ بيئة:</b> متغيّرُ البيئة عامٌّ على العمليّة،
+    /// <b>فلا يعزل صفّاً عن صفٍّ يجري معه في اللحظة نفسِها</b> — وهو بعينه التزاحمُ الذي
+    /// يُراد عزلُه. وهذا هو النمطُ الذي يستعمله <c>SecurityContext</c> في هذا المستودع
+    /// للغرض نفسِه.</para>
+    ///
+    /// <para><b>وحدُّه معترَفٌ به:</b> كتابةٌ تقع على خيطٍ لا يرث السياق تذهب إلى المجلّد
+    /// الافتراضيّ — <b>وذلك مقبولٌ بل مقصود</b>: ما يُراد عزلُه هو ما يكتبه الاختبارُ نفسُه،
+    /// وضجيجُ غيره يذهب بعيداً عنه.</para>
+    /// </summary>
+    internal static readonly AsyncLocal<string?> DirectoryOverrideSlot = new();
+
     /// <summary>مجلّدُ السجلّات — <b>في جذر البيانات لا في مجلّد التثبيت</b>.</summary>
     public static string Directory =>
-        Path.Combine(BrqoshDataRoot.Path(), "logs");
+        DirectoryOverrideSlot.Value is { Length: > 0 } isolated
+            ? isolated
+            : Path.Combine(BrqoshDataRoot.Path(), "logs");
 
     /// <summary>
     /// يكتب عطلاً ويُعيد مسارَ الملفّ — <b>و<c>null</c> إن تعذّرت الكتابة نفسُها</b>.
@@ -48,13 +70,47 @@ public static class CrashLog
             // ‏الثانية الواحدة على الخيط نفسِه ⟵ **ملفٌّ واحد**، والأوّلُ — وهو غالباً
             // ‏السببُ الجذريّ — يُمحى بالذي تلاه. فأُضيفت أجزاءُ الثانية.
             //
+            // ‏(م-٥ · ن-٥٤) ‏**وأجزاءُ الثانية لم تكفِ — والدهسُ بقي.** مقيسٌ بتشغيلٍ
+            // ‏متكرّر: نداءان متتاليان لهذه الدالّة يقعان في **الميلّي ثانية الواحدة** على
+            // ‏الخيط نفسِه فيتطابق الاسمان، ويُقصّ الأوّل. وسقط `TwoCrashesInTheSameInstant`
+            // ‏**واحدةً من كلّ خمسٍ** — وظُنّ تقطّعاً في الاختبار وهو **العطلُ الأصليُّ قائماً
+            // ‏بدقّةٍ أنعم**. **ودقّةُ ساعةٍ أنعمُ لا تُصلحه**: تُصغّر النافذةَ ولا تُغلقها.
+            //
+            // ‏**فالاسمُ يُحجَز ذرّيّاً لا يُفترَض خالياً**: `FileMode.CreateNew` يفشل إن وُجد،
+            // ‏فيُزاد لاحقةٌ ويُعاد. وهو يحرس من عمليّةٍ ثانيةٍ أيضاً، لا من خيطٍ ثانٍ فحسب.
+            //
             // ‏**والسياقُ في الاسم شرطٌ للحصّة أدناه**، لا زينة: بغيره لا يُعرف أيُّ الملفّات
-            // ‏من عطلٍ متكرّرٍ واحدٍ وأيُّها من أعطالٍ مختلفة.
-            var path = Path.Combine(Directory,
-                $"crash-{DateTime.Now:yyyy-MM-dd_HHmmss.fff}{ContextSeparator}{Slug(context)}"
-                + $"{ContextSeparator}{Environment.CurrentManagedThreadId}.log");
+            // ‏من عطلٍ متكرّرٍ واحدٍ وأيُّها من أعطالٍ مختلفة. واللاحقةُ تقع **بعد** الخيط
+            // ‏فلا تُزحزح موضعَ السياق الذي يقرؤه `ContextOf`.
+            var baseName = $"crash-{DateTime.Now:yyyy-MM-dd_HHmmss.fff}{ContextSeparator}{Slug(context)}"
+                           + $"{ContextSeparator}{Environment.CurrentManagedThreadId}";
+            var body = Compose(exception, context);
 
-            File.WriteAllText(path, Compose(exception, context), new UTF8Encoding(true));
+            var path = string.Empty;
+            for (var attempt = 0; attempt < NameAttempts; attempt++)
+            {
+                var candidate = Path.Combine(Directory,
+                    attempt == 0 ? $"{baseName}.log" : $"{baseName}-{attempt}.log");
+                try
+                {
+                    using var stream = new FileStream(
+                        candidate, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                    using var writer = new StreamWriter(stream, new UTF8Encoding(true));
+                    writer.Write(body);
+                    path = candidate;
+                    break;
+                }
+                catch (IOException) when (File.Exists(candidate))
+                {
+                    // ‏**تصادمُ اسمٍ لا فشلُ كتابة** — وهو الحالةُ المقصودةُ من الحلقة،
+                    // ‏فيُنتقل إلى اللاحقة التالية. وأيُّ `IOException` أخرى تصعد إلى
+                    // ‏المُلتقِط أدناه فتُبلَّغ بـ`null` ولا تُبتلع هنا.
+                    continue;
+                }
+            }
+
+            if (path.Length == 0)
+                return null;
 
             Prune();
             PruneSchemaReports();
@@ -109,6 +165,13 @@ public static class CrashLog
     /// <b>وسجلٌّ ينمو بلا حدٍّ يملأ قرصَ المستخدم</b> — وعطلٌ يتكرّر كلَّ ثانيةٍ يكتب
     /// ألوفاً في دقائق. <b>والأحدثُ هو المفيد</b>: أوّلُ الأعطال يُشخَّص من آخرِ وقوعه.
     /// </remarks>
+    /// <summary>
+    /// (م-٥ · ن-٥٤) <b>محاولاتُ حجزِ اسمٍ خالٍ.</b> خمسون تكفي لأسوأِ دفقةٍ في ميلّي ثانية،
+    /// <b>وحدٌّ لها شرطٌ لا زينة</b>: حلقةٌ بلا سقفٍ في مسارِ تسجيلِ عطلٍ تُعلّق التطبيقَ
+    /// حيث هو معطوبٌ أصلاً — <b>وذلك أسوأُ من فقدِ سجلّ</b>.
+    /// </summary>
+    private const int NameAttempts = 50;
+
     private const string ContextSeparator = "__";
 
     /// <summary>حصّةُ كلّ سياق — فلا يبتلع عطلٌ متكرّرٌ الأدلّةَ كلَّها.</summary>

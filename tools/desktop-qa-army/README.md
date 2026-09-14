@@ -33,7 +33,7 @@ cd tools\desktop-qa-army
 - .NET 9 SDK
 - Python 3.11+
 - **Tesseract OCR** (optional fallback): [GitHub releases](https://github.com/UB-Mannheim/tesseract/wiki)
-- Credentials: `marwan` / `UiAudit9!` or `BRQOSH_TEST_USER` / `BRQOSH_TEST_PASSWORD`
+- Credentials: `BRQOSH_TEST_USER` / `BRQOSH_TEST_PASSWORD` — ‏(ن-٢٢) لا كلمةَ افتراضيّةً منشورةً هنا.
 
 ### Do not run in parallel
 

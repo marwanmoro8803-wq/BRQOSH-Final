@@ -60,7 +60,7 @@ alwaysApply: true
 | **CEEF-120 Supreme plan closure** | **CEEF-137** |
 | **Supreme A-to-Z independent audit** | **CEEF-138** |
 
-**Last measure:** **470** tests PASS · CEEF-101…138 · harness PASS
+**Last measure:** run `dotnet test Brqosh.sln` — the count is whatever it prints. A number written here goes stale within a commit (ن-٥٣); `docs/OPEN_ITEMS.md` §3 carries the dated snapshot.
 
 ---
 

@@ -33,7 +33,7 @@ python audit_orchestrator.py --static-only
 
 # 3. Full live audit (seeds QA data, builds Desktop, navigates all pages)
 $env:BRQOSH_TEST_USERNAME = "marwan"
-$env:BRQOSH_TEST_PASSWORD = "UiAudit9!"
+$env:BRQOSH_TEST_PASSWORD = "<كلمةٌ تختارها لهذه التشغيلة>"   # ن-٢٢: لا كلمةَ منشورةً هنا
 python audit_orchestrator.py
 
 # Or use wrapper script

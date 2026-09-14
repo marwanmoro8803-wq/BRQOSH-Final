@@ -1,4 +1,5 @@
 using Brqosh.Infrastructure.Operations;
+using Brqosh.Infrastructure.Persistence;
 
 namespace Brqosh.Application.Tests.Operations;
 
@@ -28,12 +29,85 @@ public sealed class CrashLogKeepsTheRootCauseTests : IDisposable
     private const string RootCause = "root-cause";
     private const string Flood = "flood";
 
-    public CrashLogKeepsTheRootCauseTests() => Clear();
+    /// <summary>
+    /// (م-٥ · ن-٥٤) <b>مجلّدٌ خاصٌّ بهذا الصفّ — وكان يتشارك مجلّدَ الجهاز مع الحزمة كلِّها.</b>
+    ///
+    /// <para><b>مقيسٌ أنّه كان يسقط متقطّعاً</b>: <c>EXIT=1</c> في تشغيلةٍ كاملةٍ و<c>EXIT=0</c>
+    /// في التي تلتها بلا أيّ تغيير، و<c>0/6</c> فشلٍ منفرداً. والسبب: المجلّدُ عامٌّ على
+    /// الجهاز، وصفوفٌ أخرى تكتب فيه أثناء التشغيل (قِيست سجلّاتُ <c>OutboxDispatchHook</c>
+    /// فيه)، <b>فيُقلَّم ما كتبه هذا الصفُّ لتوّه ويسقط على سلوكٍ صحيح</b>.</para>
+    ///
+    /// <para><b>والعزلُ بالمجلّد لا بتليين الاختبار</b>: ما يقيسه الصفُّ سياسةُ التقليم،
+    /// <b>وتليينُه ليحتمل الضجيجَ يُفقده ما جاء يقيسه</b>.</para>
+    /// </summary>
+    private readonly string _isolated =
+        Path.Combine(Path.GetTempPath(), "n54-" + Guid.NewGuid().ToString("N"));
+
+    public CrashLogKeepsTheRootCauseTests()
+    {
+        Directory.CreateDirectory(_isolated);
+        CrashLog.DirectoryOverrideSlot.Value = _isolated;
+        Clear();
+    }
 
     public void Dispose()
     {
         Clear();
+        CrashLog.DirectoryOverrideSlot.Value = null;
+        try { Directory.Delete(_isolated, recursive: true); }
+        catch (IOException) { /* ‏تنظيفٌ لا يُسقط اختباراً */ }
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// <b>والعزلُ نافذٌ فعلاً — لا مُعلَنٌ فحسب.</b> بلا هذا الشاهد يبقى الصفُّ يكتب في
+    /// مجلّد الجهاز ويبدو معزولاً، <b>فيعود التقطّعُ ولا يُعرف لماذا</b>.
+    /// </summary>
+    [Fact]
+    public void TheLogDirectory_IsIsolatedFromTheMachine()
+    {
+        Assert.Equal(_isolated, CrashLog.Directory);
+
+        var machineRoot = Path.Combine(BrqoshDataRoot.Path(), "logs");
+        Assert.NotEqual(machineRoot, CrashLog.Directory);
+
+        // ‏وشاهدُ ضبط: الكتابةُ تقع في المعزول فعلاً، لا في مجلّدٍ ثالث.
+        var written = CrashLog.Write(new InvalidOperationException("عزل"), "n54-isolation");
+        Assert.NotNull(written);
+        Assert.StartsWith(_isolated, written!, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// (م-٥ · ن-٥٤) <b>دفقةٌ في الميلّي ثانية الواحدة — والقياسُ حتميٌّ لا احتماليّ.</b>
+    ///
+    /// <para><c>TwoCrashesInTheSameInstant_AreBothKept</c> كان يكتب اثنين فيسقط <b>واحدةً من
+    /// كلّ خمس</b> — لأنّ التصادمَ يقع حين تقع الكتابتان في الميلّي ثانية نفسِها، <b>وذلك
+    /// لا يُضمن</b>. فظُنّ العطلُ تقطّعاً في الاختبار وهو <b>العطلُ الأصليُّ قائماً بدقّةٍ
+    /// أنعم</b>.</para>
+    ///
+    /// <para><b>وعشرون كتابةً متتاليةً تضمن التصادم</b> بلا انتظارٍ ولا عشوائيّة: إن كان
+    /// الاسمُ يدهس نفسَه فالملفّاتُ أقلُّ من العشرين حتماً. <b>واختبارٌ يصيب واحدةً من خمسٍ
+    /// لا يحرس شيئاً</b> — يُقرأ تقطّعاً فيُهمَل.</para>
+    /// </summary>
+    [Fact]
+    public void ABurstWithinOneMillisecond_KeepsEveryReport()
+    {
+        const int burst = 20;
+
+        var paths = new List<string>();
+        for (var i = 0; i < burst; i++)
+            paths.Add(CrashLog.Write(new InvalidOperationException($"دفقة {i}"), RootCause)!);
+
+        Assert.All(paths, Assert.NotNull);
+
+        // ‏شاهدُ ضبط: كلُّها في المجلّد المعزول — فالعدُّ عن كتابةٍ لا عن مجلّدٍ آخر.
+        Assert.All(paths, p => Assert.StartsWith(_isolated, p, StringComparison.Ordinal));
+
+        Assert.Equal(burst, paths.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+
+        // ‏**وحصّةُ السياق تُقلّم بعدها** — فالباقي على القرص خمسةٌ بحكم `PerContextLimit`،
+        // ‏وهو سلوكٌ مقصود. والمقيسُ هنا **أنّ الأسماء لم تتصادم**، لا أنّ الكلَّ باقٍ.
+        Assert.Equal(burst, paths.Count);
     }
 
     private static void Clear()

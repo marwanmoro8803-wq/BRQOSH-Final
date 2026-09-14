@@ -27,7 +27,10 @@ builder.Host.UseSerilog((ctx, lc) => lc
         path: "logs/brqosh-api-.log",
         rollingInterval: RollingInterval.Day));
 
-var conn = builder.Configuration.GetConnectionString("Brqosh")
+// ‏(م-٥ · ن-٢٢) تُلتقَط هنا **ويُحكَم عليها بعد قرار الإنتاج** أدناه — انظر الحارسَ هناك.
+var configuredConnection = builder.Configuration.GetConnectionString("Brqosh");
+
+var conn = configuredConnection
            ?? $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}";
 var usePg = conn.Contains("Host=", StringComparison.OrdinalIgnoreCase)
             || string.Equals(builder.Configuration["Database:Provider"], "postgresql", StringComparison.OrdinalIgnoreCase);
@@ -88,6 +91,29 @@ var saasModeSetting = builder.Configuration[ApiSecuritySettings.SaaSModeEnv]
 var saasMode = ApiSecuritySettings.ResolveTenantIsolation(isProduction, saasModeSetting);
 
 ApiSecuritySettings.EnsureProductionApiKey(apiKey, isProduction);
+
+// ‏(م-٥ · ن-٢٢) **ولا يُسقَط إلى دفاترِ المُشغِّل في الإنتاج.**
+//
+// ‏هذا السطرُ هو السببُ المُسمّى في CEEF-203: «بُرهن تجريبياً أنّ تشغيلةً واحدةً لاختبارات
+// ‏API تضيف شركاتٍ إلى قاعدته المحلّيّة، **لأنّ Brqosh.Api يسقط إلى القاعدة الافتراضيّة
+// ‏حين لا يجد ConnectionStrings:Brqosh**». **وأُصلح حينها المستدعون ولم يُصلَح السطر.**
+// ‏و`appsettings.json` بلا قسم اتّصالاتٍ أصلاً، **فالسقوطُ هو الحالةُ الافتراضيّة لا الحافّة**.
+//
+// ‏**وموضعُه هنا لا عند البناء — وهو درسٌ دفعتُه:** وضعتُه أوّلاً قبل `AddBrqoshInfrastructure`
+// ‏فسبق حارسَ المفتاح، **فصار مضيفٌ إنتاجيٌّ بلا مفتاحٍ يشتكي من قاعدةٍ لا من مفتاح** —
+// ‏وأسقط `OneProductionDecisionTests`. **وترتيبُ الحرّاس رسالةٌ لا تفصيل**: أوّلُ ما يُقال
+// ‏للمُشغّل يجب أن يكون أهمَّ ما نقص، والمفتاحُ أسبقُ لأنّه قرارُ الإنتاج الواحد.
+//
+// ‏**والتطويرُ يبقى كما هو**: السقوطُ نافعٌ هناك، والاختباراتُ تعتمده وتوجّه جذرَها إلى
+// ‏مجلّدٍ مؤقّت (`TestDataRootInitializer`). فالرفضُ في الإنتاج وحدَه.
+if (string.IsNullOrWhiteSpace(configuredConnection) && isProduction)
+{
+    throw new InvalidOperationException(
+        "‏لا سلسلةَ اتّصالٍ مُعرَّفة (ConnectionStrings:Brqosh) والبيئةُ إنتاج. "
+        + "‏ولا يُسقَط إلى القاعدة المحلّيّة الافتراضيّة في جذر بيانات المستخدم: "
+        + "‏واجهةٌ تعمل على دفاترَ غيرِ المقصودة **تُقلع وتردّ وتُرجع صفراً من كلّ شيء**، "
+        + "‏والصفرُ يُقرأ بياناتٍ لا عطلاً. عرِّف ConnectionStrings:Brqosh قبل التشغيل.");
+}
 ApiSecuritySettings.EnsureProductionProvisioningKey(provisioningKey, isProduction);
 TenantContext.EnforceTenantIsolation = saasMode;
 

@@ -109,7 +109,10 @@ class UiNavigator:
   def login(self) -> None:
     creds = self.config.get("credentials", {})
     user = os.environ.get(creds.get("username_env", "BRQOSH_TEST_USERNAME"), creds.get("default_username", "marwan"))
-    passwd = os.environ.get(creds.get("password_env", "BRQOSH_TEST_PASSWORD"), creds.get("default_password", "UiAudit9!"))
+    # (م-٥ · ن-٢٢) لا كلمة احتياطية حرفية — كانت منشورة في المستودع.
+    passwd = os.environ.get(creds.get("password_env", "BRQOSH_TEST_PASSWORD"), creds.get("default_password", ""))
+    if not passwd:
+      raise RuntimeError("BRQOSH_TEST_PASSWORD غير مضبوط — ولا كلمة احتياطية هنا عمداً.")
     self.session.username = user
 
     self._handle_blocking_wizards()

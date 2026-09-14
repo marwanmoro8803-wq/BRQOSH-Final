@@ -63,7 +63,7 @@ dotnet run --project src/Brqosh.Desktop
 
 ```powershell
 dotnet build Brqosh.sln
-dotnet test Brqosh.sln                       # 561 اختباراً
+dotnet test Brqosh.sln                       # العددُ يطبعه الأمرُ نفسُه (ن-٥٣)
 dotnet run --project tools/MigrationProbe    # حارس PostgreSQL: هجرات + ترحيل + تزامن + أرصدة
 pwsh -File scripts/ops/verify-ui-live.ps1 -Nav "فواتير المبيعات" -Dialog "فاتورة مبيعات جديدة"
 ```

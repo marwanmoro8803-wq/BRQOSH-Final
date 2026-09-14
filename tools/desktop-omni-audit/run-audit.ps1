@@ -16,7 +16,11 @@ $venvPython = Join-Path $auditDir ".venv\Scripts\python.exe"
 $python = if (Test-Path $venvPython) { $venvPython } else { "python" }
 
 $env:BRQOSH_TEST_USERNAME = $Username
-if (-not $env:BRQOSH_TEST_PASSWORD) { $env:BRQOSH_TEST_PASSWORD = "UiAudit9!" }
+# ‏(م-٥ · ن-٢٢) ‏**لا كلمةَ احتياطيّة** — كانت حرفيّةً منشورةً في المستودع.
+if (-not $env:BRQOSH_TEST_PASSWORD) {
+    Write-Error "‏BRQOSH_TEST_PASSWORD غيرُ مضبوط — اضبطه لهذه التشغيلة."
+    exit 2
+}
 
 Get-Process -Name "Brqosh.Desktop" -ErrorAction SilentlyContinue | Stop-Process -Force
 
