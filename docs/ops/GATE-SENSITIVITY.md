@@ -35,7 +35,8 @@ pwsh ./scripts/ops/verify-gates.ps1 -Only coverage-stale
 | الحالة | البوّابة | العيبُ المزروع |
 |---|---|---|
 | `secrets` | `security-static-scan` | `admin123` · `$pgPass` · بايت `0x08` |
-| `pattern-selftest` | `security-static-scan` | **قتلُ نمطِ أسرار** — الاختبارُ الذاتيُّ يجب أن يعضّ كاتبَه |
+| `pattern-selftest` | `security-static-scan` | **قتلُ نمطِ أسرار** — الاختبارُ الذاتيُّ يجب أن يعضّ كاتبَه، **وباسمه**: منذ م-٦ لا يكفي رمزُ الخروج، فقتلُ النمط يُميت مدخلَ سماحٍ أيضاً فيسقط الماسحُ بطريقٍ آخر |
+| `dead-allowlist` | `security-static-scan` | **مدخلُ سماحٍ لا يُطابق شيئاً** — يجب أن يُسقط الماسحَ ويُسمّى المدخلُ في مخرجه |
 | `ui-emoji` | `ui-ux-pro-max-audit` | إيموجي في `NavigationCatalog.cs` |
 | `coverage-absent` | `check-coverage` | تجميعةٌ متوقَّعةٌ بلا تقرير |
 | `coverage-floor` | `check-coverage` | تجميعةٌ تحت سقّاطتها |

@@ -101,8 +101,43 @@ $cases['pattern-selftest'] = {
         $killed = $text.Replace('pass(word|wd)?|pwd|secret|token', 'zzzznomatchzzz')
         if ($killed -eq $text) { Add-Result 'pattern-selftest' 'security-static-scan' $false 'لم أجد النمطَ لأقتله — الحالةُ نفسُها عمياء'; return }
         [IO.File]::WriteAllText($scan, $killed)
-        $bit = Test-GateFails { & $scan }
-        Add-Result 'pattern-selftest' 'security-static-scan' $bit 'نمطُ أسرارٍ مقتول'
+        # ‏(م-٦) **السقوطُ وحدَه لم يعد دليلاً — فالحالةُ تشترط سببَها.**
+        # ‏قتلُ هذا النمط يُميت مدخلَ السماح `PGPASSWORD` أيضاً (سطرُه لا يُطابقه غيرُه)، وفحصُ «المدخل
+        # ‏الميّت» يُسقط الماسحَ عندئذٍ **ولو كان الاختبارُ الذاتيُّ نفسُه معطوباً** — فكانت «عضّت» تُقرأ
+        # ‏هنا وهي لم تعضّ. كشفته المراجعةُ الخصميّةُ بأربع نسخٍ من الماسح قبل الإيداع.
+        $run = Invoke-GateCapture { & $scan }
+        $bit = $run.Failed -and ($run.Output -match 'pattern self-test')
+        Add-Result 'pattern-selftest' 'security-static-scan' $bit 'نمطُ أسرارٍ مقتول ⟸ يسقط باسم الاختبار الذاتيّ'
+    }
+    finally { Copy-Item $backup $scan -Force }
+}
+
+# ‏يُشغّل سكربتاً ويُعيد رمزَه **ونصَّ مخرجه** — لحالاتٍ يلزمها سببُ السقوط لا السقوطُ وحدَه:
+# ‏بوّابةٌ لها أكثرُ من طريقٍ إلى الفشل يُسقطها أيُّها، والرمزُ لا يُسمّي الطريق.
+function Invoke-GateCapture([scriptblock]$Action) {
+    $global:LASTEXITCODE = 0
+    try {
+        $out = & $Action *>&1
+        return @{ Failed = ($LASTEXITCODE -ne 0); Output = ($out | Out-String) }
+    }
+    catch { return @{ Failed = $true; Output = ($_ | Out-String) } }
+}
+
+# ── ٢ب · (م-٦) مدخلُ سماحٍ ميّت: يجب أن يُسقط الماسحَ ويُسمّى ──────────────────
+$cases['dead-allowlist'] = {
+    $scan = Join-Path $root "scripts\security-static-scan.ps1"
+    $backup = Join-Path $tmp "scan-dead.bak"
+    Copy-Item $scan $backup -Force
+    try {
+        $text = [IO.File]::ReadAllText($scan)
+        $anchor = '$secretAllowlist = @('
+        if (-not $text.Contains($anchor)) { Add-Result 'dead-allowlist' 'security-static-scan' $false 'لم أجد قائمةَ السماح لأزرع فيها — الحالةُ نفسُها عمياء'; return }
+        $marker = 'zz-gatecheck-dead-entry-zz'
+        $planted = $text.Replace($anchor, $anchor + "`n    @{ Pattern = '$marker'; Reason = 'gate-check' }")
+        [IO.File]::WriteAllText($scan, $planted)
+        $run = Invoke-GateCapture { & $scan }
+        $bit = $run.Failed -and ($run.Output -match 'dead allowlist entry') -and $run.Output.Contains($marker)
+        Add-Result 'dead-allowlist' 'security-static-scan' $bit 'مدخلُ سماحٍ لا يُطابق شيئاً ⟸ يسقط ويُسمّيه'
     }
     finally { Copy-Item $backup $scan -Force }
 }

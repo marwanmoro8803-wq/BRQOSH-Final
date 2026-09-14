@@ -26,6 +26,44 @@ param(
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 
+# ‏(م-٦ · تبعيّةُ ن-٢٢) **لا كلمةَ افتراضيّةً في سكربتِ تشغيل** — كما في شقيقتها
+# ‏`live-production-first-boot.ps1`. **وهذه أسوأُ من شقيقتها بفارقٍ مقيس**: تلك تُسقط
+# ‏قاعدتَها المؤقّتةَ في نهايتها بسطرِ إسقاطٍ صريح، **وهذه لا تُسقطها إطلاقاً** —
+# ‏فيبقى في خادم الآلة الافتراضيّة قاعدةُ `brqosh_prodboot_*` فيها حسابُ مديرٍ بكلمةٍ
+# ‏كانت منشورةً، **بعد انتهاء التشغيلة وإلى الأبد**. *(والتنظيفُ نفسُه بندٌ مفتوحٌ
+# ‏مُعلَنٌ في `docs/OPEN_ITEMS.md` — لم يُحرَّر هنا لأنّ هذا السكربتَ يقود واجهةً في آلةٍ
+# ‏لا تُبلَغ من هنا، وإسقاطُ القاعدة في `finally` يمحو دليلَ التشخيص على تشغيلةٍ فاشلة:
+# ‏قرارٌ للمُشغِّل لا تحريرٌ أعمى.)*
+# ‏**ويُفحص قبل أيّ أثر**: لا مجلّدَ يُنشأ في `C:\rk` ولا في المشترك، ولا قاعدةَ، ولا تطبيقَ
+# ‏يُشغَّل قبل هذا السطر — فتشغيلةٌ تسقط هنا لا تترك وراءها شيئاً. *(وكان يقع بعد إنشاء ثلاثة
+# ‏مجلّداتٍ، أحدُها في المشترك — كشفته المراجعةُ الخصميّةُ قبل الإيداع.)*
+$adminPass = $env:BRQOSH_PRODBOOT_PASSWORD
+if ([string]::IsNullOrWhiteSpace($adminPass)) {
+    throw 'BRQOSH_PRODBOOT_PASSWORD غيرُ مضبوط — ولا كلمةَ احتياطيّةً هنا عمداً؛ الاحتياطيّةُ كانت منشورةً في المستودع. اضبطه قبل التشغيل.'
+}
+# ‏**وبسياسة كلمة المرور نفسِها** — مرآةٌ لـ`src/Brqosh.Infrastructure/Security/PasswordPolicy.cs`.
+# ‏فكلمةٌ يرفضها المعالجُ كانت تمرّ هنا ثمّ تُرفض **بعد** إنشاء القاعدة وتشغيل التطبيق، فتضيع
+# ‏التشغيلةُ وتبقى القاعدة (وهذا السكربتُ لا يُسقطها). **ولماذا مرآةٌ لا الأصل**: الأصلُ في
+# ‏تجميعةِ net9.0 لا تُحمَّل في Windows PowerShell 5.1 الذي يُشغَّل به هذا السكربتُ داخل الضيف.
+# ‏والمرآةُ قد تتأخّر عن الأصل إن تغيّر — **وأسوأُ ذلك تشغيلةٌ ضائعةٌ برسالةٍ صريحة**، وهو ما
+# ‏كان يقع قبل هذا الفحص أصلاً.
+$policyBreaks = @(
+    if ($adminPass.Length -lt 12) { '12 محرفاً على الأقلّ' }
+    if ($adminPass -cnotmatch '\p{Lu}') { 'حرفٌ كبير' }
+    if ($adminPass -cnotmatch '\p{Ll}') { 'حرفٌ صغير' }
+    if ($adminPass -notmatch '\p{Nd}') { 'رقم' }
+    if ($adminPass -notmatch '[^\p{L}\p{Nd}]') { 'رمزٌ خاصّ' }
+)
+# ‏**والكلماتُ الممنوعةُ لا تُنسخ هنا عمداً**: قائمتُها في `PasswordPolicy.cs` وحدَه، والماسحُ الأمنيُّ
+# ‏يُسقط أيَّ ذكرٍ لأوّلها خارجه — **ووحدةُ المصدر مقصودة**، ونسخةٌ هنا أسقطته فعلاً قبل الإيداع.
+# ‏فكلمةٌ تحمل واحدةً منها يرفضها المعالجُ **بعد** الأثر (وهنا تبقى القاعدة): حالةٌ ضيّقةٌ مُعلَنةٌ في كتيّب O-03.
+if ($policyBreaks.Count -gt 0) {
+    throw ('BRQOSH_PRODBOOT_PASSWORD لا يُرضي سياسةَ كلمة المرور — ينقصه: ' + ($policyBreaks -join '، '))
+}
+# ‏و`PasswordPolicy` تمنع `123456`، وعشرةُ محارفَ ستّةَ عشريّةٍ قد تحملها (نحو ٣ في ١٠ ملايين).
+# ‏فالتوليدُ يُعاد حتى يخلو منها: **صحّةٌ مضمونةٌ لا مُرجَّحة** في سكربتٍ وظيفتُه أن يُثبت.
+do { $newPass = 'Rk' + ([guid]::NewGuid().ToString('N').Substring(0, 10)) + '!9aZ' } while ($newPass -match '123456')
+
 # ── المجلّدُ المشترك: تعدادٌ لا تخمين (م-٣١) ─────────────────────────────────
 $share = $null
 foreach ($d in (Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue | Sort-Object Name)) {
@@ -50,8 +88,6 @@ New-Item -ItemType Directory -Force -Path $dataRoot | Out-Null
 $dbName    = "brqosh_prodboot_" + ($stamp -replace '-', '_')
 $company   = "منشأة الإقلاع الإنتاجي"
 $adminUser = "prodadmin"
-$adminPass = "ProdBoot!2026x"
-$newPass   = "ProdBoot!2026y"
 
 $AE = [System.Windows.Automation.AutomationElement]
 $TS = [System.Windows.Automation.TreeScope]
