@@ -250,7 +250,10 @@ internal static class Program
                 else
                 {
                     var testUser = Environment.GetEnvironmentVariable("BRQOSH_TEST_USERNAME") ?? "marwan";
-                    var testPass = Environment.GetEnvironmentVariable("BRQOSH_TEST_PASSWORD") ?? "UiAudit9!";
+                    // ‏(م-٥ · ن-٢٢) ‏**لا كلمةَ احتياطيّة** — كانت منشورةً في المستودع.
+                    var testPass = Environment.GetEnvironmentVariable("BRQOSH_TEST_PASSWORD")
+                        ?? throw new InvalidOperationException(
+                            "‏BRQOSH_TEST_PASSWORD غيرُ مضبوط — ولا كلمةَ احتياطيّةَ هنا عمداً.");
                     await UiAutomationHelpers.LoginAsync(login, testUser, testPass);
                     await UiAutomationHelpers.DismissMessageBoxesAsync(automation);
 

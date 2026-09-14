@@ -48,6 +48,14 @@ var cs = provider == DatabaseProvider.Sqlite
     ? $"Data Source={BrqoshDbContextFactory.DefaultSqlitePath()}"
     : config.ConnectionString;
 
+// ‏(م-٥ · ن-٢٢) **إذنٌ باسمِ القاعدة قبل أن تُلمس.** هذه الأداةُ تكتب في الدفاتر: تُنشئ
+// ‏حساباً بدور «مدير»، وتُرحّل مستنداتٍ تستهلك أرقامَ المستندات الحقيقيّة وتدخل ميزانَ
+// ‏المراجعة والإقرارَ الضريبيّ. **وهي الخطوةُ ٦ في كتيّب التنصيب** ويستدعيها
+// ‏`run-external-gates.ps1` يوميّاً — فكانت تفعل ذلك كلَّه بلا سؤال.
+LiveBooksGuard.RequireConsentFor(
+    LiveBooksGuard.DescribeTarget(cs, provider == DatabaseProvider.Sqlite),
+    "‏تُنشئ حسابَ تدقيقٍ بدور «مدير»، وتُرحّل مستنداتٍ تستهلك أرقامَ المستندات وتدخل الدفاترَ والإقرار.");
+
 await using var db = BrqoshDbContextFactory.Create(provider, cs);
 await new BrqoshSchemaUpdater(db).ApplyAsync();
 
@@ -316,32 +324,41 @@ static async Task<Product> EnsureRawProductAsync(BrqoshDbContext db, long compan
 static async Task EnsureUiAuditUserAsync(BrqoshDbContext db, long companyId)
 {
     const string username = "uiaudit";
-    var password = Environment.GetEnvironmentVariable("BRQOSH_TEST_PASSWORD") ?? "UiAudit9!";
+
+    // ‏(م-٥ · ن-٢٢) **لا كلمةَ افتراضيّةً بعد اليوم.** كان هنا `??` بكلمةٍ حرفيّة — **وهي منشورةٌ
+    // ‏في المستودع**، فكلُّ تشغيلةٍ بلا متغيّرِ بيئةٍ تزرع حساباً بكلمةٍ يعرفها كلُّ من قرأ
+    // ‏الشيفرة. **والصمتُ هو الخطر**: لا أحدَ يُقفَل خارج حسابه فلا أحدَ يسأل.
+    var password = Environment.GetEnvironmentVariable("BRQOSH_TEST_PASSWORD")
+        ?? throw new InvalidOperationException(
+            "‏BRQOSH_TEST_PASSWORD غيرُ مضبوط. **ولا كلمةَ احتياطيّةً هنا عمداً** — "
+            + "الاحتياطيّةُ كانت منشورةً في المستودع، فالحسابُ المزروعُ بها مفتوحٌ لكلّ قارئ.\n"
+            + "    $env:BRQOSH_TEST_PASSWORD = \"<كلمةٌ تختارها لهذه التشغيلة>\"");
+
     var hash = UserAuthService.HashPassword(password);
-    var user = await db.AppUsers.FirstOrDefaultAsync(u => u.CompanyId == companyId && u.Username == username);
+
+    // ‏والحسابُ المطلوبُ واحد: الذي يسجّل به مُدقّقُ الواجهة الدخول.
+    var auditUsername = Environment.GetEnvironmentVariable("BRQOSH_TEST_USERNAME") ?? username;
+
+    var user = await db.AppUsers.FirstOrDefaultAsync(u =>
+        u.CompanyId == companyId && u.Username == auditUsername);
+
     if (user is null)
     {
+        if (auditUsername != username)
+            throw new InvalidOperationException(
+                $"‏المستخدمُ «{auditUsername}» غيرُ موجود — ولا يُنشأ حسابُ مديرٍ لاسمٍ لم تُنشئه أنت.");
+
         db.AppUsers.Add(AppUser.Create(companyId, username, hash, "مدير تدقيق واجهة", UserRole.Administrator));
     }
     else
     {
         user.SetPasswordHash(hash);
+        user.ClearMustChangePassword();
     }
 
-    var marwan = await db.AppUsers.FirstOrDefaultAsync(u =>
-        u.CompanyId == companyId && u.Username == "marwan" && u.IsActive);
-    if (marwan is not null)
-    {
-        marwan.SetPasswordHash(hash);
-        marwan.ClearMustChangePassword();
-    }
-
-    var admins = await db.AppUsers
-        .Where(u => u.CompanyId == companyId && u.IsActive && u.Role == UserRole.Administrator)
-        .ToListAsync();
-    foreach (var admin in admins)
-        admin.SetPasswordHash(hash);
-
+    // ‏**ولا يُمسّ مديرٌ آخر.** كان هنا يُحمَّل **كلُّ مديرٍ فعّالٍ في الشركة** وتُكتب فوق
+    // ‏كلمتِه الكلمةُ نفسُها — وهو ما لا تحتاجه الأداةُ في شيء: يلزمها حسابٌ واحدٌ تدخل به.
+    // ‏**فحذفُ الحلقة إصلاحٌ لا تقليصُ ميزة.**
     await db.SaveChangesAsync();
 
     var auditUser = Environment.GetEnvironmentVariable("BRQOSH_TEST_USERNAME") ?? username;

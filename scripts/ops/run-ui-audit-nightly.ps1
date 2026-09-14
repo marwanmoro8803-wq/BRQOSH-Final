@@ -20,7 +20,12 @@ if (-not $SkipPasswordSync) {
 }
 
 $env:BRQOSH_TEST_USERNAME = $Username
-$env:BRQOSH_TEST_PASSWORD = if ($env:BRQOSH_TEST_PASSWORD) { $env:BRQOSH_TEST_PASSWORD } else { "UiAudit9!" }
+# ‏(م-٥ · ن-٢٢) ‏**لا كلمةَ احتياطيّة.** كان هنا فرعُ `else` بكلمةٍ حرفيّةٍ منشورةٍ في
+# ‏المستودع، فتشغيلةٌ ليليّةٌ بلا متغيّرٍ تزرع حساباً مفتوحاً لكلّ من قرأ الشيفرة.
+if (-not $env:BRQOSH_TEST_PASSWORD) {
+    Write-Error "‏BRQOSH_TEST_PASSWORD غيرُ مضبوط — ولا كلمةَ احتياطيّةَ هنا عمداً. اضبطه لهذه التشغيلة."
+    exit 2
+}
 $env:BRQOSH_AUDIT_ALL_PROFILES = "1"
 $env:BRQOSH_UIAUDIT_TIMEOUT_MS = "240000"
 # (CEEF-229 · م2-٤) حُذف التخطّي: تشغيلُ هذا النصّ مرشَّحٌ على تدقيق الواجهة، فلا تبلغه

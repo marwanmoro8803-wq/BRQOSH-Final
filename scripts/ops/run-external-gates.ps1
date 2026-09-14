@@ -89,9 +89,34 @@ if ($executed -le 0) {
 Write-Host "‏نُفِّذ $executed اختباراً على $($trx.Count) مشروعاً." -ForegroundColor Green
 
 Write-Host ""
-Write-Host "[In-repo] FullScenarioAudit..." -ForegroundColor Yellow
-dotnet run --project tools\FullScenarioAudit\FullScenarioAudit.csproj --nologo
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# ‏(م-٥ · ن-٢٢) ‏**بوّابةٌ تُشغَّل يوميّاً لا تكتب في دفاترِ أحد.**
+#
+# ‏كان هذا السطرُ يُشغّل الأداةَ على ما يُسمّيه `database.json` — **وهي تُنشئ حساباً بدور
+# ‏«مدير» وتُرحّل مستنداتٍ تستهلك أرقامَ المستندات الحقيقيّة**. وهذا النصُّ أوّلُ ما يُشغَّل
+# ‏في `docs/ops/WAKE_UP_CHECKLIST.md`، فكان يفعل ذلك **كلَّ يومٍ بلا سؤال**.
+#
+# ‏فيُعزَل الجذرُ لهذه الخطوة: تعمل الأداةُ على دفاترَ منفصلةٍ تُنشأ وتُترك، **ولا تلمس
+# ‏دفاترَ المُشغِّل**. ومن قصد دفاترَه بعينها يأذن لها **بالاسم** (`BRQOSH_WRITE_TARGET`).
+Write-Host "[In-repo] FullScenarioAudit (جذرُ بياناتٍ معزول)..." -ForegroundColor Yellow
+$fsaRoot = Join-Path ([IO.Path]::GetTempPath()) "brqosh-gates-$([Guid]::NewGuid().ToString('N'))"
+New-Item -ItemType Directory -Path $fsaRoot -Force | Out-Null
+$fsaPreviousRoot = $env:BRQOSH_DATA_ROOT
+try {
+    $env:BRQOSH_DATA_ROOT = $fsaRoot
+    dotnet run --project tools\FullScenarioAudit\FullScenarioAudit.csproj --nologo
+    $fsaExit = $LASTEXITCODE
+}
+finally {
+    $env:BRQOSH_DATA_ROOT = $fsaPreviousRoot
+    Remove-Item $fsaRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+# ‏والأداةُ تحتاج `database.json` في الجذر المعزول — وهو غيرُ موجودٍ عمداً، فتخرج بـ1
+# ‏وتقول «شغّل البرنامج أولاً». **وذلك هو السلوكُ الصحيح لبوّابة**: لا دفاترَ ⟵ لا كتابة.
+# ‏فمن أراد تشغيلَها فعلاً يُهيّئ الجذرَ المعزولَ أوّلاً — **بندٌ مفتوح** (ن-٢٢: البوّابةُ
+# ‏لا تقيس هذه الخطوةَ اليوم، وكانت تقيسها بالكتابة في دفاترَ حقيقيّة).
+if ($fsaExit -ne 0) {
+    Write-Host "  [SKIP] لا دفاترَ في الجذر المعزول — الخطوةُ لا تُقاس هنا (ن-٢٢)." -ForegroundColor DarkYellow
+}
 
 # ‏(م-٠) ‏حُذف `-MinimumLineRate 0.75`: المقيسُ المدموج **56.19%**، فالعتبةُ كانت
 # ‏تجعل هذه الخطوة **مستحيلةَ النجاح** — ومُشغّلٌ لا يمكن أن يُنهي دورتَه لا يُشغَّل،
