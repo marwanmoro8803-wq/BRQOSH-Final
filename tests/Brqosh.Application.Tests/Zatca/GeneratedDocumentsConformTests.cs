@@ -197,6 +197,12 @@ public class GeneratedDocumentsConformTests : IDisposable
         await SetupAsync();
         var invoice = await PostInvoiceAsync();
 
+        // ‏(م-٥ · ن-٢٥) **داخل معاملة — كما يفعل المسارُ الإنتاجيّ.**
+        // ‏كان هذا الاستدعاءُ خارجَها، وكان يمرّ لأنّ حارسَ «خارج معاملة» كان متخطّىً على
+        // ‏SQLite. **والمسارُ الحقيقيُّ يفتح معاملتَه** (`SalesInvoiceCancellationService`
+        // ‏و`CreditNoteCancellationService`)، فالاستدعاءُ العاري كان يقيس شكلاً لا يسلكه أحد.
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+
         var document = await new ZatcaEInvoiceGenerator(_db)
             .TryGenerateCancellationForSalesInvoiceAsync(invoice.Id);
 
@@ -224,6 +230,12 @@ public class GeneratedDocumentsConformTests : IDisposable
             _companyId, _customerId, invoice.Id, new DateOnly(2026, 7, 10), "إرجاع خاطئ");
         note.AddLine("خدمة استشارية", 1m, 300m);
         await new CreditNotePostingService(_db).PostAsync(note);
+
+        // ‏(م-٥ · ن-٢٥) **داخل معاملة — كما يفعل المسارُ الإنتاجيّ.**
+        // ‏كان هذا الاستدعاءُ خارجَها، وكان يمرّ لأنّ حارسَ «خارج معاملة» كان متخطّىً على
+        // ‏SQLite. **والمسارُ الحقيقيُّ يفتح معاملتَه** (`SalesInvoiceCancellationService`
+        // ‏و`CreditNoteCancellationService`)، فالاستدعاءُ العاري كان يقيس شكلاً لا يسلكه أحد.
+        await using var transaction = await _db.Database.BeginTransactionAsync();
 
         var document = await new ZatcaEInvoiceGenerator(_db)
             .TryGenerateCancellationForCreditNoteAsync(note.Id);
