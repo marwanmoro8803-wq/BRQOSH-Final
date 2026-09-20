@@ -58,6 +58,32 @@ public class PayrollLine
     public decimal FullGrossPay =>
         BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
 
+    /// <summary>
+    /// <b>حصّةُ الأساسيّ من خصم الغياب</b> — تناسُبيّةٌ مع الأجر الكامل.
+    ///
+    /// <para><b>والخصمُ في النظام السعوديّ يُحسب على الأجر الكامل</b> لا على الأساسيّ وحدَه،
+    /// فغيابُ عُشرِ الشهر يُنقص الأساسيَّ والبدلاتِ عُشراً. <b>وحملُه كلِّه على الأساسيّ</b>
+    /// يُظهر بدلاتِ سكنٍ دُفعت عن أيّامٍ لم تُعمَل، <b>وقد يدفع الأساسيَّ إلى السالب</b> حين
+    /// يتجاوز الغيابُ الأساسيَّ — فيسقط القيدُ عند حارس السطر السالب.
+    /// </para>
+    /// </summary>
+    private decimal AbsenceOnBasic => FullGrossPay == 0m
+        ? 0m
+        : Math.Round(AbsenceDeduction * BasicSalary / FullGrossPay, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>الأساسيُّ بعد حصّته من خصم الغياب — <b>وهو ما يذهب إلى مصروف الرواتب</b>.</summary>
+    public decimal BasicAfterAbsence => BasicSalary - AbsenceOnBasic;
+
+    /// <summary>
+    /// البدلاتُ بعد باقي خصم الغياب.
+    ///
+    /// <para><b>والباقي يُؤخذ طرحاً لا حساباً ثانياً</b>: فمهما فعل التقريبُ بالحصّتَين يبقى
+    /// <c>BasicAfterAbsence + AllowancesAfterAbsence = GrossPay</c> بالضبط — <b>والقسمةُ بينهما
+    /// اجتهادٌ، أمّا المجموعُ فهويّة</b>، وعليها يتوازن القيد. وهللةٌ واحدةٌ تُسقطه كلَّه.</para>
+    /// </summary>
+    public decimal AllowancesAfterAbsence =>
+        HousingAllowance + TransportAllowance + OtherAllowance - (AbsenceDeduction - AbsenceOnBasic);
+
     /// <summary><b>والصافي بعد التأمينات والسُّلفة معاً</b> — وكلاهما يخرج من جيب الموظّف.</summary>
     public decimal NetPay => GrossPay - GosiEmployee - AdvanceDeduction;
 
@@ -250,18 +276,27 @@ public class PayrollRun : IBranchScoped
         //
         // ‏**والمجموعُ لا يتغيّر**، فلا تنكسر هويّةٌ ولا يتحرّك صافي الربح. وحسابُ البدلات
         // ‏اختياريٌّ في التوقيع: مستدعٍ لا يُمرّره يسلك السلوكَ القديم حرفاً.
+        // (جاهزيّةُ الإطلاق · ح-٢) ‏**والمصروفُ يُؤخذ بعد الغياب — وكان يُؤخذ كاملاً.**
+        //
+        // ‏النيّةُ مكتوبةٌ في هذا الملفّ نفسِه (انظر `AbsenceDeduction` و`GrossPay`): الغيابُ
+        // ‏بلا أجرٍ **أجرٌ لم يُستحقّ، فالمصروفُ نفسُه ينقص**. لكنّ هذه السطورَ كانت تأخذ
+        // ‏`BasicSalary` والبدلاتِ خامّةً — أي الأجرَ الكامل — **بينما الطرفُ الدائنُ يأخذ
+        // ‏`TotalNet` المبنيَّ على `GrossPay` بعد الخصم**. فوثيقةٌ وشيفرةٌ افترقتا.
+        //
+        // ‏**والأثرُ أنّ الرواتبَ لا تُرحَّل أصلاً**: القيدُ ينقص بمقدار الغياب بالضبط
+        // ‏(مدينٌ = الأجرُ الكامل + حصّةُ صاحب العمل · دائنٌ = الصافي + السُّلَف + التأمينات
+        // ‏= الأجرُ بعد الغياب + حصّةُ صاحب العمل)، فيرتدّ على حارس التوازن. **أيُّ شهرٍ فيه
+        // ‏إجازةٌ بلا أجرٍ معتمدةٌ لموظّفٍ واحدٍ يُعطّل رواتبَ المنشأة كلِّها.**
         if (allowancesExpense is not null && TotalAllowances > 0m)
         {
-            AddExpense(entry, salariesExpense, l => l.BasicSalary, "مصروف رواتب", employeeCostCenters);
-            AddExpense(entry, allowancesExpense,
-                l => l.HousingAllowance + l.TransportAllowance + l.OtherAllowance,
+            AddExpense(entry, salariesExpense, l => l.BasicAfterAbsence, "مصروف رواتب", employeeCostCenters);
+            AddExpense(entry, allowancesExpense, l => l.AllowancesAfterAbsence,
                 "بدلات السكن والانتقال", employeeCostCenters);
         }
         else
         {
-            AddExpense(entry, salariesExpense,
-                l => l.BasicSalary + l.HousingAllowance + l.TransportAllowance + l.OtherAllowance,
-                "مصروف رواتب", employeeCostCenters);
+            // ‏و`GrossPay` هو الأجرُ الكاملُ ناقصَ الغياب — فلا قسمةَ هنا ولا تقريبَ يُخشى.
+            AddExpense(entry, salariesExpense, l => l.GrossPay, "مصروف رواتب", employeeCostCenters);
         }
         if (TotalGosiEmployer > 0)
             AddExpense(entry, gosiExpense, l => l.GosiEmployer,
