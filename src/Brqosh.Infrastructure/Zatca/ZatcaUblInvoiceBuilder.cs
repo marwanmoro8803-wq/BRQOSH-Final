@@ -66,7 +66,20 @@ public static class ZatcaUblInvoiceBuilder
         /// (BT-111). <b>وهو إفصاحٌ تفرضه الهيئة</b>: الضريبةُ تُورَّد بالريال أيّاً كانت
         /// عملةُ الفاتورة.
         /// </summary>
-        decimal? VatAmountInSar = null);
+        decimal? VatAmountInSar = null,
+
+        /// <summary>
+        /// (جاهزيّةُ الإطلاق · ح-٨) <b>تاريخُ التوريد</b> — <c>cac:Delivery/cbc:ActualDeliveryDate</c>،
+        /// وتشترطه الهيئةُ في الفاتورة الضريبيّة (BR-KSA-11).
+        ///
+        /// <para><b>و<c>null</c> تعني «يوم الفاتورة»</b>، وهو الأصلُ في بيعٍ يقع عند الإصدار —
+        /// وأكثرُ فواتير المنشآت الصغيرة كذلك. <b>ولا يُخترع تاريخٌ آخر</b>.</para>
+        ///
+        /// <para><b>وحين يُفصَل التوريدُ عن الإصدار</b> — بضاعةٌ سُلّمت في شهرٍ وفُوتِرت في
+        /// تاليه — <b>يلزم أن يُمرَّر التاريخُ الحقيقيّ</b>، فهو الذي يُحدّد فترةَ الإقرار.
+        /// والمستندُ اليومَ لا يحمل حقلاً له: <b>بندٌ مفتوحٌ مُسمّى، لا صمتٌ عنه</b>.</para>
+        /// </summary>
+        DateOnly? SupplyDate = null);
 
 /// <summary>
 /// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
@@ -126,6 +139,16 @@ public sealed record BuyerIdentity(
         AddSupplier(root, data.SellerName, data.SellerVat, data.Seller);
         if (!string.IsNullOrWhiteSpace(data.CustomerName) || !string.IsNullOrWhiteSpace(data.CustomerVat))
             AddCustomer(root, data.CustomerName, data.CustomerVat, data.Buyer);
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٨) ‏**تاريخُ التوريد — وكان غائباً عن المستند كلِّه.**
+        //
+        // ‏الهيئةُ تشترط `cac:Delivery/cbc:ActualDeliveryDate` في الفاتورة الضريبيّة
+        // ‏(BR-KSA-11)، **وهو يُحدّد الفترةَ التي تُقرَّر فيها الضريبة** — لا بيانٌ وصفيّ.
+        //
+        // ‏**وموضعُه في المتتالية مُلزِم**: `cac:Delivery` **قبل** `cac:PaymentMeans` الذي
+        // ‏يكتبه `AddIssueReason` أدناه. ووضعُه بعده يُرفض في تصديق المخطّط — أي قبل أن
+        // ‏تُقرأ أرقامُه، كما وقع في Z-6.
+        AddDelivery(root, data);
 
         AddIssueReason(root, data);
 
@@ -246,7 +269,13 @@ public sealed record BuyerIdentity(
                         El(Cbc, "BaseAmount", F(line.GrossAmount), ("currencyID", data.CurrencyCode)))
                     : null,
 
-                new XElement(Cac + "TaxTotal", El(Cbc, "TaxAmount", F(lineVat), ("currencyID", data.CurrencyCode))),
+                // ‏(جاهزيّةُ الإطلاق · ح-٨) ‏**ومبلغُ السطر شاملَ الضريبة** — وكان الوعاءُ
+                // ‏يحمل الضريبةَ وحدَها. تشترطه الهيئةُ في كلّ سطر (BR-KSA-EN16931-11)
+                // ‏بقيمةٍ محدّدة: `LineExtensionAmount + TaxAmount`. **فليس حقلاً وصفيّاً
+                // ‏يُملأ بأيّ رقم**: قيمةٌ تخالف المجموعَ تُرفض كما يُرفض غيابُه.
+                new XElement(Cac + "TaxTotal",
+                    El(Cbc, "TaxAmount", F(lineVat), ("currencyID", data.CurrencyCode)),
+                    El(Cbc, "RoundingAmount", F(lineNet + lineVat), ("currencyID", data.CurrencyCode))),
                 new XElement(Cac + "Item",
                     El(Cbc, "Name", line.Description),
                     new XElement(Cac + "ClassifiedTaxCategory",
@@ -289,6 +318,23 @@ public sealed record BuyerIdentity(
     /// SDK — <b>ولم أتحقّق منه في نصّ المواصفة</b>. يُراجَع نصّاً قبل الإرسال الحقيقيّ (م4-٤).
     /// وموضعه في المتتالية بعد طرفَي البائع والمشتري وقبل <c>cac:TaxTotal</c> — يحرسه ح-٣.</para>
     /// </summary>
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨) تاريخُ التوريد — <c>cac:Delivery/cbc:ActualDeliveryDate</c>.
+    ///
+    /// <para><b>ولا يُكتب في إشعارٍ دائنٍ أو مدين</b>: الإشعارُ يُصحّح فاتورةً سابقةً ولا
+    /// يُوثّق توريداً جديداً، <b>ومرجعُه في <c>cac:BillingReference</c></b>.</para>
+    /// </summary>
+    private static void AddDelivery(XElement root, InvoiceData data)
+    {
+        if (data.IsCreditNote || data.IsDebitNote)
+            return;
+
+        var supply = data.SupplyDate ?? data.InvoiceDate;
+
+        root.Add(new XElement(Cac + "Delivery",
+            El(Cbc, "ActualDeliveryDate", supply.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))));
+    }
+
     private static void AddIssueReason(XElement root, InvoiceData data)
     {
         if (!data.IsCreditNote && !data.IsDebitNote)
