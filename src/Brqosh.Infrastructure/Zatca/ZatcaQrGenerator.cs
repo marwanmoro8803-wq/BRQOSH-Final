@@ -22,7 +22,8 @@ public static class ZatcaQrGenerator
         decimal vatTotal,
         string invoiceHashBase64,
         string ecdsaSignatureBase64,
-        string? publicKeyDerBase64 = null)
+        string? publicKeyDerBase64 = null,
+        string? certificateSignatureBase64 = null)
     {
         var ts = timestampUtc.ToString(
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
@@ -45,9 +46,25 @@ public static class ZatcaQrGenerator
         // سبعة وسوم ولا يستطيع إثبات صحّة الختم، وفحصُ الامتثال على الفاتورة المبسّطة يفشل.
         // والمفتاح يُستخرج من الشهادة محلياً — لا ينتظر شيئاً من الهيئة.
         //
-        // (الوسم 9 — توقيع الهيئة على المفتاح العام — يأتي مع CSID الإنتاجيّ في م4.)
         if (!string.IsNullOrWhiteSpace(publicKeyDerBase64))
             items = [.. items, ((byte)8, Convert.FromBase64String(publicKeyDerBase64))];
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٧) ‏**الوسمُ ٩ — توقيعُ جهةِ الإصدار على مفتاحنا العامّ.**
+        //
+        // ‏وكان هنا سطرٌ يقول إنّه «يأتي مع CSID الإنتاجيّ» — **فصُنِّف انتظاراً لجهةٍ
+        // ‏خارجيّة**. والمقيسُ أنّه في اليد: الشهادةُ الصادرةُ تحمل في حقل `signatureValue`
+        // ‏توقيعَ الهيئة على `tbsCertificate`، **وفيه مفتاحُنا** — فيُقرأ من الملفّ ولا
+        // ‏يُنتظر نداءٌ وقتَ الإصدار.
+        //
+        // ‏**وبغيره يفشل فحصُ الامتثال على الفاتورة المبسّطة**: الماسحُ يجد ختماً ومفتاحاً
+        // ‏بلا ما يُثبت أنّ الهيئةَ اعتمدت ذلك المفتاح.
+        //
+        // ‏**ويبقى اختياريّاً في التوقيع**: كلُّ شهادةٍ تحمل `signatureValue` — ومَن وقّعها
+        // ‏هو مَن أصدرها. **فما يُثبته الوسمُ هو اعتمادُ المُصدِر لا اعتمادُ الهيئة بالضرورة**:
+        // ‏شهادةُ الإنتاج تحمل توقيعَ الهيئة، وشهادةُ المحاكاة توقيعَ بيئتها. والرمزُ يخرج
+        // ‏بثمانيةٍ فقط حين لا يُمرَّر شيء — لا بوسمٍ تاسعٍ مُختلَق.
+        if (!string.IsNullOrWhiteSpace(certificateSignatureBase64))
+            items = [.. items, ((byte)9, Convert.FromBase64String(certificateSignatureBase64))];
 
         return EncodeTlv(items);
     }

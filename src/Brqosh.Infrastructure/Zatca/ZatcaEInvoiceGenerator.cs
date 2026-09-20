@@ -417,7 +417,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             qr = ZatcaQrGenerator.GenerateTlvBase64Phase2(
                 company.NameAr, company.VatRegistrationNumber, ts, total, vat,
                 signResult.InvoiceHashBase64, signResult.SignatureBase64,
-                signResult.PublicKeyDerBase64);
+                signResult.PublicKeyDerBase64, signResult.CertificateSignatureBase64);
             signedBytes = ZatcaXmlSigner.ReplaceQrInSignedXml(signResult.SignedXml, qr);
         }
         else

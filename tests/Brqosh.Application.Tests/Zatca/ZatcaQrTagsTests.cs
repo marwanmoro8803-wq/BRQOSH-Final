@@ -17,8 +17,11 @@ namespace Brqosh.Application.Tests.Zatca;
 /// <para><b>الحارس يفكّ الترميز فعلاً</b> ويقارن قيمة الوسم بمفتاح الشهادة بايتاً ببايت —
 /// لا يفحص أن الاستدعاء موجود في الملف.</para>
 ///
-/// <para><b>مؤجَّل بوعي:</b> الوسم 9 (توقيع الهيئة على المفتاح العام) يأتي مع CSID الإنتاجيّ
-/// في م4 — لا يُولَّد محلياً بحال.</para>
+/// <para><b>وكان هنا ادّعاءٌ نُقض (جاهزيّةُ الإطلاق · ح-٧):</b> «الوسم 9 … <b>لا يُولَّد
+/// محلياً بحال</b>». <b>والمقيسُ أنّه يُولَّد</b>: توقيعُ المُصدِر على مفتاحنا هو حقلُ
+/// <c>signatureValue</c> في الشهادة نفسِها، يُقرأ من الملفّ بلا نداءٍ لأحد. <b>فبقي البندُ
+/// مُصنَّفاً «خارجيّاً» يُنتظر، والانتظارُ لشيءٍ في اليد</b> — وهذا الملفُّ نفسُه كان يحمل
+/// التصنيفَ ويُسنده.</para>
 /// </summary>
 public class ZatcaQrTagsTests : IDisposable
 {
@@ -50,7 +53,11 @@ public class ZatcaQrTagsTests : IDisposable
         return map;
     }
 
-    private static byte[] SignedInvoiceQr(string certPath, string keyPath, out byte[] certPublicKey)
+    private static byte[] SignedInvoiceQr(string certPath, string keyPath, out byte[] certPublicKey) =>
+        SignedInvoiceQr(certPath, keyPath, out certPublicKey, out _);
+
+    private static byte[] SignedInvoiceQr(
+        string certPath, string keyPath, out byte[] certPublicKey, out byte[] certSignature)
     {
         var xml = ZatcaUblInvoiceBuilder.BuildXml(new ZatcaUblInvoiceBuilder.InvoiceData(
             InvoiceNumber: "INV-2026-000001", Uuid: Guid.NewGuid(),
@@ -67,23 +74,73 @@ public class ZatcaQrTagsTests : IDisposable
             .LoadCertificateFromFile(certPath);
         certPublicKey = cert.PublicKey.ExportSubjectPublicKeyInfo();
 
+        // ‏(ح-٧) ‏توقيعُ المُصدِر يُقرأ من الشهادة هنا **بقارئٍ مستقلٍّ عن قارئ الإنتاج** —
+        // ‏فلو أخطآ معاً لَما كشف الاختبارُ شيئاً.
+        var certificate = new System.Formats.Asn1.AsnReader(
+            cert.RawData, System.Formats.Asn1.AsnEncodingRules.DER).ReadSequence();
+        certificate.ReadEncodedValue();
+        certificate.ReadEncodedValue();
+        certSignature = certificate.ReadBitString(out _);
+
         var qr = ZatcaQrGenerator.GenerateTlvBase64Phase2(
             "منشأة الاختبار", "310123456700003", new DateTime(2026, 3, 14, 12, 0, 0, DateTimeKind.Utc),
-            1150m, 150m, result.InvoiceHashBase64, result.SignatureBase64, result.PublicKeyDerBase64);
+            1150m, 150m, result.InvoiceHashBase64, result.SignatureBase64, result.PublicKeyDerBase64,
+            result.CertificateSignatureBase64);
 
         return Encoding.UTF8.GetBytes(qr);
     }
 
-    /// <summary><b>القياس الأساسيّ.</b> ثمانية وسوم، والثامن يطابق مفتاح الشهادة بالضبط.</summary>
+    /// <summary>
+    /// <b>القياس الأساسيّ.</b> تسعةُ وسوم، والثامن يطابق مفتاح الشهادة بالضبط.
+    ///
+    /// <para><b>وكان العددُ ثمانيةً</b> — وهو ما وصف السلوكَ الناقص وصفاً صحيحاً يومَه.
+    /// فلمّا صار الوسمُ التاسعُ يخرج، صار العددُ تسعة.</para>
+    /// </summary>
     [Fact]
     public void Phase2Qr_CarriesTagEight_MatchingTheCertificatePublicKey()
     {
         var qr = Encoding.UTF8.GetString(SignedInvoiceQr(_certPath, _keyPath, out var certKey));
         var tags = DecodeTlv(qr);
 
-        Assert.Equal(8, tags.Count);
+        Assert.Equal(9, tags.Count);
         Assert.True(tags.ContainsKey(8), "الوسم 8 غائب — توقيعٌ بلا مفتاحٍ يتحقّق به");
         Assert.Equal(certKey, tags[8]);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٧) <b>والوسمُ التاسعُ يطابق توقيعَ المُصدِر بايتاً ببايت.</b>
+    ///
+    /// <para><b>ولا يُفحص وجودُه وحدَه</b>: وسمٌ بقيمةٍ خاطئةٍ يمرّ على فحص الوجود ويسقط
+    /// عند الهيئة. فتُقرأ الشهادةُ هنا بقارئٍ مستقلٍّ ويُقارَن الناتجان.</para>
+    /// </summary>
+    [Fact]
+    public void Phase2Qr_CarriesTagNine_MatchingTheIssuerSignature()
+    {
+        var qr = Encoding.UTF8.GetString(
+            SignedInvoiceQr(_certPath, _keyPath, out _, out var certSignature));
+        var tags = DecodeTlv(qr);
+
+        Assert.True(tags.ContainsKey(9),
+            "الوسم 9 غائب — ختمٌ ومفتاحٌ بلا ما يُثبت أنّ المُصدِر اعتمد ذلك المفتاح");
+        Assert.Equal(certSignature, tags[9]);
+        Assert.NotEmpty(tags[9]);
+    }
+
+    /// <summary>
+    /// <b>وشاهدُ ضبطٍ للوسم التاسع:</b> بلا تمريره يبقى الرمزُ بثمانيةٍ — فهو مشروطٌ لا
+    /// يُضاف فارغاً، <b>وبهذا يُعلم أنّ الحالةَ أعلاه تقيس شيئاً حقيقيّاً</b>.
+    /// </summary>
+    [Fact]
+    public void WithoutTheIssuerSignature_TagNineIsAbsent()
+    {
+        var qr = ZatcaQrGenerator.GenerateTlvBase64Phase2(
+            "بائع", "310123456700003", new DateTime(2026, 3, 14, 12, 0, 0, DateTimeKind.Utc),
+            115m, 15m, "aGFzaA==", "c2ln", publicKeyDerBase64: "cHVi");
+
+        var tags = DecodeTlv(qr);
+
+        Assert.Equal(8, tags.Count);
+        Assert.False(tags.ContainsKey(9));
     }
 
     /// <summary>والوسوم الخمسة الأولى تبقى صحيحة — الإضافة لم تُزح شيئاً.</summary>

@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Formats.Asn1;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography.Xml;
@@ -116,7 +117,43 @@ public static class ZatcaXmlSigner
         var publicKeyDer = cert.PublicKey.ExportSubjectPublicKeyInfo();
 
         return new ZatcaSignResult(
-            signed, invoiceHashB64, signatureB64, Convert.ToBase64String(publicKeyDer));
+            signed, invoiceHashB64, signatureB64, Convert.ToBase64String(publicKeyDer),
+            Convert.ToBase64String(CertificateSignature(cert)));
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٧) <b>توقيعُ جهةِ إصدار الشهادات على ختمنا — الوسم ٩.</b>
+    ///
+    /// <para>الشهادةُ نفسُها <c>SEQUENCE</c> من ثلاثة: <c>tbsCertificate</c> (وفيه مفتاحُنا
+    /// العامّ)، ثمّ <c>signatureAlgorithm</c>، ثمّ <c>signatureValue</c>. <b>وذلك الأخيرُ هو
+    /// توقيعُ الهيئة على مفتاحنا</b> — وهو ما يطلبه الوسمُ التاسع حرفاً.</para>
+    ///
+    /// <para><b>ولا يحتاج نداءً للهيئة وقتَ الإصدار</b>: وقّعته حين أصدرت الشهادة،
+    /// <b>فهو في ملفّها على القرص منذ التسجيل</b>. وكان مُصنَّفاً بنداً «خارجيّاً» يُنتظر —
+    /// <b>والانتظارُ كان لشيءٍ في اليد</b>.</para>
+    ///
+    /// <para><b>وغيابُه يُسقط فحصَ الامتثال للفاتورة المبسّطة</b>: الماسحُ يفكّ الوسومَ
+    /// فيجد ختماً ومفتاحاً بلا ما يُثبت أنّ الهيئةَ اعتمدت ذلك المفتاح.</para>
+    /// </summary>
+    private static byte[] CertificateSignature(X509Certificate2 cert)
+    {
+        try
+        {
+            var certificate = new AsnReader(cert.RawData, AsnEncodingRules.DER)
+                .ReadSequence();
+
+            certificate.ReadEncodedValue();   // tbsCertificate
+            certificate.ReadEncodedValue();   // signatureAlgorithm
+
+            return certificate.ReadBitString(out _);
+        }
+        catch (AsnContentException ex)
+        {
+            // ‏**ولا يُبتلع**: شهادةٌ لا تُفكَّك تعني رمزاً ناقصاً لا رمزاً بلا وسمٍ تاسع،
+            // ‏والمستندُ الضريبيُّ لا يخرج بوسمٍ مُختلَقٍ ولا بصمتٍ عن نقصه.
+            throw new ZatcaSigningException(
+                "تعذّر استخراجُ توقيع جهةِ الإصدار من الشهادة — والوسمُ التاسع لا يُختلَق.", ex);
+        }
     }
 
     /// <summary>
@@ -446,8 +483,14 @@ public static class ZatcaXmlSigner
 /// المرحلة الثانية. كان غائباً، فيخرج الرمز بسبعة وسوم: توقيعٌ بلا مفتاحٍ يتحقّق به،
 /// وتطبيق «فاتورة» لا يستطيع إثبات صحّة الختم.
 /// </param>
+/// <param name="CertificateSignatureBase64">
+/// (جاهزيّةُ الإطلاق · ح-٧) توقيعُ جهةِ إصدار الشهادات على المفتاح العامّ — الوسمُ ٩.
+/// <b>يُقرأ من حقل <c>signatureValue</c> في الشهادة</b>، فلا ينتظر شيئاً من الهيئة وقتَ
+/// الإصدار: وقّعته حين أصدرت الشهادة.
+/// </param>
 public record ZatcaSignResult(
-    byte[] SignedXml, string InvoiceHashBase64, string SignatureBase64, string PublicKeyDerBase64);
+    byte[] SignedXml, string InvoiceHashBase64, string SignatureBase64, string PublicKeyDerBase64,
+    string CertificateSignatureBase64);
 
 /// <summary>استثناء توقيع ZATCA — يُميّز أخطاء التوقيع عن باقي الأخطاء.</summary>
 public class ZatcaSigningException(string message, Exception? inner = null)
