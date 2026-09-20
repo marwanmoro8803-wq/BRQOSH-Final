@@ -65,16 +65,38 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 ? await OpenAccrualByProductAsync(invoice, ct)
                 : [];
 
+            // (جاهزيّةُ الإطلاق · ح-٤) ‏**سطورُ المستند بعملته، والدفترُ بالريال.**
+            //
+            // ‏`RecalculateTotals` يحسب `ForeignSubtotal` من السطور **ثمّ** يضربه في السعر
+            // ‏ليُخرج `Subtotal` بالريال. **وهذه الحلقةُ كانت تجمع `LineTotal` خامّاً** —
+            // ‏أي بالعملة الأجنبيّة — **وتُمرّره حيث يُنتظر الريال**.
+            //
+            // ‏فاتورةُ ١٬٠٠٠ دولارٍ بسعر ٣٫٧٥: `Subtotal` ٣٬٧٥٠ ريالاً، و`inventorySubtotal`
+            // ‏كان **١٬٠٠٠**. فيُمدَّن المخزونُ بألفٍ، **ويذهب الفرقُ ٢٬٧٥٠ إلى مصروف
+            // ‏المشتريات** — فالقيدُ متوازنٌ والمخزونُ مُقيَّمٌ بربع قيمته، **وتنكسر الهوية
+            // ‏هـ-٣** بين الدفتر المساعد و1107، ويخرج كلُّ بيعٍ لاحقٍ بتكلفةٍ خاطئة.
+            //
+            // ‏**وفرقُ السعر كان يخلط العملتين كذلك**: `relief` بالريال (فالاستحقاقُ سُجِّل
+            // ‏بالريال يوم الاستلام) و`LineTotal` بالأجنبيّة — فالطرحُ بين مقدارين لا
+            // ‏يُطرح أحدُهما من الآخر.
+            //
+            // ‏والتحويلُ لكلّ سطرٍ على حدة، **وبسعرٍ واحدٍ هو سعرُ يوم الفاتورة**. وحين تكون
+            // ‏العملةُ الريالَ فالسعرُ ١ والنتيجةُ مطابقةٌ حرفاً لِما كان.
+            var rate = invoice.ExchangeRate;
+
             foreach (var line in invoice.Lines)
             {
                 if (line.ProductId is not long pid
                     || !products.TryGetValue(pid, out var product) || !product.IsStockable())
                     continue;
 
+                var lineTotalSar = Math.Round(line.LineTotal * rate, 2, MidpointRounding.AwayFromZero);
+
                 if (!hasPostedGrn)
                 {
-                    inventorySubtotal += line.LineTotal;
-                    receiptLines.Add((pid, line.Quantity, line.UnitPrice));
+                    inventorySubtotal += lineTotalSar;
+                    receiptLines.Add((pid, line.Quantity,
+                        Math.Round(line.UnitPrice * rate, 2, MidpointRounding.AwayFromZero)));
                     continue;
                 }
 
@@ -88,7 +110,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                     : 0m;
 
                 grniRelief += relief;
-                priceVariance += line.LineTotal - relief;
+                priceVariance += lineTotalSar - relief;
             }
 
             var purchases = await SystemAccountAsync(invoice.CompanyId, "5102");
