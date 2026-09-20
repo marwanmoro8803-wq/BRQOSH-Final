@@ -187,16 +187,40 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         }
         else
         {
-            // مورد غير مسجل: الضريبة غير قابلة للخصم وتُرسمل ضمن التكلفة
-            if (inventorySubtotal > 0 && inventoryAccount is not null)
+            // ‏مورد غير مسجل: الضريبة غير قابلة للخصم وتُرسمل ضمن التكلفة — **فالوعاءُ
+            // ‏`GrandTotal` لا `Subtotal`**، إذ لا سطرَ ضريبةِ مدخلاتٍ يحمل فرقَها.
+            //
+            // (جاهزيّةُ الإطلاق · ح-٣) ‏**وكان هذا الفرعُ لا يُقفل استحقاقَ الاستلام أبداً.**
+            //
+            // ‏`AddAccrualRelief` — وهي وحدَها ما يُمدِّن حسابَ «بضاعةٌ وردت ولم تُفوتر» —
+            // ‏كانت تُستدعى في فرع المورّد المسجَّل وحدَه. **والفرعان يصفان المورّدَ لا
+            // ‏المستند**: إذنُ الاستلام يسبق الفاتورةَ في الحالتين، وحسابُ الاستحقاق يُدان
+            // ‏في الحالتين. فوقع أثران بحسب المسار:
+            //
+            // ‏**(أ) والصنفُ مخزنيّ:** المدينُ كان `GrandTotal - grniRelief - priceVariance`
+            // ‏والدائنُ `GrandTotal` — **فالقيدُ ناقصٌ بمقدار الإقفال ويرتدّ على حارس
+            // ‏التوازن**، أي لا تُرحَّل الفاتورةُ أصلاً.
+            //
+            // ‏**(ب) وغيرُ المخزنيّ** (أو بلا حساب مخزون): كان يُمدَّن `GrandTotal` كاملاً
+            // ‏على المشتريات **ويُترك 2112 دائناً إلى الأبد** — والتكلفةُ دخلت مرّةً بإذن
+            // ‏الاستلام ومرّةً هنا. **والميزانُ سليمٌ تماماً فلا يشكو أحد**: التزامٌ وهميٌّ
+            // ‏يكبر كلَّ شهر، ومشترياتٌ مُضخَّمة.
+            //
+            // ‏والعلاجُ أن يتماثل الفرعان: الوعاءُ وحدَه يختلف.
+            var expensePart = this.GrandTotal() - inventorySubtotal - grniRelief - priceVariance;
+
+            if (inventorySubtotal > 0)
             {
-                var expensePart = this.GrandTotal() - inventorySubtotal - grniRelief - priceVariance;
+                if (inventoryAccount is null)
+                    throw new AccountingException("حساب المخزون مطلوب للأصناف المخزنية.");
                 entry.AddLine(inventoryAccount, inventorySubtotal, 0m, "إدخال مخزون");
-                if (expensePart > 0)
-                    entry.AddLine(purchasesAccount, expensePart, 0m, "مشتريات غير مخزنية");
             }
-            else
-                entry.AddLine(purchasesAccount, this.GrandTotal(), 0m, "قيمة المشتريات شاملة ضريبة غير قابلة للخصم");
+
+            if (expensePart > 0)
+                entry.AddLine(purchasesAccount, expensePart, 0m,
+                    "قيمة المشتريات شاملة ضريبة غير قابلة للخصم");
+
+            AddAccrualRelief(entry, grniRelief, grniAccount, priceVariance, varianceAccount);
         }
 
         entry.AddLine(payableAccount, 0m, this.GrandTotal(), "استحقاق للمورد");
