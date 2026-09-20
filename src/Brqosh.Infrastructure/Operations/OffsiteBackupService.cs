@@ -57,10 +57,30 @@ public sealed class OffsiteBackupService
         var fileName = Path.GetFileName(sourcePath);
         var results = new List<OffsiteCopyResult>();
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٥) ‏**ورفيقُ النسخة يسافر معها.**
+        //
+        // ‏`BackupService` يكتب شجرةَ ZATCA (الأرشيفَ ومفتاحَ التوقيع) في ملفٍّ بجوار
+        // ‏النسخة. **ونسخٌ خارجيٌّ ينقل القاعدةَ وحدَها يُعيد العطلَ من بابه**: وجهةٌ خارج
+        // ‏الموقع فيها الدفاترُ ولا توقيعَ لها — وهي الوجهةُ التي يُلجأ إليها حين يتلف
+        // ‏القرصُ الأصليُّ بالرفيق الذي عليه.
+        var companionSource = sourcePath + BackupService.CompanionSuffix;
+        var companionName = Path.GetFileName(companionSource);
+        var companionHash = File.Exists(companionSource)
+            ? await HashAsync(companionSource, ct)
+            : null;
+
         foreach (var destination in destinations)
         {
             results.Add(await CopyOneAsync(sourcePath, sourceHash, fileName, destination,
                 keepPerDestination, ct));
+
+            // ‏**ووجهةٌ فشل نقلُ قاعدتها لا يُحاول رفيقُها** — فرفيقٌ بلا قاعدةٍ لا يُستعاد
+            // ‏منه شيء، ويُوهم الوجهةَ بمحتوًى ليس فيها.
+            if (companionHash is not null && results[^1].Succeeded)
+            {
+                results.Add(await CopyOneAsync(companionSource, companionHash, companionName,
+                    destination, keepPerDestination, ct));
+            }
         }
 
         return results;

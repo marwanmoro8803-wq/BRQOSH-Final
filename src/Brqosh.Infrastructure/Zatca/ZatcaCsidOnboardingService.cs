@@ -224,9 +224,23 @@ public class ZatcaCsidOnboardingService
     private static AuthenticationHeaderValue BasicAuth(string user, string password) =>
         new("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user}:{password}")));
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥) <b>جذرُ البيانات واحد — وكان هذا الموضعُ يبنيه بيده.</b>
+    ///
+    /// <para>كان يركّب <c>%APPDATA%\BRQOSH</c> حرفيّاً، <b>فلا يرى <c>BRQOSH_DATA_ROOT</c></b> —
+    /// بينما أرشيفُ فواتير XML يستعمل <see cref="Persistence.BrqoshDataRoot"/>. <b>فمفتاحُ
+    /// التوقيع وأرشيفُه يسكنان جذرين مختلفين متى وُجِّه الجذر</b>، وذلك ما وُجد
+    /// <c>BrqoshDataRoot</c> لمنعه أصلاً (CEEF-203: تشغيلةُ اختبارٍ واحدةٌ كتبت في بيانات
+    /// المستخدم الحقيقيّة).</para>
+    ///
+    /// <para><b>والقيمةُ لا تتغيّر حين لا يُوجَّه الجذر</b> — الافتراضُ هو
+    /// <c>%APPDATA%\BRQOSH</c> نفسُه — <b>فتركيباتُ العملاء القائمة تجد مفاتيحَها في مكانها</b>.
+    /// وإنّما يتغيّر المُوجَّه: اختباراً كان يكتب مفاتيحَ حقيقيّةً في ملفّ المستخدم، ونسخاً
+    /// احتياطيّاً صار يلتقط الشجرةَ كلَّها بجذرٍ واحد.</para>
+    /// </summary>
     private static string GetCertDirectory(long companyId) =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "BRQOSH", "zatca", companyId.ToString(), "csid");
+        Path.Combine(Persistence.BrqoshDataRoot.Path(),
+            "zatca", companyId.ToString(), "csid");
 
     private static string SanitizeDn(string value) =>
         (value ?? "").Replace(",", " ").Replace("=", " ").Trim();

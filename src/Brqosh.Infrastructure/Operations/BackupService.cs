@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using Brqosh.Domain.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,24 @@ public sealed class BackupService(BrqoshDbContext db)
     private const string StagingSuffix = ".partial";
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥) <b>رفيقُ النسخة — ما لا تحمله القاعدة.</b>
+    ///
+    /// <para><b>البند:</b> النسخةُ الاحتياطيّة كانت <b>القاعدةَ وحدَها</b>. وأرشيفُ فواتير
+    /// ZATCA ومفتاحُ التوقيع وشهادتُه <b>ملفّاتٌ على القرص لا صفوفٌ في جدول</b> — فاستعادةٌ
+    /// كاملةُ النجاح تُنتج نظاماً <b>لا يستطيع التوقيع ولا إعادةَ إرسال المعلّق</b>،
+    /// <b>وقد فقد الأرشيفَ الذي يُلزِم به النظام</b>. والمفتاحُ الخاصُّ لا يُولَّد من جديد:
+    /// ضياعُه يعني تسجيلاً جديداً لدى الهيئة.</para>
+    ///
+    /// <para><b>ولاحقةٌ لا امتدادٌ بديل</b> — فيُرى الرفيقُ بجوار نسختِه، ويُحذف معها في
+    /// التنظيف، ويُنسخ معها إلى الوجهات الخارجيّة.</para>
+    /// </summary>
+    internal const string CompanionSuffix = ".zatca.zip";
+
+    /// <summary>شجرةُ ملفّات ZATCA تحت جذر البيانات — الأرشيفُ والمفاتيحُ معاً.</summary>
+    internal static string CompanionSourceDirectory() =>
+        Path.Combine(BrqoshDataRoot.Path(), "zatca");
+
+    /// <summary>
     /// ‏(م-٥ · ن-٤٤) ‏مهلةٌ قبل كنسِ بقيّةٍ مرحليّة — <b>فملفٌّ يُكتب الآن ليس يتيماً</b>.
     /// وستُّ ساعاتٍ أطولُ من أيّ تفريغٍ واقعيّ، وأقصرُ من أن يبيت اليتيمُ ليلتين.
     /// </summary>
@@ -113,6 +132,13 @@ public sealed class BackupService(BrqoshDbContext db)
             await VerifyAsync(staging, ct);
 
             File.Move(staging, targetPath, overwrite: true);
+
+            // ‏(ح-٥) ‏**ثمّ الرفيقُ — وفشلُه يُسقط النسخة.**
+            //
+            // ‏وهو حكمُ هذا الملفّ نفسِه في `.partial`: نسخةٌ ناقصةٌ تقول «تمّت» **أسوأُ من
+            // ‏غياب النسخة، إذ تمنع الشكوى**. فلو بقي الرفيقُ اختياريّاً لعاد العطلُ صامتاً:
+            // ‏مجلّدٌ فيه أربعَ عشرةَ نسخةً خضراء، ولا واحدةٌ فيها مفتاحُ التوقيع.
+            WriteCompanion(targetPath);
 
             // ‏(م-٤ · ن-٣٦) ‏**التنظيفُ بعد الترقية لا قبلها** — وهو مبدأٌ مكتوبٌ في
             // ‏`OffsiteBackupService`: «تنظيفُ القديم ثمّ فشلُ الجديد **يترك المنشأةَ بلا
@@ -163,6 +189,82 @@ public sealed class BackupService(BrqoshDbContext db)
             await RestorePostgresAsync(backupPath, ct);
         else
             await RestoreSqliteAsync(backupPath, ct);
+
+        // ‏(ح-٥) ‏**وبعد القاعدة: ملفّاتُها.** وترتيبُه مقصود — فالقاعدةُ هي المتلِفةُ التي
+        // ‏قد تسقط، والرفيقُ نسخُ ملفّاتٍ لا يُتلف شيئاً. واستعادةٌ بلا رفيقٍ تبقى استعادةً
+        // ‏صحيحةً لنسخةٍ قديمةٍ أُخذت قبل هذا التعديل — **فغيابُه ليس فشلاً**.
+        RestoreCompanion(backupPath);
+    }
+
+    /// <summary>
+    /// ‏يكتب رفيقَ النسخة: شجرةُ ZATCA كلُّها في أرشيفٍ واحدٍ بجوار الملفّ.
+    ///
+    /// <para><b>ويُكتب جانباً ثمّ يُنقل</b> كالنسخة نفسِها — فأرشيفٌ مقطوعٌ يبدو رفيقاً
+    /// سليماً حتى يوم الحاجة.</para>
+    ///
+    /// <para><b>والقراءةُ بـ<c>FileShare.ReadWrite</c></b>: الأرشيفُ مجلّدٌ حيٌّ يكتب فيه
+    /// المُولِّدُ بينما يجري النسخ، <b>وقفلٌ واحدٌ كان سيُسقط النسخةَ الليليّة كلَّها</b>.</para>
+    /// </summary>
+    private static void WriteCompanion(string targetPath)
+    {
+        var companion = targetPath + CompanionSuffix;
+        var staging = companion + StagingSuffix;
+        var source = CompanionSourceDirectory();
+
+        // ‏رفيقٌ قديمٌ لاسمٍ يُعاد استعمالُه لا يُترك يدّعي محتوًى ليس فيه.
+        if (File.Exists(companion)) File.Delete(companion);
+
+        var files = Directory.Exists(source)
+            ? Directory.GetFiles(source, "*", SearchOption.AllDirectories)
+            : [];
+
+        // ‏ولا مفاتيحَ بعدُ ولا أرشيف — فلا رفيقَ يُكتب، ولا يُدّعى أنّ ثمّة ما حُفظ.
+        if (files.Length == 0) return;
+
+        try
+        {
+            if (File.Exists(staging)) File.Delete(staging);
+
+            using (var zip = ZipFile.Open(staging, ZipArchiveMode.Create))
+            {
+                foreach (var file in files)
+                {
+                    var relative = Path.GetRelativePath(source, file).Replace('\\', '/');
+                    var entry = zip.CreateEntry(relative, CompressionLevel.Optimal);
+                    using var input = new FileStream(
+                        file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var output = entry.Open();
+                    input.CopyTo(output);
+                }
+            }
+
+            File.Move(staging, companion, overwrite: true);
+        }
+        finally
+        {
+            try { if (File.Exists(staging)) File.Delete(staging); }
+            catch (IOException) { /* ‏تنظيفٌ لا يُبدّل حكمَ العملية */ }
+            catch (UnauthorizedAccessException) { /* ‏كذلك */ }
+        }
+    }
+
+    /// <summary>
+    /// ‏يُعيد شجرةَ ZATCA من الرفيق إن وُجد.
+    ///
+    /// <para><b>ولا يُحذف الموجود:</b> الاستخراجُ يكتب فوق المتطابق ويترك ما ليس في الأرشيف.
+    /// فمفتاحٌ أحدثُ من النسخة لا يُمحى باستعادةِ دفاترَ أقدم — <b>وضياعُ مفتاحٍ خاصٍّ
+    /// لا يُعوَّض بتسجيلٍ جديدٍ لدى الهيئة وحدَه</b>.</para>
+    /// </summary>
+    private static void RestoreCompanion(string backupPath)
+    {
+        var companion = backupPath + CompanionSuffix;
+        if (!File.Exists(companion)) return;
+
+        var target = CompanionSourceDirectory();
+        Directory.CreateDirectory(target);
+
+        // ‏و`ExtractToDirectory` يرفض مدخلاً يخرج عن المجلّد الهدف — فلا يُكتب خارجَ الجذر.
+        ZipFile.ExtractToDirectory(companion, target, overwriteFiles: true);
     }
 
     /// <summary>
@@ -205,6 +307,11 @@ public sealed class BackupService(BrqoshDbContext db)
         {
             try
             {
+                // ‏(ح-٥) ‏**والرفيقُ يُحذف مع نسختِه** — وإلّا نما بلا حدٍّ على القرص نفسِه
+                // ‏الذي حُدّت النسخُ من أجله، وبقي يدّعي نسخةً لم تعد موجودة.
+                var companion = file.FullName + CompanionSuffix;
+                if (File.Exists(companion)) File.Delete(companion);
+
                 file.Delete();
                 pruned++;
             }
