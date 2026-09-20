@@ -137,6 +137,31 @@ public class JournalPostingService(BrqoshDbContext db)
 
             if (period is null)
             {
+                // ‏**وإنشاءُ الفترة كان بلا سؤالٍ عن السنة.**
+                //
+                // ‏الشهرُ الساكنُ في سنةٍ مقفلةٍ لا صفَّ له، فيُنشئه هذا السطرُ **مفتوحاً**
+                // ‏ويقبل القيد. وقيس: سنةُ 2025 أُقفلت، ثمّ قيدٌ بتاريخ 2025-03-10 قُبل
+                // ‏ورُحِّل — **فتغيّر دفترُ سنةٍ اعتمدها المراجع**، وإعادةُ الإقفال مرفوضةٌ
+                // ‏لأنّ قيدَ الإقفال قائم، فيبقى الأثرُ في الإيراد والمصروف إلى الأبد.
+                //
+                // ‏**والسؤالُ هنا لا في الفترة**: وسمُ قيد الإقفال هو الحقيقةُ الوحيدةُ
+                // ‏الباقيةُ في قواعدِ العملاء القائمة — لا عمودَ «سنةٌ مقفلة» ولا جدول.
+                //
+                // ‏**ولا يُسأل إلّا حين يغيب الصفّ** — فمسارُ الترحيل المعتادُ (وفترتُه
+                // ‏موجودة) لا يدفع استعلاماً زائداً، **وإعادةُ فتح فترةٍ عمداً تبقى نافذة**:
+                // ‏صفُّها قائمٌ ومفتوح، فلا يبلغها هذا الحارسُ أصلاً. ولولا هذا القيدُ
+                // ‏لصار الإصلاحُ عطلاً آخرَ يمنع التصحيحَ المشروع.
+                var closeMark = YearEndCloseService.SourceDocumentFor(date.Year);
+                var yearClosed = await db.JournalEntries.AnyAsync(e =>
+                    e.CompanyId == companyId
+                    && e.SourceDocument == closeMark
+                    && e.Status != JournalEntryStatus.Draft, token);
+
+                if (yearClosed)
+                    throw new AccountingException(
+                        $"السنة {date.Year} مقفلةٌ بقيد إقفالٍ سنويّ — لا تُفتح لها فترةٌ جديدة {code} ولا يُرحَّل فيها. "
+                        + "صحِّح بقيدٍ في سنةٍ مفتوحة، أو أعد فتح فترة السنة المعنيّة إن كنت مخوّلاً.");
+
                 db.FiscalPeriods.Add(FiscalPeriod.Create(companyId, date.Year, date.Month));
                 await db.SaveChangesAsync(token);
                 return true;

@@ -14,6 +14,16 @@ public record YearEndCloseResult(int Year, long ClosingEntryId, string EntryNumb
 /// </summary>
 public class YearEndCloseService(BrqoshDbContext db)
 {
+    /// <summary>
+    /// ‏وسمُ قيد الإقفال السنويّ — <b>مرجعٌ واحدٌ يكتبه المُقفِلُ ويقرأه الحارس</b>.
+    ///
+    /// <para>‏وكان نصّاً حرفيّاً في موضعين، ولو بقي لصار ثلاثة: الحارسُ الجديد في
+    /// <see cref="JournalPostingService.EnsurePeriodOpenAsync"/> يسأل عن القيد نفسِه.
+    /// <b>ونسختان من وسمٍ تفترقان في أوّل تعديل</b>، والافتراقُ هنا لا يُرى: يصمت الحارسُ
+    /// ويمرّ الترحيل.</para>
+    /// </summary>
+    public static string SourceDocumentFor(int year) => $"YearEndClose:{year}";
+
     public async Task<YearEndCloseResult> CloseYearAsync(
         long companyId, int year, string username, CancellationToken ct = default)
     {
@@ -52,9 +62,11 @@ public class YearEndCloseService(BrqoshDbContext db)
 
             await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "YEAREND", year, token);
 
+            // ‏الوسمُ يُحسب قبل الاستعلام: استدعاءُ تابعٍ داخل شجرة التعبير لا يُترجَم إلى SQL.
+            var closeMark = SourceDocumentFor(year);
             var existingClose = await db.JournalEntries.AnyAsync(e =>
                 e.CompanyId == companyId
-                && e.SourceDocument == $"YearEndClose:{year}"
+                && e.SourceDocument == closeMark
                 && e.Status != JournalEntryStatus.Draft, token);
             if (existingClose)
                 throw new AccountingException($"السنة {year} مقفلة مسبقاً.");
@@ -95,7 +107,7 @@ public class YearEndCloseService(BrqoshDbContext db)
             var entry = JournalEntry.CreateDraft(
                 companyId, closingDate,
                 $"إقفال السنة المالية {year}",
-                $"YearEndClose:{year}");
+                closeMark);
 
             // (CEEF-231 · O-32) ‏**الإقفالُ على الشخصية الاعتبارية لا على فرع.**
             // ‏وبغير هذا الإعلان يوسمه `SaveChanges` بفرع الجلسة — **فتُسند أرباحُ
@@ -178,16 +190,50 @@ public class YearEndCloseService(BrqoshDbContext db)
         }, ct);
     }
 
+    /// <summary>
+    /// ‏<b>يُقفل اثنَي عشرَ شهراً — وكان يُقفل الموجودَ منها وحدَه.</b>
+    ///
+    /// <para>‏والفترةُ تُنشأ عند أوّل ترحيلٍ فيها لا عند بدء السنة
+    /// (<see cref="JournalPostingService.EnsurePeriodOpenAsync"/>). <b>فشهرٌ بلا حركةٍ لا
+    /// صفَّ له</b>، وهذا التابعُ كان يُرشّح <c>Status == Open</c> على الصفوف القائمة —
+    /// <b>فيخرج الشهرُ الساكنُ من الإقفال لا لأنّه أُقفل بل لأنّه لم يوجد</b>.</para>
+    ///
+    /// <para>‏<b>وقيس:</b> إيرادٌ 1000 في 2025-06-15، ثمّ إقفالُ 2025 — فالفتراتُ
+    /// <c>2025-06=Closed · 2025-12=Closed</c> ولا غيرُهما. ثمّ قيدٌ بتاريخ 2025-03-10
+    /// <b>قُبِل ورُحِّل</b> (<c>JV-2025-000003</c>) وأُنشئ له <c>2025-03</c> مفتوحاً.
+    /// فصافي 4101 عن السنة المقفلة <c>-500</c> بدل صفر، و3103 لم يتحرّك — <b>وإعادةُ
+    /// الإقفال مرفوضةٌ أبداً</b> لأنّ قيدَ الإقفال قائم. أي أنّ دفترَ سنةٍ اعتمدها المراجعُ
+    /// يتغيّر بعد اعتماده، ولا سبيلَ لردّه.</para>
+    ///
+    /// <para>‏<b>وإنشاءُ الاثنَي عشرَ ليس احتياطاً زائداً</b>: إعادةُ الفتح
+    /// (<see cref="FiscalPeriodService.ReopenAsync"/>) تطلب صفّاً بمعرّفه، <b>فشهرٌ بلا
+    /// صفٍّ لا يُعاد فتحُه</b> — فالصفُّ المقفَل هو نفسُه طريقُ التصحيح المشروع.</para>
+    ///
+    /// <para>‏<b>ويبقى أثرٌ في قواعدَ أُقفلت بنسخةٍ سابقة:</b> شهرُها الساكنُ بلا صفّ. وحارسُ
+    /// <c>EnsurePeriodOpenAsync</c> يمنع الترحيلَ فيه بوسم قيد الإقفال، <b>لكنّ إعادةَ فتحِه
+    /// تحتاج ردماً في مسار الترقية</b> — وهو مُدوَّنٌ بنداً مستقلّاً.</para>
+    /// </summary>
     private async Task CloseAllYearPeriodsAsync(long companyId, int year, string username, CancellationToken token)
     {
-        var periods = await db.FiscalPeriods
-            .Where(p => p.CompanyId == companyId
-                        && p.StartDate.Year == year
-                        && p.Status == FiscalPeriodStatus.Open)
+        var existing = await db.FiscalPeriods
+            .Where(p => p.CompanyId == companyId && p.StartDate.Year == year)
             .ToListAsync(token);
 
-        foreach (var period in periods)
+        var byMonth = existing.ToDictionary(p => p.StartDate.Month);
+
+        for (var month = 1; month <= 12; month++)
         {
+            if (byMonth.TryGetValue(month, out var period))
+            {
+                // ‏المقفَلُ سلفاً (إقفالٌ شهريّ سابق) يُترك على حاله — و<c>Close()</c> يرمي عليه.
+                if (period.Status == FiscalPeriodStatus.Closed) continue;
+            }
+            else
+            {
+                period = FiscalPeriod.Create(companyId, year, month);
+                db.FiscalPeriods.Add(period);
+            }
+
             period.Close();
             await new AuditService(db).LogAsync(companyId, username, "إغلاق فترة مالية (إقفال سنوي)",
                 "FiscalPeriod", period.Code, $"سنة {year}");
