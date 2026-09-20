@@ -65,6 +65,10 @@
             </Grid>
             <TextBlock Text="التأمين أمانة تُرد عند الإخلاء — ويُقيَّد التزامًا لا إيرادًا"
                        Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+            <CheckBox x:Name="ResidentialBox" Margin="0,12,0,0" FontSize="14"
+                      Content="إيجار سكني (معفى من ضريبة القيمة المضافة — المادة 30)"/>
+            <TextBlock Text="السكني معفى والتجاري خاضع بنسبة 15%. والحكم على استعمال الوحدة لا على نوع المبنى — فعمارة واحدة قد تضم محلاً تجاريًا وشققًا سكنية."
+                       Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
         </StackPanel>
         <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0">
             <Button DockPanel.Dock="Left" Content="إلغاء" Style="{StaticResource SecondaryButton}"

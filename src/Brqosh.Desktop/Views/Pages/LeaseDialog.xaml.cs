@@ -79,7 +79,10 @@ public partial class LeaseDialog : Window
                 DateOnly.FromDateTime(EndBox.SelectedDate.Value),
                 Number(RentBox.Text, "الإيجار"),
                 (RecurrenceFrequency)Math.Max(0, FrequencyBox.SelectedIndex),
-                Number(DepositBox.Text, "التأمين"));
+                Number(DepositBox.Text, "التأمين"),
+                // ‏(جاهزيّةُ الإطلاق · ح-١٠) ‏والسكنيُّ معفًى بالمادة 30، والتجاريُّ خاضعٌ
+                // ‏بـ١٥٪ — **وكان كلُّ إيجارٍ يُفوتَر خاضعاً**.
+                isResidential: ResidentialBox.IsChecked == true);
 
             await using var db = AppServices.CreateDb();
             db.LeaseContracts.Add(lease);

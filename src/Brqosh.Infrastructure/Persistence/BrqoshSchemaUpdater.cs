@@ -2350,6 +2350,26 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠) ‏**وأسكنيٌّ عقدُ الإيجار أم تجاريّ.**
+        //
+        // ‏إيجارُ المسكن معفًى (المادة 30) والتجاريُّ خاضعٌ بـ١٥٪، **وكان يُفوتَر بـ١٥٪
+        // ‏دائماً**. **والافتراضُ `false` (تجاريّ) عمداً**: هو سلوكُ ما مضى حرفاً،
+        // ‏**فلا يتغيّر إقرارٌ لعقدٍ قائمٍ بهذه الترقية** — والتحوّلُ إلى الإعفاء قرارُ
+        // ‏مكلَّفٍ يُتَّخذ لا يُفترض.
+        if (await TableExistsAsync("lease_contracts", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("lease_contracts", "IsResidential",
+                    "boolean NOT NULL DEFAULT FALSE", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("lease_contracts", "IsResidential",
+                    "INTEGER NOT NULL DEFAULT 0", ct);
+            }
+        }
+
         // ‏(جاهزيّةُ الإطلاق · ح-٦) ‏**وخصمُ المستند على الإشعار الدائن.**
         //
         // ‏عمودُ `DiscountPercent` في `credit_note_lines` كان مُعرَّفاً في النموذج منذ ط1-٢

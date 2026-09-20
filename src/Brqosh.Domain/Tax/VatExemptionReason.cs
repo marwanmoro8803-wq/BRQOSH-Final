@@ -26,6 +26,15 @@ public sealed record VatExemptionReason(
     /// <summary>الفئةُ <c>O</c> وحدَها سببُها نصٌّ حرّ يكتبه المكلَّف لكلّ حالة.</summary>
     public const string OutOfScopeCode = "VATEX-SA-OOS";
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠) رمزُ إعفاء الإيجار السكنيّ — المادة 30 من اللائحة.
+    ///
+    /// <para><b>ويُسمّى ولا يُنسخ حرفيّاً حيث يُستعمل</b>: رمزٌ مكتوبٌ نصّاً في خدمةٍ
+    /// يفترق يومَ يتغيّر، <b>والافتراقُ هنا لا يُرى</b> — تخرج الفاتورةُ برمزٍ لا تعرفه
+    /// الهيئةُ فتُردّ، أو بلا رمزٍ فتُردّ.</para>
+    /// </summary>
+    public const string ResidentialRentCode = "VATEX-SA-30";
+
     private static readonly VatExemptionReason[] All =
     [
         // ‏E — معفى من الضريبة

@@ -1,6 +1,7 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -62,7 +63,19 @@ public class LeaseService(BrqoshDbContext db)
                 $"إيجار العقد {lease.ContractNumber}",
                 lease.Frequency, lease.StartDate, lease.EndDate);
 
-            plan.AddLine($"إيجار الوحدة {unit.UnitNumber}", 1m, lease.RentPerPeriod);
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠) ‏**وفئةُ الإيجار الضريبيّة تُمرَّر — وكانت تُترك
+            // ‏للافتراض.** و`AddLine` يفترض «أساسيّة»، **فكلُّ إيجارٍ كان يُفوتَر بـ١٥٪**
+            // ‏ومنه السكنيُّ المعفى بالمادة 30. فمالكُ عماراتٍ سكنيّةٍ **يُحصّل من سكّانه
+            // ‏ضريبةً لا تُستحقّ** ثمّ يُقرّ بها، أو يدفعها من ربحه إن لم يُحصّلها.
+            //
+            // ‏**والرمزُ إلزاميٌّ مع الإعفاء** — `VatExemptionReason` ترفض فئةً معفاةً بلا
+            // ‏سببٍ نظاميّ، ومستندٌ بلا سببٍ ترفضه الهيئة (BR-KSA-CL-06).
+            var (rentCategory, exemptionCode) = lease.IsResidential
+                ? (VatCategory.Exempt, VatExemptionReason.ResidentialRentCode)
+                : (VatCategory.Standard, (string?)null);
+
+            plan.AddLine($"إيجار الوحدة {unit.UnitNumber}", 1m, lease.RentPerPeriod,
+                vatCategory: rentCategory, taxExemptionReasonCode: exemptionCode);
 
             db.RecurringInvoicePlans.Add(plan);
             if (lease.Id == 0) db.LeaseContracts.Add(lease);

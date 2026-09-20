@@ -75,7 +75,7 @@ public class LeaseContract : IBranchScoped
 
     private LeaseContract(long companyId, long unitId, long tenantId, string contractNumber,
         DateOnly startDate, DateOnly endDate, decimal rentPerPeriod, RecurrenceFrequency frequency,
-        decimal securityDeposit)
+        decimal securityDeposit, bool isResidential)
     {
         CompanyId = companyId;
         PropertyUnitId = unitId;
@@ -86,12 +86,30 @@ public class LeaseContract : IBranchScoped
         RentPerPeriod = rentPerPeriod;
         Frequency = frequency;
         SecurityDeposit = securityDeposit;
+        IsResidential = isResidential;
         CreatedAtUtc = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠) <b>أسكنيٌّ هذا الإيجار أم تجاريّ — والفرقُ ضريبةٌ لا وصف.</b>
+    ///
+    /// <para>إيجارُ المسكن <b>معفًى</b> في نظام ضريبة القيمة المضافة (المادة 30)، والتجاريُّ
+    /// خاضعٌ بـ١٥٪. <b>وكان العقدُ يُفوتَر بـ١٥٪ دائماً</b> — فمالكُ عماراتٍ سكنيّةٍ
+    /// <b>يُحصّل من سكّانه ضريبةً لا تُستحقّ</b> ثمّ يُقرّ بها، أو يدفعها من ربحه.</para>
+    ///
+    /// <para><b>والحكمُ على الاستعمال لا على نوع المبنى:</b> عمارةٌ واحدةٌ فيها محلٌّ تجاريٌّ
+    /// وشققٌ سكنيّة، <b>فلا يُشتقّ من <c>PropertyKind</c></b> — ويُسأل عنه في العقد.</para>
+    ///
+    /// <para><b>والافتراضُ تجاريٌّ عمداً</b>: هو سلوكُ ما مضى حرفاً، <b>فلا يتغيّر إقرارٌ
+    /// لعقدٍ قائمٍ بهذه الترقية</b>. والتحوّلُ إلى الإعفاء قرارُ مكلَّفٍ يُتَّخذ لا يُفترض —
+    /// <b>وإعفاءٌ يُمنح بالخطأ نقصٌ في إقرارٍ سُلّم للهيئة</b>.</para>
+    /// </summary>
+    public bool IsResidential { get; private set; }
+
     public static LeaseContract Create(long companyId, long propertyUnitId, long tenantCustomerId,
         string contractNumber, DateOnly startDate, DateOnly endDate, decimal rentPerPeriod,
-        RecurrenceFrequency frequency = RecurrenceFrequency.Monthly, decimal securityDeposit = 0m)
+        RecurrenceFrequency frequency = RecurrenceFrequency.Monthly, decimal securityDeposit = 0m,
+        bool isResidential = false)
     {
         if (propertyUnitId <= 0) throw new AccountingException("الوحدة مطلوبة للعقد.");
         if (tenantCustomerId <= 0) throw new AccountingException("المستأجر مطلوب للعقد.");
@@ -106,7 +124,7 @@ public class LeaseContract : IBranchScoped
 
         return new LeaseContract(companyId, propertyUnitId, tenantCustomerId, contractNumber.Trim(),
             startDate, endDate, Math.Round(rentPerPeriod, 2, MidpointRounding.AwayFromZero),
-            frequency, Math.Round(securityDeposit, 2, MidpointRounding.AwayFromZero));
+            frequency, Math.Round(securityDeposit, 2, MidpointRounding.AwayFromZero), isResidential);
     }
 
     /// <summary>

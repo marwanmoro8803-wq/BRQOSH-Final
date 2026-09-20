@@ -3015,6 +3015,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
+                    b.Property<bool>("IsResidential")
+                        .HasColumnType("boolean");
+
                     b.Property<long>("PropertyUnitId")
                         .HasColumnType("bigint");
 
