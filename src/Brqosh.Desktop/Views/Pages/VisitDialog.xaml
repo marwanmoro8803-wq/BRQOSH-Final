@@ -64,6 +64,12 @@
                                             SelectedValueBinding="{Binding ProductId}"
                                             DisplayMemberPath="Label" SelectedValuePath="Id"/>
                     <DataGridTextColumn Header="رقم الدفعة" Binding="{Binding BatchNumber}" Width="120"/>
+                    <!-- (جاهزيّةُ الإطلاق · ح-١١) المعاملةُ الضريبيّةُ للسطر — وكانت مسمَّرةً
+                         خاضعةً بـ15%. والرعايةُ الصحيةُ للمواطن صفرية، وكذلك الأدويةُ
+                         والمعدّاتُ الطبية. والافتراضُ «خاضعة» فلا يتغيّر ما مضى. -->
+                    <DataGridComboBoxColumn x:Name="TreatmentColumn" Header="الضريبة" Width="220"
+                                            SelectedItemBinding="{Binding Treatment}"
+                                            DisplayMemberPath="Label"/>
                     <DataGridCheckBoxColumn Header="مشمولة بالوثيقة" Binding="{Binding IsCovered}" Width="140"/>
                 </DataGrid.Columns>
             </DataGrid>

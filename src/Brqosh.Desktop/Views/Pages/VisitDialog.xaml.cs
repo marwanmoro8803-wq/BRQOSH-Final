@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Healthcare;
+using Brqosh.Domain.Tax;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -32,6 +33,38 @@ public partial class VisitDialog : Window
 
         /// <summary>رقمُ الدفعة — <b>ويلزم لكلّ دواءٍ متتبَّع</b>.</summary>
         public string? BatchNumber { get; set; }
+
+        /// <summary>
+        /// (جاهزيّةُ الإطلاق · ح-١١) <b>المعاملةُ الضريبيّةُ للسطر — وكانت مسمَّرةً خاضعة.</b>
+        ///
+        /// <para><c>Visit.AddLine</c> يقبل الفئةَ ورمزَها منذ نشأته، <b>والحوارُ لا يُمرّر
+        /// شيئاً</b> — فيفترض النطاقُ «خاضعة ١٥٪». <b>فعيادةٌ تُعالج مواطناً تُحمّله ١٥٪</b>
+        /// وهي صفريّةٌ عنه (<c>VATEX-SA-HEA</c>)، <b>وصيدليّةٌ تصرف دواءً كذلك</b>
+        /// (<c>VATEX-SA-35</c>).</para>
+        ///
+        /// <para><b>والافتراضُ «خاضعة» عمداً</b>: هو سلوكُ ما مضى حرفاً، والصفريّةُ قرارٌ
+        /// يُتَّخذ على السطر لا يُفترض له — <b>وصفريّةٌ تُمنح بالخطأ نقصٌ في إقرارٍ سُلّم</b>.</para>
+        /// </summary>
+        public VisitVatTreatment Treatment { get; set; } = VisitVatTreatment.Options[0];
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١١) معاملةٌ ضريبيّةٌ مختارةٌ من قائمةٍ مغلقة — <b>لا رمزٌ يُكتب بيد</b>.
+    ///
+    /// <para><b>والفئةُ ورمزُها يُسافران معاً</b>: فئةٌ صفريّةٌ بلا رمزٍ نظاميٍّ يرفضها
+    /// النطاقُ (BR-KSA-CL-06)، ورمزٌ من فئةٍ أخرى يرفضه كذلك. <b>فاقترانُهما في مدخلٍ واحدٍ
+    /// يجعل الحالةَ الخاطئةَ غيرَ قابلةٍ للتمثيل</b> بدل أن تُحرَس بفحص.</para>
+    /// </summary>
+    public sealed record VisitVatTreatment(string Label, VatCategory Category, string? Code)
+    {
+        public static readonly IReadOnlyList<VisitVatTreatment> Options =
+        [
+            new("خاضعة 15%", VatCategory.Standard, null),
+            new("صفرية — رعاية صحية لمواطن", VatCategory.ZeroRated, "VATEX-SA-HEA"),
+            new("صفرية — أدوية ومعدات طبية", VatCategory.ZeroRated, "VATEX-SA-35"),
+        ];
+
+        public override string ToString() => Label;
     }
 
     private sealed record Option(long Id, string Label)
@@ -46,6 +79,7 @@ public partial class VisitDialog : Window
         InitializeComponent();
         DateBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
+        TreatmentColumn.ItemsSource = VisitVatTreatment.Options;
         Loaded += async (_, _) =>
         {
             await LoadPatientsAsync();
@@ -157,13 +191,10 @@ public partial class VisitDialog : Window
             if (lines.Count == 0)
                 throw new AccountingException("الزيارة بلا خدمات.");
 
-            var visit = Visit.Create(AppServices.CompanyId, patient.Id, NumberBox.Text,
+            var visit = BuildVisitFromRows(
+                AppServices.CompanyId, patient.Id, NumberBox.Text,
                 DateOnly.FromDateTime(DateBox.SelectedDate.Value), DoctorBox.Text,
                 (PolicyBox.SelectedItem as Option)?.Id);
-
-            foreach (var line in lines)
-                visit.AddLine(line.Description!, line.Quantity, line.UnitPrice, line.IsCovered,
-                    line.ProductId, batchNumber: line.BatchNumber);
 
             await using var db = AppServices.CreateDb();
             db.Visits.Add(visit);
@@ -174,6 +205,38 @@ public partial class VisitDialog : Window
         {
             UiFeedback.ShowWarning(ex.Message);
         }
+    }
+
+    /// <summary>سطورُ الحوار — <b>درزُ اختبارٍ على سابقة <c>PurchaseInvoiceDialog</c></b>.</summary>
+    internal ObservableCollection<LineRow> RowsForTests => _rows;
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١١) <b>بناءُ الزيارة من السطور — مُستخرَجٌ كي يُقاس.</b>
+    ///
+    /// <para><b>وهذا هو موضعُ العطل</b>: كان يستدعي <c>AddLine</c> بلا فئةٍ ضريبيّةٍ ولا
+    /// رمز، <b>فيفترض النطاقُ «خاضعة ١٥٪» لكلّ خدمةٍ ودواء</b> — ومنه الصفريُّ للمواطن.</para>
+    ///
+    /// <para><b>ومعالجُ الحدث لا يُشغَّل في اختبار</b>، فيبقى ما بداخله بلا قياسٍ مهما
+    /// كَثُرت الحالاتُ حولَه. والاستخراجُ يجعل السلوكَ نفسَه — لا جدولَ الخيارات وحدَه —
+    /// قابلاً للعضّ. وهي سابقةُ <c>BuildInvoiceFromRows</c> نفسُها.</para>
+    /// </summary>
+    internal Visit BuildVisitFromRows(
+        long companyId, long patientId, string visitNumber,
+        DateOnly visitDate, string? doctor, long? policyId)
+    {
+        var visit = Visit.Create(companyId, patientId, visitNumber, visitDate, doctor, policyId);
+
+        foreach (var line in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description)))
+        {
+            // ‏**والمعاملةُ الضريبيّةُ تُمرَّر** — وكانت تُترك للافتراض.
+            var treatment = line.Treatment ?? VisitVatTreatment.Options[0];
+
+            visit.AddLine(line.Description!, line.Quantity, line.UnitPrice, line.IsCovered,
+                line.ProductId, treatment.Category, treatment.Code,
+                batchNumber: line.BatchNumber);
+        }
+
+        return visit;
     }
 
     private void OnCancel(object sender, RoutedEventArgs e) => DialogResult = false;
