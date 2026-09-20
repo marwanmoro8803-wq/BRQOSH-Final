@@ -130,18 +130,9 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
             invoice = xmlB64,
         });
 
-        var endpoint = doc.TransmissionMode == ZatcaTransmissionMode.Clearance
-            ? "/invoices/clearance/single"
-            : "/invoices/reporting/single";
-
-        var request = new HttpRequestMessage(HttpMethod.Post, settings.ApiBaseUrl.TrimEnd('/') + endpoint)
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json"),
-        };
-        request.Headers.Authorization = ParseAuth(ZatcaSettingsSecrets.GetApiToken(settings));
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        // (CEEF-206) واجهات الهيئة تشترط Accept-Version؛ غيابها يرفض الطلب رغم صحة المسار والحمولة.
-        request.Headers.Add("Accept-Version", "V2");
+        var request = BuildSubmissionRequest(
+            doc.TransmissionMode, settings.ApiBaseUrl, payload,
+            ZatcaSettingsSecrets.GetApiToken(settings));
 
         var response = await Http.SendAsync(request);
         var body = await response.Content.ReadAsStringAsync();
@@ -229,6 +220,44 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 
     /// <summary>حكمُ الهيئة كما ورد في جسم الردّ — لا كما يُستنتج من رمز HTTP.</summary>
     internal readonly record struct AuthorityVerdict(bool Accepted, string Status, string? Reason);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩) <b>بناءُ الطلب — مُستخرَجٌ كي يُقاس.</b>
+    ///
+    /// <para><b>وترويسةُ <c>Clearance-Status</c> كانت غائبة</b>: نداءُ
+    /// <c>/invoices/clearance/single</c> يشترطها، <b>وغيابُها يردّ الطلبَ وإن صحّ المسارُ
+    /// والحمولةُ والتوقيع</b> — وهو بعينه ما فعله غيابُ <c>Accept-Version</c> في CEEF-206.
+    /// و<c>1</c> تعني «خلِّصْ هذه الفاتورة».</para>
+    ///
+    /// <para><b>ولا تُرسَل على مسار الإبلاغ</b>: المبسّطةُ تُبلَّغ ولا تُخلَّص.
+    /// <b>والشرطُ هو الشرطُ نفسُه الذي يختار المسار</b> — لا فحصٌ ثانٍ قد يفترق عنه بعد تعديل.</para>
+    ///
+    /// <para><b>ولمَ يُستخرَج:</b> <c>HttpClient</c> ساكنٌ بلا درزٍ يُحقن، <b>فترويسةٌ داخل
+    /// تابعِ الإرسال لا تُقاس إلّا بنداءٍ حقيقيٍّ للهيئة</b> — وهو ما لا يقع في اختبار.
+    /// وهي السابقةُ نفسُها التي جعلت <see cref="ReadAuthorityVerdict"/> مُستخرَجاً.</para>
+    /// </summary>
+    internal static HttpRequestMessage BuildSubmissionRequest(
+        ZatcaTransmissionMode mode, string apiBaseUrl, string payload, string apiToken)
+    {
+        var endpoint = mode == ZatcaTransmissionMode.Clearance
+            ? "/invoices/clearance/single"
+            : "/invoices/reporting/single";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, apiBaseUrl.TrimEnd('/') + endpoint)
+        {
+            Content = new StringContent(payload, Encoding.UTF8, "application/json"),
+        };
+
+        request.Headers.Authorization = ParseAuth(apiToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        // (CEEF-206) واجهات الهيئة تشترط Accept-Version؛ غيابها يرفض الطلب رغم صحة المسار والحمولة.
+        request.Headers.Add("Accept-Version", "V2");
+
+        if (mode == ZatcaTransmissionMode.Clearance)
+            request.Headers.Add("Clearance-Status", "1");
+
+        return request;
+    }
 
     internal static AuthorityVerdict ReadAuthorityVerdict(string body, ZatcaTransmissionMode mode)
     {
