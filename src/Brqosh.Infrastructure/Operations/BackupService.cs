@@ -157,10 +157,27 @@ public sealed class BackupService(BrqoshDbContext db)
         finally
         {
             // ‏لا يبقى نصفُ نسخةٍ على القرص بحالٍ — نجحت العمليةُ أم أخفقت.
-            try { if (File.Exists(staging)) File.Delete(staging); }
-            catch (IOException) { /* ‏تنظيفٌ لا يُبدّل حكمَ العملية */ }
-            catch (UnauthorizedAccessException) { /* ‏كذلك */ }
+            DiscardStaging(staging);
         }
+    }
+
+    /// <summary>
+    /// ‏يكنس الملفَّ المرحليَّ — <b>وإخفاقُ الكنس لا يُبدّل حكمَ العملية</b>: النسخةُ إمّا
+    /// نُقلت باسمها فتمّت، أو سقطت فسقطت، وبقيّةٌ مقفلةٌ لا تُغيّر أيَّهما.
+    ///
+    /// <para><b>وموضعٌ واحدٌ لا موضعان</b>: كُتب هذا الكنسُ مرّتين — في النسخة ورفيقِها —
+    /// <b>فأسقطت بوّابةُ الابتلاع الصامت الملفَّ بأربعةِ مواضعَ مأذونٍ لها باثنين</b>.
+    /// والإذنُ لم يُرفَع: <b>حين تُسقطك بوّابةٌ فأصلِح ما أشارت إليه لا ما يُرضيها</b>.
+    /// وهي أشارت إلى تكرارٍ حقيقيّ.</para>
+    ///
+    /// <para><b>ويبقى الكنسُ الشبكيُّ حارساً بعده</b>: <c>PruneOldBackups</c> يمسح ما بقي
+    /// من مرحليّاتٍ بعد مهلةٍ — فملفٌّ تعذّر حذفُه هنا لا يبيت ليلتين.</para>
+    /// </summary>
+    private static void DiscardStaging(string staging)
+    {
+        try { if (File.Exists(staging)) File.Delete(staging); }
+        catch (IOException) { /* ‏تنظيفٌ لا يُبدّل حكمَ العملية */ }
+        catch (UnauthorizedAccessException) { /* ‏كذلك */ }
     }
 
     /// <summary>
@@ -242,9 +259,7 @@ public sealed class BackupService(BrqoshDbContext db)
         }
         finally
         {
-            try { if (File.Exists(staging)) File.Delete(staging); }
-            catch (IOException) { /* ‏تنظيفٌ لا يُبدّل حكمَ العملية */ }
-            catch (UnauthorizedAccessException) { /* ‏كذلك */ }
+            DiscardStaging(staging);
         }
     }
 
