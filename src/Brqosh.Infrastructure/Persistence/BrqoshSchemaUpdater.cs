@@ -2348,6 +2348,25 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("sales_invoices", "ForeignVatAmount",
                     "TEXT NOT NULL DEFAULT '0'", ct);
             }
+        }
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٦) ‏**وخصمُ المستند على الإشعار الدائن.**
+        //
+        // ‏عمودُ `DiscountPercent` في `credit_note_lines` كان مُعرَّفاً في النموذج منذ ط1-٢
+        // ‏**ولا يكتبه أحد** — فالسطرُ يُبنى بصفر. وأمّا خصمُ المستند فلم يكن له عمودٌ أصلاً.
+        // ‏والافتراضُ صفرٌ، **فلا يتغيّر رقمٌ في إشعارٍ قائم**.
+        if (await TableExistsAsync("credit_notes", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("credit_notes", "DocumentDiscountAmount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("credit_notes", "DocumentDiscountAmount",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
 
             // (CEEF-230 · ط1-٤) ‏**وتعبئةُ الأجنبيّ من الريال لكلّ فاتورةٍ قائمة**: بسعرِ
             // ‏واحدٍ هما رقمٌ واحد، وتركُ الأجنبيّ صفراً يجعل الفوترةَ تُصدر مستنداً

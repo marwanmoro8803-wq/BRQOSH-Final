@@ -16,6 +16,12 @@ public partial class CreditNoteDialog : Window
 
     private readonly ObservableCollection<SalesInvoiceDialog.LineRow> _rows = [];
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٦) الفاتورةُ الأصليّةُ محفوظةً — <b>ويلزم خصمُ مستندها عند
+    /// الترحيل لا عند العرض وحدَه</b>.
+    /// </summary>
+    private SalesInvoice? _invoice;
+
     public CreditNoteDialog()
     {
         InitializeComponent();
@@ -71,6 +77,8 @@ public partial class CreditNoteDialog : Window
         if (invoice is null)
             return;
 
+        _invoice = invoice;
+
         var alreadyReturned = postedNotes
             .SelectMany(n => n.Lines)
             .Where(l => l.ProductId is not null)
@@ -92,6 +100,10 @@ public partial class CreditNoteDialog : Window
                 Quantity = returnable,
                 UnitPrice = line.UnitPrice,
                 VatCategory = line.VatCategory,
+                // ‏(جاهزيّةُ الإطلاق · ح-٦) ‏**وخصمُ السطر يُورَّث كما تُورَّث فئتُه.**
+                // ‏وبدونه يُبنى المرتجعُ على السعر الخامّ — **فيُعاد للعميل أكثرُ ممّا دفع**
+                // ‏وتُنقص ضريبةُ المخرجات أكثرَ ممّا استُحقّ.
+                DiscountPercent = line.DiscountPercent,
                 // ‏(م1-١ب/الشقّ الثاني) السببُ يُورَّث من الفاتورة الأصلية — فالمرتجعُ يحمل
                 // ‏فئتَها، ولو تُرك فارغاً لَرفض النطاقُ إشعاراً دائناً لبيعةٍ صفريةٍ صحيحة.
                 TaxExemptionReasonCode = line.TaxExemptionReasonCode,
@@ -106,10 +118,26 @@ public partial class CreditNoteDialog : Window
     private void OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) =>
         Dispatcher.BeginInvoke(UpdateTotals);
 
+    /// <summary>حصّةُ المُرتجَع من خصم الفاتورة — والحسابُ في النطاق حيث يُقاس.</summary>
+    private decimal DocumentDiscountShare() =>
+        _invoice is null
+            ? 0m
+            : CreditNote.DocumentDiscountShareFor(_invoice, _rows.Sum(r => r.LineTotal));
+
     private void UpdateTotals()
     {
-        var subtotal = _rows.Sum(r => r.LineTotal);
-        var vat = Math.Round(subtotal * SalesInvoice.SaudiVatRate, 2, MidpointRounding.AwayFromZero);
+        // ‏(ح-٦) ‏**والمعروضُ هو المُرحَّل** — وكان يعرض حاصلاً خامّاً بلا خصمِ مستند،
+        // ‏فيرى المستخدمُ رقماً ويُرحَّل غيرُه. والحسابُ من الموزِّع نفسِه لا بصيغةٍ ثانية.
+        var lines = _rows
+            .Where(r => r.Quantity != 0m || r.UnitPrice != 0m)
+            .Select(r => new SalesInvoiceLine(
+                r.Description ?? "", r.Quantity, r.UnitPrice, r.ProductId, r.VatCategory,
+                r.TaxExemptionReasonCode, r.TaxExemptionReason, DiscountPercent: r.DiscountPercent))
+            .ToList();
+
+        var (subtotal, vat) = LineDocumentTotalsCalculator.Compute(
+            lines, documentDiscount: DocumentDiscountShare());
+
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");
         TotalText.Text = (subtotal + vat).ToString("N2");
@@ -137,7 +165,17 @@ public partial class CreditNoteDialog : Window
 
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
                 note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice,
-                    row.ProductId, row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason);
+                    row.ProductId, row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason,
+                    discountPercent: row.DiscountPercent);
+
+            // ‏(جاهزيّةُ الإطلاق · ح-٦) ‏**وحصّةُ المرتجع من خصم المستند.**
+            //
+            // ‏خصمُ الفاتورة يخصّ المستندَ كلَّه، **والمرتجعُ قد يكون بعضَه** — فيُؤخذ بنسبة
+            // ‏صافي المُرتجَع إلى صافي الفاتورة. ومرتجعٌ كاملٌ يأخذه كلَّه، **فيُغلق الإشعارُ
+            // ‏الفاتورةَ تماماً بدل أن يتجاوز متبقّيها ويُرفض**.
+            var share = DocumentDiscountShare();
+            if (share > 0m)
+                note.ApplyDocumentDiscount(share);
 
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<CreditNotePostingService>().PostAsync(note);

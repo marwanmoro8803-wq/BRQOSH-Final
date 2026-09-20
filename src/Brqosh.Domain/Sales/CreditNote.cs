@@ -82,9 +82,74 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
         return new CreditNote(companyId, customerId, originalInvoiceId, noteDate, reason.Trim());
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٦) <b>خصمُ المستند على الإشعار — وكان لا يُمثَّل أصلاً.</b>
+    ///
+    /// <para>الفاتورةُ تحمل خصمَ مستندٍ وخصمَ سطر، <b>والإشعارُ الدائنُ كان يُبنى منها بلا
+    /// أيٍّ منهما</b>. فمرتجعٌ جزئيٌّ <b>يُعيد للعميل أكثرَ ممّا دفع</b> ويُنقص ضريبةَ
+    /// المخرجات أكثرَ ممّا استُحقّ، <b>ومرتجعٌ كاملٌ لفاتورةٍ مخصومةٍ يُرفض</b> لأنّ إجماليَّه
+    /// يتجاوز المتبقّي منها.</para>
+    ///
+    /// <para><b>والحسابُ كان موجوداً كلَّه</b>: <c>SalesInvoiceLine</c> تحمل
+    /// <c>DiscountPercent</c>، و<c>LineDocumentTotalsCalculator</c> يوزّع خصمَ المستند على
+    /// الأوعية ويُسكِن الفلسَ الأخيرَ في الوعاء الأخير. <b>وإنّما كان الإشعارُ لا يُمرّر
+    /// شيئاً منه.</b></para>
+    /// </summary>
+    public decimal DocumentDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٦) <b>حصّةُ المُرتجَع من خصم الفاتورة</b> — بنسبة صافيه إلى صافيها.
+    ///
+    /// <para><b>وفي النطاق لا في الحوار</b>: هذا حسابُ مالٍ يُقاس، ولو سكن شاشةَ WPF لَما
+    /// قِيس إلّا بتشغيل التطبيق — <b>وما لا يُقاس يبيت</b>. ويلزم كلَّ مسارٍ يُنشئ إشعاراً،
+    /// لا شاشةَ سطح المكتب وحدَها.</para>
+    ///
+    /// <para><b>ومرتجعٌ كاملٌ يأخذ الخصمَ كلَّه بالضبط</b> — النسبةُ واحدٌ فلا يبقى فلسٌ
+    /// عالق، <b>فيُقفل الإشعارُ الفاتورةَ تماماً</b> بدل أن يتجاوز متبقّيها فيُرفض.</para>
+    ///
+    /// <para><b>ولا يتجاوز صافيَ المُرتجَع</b>: التقريبُ لأعلى في مرتجعٍ شبهِ كاملٍ قد
+    /// يتجاوزه بفلس، <b>و<see cref="ApplyDocumentDiscount"/> يرفض ذلك بحقّ</b>.</para>
+    /// </summary>
+    public static decimal DocumentDiscountShareFor(SalesInvoice invoice, decimal returnedNet)
+    {
+        ArgumentNullException.ThrowIfNull(invoice);
+
+        if (invoice.DocumentDiscountAmount <= 0m || returnedNet <= 0m)
+            return 0m;
+
+        var invoiceNet = invoice.Lines.Sum(l => l.LineTotal);
+        if (invoiceNet <= 0m)
+            return 0m;
+
+        var share = Math.Round(
+            invoice.DocumentDiscountAmount * returnedNet / invoiceNet, 2, MidpointRounding.AwayFromZero);
+
+        return Math.Min(share, returnedNet);
+    }
+
+    /// <summary>
+    /// يضبط خصمَ المستند على الإشعار — <b>ولا يتجاوز صافيَ سطوره</b>، فإشعارٌ بوعاءٍ سالبٍ
+    /// فاتورةٌ لا إشعار.
+    /// </summary>
+    public void ApplyDocumentDiscount(decimal amount)
+    {
+        EnsureDraft();
+        if (amount < 0m)
+            throw new AccountingException("خصم المستند لا يكون سالباً.");
+
+        var linesNet = _lines.Sum(l => l.LineTotal);
+        if (amount > linesNet)
+            throw new AccountingException(
+                $"خصم المستند {amount:N2} يتجاوز صافي سطور الإشعار {linesNet:N2}.");
+
+        DocumentDiscountAmount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+        RecalculateTotals();
+    }
+
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
-        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
+        decimal discountPercent = 0m)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -113,13 +178,20 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
                 taxExemptionReason = reason.EnglishText;
         }
 
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
+        if (discountPercent is < 0m or > 100m)
+            throw new AccountingException("نسبةُ خصم السطر بين صفرٍ ومئة.");
+
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory,
+            taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(), DiscountPercent: discountPercent));
         RecalculateTotals();
     }
 
     public void RecalculateTotals()
     {
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+        // ‏(ح-٦) ‏**وخصمُ المستند يدخل الحساب** — وكان يُستدعى بلا وسيطٍ فيُحسب الإشعارُ
+        // ‏على السطور الخامّة. والوسيطُ نفسُه تُمرّره `SalesInvoice`، والموزِّعُ واحد.
+        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(
+            _lines, documentDiscount: DocumentDiscountAmount);
     }
 
     /// <summary>

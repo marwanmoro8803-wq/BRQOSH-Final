@@ -3356,6 +3356,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CustomerId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("DocumentDiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<long?>("JournalEntryId")
                         .HasColumnType("bigint");
 

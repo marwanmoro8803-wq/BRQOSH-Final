@@ -380,6 +380,8 @@ public class BrqoshDbContext : DbContext
 
             entity.Property(n => n.Subtotal).HasPrecision(18, 2);
             entity.Property(n => n.VatAmount).HasPrecision(18, 2);
+            // ‏(جاهزيّةُ الإطلاق · ح-٦) خصمُ المستند على الإشعار — نظيرُ عمود الفاتورة.
+            entity.Property(n => n.DocumentDiscountAmount).HasPrecision(18, 2);
 
             entity.OwnsMany(n => n.Lines, lines =>
             {
