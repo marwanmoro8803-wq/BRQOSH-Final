@@ -46,7 +46,9 @@ public partial class ZatcaInvoicesPage : UserControl
             ZatcaDocumentPresentation.TypeLabel(d.DocumentType),
             d.InvoiceUuid.ToString()[..8] + "…",
             d.Icv,
-            d.TransmissionMode == ZatcaTransmissionMode.Clearance ? "اعتماد" : "إبلاغ",
+            d.TransmissionMode == ZatcaTransmissionMode.Clearance
+                ? LocaleManager.T("اعتماد", "Clearance")
+                : LocaleManager.T("إبلاغ", "Reporting"),
             StatusLabel(d.ComplianceStatus),
             d.GeneratedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
             d.QrTlvBase64.Length > 24 ? d.QrTlvBase64[..24] + "…" : d.QrTlvBase64)).ToList();
@@ -65,15 +67,24 @@ public partial class ZatcaInvoicesPage : UserControl
             $"مستندات: {docs.Count} · مُرسل/معتمد: {submitted} · بانتظار الإرسال: {pending}";
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٨) ‏<b>وخلايا الجدول تُترجَم هنا لا في السجلّ.</b>
+    ///
+    /// <para>‏<c>XamlUiLocalizer</c> يترجم <b>عناوينَ الأعمدة</b> (<c>col.Header</c>)
+    /// ولا يبلغ <b>قيمَ الخلايا</b> — فهي تأتي من الكائن المربوط لا من خاصّيّةٍ على عنصر.
+    /// <b>فإدخالُ هذه النصوص في <c>ui-overrides.json</c> يُخضِّر البوّابةَ والنصُّ عربيٌّ
+    /// كما هو</b> — أي يجعل الحارسَ يكذب، وهو ما يحذّر منه <c>I18nCoverageTests</c> نصّاً
+    /// في شأن <c>MessageBox</c>.</para>
+    /// </summary>
     private static string StatusLabel(ZatcaComplianceStatus s) => s switch
     {
-        ZatcaComplianceStatus.ReadyToReport => "جاهز للإبلاغ",
-        ZatcaComplianceStatus.ReadyToClear => "جاهز للاعتماد",
-        ZatcaComplianceStatus.Reported => "مُبلَّغ",
-        ZatcaComplianceStatus.Cleared => "معتمد",
-        ZatcaComplianceStatus.Accepted => "مقبول",
-        ZatcaComplianceStatus.Rejected => "مرفوض",
-        _ => "مُولَّد",
+        ZatcaComplianceStatus.ReadyToReport => LocaleManager.T("جاهز للإبلاغ", "Ready to Report"),
+        ZatcaComplianceStatus.ReadyToClear => LocaleManager.T("جاهز للاعتماد", "Ready to Clear"),
+        ZatcaComplianceStatus.Reported => LocaleManager.T("مُبلَّغ", "Reported"),
+        ZatcaComplianceStatus.Cleared => LocaleManager.T("معتمد", "Cleared"),
+        ZatcaComplianceStatus.Accepted => LocaleManager.T("مقبول", "Accepted"),
+        ZatcaComplianceStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
+        _ => LocaleManager.T("مُولَّد", "Generated"),
     };
 
     private async void OnSubmit(object sender, RoutedEventArgs e)

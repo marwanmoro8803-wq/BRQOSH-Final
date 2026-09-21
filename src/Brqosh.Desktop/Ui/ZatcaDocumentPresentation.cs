@@ -46,13 +46,13 @@ public static class ZatcaDocumentPresentation
     /// <summary>اسمُ نوع المستند كما يُعرض في الجدول.</summary>
     public static string TypeLabel(ZatcaDocumentType type) => type switch
     {
-        ZatcaDocumentType.SalesInvoice => "فاتورة",
-        ZatcaDocumentType.CreditNote => "إشعار دائن",
-        ZatcaDocumentType.ProgressBilling => "مستخلص أعمال",
-        ZatcaDocumentType.DebitNote => "إشعار مدين",
-        ZatcaDocumentType.InvoiceCancel => "إشعار دائن (إلغاء فاتورة)",
-        ZatcaDocumentType.BillingCancel => "إشعار دائن (إلغاء مستخلص)",
-        ZatcaDocumentType.AssetDisposal => "فاتورة بيع أصل ثابت",
+        ZatcaDocumentType.SalesInvoice => LocaleManager.T("فاتورة", "Invoice"),
+        ZatcaDocumentType.CreditNote => LocaleManager.T("إشعار دائن", "Credit Note"),
+        ZatcaDocumentType.ProgressBilling => LocaleManager.T("مستخلص أعمال", "Progress Billing"),
+        ZatcaDocumentType.DebitNote => LocaleManager.T("إشعار مدين", "Debit Note"),
+        ZatcaDocumentType.InvoiceCancel => LocaleManager.T("إشعار دائن (إلغاء فاتورة)", "Credit Note (Invoice Cancellation)"),
+        ZatcaDocumentType.BillingCancel => LocaleManager.T("إشعار دائن (إلغاء مستخلص)", "Credit Note (Billing Cancellation)"),
+        ZatcaDocumentType.AssetDisposal => LocaleManager.T("فاتورة بيع أصل ثابت", "Fixed Asset Sale Invoice"),
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };
@@ -81,14 +81,15 @@ public static class ZatcaDocumentPresentation
     /// <summary>عنوانُ نافذة السطور — يصف <b>المستندَ المصدر</b> الذي تُعرض سطورُه.</summary>
     public static string SourceTitle(ZatcaDocumentType type) => SourceOf(type) switch
     {
-        SourceKind.SalesInvoice => "فاتورة مبيعات",
-        SourceKind.CreditNote => "إشعار دائن",
-        SourceKind.ProgressBilling => "مستخلص أعمال",
-        SourceKind.FixedAssetDisposal => "أصل ثابت مباع",
+        SourceKind.SalesInvoice => LocaleManager.T("فاتورة مبيعات", "Sales Invoice"),
+        SourceKind.CreditNote => LocaleManager.T("إشعار دائن", "Credit Note"),
+        SourceKind.ProgressBilling => LocaleManager.T("مستخلص أعمال", "Progress Billing"),
+        SourceKind.FixedAssetDisposal => LocaleManager.T("أصل ثابت مباع", "Fixed Asset Sold"),
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 
     /// <summary>رسالةُ الغياب — <b>تسمّي المستندَ المصدر</b> لا «الفاتورة» دائماً.</summary>
     public static string SourceMissingMessage(ZatcaDocumentType type) =>
-        $"المستند المصدر ({SourceTitle(type)}) غير موجود.";
+        LocaleManager.T($"المستند المصدر ({SourceTitle(type)}) غير موجود.",
+                        $"Source document ({SourceTitle(type)}) not found.");
 }
