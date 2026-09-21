@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Manufacturing;
@@ -64,6 +64,43 @@ public class BillOfMaterials : IBranchScoped, ISoftDeletable
 
         return new BillOfMaterials(companyId, code.Trim().ToUpperInvariant(), nameAr.Trim(),
             finishedProductId, outputQuantity);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٣) <b>أجرُ العمالة المباشرة لكلّ وحدةٍ تامّة.</b>
+    ///
+    /// <para>معيارُ المخزون يقضي أن تشمل التكلفةُ <b>تكاليفَ التحويل</b> — الأجرَ المباشرَ
+    /// ونصيباً منهجيّاً من التكاليف الصناعيّة — لا الموادَّ وحدَها. <b>وكانت التكلفةُ
+    /// موادَّ فقط</b>، فالمنتَجُ التامُّ يدخل المخزونَ بأقلَّ من كلفته: <b>مخزونٌ مُقوَّمٌ
+    /// بأدنى من حقيقته، وربحٌ مُعلَنٌ أعلى من حقيقته</b> على كلّ أمرِ إنتاج.</para>
+    ///
+    /// <para><b>وصفرٌ يعني «لا تحويلَ يُحمَّل»</b> — وهو سلوكُ ما مضى حرفاً، <b>فلا تتغيّر
+    /// تكلفةُ أمرٍ قائمٍ بهذه الترقية</b>.</para>
+    /// </summary>
+    public decimal LabourCostPerUnit { get; private set; }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٣) <b>نصيبُ التكاليف الصناعيّة غير المباشرة — نسبةً من
+    /// (الموادّ + الأجر).</b>
+    ///
+    /// <para><b>ونسبةً لا مبلغاً</b>: التحميلُ يتبع حجمَ الأمر، ومبلغٌ ثابتٌ على أمرٍ كبيرٍ
+    /// وآخرَ صغيرٍ يُحمّلهما سواء. <b>وهي «نصيبٌ منهجيّ» كما يشترط المعيار</b> لا تقديرٌ
+    /// لكلّ أمرٍ على حدة.</para>
+    /// </summary>
+    public decimal OverheadRatePercent { get; private set; }
+
+    /// <summary>
+    /// يضبط تكاليفَ التحويل — <b>ولا تُقبل سالبةً</b>، ونسبةُ التحميل بين صفرٍ ومئة.
+    /// </summary>
+    public void SetConversionCosts(decimal labourCostPerUnit, decimal overheadRatePercent)
+    {
+        if (labourCostPerUnit < 0m)
+            throw new AccountingException("أجرُ العمالة المباشرة لا يكون سالباً.");
+        if (overheadRatePercent is < 0m or > 100m)
+            throw new AccountingException("نسبةُ التكاليف الصناعيّة بين صفرٍ ومئة.");
+
+        LabourCostPerUnit = Math.Round(labourCostPerUnit, 2, MidpointRounding.AwayFromZero);
+        OverheadRatePercent = Math.Round(overheadRatePercent, 4, MidpointRounding.AwayFromZero);
     }
 
     public void AddLine(long componentProductId, decimal quantity)

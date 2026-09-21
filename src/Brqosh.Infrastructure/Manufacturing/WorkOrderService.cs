@@ -55,8 +55,26 @@ public class WorkOrderService(BrqoshDbContext db)
                 issueLines.Add((line.ComponentProductId, qty, componentUnitCost));
             }
 
+            // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل تدخل التكلفة — وكانت الموادُّ وحدَها.**
+            //
+            // ‏معيارُ المخزون يقضي أن تشمل تكلفةُ المنتَج التامّ **الأجرَ المباشرَ ونصيباً
+            // ‏منهجيّاً من التكاليف الصناعيّة**. وبدونهما يدخل التامُّ المخزونَ بأقلَّ من
+            // ‏كلفته: **مخزونٌ مُقوَّمٌ بأدنى من حقيقته، وربحٌ مُعلَنٌ أعلى من حقيقته** —
+            // ‏ويظهر الوهمُ في كلّ بيعةٍ لاحقةٍ لأنّ تكلفةَ المبيعات تخرج ناقصة.
+            //
+            // ‏**والنصيبُ على (الموادّ + الأجر)** لا على الموادّ وحدَها، فالأجرُ جزءٌ من
+            // ‏وعاء التحميل. **وصفرٌ يُبقي الحسابَ كما كان حرفاً.**
+            var labourCost = Math.Round(
+                bom.LabourCostPerUnit * producedQuantity, 2, MidpointRounding.AwayFromZero);
+            var overheadCost = Math.Round(
+                (materialCost + labourCost) * bom.OverheadRatePercent / 100m,
+                2, MidpointRounding.AwayFromZero);
+
+            var conversionCost = labourCost + overheadCost;
+            var totalProductionCost = materialCost + conversionCost;
+
             var unitCost = producedQuantity > 0
-                ? Math.Round(materialCost / producedQuantity, 4, MidpointRounding.AwayFromZero)
+                ? Math.Round(totalProductionCost / producedQuantity, 4, MidpointRounding.AwayFromZero)
                 : 0m;
 
             await inv.PostDocumentMovementAsync(companyId, warehouse.Id, StockMovementType.Issue,
@@ -73,12 +91,29 @@ public class WorkOrderService(BrqoshDbContext db)
             var inventory = await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory, token);
             var entry = JournalEntry.CreateDraft(companyId, order.OrderDate,
                 $"إكمال أمر إنتاج {order.OrderNumber}", $"WorkOrderComplete:{order.Id}");
-            entry.AddLine(wip, materialCost, 0m, "تحميل WIP");
+            // ‏(ح-١٣) ‏**وWIP يُحمَّل بالثلاثة**: الموادُّ من المخزون، والأجرُ والتكاليفُ
+            // ‏الصناعيّةُ من حسابَيهما — **فتُنقَل تكلفةٌ وقعت، لا تُخترع**. وحسابا 5106
+            // ‏و5107 موجودان في الدليل منذ نشأته **ولا يكتبهما أحد**؛ وبعد هذا يحملان
+            // ‏المُحمَّلَ دائناً، **ورصيدُهما الباقي هو فرقُ التحميل** يُقرأ في قائمة الدخل.
+            entry.AddLine(wip, totalProductionCost, 0m, "تحميل WIP");
             entry.AddLine(inventory, 0m, materialCost, "صرف مواد للإنتاج");
+
+            if (labourCost > 0m)
+            {
+                var directLabour = await AccountAsync(companyId, "5106", token);
+                entry.AddLine(directLabour, 0m, labourCost, "تحميل أجور عمالة مباشرة");
+            }
+
+            if (overheadCost > 0m)
+            {
+                var overhead = await AccountAsync(companyId, "5107", token);
+                entry.AddLine(overhead, 0m, overheadCost, "تحميل تكاليف صناعية غير مباشرة");
+            }
+
             var entry2 = JournalEntry.CreateDraft(companyId, order.OrderDate,
                 $"استلام منتج تام — {order.OrderNumber}", $"WorkOrderReceipt:{order.Id}");
-            entry2.AddLine(inventory, materialCost, 0m, "منتج تام");
-            entry2.AddLine(wip, 0m, materialCost, "إغلاق WIP");
+            entry2.AddLine(inventory, totalProductionCost, 0m, "منتج تام");
+            entry2.AddLine(wip, 0m, totalProductionCost, "إغلاق WIP");
 
             var num1 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, order.OrderDate);
             entry.Post(num1);

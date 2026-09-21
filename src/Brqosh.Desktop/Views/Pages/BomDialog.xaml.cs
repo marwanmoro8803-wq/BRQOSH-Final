@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Manufacturing;
@@ -44,6 +45,8 @@ public partial class BomDialog : Window
         var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == bomId);
         CodeBox.Text = bom.Code;
         NameBox.Text = bom.NameAr;
+        LabourBox.Text = bom.LabourCostPerUnit.ToString(CultureInfo.InvariantCulture);
+        OverheadBox.Text = bom.OverheadRatePercent.ToString(CultureInfo.InvariantCulture);
         ProductCombo.SelectedValue = bom.FinishedProductId;
         foreach (var line in bom.Lines)
             _rows.Add(new LineRow { ProductId = line.ComponentProductId, Quantity = line.Quantity });
@@ -85,12 +88,16 @@ public partial class BomDialog : Window
                 var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == bomId);
                 bom.Rename(NameBox.Text);
                 bom.ReplaceLines(lines);
+                bom.SetConversionCosts(ConversionNumber(LabourBox.Text, "أجر العمالة المباشرة"),
+                    ConversionNumber(OverheadBox.Text, "نسبة التكاليف الصناعية"));
             }
             else
             {
                 var bom = BillOfMaterials.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text, productId);
                 foreach (var (pid, qty) in lines)
                     bom.AddLine(pid, qty);
+                bom.SetConversionCosts(ConversionNumber(LabourBox.Text, "أجر العمالة المباشرة"),
+                    ConversionNumber(OverheadBox.Text, "نسبة التكاليف الصناعية"));
                 db.BillsOfMaterials.Add(bom);
             }
 
@@ -109,5 +116,23 @@ public partial class BomDialog : Window
     {
         DialogResult = false;
         Close();
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٣) يقرأ رقمَ تكلفةِ تحويل — <b>وفارغٌ يعني صفراً</b>،
+    /// أمّا نصٌّ ليس رقماً فيُرمى باسمه بدل أن يُقرأ صفراً صامتاً.
+    ///
+    /// <para><b>وعبر <c>NumericInput</c> لا <c>decimal.TryParse</c> عارياً</b>: أوّلُ
+    /// صياغةٍ كتبته عارياً بـ<c>NumberStyles.Any</c>، <b>فأسقطها حارسُ المُحلِّل الواحد</b>
+    /// — و«1,5» تُقرأ هناك <b>خمسةَ عشر</b>. فأجرُ وحدةٍ يُكتب بفاصلةٍ عشريّةٍ يصير عشرةَ
+    /// أضعافه، <b>ويدخل تكلفةَ كلّ وحدةٍ تُنتَج</b>.</para>
+    /// </summary>
+    private static decimal ConversionNumber(string? text, string field)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return 0m;
+
+        return NumericInput.TryParse(text, out var value)
+            ? value
+            : throw new AccountingException($"قيمة «{field}» ليست رقماً صحيحاً.");
     }
 }

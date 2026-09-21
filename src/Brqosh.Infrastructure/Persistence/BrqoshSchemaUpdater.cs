@@ -2350,6 +2350,29 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل على قائمة الموادّ.**
+        //
+        // ‏معيارُ المخزون يقضي أن تشمل تكلفةُ التامّ الأجرَ المباشرَ ونصيباً من التكاليف
+        // ‏الصناعيّة، **وكانت الموادَّ وحدَها**. **والافتراضُ صفرٌ** فلا تتغيّر تكلفةُ
+        // ‏أمرٍ قائمٍ بهذه الترقية.
+        if (await TableExistsAsync("bills_of_materials", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("bills_of_materials", "LabourCostPerUnit",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                await EnsurePgColumnAsync("bills_of_materials", "OverheadRatePercent",
+                    "NUMERIC(9,4) NOT NULL DEFAULT 0", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("bills_of_materials", "LabourCostPerUnit",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("bills_of_materials", "OverheadRatePercent",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+        }
+
         // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**ووسمُ أنّ قيدَ تحصيل الدفع عند الاستلام وقع.**
         //
         // ‏`CodCollected` يُضبط **بالتسليم بلا قيد**، فلم يكن ثمّة ما يمنع تحصيلاً

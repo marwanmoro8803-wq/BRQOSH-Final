@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Crm;
+using Brqosh.Domain.Crm;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using Brqosh.Domain.Reporting;
@@ -1495,6 +1495,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(b => b.Code).HasMaxLength(32).IsRequired();
             entity.Property(b => b.NameAr).HasMaxLength(256).IsRequired();
             entity.Property(b => b.OutputQuantity).HasPrecision(18, 4);
+            // ‏(جاهزيّةُ الإطلاق · ح-١٣) تكاليفُ التحويل — الأجرُ المباشرُ ونسبةُ التحميل.
+            entity.Property(b => b.LabourCostPerUnit).HasPrecision(18, 2);
+            entity.Property(b => b.OverheadRatePercent).HasPrecision(9, 4);
             entity.HasIndex(b => new { b.CompanyId, b.Code }).IsUnique();
             entity.HasIndex(b => b.FinishedProductId);
 

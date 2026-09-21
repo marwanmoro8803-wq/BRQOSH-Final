@@ -38,6 +38,25 @@
             </StackPanel>
         </Grid>
 
+        <!-- (جاهزيّةُ الإطلاق · ح-١٣) تكاليفُ التحويل — ومعيارُ المخزون يقضي بها:
+             تكلفةُ التامّ = الموادّ + الأجرُ المباشر + نصيبٌ من التكاليف الصناعية.
+             وصفرٌ يُبقي الحسابَ على الموادّ وحدَها كما كان. -->
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="أجر العمالة المباشرة للوحدة" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="LabourBox" Style="{StaticResource AppTextBox}" Text="0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="نسبة التكاليف الصناعية %" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="OverheadBox" Style="{StaticResource AppTextBox}" Text="0"/>
+            </StackPanel>
+        </Grid>
+
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">

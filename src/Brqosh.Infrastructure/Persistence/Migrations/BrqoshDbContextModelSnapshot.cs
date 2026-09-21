@@ -2059,6 +2059,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<decimal>("LabourCostPerUnit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("NameAr")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -2067,6 +2071,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("OutputQuantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("OverheadRatePercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)");
 
                     b.HasKey("Id");
 
