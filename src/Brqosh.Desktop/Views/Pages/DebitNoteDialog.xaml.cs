@@ -1,4 +1,3 @@
-﻿using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
@@ -10,7 +9,13 @@ namespace Brqosh.Desktop.Views.Pages;
 
 public partial class DebitNoteDialog : Window
 {
-    private record InvoiceOption(long Id, long SupplierId, string Display, long? ProductId, string LineDesc, decimal UnitPrice);
+    private record InvoiceOption(long Id, long SupplierId, string Display);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٧) <b>سطرٌ من الفاتورة يُختار بعينه — لا وصفٌ حرٌّ
+    /// يُنسب إلى أوّل سطر.</b>
+    /// </summary>
+    private record LineOption(int Index, string Display, decimal Returnable, decimal UnitPrice);
 
     public DebitNoteDialog()
     {
@@ -31,15 +36,45 @@ public partial class DebitNoteDialog : Window
             .Where(s => invoices.Select(i => i.SupplierId).Contains(s.Id))
             .ToDictionaryAsync(s => s.Id, s => s.NameAr);
 
-        InvoiceBox.ItemsSource = invoices.Select(i =>
-        {
-            var line = i.Lines.FirstOrDefault();
-            return new InvoiceOption(
-                i.Id, i.SupplierId,
-                $"{i.InvoiceNumber} — {suppliers.GetValueOrDefault(i.SupplierId, "?")} — {i.GrandTotal():N2}",
-                line?.ProductId, line?.Description ?? "تعديل", line?.UnitPrice ?? 0m);
-        }).ToList();
+        InvoiceBox.ItemsSource = invoices.Select(i => new InvoiceOption(
+            i.Id, i.SupplierId,
+            $"{i.InvoiceNumber} — {suppliers.GetValueOrDefault(i.SupplierId, "?")} — {i.GrandTotal():N2}"))
+            .ToList();
+
+        InvoiceBox.SelectionChanged += async (_, _) => await LoadLinesAsync();
         if (InvoiceBox.Items.Count > 0) InvoiceBox.SelectedIndex = 0;
+    }
+
+    /// <summary>
+    /// <b>سطورُ الفاتورة المختارة وما بقي من كلٍّ منها</b> — ومن استُنفد لا يُعرض،
+    /// <b>فلا يُطلب ما لا يُرجَع</b>.
+    /// </summary>
+    private async Task LoadLinesAsync()
+    {
+        LineBox.ItemsSource = null;
+        if (InvoiceBox.SelectedItem is not InvoiceOption inv) return;
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var lines = await new DebitNoteDraftBuilder(db)
+                .ReturnableLinesAsync(AppServices.CompanyId, inv.Id);
+
+            LineBox.ItemsSource = lines
+                .Where(l => l.ProductId is null || l.Returnable > 0m)
+                .Select(l => new LineOption(
+                    l.LineIndex,
+                    $"{l.Description} — متبقٍّ {l.Returnable:N2} من {l.InvoiceQuantity:N2} @ {l.UnitPrice:N2}",
+                    l.Returnable, l.UnitPrice))
+                .ToList();
+
+            if (LineBox.Items.Count > 0) LineBox.SelectedIndex = 0;
+        }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+            ErrorText.Visibility = Visibility.Visible;
+        }
     }
 
     private async void OnPost(object sender, RoutedEventArgs e)
@@ -52,21 +87,25 @@ public partial class DebitNoteDialog : Window
         {
             if (InvoiceBox.SelectedItem is not InvoiceOption inv)
                 throw new InvalidOperationException("اختر فاتورة.");
+            if (LineBox.SelectedItem is not LineOption line)
+                throw new InvalidOperationException("اختر السطر المُرجَع.");
             if (DateBox.SelectedDate is null)
                 throw new InvalidOperationException("التاريخ مطلوب.");
             if (!NumericInput.TryParse(QtyBox.Text, out var qty))
                 throw new InvalidOperationException("كمية غير صالحة.");
-            if (!NumericInput.TryParse(PriceBox.Text, out var price))
-                price = inv.UnitPrice;
 
-            var note = DebitNote.CreateDraft(
-                AppServices.CompanyId, inv.SupplierId, inv.Id,
-                DateOnly.FromDateTime(DateBox.SelectedDate.Value),
-                ReasonBox.Text);
-            var desc = string.IsNullOrWhiteSpace(DescBox.Text) ? inv.LineDesc : DescBox.Text;
-            note.AddLine(desc, qty, price, inv.ProductId);
+            decimal? price = NumericInput.TryParse(PriceBox.Text, out var typed) ? typed : null;
 
             using var facade = new DesktopAccountingFacade();
+            var db = facade.Db;
+
+            // ‏(ح-٣٧) ‏**البناءُ في خدمةٍ تُقاس** — والشاشةُ تنقل اختيارَ المستخدم لا غير.
+            var note = await new DebitNoteDraftBuilder(db).BuildAsync(
+                AppServices.CompanyId, inv.Id,
+                DateOnly.FromDateTime(DateBox.SelectedDate.Value),
+                ReasonBox.Text,
+                [new RequestedReturn(line.Index, qty, price)]);
+
             await facade.GetService<DebitNotePostingService>().PostAsync(note);
             DialogResult = true;
             Close();

@@ -460,6 +460,7 @@ public static partial class UiBilingualRegistry
         ["السبب"] = "Reason",
         ["السبب *"] = "Reason",
         ["السريان"] = "Validity",
+        ["السطر المُرجَع *"] = "Returned line *",
         ["السطر مطابق — ولا يُنشأ له قيد فروق."] = "This line is matched — no difference entry is created for it.",
         ["السطور"] = "Lines",
         ["السطور تُبنى من سجل الموظفين — والتأمينات وأقساط السلف محسوبة لا مكتوبة"] = "Lines are built from the employee register — GOSI and advance instalments are computed, not typed",
