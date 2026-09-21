@@ -144,7 +144,7 @@ public class ReservationDepositService(BrqoshDbContext db)
 
         return await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.SourceDocument == sourceDocument)
             .SelectMany(e => e.Lines)
             .Where(l => l.AccountId == accountId)

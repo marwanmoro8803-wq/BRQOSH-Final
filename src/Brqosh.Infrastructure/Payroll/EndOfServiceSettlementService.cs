@@ -184,7 +184,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
         BrqoshDbContext db, long companyId, long employeeId, CancellationToken ct = default) =>
         db.JournalEntries.AnyAsync(
             e => e.CompanyId == companyId
-                 && e.Status == JournalEntryStatus.Posted
+                 && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                  && e.SourceDocument == SourceDocumentPrefix + employeeId, ct);
 
     /// <summary>مُعرِّفاتُ مَن صُفّيت مستحقّاتُهم — لاستبعادهم من التخصيص الشهريّ.</summary>
@@ -193,7 +193,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
     {
         var sources = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate <= asOf
                         && e.SourceDocument != null
                         && e.SourceDocument.StartsWith(SourceDocumentPrefix))

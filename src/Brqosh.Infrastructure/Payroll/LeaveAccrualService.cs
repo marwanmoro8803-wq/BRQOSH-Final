@@ -122,7 +122,7 @@ public class LeaveAccrualService(BrqoshDbContext db)
         long companyId, DateOnly asOf, CancellationToken ct = default)
     {
         var lines = await db.JournalEntries
-            .Where(e => e.CompanyId == companyId && e.Status == JournalEntryStatus.Posted
+            .Where(e => e.CompanyId == companyId && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate <= asOf)
             .SelectMany(e => e.Lines)
             .Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.LeaveProvision)

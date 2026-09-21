@@ -40,7 +40,7 @@ public class BankReconciliationQuery(BrqoshDbContext db)
 
         var entries = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                && e.Status == JournalEntryStatus.Posted
+                && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                 && e.EntryDate >= from && e.EntryDate <= to)
             .OrderBy(e => e.EntryDate).ThenBy(e => e.EntryNumber)
             .ToListAsync();
@@ -69,7 +69,7 @@ public class BankReconciliationQuery(BrqoshDbContext db)
 
         var entries = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                && e.Status == JournalEntryStatus.Posted
+                && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                 && e.EntryDate < from)
             .ToListAsync();
 

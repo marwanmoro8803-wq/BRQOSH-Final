@@ -112,7 +112,7 @@ public class FinancialIntelligenceService(
         {
             var lines = await db.JournalEntries
                 .Where(e => e.CompanyId == companyId
-                            && e.Status == JournalEntryStatus.Posted
+                            && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                             && e.EntryDate <= day)
                 .SelectMany(e => e.Lines)
                 .Where(l => liquidAccounts.Contains(l.AccountId))
@@ -131,14 +131,14 @@ public class FinancialIntelligenceService(
         decimal ar = 0, ap = 0;
         if (arId is long arid)
         {
-            var rows = await db.JournalEntries.Where(e => e.CompanyId == companyId && e.Status == JournalEntryStatus.Posted && e.EntryDate <= day)
+            var rows = await db.JournalEntries.Where(e => e.CompanyId == companyId && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed) && e.EntryDate <= day)
                 .SelectMany(e => e.Lines).Where(l => l.AccountId == arid)
                 .Select(l => new { l.Debit, l.Credit }).ToListAsync(ct);
             ar = rows.Sum(l => l.Debit - l.Credit);
         }
         if (apId is long apid)
         {
-            var rows = await db.JournalEntries.Where(e => e.CompanyId == companyId && e.Status == JournalEntryStatus.Posted && e.EntryDate <= day)
+            var rows = await db.JournalEntries.Where(e => e.CompanyId == companyId && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed) && e.EntryDate <= day)
                 .SelectMany(e => e.Lines).Where(l => l.AccountId == apid)
                 .Select(l => new { l.Debit, l.Credit }).ToListAsync(ct);
             ap = rows.Sum(l => l.Credit - l.Debit);
@@ -174,7 +174,7 @@ public class FinancialIntelligenceService(
         var from = day.AddDays(-90);
         var entries = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate >= from
                         && e.EntryDate <= day)
             .ToListAsync(ct);
@@ -269,7 +269,7 @@ public class FinancialIntelligenceService(
     {
         var recent = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate >= day.AddDays(-14)
                         && e.EntryDate <= day
                         && e.SourceDocument == null)

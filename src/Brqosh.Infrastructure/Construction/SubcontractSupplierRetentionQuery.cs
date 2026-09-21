@@ -56,7 +56,7 @@ public class SubcontractSupplierRetentionQuery(BrqoshDbContext db)
         var entries = await db.JournalEntries
             .Include(e => e.Lines)
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.SourceDocument != null
                         && e.SourceDocument.StartsWith("SubcontractRetentionHold:"))
             .ToListAsync(ct);
@@ -129,7 +129,7 @@ public class SubcontractSupplierRetentionQuery(BrqoshDbContext db)
         var entries = await db.JournalEntries
             .Include(e => e.Lines)
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.SourceDocument != null
                         && e.SourceDocument.StartsWith("SubcontractRetentionHold:"))
             .ToListAsync(ct);
@@ -156,7 +156,7 @@ public class SubcontractSupplierRetentionQuery(BrqoshDbContext db)
     {
         var entries = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.SourceDocument != null
                         && e.SourceDocument.StartsWith("RetentionRelease:"))
             .ToListAsync(ct);
@@ -198,7 +198,7 @@ public class SubcontractSupplierRetentionQuery(BrqoshDbContext db)
         var entries = await db.JournalEntries
             .Include(e => e.Lines)
             .Where(e => e.CompanyId == companyId
-                        && e.Status == JournalEntryStatus.Posted
+                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.SourceDocument != null
                         && e.SourceDocument.StartsWith("SubcontractRetentionHold:"))
             .ToListAsync(ct);

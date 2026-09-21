@@ -125,7 +125,7 @@ public class EndOfServiceAccrualService(BrqoshDbContext db)
     private async Task<decimal> ProvisionBalanceAsync(long companyId, DateOnly asOf, CancellationToken ct)
     {
         var lines = await db.JournalEntries
-            .Where(e => e.CompanyId == companyId && e.Status == JournalEntryStatus.Posted
+            .Where(e => e.CompanyId == companyId && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate <= asOf)
             .SelectMany(e => e.Lines)
             .Where(l => l.AccountCode == "2202")
