@@ -1,6 +1,7 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Accounting;
+using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -95,10 +96,21 @@ public class FxRevaluationService(BrqoshDbContext db)
     private static async Task<decimal> GetBookedFunctionalBalanceAsync(
         BrqoshDbContext db, long companyId, long glAccountId, DateOnly asOfDate, CancellationToken ct)
     {
+        // (جاهزيّةُ الإطلاق · ح-٢٥) ‏**القيدُ المعكوسُ يبقى في الرصيد مع عكسه — أو يخرجان معاً.**
+        //
+        // ‏كان المُرشِّحُ `Status == Posted` وحدَه. و`CreateReversal` **يضع الأصلَ في حالة
+        // ‏`Reversed`** ويُرحّل العكسيَّ `Posted`. فالأصلُ **يخرج** من الجمع **وعكسُه يبقى**:
+        // ‏**الرصيدُ الدفتريُّ يصير مقلوبَ القيد الملغى**، لا صفراً ولا صحيحاً.
+        //
+        // ‏**والفرقُ يُقيَّد ربحاً أو خسارةَ صرفٍ غيرَ محقَّقة** — أي **مبلغٌ في قائمة الدخل
+        // ‏عن واقعةٍ لم تقع**، ويتكرّر مع كلّ إعادة تقييمٍ بعد أيّ عكسٍ يمسّ بنكاً أجنبيّاً.
+        //
+        // ‏**والعلاجُ موجودٌ في المستودع لهذا السبب بعينه**: `WhereReportable` تضمّ
+        // ‏`Posted` و`Reversed` معاً — وتعليقُها يقول: «استبعادُ المعكوسة كان يشوّه
+        // ‏التقاريرَ التاريخية بعد الإلغاء لاحقاً (ACC-001)». **وثمانيةُ قُرّاءٍ يستعملونها،
+        // ‏وهذا لم يكن منهم.**
         var entries = await db.JournalEntries
-            .Where(e => e.CompanyId == companyId
-                && e.Status == JournalEntryStatus.Posted
-                && e.EntryDate <= asOfDate)
+            .WhereReportable(companyId, to: asOfDate)
             .ToListAsync(ct);
 
         decimal balance = 0m;
