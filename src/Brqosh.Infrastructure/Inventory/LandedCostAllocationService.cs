@@ -72,11 +72,26 @@ public class LandedCostAllocationService(BrqoshDbContext db)
 
             var inventory = await db.Accounts.SingleAsync(a =>
                 a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.Inventory, token);
+            // (جاهزيّةُ الإطلاق · ح-٢٧) ‏**التكلفةُ الإضافيّةُ غيرُ المدفوعة مصروفٌ مستحقّ
+            // ‏لا ذمّةُ مورِّد.**
+            //
+            // ‏كانت تُدائن `2101` — **حسابَ مراقبة الموردين** — **بلا مورِّدٍ البتّة**.
+            // ‏والهويّةُ هـ-٢ تقضي: `مجموعُ أرصدة الموردين == رصيدُ 2101`. فالدفترُ يزيد
+            // ‏**والدفترُ المساعدُ لا يستطيع أن يزيد** — إذ لا طرفَ يُنسب إليه المبلغ —
+            // ‏**فتنكسر الهويّةُ كسراً دائماً** لا يُصلحه شيءٌ بعده.
+            //
+            // ‏**ولا يشكو الميزان**: القيدُ متوازن. ويظهر العطلُ في **مطابقة كشف المورّد**
+            // ‏وحدَها: إجماليُّ الذمم في الميزانية أعلى من مجموع ما على الموردين،
+            // ‏**والفرقُ بلا اسمٍ يُسأل عنه**.
+            //
+            // ‏**والصوابُ أنّ شحناً أو جمركاً لم تَرِد فاتورتُه بعدُ التزامٌ مستحقٌّ لا
+            // ‏ذمّةُ مورِّد**: يُدائن `2104` «مصروفات مستحقة» — وهو في الدليل منذ نشأته
+            // ‏**ولا يكتبه أحد** — فإذا وردت الفاتورةُ نُقل إلى ذمّة صاحبها بمستندها.
             var creditAccount = creditCash
                 ? await db.Accounts.SingleAsync(a =>
                     a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashOnHand, token)
                 : await db.Accounts.SingleAsync(a =>
-                    a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.AccountsPayable, token);
+                    a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.AccruedExpenses, token);
 
             var je = JournalEntry.CreateDraft(companyId, costDate, $"تكلفة إضافية — {description}",
                 sourceDocument: $"LandedCost:{costDate:yyyyMMdd}");

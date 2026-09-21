@@ -103,6 +103,41 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     internal Task<bool> TrySchemaSqlForTests(string step, string sql, CancellationToken ct) =>
         TrySchemaSqlAsync(step, sql, ct);
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٧) يرفع وسمَ «نظاميّ» عن كلّ حسابٍ يقول القالبُ إنّه
+    /// نظاميٌّ وقاعدةُ العميل تقول غيرَ ذلك.
+    ///
+    /// <para><b>والمصدرُ هو القالبُ نفسُه</b> لا قائمةٌ تُكتب بيد — فكلُّ ترقيةٍ لاحقةٍ
+    /// تسري بنفسها. <b>ولا يُخفَّض وسمٌ أبداً</b>: الشرطُ اتّجاهٌ واحد، فحسابٌ رفعه
+    /// المالكُ بنفسه لا يُمَسّ.</para>
+    ///
+    /// <para><b>والرموزُ من ثوابتنا لا من مُدخَل</b> — ومع ذلك تُفحص أنّها أرقامٌ قبل
+    /// أن تدخل نصَّ الاستعلام، <b>فلا يُبنى SQL من قيمةٍ لم تُتحقَّق</b>.</para>
+    /// </summary>
+    private async Task PromoteSystemAccountsAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("accounts", isPg, ct))
+            return;
+
+        var codes = Domain.Accounting.SaudiChartOfAccounts.Template
+            .Where(a => a.IsSystem && !a.IsGroup)
+            .Select(a => a.Code)
+            .Where(c => c.Length > 0 && c.All(char.IsAsciiDigit))
+            .Distinct()
+            .ToList();
+
+        if (codes.Count == 0) return;
+
+        var list = string.Join(", ", codes.Select(c => "'" + c + "'"));
+        var yes = isPg ? "TRUE" : "1";
+        var no = isPg ? "FALSE" : "0";
+        var col = isPg ? "\"IsSystem\"" : "IsSystem";
+        var code = isPg ? "\"Code\"" : "Code";
+
+        await TrySchemaSqlAsync("Backfill.PromoteSystemAccounts",
+            $"UPDATE accounts SET {col} = {yes} WHERE {code} IN ({list}) AND {col} = {no}", ct);
+    }
+
     private async Task<bool> TrySchemaSqlAsync(string step, string sql, CancellationToken ct)
     {
         try
@@ -165,6 +200,22 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
             await ApplySqlitePatchesAsync(ct);
+
+        // (جاهزيّةُ الإطلاق · ح-٢٧) ‏**وسمُ «حسابٍ نظاميّ» يلحق القواعدَ القائمة.**
+        //
+        // ‏`DatabaseInitializer.SeedChartOfAccountsAsync` **يخرج مبكّراً إن وُجد حسابٌ
+        // ‏واحد** — فالدليلُ يُزرع مرّةً عند التأسيس **ولا يُعاد مطابقتُه بالقالب أبداً**.
+        // ‏فحسابٌ يُرقَّى اليومَ إلى «نظاميّ» في القالب **يبقى عاديّاً على كلّ تنصيبٍ
+        // ‏قائم**، ويظلّ **قابلاً للحذف وإعادة التسمية** بينما صار محرّكُ الترحيل يعتمد
+        // ‏عليه — فيُحذف يوماً وتسقط عمليّةُ ترحيلٍ برسالةٍ لا تدلّ على السبب.
+        //
+        // ‏**ووقع هذا الآن فعلاً**: `2104` «مصروفات مستحقة» كان عاديّاً، فلمّا صار
+        // ‏مقابلَ التكلفة الإضافيّة غير المدفوعة **أسقط حارسُ الدليل الترقيةَ** —
+        // ‏«الكود 2104 غير معلّم كحساب نظامي».
+        //
+        // ‏**والمطابقةُ من القالب لا من قائمةٍ تُكتب بيد**: كلُّ ترقيةٍ لاحقةٍ تسري
+        // ‏بنفسها، فلا يُنسى تنصيبٌ قائم.
+        await PromoteSystemAccountsAsync(isPg, ct);
 
         // (CEEF-207) فئة الضريبة لأسطر المستندات — بعد اكتمال إنشاء الجداول أعلاه،
         // فإضافة عمود إلى جدول لم يُنشأ بعد تفشل صراحةً (وهو الصواب: لا ابتلاع أخطاء).

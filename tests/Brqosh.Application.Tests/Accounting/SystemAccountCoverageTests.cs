@@ -6,6 +6,7 @@ using Brqosh.Domain.Assets;
 using Brqosh.Domain.Payroll;
 using Brqosh.Infrastructure.Logistics;
 using Brqosh.Infrastructure.Hospitality;
+using Brqosh.Infrastructure.Inventory;
 using Brqosh.Domain.Logistics;
 using Brqosh.Domain.Hospitality;
 using Brqosh.Domain.Purchasing;
@@ -230,6 +231,16 @@ public class SystemAccountCoverageTests : IDisposable
         await _db.SaveChangesAsync();
         await new BankStatementDifferencePostingService(_db)
             .PostUnmatchedLineAsync(companyId, statement.Id, 0);
+
+        // ── تكلفةٌ إضافيّةٌ على الحساب (شحنٌ وجمارك) — و2104 يُدان بها ──────
+        //
+        // ‏(جاهزيّةُ الإطلاق · ح-٢٧) ‏**والمقابلُ مصروفٌ مستحقّ لا ذمّةُ مورِّد**:
+        // ‏كان يُدائن `2101` — حسابَ مراقبة الموردين — **بلا مورِّدٍ البتّة**، فتنكسر
+        // ‏الهويّةُ هـ-٢ كسراً دائماً. وشحنٌ لم تَرِد فاتورتُه التزامٌ مستحقّ.
+        await new LandedCostAllocationService(_db).AllocateAsync(
+            companyId, new DateOnly(2026, 5, 26), "شحن وجمارك", 300m,
+            [(product.Id, (await _db.Warehouses.FirstAsync(w => w.CompanyId == companyId)).Id, 1m)],
+            "admin", creditCash: false);
 
         // ── بيعُ الأصل الثابت (الثلاجة القديمة) ────────────────────────────
         await new FixedAssetDisposalPostingService(_db)

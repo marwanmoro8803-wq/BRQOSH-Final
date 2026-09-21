@@ -74,7 +74,7 @@ public static class SaudiChartOfAccounts
         new("2101", "الموردون (الدائنون التجاريون)", "Accounts Payable - Trade", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2102", "أوراق الدفع", "Notes Payable", AccountType.Liability, "21", IsGroup: false),
         new("2103", "شيكات برسم الدفع", "Cheques Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
-        new("2104", "مصروفات مستحقة", "Accrued Expenses", AccountType.Liability, "21", IsGroup: false),
+        new("2104", "مصروفات مستحقة", "Accrued Expenses", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2105", "دفعات مقدمة من العملاء", "Advances from Customers", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2106", "ضريبة القيمة المضافة — مخرجات", "VAT Output (Payable)", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2107", "صافي ضريبة القيمة المضافة المستحقة", "VAT Net Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
@@ -186,6 +186,11 @@ public static class SaudiChartOfAccounts
         public const string AccountsPayable = "2101";
         public const string GoodsReceivedNotInvoiced = "2112";
         public const string ChequesPayable = "2103";
+        /// <summary>
+        /// (جاهزيّةُ الإطلاق · ح-٢٧) مصروفاتٌ مستحقّةٌ بلا فاتورةٍ بعد —
+        /// <b>وليست ذمّةَ مورِّد</b>. والحسابُ في الدليل منذ نشأتِه <b>ولم يكتبه أحد</b>.
+        /// </summary>
+        public const string AccruedExpenses = "2104";
         public const string VatOutput = "2106";
         public const string VatNetPayable = "2107";
         public const string SalesRevenue = "4101";
