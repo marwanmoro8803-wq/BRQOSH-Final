@@ -201,16 +201,36 @@ public class StockMovementPostingService(BrqoshDbContext db)
         return entry;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٣) <b>فائضُ الجرد ربحُ الفترة — لا إضافةٌ إلى حقوق الملكية.</b>
+    ///
+    /// <para><b>وكان يُدائن الأرباحَ المبقاة مباشرةً</b>، <b>فلا يمرّ بقائمة الدخل أبداً</b>.
+    /// والنقصُ يُقيَّد مصروفاً على <c>5215</c> — <b>فالمعالجتان غيرُ متماثلتين</b>:</para>
+    ///
+    /// <para><b>جردٌ يجد نقصاً بألفٍ وفائضاً بألف</b> ⟵ حقوقُ الملكية لا تتغيّر،
+    /// <b>والربحُ المُعلَن ينقص ألفاً كاملة</b>. <b>ويتكرّر مع كلّ جرد</b>، فتُعلَن أرباحٌ
+    /// أدنى من الحقيقة دائماً — <b>وتُبنى عليها الزكاةُ والتوزيعات</b>.</para>
+    ///
+    /// <para><b>وتنكسر معه هويّةٌ أساسيّة</b>: صافي الدخل + الأرباحُ المبقاة أوّلَ المدّة
+    /// ≠ الأرباحُ المبقاة آخرَها. <b>فقائمةُ الدخل لا تُفسّر تغيّرَ حقوق الملكية</b>،
+    /// ولا يظهر الفرقُ في ميزان المراجعة لأنّ القيد متوازن.</para>
+    ///
+    /// <para><b>والمقابلُ الصحيحُ <c>4106</c> «إيرادات أخرى»</b> — نظيرُ <c>5215</c>
+    /// تماماً، وهو الحسابُ الذي يحمل ربحَ استبعاد الأصل الثابت. <b>فيتماثل الطرفان.</b></para>
+    ///
+    /// <para><b>ولا يُمَسّ الرصيدُ الافتتاحيّ</b> (<see cref="OpeningEntryAsync"/>): ذاك
+    /// <b>حقوقُ ملكيّةٍ بحقّ</b> — بضاعةٌ دخلت يومَ التأسيس لا ربحٌ كُسب في فترة.</para>
+    /// </summary>
     private async Task<JournalEntry?> AdjustmentInEntryAsync(StockMovement movement, Account inventory)
     {
         if (movement.TotalValue == 0m) return null;
 
-        var equity = await AccountAsync(movement.CompanyId, SaudiChartOfAccounts.SystemCodes.RetainedEarnings);
+        var otherIncome = await AccountAsync(movement.CompanyId, "4106");
 
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockAdjustmentIn");
         entry.AddLine(inventory, movement.TotalValue, 0m, "زيادة مخزون — جرد");
-        entry.AddLine(equity, 0m, movement.TotalValue, "فائض جرد — حقوق ملكية");
+        entry.AddLine(otherIncome, 0m, movement.TotalValue, "فائض جرد — إيراد");
         return entry;
     }
 
