@@ -60,15 +60,35 @@ public class CodSettlementService(BrqoshDbContext db)
                     + string.Join("، ", notCollected.Select(s => s.WaybillNumber))
                     + " — والتسليمُ هو ما يُحصّل، فسلِّمْها أوّلاً.");
 
+            // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**وبوليصةٌ أُثبت تحصيلُها لا تُثبَت ثانية.**
+            //
+            // ‏لم يكن ثمّة وسمٌ يقول «قيدُ التحصيل وقع» — `CodCollected` يُضبط **بالتسليم**
+            // ‏لا بالقيد. **فاستدعاءٌ ثانٍ بالبوالص نفسِها يُقيّد مرّةً أخرى**: نقدٌ وهميٌّ
+            // ‏والتزامٌ مضاعَفٌ في `2114`، **والقيدان متوازنان فلا يشكو الميزان**.
+            // ‏ويقع بضغطةٍ مكرّرةٍ أو بكشفٍ يُعاد تحصيلُه في آخر اليوم.
+            var alreadyPosted = shipments.Where(s => s.CodCollectionPosted).ToList();
+            if (alreadyPosted.Count > 0)
+                throw new AccountingException(
+                    "بوالصُ أُثبت تحصيلُها سلفاً: "
+                    + string.Join("، ", alreadyPosted.Select(s => s.WaybillNumber))
+                    + " — ولا يُقيَّد التحصيلُ مرّتين.");
+
             var total = shipments.Sum(s => s.CodAmount);
             if (total <= 0m)
                 throw new AccountingException("لا مبلغَ تحصيلٍ على هذه البوالص.");
 
-            return await PostAsync(companyId, on, cashAccountCode, total,
+            var entryId = await PostAsync(companyId, on, cashAccountCode, total,
                 debitCash: true,
                 memo: "تحصيل نيابةً عن التجّار",
                 sourceDocument: $"CodCollect:{on:yyyyMMdd}",
                 auditDetails: $"{shipments.Count} بوليصة · {total:N2}", ct: token);
+
+            // ‏**والوسمُ داخلَ المعاملة نفسِها** — فقيدٌ يقع ووسمٌ لا يُحفظ يُعيد الثقبَ من بابه.
+            foreach (var shipment in shipments)
+                shipment.MarkCodCollectionPosted();
+
+            await db.SaveChangesAsync(token);
+            return entryId;
         }, ct);
     }
 
@@ -86,10 +106,16 @@ public class CodSettlementService(BrqoshDbContext db)
 
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
+            // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**والمستحقُّ هو ما قُيِّد تحصيلُه، لا ما سُلِّم.**
+            //
+            // ‏كان الترشيحُ على `CodCollected` — وهو يُضبط **بالتسليم بلا قيد**. فبوليصةٌ
+            // ‏سُلّمت ولم يُقيَّد تحصيلُها بعدُ كانت تدخل التوريد، **فيُمدَّن `2114` بما لم
+            // ‏يُدَن به قطّ ويخرج الالتزامُ سالباً** — أي أنّ الشركة دفعت من مالها وهي
+            // ‏تحسبها أمانة. وهو كسرُ هـ-١٣ المكتوبة في صدر هذا الملفّ.
             var due = await db.Shipments
                 .Where(s => s.CompanyId == companyId
                             && s.ShipperCustomerId == shipperCustomerId
-                            && s.CodCollected && !s.CodRemitted)
+                            && s.CodCollectionPosted && !s.CodRemitted)
                 .ToListAsync(token);
 
             if (due.Count == 0)

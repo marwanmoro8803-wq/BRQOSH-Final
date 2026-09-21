@@ -1,4 +1,4 @@
-﻿using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 using Brqosh.Domain.Platform;
 using System.Globalization;
@@ -2347,6 +2347,25 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "TEXT NOT NULL DEFAULT '0'", ct);
                 await EnsureSqliteColumnAsync("sales_invoices", "ForeignVatAmount",
                     "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+        }
+
+        // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**ووسمُ أنّ قيدَ تحصيل الدفع عند الاستلام وقع.**
+        //
+        // ‏`CodCollected` يُضبط **بالتسليم بلا قيد**، فلم يكن ثمّة ما يمنع تحصيلاً
+        // ‏يُقيَّد مرّتين ولا توريداً يسبق التحصيل فيُخرج `2114` مديناً.
+        // ‏**والافتراضُ `false`**: بوالصُ قائمةٌ لا يُدّعى أنّ قيدَها وقع.
+        if (await TableExistsAsync("shipments", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("shipments", "CodCollectionPosted",
+                    "boolean NOT NULL DEFAULT FALSE", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("shipments", "CodCollectionPosted",
+                    "INTEGER NOT NULL DEFAULT 0", ct);
             }
         }
 

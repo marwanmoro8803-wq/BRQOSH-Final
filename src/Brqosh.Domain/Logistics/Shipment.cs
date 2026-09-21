@@ -101,6 +101,35 @@ public class Shipment : IBranchScoped
     public bool CodRemitted { get; private set; }
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٢) <b>هل أُثبت التحصيلُ في الدفتر؟ — وهو غيرُ
+    /// <see cref="CodCollected"/>.</b>
+    ///
+    /// <para><c>CodCollected</c> يُضبط <b>عند التسليم</b> (أي «المالُ في يد المندوب»)،
+    /// <b>ولا قيدَ معه</b>. وهذا الوسمُ يقول إنّ القيدَ وقع: نقدٌ مدينٌ و<c>2114</c> دائن.</para>
+    ///
+    /// <para><b>وبغيره ثقبان:</b> تحصيلٌ يُعاد على البوالص نفسِها <b>يُقيَّد مرّتين</b> —
+    /// نقدٌ وهميٌّ والتزامٌ مضاعَف. <b>وتوريدٌ يسبق التحصيل</b> يُمدِّن <c>2114</c> بما لم
+    /// يُدَن به قطّ، <b>فيخرج الالتزامُ سالباً</b> — أي أنّ الشركة دفعت من مالها وهي
+    /// تحسبها أمانةً تُورَّد. <b>وذلك كسرُ هـ-١٣ نفسِها.</b></para>
+    /// </summary>
+    public bool CodCollectionPosted { get; private set; }
+
+    /// <summary>
+    /// يُثبت أنّ قيدَ التحصيل وقع — <b>ومرّةً واحدةً لا غير</b>.
+    /// </summary>
+    public void MarkCodCollectionPosted()
+    {
+        if (!CodCollected)
+            throw new AccountingException(
+                $"البوليصة «{WaybillNumber}» لم تُسلَّم — ولا يُقيَّد تحصيلُ ما لم يُسلَّم.");
+        if (CodCollectionPosted)
+            throw new AccountingException(
+                $"البوليصة «{WaybillNumber}» أُثبت تحصيلُها سلفاً — ولا يُقيَّد مرّتين.");
+
+        CodCollectionPosted = true;
+    }
+
+    /// <summary>
     /// (CEEF-232 · ل-١) <b>فاتورةُ أجرة الشحن — و<c>null</c> يعني أجرةً لم تُفوتَر بعد.</b>
     ///
     /// <para><b>وكانت <see cref="FreightCharge"/> تُقرأ للعرض ولحساب ربحيّة الخطّ فقط</b>،
@@ -344,6 +373,16 @@ public class Shipment : IBranchScoped
         if (!CodCollected)
             throw new AccountingException(
                 $"البوليصة «{WaybillNumber}» لم يُحصَّل مالُها — ولا يُورَّد ما لم يُحصَّل.");
+
+        // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**ولا يُورَّد ما لم يُقيَّد تحصيلُه.**
+        //
+        // ‏التسليمُ يضبط `CodCollected` بلا قيد، **فتوريدٌ يسبق قيدَ التحصيل يُمدِّن `2114`
+        // ‏بما لم يُدَن به** — فيخرج الالتزامُ سالباً، وهو كسرُ هـ-١٣: «رصيدُ 2114 =
+        // ‏المحصَّلُ − المُورَّد، ولا يكون سالباً أبداً».
+        if (!CodCollectionPosted)
+            throw new AccountingException(
+                $"البوليصة «{WaybillNumber}» لم يُقيَّد تحصيلُها بعد — "
+                + "وتوريدٌ قبل قيد التحصيل يُخرج التزامَ 2114 مديناً.");
         if (CodRemitted)
             throw new AccountingException($"البوليصة «{WaybillNumber}» ورِّد مالُها سلفاً.");
 

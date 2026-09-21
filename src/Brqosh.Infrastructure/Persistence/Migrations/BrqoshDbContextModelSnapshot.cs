@@ -1957,6 +1957,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<bool>("CodCollected")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("CodCollectionPosted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("CodRemitted")
                         .HasColumnType("boolean");
 

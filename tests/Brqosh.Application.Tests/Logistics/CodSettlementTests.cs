@@ -125,13 +125,21 @@ public class CodSettlementTests : IDisposable
         Assert.Contains("لم يُحصَّل", error.Message, StringComparison.Ordinal);
     }
 
-    /// <summary><b>ويرفض الثانيةَ كذلك</b> — وبالقياس نفسِه.</summary>
+    /// <summary>
+    /// <b>ويرفض الثانيةَ كذلك</b> — وبالقياس نفسِه.
+    ///
+    /// <para><b>(جاهزيّةُ الإطلاق · ح-١٢) وتهيئةُ هذه الحالة كانت تعتمد على العطل نفسِه</b>:
+    /// كانت تُورِّد فورَ التسليم <b>بلا قيدِ تحصيلٍ إطلاقاً</b> — وهو ما صار مرفوضاً، لأنّه
+    /// يُمدِّن <c>2114</c> بما لم يُدَن به. <b>والمقصدُ باقٍ ولم يُمسّ</b> (لا توريدَ مرّتين)،
+    /// وإنّما زالت المقدّمةُ الباطلة: يُقيَّد التحصيلُ أوّلاً كما يقع في المنتَج.</para>
+    /// </summary>
     [Fact]
     public void TheDomainItself_RefusesASecondRemittance()
     {
         var shipment = Shipment.Create(1L, "WB-D2", 1L, "مستلم", "الرياض",
             new DateOnly(2026, 3, 1), freightCharge: 25m, codAmount: 900m);
         shipment.Deliver(new DateOnly(2026, 3, 3), "مستلم");
+        shipment.MarkCodCollectionPosted();
         shipment.MarkCodRemitted();
 
         var error = Assert.Throws<AccountingException>(shipment.MarkCodRemitted);
