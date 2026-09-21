@@ -69,7 +69,17 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.CreditNote, creditNoteId,
             note.NoteNumber, note.NoteDate, company, customer,
-            note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode, isCreditNote: true,
+            // (جاهزيّةُ الإطلاق · ح-٣٥) ‏**والإشعارُ يخرج بعملتِه كفاتورتِه.**
+            //
+            // ‏كان يُمرّر الريالَ ويُسقِط **العملةَ والسعرَ وضريبةَ الريال
+            // ‏وخصمَ المستند** — **أربعةً ممّا تُمرّرُه الفاتورةُ أعلاه**.
+            // ‏**فتخرج سطورٌ لا تجمع إلى إجماليّها** متى كان ثَمّ خصمٌ،
+            // ‏**ويُعلَن مرتجعٌ بالريال عن توريدٍ أُعلِن بالدولار**.
+            note.ForeignSubtotal, note.ForeignVatAmount, note.ForeignGrandTotal,
+            note.Lines, mode, isCreditNote: true,
+            documentDiscount: note.DocumentDiscountAmount,
+            currencyCode: note.CurrencyCode, exchangeRate: note.ExchangeRate,
+            vatAmountInSar: note.VatAmount,
             issueReason: note.Reason);
     }
 

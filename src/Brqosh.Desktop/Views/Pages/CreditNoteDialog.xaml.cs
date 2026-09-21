@@ -163,6 +163,17 @@ public partial class CreditNoteDialog : Window
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value),
                 ReasonBox.Text);
 
+            // (جاهزيّةُ الإطلاق · ح-٣٥) ‏**والعملةُ تُورَّث من الفاتورة لا تُختار.**
+            //
+            // ‏سطورُ الفاتورة الأجنبيّة **مُسعّرةٌ بعملتِها**، وتُنسخ أسفلَه
+            // ‏كما هي. **فبلا وراثةِ العملة يصير الأجنبيُّ ريالاً**، ومرتجعٌ
+            // ‏كاملٌ يردّ جزءاً ممّا قُبِض (قُيس: ١٬١٥٠ من ٤٬٣١٢٫٥٠).
+            //
+            // ‏**وبسعرِ الفاتورة لا بسعرِ اليوم**: المرتجعُ يردّ ما قُبِض،
+            // ‏**وسعرٌ آخرُ يخلق فرقَ صرفٍ لم يقع**.
+            if (_invoice is { IsForeignCurrency: true } src)
+                note.SetCurrency(src.CurrencyCode, src.ExchangeRate);
+
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
                 note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice,
                     row.ProductId, row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason,

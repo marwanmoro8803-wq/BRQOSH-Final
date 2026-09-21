@@ -37,6 +37,50 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     public decimal Subtotal { get; private set; }
     public decimal VatAmount { get; private set; }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٥) <b>والإشعارُ يحمل عملةَ فاتورتِه.</b>
+    ///
+    /// <para><b>وكان بلا عملةٍ أصلاً</b> — وسطورُ الفاتورة الأجنبيّة <b>مُسعّرةٌ
+    /// بالعملة الأجنبيّة</b> (<c>ForeignSubtotal</c> يُحسب منها، والريالُ يُشتقّ).
+    /// <b>فنسخُ سعرِ السطر إلى إشعارٍ بلا عملة يجعل الأجنبيّ ريالاً.</b></para>
+    ///
+    /// <para><b>وقُيس</b>: فاتورةُ <c>USD 1,000</c> بسعر <c>3.75</c> ⟵ <b>٤٬٣١٢٫٥٠ ريالاً</b>؛
+    /// <b>ومرتجعٌ كاملٌ يردّ ١٬١٥٠ فقط</b> — <b>فيبقى على العميل ٣٬١٦٢٫٥٠ وقد
+    /// ردّ كلّ شيء</b>، <b>وضريبةُ المخرجات تُعكس بـ١٥٠ بدل ٥٦٢٫٥٠</b> —
+    /// فالإقرارُ يُبالغ في مخرجاتِه عن توريدٍ رُدّ بتمامِه.
+    ///
+    /// <para><b>والمرآةُ <c>SalesInvoice</c> حرفاً</b>: السطورُ بالعملة، <b>والريالُ
+    /// يُشتقّ على الوعاء والضريبة كلٍّ على حدة</b> لا على الإجماليّ.
+    /// <b>والافتراضُ ريالٌ بسعرِ واحد، فلا يتغيّر رقمٌ في إشعارٍ قائم.</b></para>
+    /// </summary>
+    public string CurrencyCode { get; private set; } = "SAR";
+    public decimal ExchangeRate { get; private set; } = 1m;
+    public decimal ForeignSubtotal { get; private set; }
+    public decimal ForeignVatAmount { get; private set; }
+
+    /// <summary>الإجماليُّ بعملة المستند — وهو ما يُردّ للعميل.</summary>
+    public decimal ForeignGrandTotal => ForeignSubtotal + ForeignVatAmount;
+
+    /// <summary>عملةُ المستند تخالف عملةَ الدفاتر.</summary>
+    public bool IsForeignCurrency => CurrencyCode != "SAR";
+
+    /// <summary>
+    /// <b>تُورَّث من الفاتورة الأصليّة لا تُختار</b> — فالمرتجعُ يردّ ما قُبِض
+    /// <b>بسعرِ صرفِه يومَ قُبِض</b>، وسعرٌ آخرُ يخلق فرقَ صرفٍ لم يقع.
+    /// </summary>
+    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    {
+        EnsureDraft();
+        if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
+            throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
+        if (exchangeRate <= 0m)
+            throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+
+        CurrencyCode = currencyCode.Trim().ToUpperInvariant();
+        ExchangeRate = exchangeRate;
+        RecalculateTotals();
+    }
+
 
     /// <summary>
     /// تاريخ الإلغاء (O-21، CEEF-219). الإقرار الضريبي يعكس **وقائع الفترة**:
@@ -190,8 +234,14 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     {
         // ‏(ح-٦) ‏**وخصمُ المستند يدخل الحساب** — وكان يُستدعى بلا وسيطٍ فيُحسب الإشعارُ
         // ‏على السطور الخامّة. والوسيطُ نفسُه تُمرّره `SalesInvoice`، والموزِّعُ واحد.
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(
+        (ForeignSubtotal, ForeignVatAmount) = LineDocumentTotalsCalculator.Compute(
             _lines, documentDiscount: DocumentDiscountAmount);
+
+        // ‏(ح-٣٥) **والتحويلُ على الوعاء والضريبة كلٍّ على حدة** — كما في
+        // ‏`SalesInvoice`، فالهيئةُ تقرأ الضريبةَ بعملة الدفاتر رقماً مستقلّاً.
+        // ‏**وبسعرٍ واحدٍ يعود الرقمان إلى ما كانا حرفاً.**
+        Subtotal = Math.Round(ForeignSubtotal * ExchangeRate, 2, MidpointRounding.AwayFromZero);
+        VatAmount = Math.Round(ForeignVatAmount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>

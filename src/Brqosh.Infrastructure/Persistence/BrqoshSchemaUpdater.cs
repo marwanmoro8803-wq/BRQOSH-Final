@@ -2486,12 +2486,42 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             {
                 await EnsurePgColumnAsync("credit_notes", "DocumentDiscountAmount",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+
+                // (جاهزيّةُ الإطلاق · ح-٣٥) ‏عملةُ الإشعار — **والافتراضُ ريالٌ
+                // ‏بسعرِ واحد، فلا يتغيّر رقمٌ في إشعارٍ قائم**.
+                await EnsurePgColumnAsync("credit_notes", "CurrencyCode",
+                    "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+                await EnsurePgColumnAsync("credit_notes", "ExchangeRate",
+                    "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+                await EnsurePgColumnAsync("credit_notes", "ForeignSubtotal",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                await EnsurePgColumnAsync("credit_notes", "ForeignVatAmount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
             }
             else
             {
                 await EnsureSqliteColumnAsync("credit_notes", "DocumentDiscountAmount",
                     "TEXT NOT NULL DEFAULT '0'", ct);
+
+                await EnsureSqliteColumnAsync("credit_notes", "CurrencyCode",
+                    "TEXT NOT NULL DEFAULT 'SAR'", ct);
+                await EnsureSqliteColumnAsync("credit_notes", "ExchangeRate",
+                    "TEXT NOT NULL DEFAULT '1'", ct);
+                await EnsureSqliteColumnAsync("credit_notes", "ForeignSubtotal",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("credit_notes", "ForeignVatAmount",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
             }
+
+            // (جاهزيّةُ الإطلاق · ح-٣٥) ‏**وتعبئةُ الأجنبيّ من الريال لكلّ
+            // ‏إشعارٍ قائم** — **وتركُ الأجنبيّ صفراً يجعل `RecalculateTotals`
+            // ‏تُصيّر الريالَ صفراً عند أوّل مسّ**، فيُفقَد مبلغٌ قائم.
+            // ‏**وتعبئةٌ بقيمةٍ مساويةٍ لا تُغيّر معنىً** — بسعرِ واحدٍ هما رقمٌ واحد.
+            var creditBackfill = isPg
+                ? """UPDATE credit_notes SET "ForeignSubtotal" = "Subtotal", "ForeignVatAmount" = "VatAmount" WHERE "ForeignSubtotal" = 0 AND "Subtotal" <> 0;"""
+                : """UPDATE credit_notes SET ForeignSubtotal = Subtotal, ForeignVatAmount = VatAmount WHERE CAST(ForeignSubtotal AS REAL) = 0 AND CAST(Subtotal AS REAL) <> 0;""";
+            if (isPg) await SafePgIndexAsync(creditBackfill, ct);
+            else await SafeSqliteIndexAsync(creditBackfill, ct);
 
             // (CEEF-230 · ط1-٤) ‏**وتعبئةُ الأجنبيّ من الريال لكلّ فاتورةٍ قائمة**: بسعرِ
             // ‏واحدٍ هما رقمٌ واحد، وتركُ الأجنبيّ صفراً يجعل الفوترةَ تُصدر مستنداً
