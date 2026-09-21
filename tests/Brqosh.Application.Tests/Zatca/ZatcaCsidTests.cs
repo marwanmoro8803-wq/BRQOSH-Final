@@ -64,6 +64,40 @@ public class ZatcaCsidTests
         Assert.Equal("1.2.840.10045.3.1.7", oid);
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٠) <b>مفتاحُ الختم يُكتب <u>نصّاً صريحاً</u> على القرص —
+    /// والسجلُّ كان يقول إنّه محميٌّ بـDPAPI.</b>
+    ///
+    /// <para><b>والواقعُ مقيسٌ هنا</b>: <c>GenerateKeyPairAndCsr</c> يكتب
+    /// <c>ExportECPrivateKeyPem()</c> كما هو. و<c>LocalSecretProtector</c> — وهو آلةُ DPAPI
+    /// القائمة — <b>يحمي نصَّ اتّصال القاعدة وعلامةَ الساعة، ولا يمسّ هذا الملفّ</b>.</para>
+    ///
+    /// <para><b>وهذا أخطرُ سرٍّ في النظام</b>: من ملكه أصدر فواتيرَ تنسبها الهيئةُ
+    /// إلى المنشأة.</para>
+    ///
+    /// <para><b>ولم يُشفَّر هنا — والسببُ تعارضٌ حقيقيٌّ لا تهاون:</b> DPAPI بنطاق
+    /// <c>CurrentUser</c> يربط الملفَّ <b>بمستخدمِ ويندوز وجهازِه</b>، <b>والنسخةُ
+    /// الاحتياطيّةُ تحمل هذا المفتاح منذ ح-٥</b> — فتشفيرُه <b>يُبطل الاستعادةَ على جهازٍ
+    /// آخر</b>، وهي عينُ الحالة التي تُطلب فيها النسخةُ الاحتياطيّة. <b>فالمفاضلةُ بين
+    /// سرّيّةِ المفتاح وقابليّةِ التعافي قرارُ المالك</b>، لا اختيارُ مُصلِحٍ عابر.</para>
+    ///
+    /// <para><b>وهذا الاختبارُ يُثبّت الواقعَ ليُرى</b>: يسقط يومَ يُشفَّر — فيُتّخذ القرارُ
+    /// عن قصدٍ ويُحدَّث معه كتيّبُ الاستعادة، <b>ولا ينزلق النظامُ إلى حالةٍ لا تُستعاد</b>.</para>
+    /// </summary>
+    [Fact]
+    public void TheStampPrivateKey_IsStoredInPlainText_NotProtected()
+    {
+        var material = new ZatcaCsidOnboardingService()
+            .GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
+
+        var onDisk = File.ReadAllText(material.PrivateKeyPath);
+
+        Assert.StartsWith("-----BEGIN EC PRIVATE KEY-----", onDisk.TrimStart(), StringComparison.Ordinal);
+
+        // ‏**وشاهدُ نفي**: لو كان محميّاً لَحمل بادئةَ `LocalSecretProtector`.
+        Assert.False(Brqosh.Infrastructure.Security.LocalSecretProtector.IsProtected(onDisk));
+    }
+
     [Fact]
     public void GenerateCsr_RejectsInvalidVat()
     {
