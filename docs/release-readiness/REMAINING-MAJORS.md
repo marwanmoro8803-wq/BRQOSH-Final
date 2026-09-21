@@ -30,8 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 14 بنداً ✅ و5 ◐.
-**وستّةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٦) — **بعضُها خارج هذا الحصر**،
+**والمجموعُ المُغلَق من هذا الحصر:** 16 بنداً ✅ و5 ◐.
+
+> **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
+> وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
+> **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
+**وسبعةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٧) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -70,7 +74,7 @@
 
 ## tax-zatca (10 major)
 
-- ☐ **`tax-zatca#7`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cancellation credit notes for discounted or foreign-currency invoices are internally inconsistent (measured with the repo's own validator); credit notes have no currency at all
+- ✅ **`tax-zatca#7`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cancellation credit notes for discounted or foreign-currency invoices are internally inconsistent (measured with the repo's own validator); credit notes have no currency at all — ح-٣٥ `67b3635` وح-٣٦ `693f8ce` — **وهو عينُ `o2c#10` و`o2c#11` بعدسةٍ ثالثة**؛ **وفاتني وسمُه حينها**
 - ☐ **`tax-zatca#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No automatic retry or offline queue; transient HTTP errors are recorded as Rejected; rejected documents have no correction or reissue path
 - ☐ **`tax-zatca#9`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Standard tax invoices can be printed before clearance and always carry the local QR; the ZATCA-cleared XML is never used, despite the claim that it is what the buyer receives
 - ☐ **`tax-zatca#10`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No CSID expiry check and no renewal flow
@@ -99,7 +103,7 @@
 
 - ✅ **`order-to-cash-procure-to-pay-inventory#4`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Stock-count surpluses (and manual adjustments in) are credited straight to retained earnings instead of the income statement — ح-٢٣ `e46e028`
 - ✅ **`order-to-cash-procure-to-pay-inventory#5`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Debit note under FIFO records its layer consumption under the empty key 'DebitNote:', and cancellation creates a new layer instead of restoring the consumed ones (the م0-٣ defect class again) — ح-٣١ `1076202`
-- ☐ **`order-to-cash-procure-to-pay-inventory#6`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Debit note screen can return only the invoice's first product, whatever the user types; it ignores VAT category and has no per-product quantity check against the invoice
+- ✅ **`order-to-cash-procure-to-pay-inventory#6`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Debit note screen can return only the invoice's first product, whatever the user types; it ignores VAT category and has no per-product quantity check against the invoice — ح-٣٧ `90da002`
 - ☐ **`order-to-cash-procure-to-pay-inventory#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Batch- or serial-tracked products cannot be returned, stock-counted, sold through a sales order, or bought through the PO auto-GRN or a manual purchase invoice
 - ☐ **`order-to-cash-procure-to-pay-inventory#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Order-to-cash is broken in the UI: sales orders are one free-text line with no product or VAT category, and quotation→order conversion and quotation accept/reject have no UI
 - ✅ **`order-to-cash-procure-to-pay-inventory#9`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Invoicing a sales order back-dates the tax invoice to the order date, and does it outside one transaction — ح-٣٣ `77ed9dc`
