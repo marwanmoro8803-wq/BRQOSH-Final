@@ -51,6 +51,21 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             var products = await inv.LoadProductsForLinesAsync(invoice.CompanyId, invoice.Lines.Select(l => l.ProductId));
             InventoryService.EnsureTradable(products, "شراء");
+
+            // ‏(جاهزيّةُ الإطلاق · ح-١٤) ‏**فاتورةٌ بلا أمرِ شراءٍ لبضاعةٍ وصلت بإذنِ استلام
+            // ‏تُدخلها المخزونَ مرّةً ثانية.**
+            //
+            // ‏مسارُ «بلا إذن» أدناه يُضيف الكمّيةَ إلى المستودع. **وهو الصوابُ لشراءٍ مباشر**
+            // ‏— نقداً من السوق بلا أمرٍ ولا إذن. **لكنّ البضاعةَ التي دخلت بإذنِ استلامٍ
+            // ‏دخلت المخزونَ يومَها**، فإن فُوتِرت بفاتورةٍ غيرِ مربوطةٍ بأمرها:
+            // ‏**تُضاف كمّيتُها ثانيةً، ويبقى `2112` دائناً إلى الأبد** — كمّيةٌ وهميّةٌ
+            // ‏في الجرد والتزامٌ لا يُقفله شيء. **والقيدُ متوازنٌ فلا يشكو الميزان.**
+            //
+            // ‏**ولا سبيلَ للخدمة أن تعرف النيّةَ من الفاتورة وحدَها** — لا رابطَ فيها.
+            // ‏فيُسأل الدفترُ: أللمورِّد استحقاقٌ مفتوحٌ على هذا الصنف؟ فإن كان، **فالفاتورةُ
+            // ‏غالباً له**، ويُطلب ربطُها بأمرها بدل أن تُخمَّن النيّة.
+            if (invoice.PurchaseOrderId is null)
+                await EnsureNoOpenAccrualForUnlinkedInvoiceAsync(invoice, products, ct);
             decimal inventorySubtotal = 0;
             var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
 
@@ -194,6 +209,73 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
     /// فوترةَ أكثرَ ممّا استُلم. فالخطأُ محصورٌ في التسامح — <b>ريالٌ أو ريالان على كلّ أمر
     /// شراء، لكنّهما لا يُقفلان أبداً ويتراكمان</b>. والتسامحُ معاملٌ قابلٌ للرفع.</para>
     /// </summary>
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤) <b>يمنع فاتورةً غيرَ مربوطةٍ أن تُدخل بضاعةً دخلت بإذنِ استلام.</b>
+    ///
+    /// <para><b>والحكمُ من الدفتر لا من النيّة:</b> يُسأل عن استحقاقٍ مفتوحٍ لهذا المورِّد
+    /// على هذا الصنف — أي بضاعةٍ استُلمت منه ولم تُفوتَر بعد. <b>فإن وُجد، فالفاتورةُ
+    /// غالباً لها</b>، وربطُها بأمرها يُقفل الاستحقاقَ ولا يُضاعف المخزون.</para>
+    ///
+    /// <para><b>ولا يُمنع الشراءُ المباشر</b>: مورِّدٌ بلا إذنِ استلامٍ مفتوحٍ على الصنف
+    /// يمرّ كما كان — <b>وهو الحالةُ الشائعةُ في المتاجر الصغيرة</b>، وحظرُها كان سيُغلق
+    /// باباً سليماً لأجل بابٍ معطوب.</para>
+    /// </summary>
+    private async Task EnsureNoOpenAccrualForUnlinkedInvoiceAsync(
+        PurchaseInvoice invoice,
+        IReadOnlyDictionary<long, Domain.Inventory.Product> products,
+        CancellationToken ct)
+    {
+        var stockableIds = invoice.Lines
+            .Where(l => l.ProductId is long pid
+                        && products.TryGetValue(pid, out var p) && p.IsStockable())
+            .Select(l => l.ProductId!.Value)
+            .Distinct()
+            .ToList();
+
+        if (stockableIds.Count == 0) return;
+
+        var received = await db.GoodsReceipts
+            .Where(g => g.CompanyId == invoice.CompanyId
+                        && g.SupplierId == invoice.SupplierId
+                        && g.Status == GoodsReceiptStatus.Posted)
+            .SelectMany(g => g.Lines)
+            .Where(l => l.ProductId != null && stockableIds.Contains(l.ProductId!.Value))
+            .Select(l => new { ProductId = l.ProductId!.Value, l.ReceivedQuantity })
+            .ToListAsync(ct);
+
+        if (received.Count == 0) return;
+
+        var invoiced = (await db.PurchaseInvoices
+                .Where(i => i.CompanyId == invoice.CompanyId
+                            && i.SupplierId == invoice.SupplierId
+                            && i.PurchaseOrderId != null
+                            && i.Status == PurchaseInvoiceStatus.Posted)
+                .SelectMany(i => i.Lines)
+                .Where(l => l.ProductId != null && stockableIds.Contains(l.ProductId!.Value))
+                .Select(l => new { ProductId = l.ProductId!.Value, l.Quantity })
+                .ToListAsync(ct))
+            .GroupBy(l => l.ProductId)
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+        var open = received
+            .GroupBy(l => l.ProductId)
+            .Where(g => g.Sum(l => l.ReceivedQuantity) - invoiced.GetValueOrDefault(g.Key) > 0m)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (open.Count == 0) return;
+
+        var names = open
+            .Select(id => products.TryGetValue(id, out var p) ? p.NameAr : id.ToString())
+            .ToList();
+
+        throw new AccountingException(
+            "أصنافٌ استُلمت من هذا المورّد بإذنِ استلامٍ ولم تُفوتَر بعد: "
+            + string.Join("، ", names)
+            + " — واربط الفاتورةَ بأمر الشراء، وإلّا دخلت البضاعةُ المخزونَ مرّتين "
+            + "وبقي استحقاقُ الاستلام مفتوحاً.");
+    }
+
     private async Task<Dictionary<long, AccrualState>> OpenAccrualByProductAsync(
         PurchaseInvoice invoice, CancellationToken ct)
     {
