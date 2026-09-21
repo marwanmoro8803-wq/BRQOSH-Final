@@ -48,9 +48,22 @@ public class WorkOrderService(BrqoshDbContext db)
             foreach (var line in bom.Lines)
             {
                 var qty = Math.Round(line.Quantity * scale, 4, MidpointRounding.AwayFromZero);
+                // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**مفتاحُ الاستهلاك هو مفتاحُ الحركة بعينه.**
+                //
+                // ‏كان هذا يُسجّل الاستهلاكَ تحت `WorkOrder:{OrderNumber}` **والحركةُ
+                // ‏المخزنيّة تُرحَّل تحت `WorkOrder:{Id}`** (انظر أسفله) — **مفتاحان
+                // ‏لأمرٍ واحد**. فدفترُ الاستهلاك والحركةُ لا يلتقيان أبداً،
+                // ‏و`RestoreConsumedLayersAsync` — وهي تبحث بمفتاح الحركة — **لا تجد
+                // ‏شيئاً فلا تُرمّم شيئاً**.
+                //
+                // ‏**وقيس: طبقةُ المادّة تبقى ستّاً بعد إلغاءٍ يجب أن يُعيدها عشراً.**
+                //
+                // ‏**والمعرّفُ أثبتُ من الرقم**: رقمُ الأمر نصٌّ قد يكون فارغاً وقتَ
+                // ‏الاستهلاك، فيصير المفتاحُ `WorkOrder:` — وهو عينُ صنفِ العطل المسجَّل
+                // ‏في التدقيق للإشعار المدين (`DebitNote:` فارغاً).
                 var (totalCost, componentUnitCost) = await costing.ConsumeForIssueAsync(
                     companyId, line.ComponentProductId, warehouse.Id, qty,
-                    $"WorkOrder:{order.OrderNumber}", token);
+                    $"WorkOrder:{order.Id}", token);
                 materialCost += totalCost;
                 issueLines.Add((line.ComponentProductId, qty, componentUnitCost));
             }
@@ -195,24 +208,28 @@ public class WorkOrderService(BrqoshDbContext db)
         if (movements.Count == 0)
             return;
 
+        // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+        //
+        // ‏كان الإلغاءُ يُرحّل حركتين مقابلتين: وارِداً مقابلَ صرف المواد، وصادراً مقابلَ
+        // ‏استلام التامّ. **والرصيدُ يعود صحيحاً — والتكلفةُ لا تعود.**
+        //
+        // ‏**فالوارِدُ المقابل يُنشئ طبقةً جديدةً بتكلفةٍ مخلوطة** بدل أن يُرمّم الطبقاتِ
+        // ‏التي استهلكها الصرفُ بأعيانها (وقد تكون طبقتين بسعرين). **والصادرُ المقابل
+        // ‏يستهلك بالوارد-أوّلاً** فيأكل **طبقةً أقدمَ من طبقة التامّ التي أنشأها هذا
+        // ‏الأمر** — فتُحذف تكلفةٌ ليست تكلفتَه ويبقى التامُّ في الطبقات.
+        //
+        // ‏**فينشقّ مجموعُ الطبقات عن الرصيد**، ويخرج كلُّ بيعٍ لاحقٍ بتكلفةٍ خاطئة.
+        //
+        // ‏**والمسارُ الصحيحُ قائمٌ وموثَّق**: `ReverseDocumentMovementAsync` — يُرمّم
+        // ‏المستهلَكَ للصادر، ويُزيل الطبقةَ التي أنشأها المستندُ بعينها للوارد
+        // ‏(‏CEEF-229 · م0-٣ و م0-٣ب). **وخمسُ خدماتِ إلغاءٍ تستعمله، وهذه لم تكن منها** —
+        // ‏وتعليقُ `GoodsReceiptCancellationService` يقول نصّاً ما كان يقع هنا:
+        // ‏«الطبقات 250 والرصيد 200».
         var inv = new InventoryService(db);
         foreach (var movement in movements.OrderByDescending(m => m.Id))
         {
-            var lines = movement.Lines.Select(l => (l.ProductId, l.Quantity, l.UnitCost)).ToList();
-            if (movement.Type == StockMovementType.Issue)
-            {
-                await inv.PostDocumentMovementAsync(companyId, movement.WarehouseId,
-                    StockMovementType.Receipt, cancelDate,
-                    $"عكس صرف مواد — إلغاء أمر {order.OrderNumber}",
-                    sourcePrefix, lines);
-            }
-            else if (movement.Type == StockMovementType.Receipt)
-            {
-                await inv.PostDocumentMovementAsync(companyId, movement.WarehouseId,
-                    StockMovementType.Issue, cancelDate,
-                    $"عكس إنتاج — إلغاء أمر {order.OrderNumber}",
-                    sourcePrefix, lines);
-            }
+            await inv.ReverseDocumentMovementAsync(movement);
+            movement.MarkCancelled();
         }
     }
 
