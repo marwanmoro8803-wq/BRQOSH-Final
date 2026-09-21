@@ -30,8 +30,8 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 11 بنداً ✅ و5 ◐.
-**وأربعةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٤) — **بعضُها خارج هذا الحصر**،
+**والمجموعُ المُغلَق من هذا الحصر:** 14 بنداً ✅ و5 ◐.
+**وستّةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٦) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -76,7 +76,7 @@
 - ☐ **`tax-zatca#10`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No CSID expiry check and no renewal flow
 - ✅ **`tax-zatca#11`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Fixed-asset sales post output VAT with no tax invoice and no e-invoice — ح-١٦ `70444ef`
 - ☐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT
-- ☐ **`tax-zatca#13`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Progress-billing cancellation document has no billing reference and no reason
+- ✅ **`tax-zatca#13`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Progress-billing cancellation document has no billing reference and no reason — ح-٣٦ `693f8ce`
 - ☐ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency
 - ☐ **`tax-zatca#15`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>The O-01 runbook and OPEN_ITEMS overstate readiness: onboarding steps are missing, the test environment was never exercised, and a live-CSID test reports Passed while doing nothing
 - ☐ **`tax-zatca#16`** · <sub>مؤكّد · في اليد · كبير · خطر</sub><br>G-42 re-measured: the product has one EGS unit and one CSID per company; there is no per-branch or per-device EGS onboarding, and POS-solution registration is external
@@ -103,8 +103,8 @@
 - ☐ **`order-to-cash-procure-to-pay-inventory#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Batch- or serial-tracked products cannot be returned, stock-counted, sold through a sales order, or bought through the PO auto-GRN or a manual purchase invoice
 - ☐ **`order-to-cash-procure-to-pay-inventory#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Order-to-cash is broken in the UI: sales orders are one free-text line with no product or VAT category, and quotation→order conversion and quotation accept/reject have no UI
 - ✅ **`order-to-cash-procure-to-pay-inventory#9`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Invoicing a sales order back-dates the tax invoice to the order date, and does it outside one transaction — ح-٣٣ `77ed9dc`
-- ☐ **`order-to-cash-procure-to-pay-inventory#10`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Credit note against a foreign-currency invoice copies foreign unit prices into a SAR document, and the ZATCA credit note is issued in SAR
-- ☐ **`order-to-cash-procure-to-pay-inventory#11`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>ZATCA cancellation document for a sales invoice omits the document discount and currency, so its UBL totals are inconsistent with its lines
+- ✅ **`order-to-cash-procure-to-pay-inventory#10`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Credit note against a foreign-currency invoice copies foreign unit prices into a SAR document, and the ZATCA credit note is issued in SAR — ح-٣٥ `67b3635`
+- ✅ **`order-to-cash-procure-to-pay-inventory#11`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>ZATCA cancellation document for a sales invoice omits the document discount and currency, so its UBL totals are inconsistent with its lines — ح-٣٦ `693f8ce`
 - ☐ **`order-to-cash-procure-to-pay-inventory#12`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Sales, returns and PO invoices always use the default warehouse, while receipts, counts and transfers can target any warehouse
 - ☐ **`order-to-cash-procure-to-pay-inventory#13`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No customer credit limit exists anywhere
 - ✅ **`order-to-cash-procure-to-pay-inventory#14`** · <sub>مؤكّد · في اليد · كبير · عطل</sub><br>Landed cost 'credit payables' posts to AP control 2101 with no supplier, breaking the payables subledger identity; it also has no VAT and no reversal — ح-٢٧ `04aef12`
