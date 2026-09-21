@@ -50,7 +50,10 @@ public class PayslipQuery(BrqoshDbContext db)
                 employee?.JobTitle ?? "—",
                 employee?.Iban,
                 line.BasicSalary, line.HousingAllowance, line.TransportAllowance,
-                line.OtherAllowance, line.GosiEmployee);
+                line.OtherAllowance, line.GosiEmployee,
+                // (جاهزيّةُ الإطلاق · ح-٢٤) ‏**الأرقامُ على السطر ولم تُمرَّر**،
+                // ‏فتخرج القسيمةُ بصافٍِ يخالف ملفّ الأجور والقيد.
+                line.AbsenceDeduction, line.AdvanceDeduction);
         })];
     }
 }

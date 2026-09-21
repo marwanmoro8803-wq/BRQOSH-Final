@@ -17,13 +17,32 @@ public record PayslipData(
     decimal HousingAllowance,
     decimal TransportAllowance,
     decimal OtherAllowance,
-    decimal GosiEmployee)
+    decimal GosiEmployee,
+    // (جاهزيّةُ الإطلاق · ح-٢٤) ‏الغيابُ والسلفة — وكانا غائبَين عن القسيمة وحدَها.
+    decimal AbsenceDeduction = 0m,
+    decimal AdvanceDeduction = 0m)
 {
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٤) <b>الاستحقاقُ بعد الغياب — كما يحسبه <c>PayrollLine</c>.</b>
+    ///
+    /// <para>كان يجمع مكوّناتِ الراتب <b>خامّاً</b>، و<c>PayrollLine.GrossPay</c> محسوبٌ
+    /// <b>بعد خصم الغياب</b>. <b>فشهرٌ فيه إجازةٌ بلا أجرٍ يُخرج قسيمةً باستحقاقٍ أعلى
+    /// ممّا رُحِّل.</b></para>
+    /// </summary>
     public decimal GrossPay =>
-        BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
+        BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance - AbsenceDeduction;
 
-    public decimal TotalDeductions => GosiEmployee;
+    /// <summary>
+    /// <b>والسلفةُ استقطاعٌ كالتأمينات</b> — <c>PayrollLine.NetPay</c> يطرحها،
+    /// <b>والقسيمةُ كانت لا تعرفها</b>.
+    /// </summary>
+    public decimal TotalDeductions => GosiEmployee + AdvanceDeduction;
 
+    /// <summary>
+    /// <b>والصافي هنا هو الصافي المُرحَّل والمُحوَّل حرفاً</b> —
+    /// <c>GrossPay − GosiEmployee − AdvanceDeduction</c>، وهو نصُّ
+    /// <c>PayrollLine.NetPay</c>. <b>واختلافُهما يعني ورقةً تخالف ما يصل الحساب.</b>
+    /// </summary>
     public decimal NetPay => GrossPay - TotalDeductions;
 }
 
@@ -73,12 +92,17 @@ public static class PayslipPdfGenerator
                     Line(col, "بدل السكن", data.HousingAllowance);
                     Line(col, "بدل النقل", data.TransportAllowance);
                     Line(col, "بدلات أخرى", data.OtherAllowance);
+                    // ‏**والغيابُ يُعرَض طرحاً لا يُطوى في الإجمالي**: موظّفٌ يرى أساسيّاً
+                    // ‏أعلى من إجماليه يسأل عن الفرق، **وحقُّه أن يقرأه لا أن يُحسبه**.
+                    if (data.AbsenceDeduction != 0m)
+                        Line(col, "خصم غياب / إجازة بلا أجر", -data.AbsenceDeduction);
                     Line(col, "إجمالي الاستحقاق", data.GrossPay, bold: true);
 
                     // ‏**والاستقطاعُ يُعرض ولو كان صفراً**: غيابُ السطر يُقرأ «لم يُحسب»،
                     // ‏ووجودُه بصفرٍ يقول «حُسب ولم يُستقطع». والوافدُ حصّتُه صفرٌ نظاماً.
                     col.Item().PaddingTop(10).Text("الاستقطاعات").Bold();
                     Line(col, "التأمينات الاجتماعية", data.GosiEmployee);
+                    Line(col, "سداد سلفة", data.AdvanceDeduction);
                     Line(col, "إجمالي الاستقطاعات", data.TotalDeductions, bold: true);
 
                     col.Item().PaddingTop(12).Row(row =>
