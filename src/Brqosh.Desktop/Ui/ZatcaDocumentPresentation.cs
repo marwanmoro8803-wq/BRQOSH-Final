@@ -3,18 +3,22 @@ using Brqosh.Domain.Zatca;
 namespace Brqosh.Desktop.Ui;
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-١٥) <b>أيُّ مستندٍ يحمله <c>SourceDocumentId</c> — ثلاثةُ فضاءاتٍ
-/// لا ستّة.</b>
+/// (جاهزيّةُ الإطلاق · ح-١٥) <b>أيُّ مستندٍ يحمله <c>SourceDocumentId</c> — فالأنواعُ
+/// أكثرُ من فضاءات المعرّفات.</b>
 ///
-/// <para><c>ZatcaEInvoiceDocument</c> يحمل <b>ستّةَ أنواع</b> في عمودِ مصدرٍ واحد، ومصادرُها
-/// <b>ثلاثةٌ</b>: فاتورةُ مبيعات، وإشعارٌ دائن، ومستخلصُ أعمال. <b>وكلُّ فضاءٍ يبدأ من واحد</b> —
-/// وهو بعينه السببُ الذي من أجله أُفرد <see cref="ZatcaDocumentType.InvoiceCancel"/> بقيمةٍ
-/// خاصّةٍ في جدول التخزين.</para>
+/// <para><c>ZatcaEInvoiceDocument</c> حمل يومَ ح-١٥ <b>ستّةَ أنواع</b> في عمودِ مصدرٍ واحد،
+/// ومصادرُها <b>ثلاثةٌ</b>: فاتورةُ مبيعات، وإشعارٌ دائن، ومستخلصُ أعمال — <b>ثمّ أضاف ح-١٦
+/// رابعاً</b>: الأصلُ الثابتُ المباع. <b>وكلُّ فضاءٍ يبدأ من واحد</b> — وهو بعينه السببُ
+/// الذي من أجله أُفرد <see cref="ZatcaDocumentType.InvoiceCancel"/> بقيمةٍ خاصّةٍ في
+/// جدول التخزين.</para>
 ///
 /// <para><b>والقراءةُ لم تُدقَّق يومها.</b> فبقيت شاشةُ المستندات تسأل سؤالاً ثنائيّاً:
 /// «أهو فاتورةُ مبيعات؟ فإن لم يكن <b>فهو إشعارٌ دائن</b>» — <b>فثلاثةٌ من الستّة تُقرأ من
 /// الجدول الخطأ</b>: مستخلصٌ رقمُه ٥ يُعرض بسطور <b>إشعارٍ دائنٍ رقمُه ٥</b>، بأصنافه ومبالغه
 /// وضريبته، تحت عنوان «إشعار دائن». <b>ولا شيء يقول إنّ المعروضَ مستندٌ آخر.</b></para>
+///
+/// <para><b>والحارسُ عمل كما وُضع له</b>: نوعُ ح-١٦ السابعُ أسقط هذه الدوالَّ رمياً حتّى
+/// أُدرج فيها — <b>ولم يُعرض بوصفه «إشعارَ دائنٍ» صامتاً</b> كما كان سيقع لولاه.</para>
 ///
 /// <para><b>ولذلك صار الجوابُ دالّةً واحدةً تُقاس</b> بدل شرطٍ داخل معالجِ ضغطٍ يحتاج قاعدةَ
 /// بياناتٍ وخيطَ واجهة — على منوال <see cref="VatReturnRows"/>. <b>ولا فرعَ افتراضيّاً يبتلع
@@ -34,6 +38,9 @@ public static class ZatcaDocumentPresentation
 
         /// <summary>مستخلصُ أعمالٍ في <c>progress_billings</c>.</summary>
         ProgressBilling,
+
+        /// <summary>(ح-١٦) أصلٌ ثابتٌ بِيع — في <c>fixed_assets</c>.</summary>
+        FixedAssetDisposal,
     }
 
     /// <summary>اسمُ نوع المستند كما يُعرض في الجدول.</summary>
@@ -45,6 +52,7 @@ public static class ZatcaDocumentPresentation
         ZatcaDocumentType.DebitNote => "إشعار مدين",
         ZatcaDocumentType.InvoiceCancel => "إشعار دائن (إلغاء فاتورة)",
         ZatcaDocumentType.BillingCancel => "إشعار دائن (إلغاء مستخلص)",
+        ZatcaDocumentType.AssetDisposal => "فاتورة بيع أصل ثابت",
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };
@@ -65,6 +73,7 @@ public static class ZatcaDocumentPresentation
         ZatcaDocumentType.DebitNote => SourceKind.CreditNote,
         ZatcaDocumentType.InvoiceCancel => SourceKind.SalesInvoice,
         ZatcaDocumentType.BillingCancel => SourceKind.ProgressBilling,
+        ZatcaDocumentType.AssetDisposal => SourceKind.FixedAssetDisposal,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };
@@ -75,6 +84,7 @@ public static class ZatcaDocumentPresentation
         SourceKind.SalesInvoice => "فاتورة مبيعات",
         SourceKind.CreditNote => "إشعار دائن",
         SourceKind.ProgressBilling => "مستخلص أعمال",
+        SourceKind.FixedAssetDisposal => "أصل ثابت مباع",
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 

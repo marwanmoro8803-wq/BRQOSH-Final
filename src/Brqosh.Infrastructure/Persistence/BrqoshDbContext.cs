@@ -1586,6 +1586,13 @@ public class BrqoshDbContext : DbContext
             entity.Property(a => a.AcquisitionCost).HasPrecision(18, 2);
             entity.Property(a => a.SalvageValue).HasPrecision(18, 2);
             entity.Property(a => a.AccumulatedDepreciation).HasPrecision(18, 2);
+            // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل — المشتري ورقمُ فاتورته ومقابلُه وفئتُه.
+            // ‏والأطوالُ هي أطوالُ قائمة السماح في `SchemaSqlGuard` نفسِها — فالنموذجُ
+            // ‏والـDDL يلتقيان، ولو اختلفا أسقطا مسبارَ تغطية المخطّط بفارق نوع.
+            entity.Property(a => a.DisposalInvoiceNumber).HasMaxLength(64);
+            entity.Property(a => a.DisposalProceeds).HasPrecision(18, 2);
+            entity.Property(a => a.DisposalVatCategory).HasConversion<string>().HasMaxLength(16);
+            entity.Property(a => a.DisposalVatExemptionCode).HasMaxLength(64);
             entity.HasIndex(a => new { a.CompanyId, a.Code }).IsUnique();
         });
 

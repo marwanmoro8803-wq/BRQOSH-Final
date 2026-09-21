@@ -126,6 +126,17 @@ public class FixedAssetDisposalVatTests : IDisposable
     /// لا معفى ولا خاضع — <b>وفرضُ خمسةَ عشرَ بالمئة عليه يُخرج المنشأةَ من السوق</b>، أو
     /// يجعلها تدفع من مالها ضريبةً لا تُحصّلها.</para>
     /// </summary>
+    /// <remarks>
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>والمقدّمةُ أُكمِلت، والحكمُ لم يُمَسّ.</b>
+    ///
+    /// <para>كان هذا الاستدعاءُ يُمرّر فئةً صفريّةً <b>بلا رمزِ سبب</b> — وكان يمرّ لأنّ
+    /// الاستبعادَ لم يكن يُصدر مستنداً أصلاً. <b>وبعد ح-١٦ يُصدر</b>، و<c>BR-KSA-CL-06</c>
+    /// يرفض فئةً غيرَ أساسيّةٍ بلا رمزٍ من قائمة السعودية.</para>
+    ///
+    /// <para><b>فالمقدّمةُ كانت تعتمد على العطل</b> — تصديرٌ صفريٌّ بلا سببٍ مُعلَن — وهي
+    /// حالةٌ <b>لا تصلح فاتورةً</b>. فأُكمِلت بالرمز <c>VATEX-SA-32</c> (تصدير السلع)،
+    /// <b>وبقيت الدعوى كما هي حرفاً</b>: الصفريُّ لا يُقيَّد له ريالُ ضريبة.</para>
+    /// </remarks>
     [Fact]
     public async Task AZeroRatedDisposal_ChargesNoVat()
     {
@@ -133,7 +144,7 @@ public class FixedAssetDisposalVatTests : IDisposable
 
         var entry = await new FixedAssetDisposalPostingService(_db)
             .PostDisposalAsync(asset, saleProceeds: 80_000m, new DateOnly(2026, 1, 15), "admin",
-                vatCategory: VatCategory.ZeroRated);
+                vatCategory: VatCategory.ZeroRated, vatExemptionReasonCode: "VATEX-SA-32");
 
         Assert.True(entry.IsBalanced);
         Assert.DoesNotContain(entry.Lines,

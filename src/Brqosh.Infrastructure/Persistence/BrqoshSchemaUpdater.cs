@@ -537,6 +537,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("zatca_settings", "CsidSecret", "character varying(512) NOT NULL DEFAULT ''", ct);
         await EnsurePgColumnAsync("fixed_assets", "AcquisitionJournalEntryId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalJournalEntryId", "BIGINT NULL", ct);
+        // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل: المشتري ورقمُ فاتورته ومقابلُه وفئتُه وسببُها.
+        await EnsurePgColumnAsync("fixed_assets", "DisposalBuyerCustomerId", "BIGINT NULL", ct);
+        await EnsurePgColumnAsync("fixed_assets", "DisposalInvoiceNumber", "character varying(64) NULL", ct);
+        await EnsurePgColumnAsync("fixed_assets", "DisposalProceeds", "NUMERIC(18,2) NULL", ct);
+        await EnsurePgColumnAsync("fixed_assets", "DisposalVatCategory", "character varying(16) NULL", ct);
+        await EnsurePgColumnAsync("fixed_assets", "DisposalVatExemptionCode", "character varying(64) NULL", ct);
         await EnsurePgColumnAsync("app_users", "MustChangePasswordOnNextLogin", "BOOLEAN NOT NULL DEFAULT false", ct);
         await EnsurePgColumnAsync("app_users", "MobilePhoneE164", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
@@ -631,6 +637,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("zatca_settings", "CsidSecret", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "AcquisitionJournalEntryId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalJournalEntryId", "INTEGER NULL", ct);
+        // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل — انظر النظيرَ في مسار PostgreSQL أعلاه.
+        await EnsureSqliteColumnAsync("fixed_assets", "DisposalBuyerCustomerId", "INTEGER NULL", ct);
+        await EnsureSqliteColumnAsync("fixed_assets", "DisposalInvoiceNumber", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("fixed_assets", "DisposalProceeds", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("fixed_assets", "DisposalVatCategory", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("fixed_assets", "DisposalVatExemptionCode", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MustChangePasswordOnNextLogin", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MobilePhoneE164", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);

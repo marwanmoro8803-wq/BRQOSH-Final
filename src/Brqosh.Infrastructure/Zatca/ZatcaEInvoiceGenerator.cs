@@ -106,6 +106,99 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode, isCreditNote: false);
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>فاتورةُ ضريبةٍ عن بيع أصلٍ ثابت.</b>
+    ///
+    /// <para><b>وبيعُ أصلٍ توريدٌ خاضعٌ نظاماً</b>، وكان الاستبعادُ يُقيّد ضريبةَ المخرجات
+    /// <b>بلا مستندٍ خلفَها</b>. والقياسُ على <see cref="TryGenerateForProgressBillingAsync"/>:
+    /// مستندٌ ليس فاتورةَ مبيعاتٍ، بسطرٍ واحدٍ مُركَّبٍ من بيانات المصدر.</para>
+    ///
+    /// <para><b>ويقرأ ما سُجِّل على الأصل لا ما يُمرَّر إليه</b> — فيُنتج المستندَ نفسَه
+    /// سواءٌ استُدعي داخل معاملة الترحيل أو بعدَها.</para>
+    ///
+    /// <para><b>والصامتُ هنا صوابٌ</b>: <c>null</c> حين لا بيعَ مسجَّلاً أو لا فوترةَ
+    /// إلكترونيّةً مفعَّلة — كإخوته. <b>والرميةُ للمكرَّر وحدَه</b>، فمستندان لأصلٍ واحدٍ
+    /// يستهلكان عدّادَين وتنكسر سلسلةُ البصمات.</para>
+    /// </summary>
+    public async Task<ZatcaEInvoiceDocument?> TryGenerateForAssetDisposalAsync(long fixedAssetId)
+    {
+        var asset = await db.FixedAssets.IgnoreQueryFilters()
+            .SingleOrDefaultAsync(a => a.Id == fixedAssetId);
+
+        // ‏**ولا فاتورةَ لأصلٍ لم يُسجَّل بيعُه**: خردةٌ بلا مقابل، أو منشأةٌ خارج النطاق.
+        if (asset?.DisposalInvoiceNumber is null || asset.DisposalProceeds is not decimal proceeds)
+            return null;
+
+        var settings = await GetSettingsAsync(asset.CompanyId);
+        if (settings is null || !settings.IsEnabled) return null;
+
+        if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == asset.CompanyId &&
+                d.DocumentType == ZatcaDocumentType.AssetDisposal &&
+                d.SourceDocumentId == fixedAssetId))
+            throw new AccountingException("مستند ZATCA موجود مسبقاً لبيع هذا الأصل.");
+
+        var company = await db.Companies.SingleAsync(c => c.Id == asset.CompanyId);
+        if (string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
+            throw new AccountingException("الرقم الضريبي للمنشأة مطلوب لتفعيل ZATCA.");
+
+        // ‏**والمشتري قد يكون مجهولاً** — فيُفوتَر مبسَّطةً بـ«عميل نقدي»، كما تفعل نقطةُ
+        // ‏البيع. وهو مسارٌ نظاميٌّ للبيع النقديّ لمستهلكٍ لا تحايلٌ على هوية المشتري.
+        var customer = asset.DisposalBuyerCustomerId is long buyerId
+            ? await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == buyerId)
+            : await WalkInCustomerAsync(asset.CompanyId);
+
+        var mode = customer.SupportsStandardTaxInvoice
+            ? ZatcaTransmissionMode.Clearance
+            : ZatcaTransmissionMode.Reporting;
+
+        var category = asset.DisposalVatCategory ?? VatCategory.Standard;
+        var reason = VatExemptionReason.Find(asset.DisposalVatExemptionCode);
+        var lines = new List<SalesInvoiceLine>
+        {
+            new($"بيع أصل ثابت {asset.Code} — {asset.NameAr}", 1m, proceeds, null,
+                category, asset.DisposalVatExemptionCode, reason?.ArabicText),
+        };
+
+        // ‏**والضريبةُ تُحسب هنا كما تُحسب في القيد** — من الفئة والمقابل، لا من عمودٍ
+        // ‏مخزَّنٍ يُوازي القيدَ فيفترق عنه يوماً.
+        var vat = Math.Round(
+            proceeds * category.RateFor(VatCalculator.SaudiVatRate), 2, MidpointRounding.AwayFromZero);
+
+        return await GenerateAsync(
+            asset.CompanyId, ZatcaDocumentType.AssetDisposal, fixedAssetId,
+            asset.DisposalInvoiceNumber, await DisposalDateOfAsync(asset), company, customer,
+            proceeds, vat, proceeds + vat, lines, mode, isCreditNote: false);
+    }
+
+    /// <summary>
+    /// تاريخُ الفاتورة هو تاريخُ قيد الاستبعاد — <b>لا تاريخُ اليوم</b>: استبعادٌ يُرحَّل
+    /// بتاريخٍ سابقٍ تخرج فاتورتُه بتاريخه، <b>وإلّا وقع المستندُ في فترةٍ ضريبيّةٍ غير
+    /// فترة قيده</b> فاختلف الإقرارُ عن الدفتر.
+    /// </summary>
+    private async Task<DateOnly> DisposalDateOfAsync(Brqosh.Domain.Assets.FixedAsset asset) =>
+        asset.DisposalJournalEntryId is long entryId
+            ? await db.JournalEntries.Where(e => e.Id == entryId).Select(e => e.EntryDate).SingleAsync()
+            : DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>
+    /// «عميل نقدي» — <b>والقاعدةُ والاسمُ من <c>PosSaleService</c> حرفاً</b>، فلا يُنشأ
+    /// عميلان بالمعنى نفسِه في منشأةٍ واحدة.
+    /// </summary>
+    private async Task<Customer> WalkInCustomerAsync(long companyId)
+    {
+        var walkIn = await db.Customers.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => c.CompanyId == companyId && c.NameAr == "عميل نقدي");
+        if (walkIn is null)
+        {
+            walkIn = Customer.Create(companyId, "عميل نقدي", "");
+            db.Customers.Add(walkIn);
+            await db.SaveChangesAsync();
+        }
+
+        return walkIn;
+    }
+
     /// <summary>إشعار دائن ZATCA عند إلغاء مستخلص أعمال مرحّل.</summary>
     public async Task<ZatcaEInvoiceDocument?> TryGenerateCancellationForProgressBillingAsync(long progressBillingId)
     {

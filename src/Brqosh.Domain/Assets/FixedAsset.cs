@@ -1,5 +1,6 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
+using Brqosh.Domain.Tax;
 
 namespace Brqosh.Domain.Assets;
 
@@ -26,6 +27,41 @@ public class FixedAsset : IBranchScoped
     public long? AcquisitionJournalEntryId { get; private set; }
     public long? DisposalJournalEntryId { get; private set; }
     public bool IsActive { get; private set; } = true;
+
+    // ── بيعُ الأصل (جاهزيّةُ الإطلاق · ح-١٦) ────────────────────────────────
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>المشتري — ولم يكن للأصل مشترٍ قطّ.</b>
+    ///
+    /// <para>بيعُ أصلٍ من أصول النشاط <b>توريدٌ خاضعٌ نظاماً</b>، والاستبعادُ كان يُقيّد
+    /// ضريبةَ مخرجاتٍ على <c>2106</c> <b>بلا مستندٍ خلفَها ولا طرفٍ ثانٍ</b>. فلا تُعرف
+    /// جهةُ التوريد في الدفاتر أصلاً — <b>ولا في القيد إلّا سرداً</b>.</para>
+    ///
+    /// <para><b>ويبقى مسموحاً بالفراغ</b> لبيعٍ نقديٍّ لمجهول (خردة) — فيُفوتَر <b>مبسَّطةً</b>
+    /// كما تفعل نقطةُ البيع بـ«عميل نقدي»، وهو مسارٌ نظاميٌّ لا تحايل.</para>
+    /// </summary>
+    public long? DisposalBuyerCustomerId { get; private set; }
+
+    /// <summary>
+    /// رقمُ فاتورة الضريبة الصادرة عن البيع — <b>وهو ما يربط القيدَ بالمستند الإلكترونيّ.</b>
+    /// <b>وفارغٌ يعني أنّ البيعَ لم يُفوتَر</b>: خردةٌ بلا مقابل، أو منشأةٌ خارج نطاق الضريبة.
+    /// </summary>
+    public string? DisposalInvoiceNumber { get; private set; }
+
+    /// <summary>
+    /// المقابلُ قبل الضريبة. <b>ولم يكن يُحفظ في أيّ حقل</b> — فسؤالُ المراجع «بكم بيع هذا
+    /// الأصل؟» كان جوابُه <b>سردَ قيدٍ</b> لا رقماً في سجلّ الأصل.
+    /// </summary>
+    public decimal? DisposalProceeds { get; private set; }
+
+    /// <summary>
+    /// فئةُ التوريد وقتَ البيع. <b>ولا تُشتقّ من المبلغ بعدَه</b>: صفرُ ضريبةٍ يحتمل
+    /// <b>تصديراً صفريّاً</b> و<b>معفًى</b> و<b>خارجَ النطاق</b>، وثلاثتُها تختلف في الإقرار.
+    /// </summary>
+    public VatCategory? DisposalVatCategory { get; private set; }
+
+    /// <summary>رمزُ سبب الإعفاء (BT-121) حين لا تكون الفئةُ أساسيّة — تشترطه الهيئة.</summary>
+    public string? DisposalVatExemptionCode { get; private set; }
 
     public decimal BookValue => AcquisitionCost - AccumulatedDepreciation;
     public decimal MonthlyDepreciation =>
@@ -109,6 +145,39 @@ public class FixedAsset : IBranchScoped
         if (!IsActive)
             throw new AccountingException("الأصل مستبعد مسبقاً.");
         IsActive = false;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>تسجيلُ البيع على سجلّ الأصل — لا في سرد القيد وحدَه.</b>
+    ///
+    /// <para><b>ولا يُسجَّل مرّتين</b>: الأصلُ يُباع مرّةً واحدة، ومحاولةُ تسجيلِ بيعٍ ثانٍ
+    /// تعني أنّ استبعاداً كُرِّر — <b>وذاك يُمنع هنا لا يُصحَّح لاحقاً</b>، لأنّ الرقمَ
+    /// الثاني كان سيطمس الأوّلَ بلا أثر.</para>
+    ///
+    /// <para><b>وسببُ الإعفاء مطلوبٌ لغير الأساسيّة</b> — <c>BR-KSA-CL-06</c>: فئةٌ
+    /// <c>Z</c>/<c>E</c>/<c>O</c> بلا رمزٍ من قائمة السعودية <b>ترفضها الهيئة</b>.
+    /// <b>ويُمنع هنا لا عند التوليد</b>: المولّدُ يستهلك عدّاداً تسلسليّاً قبل أن يفحص،
+    /// ورقمٌ استُهلك لمستندٍ مرفوضٍ يُلوّث سلسلةَ البصمات بعده.</para>
+    /// </summary>
+    public void RecordDisposalSale(
+        long? buyerCustomerId, string invoiceNumber, decimal proceeds,
+        VatCategory vatCategory, string? vatExemptionCode)
+    {
+        if (DisposalInvoiceNumber is not null)
+            throw new AccountingException($"بيعُ الأصل {Code} مسجَّلٌ مسبقاً بالفاتورة {DisposalInvoiceNumber}.");
+        if (string.IsNullOrWhiteSpace(invoiceNumber))
+            throw new AccountingException("رقم فاتورة بيع الأصل مطلوب.");
+        if (proceeds <= 0)
+            throw new AccountingException("لا تُسجَّل فاتورةُ بيعٍ لأصلٍ بلا مقابل.");
+        if (VatExemptionReason.IsRequiredFor(vatCategory) && string.IsNullOrWhiteSpace(vatExemptionCode))
+            throw new AccountingException(
+                $"فئةُ التوريد «{vatCategory}» تستلزم رمزَ سبب إعفاء (BT-121) — وبدونه تُردّ الفاتورة.");
+
+        DisposalBuyerCustomerId = buyerCustomerId;
+        DisposalInvoiceNumber = invoiceNumber.Trim();
+        DisposalProceeds = proceeds;
+        DisposalVatCategory = vatCategory;
+        DisposalVatExemptionCode = vatExemptionCode?.Trim();
     }
 
     /// <summary>

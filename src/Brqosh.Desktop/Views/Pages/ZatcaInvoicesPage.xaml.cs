@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
@@ -203,6 +204,33 @@ public partial class ZatcaInvoicesPage : UserControl
                 new DocumentLinesViewDialog(title,
                     Header(billing.BillingNumber, billing.BillingDate), lines,
                     billing.TaxableAmount, billing.VatAmount, billing.TotalAmount) { Owner = owner }.ShowDialog();
+                return;
+            }
+
+            case ZatcaDocumentPresentation.SourceKind.FixedAssetDisposal:
+            {
+                var asset = await db.FixedAssets.IgnoreQueryFilters()
+                    .SingleOrDefaultAsync(a => a.Id == row.SourceDocumentId);
+                if (asset?.DisposalProceeds is not decimal proceeds) { Missing(); return; }
+
+                // ‏**والسطرُ هو نفسُه الذي أرسله المولّد** — انظر `TryGenerateForAssetDisposalAsync`.
+                var category = asset.DisposalVatCategory ?? VatCategory.Standard;
+                var assetLines = new List<SalesInvoiceLine>
+                {
+                    new($"بيع أصل ثابت {asset.Code} — {asset.NameAr}", 1m, proceeds, null, category),
+                };
+                var assetVat = Math.Round(
+                    proceeds * category.RateFor(VatCalculator.SaudiVatRate), 2, MidpointRounding.AwayFromZero);
+
+                // ‏**وتاريخُ الفاتورة تاريخُ قيد الاستبعاد** لا تاريخُ توليد المستند — وهو
+                // ‏ما كتبه المولّدُ في `cbc:IssueDate`، فيُقرأ من حيث كُتب.
+                var disposalDate = asset.DisposalJournalEntryId is long jid
+                    ? await db.JournalEntries.Where(e => e.Id == jid).Select(e => e.EntryDate).SingleAsync()
+                    : default;
+
+                new DocumentLinesViewDialog(title,
+                    Header(asset.DisposalInvoiceNumber, disposalDate, $"الأصل: {asset.Code}"),
+                    assetLines, proceeds, assetVat, proceeds + assetVat) { Owner = owner }.ShowDialog();
                 return;
             }
 

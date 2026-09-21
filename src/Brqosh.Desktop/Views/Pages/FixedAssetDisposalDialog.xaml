@@ -1,0 +1,58 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.FixedAssetDisposalDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="بيع أصل ثابت"
+        Width="640" Height="540"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="24,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="TitleText" Style="{StaticResource PageTitleText}" Margin="0,0,0,14"/>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock Text="عائد البيع/الخردة — قبل الضريبة" Style="{StaticResource FieldLabel}"/>
+            <TextBox x:Name="ProceedsBox" Style="{StaticResource AppTextBox}" Text="0"
+                     TextChanged="OnInputChanged"/>
+        </StackPanel>
+
+        <!-- ‏(جاهزيّةُ الإطلاق · ح-١٦) الفئةُ الضريبيّة — والخدمةُ تقبلها منذ CEEF-232 · ض-٢
+             ‏**ولا شاشةَ كانت تُمرّرها**، فتُفرض الأساسيّةُ على كلّ بيع. وتصديرُ معدّةٍ
+             ‏توريدٌ صفريُّ النسبة، وفرضُ خمسةَ عشرَ بالمئة عليه يُدفع من مال المنشأة.
+             ‏والفئةُ ورمزُها في مدخلٍ واحدٍ فلا تُمثَّل حالةٌ خاطئة. -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+            <TextBlock Text="المعاملة الضريبية" Style="{StaticResource FieldLabel}"/>
+            <ComboBox x:Name="VatCombo" FontSize="14" Padding="10,8"
+                      DisplayMemberPath="Label" SelectionChanged="OnSelectionChanged"/>
+        </StackPanel>
+
+        <!-- ‏والمشتري اختياريّ: بيعٌ نقديٌّ لمشترٍ لا يُعرَّف عن نفسه يُفوتَر **مبسَّطةً**،
+             ‏كما تفعل نقطةُ البيع — وهو مسارٌ نظاميّ لا تحايل. -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,12">
+            <TextBlock Text="المشتري" Style="{StaticResource FieldLabel}"/>
+            <ComboBox x:Name="BuyerCombo" FontSize="14" Padding="10,8"
+                      DisplayMemberPath="Label" SelectedValuePath="Id"/>
+        </StackPanel>
+
+        <Border Grid.Row="4" Margin="0,6,0,0" Padding="14,12"
+                Background="{StaticResource SurfaceBrush}" CornerRadius="6">
+            <TextBlock x:Name="VerdictText" TextWrapping="Wrap" FontSize="13"/>
+        </Border>
+
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,14,0,0">
+            <Button Content="ترحيل الاستبعاد" Style="{StaticResource PrimaryButton}"
+                    Padding="24,9" Click="OnConfirm" IsDefault="True"/>
+            <Button Content="إلغاء" Style="{StaticResource SecondaryButton}"
+                    Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

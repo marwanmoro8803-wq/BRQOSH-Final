@@ -2,6 +2,7 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 using Brqosh.Domain.Treasury;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
@@ -120,6 +121,75 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
 
         var fileName = $"brqosh-cn-{SanitizeFileName(note.NoteNumber ?? note.Id.ToString())}.pdf";
         await LogAsync(companyId, username, "CreditNote", note.NoteNumber ?? note.Id.ToString(), ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>فاتورةُ بيع الأصل الثابت مطبوعةً — يأخذها المشتري.</b>
+    ///
+    /// <para><b>ومستندٌ ضريبيٌّ لا يُطبع نصفُ مستند</b>: المشتري يطلب فاتورتَه ورقاً أو
+    /// ملفّاً ليخصم مدخلاتِه، <b>وزرُّ الطباعة في شاشة المستندات كان سيرمي</b> على النوع
+    /// الذي أُضيف للتوّ.</para>
+    ///
+    /// <para><b>ولا نوعَ طباعةٍ جديد</b>: الفاتورةُ القياسيّةُ والمبسَّطةُ تصفان هذا البيعَ
+    /// تماماً كما تصفان أيَّ بيع — <b>والفرقُ في المشتري لا في المبيع</b>. فيُقرأ النوعُ
+    /// من وضع الإرسال كما يُقرأ لفاتورة المبيعات.</para>
+    /// </summary>
+    public async Task<PrintResult> ExportAssetDisposalAsync(
+        long companyId, long assetId, string username, CancellationToken ct = default)
+    {
+        var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
+        var asset = await db.FixedAssets.IgnoreQueryFilters()
+            .SingleAsync(a => a.CompanyId == companyId && a.Id == assetId, ct);
+
+        // ‏**ولا تُطبع فاتورةٌ لبيعٍ لم يقع** — حارسُ «المرحَّل وحدَه» بصيغته هنا:
+        // ‏خردةٌ بلا مقابلٍ أو منشأةٌ خارج النطاق لا فاتورةَ لها فلا شيءَ يُطبع.
+        if (asset.DisposalInvoiceNumber is not string invoiceNumber
+            || asset.DisposalProceeds is not decimal proceeds)
+            throw new Domain.Accounting.AccountingException(
+                $"الأصل {asset.Code} لم يُبَع بفاتورة ضريبة — لا يوجد مستند يُطبع.");
+
+        var zatca = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+            d.CompanyId == companyId &&
+            d.SourceDocumentId == assetId &&
+            d.DocumentType == ZatcaDocumentType.AssetDisposal, ct);
+
+        var buyerName = asset.DisposalBuyerCustomerId is long buyerId
+            ? (await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == buyerId, ct)).NameAr
+            : "عميل نقدي";
+
+        var category = asset.DisposalVatCategory ?? VatCategory.Standard;
+        var vat = Math.Round(
+            proceeds * category.RateFor(VatCalculator.SaudiVatRate),
+            2, MidpointRounding.AwayFromZero);
+
+        // ‏**والتاريخُ تاريخُ القيد** — وهو ما كتبه المولّد في المستند الإلكترونيّ، فلا
+        // ‏تختلف الورقةُ عمّا وصل الهيئة.
+        var invoiceDate = asset.DisposalJournalEntryId is long entryId
+            ? await db.JournalEntries.Where(e => e.Id == entryId).Select(e => e.EntryDate).SingleAsync(ct)
+            : DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var lines = new List<SalesInvoicePdfGenerator.Line>
+        {
+            new($"بيع أصل ثابت {asset.Code} — {asset.NameAr}", 1m, proceeds, proceeds, category),
+        };
+
+        var branding = PrintBranding.FromCompany(company);
+        var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
+            zatca?.TransmissionMode == ZatcaTransmissionMode.Reporting
+                ? PrintDocumentKind.SimplifiedSalesInvoice
+                : PrintDocumentKind.StandardSalesInvoice,
+            PartyName: buyerName,
+            QrTlvBase64: zatca?.QrTlvBase64
+                         ?? Phase1QrFallback(company, invoiceDate, null, proceeds + vat, vat),
+            Icv: zatca?.Icv,
+            ComplianceStatus: zatca?.ComplianceStatus.ToString());
+
+        var pdf = SalesInvoicePdfGenerator.Generate(
+            branding, invoiceNumber, invoiceDate, lines, proceeds, vat, proceeds + vat, options);
+
+        var fileName = $"brqosh-fas-{SanitizeFileName(invoiceNumber)}.pdf";
+        await LogAsync(companyId, username, "AssetDisposal", invoiceNumber, ct);
         return new PrintResult(pdf, fileName);
     }
 

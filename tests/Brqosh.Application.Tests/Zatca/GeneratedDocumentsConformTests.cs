@@ -1,8 +1,10 @@
 ﻿using System.Globalization;
 using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Domain.Assets;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
+using Brqosh.Infrastructure.Assets;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Zatca;
@@ -186,6 +188,41 @@ public class GeneratedDocumentsConformTests : IDisposable
         var document = await DocumentFromPostingAsync(note.Id, ZatcaDocumentType.CreditNote);
 
         AssertConforms(nameof(ZatcaEInvoiceGenerator.TryGenerateForCreditNoteAsync), ReadGenerated(document));
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>وبيعُ أصلٍ ثابت — توريدٌ خاضعٌ نظاماً لم يكن له مستند.</b>
+    ///
+    /// <para>كان الاستبعادُ يُقيّد ضريبةَ المخرجات على <c>2106</c> <b>بلا فاتورةٍ ولا مشترٍ
+    /// ولا مستندٍ إلكترونيّ</b>. <b>والمتجرُ يبلغه</b>: كلُّ منشأةٍ تبيع سيّارتَها أو
+    /// جهازَها القديم — وهو أشيعُ ما يُضبط في فحص المنشآت الصغيرة.</para>
+    ///
+    /// <para><b>والقياسُ هنا ليس «صفٌّ وُجد»</b> بل <b>ما استقرّ على القرص</b>: بنيةُ UBL
+    /// كما تصل الهيئة. <b>وبلا هذا كان يكفي أن يُنشأ صفٌّ لِيُقال «أُغلق».</b></para>
+    /// </summary>
+    [Fact]
+    public async Task AGeneratedAssetDisposalInvoice_Conforms()
+    {
+        await SetupAsync();
+
+        var assetAccount = await _db.Accounts.SingleAsync(a => a.CompanyId == _companyId && a.Code == "1203");
+        var accumAccount = await _db.Accounts.SingleAsync(a => a.CompanyId == _companyId && a.Code == "1207");
+
+        var asset = FixedAsset.Create(
+            _companyId, "FA-Z1", "سيارة نقل", new DateOnly(2024, 1, 1),
+            acquisitionCost: 120_000m, salvageValue: 0m, usefulLifeMonths: 120,
+            glAssetAccountId: assetAccount.Id, glDepreciationAccountId: accumAccount.Id);
+        for (var i = 0; i < 24; i++) asset.ApplyDepreciation();
+        _db.FixedAssets.Add(asset);
+        await _db.SaveChangesAsync();
+
+        await new FixedAssetDisposalPostingService(_db).PostDisposalAsync(
+            asset, saleProceeds: 80_000m, new DateOnly(2026, 7, 11), "admin",
+            buyerCustomerId: _customerId);
+
+        var document = await DocumentFromPostingAsync(asset.Id, ZatcaDocumentType.AssetDisposal);
+
+        AssertConforms(nameof(ZatcaEInvoiceGenerator.TryGenerateForAssetDisposalAsync), ReadGenerated(document));
     }
 
     /// <summary>
@@ -698,6 +735,10 @@ public class GeneratedDocumentsConformTests : IDisposable
             nameof(ZatcaEInvoiceGenerator.TryGenerateForCreditNoteAsync),
             nameof(ZatcaEInvoiceGenerator.TryGenerateCancellationForSalesInvoiceAsync),
             nameof(ZatcaEInvoiceGenerator.TryGenerateCancellationForCreditNoteAsync),
+            // ‏(جاهزيّةُ الإطلاق · ح-١٦) **وهذا هو «المسارُ السابع» الذي حذّر منه هذا
+            // ‏الحارسُ نصّاً** — فأسقط الاختبارَ يومَ أُضيف حتّى قِيس. انظر
+            // ‏<see cref="AGeneratedAssetDisposalInvoice_Conforms"/>.
+            nameof(ZatcaEInvoiceGenerator.TryGenerateForAssetDisposalAsync),
         ];
 
         // ‏واسمٌ في القائمتين لا يقابله مسارٌ حقيقيّ يجعل الحارسَ يُصدّق ادّعاءَ نفسه —

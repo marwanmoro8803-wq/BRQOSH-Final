@@ -34,6 +34,8 @@ public class ZatcaDocumentPresentationTests
         { ZatcaDocumentType.InvoiceCancel, ZatcaDocumentPresentation.SourceKind.SalesInvoice },
         // ‏وكذلك إلغاءُ المستخلص — مصدرُه المستخلص.
         { ZatcaDocumentType.BillingCancel, ZatcaDocumentPresentation.SourceKind.ProgressBilling },
+        // ‏(ح-١٦) وفاتورةُ بيع أصلٍ ثابت — **فضاءُ معرّفاتٍ رابع**، مصدرُه `fixed_assets`.
+        { ZatcaDocumentType.AssetDisposal, ZatcaDocumentPresentation.SourceKind.FixedAssetDisposal },
     };
 
     // ── العطلُ نفسُه ────────────────────────────────────────────────────────
@@ -51,11 +53,12 @@ public class ZatcaDocumentPresentationTests
     }
 
     /// <summary>
-    /// <b>وثلاثةٌ من الستّة مصدرُها ليس إشعاراً دائناً</b> — وهو نفيُ القاعدة القديمة
-    /// صراحةً: «ما ليس فاتورةَ مبيعاتٍ فهو إشعارٌ دائن».
+    /// <b>وهذه الأنواعُ مصدرُها ليس إشعاراً دائناً</b> — وهو نفيُ القاعدة القديمة صراحةً:
+    /// «ما ليس فاتورةَ مبيعاتٍ فهو إشعارٌ دائن». <b>وكلُّ واحدٍ منها كان يُقرأ من الجدول
+    /// الخطأ.</b>
     /// </summary>
     [Fact]
-    public void TheOldRule_WouldMisreadThreeOfTheSixTypes()
+    public void TheOldRule_WouldMisreadEveryTypeWhoseSourceIsNotACreditNote()
     {
         var misread = Enum.GetValues<ZatcaDocumentType>()
             .Where(t => t != ZatcaDocumentType.SalesInvoice)
@@ -66,7 +69,8 @@ public class ZatcaDocumentPresentationTests
         Assert.Equal(
             [ZatcaDocumentType.ProgressBilling,
              ZatcaDocumentType.InvoiceCancel,
-             ZatcaDocumentType.BillingCancel],
+             ZatcaDocumentType.BillingCancel,
+             ZatcaDocumentType.AssetDisposal],
             misread);
     }
 

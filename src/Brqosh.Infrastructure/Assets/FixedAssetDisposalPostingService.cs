@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Platform;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Assets;
@@ -29,9 +30,23 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
     /// <para><b>وغيرُها يقع فعلاً:</b> تصديرُ معدّةٍ إلى الخارج توريدٌ صفريُّ النسبة —
     /// <b>وفرضُ خمسةَ عشرَ بالمئة عليه يجعل المنشأةَ تدفع من مالها ضريبةً لا تُحصّلها</b>.</para>
     /// </param>
+    /// <param name="buyerCustomerId">
+    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>المشتري — ولم يكن للاستبعاد مشترٍ قطّ.</b>
+    ///
+    /// <para><b>وفارغٌ مقبولٌ عمداً</b>: بيعُ خردةٍ نقداً لمشترٍ لا يُعرَّف عن نفسه واقعٌ
+    /// يوميّ، <b>ويُفوتَر مبسَّطةً</b> كما تفعل نقطةُ البيع — وهو مسارٌ نظاميّ.
+    /// <b>وفرضُ اختيارِ عميلٍ كان سيُغلق بابَ التخلّص من الخردة</b> لأجل بابٍ آخر.</para>
+    /// </param>
+    /// <param name="vatExemptionReasonCode">
+    /// رمزُ سبب الإعفاء (BT-121) — <b>مطلوبٌ لغير الفئة الأساسيّة</b> وترفض الهيئةُ بدونه
+    /// (<c>BR-KSA-CL-06</c>). <b>ويُطلب هنا لا عند التوليد</b>: المولّدُ يستهلك عدّاداً
+    /// تسلسليّاً قبل أن يفحص، <b>ورقمٌ استُهلك لمستندٍ مرفوضٍ يُلوّث سلسلةَ البصمات بعده</b>.
+    /// </param>
     public async Task<JournalEntry> PostDisposalAsync(
         FixedAsset asset, decimal saleProceeds, DateOnly disposalDate, string username,
         VatCategory vatCategory = VatCategory.Standard,
+        long? buyerCustomerId = null,
+        string? vatExemptionReasonCode = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -122,6 +137,37 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             asset.LinkDisposalJournal(entry.Id);
             asset.MarkDisposed();
             await db.SaveChangesAsync(token);
+
+            // (جاهزيّةُ الإطلاق · ح-١٦) ‏**وبيعُ أصلٍ توريدٌ خاضعٌ نظاماً — فله فاتورةُ ضريبة.**
+            //
+            // ‏كان القيدُ يُنشئ التزاماً على `2106` **بلا مستندٍ خلفَه**: لا رقمَ فاتورةٍ
+            // ‏ولا مشترياً ولا مستنداً إلكترونيّاً. **والضريبةُ تبلغ الإقرارَ منذ ض-١**،
+            // ‏فالنقصُ ليس في الإفصاح بل في المستند: **توريدٌ خاضعٌ لا تعرفه الهيئةُ أبداً**
+            // ‏— وهي مخالفةُ الطور الثاني بعينها، وتُكتشف عند الفحص لا قبلَه.
+            //
+            // ‏**والشرطُ هو شرطُ الضريبة نفسُه**: مقابلٌ موجبٌ وفئةٌ داخل النطاق. فخردةٌ
+            // ‏بلا مقابلٍ لا توريدَ فيها، **ومنشأةٌ غير مسجَّلةٍ لا تُصدر فاتورةَ ضريبةٍ
+            // ‏أصلاً** — وكلاهما يمرّ كما كان بلا فاتورة.
+            if (saleProceeds > 0 && effectiveCategory != VatCategory.OutOfScope)
+            {
+                var invoiceNumber = await DocumentNumberGenerator.NextAsync(
+                    db,
+                    db.FixedAssets.IgnoreQueryFilters()
+                        .Where(a => a.CompanyId == asset.CompanyId)
+                        .Select(a => a.DisposalInvoiceNumber),
+                    "FAS", disposalDate.Year, asset.CompanyId);
+
+                asset.RecordDisposalSale(
+                    buyerCustomerId, invoiceNumber, saleProceeds, effectiveCategory, vatExemptionReasonCode);
+                await db.SaveChangesAsync(token);
+
+                // ‏**والتوليدُ من حيث تُولَّد كلُّ فاتورة** — داخل المعاملة، والإرسالُ
+                // ‏الشبكيُّ بعد الـcommit. وهو عرفُ هذا المستودع منذ أوّله.
+                await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
+                    db, asset.CompanyId,
+                    () => new ZatcaEInvoiceGenerator(db).TryGenerateForAssetDisposalAsync(asset.Id),
+                    token);
+            }
 
             await FinancialPostingSupport.AuditPostAsync(
                 db, asset.CompanyId, "FixedAssetDisposal", asset.Code,

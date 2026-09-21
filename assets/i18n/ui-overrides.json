@@ -1091,5 +1091,10 @@
   "＋ وثيقة تأمين": "＋ Insurance Policy",
   "＋ وحدة": "＋ Unit",
   "＋ وحدة قياس": "＋ Unit of Measure",
-  "＋ وعاء": "＋ Pool"
+  "＋ وعاء": "＋ Pool",
+  "بيع أصل ثابت": "Sell Fixed Asset",
+  "المشتري": "Buyer",
+  "المعاملة الضريبية": "VAT Treatment",
+  "ترحيل الاستبعاد": "Post Disposal",
+  "عائد البيع/الخردة — قبل الضريبة": "Sale/Scrap Proceeds — Before VAT"
 }

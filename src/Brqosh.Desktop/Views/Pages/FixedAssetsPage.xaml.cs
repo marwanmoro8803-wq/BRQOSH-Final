@@ -109,50 +109,24 @@ public partial class FixedAssetsPage : UserControl
     {
         if (Grid.SelectedItem is not AssetRow row) return;
 
-        var dialog = new TextInputDialog("استبعاد أصل ثابت",
-            $"عائد البيع/الخردة للأصل {row.NameAr} — قبل الضريبة (0 إن لم يوجد):", "0")
+        // (جاهزيّةُ الإطلاق · ح-١٦) ‏**ومربّعُ نصٍّ واحدٌ لا يكفي لتوريدٍ خاضع.**
+        //
+        // ‏كانت الشاشةُ تسأل عن المبلغ وحدَه، **فينقص أمران**: الفئةُ الضريبيّة — تقبلها
+        // ‏الخدمةُ منذ CEEF-232 · ض-٢ **ولا شاشةَ تُمرّرها**، فتُفرض الأساسيّةُ على كلّ
+        // ‏بيعٍ ولو كان تصديراً صفريَّ النسبة — **والمشتري**، ولم يكن للأصل مشترٍ في
+        // ‏النموذج أصلاً، فيُقيَّد التزامُ ضريبةٍ بلا فاتورةٍ ولا طرفٍ ثانٍ.
+        //
+        // ‏(CEEF-229 · م0-١٥ · CEEF-232 · ض-٢/ض-٤) **والمعاينةُ تبقى وتُثرى**: الناتجُ
+        // ‏والمقبوضُ والضريبةُ — **والنسبةُ من حال المنشأة لا مكتوبةً ثابتة** — وصارت
+        // ‏تتجدّد مع كلّ تغييرٍ في الشاشة بدل رسالةِ تأكيدٍ واحدة.
+        var customers = await FixedAssetDisposalDialog.LoadCustomersAsync();
+        var isVatRegistered = await ResolveDisposalVatRateAsync() > 0m;
+
+        var dialog = new FixedAssetDisposalDialog(
+            row.NameAr, row.AcquisitionCost, row.AccumulatedDepreciation, row.BookValue,
+            isVatRegistered, customers)
             { Owner = Window.GetWindow(this) };
         if (dialog.ShowDialog() != true)
-            return;
-
-        if (!NumericInput.TryParse(dialog.Value, out var proceeds) || proceeds < 0)
-        {
-            UiDialog.Show("أدخل مبلغاً صحيحاً (صفر أو أكثر).", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        // (CEEF-229 · م0-١٥) التأكيد يعرض ناتج العملية لا مُدخَلها وحده.
-        //
-        // كان الاستبعاد محصوراً بالأصل المستهلَك بالكامل، فالربح/الخسارة صفرٌ دائماً ولا شيء
-        // يُعرَض. وبعد فتح البيع المبكّر صار **الفرق هو ناتج العملية** — ويُرحَّل إلى قائمة الدخل
-        // بلا أن يراه المستخدم. وهنا تحديداً يظهر الحدّ المسجَّل: القيمة الدفترية محسوبة على آخر
-        // إهلاك مُرحَّل، فإن كان الإهلاك متأخّراً بدت الخسارة أكبر — ورؤيتُها قبل الترحيل هي ما
-        // يجعل العطل الصامت رقماً على الشاشة.
-        var gainLoss = proceeds - row.BookValue;
-        var verdict = gainLoss >= 0
-            ? $"ربح متوقّع {gainLoss:N2}"
-            : $"خسارة متوقّعة {-gainLoss:N2}";
-
-        // (CEEF-232 · ض-٢) ‏والمقبوضُ يُعرض معه — **فهو ما سيُودَع في الصندوق**، والمستخدم
-        // ‏يُطابق التأكيدَ بما في يده لا بما في الدفتر. **وعرضُ المقابل وحدَه يجعله يظنّ
-        // ‏نقصاً في القيد** حين يجد في يده أكثرَ ممّا أُقرّ به.
-        //
-        // ‏(ض-٤) **والنسبةُ تُقرأ من حال المنشأة لا تُكتب ثابتةً** — وإلّا وعد التأكيدُ
-        // ‏منشأةً غيرَ مسجَّلةٍ بضريبةٍ لا تُقيَّد، **فيختلف ما على الشاشة عمّا في القيد**
-        // ‏وهو أسوأ من الخطأ نفسِه: يُفقد الثقةَ في كلّ تأكيدٍ بعده.
-        var vatRate = await ResolveDisposalVatRateAsync();
-        var vat = Math.Round(proceeds * vatRate, 2, MidpointRounding.AwayFromZero);
-
-        if (UiDialog.Show(
-                $"استبعاد الأصل {row.NameAr}؟\n\n" +
-                $"التكلفة: {row.AcquisitionCost:N2}\n" +
-                $"مجمّع الإهلاك: {row.AccumulatedDepreciation:N2}\n" +
-                $"القيمة الدفترية: {row.BookValue:N2}\n" +
-                $"عائد البيع (قبل الضريبة): {proceeds:N2}\n" +
-                $"ضريبة القيمة المضافة: {vat:N2}\n" +
-                $"المقبوض: {proceeds + vat:N2}\n" +
-                $"⟵ {verdict}",
-                "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         try
@@ -162,7 +136,8 @@ public partial class FixedAssetsPage : UserControl
             var asset = await db.FixedAssets.SingleAsync(a => a.Id == row.Id);
             var username = SecurityContext.ResolveUsername();
             await facade.GetService<FixedAssetDisposalPostingService>().PostDisposalAsync(
-                asset, proceeds, DateOnly.FromDateTime(DateTime.Today), username);
+                asset, dialog.Proceeds, DateOnly.FromDateTime(DateTime.Today), username,
+                dialog.Treatment.Category, dialog.BuyerCustomerId, dialog.Treatment.Code);
             await ReloadAsync();
             UiDialog.Show("تم ترحيل قيد الاستبعاد.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
         }

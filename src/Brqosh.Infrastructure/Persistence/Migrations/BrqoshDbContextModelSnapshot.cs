@@ -292,8 +292,27 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("DisposalBuyerCustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DisposalInvoiceNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<long?>("DisposalJournalEntryId")
                         .HasColumnType("bigint");
+
+                    b.Property<decimal?>("DisposalProceeds")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("DisposalVatCategory")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("DisposalVatExemptionCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<long>("GlAssetAccountId")
                         .HasColumnType("bigint");
