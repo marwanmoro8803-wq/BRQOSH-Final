@@ -5,6 +5,7 @@ using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Reporting;
+using Brqosh.Infrastructure.Security;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -135,6 +136,50 @@ public class SubledgerDriftIsVisibleInTheProductTests : IDisposable
         await new Brqosh.Infrastructure.Purchasing.PurchaseInvoicePostingService(_db).PostAsync(invoice);
 
         Assert.Equal("Info", (await RunAsync()).Single(f => f.Code == "AP_SUBLEDGER_DRIFT").Severity);
+    }
+
+    // ── سلسلةُ التدقيق (ح-٢٩) ───────────────────────────────────────────────
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٩) <b>سلسلةُ تجزئة سجلّ التدقيق تُفحَص في المنتَج.</b>
+    ///
+    /// <para><c>AuditChainVerifier</c> يقول عن نفسه: «لا يمنع العبث — <b>يجعله غير قابل
+    /// للإخفاء</b>». <b>ولم يكن له مستدعٍ واحدٌ في <c>src/</c></b> — في الاختبارات وحدَها.
+    /// <b>فالعبثُ كان قابلاً للإخفاء تماماً</b>: لا أحدَ ينظر.</para>
+    ///
+    /// <para>ومسارُ المهاجم هو التعديلُ المباشر في القاعدة — <b>وهو ما تُوضع السلسلةُ
+    /// لأجله أصلاً</b>، إذ يمنع معترضُ EF ما يجري داخل التطبيق وحدَه.</para>
+    /// </summary>
+    [Fact]
+    public async Task TamperingWithTheAuditLog_IsReportedByTheProduct()
+    {
+        await SetupAsync();
+        await new AuditService(_db).LogAsync(_companyId, "admin", "ترحيل", "T", "A-1", "تفاصيل");
+        await new AuditService(_db).LogAsync(_companyId, "admin", "إلغاء", "T", "A-2", "تفاصيل");
+
+        await _db.Database.ExecuteSqlRawAsync(
+            "UPDATE audit_log SET Details = 'محتوى مزوَّر' WHERE Sequence = 1");
+
+        var finding = (await RunAsync()).Single(f => f.Code == "AUDIT_CHAIN");
+
+        Assert.Equal("Error", finding.Severity);
+        Assert.Contains("مكسورة", finding.MessageAr, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// <b>وشاهدُ ضبط — سلسلةٌ سليمةٌ تُبلَّغ سليمةً بعددها.</b>
+    /// <b>وغيابُ السطر يُقرأ «لم يُفحص»</b>، فلا يُفرَّق بين سجلٍّ نظيفٍ وفحصٍ لم يقع.
+    /// </summary>
+    [Fact]
+    public async Task AnIntactAuditChain_IsReportedAsInfo()
+    {
+        await SetupAsync();
+        await new AuditService(_db).LogAsync(_companyId, "admin", "ترحيل", "T", "A-1", "تفاصيل");
+
+        var finding = (await RunAsync()).Single(f => f.Code == "AUDIT_CHAIN");
+
+        Assert.Equal("Info", finding.Severity);
+        Assert.Contains("سليمة", finding.MessageAr, StringComparison.Ordinal);
     }
 
     // ── تهيئة ───────────────────────────────────────────────────────────────

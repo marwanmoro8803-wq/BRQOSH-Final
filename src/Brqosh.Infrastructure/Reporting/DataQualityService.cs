@@ -4,6 +4,7 @@ using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Purchasing;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
@@ -120,6 +121,29 @@ public class DataQualityService(BrqoshDbContext db) : IDataQualityService
             (await new StockBalanceQuery(db).ExecuteAsync(companyId, includeZeroBalances: false))
                 .Sum(r => r.TotalValue),
             creditNature: false, ct);
+
+        // (جاهزيّةُ الإطلاق · ح-٢٩) ‏**سلسلةُ تجزئة سجلّ التدقيق تُفحَص في المنتَج.**
+        //
+        // ‏`AuditChainVerifier` يقول عن نفسه: «لا يمنع العبث — يجعله **غير قابل
+        // ‏للإخفاء**». **ولم يكن له مستدعٍ واحدٌ في `src/`** — في الاختبارات وحدَها.
+        // ‏**فالعبثُ كان قابلاً للإخفاء تماماً**: لا أحدَ ينظر.
+        //
+        // ‏ومعترضُ EF يمنع التعديلَ والحذفَ **من داخل التطبيق**، والوصولُ المباشر
+        // ‏للقاعدة يتجاوزه — **وهو المسارُ الذي تُوضع السلسلةُ لأجله أصلاً**.
+        var chain = await new AuditChainVerifier(db).VerifyAsync(companyId, ct);
+
+        findings.Add(chain.IsIntact
+            ? new DataQualityFinding("AUDIT_CHAIN", "Info",
+                $"سلسلة سجلّ التدقيق سليمة — فُحص {chain.EntriesChecked} إدخالاً.",
+                $"Audit log hash chain intact — {chain.EntriesChecked} entr"
+                + $"{(chain.EntriesChecked == 1 ? "y" : "ies")} checked.")
+            : new DataQualityFinding("AUDIT_CHAIN", "Error",
+                $"سلسلة سجلّ التدقيق مكسورة في {chain.Breaks.Count} موضعاً "
+                + $"(أوّلُها عند التسلسل {chain.Breaks[0].Sequence}: {chain.Breaks[0].Description}) — "
+                + "عُبث بالسجلّ من خارج التطبيق، والسجلُّ حجّةٌ نظاميّة.",
+                $"Audit log hash chain broken at {chain.Breaks.Count} point(s) "
+                + $"(first at sequence {chain.Breaks[0].Sequence}: {chain.Breaks[0].Kind}) — "
+                + "the log was altered outside the application."));
 
         return new DataQualityReport(companyId, DateTime.UtcNow, findings);
     }
