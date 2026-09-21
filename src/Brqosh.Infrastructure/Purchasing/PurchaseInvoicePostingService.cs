@@ -281,10 +281,16 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
     {
         var poId = invoice.PurchaseOrderId!.Value;
 
+        // (جاهزيّةُ الإطلاق · ح-١٧) ‏**والترتيبُ جزءٌ من الجواب لا زينةٌ في الاستعلام.**
+        //
+        // ‏كلُّ سطرِ إذنٍ **طبقةٌ بقيمتها التي قُيّدت في `2112` يومَها**، والفوترةُ تُحرِّرها
+        // ‏بالترتيب (الأقدمُ أوّلاً). **ولولا الترتيبُ لَما كان للتحرير معنًى محدَّد**: أيُّ
+        // ‏طبقةٍ تُحرَّر أوّلاً يُغيّر ما يُقيَّد فرقَ سعر.
         var received = await db.GoodsReceipts
             .Where(g => g.CompanyId == invoice.CompanyId
                         && g.PurchaseOrderId == poId
                         && g.Status == GoodsReceiptStatus.Posted)
+            .OrderBy(g => g.ReceiptDate).ThenBy(g => g.Id)
             .SelectMany(g => g.Lines)
             .Where(l => l.ProductId != null)
             .Select(l => new { ProductId = l.ProductId!.Value, l.ReceivedQuantity, l.UnitCost })
@@ -304,50 +310,92 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
         var open = new Dictionary<long, AccrualState>();
         foreach (var group in received.GroupBy(l => l.ProductId))
         {
-            var receivedQuantity = group.Sum(l => l.ReceivedQuantity);
-            if (receivedQuantity <= 0) continue;
+            // (جاهزيّةُ الإطلاق · ح-١٧) ‏**طبقةٌ لكلّ سطرِ إذن — لا متوسّطٌ لكلّ الأذون.**
+            //
+            // ‏كان المتبقّي يُحسب بمتوسّطٍ مُرجَّح: **مجموعُ قيمة ما استُلم كلِّه** مضروباً
+            // ‏في نسبة الكمّية المتبقّية. **وهو صحيحٌ ما دامت كلُّ الأذون بسعرٍ واحد**، فإن
+            // ‏اختلفت الأسعارُ بين دفعةٍ وأخرى — **وذاك أمرٌ يوميّ على أمرٍ واحد** — صار
+            // ‏المُحرَّرُ غيرَ المُقيَّد.
+            //
+            // ‏**مثالٌ مقيس:** ستٌّ بعشرةٍ ثمّ فاتورتُها (يُحرَّر ٦٠٫٠٠ فيصفر الحساب)، ثمّ
+            // ‏أربعٌ بعشرةٍ وعُشر (يُقيَّد ٤٠٫٤٠). فالمتوسّطُ يُحرِّر للأربع
+            // ‏`١٠٠٫٤٠ × ٤ ÷ ١٠ = ٤٠٫١٦` — **فيبقى ٠٫٢٤ في `2112` وقد فُوتِر كلُّ ما استُلم**،
+            // ‏وهو نقضُ الهوية هـ-٨ بعينه: **التزامٌ في الميزانية لا يُقفله شيءٌ أبداً**،
+            // ‏ويتراكم أمرَ شراءٍ بعد آخر ولا يشكو منه ميزانُ المراجعة.
+            //
+            // ‏**والطبقاتُ تُغلق الحساب بالبناء**: مجموعُ قيم الطبقات هو عينُ ما قُيّد
+            // ‏دائناً في `2112`، فاستهلاكُها كلِّها يُحرِّره إلى الصفر حرفاً.
+            var layers = group
+                .Where(l => l.ReceivedQuantity > 0)
+                .Select(l => new AccrualLayer(
+                    l.ReceivedQuantity,
+                    Math.Round(l.ReceivedQuantity * l.UnitCost, 2, MidpointRounding.AwayFromZero)))
+                .ToList();
 
-            var receivedValue = group.Sum(l =>
-                Math.Round(l.ReceivedQuantity * l.UnitCost, 2, MidpointRounding.AwayFromZero));
+            if (layers.Count == 0) continue;
 
-            var consumed = invoicedQuantity.GetValueOrDefault(group.Key);
-            var remaining = Math.Max(0m, receivedQuantity - consumed);
+            var state = new AccrualState(layers);
 
-            // ‏القيمةُ المتبقّية تُشتقّ من الكمية المتبقّية بمتوسط سعر الاستلام — فما خرج
-            // ‏من البضاعة خرج من قيمتها بالنسبة نفسِها، مهما اختلف سعرُ الفاتورة.
-            open[group.Key] = new AccrualState(
-                remaining,
-                Math.Round(receivedValue * remaining / receivedQuantity, 2, MidpointRounding.AwayFromZero));
+            // ‏**وما فُوتِر سابقاً يُستهلَك من المقدّمة** — فالحالةُ تُحسب من الدفتر في كلّ
+            // ‏مرّة ولا تُحفظ، وترتيبُ الاستهلاك هو ترتيبُ الأذون.
+            state.Consume(invoicedQuantity.GetValueOrDefault(group.Key));
+
+            open[group.Key] = state;
         }
 
         return open;
     }
 
-    /// <summary>ما بقي من استحقاق صنفٍ: كمّيةً وقيمةً. والقيمةُ تتبع الكمية لا سعرَ الفاتورة.</summary>
-    private sealed class AccrualState(decimal quantity, decimal value)
+    /// <summary>طبقةُ استحقاقٍ واحدة — سطرُ إذنٍ بكمّيته وقيمته التي قُيّدت في 2112.</summary>
+    private sealed class AccrualLayer(decimal quantity, decimal value)
     {
-        public decimal Quantity { get; private set; } = quantity;
-        public decimal Value { get; private set; } = value;
+        public decimal Quantity { get; set; } = quantity;
+        public decimal Value { get; set; } = value;
+    }
+
+    /// <summary>
+    /// ما بقي من استحقاق صنفٍ — <b>طبقاتٍ مرتَّبةً بترتيب الأذون</b>، لا كمّيةً وقيمةً
+    /// مُتوسَّطتَين. والقيمةُ تتبع الكمية لا سعرَ الفاتورة.
+    /// </summary>
+    private sealed class AccrualState(List<AccrualLayer> layers)
+    {
+        private readonly List<AccrualLayer> _layers = layers;
+        private int _head;
 
         /// <summary>
-        /// ‏يستهلك من الاستحقاق ما يقابل <paramref name="quantityInvoiced"/>، ويُعيد القيمةَ
-        /// المُحرَّرة.
+        /// ‏يستهلك من الاستحقاق ما يقابل <paramref name="quantityInvoiced"/> <b>من أقدم
+        /// الطبقات</b>، ويُعيد القيمةَ المُحرَّرة.
         ///
-        /// <para><b>وآخرُ ما بقي يُحرَّر كاملاً</b> لا بحاصل الضرب: التقريبُ إلى هللتين على
-        /// كلّ فاتورةٍ يترك كسراً، وكسرٌ في حساب استحقاقٍ لا يُقفله شيءٌ بعده. فالشرطُ
-        /// يضمن الهوية <b>بالبناء</b>: فُوتِر كلُّ ما استُلم ⟵ 2112 صفرٌ تماماً.</para>
+        /// <para><b>والطبقةُ التي تُستنفد تُحرَّر كاملةً</b> لا بحاصل الضرب: التقريبُ إلى
+        /// هللتين على كلّ فاتورةٍ يترك كسراً، <b>وكسرٌ في حساب استحقاقٍ لا يُقفله شيءٌ
+        /// بعده</b>. فالشرطُ يضمن الهوية <b>بالبناء</b>: فُوتِر كلُّ ما استُلم ⟵ 2112
+        /// صفرٌ تماماً.</para>
         /// </summary>
         public decimal Consume(decimal quantityInvoiced)
         {
-            var consumed = Math.Min(quantityInvoiced, Quantity);
-            if (consumed <= 0) return 0m;
+            var released = 0m;
+            var remaining = quantityInvoiced;
 
-            var released = consumed == Quantity
-                ? Value
-                : Math.Round(consumed * Value / Quantity, 2, MidpointRounding.AwayFromZero);
+            while (remaining > 0 && _head < _layers.Count)
+            {
+                var layer = _layers[_head];
+                if (layer.Quantity <= 0) { _head++; continue; }
 
-            Quantity -= consumed;
-            Value -= released;
+                var take = Math.Min(remaining, layer.Quantity);
+
+                // ‏استنفادُ الطبقة يُحرِّر باقيَها كلَّه — فلا يبقى كسرٌ في `2112`.
+                var amount = take == layer.Quantity
+                    ? layer.Value
+                    : Math.Round(take * layer.Value / layer.Quantity, 2, MidpointRounding.AwayFromZero);
+
+                layer.Quantity -= take;
+                layer.Value -= amount;
+                released += amount;
+                remaining -= take;
+
+                if (layer.Quantity <= 0) _head++;
+            }
+
             return released;
         }
     }

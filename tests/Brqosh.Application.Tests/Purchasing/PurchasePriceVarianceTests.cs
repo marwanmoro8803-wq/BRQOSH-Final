@@ -3,6 +3,7 @@ using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Purchasing;
+using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Purchasing;
 using Brqosh.Infrastructure.Reporting;
@@ -162,6 +163,63 @@ public class PurchasePriceVarianceTests : IDisposable
         Assert.Equal(-40m, await LedgerAsync(companyId, "2112"));
 
         await AssertAccrualIdentityAsync(companyId);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٧) <b>وإذنُ استلامٍ ثانٍ <u>بعد</u> فاتورةٍ أولى — وهو
+    /// الترتيبُ الذي لم يكن مقيساً.</b>
+    ///
+    /// <para><c>OpenAccrualByProductAsync</c> يحسب المتبقّي <b>بالطرح</b>: كلُّ ما استُلم
+    /// (من كلّ الأذون المرحَّلة) ناقصَ كلِّ ما فُوتِر (من كلّ الفواتير المرحَّلة). <b>وهذا
+    /// صحيحٌ بالبناء مهما تداخل الترتيب</b> — لكنّ المقيسَ قبل اليوم كان إذناً واحداً
+    /// وفاتورتين، <b>أي الترتيبَ الساكن وحدَه</b>.</para>
+    ///
+    /// <para><b>والترتيبُ المتداخل هو الواقع:</b> أمرٌ بعشرين، يصل نصفُه فيُفوتَر، ثمّ يصل
+    /// النصفُ الثاني بسعرٍ آخر فيُفوتَر. <b>ولو حُفظت حالةُ الاستحقاق بدل أن تُحسب</b> —
+    /// أو حُسب المتبقّي من الإذن الأوّل وحدَه — <b>لَتراكم خطأٌ لا يُقفله شيء</b>.</para>
+    ///
+    /// <para>ستّةٌ بعشرة ثمّ فاتورتُها ⟵ <c>2112</c> صفر. ثمّ أربعةٌ <b>بأحدَ عشر</b> ثمّ
+    /// فاتورتُها ⟵ <b>صفرٌ ثانيةً</b>، والمخزونُ عشرةُ قطعٍ لا أكثر.</para>
+    /// </summary>
+    [Fact]
+    public async Task ASecondReceipt_AfterAnInvoice_StillClosesTheAccrualExactly()
+    {
+        var (companyId, supplierId, productId, warehouseId) = await SetupAsync();
+
+        var order = PurchaseOrder.CreateDraft(companyId, supplierId, new DateOnly(2026, 8, 1));
+        order.AddLine("مواد", 10m, 10m, productId);
+        await new PurchaseOrderService(_db).ApproveAsync(order);
+
+        await PostReceiptAsync(companyId, supplierId, order, warehouseId, productId,
+            orderedQuantity: 10m, receivedQuantity: 6m, unitCost: 10m, day: 2);
+        await InvoiceAsync(companyId, supplierId, order, productId, 6m, 10m);
+
+        Assert.Equal(0m, await LedgerAsync(companyId, "2112"));
+
+        // ‏**والإذنُ الثاني يأتي بعد الفاتورة الأولى** — وبسعرٍ أعلى داخل التسامح.
+        await PostReceiptAsync(companyId, supplierId, order, warehouseId, productId,
+            orderedQuantity: 10m, receivedQuantity: 4m, unitCost: 10.1m, day: 9);
+
+        Assert.Equal(-40.4m, await LedgerAsync(companyId, "2112"));
+
+        await InvoiceAsync(companyId, supplierId, order, productId, 4m, 10.1m);
+
+        Assert.Equal(0m, await LedgerAsync(companyId, "2112"));
+
+        // ‏**ولا قطعةَ زائدة**: البضاعةُ دخلت بالإذنين، والفاتورتان لم تُضيفا شيئاً.
+        Assert.Equal(10m, await new InventoryService(_db).GetOnHandAsync(companyId, productId, warehouseId));
+
+        await AssertAccrualIdentityAsync(companyId);
+    }
+
+    private async Task PostReceiptAsync(
+        long companyId, long supplierId, PurchaseOrder order, long warehouseId, long productId,
+        decimal orderedQuantity, decimal receivedQuantity, decimal unitCost, int day)
+    {
+        var receipt = GoodsReceipt.CreateDraft(
+            companyId, supplierId, order.Id, warehouseId, new DateOnly(2026, 8, day));
+        receipt.AddLine("مواد", orderedQuantity, receivedQuantity, unitCost, productId);
+        await new GoodsReceiptPostingService(_db).PostAsync(receipt);
     }
 
     /// <summary>هـ-٨ مع الهويات الرصيدية الثلاث — فالإصلاحُ لا يُقاس بحسابٍ واحد.</summary>
