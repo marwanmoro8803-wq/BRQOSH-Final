@@ -79,20 +79,20 @@ public class Product : ISoftDeletable
         Barcode = (barcode ?? "").Trim();
     }
 
-    /// <summary>تحديث المتوسط المرجح بعد إدخال كمية جديدة.</summary>
-    public void ApplyReceipt(decimal quantityIn, decimal unitCost)
-    {
-        if (!this.IsStockable())
-            throw new AccountingException($"الصنف '{NameAr}' ليس مخزنياً.");
-        if (quantityIn <= 0)
-            throw new AccountingException("كمية الإدخال يجب أن تكون موجبة.");
-        if (unitCost < 0)
-            throw new AccountingException("تكلفة الوحدة لا تكون سالبة.");
-
-        // WAC = (رصيد قديم × تكلفة قديمة + كمية جديدة × تكلفة جديدة) ÷ الرصيد الجديد
-        // الرصيد الكلي يُمرَّر من الخدمة — هنا نحدّث التكلفة فقط بناءً على الكمية الإجمالية المعروفة
-        WeightedAverageCost = unitCost; // placeholder — InventoryService يحسب WAC الصحيح
-    }
+    // (جاهزيّةُ الإطلاق · ح-٢١) ‏**نُزعت `ApplyReceipt`** — دالّةٌ ميّتةٌ تُفسد المتوسّطَ
+    // ‏لو استُدعيت، وكانت تعليقُها يُقرّ بذلك: «placeholder — InventoryService يحسب WAC الصحيح».
+    //
+    // ‏**وجسمُها لم يكن متوسّطاً مرجّحاً بل إحلالاً**: `WeightedAverageCost = unitCost` —
+    // ‏فآخرُ تكلفةِ وارِدٍ تمحو تاريخَ الصنف كلَّه. **ورأسُها يَعِد بالمتوسّط** («تحديث
+    // ‏المتوسط المرجح»)، **وصيغتُه الصحيحةُ مكتوبةٌ تعليقاً فوق السطر الذي يخالفها**.
+    //
+    // ‏**وخطرُها في اسمها**: المسارُ الحقيقيُّ `InventoryService.ApplyReceiptCostAsync`
+    // ‏— **كلمةٌ واحدةٌ تفصل بينهما** — وهو يحسب المتوسّطَ على الرصيد ثمّ يُسنده عبر
+    // ‏`SetWeightedAverageCost`. فمن قصد المسارَ الصحيح وأكملت له أداةُ التحرير الاسمَ
+    // ‏القريب **أفسد تكلفةَ الصنف وكلَّ تكلفةِ مبيعاتٍ بعده**، والقيدُ متوازنٌ لا يشكو.
+    //
+    // ‏**وصفرُ مستدعٍ في `src/` و`tests/` معاً** — فالنزعُ لا يكسر شيئاً، **ويُغلق باباً
+    // ‏لا يُفتح إلا على خطأ**.
 
     public void SetWeightedAverageCost(decimal wac) =>
         WeightedAverageCost = Math.Round(wac, 4, MidpointRounding.AwayFromZero);
