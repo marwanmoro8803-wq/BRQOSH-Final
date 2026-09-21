@@ -193,6 +193,109 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         return new PrintResult(pdf, fileName);
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٩) <b>مستندُ الإلغاء يُطبع — وكان يرمي.</b>
+    ///
+    /// <para>ثلاثةُ أنواعٍ تُصدرها الهيئةُ عند الإلغاء (<c>InvoiceCancel</c> و
+    /// <c>BillingCancel</c> و<c>DebitNote</c>) <b>لم يكن لها فرعٌ في مُوزِّع الطباعة</b>،
+    /// فيرمي «طباعة PDF غير مدعومة». <b>والرميةُ كانت أصدقَ من البديل</b>: إسنادُها إلى
+    /// مستندها المصدر يطبع <b>الفاتورةَ الملغاة بدل إشعار إلغائها</b> — وهو داءُ ح-١٥
+    /// بعينه.</para>
+    ///
+    /// <para><b>والعلاجُ مستندٌ يصف نفسَه</b>: رقمُه رقمُ مستند ZATCA لا رقمُ المصدر،
+    /// وعنوانُه نوعُه هو، <b>وسببُه مكتوبٌ فيه</b> («إلغاء فاتورة مبيعات …») —
+    /// <b>وسطورُه سطورُ ما أُلغي</b>، فهي ما عُكس.</para>
+    ///
+    /// <para><b>ورمزُ QR وعدّادُ ICV من مستند الإلغاء نفسِه</b> لا من المصدر: <b>هما
+    /// هويّتُه لدى الهيئة</b>، ونسخُهما من المصدر ينسب المستندَ إلى غيره.</para>
+    /// </summary>
+    public async Task<PrintResult> ExportZatcaCancellationAsync(
+        long companyId, long zatcaDocumentId, string username, CancellationToken ct = default)
+    {
+        var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
+        var doc = await db.ZatcaEInvoiceDocuments.SingleAsync(
+            d => d.CompanyId == companyId && d.Id == zatcaDocumentId, ct);
+
+        var lines = new List<SalesInvoicePdfGenerator.Line>();
+        decimal subtotal, vat, total;
+        DateOnly date;
+        string partyName, notes;
+        var kind = PrintDocumentKind.CreditNote;
+
+        switch (doc.DocumentType)
+        {
+            case ZatcaDocumentType.InvoiceCancel:
+            {
+                var invoice = await db.SalesInvoices.SingleAsync(
+                    i => i.CompanyId == companyId && i.Id == doc.SourceDocumentId, ct);
+                lines.AddRange(invoice.Lines.Select(l => new SalesInvoicePdfGenerator.Line(
+                    l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)));
+                subtotal = invoice.Subtotal;
+                vat = invoice.VatAmount;
+                total = invoice.GrandTotal();
+                date = invoice.CancelledAt ?? invoice.InvoiceDate;
+                partyName = (await db.Customers.IgnoreQueryFilters()
+                    .SingleAsync(c => c.Id == invoice.CustomerId, ct)).NameAr;
+                notes = $"إلغاء فاتورة مبيعات {invoice.InvoiceNumber ?? invoice.Id.ToString()}";
+                break;
+            }
+
+            case ZatcaDocumentType.BillingCancel:
+            {
+                var billing = await db.ProgressBillings.SingleAsync(
+                    b => b.CompanyId == companyId && b.Id == doc.SourceDocumentId, ct);
+                lines.Add(new SalesInvoicePdfGenerator.Line(
+                    billing.PeriodDescription, 1m, billing.TaxableAmount, billing.TaxableAmount));
+                subtotal = billing.TaxableAmount;
+                vat = billing.VatAmount;
+                total = billing.TotalAmount;
+                date = billing.CancelledAt ?? billing.BillingDate;
+                partyName = (await db.Customers.IgnoreQueryFilters()
+                    .SingleAsync(c => c.Id == billing.CustomerId, ct)).NameAr;
+                notes = $"إلغاء مستخلص أعمال {billing.BillingNumber ?? billing.Id.ToString()}";
+                break;
+            }
+
+            case ZatcaDocumentType.DebitNote:
+            {
+                var note = await db.CreditNotes.SingleAsync(
+                    n => n.CompanyId == companyId && n.Id == doc.SourceDocumentId, ct);
+                lines.AddRange(note.Lines.Select(l => new SalesInvoicePdfGenerator.Line(
+                    l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)));
+                subtotal = note.Subtotal;
+                vat = note.VatAmount;
+                total = note.GrandTotal();
+                date = note.CancelledAt ?? note.NoteDate;
+                partyName = (await db.Customers.IgnoreQueryFilters()
+                    .SingleAsync(c => c.Id == note.CustomerId, ct)).NameAr;
+                notes = $"إلغاء إشعار دائن {note.NoteNumber ?? note.Id.ToString()}";
+                // ‏**إشعارٌ مدينٌ على جانب المبيعات** — لا إشعارُ مشترياتٍ طرفُه مورّد.
+                kind = PrintDocumentKind.SalesDebitNote;
+                break;
+            }
+
+            default:
+                throw new Domain.Accounting.AccountingException(
+                    $"نوعُ المستند {doc.DocumentType} ليس مستندَ إلغاء.");
+        }
+
+        var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
+            kind,
+            PartyName: partyName,
+            QrTlvBase64: doc.QrTlvBase64,
+            Icv: doc.Icv,
+            ComplianceStatus: doc.ComplianceStatus.ToString(),
+            NotesAr: notes);
+
+        var pdf = SalesInvoicePdfGenerator.Generate(
+            PrintBranding.FromCompany(company),
+            doc.InvoiceNumber, date, lines, subtotal, vat, total, options);
+
+        var fileName = $"brqosh-cancel-{SanitizeFileName(doc.InvoiceNumber)}.pdf";
+        await LogAsync(companyId, username, doc.DocumentType.ToString(), doc.InvoiceNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
     public async Task<PrintResult> ExportDebitNoteAsync(
         long companyId, long noteId, string username, CancellationToken ct = default)
     {

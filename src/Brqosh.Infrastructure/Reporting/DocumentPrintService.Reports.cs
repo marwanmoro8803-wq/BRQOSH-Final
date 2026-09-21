@@ -193,6 +193,9 @@ public partial class DocumentPrintService
             ZatcaDocumentType.ProgressBilling => await ExportProgressBillingAsync(companyId, doc.SourceDocumentId, username, ct),
             // (جاهزيّةُ الإطلاق · ح-١٦) ‏وبيعُ الأصل الثابت — مستندٌ ضريبيٌّ يأخذه المشتري.
             ZatcaDocumentType.AssetDisposal => await ExportAssetDisposalAsync(companyId, doc.SourceDocumentId, username, ct),
+            // (جاهزيّةُ الإطلاق · ح-١٩) ‏ومستنداتُ الإلغاء الثلاثة — **بأنفسها لا بمصادرها**.
+            ZatcaDocumentType.InvoiceCancel or ZatcaDocumentType.BillingCancel or ZatcaDocumentType.DebitNote
+                => await ExportZatcaCancellationAsync(companyId, zatcaDocumentId, username, ct),
             _ => throw new InvalidOperationException($"طباعة PDF غير مدعومة لنوع المستند: {doc.DocumentType}"),
         };
     }

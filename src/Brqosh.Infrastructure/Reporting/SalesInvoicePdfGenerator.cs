@@ -357,6 +357,7 @@ public static class SalesInvoicePdfGenerator
         PrintDocumentKind.PurchaseInvoice => "فاتورة مشتريات",
         PrintDocumentKind.CreditNote => "إشعار دائن",
         PrintDocumentKind.PurchaseDebitNote => "إشعار مدين مشتريات",
+        PrintDocumentKind.SalesDebitNote => "إشعار مدين",
         _ => "فاتورة ضريبية مبسّطة",
     };
 
