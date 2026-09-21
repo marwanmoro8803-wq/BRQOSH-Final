@@ -52,7 +52,16 @@ public class WorkOrderCancellationTests : IDisposable
 
         var service = new WorkOrderService(_db);
         await service.ReleaseAsync(company.Id, order.Id);
-        await service.CompleteAsync(company.Id, order.Id, 10m, "admin");
+        // ‏(ح-٣٤) **والإكمالُ يُؤرّخ صراحةً الآن.**
+        //
+        // ‏كانت مقدّمةُ هذا الاختبار **تعتمد على العطل نفسِه**: الإكمالُ
+        // ‏يُؤرّخ بيوم الأمر (٢٠٢٦-٠٤-٠١) **فيقع الإلغاءُ بعدَه صدفةً**.
+        // ‏وبعد ح-٣٤ يُكمَل اليوم، فيسبقُه إلغاءُ ٢٠٢٦-٠٤-٠٢ — **ويرفضُه
+        // ‏النطاقُ بحقّ: «تاريخ القيد العكسي لا يسبق تاريخ القيد الأصلي»**.
+        //
+        // ‏**فتُكمّل المقدّمةُ وتبقى الدعوى** — وهي أنّ الإلغاءَ يعكس المخزون
+        // ‏والقيود، لا أنّ الإكمالَ يُؤرّخ بيوم الأمر. **ولا تُضعَّف.**
+        await service.CompleteAsync(company.Id, order.Id, 10m, "admin", new DateOnly(2026, 4, 1));
         Assert.Equal(WorkOrderStatus.Completed, order.Status);
 
         Assert.Equal(80m, await new InventoryService(_db).GetOnHandAsync(company.Id, raw.Id, warehouse.Id));

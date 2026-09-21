@@ -28,14 +28,33 @@ public class WorkOrderService(BrqoshDbContext db)
             return order;
         }, ct);
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٤) <b>الإكمالُ يُؤرّخ يومَ وقوعه لا يومَ
+    /// مسودّة الأمر.</b>
+    ///
+    /// <para>كانت <b>سبعةُ مواضعَ</b> تأخذ <c>order.OrderDate</c>: حركتا المخزون،
+    /// وحارسُ الفترة، والقيدان، وترقيمُهما. <b>وأمرٌ يُسودّ في ديسمبر
+    /// ويُكمَل في يناير يُدخل إنتاجَ ينايرَ في ديسمبر</b> — فتكلفةُ
+    /// المبيعات وقيمةُ المخزون تقعان في السنة الخطأ.
+    ///
+    /// <para><b>وبعد ح-١ صار أشدّ</b>: أمرٌ من شهرٍ أُقفِل <b>لا يُكمَل أبداً</b>
+    /// — يرفضُه حارسُ الفترة بحقّ، <b>والخطأُ في التاريخ المُغذّى إليه</b>.
+    /// <b>فتبقى بضاعةٌ مُنتَجةٌ لا تدخل الدفاتر وموادُ لا تُصرَف.</b></para>
+    ///
+    /// <para><b>والنمطُ الصحيحُ في هذا الملفّ نفسِه</b>: <c>CancelAsync</c> أسفلَها
+    /// تأخذ <c>DateOnly? cancellationDate = null</c> ثمّ <c>?? DateOnly.FromDateTime(DateTime.Today)</c>.
+    /// <b>فهذا نقلُ نمطٍ قائمٍ لا اختراع</b> — واختيارُ الوسيط الاختياريّ
+    /// <b>يُبقي كلّ موضعِ نداءٍ قائماً ويُصحّح سلوكَه معاً</b>.</para>
+    /// </summary>
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
-        string username, CancellationToken ct = default)
+        string username, DateOnly? completionDate = null, CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPost();
         username = SecurityContext.ResolveUsername(username);
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
+            var completedOn = completionDate ?? DateOnly.FromDateTime(DateTime.Today);
             var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == order.BomId, token);
             var inv = new InventoryService(db);
             var warehouse = await inv.GetDefaultWarehouseAsync(companyId);
@@ -91,18 +110,18 @@ public class WorkOrderService(BrqoshDbContext db)
                 : 0m;
 
             await inv.PostDocumentMovementAsync(companyId, warehouse.Id, StockMovementType.Issue,
-                order.OrderDate, $"صرف مواد — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}", issueLines);
+                completedOn, $"صرف مواد — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}", issueLines);
 
             await inv.PostDocumentMovementAsync(companyId, warehouse.Id, StockMovementType.Receipt,
-                order.OrderDate, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
+                completedOn, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
                 [(bom.FinishedProductId, producedQuantity, unitCost)]);
 
             var posting = new JournalPostingService(db);
-            await posting.EnsurePeriodOpenAsync(companyId, order.OrderDate);
+            await posting.EnsurePeriodOpenAsync(companyId, completedOn);
 
             var wip = await AccountAsync(companyId, "1113", token);
             var inventory = await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory, token);
-            var entry = JournalEntry.CreateDraft(companyId, order.OrderDate,
+            var entry = JournalEntry.CreateDraft(companyId, completedOn,
                 $"إكمال أمر إنتاج {order.OrderNumber}", $"WorkOrderComplete:{order.Id}");
             // ‏(ح-١٣) ‏**وWIP يُحمَّل بالثلاثة**: الموادُّ من المخزون، والأجرُ والتكاليفُ
             // ‏الصناعيّةُ من حسابَيهما — **فتُنقَل تكلفةٌ وقعت، لا تُخترع**. وحسابا 5106
@@ -123,16 +142,16 @@ public class WorkOrderService(BrqoshDbContext db)
                 entry.AddLine(overhead, 0m, overheadCost, "تحميل تكاليف صناعية غير مباشرة");
             }
 
-            var entry2 = JournalEntry.CreateDraft(companyId, order.OrderDate,
+            var entry2 = JournalEntry.CreateDraft(companyId, completedOn,
                 $"استلام منتج تام — {order.OrderNumber}", $"WorkOrderReceipt:{order.Id}");
             entry2.AddLine(inventory, totalProductionCost, 0m, "منتج تام");
             entry2.AddLine(wip, 0m, totalProductionCost, "إغلاق WIP");
 
-            var num1 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, order.OrderDate);
+            var num1 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, completedOn);
             entry.Post(num1);
             db.JournalEntries.Add(entry);
 
-            var num2 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, order.OrderDate);
+            var num2 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, completedOn);
             entry2.Post(num2);
             db.JournalEntries.Add(entry2);
             await db.SaveChangesAsync(token);
