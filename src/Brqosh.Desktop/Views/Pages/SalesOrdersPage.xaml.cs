@@ -76,7 +76,8 @@ public partial class SalesOrdersPage : UserControl
         try
         {
             using var facade = new DesktopAccountingFacade();
-            var invoice = await facade.GetService<SalesOrderService>().CreateInvoiceFromOrderAsync(AppServices.CompanyId, row.Id);
+            var invoice = await facade.GetService<SalesOrderService>().CreateInvoiceFromOrderAsync(
+                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today));
             UiDialog.Show($"تم إنشاء الفاتورة {invoice.InvoiceNumber}.", "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();

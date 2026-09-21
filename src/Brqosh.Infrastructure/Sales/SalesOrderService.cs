@@ -24,26 +24,48 @@ public class SalesOrderService(BrqoshDbContext db)
         return order;
     }
 
-    public async Task<SalesInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId, CancellationToken ct = default)
-    {
-        SecurityContext.EnsureCanPost();
-        var order = await db.SalesOrders
-            .SingleAsync(o => o.CompanyId == companyId && o.Id == orderId, ct);
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٣) <b>الفاتورةُ تُؤرّخ يومَ صدورها لا يومَ الأمر،
+    /// وتقع هي ووسمُ الأمر في معاملةٍ واحدة.</b>
+    ///
+    /// <para><b>وتاريخُ الفاتورة حقلٌ ضريبيٌّ لا وصفٌ</b>: تقع به في إقرارٍ
+    /// دون إقرار، <b>وتأريخٌ إلى الوراء يُدخل توريداً في فترةٍ قد تكون
+    /// قُدِّمت إقرارُها</b>. وكان يُؤخذ <c>order.OrderDate</c> — <b>وأمرُ البيع ليس
+    /// توريداً</b>، وقد يسبق الفاتورةَ بشهور.
+    ///
+    /// <para><b>والتوأمُ يفعلُها صواباً</b>: <c>PurchaseOrderService.CreateInvoiceFromOrderAsync</c>
+    /// يأخذ <c>invoiceDate</c> وسيطاً <b>ويلُفّ في <c>UnitOfWork.ExecuteInTransactionAsync</c></b>.
+    /// <b>فهذا نقلُ نمطٍ قائمٍ لا اختراع.</b></para>
+    ///
+    /// <para><b>والمعاملةُ ليست زينةً هنا</b>: كان الترحيلُ يقع ثمّ يُحفظ وسمُ
+    /// الأمر <b>عمليّتين منفصلتين</b>. فإن سقطت الثانيةُ <b>بقيت فاتورةٌ
+    /// ضريبيّةٌ مُرحَّلةٌ والأمرُ يقرأ «غيرَ مُفوتر»</b> — <b>فيُفوتَر ثانيةً
+    /// فتصدر فاتورتان ضريبيّتان عن توريدٍ واحد</b>.
+    /// <b>ومسارُ التراجُع لا يُفرِّقُه اختبارٌ هنا</b> — يلزمُه حقنُ عطلٍ،
+    /// <b>وذلك يُقال ولا يُدّعى خلافُه</b>.</para>
+    /// </summary>
+    public async Task<SalesInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId,
+        DateOnly invoiceDate, CancellationToken ct = default) =>
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            SecurityContext.EnsureCanPost();
+            var order = await db.SalesOrders
+                .SingleAsync(o => o.CompanyId == companyId && o.Id == orderId, token);
 
-        if (order.Status != SalesOrderStatus.Confirmed)
-            throw new Domain.Accounting.AccountingException("يُنشأ الفاتورة من أمر بيع مؤكد فقط.");
+            if (order.Status != SalesOrderStatus.Confirmed)
+                throw new Domain.Accounting.AccountingException("يُنشأ الفاتورة من أمر بيع مؤكد فقط.");
 
-        var invoice = SalesInvoice.CreateDraft(companyId, order.CustomerId, order.OrderDate);
-        // ‏(م-٥ · ن-٥٢) الثلاثيُّ الضريبيُّ يعبر التحويل — انظر `PurchaseOrderService`.
-        foreach (var line in order.Lines)
-            invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
-                line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
+            var invoice = SalesInvoice.CreateDraft(companyId, order.CustomerId, invoiceDate);
+            // ‏(م-٥ · ن-٥٢) الثلاثيُّ الضريبيُّ يعبر التحويل — انظر `PurchaseOrderService`.
+            foreach (var line in order.Lines)
+                invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                    line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
-        await new SalesInvoicePostingService(db).PostAsync(invoice);
-        order.MarkInvoiced(invoice.Id);
-        await db.SaveChangesAsync(ct);
-        return invoice;
-    }
+            await new SalesInvoicePostingService(db).PostAsync(invoice);
+            order.MarkInvoiced(invoice.Id);
+            await db.SaveChangesAsync(token);
+            return invoice;
+        });
 
     public async Task<SalesOrder> CreateFromQuotationAsync(long companyId, long quotationId, CancellationToken ct = default)
     {

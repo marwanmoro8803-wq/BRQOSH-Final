@@ -176,7 +176,7 @@ public class TaxIdentitySurvivesConversionTests : IDisposable
             .SingleAsync(o => o.Id == order.Id);
         Assert.Equal(VatCategory.Exempt, storedOrder.Lines[0].VatCategory);
 
-        var invoice = await new SalesOrderService(_db).CreateInvoiceFromOrderAsync(company.Id, order.Id);
+        var invoice = await new SalesOrderService(_db).CreateInvoiceFromOrderAsync(company.Id, order.Id, new DateOnly(2026, 3, 4));
         var stored = await _db.SalesInvoices.Include(i => i.Lines).SingleAsync(i => i.Id == invoice.Id);
 
         AssertConversionKept(storedOrder.Lines, stored.Lines, "أمرُ البيع ⟵ فاتورةُ المبيعات");

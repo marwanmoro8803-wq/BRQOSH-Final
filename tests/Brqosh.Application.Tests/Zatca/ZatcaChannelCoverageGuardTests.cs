@@ -285,7 +285,7 @@ public class ZatcaChannelCoverageGuardTests : IDisposable
         var service = new SalesOrderService(_db);
         await service.ConfirmAsync(order);
 
-        var invoice = await service.CreateInvoiceFromOrderAsync(_companyId, order.Id);
+        var invoice = await service.CreateInvoiceFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 5, 8));
         return [invoice.Id];
     }
 

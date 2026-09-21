@@ -67,7 +67,7 @@ public class SalesOrderTests : IDisposable
         order.AddLine("منتج", 1m, 200m);
         await new SalesOrderService(_db).ConfirmAsync(order);
 
-        var invoice = await new SalesOrderService(_db).CreateInvoiceFromOrderAsync(_companyId, order.Id);
+        var invoice = await new SalesOrderService(_db).CreateInvoiceFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 6, 5));
 
         Assert.NotNull(invoice.InvoiceNumber);
         var reloaded = await _db.SalesOrders.SingleAsync(o => o.Id == order.Id);
