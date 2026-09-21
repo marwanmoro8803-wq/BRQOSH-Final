@@ -246,7 +246,13 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             billing.CompanyId, ZatcaDocumentType.BillingCancel, progressBillingId,
             cnNumber, billing.CancelledAt ?? billing.BillingDate, company, customer,
-            billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode, isCreditNote: true);
+            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**وسببُ الإلغاء يُكتب كما يُكتب
+            // ‏للفاتورة والإشعار** — وكان المستخلصُ وحدَه بلا سببٍ.
+            // ‏**والسببُ حقلٌ يقرؤه المراجع** لا تزيينٌ: إلغاءٌ بلا سببٍ
+            // ‏توريدٌ رُفِع من الإقرار بلا تفسير.
+            billing.TaxableAmount, billing.VatAmount, billing.TotalAmount, lines, mode,
+            isCreditNote: true,
+            issueReason: $"إلغاء مستخلص {billing.BillingNumber}");
     }
 
     /// <summary>إشعار دائن ZATCA عند إلغاء إشعار دائن مرحّل — دون قيد محاسبي منفصل.</summary>
@@ -281,8 +287,17 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.DebitNote, creditNoteId,
             dnNumber, note.CancelledAt ?? note.NoteDate, company, customer,
-            note.Subtotal, note.VatAmount, note.GrandTotal(), note.Lines, mode,
+            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**ومستندُ الإلغاء يحمل ما يحملُه
+            // ‏مصدرُه** — عملةً وسعراً وخصمَ مستندٍ وضريبةَ ريال.
+            //
+            // ‏وإلّا **خرجت سطورٌ لا تجمع إلى إجماليّها** متى كان ثَمّ خصمٌ
+            // ‏(ويمسكُه `UblStructureValidator` في المستودع نفسِه)، **وأُعلِن إلغاءٌ
+            // ‏بالريال عن توريدٍ أُعلِن بالدولار**.
+            note.ForeignSubtotal, note.ForeignVatAmount, note.ForeignGrandTotal, note.Lines, mode,
             isCreditNote: false, isDebitNote: true,
+            documentDiscount: note.DocumentDiscountAmount,
+            currencyCode: note.CurrencyCode, exchangeRate: note.ExchangeRate,
+            vatAmountInSar: note.VatAmount,
             issueReason: $"إلغاء إشعار دائن {note.NoteNumber}");
     }
 
@@ -319,7 +334,17 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.InvoiceCancel, salesInvoiceId,
             cnNumber, invoice.CancelledAt ?? invoice.InvoiceDate, company, customer,
-            invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal(), invoice.Lines, mode, isCreditNote: true,
+            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**ومستندُ الإلغاء يحمل ما يحملُه
+            // ‏مصدرُه** — عملةً وسعراً وخصمَ مستندٍ وضريبةَ ريال.
+            //
+            // ‏وإلّا **خرجت سطورٌ لا تجمع إلى إجماليّها** متى كان ثَمّ خصمٌ
+            // ‏(ويمسكُه `UblStructureValidator` في المستودع نفسِه)، **وأُعلِن إلغاءٌ
+            // ‏بالريال عن توريدٍ أُعلِن بالدولار**.
+            invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.ForeignGrandTotal,
+            invoice.Lines, mode, isCreditNote: true,
+            documentDiscount: invoice.DocumentDiscountAmount,
+            currencyCode: invoice.CurrencyCode, exchangeRate: invoice.ExchangeRate,
+            vatAmountInSar: invoice.VatAmount,
             issueReason: $"إلغاء فاتورة مبيعات {invoice.InvoiceNumber}");
     }
 
@@ -600,6 +625,23 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                     d.SourceDocumentId == sourceId);
                 if (originalCn is not null)
                     return (originalCn.InvoiceNumber, originalCn.InvoiceUuid);
+                break;
+            }
+
+            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**وإلغاءُ المستخلص مرجعُه مستخلصُه.**
+            //
+            // ‏كان `BillingCancel` **يسقط من هذا المبدل إلى `(null, null)`**،
+            // ‏فيخرج مستندُ إلغاءٍ **بلا `BillingReference`** — **إشعارٌ دائنٌ لا
+            // ‏يقول ماذا يُلغي**. والنمطُ نمطُ `DebitNote` أعلاه حرفاً:
+            // ‏يُبحث عن مستند المصدر المُرسَل سلفاً ويُشار إليه.
+            case ZatcaDocumentType.BillingCancel:
+            {
+                var originalPb = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+                    d.CompanyId == companyId &&
+                    d.DocumentType == ZatcaDocumentType.ProgressBilling &&
+                    d.SourceDocumentId == sourceId);
+                if (originalPb is not null)
+                    return (originalPb.InvoiceNumber, originalPb.InvoiceUuid);
                 break;
             }
         }
