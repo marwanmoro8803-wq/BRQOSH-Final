@@ -118,14 +118,31 @@ public class Cheque : IBranchScoped
         return entry;
     }
 
-    /// <summary>إيداع شيك وارد: مدين البنك دائن شيكات برسم التحصيل.</summary>
-    public JournalEntry PostDeposit(Account bankGlAccount, Account chequesUnderCollection)
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٢) <b>تاريخُ الحدث يُمرّر — ولا يُشتقّ من
+    /// <c>ChequeDate</c>.</b>
+    ///
+    /// <para>كانت قيودُ الدورة الخمسة تُبنى بتاريخ الشيك نفسِه، <b>والخدمةُ
+    /// تفحص الفترةَ بالتاريخ الذي أدخلَه المستخدم</b>. <b>فالحارسُ يقيس
+    /// تاريخاً لا يبلغ الدفتر أبداً.</b></para>
+    ///
+    /// <para><b>وقُيس</b>: شيكٌ بتاريخ 2026-04-05، <b>ثمّ أُقفِلت فترةُ أبريل</b>،
+    /// ثمّ أُودِع في 2026-07-10 (فترةٌ مفتوحة) ⟵ <b>قُبِل، والقيدُ دخل
+    /// <c>2026-04-05</c> وهي <c>Closed</c></b>. فليس العطلُ تاريخاً خاطئاً فحسب —
+    /// <b>بل نفاذٌ من حارس الفترة المقفلة</b>، وهو الضمانُ الذي بُني
+    /// لأجله ح-١.
+    ///
+    /// <para><b>وتاريخُ الشيك ليس تاريخَ حدثِه</b>: شيكٌ مؤجّلٌ يُستلم في
+    /// شهرٍ ويُودَع في آخر ويُحصّل في ثالث — <b>ومطابقةُ كشف البنك
+    /// تبحث عن حركةِ الشهر الذي وقعت فيه</b>.</para>
+    /// </summary>
+    public JournalEntry PostDeposit(DateOnly depositDate, Account bankGlAccount, Account chequesUnderCollection)
     {
         if (Type != ChequeType.Received)
             throw new AccountingException("الإيداع للشيكات الواردة فقط.");
         EnsureStatus(ChequeStatus.InPortfolio, "إيداع الشيك");
 
-        var entry = BuildSettlementEntry(ChequeDate,
+        var entry = BuildSettlementEntry(depositDate,
             $"إيداع شيك رقم {ChequeNumber}",
             bankGlAccount, chequesUnderCollection);
         Status = ChequeStatus.Deposited;
@@ -133,7 +150,7 @@ public class Cheque : IBranchScoped
     }
 
     /// <summary>تحصيل شيك وارد أو صرف شيك صادر. يُرجع null إذا كان التحصيل تأكيداً فقط (بعد الإيداع).</summary>
-    public JournalEntry? PostClear(Account bankGlAccount, Account clearingAccount)
+    public JournalEntry? PostClear(DateOnly clearDate, Account bankGlAccount, Account clearingAccount)
     {
         if (Type == ChequeType.Received)
         {
@@ -146,7 +163,7 @@ public class Cheque : IBranchScoped
                 return null;
             }
 
-            var entry = BuildSettlementEntry(ChequeDate,
+            var entry = BuildSettlementEntry(clearDate,
                 $"تحصيل شيك رقم {ChequeNumber}",
                 bankGlAccount, clearingAccount);
             Status = ChequeStatus.Cleared;
@@ -154,7 +171,7 @@ public class Cheque : IBranchScoped
         }
 
         EnsureStatus(ChequeStatus.InPortfolio, "صرف الشيك الصادر");
-        var clearEntry = BuildSettlementEntry(ChequeDate,
+        var clearEntry = BuildSettlementEntry(clearDate,
             $"صرف شيك رقم {ChequeNumber}",
             clearingAccount, bankGlAccount);
         Status = ChequeStatus.Cleared;
@@ -162,13 +179,13 @@ public class Cheque : IBranchScoped
     }
 
     /// <summary>ارتجاع شيك وارد أو إلغاء شيك صادر قبل الصرف.</summary>
-    public JournalEntry PostBounceOrCancel(Account debitAccount, Account creditAccount, bool isCancel)
+    public JournalEntry PostBounceOrCancel(DateOnly eventDate, Account debitAccount, Account creditAccount, bool isCancel)
     {
         if (Type == ChequeType.Issued && isCancel)
         {
             EnsureStatus(ChequeStatus.InPortfolio, "إلغاء الشيك");
             Status = ChequeStatus.Cancelled;
-            return BuildSettlementEntry(ChequeDate,
+            return BuildSettlementEntry(eventDate,
                 $"إلغاء شيك رقم {ChequeNumber}",
                 debitAccount, creditAccount);
         }
@@ -181,7 +198,7 @@ public class Cheque : IBranchScoped
 
         var wasCreditedToBank = Status is ChequeStatus.Deposited or ChequeStatus.Cleared;
         Status = ChequeStatus.Bounced;
-        return BuildSettlementEntry(ChequeDate,
+        return BuildSettlementEntry(eventDate,
             $"ارتجاع شيك رقم {ChequeNumber}",
             debitAccount, creditAccount, allowSecondary: wasCreditedToBank);
     }

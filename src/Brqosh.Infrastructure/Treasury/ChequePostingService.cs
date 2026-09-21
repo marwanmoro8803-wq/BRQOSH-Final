@@ -64,7 +64,7 @@ public class ChequePostingService(BrqoshDbContext db)
             var bankGl = await db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId, ct);
             var chequesUnderCollection = await SystemAccountAsync(cheque.CompanyId, SaudiChartOfAccounts.SystemCodes.ChequesUnderCollection);
 
-            var entry = cheque.PostDeposit(bankGl, chequesUnderCollection);
+            var entry = cheque.PostDeposit(depositDate, bankGl, chequesUnderCollection);
             await PostAndLinkAsync(cheque, entry, linkPortfolio: false, ct);
             return cheque;
         });
@@ -87,7 +87,7 @@ public class ChequePostingService(BrqoshDbContext db)
                 : SaudiChartOfAccounts.SystemCodes.ChequesPayable;
             var clearing = await SystemAccountAsync(cheque.CompanyId, clearingCode);
 
-            var entry = cheque.PostClear(bankGl, clearing);
+            var entry = cheque.PostClear(clearDate, bankGl, clearing);
             if (entry is not null)
                 await PostAndLinkAsync(cheque, entry, linkPortfolio: false, ct);
             else
@@ -125,7 +125,7 @@ public class ChequePostingService(BrqoshDbContext db)
                 : chequesUnderCollection;
 
             var useSecondary = cheque.SettlementJournalEntryId is not null;
-            var entry = cheque.PostBounceOrCancel(receivable, creditAccount, isCancel: false);
+            var entry = cheque.PostBounceOrCancel(bounceDate, receivable, creditAccount, isCancel: false);
             await PostAndLinkAsync(cheque, entry, linkPortfolio: false, ct, useSecondary);
             return cheque;
         });
@@ -146,7 +146,7 @@ public class ChequePostingService(BrqoshDbContext db)
             var chequesPayable = await SystemAccountAsync(cheque.CompanyId, SaudiChartOfAccounts.SystemCodes.ChequesPayable);
             var payable = await SystemAccountAsync(cheque.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsPayable);
 
-            var entry = cheque.PostBounceOrCancel(chequesPayable, payable, isCancel: true);
+            var entry = cheque.PostBounceOrCancel(cancelDate, chequesPayable, payable, isCancel: true);
             await PostAndLinkAsync(cheque, entry, linkPortfolio: false, ct);
             return cheque;
         });
@@ -154,6 +154,20 @@ public class ChequePostingService(BrqoshDbContext db)
 
     private async Task PostAndLinkAsync(Cheque cheque, JournalEntry entry, bool linkPortfolio, CancellationToken ct, bool useSecondary = false)
     {
+        // (جاهزيّةُ الإطلاق · ح-٣٢) ‏**والحارسُ يقيس تاريخَ القيد نفسِه.**
+        //
+        // ‏هذا الموضعُ لا يمرّ بـ`JournalPostingService.PostAsync` — **يكتب في
+        // ‏`JournalEntries` رأساً** فلا يبلغُه `PostingOrchestrator` الذي يفحص
+        // ‏بـ`entry.EntryDate`. **والخدمةُ تفحص بتاريخِ المستخدم أعلاه**،
+        // ‏فإن افترق عن تاريخ القيد لم يُفحص ما دخل الدفترَ أصلاً.
+        //
+        // ‏**فيُسأل عن تاريخ القيد عند كتابته** — وهذا حارسٌ يقيس ما يحرس،
+        // ‏فلا يعود النفاذُ إن افترق تاريخان ثانيةً. **وهو لا يُغني عن
+        // ‏تمرير التاريخ ولا يُغني التمريرُ عنه**: ذاك يُصحّح التاريخ،
+        // ‏وهذا يمنع عودةَ الصنف.
+        await new JournalPostingService(db)
+            .EnsurePeriodOpenAsync(cheque.CompanyId, entry.EntryDate);
+
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(cheque.CompanyId, entry.EntryDate);
         entry.Post(entryNumber);
 
