@@ -47,16 +47,20 @@ public class DebitNoteCancellationService(BrqoshDbContext db)
 
             if (issueMovements.Count > 0)
             {
+                // (جاهزيّةُ الإطلاق · ح-٣١) ‏**يُعكَس الأصلُ — لا تُرحّل حركةٌ مضادّة.**
+                //
+                // ‏كان يُرحّل **وارِداً مقابلاً**، وهو **يُنشئ طبقةً جديدةً في ذيل
+                // ‏طابور الوارد-أوّلاً** بدل أن يُرمّم الطبقةَ التي أُخِذ منها **بعينها**.
+                // ‏**فالرصيدُ يعود والتكلفةُ لا تعود**، وتخرج الصرفةُ التاليةُ بتكلفةٍ
+                // ‏ليست تكلفتَها.
+                //
+                // ‏**والمسارُ الصحيحُ قائمٌ وموثّق** (CEEF-229 · م0-٣)، **وستُّ خدماتِ
+                // ‏إلغاءٍ تستعملُه — وهذه لم تكن منها**، كما لم يكن أمرُ الإنتاج (ح-٣٠).
                 var inv = new InventoryService(db);
                 foreach (var movement in issueMovements)
                 {
-                    var receiptLines = movement.Lines
-                        .Select(l => (l.ProductId, l.Quantity, l.UnitCost))
-                        .ToList();
-                    await inv.PostDocumentMovementAsync(companyId, movement.WarehouseId,
-                        StockMovementType.Receipt, cancellationDate,
-                        $"إعادة مخزون — إلغاء إشعار مدين {note.NoteNumber}",
-                        sourceDoc, receiptLines);
+                    await inv.ReverseDocumentMovementAsync(movement);
+                    movement.MarkCancelled();
                 }
             }
 

@@ -439,8 +439,43 @@ public class InventoryService(BrqoshDbContext db)
             // البند مفتوح. وقد أُغلق: `ConsumeForIssueAsync` يُسجّل ما أُخذ من كلّ طبقة
             // مربوطاً بالمستند، فيُعاد بعينه.
             if (!string.IsNullOrWhiteSpace(movement.SourceDocument))
-                await new InventoryCostingService(db)
-                    .RestoreConsumedLayersAsync(movement.CompanyId, movement.SourceDocument);
+            {
+                var costing = new InventoryCostingService(db);
+                var restored = await costing.RestoreConsumedLayersAsync(
+                    movement.CompanyId, movement.SourceDocument);
+
+                // (جاهزيّةُ الإطلاق · ح-٣١ب) ‏**و«لا سجلّ» لا يُبتلع.**
+                //
+                // ‏`RestoreConsumedLayersAsync` **موثّقٌ فيها** أنّ `false` يعني «مستندٌ
+                // ‏رُحّل قبل هذه الدفعة — **فيُقرّر المستدعي** ولا يُبتلع الأمرُ
+                // ‏صامتاً». **وكلا مستدعيَها كان يرمي القيمةَ** — فالقرارُ الموصوفُ
+                // ‏بصفرِ متخذٍ.
+                //
+                // ‏والأثرُ مقيس: `ReverseMovementBalancesAsync` أعاد الكمّيةَ سلفاً،
+                // ‏**فإن لم تعد طبقةٌ معها بقي الرصيدُ بلا تكلفةٍ تحملُه**:
+                // ‏**الطبقات ٦ والرصيد ١٠** على إشعارٍ مدينٍ رُحّل قبل ح-٣١.
+                //
+                // ‏**والترميمُ بمفتاحٍ قديمٍ غيرُ ممكن** — ذاك المفتاحُ كان فارغاً
+                // ‏مشترَكاً، فالترميمُ به يردُّ طبقاتَ مستندٍ آخر. **فتُبنى طبقةٌ من
+                // ‏سطور الحركة نفسِها** — وهي تحمل التكلفةَ التي خرجت بها فعلاً.
+                //
+                // ‏**وهي أدنى من الترميم بعينه ولا تُساويه**: تقع في ذيل طابور
+                // ‏الوارد-أوّلاً لا في موضعها. **لكنّ هويّةً قائمةً بترتيبٍ مزاحَم
+                // ‏أصدقُ من هويّةٍ منشقّة** — وهذا ما كانت تفعلُه الحركةُ المضادّة
+                // ‏قبلَ ح-٣١، **فلا تراجُع عن حالٍ قائم**.
+                //
+                // ‏و`AddCostLayerAsync` **تُميّز بنفسها**: لا تفعل شيئاً في المتوسّط
+                // ‏المرجّح (ولا طبقاتِ هناك أصلاً، **و`false` حالُه دائماً**)، ولا لصنفٍ
+                // ‏غير مخزنيٍّ. **فالمسارُ السليمُ لا يُمسّ.**
+                if (!restored)
+                {
+                    foreach (var line in movement.Lines)
+                        await costing.AddCostLayerAsync(
+                            movement.CompanyId, line.ProductId, movement.WarehouseId,
+                            movement.MovementDate, line.Quantity, line.UnitCost,
+                            movement.SourceDocument);
+                }
+            }
 
             return;
         }

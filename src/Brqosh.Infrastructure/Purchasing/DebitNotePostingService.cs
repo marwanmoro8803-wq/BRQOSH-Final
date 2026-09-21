@@ -43,6 +43,21 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"قيمة الإشعار {note.GrandTotal():N2} تتجاوز المتبقي من الفاتورة {remaining:N2}.");
 
+            // (جاهزيّةُ الإطلاق · ح-٣١) ‏**الرقمُ يُولَد قبل أن يُستعمل مفتاحاً.**
+            //
+            // ‏كان توليدُه بعد حلقةِ استهلاكِ الطبقات، والحلقةُ تُمرّر
+            // ‏`$"DebitNote:{note.NoteNumber}"` — **و`NoteNumber` عدمٌ وقتَها**، لا يُسنَد
+            // ‏إلّا داخل `DebitNote.Post`. **والاستيفاءُ يُصيّر العدمَ فراغاً ولا يرمي**،
+            // ‏فيخرج المفتاحُ `DebitNote:` — **واحداً لكلّ إشعارٍ تُصدرُه المنشأةُ ما بقيت**،
+            // ‏بينما الحركةُ المخزنيّةُ أسفلَ تُرحّل تحت `DebitNote:{الرقم المولّد}`.
+            //
+            // ‏**فلا يلتقي دفترُ الاستهلاك بالحركة، ولا يجد `RestoreConsumedLayersAsync`
+            // ‏شيئاً يُرمّمُه.** **وأشدُّ من ذلك**: مفتاحٌ فارغٌ مشترَكٌ ليس «مفتاحاً
+            // ‏ناقصاً» بل **مفتاحُ مستندٍ آخر** — والترميمُ به يردُّ طبقاتَ إشعارٍ سواه.
+            var noteNumber = await DocumentNumberGenerator.NextAsync(db, 
+                db.DebitNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
+                "DN", note.NoteDate.Year, note.CompanyId);
+
             var inv = new InventoryService(db);
             var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
             decimal inventoryReduction = 0;
@@ -56,7 +71,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 {
                     var (total, unit) = await costing.ConsumeForIssueAsync(
                         note.CompanyId, pid, warehouse.Id, line.Quantity,
-                        $"DebitNote:{note.NoteNumber}", token);
+                        $"DebitNote:{noteNumber}", token);
                     inventoryReduction += total;
                     issueLines.Add((pid, line.Quantity, unit));
                 }
@@ -71,10 +86,6 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 ? await db.Accounts.SingleAsync(a =>
                     a.CompanyId == note.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.Inventory, token)
                 : null;
-
-            var noteNumber = await DocumentNumberGenerator.NextAsync(db, 
-                db.DebitNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
-                "DN", note.NoteDate.Year, note.CompanyId);
 
             var entry = note.Post(noteNumber, purchases, vatInput, payable, inventoryReduction, inventory, purchases,
                 invoice.VatDeductible);
