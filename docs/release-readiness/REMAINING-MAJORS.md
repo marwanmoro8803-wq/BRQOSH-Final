@@ -30,8 +30,8 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 8 بنداً ✅ و5 ◐.
-**وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣١) — **بعضُها خارج هذا الحصر**،
+**والمجموعُ المُغلَق من هذا الحصر:** 11 بنداً ✅ و5 ◐.
+**وأربعةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٤) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -85,7 +85,7 @@
 
 - ✅ **`manufacturing#1`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Cancelling a completed work order corrupts inventory valuation (WAC and FIFO) instead of reversing it — ح-٣٠ `f03f801`
 - ☐ **`manufacturing#2`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No UI path to correct a completed work order: a wrong produced quantity is permanent
-- ☐ **`manufacturing#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Completion posts stock and GL at the draft's OrderDate, not the completion date; the UI offers no completion date
+- ✅ **`manufacturing#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Completion posts stock and GL at the draft's OrderDate, not the completion date; the UI offers no completion date — ح-٣٤ `a795f87`
 - ☐ **`manufacturing#4`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No actual material issue, scrap, yield or by-product recording, and no partial completion: only standard backflush at completion
 - ☐ **`manufacturing#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>BOM edits after release silently change what open orders consume; no BOM snapshot, version or audit
 - ☐ **`manufacturing#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Batch/lot-tracked raw materials or finished goods cannot go through a work order at all
@@ -98,11 +98,11 @@
 ## order-to-cash-procure-to-pay-inventory (12 major)
 
 - ✅ **`order-to-cash-procure-to-pay-inventory#4`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Stock-count surpluses (and manual adjustments in) are credited straight to retained earnings instead of the income statement — ح-٢٣ `e46e028`
-- ✅ **`order-to-cash-procure-to-pay-inventory#5`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Debit note under FIFO records its layer consumption under the empty key 'DebitNote:', and cancellation creates a new layer instead of restoring the consumed ones (the م0-٣ defect class again) — ح-٣١
+- ✅ **`order-to-cash-procure-to-pay-inventory#5`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Debit note under FIFO records its layer consumption under the empty key 'DebitNote:', and cancellation creates a new layer instead of restoring the consumed ones (the م0-٣ defect class again) — ح-٣١ `1076202`
 - ☐ **`order-to-cash-procure-to-pay-inventory#6`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Debit note screen can return only the invoice's first product, whatever the user types; it ignores VAT category and has no per-product quantity check against the invoice
 - ☐ **`order-to-cash-procure-to-pay-inventory#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Batch- or serial-tracked products cannot be returned, stock-counted, sold through a sales order, or bought through the PO auto-GRN or a manual purchase invoice
 - ☐ **`order-to-cash-procure-to-pay-inventory#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Order-to-cash is broken in the UI: sales orders are one free-text line with no product or VAT category, and quotation→order conversion and quotation accept/reject have no UI
-- ☐ **`order-to-cash-procure-to-pay-inventory#9`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Invoicing a sales order back-dates the tax invoice to the order date, and does it outside one transaction
+- ✅ **`order-to-cash-procure-to-pay-inventory#9`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Invoicing a sales order back-dates the tax invoice to the order date, and does it outside one transaction — ح-٣٣ `77ed9dc`
 - ☐ **`order-to-cash-procure-to-pay-inventory#10`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Credit note against a foreign-currency invoice copies foreign unit prices into a SAR document, and the ZATCA credit note is issued in SAR
 - ☐ **`order-to-cash-procure-to-pay-inventory#11`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>ZATCA cancellation document for a sales invoice omits the document discount and currency, so its UBL totals are inconsistent with its lines
 - ☐ **`order-to-cash-procure-to-pay-inventory#12`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Sales, returns and PO invoices always use the default warehouse, while receipts, counts and transfers can target any warehouse
@@ -112,7 +112,7 @@
 
 ## treasury-payroll-assets (12 major)
 
-- ☐ **`treasury-payroll-assets#2`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cheque deposit, clearing, bounce and cancel entries are dated on the cheque date, not the date the user enters
+- ✅ **`treasury-payroll-assets#2`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cheque deposit, clearing, bounce and cancel entries are dated on the cheque date, not the date the user enters — ح-٣٢ `c134b5e`
 - ☐ **`treasury-payroll-assets#3`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No flow ever clears Salaries Payable (2108) or GOSI Payable (2109), and the payment voucher only pays suppliers
 - ☐ **`treasury-payroll-assets#4`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No proration and an incomplete final settlement: leavers get no pay for their last partial month, joiners get a full month, advances are not recovered
 - ✅ **`treasury-payroll-assets#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Payslip net pay leaves out the advance (and absence) deduction, so it disagrees with the WPS file and the journal — ح-٢٤ `fda1146`
