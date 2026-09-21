@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,9 @@ public partial class ZatcaInvoicesPage : UserControl
 
         var rows = docs.Select(d => new Row(
             d.Id, d.SourceDocumentId, d.DocumentType, d.InvoiceNumber,
-            d.DocumentType == ZatcaDocumentType.SalesInvoice ? "فاتورة" : "إشعار دائن",
+            // (جاهزيّةُ الإطلاق · ح-١٥) ‏**والاسمُ يُسمّى، ولا يُنفى عنه «فاتورة».**
+            // ‏أربعةٌ من الستّة كانت تُعرض «إشعار دائن» — ومنها **مستخلصُ الأعمال**.
+            ZatcaDocumentPresentation.TypeLabel(d.DocumentType),
             d.InvoiceUuid.ToString()[..8] + "…",
             d.Icv,
             d.TransmissionMode == ZatcaTransmissionMode.Clearance ? "اعتماد" : "إبلاغ",
@@ -141,30 +144,71 @@ public partial class ZatcaInvoicesPage : UserControl
         await using var db = AppServices.CreateDb();
         var owner = Window.GetWindow(this);
 
-        if (row.DocumentType == ZatcaDocumentType.SalesInvoice)
+        // (جاهزيّةُ الإطلاق · ح-١٥) ‏**المصدرُ يُسأل عنه، ولا يُستنتج بنفيِ «فاتورة».**
+        //
+        // ‏كان السؤالُ ثنائيّاً — أهي فاتورةُ مبيعات؟ **وإلّا فإشعارٌ دائن** — والأنواعُ ستّة
+        // ‏ومصادرُها ثلاثة. فمستخلصٌ ومُلغيان **تُقرأ من `credit_notes` بمعرّفٍ ليس لها**،
+        // ‏وفضاءاتُ المعرّفات مستقلّةٌ تبدأ كلُّها من واحد: **فتُعرض سطورُ مستندٍ آخرَ ومبالغُه
+        // ‏وضريبتُه** تحت عنوان «إشعار دائن»، ولا شيءَ يقول إنّه غيرُه. انظر
+        // ‏<see cref="ZatcaDocumentPresentation"/>.
+        var sourceKind = ZatcaDocumentPresentation.SourceOf(row.DocumentType);
+        var title = ZatcaDocumentPresentation.SourceTitle(row.DocumentType);
+
+        // ‏**وترويسةُ النافذة تفصل المستندَ عن مصدره** — فهما رقمان مختلفان، وخلطُهما
+        // ‏هو أصلُ العطل.
+        string Header(string? sourceNumber, DateOnly date, string? extra = null) =>
+            $"مستند ZATCA: {row.InvoiceNumber} ({row.TypeAr})  |  "
+            + $"المصدر: {sourceNumber ?? "—"}  |  التاريخ: {date:yyyy-MM-dd}"
+            + (extra is null ? "" : $"  |  {extra}");
+
+        void Missing() => UiDialog.Show(
+            ZatcaDocumentPresentation.SourceMissingMessage(row.DocumentType),
+            "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+        switch (sourceKind)
         {
-            var invoice = await db.SalesInvoices.SingleOrDefaultAsync(i => i.Id == row.SourceDocumentId);
-            if (invoice is null)
+            case ZatcaDocumentPresentation.SourceKind.SalesInvoice:
             {
-                UiDialog.Show("الفاتورة المصدر غير موجودة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+                var invoice = await db.SalesInvoices.SingleOrDefaultAsync(i => i.Id == row.SourceDocumentId);
+                if (invoice is null) { Missing(); return; }
+
+                new DocumentLinesViewDialog(title,
+                    Header(invoice.InvoiceNumber, invoice.InvoiceDate), invoice.Lines.ToList(),
+                    invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal()) { Owner = owner }.ShowDialog();
                 return;
             }
 
-            var header = $"رقم: {invoice.InvoiceNumber ?? "—"}  |  التاريخ: {invoice.InvoiceDate:yyyy-MM-dd}";
-            new DocumentLinesViewDialog("فاتورة مبيعات", header, invoice.Lines.ToList(),
-                invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal()) { Owner = owner }.ShowDialog();
-            return;
-        }
+            case ZatcaDocumentPresentation.SourceKind.CreditNote:
+            {
+                var note = await db.CreditNotes.SingleOrDefaultAsync(n => n.Id == row.SourceDocumentId);
+                if (note is null) { Missing(); return; }
 
-        var note = await db.CreditNotes.SingleOrDefaultAsync(n => n.Id == row.SourceDocumentId);
-        if (note is null)
-        {
-            UiDialog.Show("إشعار الدائن المصدر غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
+                new DocumentLinesViewDialog(title,
+                    Header(note.NoteNumber, note.NoteDate, $"السبب: {note.Reason}"), note.Lines.ToList(),
+                    note.Subtotal, note.VatAmount, note.GrandTotal()) { Owner = owner }.ShowDialog();
+                return;
+            }
 
-        var noteHeader = $"رقم: {note.NoteNumber ?? "—"}  |  التاريخ: {note.NoteDate:yyyy-MM-dd}  |  السبب: {note.Reason}";
-        new DocumentLinesViewDialog("إشعار دائن", noteHeader, note.Lines.ToList(),
-            note.Subtotal, note.VatAmount, note.GrandTotal()) { Owner = owner }.ShowDialog();
+            case ZatcaDocumentPresentation.SourceKind.ProgressBilling:
+            {
+                var billing = await db.ProgressBillings.SingleOrDefaultAsync(b => b.Id == row.SourceDocumentId);
+                if (billing is null) { Missing(); return; }
+
+                // ‏**والسطرُ هو نفسُه الذي أرسله المولّد** إلى الهيئة — وصفُ الفترة بكمّيةٍ
+                // ‏واحدةٍ بسعر المبلغ الخاضع — فما على الشاشة هو ما في المستند لا تقريبٌ له.
+                var lines = new List<SalesInvoiceLine>
+                {
+                    new(billing.PeriodDescription, 1m, billing.TaxableAmount, null),
+                };
+                new DocumentLinesViewDialog(title,
+                    Header(billing.BillingNumber, billing.BillingDate), lines,
+                    billing.TaxableAmount, billing.VatAmount, billing.TotalAmount) { Owner = owner }.ShowDialog();
+                return;
+            }
+
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(sourceKind), sourceKind, "مصدرُ مستندٍ إلكترونيٍّ غيرُ معروف.");
+        }
     }
 }
