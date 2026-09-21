@@ -1,0 +1,199 @@
+# حصرُ ما بقي من تدقيق جاهزيّة الإطلاق — **١٢٤ بنداً كبيراً**
+
+> **لماذا هذا الملفُّ هنا:** هذا الحصرُ كان يعيش في **مجلّدٍ مؤقّتٍ مُلحَقٍ بجلسة العمل**،
+> **فيزول بزوالها** — ومعه خريطةُ ما بقي. **وقيل مرّةً إنّ البقيّة «ليست مُحصاةً في مكانٍ
+> يُبلَغ» وهي في ذلك المجلّد نفسِه**، إلى جانب السجلّات. فنُقل إلى المستودع حيث يدوم.
+>
+> **وهو مخرَجُ التدقيق بنصّه الإنجليزيِّ كما كتبه المُدقِّقون** — **ولم يُترجم عمداً**:
+> الترجمةُ إعادةُ صياغةٍ، وإعادةُ الصياغة تُغيّر الدعوى. **والحكمُ والتفصيلُ العربيّان في
+> `MASTER.md` و`OPEN_ITEMS.md`.**
+
+## كيف يُقرأ السطر
+
+```
+[surv|RM|defec] accounting-core#3 <نصُّ البند>
+   │     │  │      │
+   │     │  │      └── القسمُ ورقمُ البند
+   │     │  └───────── الصنف: عطل · ناقص · دعوى · خطر · خارجيّ
+   │     └──────────── R = في اليد (داخل المستودع) · S/M/L = حجمُ العمل
+   └────────────────── surv = نجا من مُشكِّكَين · no-v = لم يبلغه التحقّق بعد
+```
+
+**و`no-v` لا يعني «غيرَ صحيح»** — يعني **لم يُنقَض ولم يُؤكَّد**، فيُعامَل مُدَّعًى
+حتّى يُقاس. **وهذا الفرقُ هو ما يمنع عدَّ ١٢٤ بنداً مؤكَّداً.**
+
+## الحالة
+
+| الرمز | المعنى |
+|---|---|
+| ✅ | أُغلق بإيداعٍ مقيس — **أحمرُ قبلُ وأخضرُ بعدُ في شجرةٍ معزولة** |
+| ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
+| ☐ | مفتوح |
+
+**والمجموعُ المُغلَق من هذا الحصر:** 8 بنداً ✅ و5 ◐.
+**وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣١) — **بعضُها خارج هذا الحصر**،
+إذ جاء من تدقيق S0 السابق.
+
+---
+
+
+
+## accounting-core (10 major)
+
+- ☐ **`accounting-core#1`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>A closed year cannot be corrected: its periods can be reopened and posted to, but year-end close cannot be re-run or reversed
+- ☐ **`accounting-core#2`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>MASTER §2ب claims 'year-end close and its reversal' are proven automatically, but no reversal exists in code or tests
+- ✅ **`accounting-core#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Bank FX revaluation ignores reversed entries but counts their reversals, posting a fictitious FX gain or loss — ح-٢٥ `bee1546`
+- ☐ **`accounting-core#4`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>FX closing translation posts a reporting-currency translation adjustment (CTA) into the subsidiary's own P&L (4107/5217 against 3106)
+- ☐ **`accounting-core#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Consolidated balance sheet shows prior-year unclosed profit as 'Currency translation reserve', even in an all-SAR group
+- ◐ **`accounting-core#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Manual journal entries have no enforced approval and can post directly to control accounts (AR, AP, inventory, VAT), silently breaking subledgers — ح-٢٨ `1614381` — **كشفٌ بمقداره لا حظر**؛ المنعُ يُغلق التأسيس
+- ☐ **`accounting-core#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No go-live migration path for opening balances: no opening trial balance, no open AR/AP invoices, no supplier import
+- ☐ **`accounting-core#8`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>A monetary (AR/AP) revaluation run with a wrong rate cannot be undone: the error message says 'reverse it', but reversal and re-run are both refused
+- ✅ **`accounting-core#9`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No product feature can verify the audit-log hash chain: AuditChainVerifier has zero callers outside tests — ح-٢٩ `d59f2e1`
+- ☐ **`accounting-core#10`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>SOCPA reviewer package (O-02) is a stale 41-line stub; it points the reviewer at a tool that writes into whatever live database is configured, and claims 'In-repo prep: PASS'
+
+## tax-zatca (10 major)
+
+- ☐ **`tax-zatca#7`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cancellation credit notes for discounted or foreign-currency invoices are internally inconsistent (measured with the repo's own validator); credit notes have no currency at all
+- ☐ **`tax-zatca#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No automatic retry or offline queue; transient HTTP errors are recorded as Rejected; rejected documents have no correction or reissue path
+- ☐ **`tax-zatca#9`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Standard tax invoices can be printed before clearance and always carry the local QR; the ZATCA-cleared XML is never used, despite the claim that it is what the buyer receives
+- ☐ **`tax-zatca#10`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No CSID expiry check and no renewal flow
+- ✅ **`tax-zatca#11`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Fixed-asset sales post output VAT with no tax invoice and no e-invoice — ح-١٦ `70444ef`
+- ☐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT
+- ☐ **`tax-zatca#13`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Progress-billing cancellation document has no billing reference and no reason
+- ☐ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency
+- ☐ **`tax-zatca#15`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>The O-01 runbook and OPEN_ITEMS overstate readiness: onboarding steps are missing, the test environment was never exercised, and a live-CSID test reports Passed while doing nothing
+- ☐ **`tax-zatca#16`** · <sub>مؤكّد · في اليد · كبير · خطر</sub><br>G-42 re-measured: the product has one EGS unit and one CSID per company; there is no per-branch or per-device EGS onboarding, and POS-solution registration is external
+
+## manufacturing (11 major)
+
+- ✅ **`manufacturing#1`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Cancelling a completed work order corrupts inventory valuation (WAC and FIFO) instead of reversing it — ح-٣٠ `f03f801`
+- ☐ **`manufacturing#2`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No UI path to correct a completed work order: a wrong produced quantity is permanent
+- ☐ **`manufacturing#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Completion posts stock and GL at the draft's OrderDate, not the completion date; the UI offers no completion date
+- ☐ **`manufacturing#4`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No actual material issue, scrap, yield or by-product recording, and no partial completion: only standard backflush at completion
+- ☐ **`manufacturing#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>BOM edits after release silently change what open orders consume; no BOM snapshot, version or audit
+- ☐ **`manufacturing#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Batch/lot-tracked raw materials or finished goods cannot go through a work order at all
+- ☐ **`manufacturing#7`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Work orders always use the company's default warehouse for both components and output
+- ☐ **`manufacturing#8`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>'WIP' is cosmetic: it never carries a balance, uses the construction account 'Work in Progress - Unbilled', and assistant/template claims say otherwise
+- ☐ **`manufacturing#9`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No manufacturing reports: no production cost sheet, material usage/variance or production summary
+- ☐ **`manufacturing#10`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Release rubric omits manufacturing: no critical journey, and the live evidence cannot detect cost errors, yet the verdict is 97% CONDITIONAL GO with no manufacturing residual risk
+- ☐ **`manufacturing#11`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Manufacturing tests execute the code but assert no money: 97% line coverage let the reversal defect pass
+
+## order-to-cash-procure-to-pay-inventory (12 major)
+
+- ✅ **`order-to-cash-procure-to-pay-inventory#4`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Stock-count surpluses (and manual adjustments in) are credited straight to retained earnings instead of the income statement — ح-٢٣ `e46e028`
+- ✅ **`order-to-cash-procure-to-pay-inventory#5`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Debit note under FIFO records its layer consumption under the empty key 'DebitNote:', and cancellation creates a new layer instead of restoring the consumed ones (the م0-٣ defect class again) — ح-٣١
+- ☐ **`order-to-cash-procure-to-pay-inventory#6`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Debit note screen can return only the invoice's first product, whatever the user types; it ignores VAT category and has no per-product quantity check against the invoice
+- ☐ **`order-to-cash-procure-to-pay-inventory#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Batch- or serial-tracked products cannot be returned, stock-counted, sold through a sales order, or bought through the PO auto-GRN or a manual purchase invoice
+- ☐ **`order-to-cash-procure-to-pay-inventory#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Order-to-cash is broken in the UI: sales orders are one free-text line with no product or VAT category, and quotation→order conversion and quotation accept/reject have no UI
+- ☐ **`order-to-cash-procure-to-pay-inventory#9`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Invoicing a sales order back-dates the tax invoice to the order date, and does it outside one transaction
+- ☐ **`order-to-cash-procure-to-pay-inventory#10`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Credit note against a foreign-currency invoice copies foreign unit prices into a SAR document, and the ZATCA credit note is issued in SAR
+- ☐ **`order-to-cash-procure-to-pay-inventory#11`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>ZATCA cancellation document for a sales invoice omits the document discount and currency, so its UBL totals are inconsistent with its lines
+- ☐ **`order-to-cash-procure-to-pay-inventory#12`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Sales, returns and PO invoices always use the default warehouse, while receipts, counts and transfers can target any warehouse
+- ☐ **`order-to-cash-procure-to-pay-inventory#13`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No customer credit limit exists anywhere
+- ✅ **`order-to-cash-procure-to-pay-inventory#14`** · <sub>مؤكّد · في اليد · كبير · عطل</sub><br>Landed cost 'credit payables' posts to AP control 2101 with no supplier, breaking the payables subledger identity; it also has no VAT and no reversal — ح-٢٧ `04aef12`
+- ☐ **`order-to-cash-procure-to-pay-inventory#15`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>Launch rubric has no procure-to-pay, inventory or returns journey: 97% readiness never measured these flows live or end-to-end
+
+## treasury-payroll-assets (12 major)
+
+- ☐ **`treasury-payroll-assets#2`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cheque deposit, clearing, bounce and cancel entries are dated on the cheque date, not the date the user enters
+- ☐ **`treasury-payroll-assets#3`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No flow ever clears Salaries Payable (2108) or GOSI Payable (2109), and the payment voucher only pays suppliers
+- ☐ **`treasury-payroll-assets#4`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No proration and an incomplete final settlement: leavers get no pay for their last partial month, joiners get a full month, advances are not recovered
+- ✅ **`treasury-payroll-assets#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Payslip net pay leaves out the advance (and absence) deduction, so it disagrees with the WPS file and the journal — ح-٢٤ `fda1146`
+- ☐ **`treasury-payroll-assets#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Advance installments can take an employee's entire net wage; the documented half-wage guard does not exist
+- ☐ **`treasury-payroll-assets#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>GOSI policy has a single Saudi rate per company and cannot handle contributor groups under the 2024 Social Insurance Law
+- ☐ **`treasury-payroll-assets#8`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>WPS is marked closed (G-19) but the file is a home-grown CSV, not a bank WPS or Mudad upload format
+- ☐ **`treasury-payroll-assets#9`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Article 117 sick-pay tiers and statutory leave limits are never applied in payroll; the leave calculator's sick-pay functions are dead code
+- ☐ **`treasury-payroll-assets#10`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>Many treasury, asset and payroll postings cannot be reversed or corrected at all
+- ☐ **`treasury-payroll-assets#11`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Depreciation engine: future-dated assets are depreciated, a full month is charged regardless of acquisition date, missed months are never caught up, and only straight-line exists
+- ☐ **`treasury-payroll-assets#12`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Asset acquisition is cash-only, without VAT, without opening balances, and not atomic
+- ☐ **`treasury-payroll-assets#13`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Bank reconciliation, auto-matching and FX revaluation load the company's entire posted ledger into memory; no statement balance, reconciliation is per entry rather than per line
+
+## sector-modules (10 major)
+
+- ☐ **`sector-modules#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Construction IFRS 15: revenue deferred to 2105 is never released, and costs running ahead of billing are never recognised
+- ☐ **`sector-modules#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Hotel room revenue is not accrued night by night in the GL, despite the screen and service claiming it is; in-house nights at period end are missing from revenue
+- ☐ **`sector-modules#5`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Reservation cancellation and no-show cannot be done from the UI or any service, and deposits have no refund or forfeit path
+- ☐ **`sector-modules#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>Hotel reservation deposits are booked with no VAT at receipt. KSA treats advance consideration as a tax point.
+- ☐ **`sector-modules#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Rent billed in advance (quarterly, semi-annual, annual) is recognised as revenue on the invoice date, not over the lease period
+- ☐ **`sector-modules#8`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sector cash postings default to the parent bank account 1102, reintroducing the split-cash defect CEEF-229 م2-١٥ fixed for POS
+- ☐ **`sector-modules#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>Project costing is not integrated with purchasing, AP, payroll or input VAT. The only cost source is a manual dialog that always credits petty cash.
+- ☐ **`sector-modules#10`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>On a second workstation, the navigation follows the profile chosen in that machine's setup wizard, not the company's stored profile. Sector screens can be hidden.
+- ☐ **`sector-modules#11`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Real Estate and General profiles lack Purchasing, and maintenance orders post gross cost with no supplier and no input VAT
+- ☐ **`sector-modules#12`** · <sub>بلا تحقّق · خارج المستودع · كبير · خارجيّ</sub><br>No NPHIES integration for insurance claims, and no Ejar link for leases
+
+## security-licensing-tenancy (10 major)
+
+- ☐ **`security-licensing-tenancy#0`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>A local Windows admin can switch off both the license check and the login by downgrading the environment
+- ☐ **`security-licensing-tenancy#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>License expiry is still not enforced against clock rollback or a long-running session, though ت-١٢ is marked closed
+- ☐ **`security-licensing-tenancy#2`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>License Tier and Features are never enforced, so any license unlocks every edition, module and company count
+- ◐ **`security-licensing-tenancy#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>The ZATCA e-invoicing private key is written to disk in plaintext — ح-٢٠ `3dfe3c6` — **مُثبَّتٌ باختبار**؛ **والمفاضلةُ قرارُ المالك**
+- ☐ **`security-licensing-tenancy#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Deactivating or demoting a user does not end their open session
+- ☐ **`security-licensing-tenancy#5`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>In-app RBAC and the tamper-evident audit chain are not a real boundary: every workstation holds a DB-owner credential and the chain has no key
+- ☐ **`security-licensing-tenancy#6`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>The pen-test gate O-05 has never run, and its scope (the API) is not what ships
+- ☐ **`security-licensing-tenancy#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No in-product password recovery for the seeded administrator in production
+- ☐ **`security-licensing-tenancy#8`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Privilege changes and other security events are not written to the audit trail
+- ☐ **`security-licensing-tenancy#9`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and all shipped binaries are unsigned
+
+## data-upgrade-performance (7 major)
+
+- ☐ **`data-upgrade-performance#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Restore is proven only onto an empty schema; the shipped restore runs pg_restore --clean over the live, possibly newer schema
+- ☐ **`data-upgrade-performance#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No automatic backup before a version upgrade migrates production books, and rollback was never exercised
+- ☐ **`data-upgrade-performance#3`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The O-04 '1M-entry' harness runs 2,000 entries on in-memory SQLite, and -FullMillion changes nothing
+- ☐ **`data-upgrade-performance#4`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>No valid performance evidence on PostgreSQL at realistic ledger size; SQLite numbers already show per-post cost growing with the ledger
+- ☐ **`data-upgrade-performance#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Scheduled backup needs PostgreSQL client tools on every workstation, and the installer does not ship them
+- ☐ **`data-upgrade-performance#7`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>No guard stops an older workstation from running against a schema already upgraded by a newer one
+- ☐ **`data-upgrade-performance#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>G-39 data migration from other systems is only chart of accounts plus customer name/VAT, through a naive CSV parser
+
+## installer-deployment-ops (12 major)
+
+- ☐ **`installer-deployment-ops#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No release pipeline: CI never builds the MSI, and the only MSI on disk is an unsigned local 1.0.0 that the shipped-versions gate deliberately exempts
+- ☐ **`installer-deployment-ops#3`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Code-signing hook only accepts a PFX file, which CAs no longer issue; 'hook ready, waiting for certificate' is false
+- ☐ **`installer-deployment-ops#4`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>Package and payload are unsigned today (certificate is a third-party dependency)
+- ☐ **`installer-deployment-ops#5`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>.NET launch condition passes on any Desktop runtime version; the '9 or newer' message is also wrong for .NET 10
+- ☐ **`installer-deployment-ops#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>.NET 9 runtime support ends about 8 weeks after launch, and no document plans for it
+- ☐ **`installer-deployment-ops#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Licence and password bypass: the environment can be downgraded to development, which enables BRQOSH_UITEST auto-admin login and the 30-day trial
+- ☐ **`installer-deployment-ops#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No licence-expiry warning, and expiry locks the owner out of all books with no read-only mode
+- ☐ **`installer-deployment-ops#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No supported multi-workstation or multi-user deployment: each Windows account re-runs the setup wizard, which silently adopts whatever company is in the database
+- ☐ **`installer-deployment-ops#10`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Automatic backups only work where pg_dump is installed locally; the MSI neither ships nor checks for it, and the guide points to scripts that are not shipped
+- ☐ **`installer-deployment-ops#11`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Upgrades to production DBs cannot be rolled back, and no client-version guard stops old workstations writing to a migrated schema; the MASTER §9 rollback evidence is unrelated
+- ☐ **`installer-deployment-ops#12`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Update channel is not operable: manual file picker only, no publisher tool for signed manifests, staging never called, and it trusts the licence key
+- ☐ **`installer-deployment-ops#13`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Installer shows no end-user licence agreement or commercial terms
+
+## ui-ux-i18n-printing (10 major)
+
+- ☐ **`ui-ux-i18n-printing#0`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed credit note (إشعار دائن) lacks the buyer's VAT number and address, the original invoice number, and the reason
+- ☐ **`ui-ux-i18n-printing#1`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Progress-billing PDF (the construction tax invoice) is not titled 'فاتورة ضريبية', has no buyer VAT number or address, hard-codes 15%, and prints the ZATCA status as a raw English enum
+- ☐ **`ui-ux-i18n-printing#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed sales invoice hides line and document discounts, so its columns do not add up to its totals
+- ☐ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س
+- ☐ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن'
+- ☐ **`ui-ux-i18n-printing#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Pressing Enter in 14 dialogs immediately posts an unchangeable document, with the first customer or supplier preselected and no confirmation
+- ☐ **`ui-ux-i18n-printing#6`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sales invoice entry screen shows totals with 15% VAT on every line, including zero-rated and exempt lines
+- ☐ **`ui-ux-i18n-printing#7`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>'محاسبة عامة' (General) and real-estate profiles have no supplier, purchase-invoice or product screens, so the payment-voucher screen they do show cannot be used, and the profile cannot be changed later
+- ☐ **`ui-ux-i18n-printing#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>POS has no printable receipt: the receipt window only closes, and printing means an A4 PDF of the last POS invoice from any shift
+- ☐ **`ui-ux-i18n-printing#9`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>The published '100% translated' claim covers only fixed literal strings; English mode still shows Arabic statuses, summaries, VAT-return lines and message text
+
+## commercial-readiness (12 major)
+
+- ◐ **`commercial-readiness#4`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Published readiness numbers are stale: MASTER's 97% predates the 7-S0 forensic audit and was never recomputed — `0815835` — كما فوق
+- ☐ **`commercial-readiness#5`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Licence tiers and features are signed but never enforced, so any licence unlocks every module; per-machine binding is not reflected in pricing
+- ☐ **`commercial-readiness#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Licence expiry locks customers out of their own statutory books with no warning and no read-only mode
+- ☐ **`commercial-readiness#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The shipped support screen shows a placeholder phone number, internal tags and an SLA that contradicts both GTM drafts; no helpdesk exists
+- ☐ **`commercial-readiness#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No Arabic user manual; the only install guide sends pilot customers to a developer tool that writes to the books
+- ☐ **`commercial-readiness#9`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>No release pipeline: every shippable MSI is a local, unnumbered 1.0.0 build with no changelog and no update channel
+- ☐ **`commercial-readiness#10`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and executable are unsigned
+- ☐ **`commercial-readiness#11`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · ناقص</sub><br>No prices, and licence issuance cannot be reconciled with the vendor's own ZATCA invoices
+- ☐ **`commercial-readiness#12`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>No third-party licence notices ship with the product
+- ☐ **`commercial-readiness#13`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-02 not done: no independent SOCPA or accounting review, and the reviewer package predates the audit that found a year-end-close S0
+- ☐ **`commercial-readiness#14`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-05 not done: no penetration test or ZAP run, and the recorded 'static scan PASS' points at an empty log
+- ☐ **`commercial-readiness#15`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Data migration covers only chart of accounts and customers; no opening balances, suppliers, items or open invoices
+
+## evidence-integrity (8 major)
+
+- ◐ **`evidence-integrity#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>MASTER.md verdict (CONDITIONAL GO, 97%) predates the 51-finding forensic audit and was never recomputed — `0815835` — **الحكمُ صار NO-GO**؛ **ولم يُنشَر رقمٌ بديل**
+- ☐ **`evidence-integrity#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Coverage gate double-counts Brqosh.Domain; the published per-assembly and merged numbers are artifacts, and the gate is blind to Domain.Tests losing coverage
+- ◐ **`evidence-integrity#3`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No critical journey covers manufacturing, and no test asserts finished-goods cost, quantity or WIP amounts — ح-١٣ وح-٣٠ — **التكلفةُ صارت مؤكّدةً بمبلغ**؛ ولا رحلةَ حرجةً بعد
+- ☐ **`evidence-integrity#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>verify-gates.ps1: five of fifteen sensitivity cases do not exercise the real gate, and there is no recorded full run of the current fifteen
+- ☐ **`evidence-integrity#5`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>CI has not run on the 46 audited commits; 'CI chain green' is a local re-run, and the version bump behind the upgrade fix only happens in CI
+- ☐ **`evidence-integrity#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The tenant-mismatch API tests exit before asserting anything, yet OPEN_ITEMS cites them as guarding tenant default-deny
+- ☐ **`evidence-integrity#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>OPEN_ITEMS §3 publishes false or contradictory figures, and PERFORMANCE_BUDGETS is stale
+- ☐ **`evidence-integrity#8`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>MARKET_LAUNCH_GAP_ANALYSIS.md is two months stale, wrong in both directions, and still linked as the launch-gap detail
