@@ -19,6 +19,10 @@
                             Style="{StaticResource ToolbarPrimaryGroup}">
                     <Button x:Name="RunBtn" Content="إعادة التقييم" Style="{StaticResource PrimaryButton}"
                             Padding="18,9" Click="OnRun"/>
+                    <!-- (جاهزيّةُ الإطلاق · ح-٣٨) سعرٌ خاطئٌ يُلغى من هنا —
+                         وكانت رسالةُ الرفض تُحيل إلى عكسٍ مرفوضٍ في نفسِه. -->
+                    <Button x:Name="CancelBtn" Content="إلغاء تقييم التاريخ" Style="{StaticResource SecondaryButton}"
+                            Margin="10,0,0,0" Padding="18,9" Click="OnCancelRevaluation"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="RefreshBtn" DockPanel.Dock="Right" Content="عرض المكشوف"

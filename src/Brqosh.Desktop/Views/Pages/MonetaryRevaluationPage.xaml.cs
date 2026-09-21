@@ -122,4 +122,32 @@ public partial class MonetaryRevaluationPage : UserControl
             UiFeedback.ShowWarning(ex.Message);
         }
     }
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٨) <b>إلغاءُ تقييمٍ أُعيد بسعرٍ خاطئ.</b>
+    ///
+    /// <para><b>وبه تصير رسالةُ الرفض صادقةً</b> — تُحيل إلى مسارٍ
+    /// <b>قائمٍ في الشاشة نفسِها</b>، لا إلى عكسٍ يرفضُه النطاق.</para>
+    /// </summary>
+    private async void OnCancelRevaluation(object sender, RoutedEventArgs e)
+    {
+        if (AsOfBox.SelectedDate is null)
+        {
+            UiFeedback.ShowWarning("حدّد تاريخ الإقفال أولاً.");
+            return;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var reversed = await facade.GetService<MonetaryRevaluationService>().CancelAsync(
+                AppServices.CompanyId, DateOnly.FromDateTime(AsOfBox.SelectedDate.Value),
+                DateOnly.FromDateTime(DateTime.Today), SecurityContext.ResolveUsername());
+
+            SummaryText.Text = $"أُلغي التقييم — عُكِس {reversed} من قيودِه، ولك أن تُعيدَه بسعرٍ آخر.";
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
 }

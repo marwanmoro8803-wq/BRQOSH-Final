@@ -176,6 +176,7 @@ public static partial class UiBilingualRegistry
         ["إلغاء الإشعار"] = "Cancel Note",
         ["إلغاء الاستلام"] = "Cancel Goods Receipt",
         ["إلغاء المحدد"] = "Cancel Selected",
+        ["إلغاء تقييم التاريخ"] = "Cancel this date’s revaluation",
         ["إلى"] = "To",
         ["إلى *"] = "To *",
         ["إلى تاريخ"] = "To date",

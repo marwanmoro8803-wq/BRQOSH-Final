@@ -92,13 +92,29 @@ public class MonetaryRevaluationService(BrqoshDbContext db)
 
             // ‏**ولا يُقيَّد التقييمُ مرّتين للتاريخ نفسِه**: تشغيلٌ ثانٍ يُضاعف الأثرَ،
             // ‏**والعكسُ في اليوم التالي يُلغي واحداً ويترك الآخر** — فيبقى فرقٌ دائم.
+            // (جاهزيّةُ الإطلاق · ح-٣٨) ‏**والسؤالُ عن تقييمٍ حيٍّ لا عن أثرٍ باق.
+            //
+            // ‏كان `Status != Draft` — **والمعكوسُ ليس مسودّةً**، فيبقى الحارسُ
+            // ‏يرفض بعد العكس تماماً. **والرسالةُ كانت تقول «اعكسْ قيدَه
+            // ‏إن أردت إعادته»** — **فتأمر بما لا يُجدي**: من يعكس يُمنع كما مُنِع قبلَه.
+            //
+            // ‏**ومعكوسٌ لا أثرَ له في الدفتر** فلا يمنع تقييماً جديداً.
+            // ‏**وليس هذا نقضاً لـح-٢٦**: ذاك في الأرصدة حيث يبقى المعكوسُ
+            // ‏وعكسُه معاً، **وهذا سؤالُ وجودٍ لا سؤالُ مبلغ**.
             var already = await db.JournalEntries.AnyAsync(e =>
                 e.CompanyId == companyId && e.SourceDocument == sourceDocument
-                && e.Status != JournalEntryStatus.Draft, token);
+                && e.Status == JournalEntryStatus.Posted
+                // ‏**وقيدُ العكس يرث `SourceDocument` من أصله** (`CreateReversal`)،
+                // ‏**فيبقى `Posted` تحت المفتاح نفسِه بعد الإلغاء**. ولا وسمَ
+                // ‏يقول «أنا عكس» — **بل الأصلُ هو من يُشير إليه**. فالتمييزُ
+                // ‏أنّ لا قيدَ يُسمّيني عكساً له.
+                && !db.JournalEntries.Any(o =>
+                    o.CompanyId == companyId && o.ReversalEntryId == e.Id), token);
 
             if (already)
                 throw new AccountingException(
-                    $"أُعيد التقييمُ لهذا التاريخ سلفاً ({asOf:yyyy-MM-dd}) — واعكسْ قيدَه إن أردت إعادته.");
+                    $"أُعيد التقييمُ لهذا التاريخ سلفاً ({asOf:yyyy-MM-dd}) — "
+                    + "ويُلغى من شاشة إعادة التقييم قبل إعادتِه بسعرٍ آخر.");
 
             var entry = await BuildAsync(companyId, asOf, receivableAdjustment, payableAdjustment,
                 sourceDocument, $"إعادة تقييم الذمم بالعملات — {asOf:yyyy-MM-dd}", reverse: false, token);
@@ -128,6 +144,70 @@ public class MonetaryRevaluationService(BrqoshDbContext db)
     /// بينهما هو أثرُ حركة السعر وحدَه. <b>وحسابُه من الأرصدة الريالية يخلط أثرَ السعر
     /// بأثر السداد</b> — فيُنتج «فرقَ عملة» هو في حقيقته تحصيلٌ وقع.</para>
     /// </summary>
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٨) <b>إلغاءُ تقييمٍ أُعيد بسعرٍ خاطئ —
+    /// <b>من مستنده لا من القيد</b>.</b>
+    ///
+    /// <para><b>وكانت حلقةً مغلقة</b>: رسالةُ الإعادة تقول «اعكسْ قيدَه»،
+    /// <b>و<c>JournalReversalService</c> يرفض العكسَ المباشر</b> لأنّ القيدَ مرتبطٌ
+    /// بمستندٍ نظام («يُصحّح من المستند المصدر») — <b>ولا مسارَ تصحيحٍ
+    /// في المستند أصلاً</b>. <b>فيُحال المستخدمُ من رسالةٍ إلى رسالةٍ
+    /// إلى لا شيء</b> — <b>وسعرٌ خاطئٌ يبقى في دفاترِ سنةٍ تُقفَل عليه</b>.</para>
+    ///
+    /// <para><b>والطرفان يُعكسان معاً</b>: التقييمُ يُنشئ قيدَه
+    /// وقيدَ عكسِه في اليوم التالي. <b>وعكسُ الأوّل وحدَه يترك الثاني
+    /// حيّاً فيبقى فرقٌ دائم</b> — وهو عينُ ما يحذّر منه التعليقُ أعلاه.</para>
+    /// </summary>
+    public async Task<int> CancelAsync(
+        long companyId, DateOnly asOf, DateOnly cancellationDate, string username,
+        CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var sourceDocument = $"MonetaryRevaluation:{asOf:yyyy-MM-dd}";
+            var keys = new[] { sourceDocument, $"{sourceDocument}:Reversal" };
+
+            var entries = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId
+                            && keys.Contains(e.SourceDocument)
+                            && e.Status == JournalEntryStatus.Posted
+                            // ‏**وقيدُ العكس يرث `SourceDocument` من أصله** (`CreateReversal`)،
+                            // ‏**فيبقى `Posted` تحت المفتاح نفسِه بعد الإلغاء**. ولا وسمَ
+                            // ‏يقول «أنا عكس» — **بل الأصلُ هو من يُشير إليه**. فالتمييزُ
+                            // ‏أنّ لا قيدَ يُسمّيني عكساً له.
+                            && !db.JournalEntries.Any(o =>
+                                o.CompanyId == companyId && o.ReversalEntryId == e.Id))
+                .OrderBy(e => e.EntryDate)
+                .ToListAsync(token);
+
+            if (entries.Count == 0)
+                throw new AccountingException(
+                    $"لا تقييمَ قائماً لهذا التاريخ ({asOf:yyyy-MM-dd}).");
+
+            var reversal = new JournalReversalService(db);
+            foreach (var entry in entries)
+            {
+                // ‏**ولا يسبق العكسُ أصلَه**: قيدُ العكس التلقائيُّ مؤرّخٌ بغدٍ،
+                // ‏فيُؤخَذ المتأخّرُ من تاريخ الإلغاء وتاريخِ القيد — والنطاقُ
+                // ‏يرفض عكساً يسبق أصلَه (درسُ ح-٣٤).
+                var on = cancellationDate < entry.EntryDate ? entry.EntryDate : cancellationDate;
+                await reversal.ReverseAsync(
+                    companyId, entry.Id, on, username, fromSourceDocument: true, token);
+            }
+
+            await FinancialPostingSupport.AuditPostAsync(
+                db, companyId, "MonetaryRevaluation", $"{asOf:yyyy-MM-dd}",
+                reason: "إلغاء إعادة تقييم الذمم",
+                details: $"عُكِس {entries.Count}",
+                ct: token);
+
+            return entries.Count;
+        }, ct);
+    }
+
     public async Task<IReadOnlyList<MonetaryExposure>> ExposuresAsync(
         long companyId, DateOnly asOf, CancellationToken ct = default)
     {
