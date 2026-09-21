@@ -7,23 +7,61 @@ namespace Brqosh.Application.Tests.Zatca;
 
 public class ZatcaCsidTests
 {
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٠) <b>وكان هذا الاختبارُ يبتلع فشلَه ويمرّ.</b>
+    ///
+    /// <para>كان جسمُه كلُّه داخل <c>try</c> ومعه
+    /// <c>catch (CryptographicException) { }</c> بتعليق «secp256k1 قد لا يكون متاحاً على
+    /// بعض البيئات — تخطّي». <b>فلو عجز توليدُ المفتاح لَمرّ الاختبارُ أخضرَ ولم يؤكّد
+    /// شيئاً</b> — وهو عينُ نمط «الابتلاع الصامت» الذي تحرسه
+    /// <c>SilentFailureTests</c> في <c>src/</c> <b>ولا تبلغ به الاختبارات</b>.</para>
+    ///
+    /// <para><b>والمبرِّرُ نفسُه بائت</b>: الخدمةُ <b>لا تستعمل secp256k1</b> أصلاً —
+    /// تستعمل <c>nistP256</c> (انظر <see cref="TheStampKeyCurve_IsPinned"/>). فالمصيدةُ
+    /// <b>لا يمكن أن تقع للسبب المكتوب فيها</b>، ووقوعُها لأيّ سببٍ آخر يُخفي كسراً حقيقيّاً.</para>
+    /// </summary>
     [Fact]
     public void GenerateCsr_CreatesKeyAndCsrFiles()
     {
-        try
-        {
-            var service = new ZatcaCsidOnboardingService();
-            var material = service.GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
+        var service = new ZatcaCsidOnboardingService();
+        var material = service.GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
 
-            Assert.True(File.Exists(material.PrivateKeyPath));
-            Assert.True(File.Exists(material.CsrPath));
-            Assert.False(string.IsNullOrWhiteSpace(material.CsrBase64));
-            Assert.Contains("BEGIN CERTIFICATE REQUEST", material.CsrPem);
-        }
-        catch (CryptographicException)
-        {
-            // secp256k1 قد لا يكون متاحاً على بعض البيئات — تخطّي
-        }
+        Assert.True(File.Exists(material.PrivateKeyPath));
+        Assert.True(File.Exists(material.CsrPath));
+        Assert.False(string.IsNullOrWhiteSpace(material.CsrBase64));
+        Assert.Contains("BEGIN CERTIFICATE REQUEST", material.CsrPem);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٢٠) <b>منحنى مفتاح الختم مُثبَّتٌ صراحةً — لا يتغيّر سهواً.</b>
+    ///
+    /// <para><b>وهذا الاختبارُ لا يقول إنّ المنحنى صحيح</b> — يقول <b>أيُّ منحنًى يُولَّد
+    /// فعلاً</b>، فيصير الاختيارُ مرئيّاً ومقصوداً بدل أن يكون افتراضاً في سطرٍ واحد.</para>
+    ///
+    /// <para><b>وبندٌ مفتوحٌ مُسمًّى يلزمه تأكيدٌ من المواصفة المنشورة:</b> معيارُ الهيئة
+    /// لخصائص الأمان يشترط — بحسب ما هو شائعٌ منذ الطور الثاني — منحنى <c>secp256k1</c>
+    /// لزوج مفاتيح الختم، <b>والمولَّدُ هنا <c>nistP256</c></b>
+    /// (<c>ZatcaCsidOnboardingService.cs</c>). <b>فإن صحّ ذلك فطلبُ CSID الإنتاجيّ
+    /// يُرفض عند الهيئة ولا يقوم الربطُ أصلاً</b> — وهو مانعُ إطلاقٍ لا بندٌ خارجيّ.</para>
+    ///
+    /// <para><b>ولم يُبدَّل المنحنى هنا</b>: تبديلُه بلا تأكيدٍ يستبدل شكّاً بشكّ، و
+    /// <c>secp256k1</c> <b>قد لا تدعمه المنصّةُ أصلاً</b> (‏CNG على Windows) فينكسر توليدُ
+    /// الـCSR كلُّه على أجهزةٍ يعمل عليها اليوم. <b>والقرارُ يحتاج مطابقةً بالمواصفة
+    /// وتجربةً حيّة — وكلاهما خارج المستودع.</b></para>
+    /// </summary>
+    [Fact]
+    public void TheStampKeyCurve_IsPinned()
+    {
+        var material = new ZatcaCsidOnboardingService()
+            .GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
+
+        using var key = ECDsa.Create();
+        key.ImportFromPem(File.ReadAllText(material.PrivateKeyPath));
+
+        var oid = key.ExportParameters(includePrivateParameters: false).Curve.Oid.Value;
+
+        // ‏1.2.840.10045.3.1.7 = nistP256 (secp256r1) · 1.3.132.0.10 = secp256k1
+        Assert.Equal("1.2.840.10045.3.1.7", oid);
     }
 
     [Fact]
