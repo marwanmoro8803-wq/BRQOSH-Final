@@ -54,6 +54,11 @@ public class DocumentCurrencyEntryTests
         // ‏**والوراثةُ مقيسةٌ لا موعودة** — في
         // ‏`CreditNoteCarriesItsInvoiceCurrencyTests`، ولولاها لَكان هذا الإقرارُ دعوى.
         ["CreditNote"] = null,
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٣٩) **والإشعارُ المدينُ كذلك — يرث ولا يختار**:
+        // ‏`DebitNoteDraftBuilder` ينقل عملةَ فاتورة الشراء وسعرَها، **ومنتقي عملةٍ هنا
+        // ‏عطلٌ لا ميزة**. والوراثةُ مقيسةٌ في `DebitNoteCarriesItsInvoiceCurrencyTests`.
+        ["DebitNote"] = null,
     };
 
     /// <summary>

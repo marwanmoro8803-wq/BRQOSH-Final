@@ -90,6 +90,12 @@ public class DebitNoteDraftBuilder(BrqoshDbContext db)
 
         var note = DebitNote.CreateDraft(companyId, invoice.SupplierId, invoiceId, noteDate, reason);
 
+        // (جاهزيّةُ الإطلاق · ح-٣٩) ‏**والعملةُ تُورَّث قبل السطور** — فسعرُ السطر
+        // ‏المنسوخُ أدناه بعملة الفاتورة، **وبلا وراثتها يصير الدولارُ ريالاً**.
+        // ‏وكان هذا الباني (ح-٣٧) يحمل المنتَجَ والثلاثيَّ ويُغفل العملة.
+        if (invoice.IsForeignCurrency)
+            note.SetCurrency(invoice.CurrencyCode, invoice.ExchangeRate);
+
         foreach (var want in requested)
         {
             if (want.LineIndex < 0 || want.LineIndex >= returnable.Count)

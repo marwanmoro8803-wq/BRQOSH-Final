@@ -2413,6 +2413,41 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
+        // (جاهزيّةُ الإطلاق · ح-٣٩) ‏**وعملةُ الإشعار المدين** — مرآةُ ح-٣٥.
+        // ‏والافتراضُ ريالٌ بسعرِ واحد، **والأجنبيُّ يُعبّأ من الريال لكلّ إشعارٍ قائم**
+        // ‏— وإلّا صيّرت `RecalculateTotals` الريالَ صفراً عند أوّل مسّ.
+        if (await TableExistsAsync("debit_notes", isPg, ct))
+        {
+            if (isPg)
+            {
+                await EnsurePgColumnAsync("debit_notes", "CurrencyCode",
+                    "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+                await EnsurePgColumnAsync("debit_notes", "ExchangeRate",
+                    "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+                await EnsurePgColumnAsync("debit_notes", "ForeignSubtotal",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+                await EnsurePgColumnAsync("debit_notes", "ForeignVatAmount",
+                    "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            }
+            else
+            {
+                await EnsureSqliteColumnAsync("debit_notes", "CurrencyCode",
+                    "TEXT NOT NULL DEFAULT 'SAR'", ct);
+                await EnsureSqliteColumnAsync("debit_notes", "ExchangeRate",
+                    "TEXT NOT NULL DEFAULT '1'", ct);
+                await EnsureSqliteColumnAsync("debit_notes", "ForeignSubtotal",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+                await EnsureSqliteColumnAsync("debit_notes", "ForeignVatAmount",
+                    "TEXT NOT NULL DEFAULT '0'", ct);
+            }
+
+            var debitBackfill = isPg
+                ? """UPDATE debit_notes SET "ForeignSubtotal" = "Subtotal", "ForeignVatAmount" = "VatAmount" WHERE "ForeignSubtotal" = 0 AND "Subtotal" <> 0;"""
+                : """UPDATE debit_notes SET ForeignSubtotal = Subtotal, ForeignVatAmount = VatAmount WHERE CAST(ForeignSubtotal AS REAL) = 0 AND CAST(Subtotal AS REAL) <> 0;""";
+            if (isPg) await SafePgIndexAsync(debitBackfill, ct);
+            else await SafeSqliteIndexAsync(debitBackfill, ct);
+        }
+
         // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل على قائمة الموادّ.**
         //
         // ‏معيارُ المخزون يقضي أن تشمل تكلفةُ التامّ الأجرَ المباشرَ ونصيباً من التكاليف

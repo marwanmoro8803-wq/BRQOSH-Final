@@ -35,6 +35,44 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
     public decimal VatAmount { get; private set; }
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٣٩) <b>والإشعارُ المدينُ يحمل عملةَ فاتورتِه —
+    /// مرآةُ ح-٣٥ في المشتريات.</b>
+    ///
+    /// <para><b>وكان بلا عملةٍ أصلاً</b>، وسطورُ فاتورةِ الشراء الأجنبيّة
+    /// <b>مُسعّرةٌ بعملتِها</b>. <b>وقُيس</b>: شراءٌ بـ<c>USD 1,000</c> بسعر <c>3.75</c>
+    /// (٤٬٣١٢٫٥٠)، <b>ومرتجعٌ كاملٌ يُنقص المستحقَّ للمورّد ١٬١٥٠ فقط</b> —
+    /// <b>فتبقى الدفاترُ تقول إنّا مدينون بـ٣٬١٦٢٫٥٠ وقد أعدنا كلَّ شيء</b>،
+    /// وضريبةُ المدخلات تُعكَس بـ١٥٠ من ٥٦٢٫٥٠ <b>فيُستردّ ما لم يُدفَع</b>.</para>
+    ///
+    /// <para><b>والمرآةُ <c>PurchaseInvoice</c> حرفاً</b>، <b>والافتراضُ ريالٌ بسعرِ واحد
+    /// فلا يتغيّر رقمٌ في إشعارٍ قائم</b>.</para>
+    /// </summary>
+    public string CurrencyCode { get; private set; } = "SAR";
+    public decimal ExchangeRate { get; private set; } = 1m;
+    public decimal ForeignSubtotal { get; private set; }
+    public decimal ForeignVatAmount { get; private set; }
+
+    /// <summary>الإجماليُّ بعملة المستند — وهو ما يُستردّ من المورّد.</summary>
+    public decimal ForeignGrandTotal => ForeignSubtotal + ForeignVatAmount;
+
+    /// <summary>عملةُ المستند تخالف عملةَ الدفاتر.</summary>
+    public bool IsForeignCurrency => CurrencyCode != "SAR";
+
+    /// <summary><b>تُورَّث من الفاتورة الأصليّة لا تُختار</b> — وسعرٌ آخرُ يخلق فرقَ صرفٍ لم يقع.</summary>
+    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    {
+        EnsureDraft();
+        if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
+            throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
+        if (exchangeRate <= 0m)
+            throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+
+        CurrencyCode = currencyCode.Trim().ToUpperInvariant();
+        ExchangeRate = exchangeRate;
+        RecalculateTotals();
+    }
+
+    /// <summary>
     /// تاريخ الإلغاء (O-21، CEEF-219). الإقرار الضريبي يعكس **وقائع الفترة**:
     /// المستند الملغى يبقى في إقرار فترة إصداره كما قُدِّم للهيئة، ويظهر أثر إلغائه
     /// في فترة الإلغاء. بدون هذا التاريخ لا سبيل لوضع الأثر في فترته الصحيحة.
@@ -78,7 +116,12 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
 
     public void RecalculateTotals()
     {
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+        (ForeignSubtotal, ForeignVatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+
+        // ‏(ح-٣٩) **التحويلُ على الوعاء والضريبة كلٍّ على حدة** — كما في
+        // ‏`PurchaseInvoice`. **وبسعرٍ واحدٍ يعود الرقمان إلى ما كانا حرفاً.**
+        Subtotal = Math.Round(ForeignSubtotal * ExchangeRate, 2, MidpointRounding.AwayFromZero);
+        VatAmount = Math.Round(ForeignVatAmount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
     }
 
     /// <summary>

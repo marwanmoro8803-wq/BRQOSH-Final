@@ -1404,6 +1404,11 @@ public class BrqoshDbContext : DbContext
 
             entity.Property(n => n.Subtotal).HasPrecision(18, 2);
             entity.Property(n => n.VatAmount).HasPrecision(18, 2);
+            // ‏(جاهزيّةُ الإطلاق · ح-٣٩) عملةُ الإشعار المدين — نظيرُ أعمدة فاتورة الشراء.
+            entity.Property(n => n.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
+            entity.Property(n => n.ExchangeRate).HasPrecision(18, 6);
+            entity.Property(n => n.ForeignSubtotal).HasPrecision(18, 2);
+            entity.Property(n => n.ForeignVatAmount).HasPrecision(18, 2);
 
             entity.OwnsMany(n => n.Lines, lines =>
             {
