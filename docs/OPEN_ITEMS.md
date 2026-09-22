@@ -3050,9 +3050,10 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-٣٥ | `67b3635` | `Domain/Sales/CreditNote.cs` · `Zatca/ZatcaEInvoiceGenerator.cs` · هجرةٌ | **الإشعارُ الدائنُ بلا عملةٍ أصلاً** — فمرتجعٌ كاملٌ لفاتورةٍ دولاريّةٍ **يترك على العميل ٣٬١٦٢٫٥٠ من ٤٬٣١٢٫٥٠**، **وضريبةُ المخرجات تُعكس بـ١٥٠ من ٥٦٢٫٥٠** |
 | ح-٣٦ | `693f8ce` | `Zatca/ZatcaEInvoiceGenerator.cs` | **مستنداتُ الإلغاء تُسقِط ما يحملُه مصدرُها** (عملةً وسعراً وخصماً وضريبةَ ريال)؛ **و`BillingCancel` يسقط من المُبدِّل فيخرج إشعارٌ دائنٌ لا يقول ماذا يُلغي** |
 | ح-٣٧ | `90da002` | `Purchasing/DebitNoteDraftBuilder.cs` · `Desktop/Views/Pages/DebitNoteDialog` | **من يُرجع الصنفَ الثالث يُنقص مخزونَ الأوّل** (المعرّفُ من `Lines.FirstOrDefault()` والوصفُ حرّ)؛ **والثلاثيُّ الضريبيُّ لا يعبر**؛ ولا فحصَ كمّيّةٍ للصنف — **ولا فحصَ ماليٌّ واحدٌ يراه: القيدُ متوازنٌ وهـ-٢ سليمة** |
+| ح-٣٨ | `81080d0` | `Accounting/MonetaryRevaluationService.cs` · `Desktop/Views/Pages/MonetaryRevaluationPage` | **سعرُ إقفالٍ خاطئ لا يُعكَس ولا يُعاد** — رسالةٌ تأمر بالعكس، **والعكسُ مرفوضٌ لأنّ القيدَ لمستندِ نظام**، والمستندُ بلا مسارِ تصحيح؛ و`CreateReversal` **يُورّث `SourceDocument`** |
 
-**والقياسُ عند آخر إيداع (`90da002`):** `Brqosh.Domain.Tests` **٢٤٠/٢٤٠** ·
-`Brqosh.Application.Tests` **١٧٤٨/١٧٤٨** · `Brqosh.Desktop.Tests` **٣٤٥/٣٤٥** ·
+**والقياسُ عند آخر إيداع (`81080d0`):** `Brqosh.Domain.Tests` **٢٤٠/٢٤٠** ·
+`Brqosh.Application.Tests` **١٧٥٤/١٧٥٤** · `Brqosh.Desktop.Tests` **٣٤٥/٣٤٥** ·
 **صفرٌ متخطًّى** · الماسحُ الأمنيُّ `EXIT=0`.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**

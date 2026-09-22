@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 16 بنداً ✅ و5 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 17 بنداً ✅ و5 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وسبعةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٧) — **بعضُها خارج هذا الحصر**،
+**وثمانيةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٨) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -68,7 +68,7 @@
 - ☐ **`accounting-core#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Consolidated balance sheet shows prior-year unclosed profit as 'Currency translation reserve', even in an all-SAR group
 - ◐ **`accounting-core#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Manual journal entries have no enforced approval and can post directly to control accounts (AR, AP, inventory, VAT), silently breaking subledgers — ح-٢٨ `1614381` — **كشفٌ بمقداره لا حظر**؛ المنعُ يُغلق التأسيس
 - ☐ **`accounting-core#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No go-live migration path for opening balances: no opening trial balance, no open AR/AP invoices, no supplier import
-- ☐ **`accounting-core#8`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>A monetary (AR/AP) revaluation run with a wrong rate cannot be undone: the error message says 'reverse it', but reversal and re-run are both refused
+- ✅ **`accounting-core#8`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>A monetary (AR/AP) revaluation run with a wrong rate cannot be undone: the error message says 'reverse it', but reversal and re-run are both refused — ح-٣٨ `81080d0`
 - ✅ **`accounting-core#9`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No product feature can verify the audit-log hash chain: AuditChainVerifier has zero callers outside tests — ح-٢٩ `d59f2e1`
 - ☐ **`accounting-core#10`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>SOCPA reviewer package (O-02) is a stale 41-line stub; it points the reviewer at a tool that writes into whatever live database is configured, and claims 'In-repo prep: PASS'
 
