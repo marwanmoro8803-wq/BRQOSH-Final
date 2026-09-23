@@ -16,7 +16,9 @@
 
 1. ‏**أنّ النزعَ وقع** — الملفُّ يختلف عن الأصل فعلاً (لا «نجح السكربت»).
 2. ‏**أنّ البناءَ أنتج حصيلة** — سطرُ `Failed: N, Passed: M` موجود.
-3. ‏**أنّ الساقطَ هو المنسوبُ إليه** — بأسماء الاختبارات لا بعددها.
+3. ‏**أنّ الساقطَ هو المنسوبُ إليه** — بأسماء الاختبارات لا بعددها، **وكلُّ ساقطٍ منسوب**
+   (ح-٥٦): صفُّ `[Theory]` يُطبع باسمه ومعاملاته، وكان الشاهدُ لا يراه فيقبل قائمةً فارغة.
+   ‏`python scripts/red_proof.py --self-test` يُسقطه إن عمي ثانيةً.
 
 ‏الاستعمال:
 
@@ -37,6 +39,42 @@ import re
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 TALLY = re.compile(r"Failed:\s*(\d+),\s*Passed:\s*(\d+)")
 
+# ‏(ح-٥٦) **صفُّ النظريّة يُنسَب كالحقيقة.** xUnit يطبع صفَّ `[Theory]` باسمه ومعاملاته:
+# ‏`Method(mode: null, …) [FAIL]` — **وكان النمطُ `([A-Za-z0-9_.]+) \[FAIL\]` لا يراه**، فخرج
+# ‏برهانُ `precedence` «صحيحاً» بقائمة نسبةٍ فارغة: الشاهدُ الثالثُ أعمى ويقول نعم.
+FAIL_ROW = re.compile(r"([A-Za-z0-9_.]+(?:\([^\r\n]*\))?) \[FAIL\]")
+
+
+def attribute(out, failed):
+    """‏الساقطون بأسمائهم — **وكلُّ ساقطٍ منسوب**، وإلّا فسببُ البطلان."""
+    rows = [r.split("(")[0].split(".")[-1] + ("(" + r.split("(", 1)[1] if "(" in r else "")
+            for r in FAIL_ROW.findall(out)]
+    if len(rows) != failed:
+        return rows, ("%d test(s) failed but %d [FAIL] row(s) were attributed by name — the "
+                      "third witness is blind to the rest" % (failed, len(rows)))
+    return rows, None
+
+
+def self_test():
+    """‏(ح-٥٦) **شاهدُ ضبطٍ للشاهد الثالث** — يُسقطه إن عمي عن صفّ نظريّة أو رضي بقائمةٍ فارغة."""
+    fact = "[xUnit.net 00:00:01.00]     A.B.C.Fact_Name [FAIL]\n"
+    theory = ("[xUnit.net 00:00:01.00]     A.B.C.Rule(mode: null, flag: False) [FAIL]\n"
+              "[xUnit.net 00:00:01.10]     A.B.C.Rule(mode: Clearance, flag: (x)) [FAIL]\n")
+    checks = [
+        ("a fact is attributed", attribute(fact, 1), (["Fact_Name"], None)),
+        ("theory rows are attributed", attribute(theory, 2)[0],
+         ["Rule(mode: null, flag: False)", "Rule(mode: Clearance, flag: (x))"]),
+        ("an unattributed failure voids the proof", attribute(fact, 2)[1] is not None, True),
+        ("no rows at all voids the proof", attribute("", 1)[1] is not None, True),
+        # ‏والشاهدُ القديمُ كان أعمى هنا — فالضبطُ يقيس الفرقَ لا الشكل.
+        ("the old pattern was blind to theory rows",
+         re.findall(r"([A-Za-z0-9_.]+) \[FAIL\]", theory), []),
+    ]
+    bad = [name for name, got, want in checks if got != want]
+    for name, got, want in checks:
+        print("%s %s" % ("ok  " if got == want else "FAIL", name))
+    return 1 if bad else 0
+
 
 def run(cmd, cwd=None):
     p = subprocess.run(cmd, cwd=cwd, shell=isinstance(cmd, str),
@@ -50,6 +88,9 @@ def die(msg, code=2):
 
 
 def main():
+    if sys.argv[1:] == ["--self-test"]:
+        return self_test()
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--unfix", required=True)
     ap.add_argument("--mode", required=True)
@@ -97,22 +138,31 @@ def main():
                        "--filter", args.filter], cwd=wt)
         tally = TALLY.search(out)
         if not tally:
+            # ‏(ح-٥٦) **والمخرَجُ كاملاً إلى ملفّ** — وكان يُختصر في «First errors: unknown»
+            # ‏ثمّ تُزال الشجرةُ، فلا يبقى ما يُقرأ منه السببُ.
+            log = wt + ".log"
+            with open(log, "w", encoding="utf-8") as f:
+                f.write(out)
             errs = sorted(set(re.findall(r"error [A-Z]+\d+", out)))
             die("no test tally in the output — the build failed, this is NOT a "
-                "red proof. First errors: %s" % (", ".join(errs[:5]) or "unknown"))
+                "red proof. First errors: %s. Full output: %s"
+                % (", ".join(errs[:5]) or "unknown", log))
 
         failed, passed = int(tally.group(1)), int(tally.group(2))
         print("[2/3] build produced a tally — Failed: %d, Passed: %d" % (failed, passed))
 
-        names = sorted(set(re.findall(r"([A-Za-z0-9_.]+) \[FAIL\]", out)))
         if failed == 0:
             die("the revert changed the code and the suite is STILL GREEN — "
                 "nothing distinguishes this change. Either the test does not "
                 "reach it, or the change is not load-bearing.")
 
+        names, blind = attribute(out, failed)
+        if blind:
+            die(blind)
+
         print("[3/3] attributed failures:")
         for n in names:
-            print("       - %s" % n.split(".")[-1])
+            print("       - %s" % n)
         return 0
     finally:
         run(["git", "worktree", "remove", "--force", wt], cwd=REPO)
