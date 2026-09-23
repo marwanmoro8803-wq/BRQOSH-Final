@@ -123,14 +123,22 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
 
         var amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
             note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
+        // ‏(ح-٤٣) **رقمُ الفاتورة التي يُصحّحها** — قراءةٌ تتجاوز المرشّحات: المستندُ تاريخيّ.
+        var original = await OriginalSalesInvoiceNumberAsync(note.OriginalInvoiceId, ct);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.CreditNote,
             PartyName: customer.NameAr,
+            // ‏(ح-٤٣ · ui-ux-i18n-printing#0) ‏**هويّةُ المشتري كما في الفاتورة** — وكان الإشعارُ
+            // ‏بلا رقمه الضريبيّ ولا عنوانه، والفاتورةُ في الملفّ نفسِه تمرّرهما.
+            PartyVatNumber: customer.VatRegistrationNumber,
+            PartyAddress: customer.Address,
             QrTlvBase64: zatca?.QrTlvBase64
                          ?? Phase1QrFallback(company, note.NoteDate, note.PostedAtUtc, amounts.Total, amounts.Vat),
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString(),
-            Currency: amounts.Currency);
+            Currency: amounts.Currency,
+            ReferenceDocumentNumber: original,
+            ReasonAr: note.Reason);
 
         return new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
@@ -162,6 +170,13 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                       new SalesInvoicePdfGenerator.CurrencyDisclosure(currencyCode, exchangeRate, sarSubtotal, sarVat))
                 : new(sarSubtotal, sarVat, null);
     }
+
+    /// <summary>(ح-٤٣) رقمُ فاتورة المبيعات الأصليّة — ومعرّفُها إن لم تُرقَّم.</summary>
+    private async Task<string> OriginalSalesInvoiceNumberAsync(long invoiceId, CancellationToken ct) =>
+        await db.SalesInvoices.IgnoreQueryFilters().AsNoTracking()
+            .Where(i => i.Id == invoiceId)
+            .Select(i => i.InvoiceNumber)
+            .SingleOrDefaultAsync(ct) ?? invoiceId.ToString();
 
     private static IReadOnlyList<SalesInvoicePdfGenerator.Line> LinesOf(IEnumerable<SalesInvoiceLine> lines) =>
         [.. lines.Select(l =>
@@ -279,6 +294,9 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         PrintedAmounts amounts;
         DateOnly date;
         string partyName, notes;
+        // ‏(ح-٤٣) هويّةُ المشتري والمستندُ الأصليّ — مستندُ الإلغاء إشعارٌ ضريبيٌّ كغيره.
+        Customer party;
+        string reference;
         var kind = PrintDocumentKind.CreditNote;
 
         switch (doc.DocumentType)
@@ -292,9 +310,11 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                 amounts = PrintedAmounts.Of(invoice.IsForeignCurrency, invoice.CurrencyCode, invoice.ExchangeRate,
                     invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.Subtotal, invoice.VatAmount);
                 date = invoice.CancelledAt ?? invoice.InvoiceDate;
-                partyName = (await db.Customers.IgnoreQueryFilters()
-                    .SingleAsync(c => c.Id == invoice.CustomerId, ct)).NameAr;
-                notes = $"إلغاء فاتورة مبيعات {invoice.InvoiceNumber ?? invoice.Id.ToString()}";
+                party = await db.Customers.IgnoreQueryFilters()
+                    .SingleAsync(c => c.Id == invoice.CustomerId, ct);
+                partyName = party.NameAr;
+                reference = invoice.InvoiceNumber ?? invoice.Id.ToString();
+                notes = $"إلغاء فاتورة مبيعات {reference}";
                 break;
             }
 
@@ -307,9 +327,11 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                 // ‏المستخلصُ بالريال بالبناء — لا عملةَ له.
                 amounts = new PrintedAmounts(billing.TaxableAmount, billing.VatAmount, null);
                 date = billing.CancelledAt ?? billing.BillingDate;
-                partyName = (await db.Customers.IgnoreQueryFilters()
-                    .SingleAsync(c => c.Id == billing.CustomerId, ct)).NameAr;
-                notes = $"إلغاء مستخلص أعمال {billing.BillingNumber ?? billing.Id.ToString()}";
+                party = await db.Customers.IgnoreQueryFilters()
+                    .SingleAsync(c => c.Id == billing.CustomerId, ct);
+                partyName = party.NameAr;
+                reference = billing.BillingNumber ?? billing.Id.ToString();
+                notes = $"إلغاء مستخلص أعمال {reference}";
                 break;
             }
 
@@ -322,9 +344,11 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                 amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
                     note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
                 date = note.CancelledAt ?? note.NoteDate;
-                partyName = (await db.Customers.IgnoreQueryFilters()
-                    .SingleAsync(c => c.Id == note.CustomerId, ct)).NameAr;
-                notes = $"إلغاء إشعار دائن {note.NoteNumber ?? note.Id.ToString()}";
+                party = await db.Customers.IgnoreQueryFilters()
+                    .SingleAsync(c => c.Id == note.CustomerId, ct);
+                partyName = party.NameAr;
+                reference = note.NoteNumber ?? note.Id.ToString();
+                notes = $"إلغاء إشعار دائن {reference}";
                 // ‏**إشعارٌ مدينٌ على جانب المبيعات** — لا إشعارُ مشترياتٍ طرفُه مورّد.
                 kind = PrintDocumentKind.SalesDebitNote;
                 break;
@@ -338,11 +362,14 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: partyName,
+            PartyVatNumber: party.VatRegistrationNumber,
+            PartyAddress: party.Address,
             QrTlvBase64: doc.QrTlvBase64,
             Icv: doc.Icv,
             ComplianceStatus: doc.ComplianceStatus.ToString(),
             NotesAr: notes,
-            Currency: amounts.Currency);
+            Currency: amounts.Currency,
+            ReferenceDocumentNumber: reference);
 
         return (new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
@@ -374,6 +401,11 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == note.SupplierId, ct);
         var amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
             note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
+        // ‏(ح-٤٣) **والإشعارُ المدينُ كذلك يُسمّي فاتورتَه وسببَه** — وهو ما يُرسَل للمورّد.
+        var original = await db.PurchaseInvoices.IgnoreQueryFilters().AsNoTracking()
+            .Where(i => i.Id == note.OriginalPurchaseInvoiceId)
+            .Select(i => i.InvoiceNumber)
+            .SingleOrDefaultAsync(ct) ?? note.OriginalPurchaseInvoiceId.ToString();
 
         return new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
@@ -384,7 +416,11 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             new SalesInvoicePdfGenerator.InvoicePrintOptions(
                 PrintDocumentKind.PurchaseDebitNote,
                 PartyName: supplier.NameAr,
-                Currency: amounts.Currency));
+                PartyVatNumber: supplier.VatRegistrationNumber,
+                PartyAddress: supplier.Address,
+                Currency: amounts.Currency,
+                ReferenceDocumentNumber: original,
+                ReasonAr: note.Reason));
     }
 
     public async Task<PrintResult> ExportReceiptVoucherAsync(

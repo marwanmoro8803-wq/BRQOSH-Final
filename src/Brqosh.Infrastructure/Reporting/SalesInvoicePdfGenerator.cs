@@ -35,7 +35,12 @@ public static class SalesInvoicePdfGenerator
         string? PartyAddress = null,
         string? NotesAr = null,
         // (جاهزيّةُ الإطلاق · ح-٤٢) عدمٌ = مستندٌ بالريال.
-        CurrencyDisclosure? Currency = null);
+        CurrencyDisclosure? Currency = null,
+        // (جاهزيّةُ الإطلاق · ح-٤٣ · ui-ux-i18n-printing#0) ‏**الإشعارُ يُسمّي ما يُصحّحه ولماذا.**
+        // ‏كان الإشعارُ الدائنُ المطبوعُ بلا رقم الفاتورة الأصليّة ولا السبب — وكلاهما في
+        // ‏المستند وفي الـXML — **فلا يُطابقه مدقّقٌ بفاتورة، ولا يخصم به المشتري مدخلاتِه**.
+        string? ReferenceDocumentNumber = null,
+        string? ReasonAr = null);
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٤٢ · tax-zatca#14) <b>مستندٌ بعملةٍ أجنبيّة: رمزُها وسعرُها
@@ -163,6 +168,11 @@ public static class SalesInvoicePdfGenerator
         };
         if (figures.Sar is { } fx)
             documentRows.Add(("العملة", PrintText.Code(fx.Code)));
+        // ‏(ح-٤٣) المستندُ الأصليُّ والسببُ — للإشعارات ومستندات الإلغاء.
+        if (!string.IsNullOrWhiteSpace(options.ReferenceDocumentNumber))
+            documentRows.Add(("المستند الأصليّ", PrintText.Code(options.ReferenceDocumentNumber)));
+        if (!string.IsNullOrWhiteSpace(options.ReasonAr))
+            documentRows.Add(("السبب", options.ReasonAr));
 
         return Document.Create(container =>
         {
