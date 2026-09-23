@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 17 بنداً ✅ و5 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 17 بنداً ✅ و6 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وثمانيةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-٣٨) — **بعضُها خارج هذا الحصر**،
+**وواحدٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤١) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -56,6 +56,16 @@
   **ولم تُقَس الستُّ والثلاثون الباقية** — فلا يُدَّعى أنّها سليمةٌ ولا أنّها معطوبة.
   **وأصغرُ ما يُغلق الصنف**: بوّابةٌ تُلزم كلَّ كاتبٍ مباشرٍ بالفحص على `entry.EntryDate`،
   **بإقرارٍ مُجمَّدٍ للقائم** كما في ح-١٨.
+- ✅ **`found#2`** · <sub>مؤكّدٌ بالقياس · في اليد · صغير · عطل</sub><br>
+  **الإشعارُ المدينُ بلا عملةٍ أصلاً — مرآةُ ح-٣٥ في المشتريات.** مرتجعٌ كاملٌ لشراءٍ
+  بـUSD 1,000 بسعر 3.75 **يترك للمورّد ٣٬١٦٢٫٥٠ من ٤٬٣١٢٫٥٠**، وضريبةُ المدخلات تُعكس
+  بـ١٥٠ من ٥٦٢٫٥٠، **وحدُّ «متبقّي الفاتورة» يقارن دولاراً بريال فيقبل إرجاعَ ضعفِ ما
+  اشتُري**. — ح-٣٩ `ee47836`
+- ✅ **`found#3`** · <sub>مؤكّدٌ بالقياس · في اليد · صغير · عطل</sub><br>
+  **شاشةُ الإقرار تحسب الصافيَ بمعادلةٍ أقدمَ منه.** `VatReturnDto` يشتقّه بنفسه بلا
+  تسوية الإلغاء (CEEF-219) ولا الضريبةِ المقيّدة بلا مستند (ض-١) — **فبلغ الإصلاحان المطبوعةَ
+  ولم يبلغا الشاشة**، وضريبةُ بيع الأصل الثابت **تختفي من «صافي الضريبة… مستحقة للهيئة»**.
+  قِيس: الإقرارُ ١٤٬٨٠٠ والشاشةُ تقول ١٥٬٠٠٠. — ح-٤٠ `0555515`
 
 ---
 
@@ -79,9 +89,9 @@
 - ☐ **`tax-zatca#9`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Standard tax invoices can be printed before clearance and always carry the local QR; the ZATCA-cleared XML is never used, despite the claim that it is what the buyer receives
 - ☐ **`tax-zatca#10`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No CSID expiry check and no renewal flow
 - ✅ **`tax-zatca#11`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Fixed-asset sales post output VAT with no tax invoice and no e-invoice — ح-١٦ `70444ef`
-- ☐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT
+- ◐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT — ح-٤١ `21ce51e` — **الأوعيةُ بالريال بعد الخصم، وتشمل المستخلصَ والإلغاء، وتُطابق الصافي على الشاشة والمطبوع**؛ **ولا إسنادَ إلى صناديق النموذج** (نصُّه ليس في المستودع) **ولا احتسابَ عكسيّ**
 - ✅ **`tax-zatca#13`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Progress-billing cancellation document has no billing reference and no reason — ح-٣٦ `693f8ce`
-- ☐ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency
+- ☐ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency — **وطباعةُ الإشعار المدين انضمّت إلى الصنف بـح-٣٩** (`ee47836`)، وكانت قبلُ متّسقةً في خطئها
 - ☐ **`tax-zatca#15`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>The O-01 runbook and OPEN_ITEMS overstate readiness: onboarding steps are missing, the test environment was never exercised, and a live-CSID test reports Passed while doing nothing
 - ☐ **`tax-zatca#16`** · <sub>مؤكّد · في اليد · كبير · خطر</sub><br>G-42 re-measured: the product has one EGS unit and one CSID per company; there is no per-branch or per-device EGS onboarding, and POS-solution registration is external
 
