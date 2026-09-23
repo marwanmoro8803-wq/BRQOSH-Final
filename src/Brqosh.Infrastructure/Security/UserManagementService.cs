@@ -41,39 +41,86 @@ public class UserManagementService(BrqoshDbContext db)
         var user = AppUser.Create(companyId, normalized, UserAuthService.HashPassword(password),
             displayName, role);
         user.SetMobilePhone(phoneE164);
-        db.AppUsers.Add(user);
-        await db.SaveChangesAsync(ct);
-        return user;
+
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            db.AppUsers.Add(user);
+            await db.SaveChangesAsync(token);
+            await AuditAsync(companyId, "إنشاء مستخدم", user, AppUser.RoleLabel(role), token);
+            return user;
+        }, ct);
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٥٠ · <c>security-licensing-tenancy#4</c> + <c>#8</c>) <b>تغييرُ الصلاحيّة
+    /// يُنهي الجلسةَ ويُكتب في السلسلة.</b>
+    ///
+    /// <para>‏<b>والآليّةُ كانت قائمةً ولا يستدعيها أحد</b>: <see cref="AppUser.InvalidateSessions"/> يزيد
+    /// <c>SessionVersion</c> وسطحُ المكتب يقرؤه في مؤقّت الخمول فيُعيد المستخدمَ إلى الدخول. <b>ومستدعيه
+    /// الوحيدُ كان استردادَ كلمة المرور بالواتساب</b> — فموظّفٌ يُعطَّل أو يُنزَل من «مدير» يبقى يعمل بصلاحيّته
+    /// القديمة حتى يخرج بنفسه، <b>ولا أثرَ لذلك في سجلّ التدقيق</b>.</para>
+    ///
+    /// <para>‏<b>والإنهاءُ لتغيير الصلاحيّة لا لكلّ حفظ</b> (الدورُ · التعطيلُ · كلمةُ المرور) — وإلّا خرج
+    /// الموظّفُ كلّما صُحّح اسمُه. <b>والتفعيلُ يُكتب ولا يُنهي</b>: المعطَّلُ لا جلسةَ له أصلاً. <b>والسجلُّ
+    /// لا يحمل السرّ</b>: لا كلمةَ المرور ولا بصمتَها.</para>
+    /// </summary>
     public async Task UpdateAsync(
         long companyId, long userId, string displayName, UserRole role, bool isActive,
         string? newPassword, string? mobilePhone = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureAdministrator();
-        var user = await db.AppUsers.IgnoreQueryFilters()
-            .SingleAsync(u => u.Id == userId && u.CompanyId == companyId, ct);
-        user.UpdateProfile(displayName, role);
-        if (isActive) user.Activate(); else user.Deactivate();
-        if (!string.IsNullOrWhiteSpace(newPassword))
-        {
-            if (!PasswordPolicy.IsValid(newPassword, out var pwdError))
-                throw new AccountingException(pwdError!);
-            user.SetPasswordHash(UserAuthService.HashPassword(newPassword));
-        }
 
-        if (mobilePhone is not null)
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            if (string.IsNullOrWhiteSpace(mobilePhone))
-                user.SetMobilePhone(null);
-            else if (!PhoneNumberNormalizer.TryNormalizeSaudi(mobilePhone, out var phoneE164, out var phoneError))
-                throw new AccountingException(phoneError!);
-            else
-                user.SetMobilePhone(phoneE164);
-        }
+            var user = await db.AppUsers.IgnoreQueryFilters()
+                .SingleAsync(u => u.Id == userId && u.CompanyId == companyId, token);
+            var roleBefore = user.Role;
+            var activeBefore = user.IsActive;
 
-        await db.SaveChangesAsync(ct);
+            user.UpdateProfile(displayName, role);
+            if (isActive) user.Activate(); else user.Deactivate();
+
+            var passwordSet = false;
+            if (!string.IsNullOrWhiteSpace(newPassword))
+            {
+                if (!PasswordPolicy.IsValid(newPassword, out var pwdError))
+                    throw new AccountingException(pwdError!);
+                user.SetPasswordHash(UserAuthService.HashPassword(newPassword));
+                passwordSet = true;
+            }
+
+            if (mobilePhone is not null)
+            {
+                if (string.IsNullOrWhiteSpace(mobilePhone))
+                    user.SetMobilePhone(null);
+                else if (!PhoneNumberNormalizer.TryNormalizeSaudi(mobilePhone, out var phoneE164, out var phoneError))
+                    throw new AccountingException(phoneError!);
+                else
+                    user.SetMobilePhone(phoneE164);
+            }
+
+            var roleChanged = roleBefore != user.Role;
+            var deactivated = activeBefore && !user.IsActive;
+            var reactivated = !activeBefore && user.IsActive;
+
+            if (roleChanged || deactivated || passwordSet)
+                user.InvalidateSessions();
+
+            await db.SaveChangesAsync(token);
+
+            if (roleChanged)
+                await AuditAsync(companyId, "تغيير دور مستخدم", user,
+                    $"{AppUser.RoleLabel(roleBefore)} ⟵ {AppUser.RoleLabel(user.Role)}", token);
+            if (deactivated)
+                await AuditAsync(companyId, "تعطيل مستخدم", user, "", token);
+            if (reactivated)
+                await AuditAsync(companyId, "تفعيل مستخدم", user, "", token);
+            if (passwordSet)
+                await AuditAsync(companyId, "تعيين كلمة مرور مستخدم", user, "بيد مدير النظام", token);
+
+            return true;
+        }, ct);
     }
 
     /// <summary>إعادة تعيين كلمة مرور مستخدم — للمدير أو أداة الطوارئ بعد التحقق.</summary>
@@ -93,12 +140,29 @@ public class UserManagementService(BrqoshDbContext db)
             throw new AccountingException(pwdError!);
 
         var normalized = username.Trim().ToLowerInvariant();
-        var user = await db.AppUsers.IgnoreQueryFilters()
-            .SingleOrDefaultAsync(u => u.CompanyId == companyId && u.Username == normalized, ct)
-            ?? throw new AccountingException($"المستخدم '{username}' غير موجود.");
 
-        user.SetPasswordHash(UserAuthService.HashPassword(newPassword));
-        user.RequirePasswordChange();
-        await db.SaveChangesAsync(ct);
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var user = await db.AppUsers.IgnoreQueryFilters()
+                .SingleOrDefaultAsync(u => u.CompanyId == companyId && u.Username == normalized, token)
+                ?? throw new AccountingException($"المستخدم '{username}' غير موجود.");
+
+            user.SetPasswordHash(UserAuthService.HashPassword(newPassword));
+            user.RequirePasswordChange();
+            // ‏(ح-٥٠) ‏**ومن أُعيدت كلمةُ مروره لا تبقى جلستُه القديمة** — فمن بلغها قبل الإعادة لا يستمرّ بها.
+            user.InvalidateSessions();
+            await db.SaveChangesAsync(token);
+
+            await AuditAsync(companyId, "إعادة تعيين كلمة مرور مستخدم", user, "بيد مدير النظام", token);
+            return true;
+        }, ct);
     }
+
+    /// <summary>
+    /// ‏سطرُ تدقيقٍ في السلسلة — <b>والمنفِّذُ من الجلسة</b> لا من المستدعي، <b>والمفتاحُ اسمُ المستخدم</b>
+    /// المتأثِّر. <b>ولا سرَّ في التفاصيل</b>.
+    /// </summary>
+    private Task AuditAsync(long companyId, string action, AppUser user, string details, CancellationToken ct) =>
+        new AuditService(db).LogAsync(companyId, SecurityContext.ResolveUsername(), action,
+            "AppUser", user.Username, details, ct: ct);
 }
