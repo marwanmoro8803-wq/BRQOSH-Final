@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 27 بنداً ✅ و6 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 30 بنداً ✅ و6 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وتسعةٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤٩) — **بعضُها خارج هذا الحصر**،
+**وواحدٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥١) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -158,11 +158,11 @@
 - ☐ **`security-licensing-tenancy#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>License expiry is still not enforced against clock rollback or a long-running session, though ت-١٢ is marked closed
 - ☐ **`security-licensing-tenancy#2`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>License Tier and Features are never enforced, so any license unlocks every edition, module and company count
 - ◐ **`security-licensing-tenancy#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>The ZATCA e-invoicing private key is written to disk in plaintext — ح-٢٠ `3dfe3c6` — **مُثبَّتٌ باختبار**؛ **والمفاضلةُ قرارُ المالك**
-- ☐ **`security-licensing-tenancy#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Deactivating or demoting a user does not end their open session
+- ✅ **`security-licensing-tenancy#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Deactivating or demoting a user does not end their open session — ح-٥٠ `c72acca` — **والآليّةُ كانت قائمةً (`SessionVersion` يقرؤه سطحُ المكتب) ومستدعيها الوحيدُ استردادُ الواتساب**
 - ☐ **`security-licensing-tenancy#5`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>In-app RBAC and the tamper-evident audit chain are not a real boundary: every workstation holds a DB-owner credential and the chain has no key
 - ☐ **`security-licensing-tenancy#6`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>The pen-test gate O-05 has never run, and its scope (the API) is not what ships
 - ☐ **`security-licensing-tenancy#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No in-product password recovery for the seeded administrator in production
-- ☐ **`security-licensing-tenancy#8`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Privilege changes and other security events are not written to the audit trail
+- ✅ **`security-licensing-tenancy#8`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Privilege changes and other security events are not written to the audit trail — ح-٥٠ `c72acca` — **خمسةُ أحداثٍ في السلسلة، ولا سرَّ في تفاصيلها (مقيس)؛ وهو والبندُ #4 أصلٌ واحد**
 - ☐ **`security-licensing-tenancy#9`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and all shipped binaries are unsigned
 
 ## data-upgrade-performance (7 major)
@@ -172,7 +172,7 @@
 - ☐ **`data-upgrade-performance#3`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The O-04 '1M-entry' harness runs 2,000 entries on in-memory SQLite, and -FullMillion changes nothing
 - ☐ **`data-upgrade-performance#4`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>No valid performance evidence on PostgreSQL at realistic ledger size; SQLite numbers already show per-post cost growing with the ledger
 - ☐ **`data-upgrade-performance#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Scheduled backup needs PostgreSQL client tools on every workstation, and the installer does not ship them
-- ☐ **`data-upgrade-performance#7`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>No guard stops an older workstation from running against a schema already upgraded by a newer one
+- ✅ **`data-upgrade-performance#7`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>No guard stops an older workstation from running against a schema already upgraded by a newer one — ح-٥١ `a916c42` — **مقيسٌ على PostgreSQL حيّ؛ والحارسُ خارج الـ`try` لأنّ الموضعَ الطبيعيَّ يبتلعه (مقيس)؛ والحدُّ المعلَن: قاعدةٌ بلا سجلّ هجراتٍ لا تُقارَن**
 - ☐ **`data-upgrade-performance#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>G-39 data migration from other systems is only chart of accounts plus customer name/VAT, through a naive CSV parser
 
 ## installer-deployment-ops (12 major)
