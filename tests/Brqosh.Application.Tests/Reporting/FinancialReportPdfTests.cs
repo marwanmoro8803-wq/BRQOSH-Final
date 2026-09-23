@@ -50,7 +50,8 @@ public class FinancialReportPdfTests
     {
         var result = new VatReturnResult(
             new DateOnly(2026, 1, 1), new DateOnly(2026, 3, 31),
-            10000m, 1500m, 2000m, 300m, 500m, 75m, 8000m, 1200m, 200m, 30m, 30m);
+            10000m, 1500m, 2000m, 300m, 500m, 75m, 8000m, 1200m, 200m, 30m, 30m,
+            SalesBaseNet: 11_500m, PurchasesBaseNet: 7_800m);
         var pdf = FinancialReportPdfGenerator.VatReturn("شركة", result);
         Assert.NotEmpty(pdf);
     }

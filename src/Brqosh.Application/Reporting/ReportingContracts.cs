@@ -186,6 +186,10 @@ public record VatReturnDto(
     decimal CancelledInputVat,
     decimal JournalOutputVat,
     decimal JournalInputVat,
+    // (جاهزيّةُ الإطلاق · ح-٤١) ‏الأبُ الذي تُعرض أوعيةُ الفئات تحته — صافي الوعاء من
+    // ‏إجماليّات المستندات، **لا من الأوعية نفسِها**؛ فتصير المساواةُ تحته فحصاً لا تحصيلاً.
+    decimal SalesBaseNet,
+    decimal PurchasesBaseNet,
     decimal? GlVatNetPayableBalance = null,
     IReadOnlyList<VatReturnCategoryDto>? SalesByCategory = null,
     IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null)

@@ -24,6 +24,7 @@ public class VatReturnRowsTests
         DebitNotesSubtotal: 0m, DebitNotesVat: 0m, DebitNotesDeductibleVat: 0m,
         CancelledOutputVat: 0m, CancelledInputVat: 0m,
         JournalOutputVat: 0m, JournalInputVat: 0m,
+        SalesBaseNet: 1_400_000m, PurchasesBaseNet: 0m,
         GlVatNetPayableBalance: null,
         SalesByCategory:
         [
@@ -47,8 +48,11 @@ public class VatReturnRowsTests
     }
 
     /// <summary>
-    /// <b>وهويةُ العرض:</b> مجموعُ سطور «منها» تحت وعاء المبيعات == الوعاءُ نفسُه.
+    /// <b>وهويةُ العرض:</b> مجموعُ سطور «منها» تحت صافي وعاء المبيعات == الصافي نفسُه.
     /// فسطرٌ يسقط أو يتكرّر يُكسر هذه المساواة — ولا يكشفه عدُّ السطور وحده.
+    ///
+    /// <para>(ح-٤١) <b>والأبُ تغيّر</b>: كان «مبيعات خاضعة (وعاء)» — <b>الفواتيرُ وحدَها قبل
+    /// الإشعارات</b> — والأوعيةُ صافيةٌ من الإشعارات. فتطابقا هنا لأنّ هذا المُثبِّت بلا إشعار.</para>
     /// </summary>
     [Fact]
     public void TheBreakdownRows_SumToTheTotalAboveThem()
@@ -56,13 +60,52 @@ public class VatReturnRowsTests
         var dto = MixedQuarter();
         var rows = VatReturnRows.Build(dto);
 
-        var total = rows.First(r => r.Label == "مبيعات خاضعة (وعاء)").Value;
-        var index = rows.ToList().FindIndex(r => r.Label == "مبيعات خاضعة (وعاء)");
+        Assert.Equal(dto.SalesBaseNet, ParentOf(rows, "صافي وعاء المبيعات (من المستندات)"));
+        Assert.Equal(dto.SalesBaseNet, ChildrenOf(rows, "صافي وعاء المبيعات (من المستندات)"));
+    }
 
-        var children = rows.Skip(index + 1).TakeWhile(r => r.Indented).Sum(r => r.Value);
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤١) <b>والهويّةُ قائمةٌ حيث كانت تنكسر: متى وُجد إشعارٌ دائن.</b>
+    ///
+    /// <para>كانت الأوعيةُ «منها» تحت <b>وعاء الفواتير الإجماليّ</b> وهي صافيةٌ من الإشعارات،
+    /// فلا تجمع إليه. <b>ومُثبِّتُ الاختبار أعلاه بلا إشعارٍ فلم يرَ ذلك قطّ</b> — وهو الذي
+    /// سمّاه التدقيق: «تُعرض تحت الإجماليّات».</para>
+    ///
+    /// <para><b>والضريبةُ تحت صافي المخرجات، ومعها «بلا فئة» لِما قُيّد بلا مستند</b> — فهو
+    /// في الصافي ولا وعاءَ له يُخترع.</para>
+    /// </summary>
+    [Fact]
+    public void TheCategoryRows_SumToTheirParent_WhenACreditNoteExists()
+    {
+        var dto = MixedQuarter() with
+        {
+            SalesSubtotal = 1_000_000m, OutputVat = 150_000m,
+            CreditNotesSubtotal = 100_000m, CreditNotesVat = 15_000m,
+            JournalOutputVat = 3_000m,
+            SalesBaseNet = 900_000m,
+            SalesByCategory = [new VatReturnCategoryDto("S", 900_000m, 135_000m)],
+        };
+        var rows = VatReturnRows.Build(dto);
 
-        Assert.Equal(total, children);
-        Assert.Equal(dto.SalesSubtotal, children);
+        // ‏**الأبُ المعروض == مجموعُ أبنائه المعروضين** — لا الأبناءُ وحدَهم، فأبٌ يُقرأ من حقلٍ
+        // ‏آخر (وعاءِ الفواتير الإجماليّ مثلاً) يمرّ على فحص الأبناء وحدَهم.
+        Assert.Equal(138_000m, ParentOf(rows, "صافي ضريبة المخرجات"));   // ‏150,000 − 15,000 + 3,000
+        Assert.Equal(138_000m, ChildrenOf(rows, "صافي ضريبة المخرجات"));
+        Assert.Equal(900_000m, ParentOf(rows, "صافي وعاء المبيعات (من المستندات)"));
+        Assert.Equal(900_000m, ChildrenOf(rows, "صافي وعاء المبيعات (من المستندات)"));
+
+        // ‏**ووعاءُ الفواتير الإجماليُّ لم يعد له أبناءٌ لا يجمعون إليه.**
+        Assert.Equal(0m, ChildrenOf(rows, "مبيعات خاضعة (وعاء)"));
+    }
+
+    private static decimal ParentOf(IReadOnlyList<VatReturnRows.Row> rows, string parent) =>
+        rows.Single(r => r.Label == parent).Value;
+
+    private static decimal ChildrenOf(IReadOnlyList<VatReturnRows.Row> rows, string parent)
+    {
+        var index = rows.ToList().FindIndex(r => r.Label == parent);
+        Assert.True(index >= 0, $"لا صفَّ «{parent}» — " + string.Join(" · ", rows.Select(r => r.Label)));
+        return rows.Skip(index + 1).TakeWhile(r => r.Indented).Sum(r => r.Value);
     }
 
     /// <summary>

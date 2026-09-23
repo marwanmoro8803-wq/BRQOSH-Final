@@ -40,6 +40,10 @@ public record VatReturnResult(
     decimal DebitNotesSubtotal,
     decimal DebitNotesVat,
     decimal DebitNotesDeductibleVat,
+    // (جاهزيّةُ الإطلاق · ح-٤١) ‏**الأبُ الذي تُعرض الأوعيةُ تحته** — صافي الوعاء من إجماليّات
+    // ‏المستندات المخزونة، **لا من الأوعية**. إلزاميٌّ بلا افتراضيّ كحدود ح-٤٠.
+    decimal SalesBaseNet,
+    decimal PurchasesBaseNet,
     decimal? GlVatNetPayableBalance = null,
     // تسويات إلغاء مستندات صدرت في فترات سابقة وأُلغيت داخل هذه الفترة (CEEF-219).
     decimal CancelledOutputVat = 0m,
@@ -66,6 +70,11 @@ public record VatReturnResult(
     /// <para><b>حدٌّ مُصرَّح به:</b> التفكيك بالفئة <b>فقط</b> — ولا تُسنَد أرقام صناديق النموذج
     /// الرسميّ هنا، فأرقامها تحتاج مراجعة النموذج نصّاً (م4-٤). إسنادُ رقم صندوقٍ بالتخمين أسوأ
     /// من عدم إسناده.</para>
+    ///
+    /// <para>(جاهزيّةُ الإطلاق · ح-٤١) <b>وصارت بالريال، بعد خصم المستند، وتشمل كلَّ ما في
+    /// الصافي من المستندات</b> — الفواتيرَ والمستخلصاتِ ناقصاً الإشعاراتِ وتسويةَ إلغاء الفترات
+    /// السابقة. <b>وهويّتُها</b>: ضريبتُها + <see cref="JournalOutputVat"/> == <see cref="NetOutputVat"/>،
+    /// ووعاؤها == <see cref="SalesBaseNet"/>.</para>
     /// </summary>
     public IReadOnlyList<VatReturnBucket> Sales => SalesByCategory ?? [];
 
@@ -196,13 +205,51 @@ public class VatReturnQuery(BrqoshDbContext db)
         var (journalOutputVat, journalInputVat) = await ReadJournalOnlyVatAsync(companyId, from, to);
 
         // (CEEF-229 · A-15) التفكيك بالفئة — من السطور المحمَّلة أصلاً، بلا استعلام إضافيّ.
-        // الإشعارات تُطرح بإشارة سالبة فيصير كل وعاء **صافياً** كما يُقدَّم في الإقرار.
-        var salesByCategory = Aggregate(
-            [.. sales.SelectMany(i => i.Lines), .. creditNotes.SelectMany(n => n.Lines.Select(Negate))]);
-        var purchasesByCategory = Aggregate(
-            [.. purchases.Where(p => p.VatDeductible).SelectMany(p => p.Lines),
-             .. debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
-                          .SelectMany(n => n.Lines.Select(Negate))]);
+        //
+        // (جاهزيّةُ الإطلاق · ح-٤١ · tax-zatca#12) ‏**لكلّ مستندٍ أوعيتُه بخصمه وسعره — ثمّ
+        // ‏تُجمع.** وكانت السطورُ كلُّها تُصبّ خاماً في حسابٍ واحد: **بلا خصمِ مستندٍ وبعملة
+        // ‏المستند**، والإجماليّاتُ بالريال بعد الخصم — فلا يمكن أن تتطابق. **وكان المستخلصُ
+        // ‏وتسويةُ الإلغاء غائبَين**، وكلاهما في الصافي.
+        //
+        // ‏**والإشارةُ كإشارتها في الصافي حرفاً**: الإشعارُ الدائنُ وإلغاءُ ما صدر قبل الفترة
+        // ‏يُطرحان، وإلغاءُ إشعارٍ دائنٍ سابقٍ يُعيد ما طرحه. فالهويّةُ:
+        // ‏ضريبةُ الأوعية + ما قُيّد بلا مستند (ولا فئةَ له) == صافي المخرجات.
+        var salesByCategory = SumByCategory(
+        [
+            .. sales.SelectMany(i => DocumentBuckets(
+                i.Lines, i.DocumentDiscountAmount, i.ExchangeRate, i.Subtotal, +1)),
+            .. progressBillings.Select(b => ProgressBillingBucket(b, +1)),
+            .. creditNotes.SelectMany(n => DocumentBuckets(
+                n.Lines, n.DocumentDiscountAmount, n.ExchangeRate, n.Subtotal, -1)),
+            .. cancelledSales.SelectMany(i => DocumentBuckets(
+                i.Lines, i.DocumentDiscountAmount, i.ExchangeRate, i.Subtotal, -1)),
+            .. cancelledProgressBillings.Select(b => ProgressBillingBucket(b, -1)),
+            .. cancelledCreditNotes.SelectMany(n => DocumentBuckets(
+                n.Lines, n.DocumentDiscountAmount, n.ExchangeRate, n.Subtotal, +1)),
+        ]);
+        var purchasesByCategory = SumByCategory(
+        [
+            .. purchases.Where(p => p.VatDeductible).SelectMany(p => DocumentBuckets(
+                p.Lines, 0m, p.ExchangeRate, p.Subtotal, +1)),
+            .. debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
+                .SelectMany(n => DocumentBuckets(
+                    n.Lines, 0m, n.ExchangeRate, n.Subtotal, -1)),
+            .. cancelledPurchases.SelectMany(p => DocumentBuckets(
+                p.Lines, 0m, p.ExchangeRate, p.Subtotal, -1)),
+        ]);
+
+        // ‏(ح-٤١) ‏**والأبُ الذي تُعرض الأوعيةُ تحته — من إجماليّات المستندات المخزونة لا من
+        // ‏الأوعية.** فأبٌ يُحسب من أبنائه لا يُثبت شيئاً؛ **ومن مصدرٍ آخر تصير المساواةُ فحصاً.**
+        var salesBaseNet =
+            sales.Sum(i => i.Subtotal) + progressBillings.Sum(b => b.TaxableAmount)
+            - creditNotes.Sum(n => n.Subtotal)
+            - (cancelledSales.Sum(i => i.Subtotal) + cancelledProgressBillings.Sum(b => b.TaxableAmount)
+               - cancelledCreditNotes.Sum(n => n.Subtotal));
+        var purchasesBaseNet =
+            purchases.Where(p => p.VatDeductible).Sum(p => p.Subtotal)
+            - debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
+                        .Sum(n => n.Subtotal)
+            - cancelledPurchases.Sum(p => p.Subtotal);
 
         return new VatReturnResult(
             from, to,
@@ -225,22 +272,83 @@ public class VatReturnQuery(BrqoshDbContext db)
             SalesByCategory: salesByCategory,
             PurchasesByCategory: purchasesByCategory,
             JournalOutputVat: journalOutputVat,
-            JournalInputVat: journalInputVat);
+            JournalInputVat: journalInputVat,
+            SalesBaseNet: salesBaseNet,
+            PurchasesBaseNet: purchasesBaseNet);
     }
 
-    /// <summary>سطرٌ بإشارة معكوسة — الإشعارات تُطرح من وعائها لا تُفرَد في وعاءٍ خاصّ.</summary>
-    private static SalesInvoiceLine Negate(SalesInvoiceLine line) =>
-        line with { Quantity = -line.Quantity };
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤١) <b>أوعيةُ مستندٍ واحدٍ بالريال — كما يحسبها المستندُ لنفسه.</b>
+    ///
+    /// <para><b>بخصمه</b> (يُوزَّع على الأوعية بنسبها في <c>ComputeSubtotals</c>) <b>ثمّ
+    /// بسعره</b> — الوعاءُ والضريبةُ كلٌّ على حدة، <b>كما يُحوِّل المستندُ إجماليَّه</b>
+    /// (<c>RecalculateTotals</c>).</para>
+    ///
+    /// <para><b>وفلسُ التحويل:</b> <c>Σ round(وعاء × سعر)</c> قد يفترق عن
+    /// <c>round(Σ وعاء × سعر)</c> — والثاني هو ما في الأستاذ. <b>فيُسكَن الفرقُ في طرفٍ واحدٍ
+    /// مُعلَن</b> (وهو مذهبُ <c>ComputeSubtotals</c> نفسِه في خصم المستند): أكبرُ الأوعية.</para>
+    ///
+    /// <para><b>ولا يُمتصّ إلّا ما يُفسّره التقريب</b> — <c>0.005 × (عدد الأوعية + 1)</c>.
+    /// فرقٌ أكبرُ يعني أنّ إجماليَّ المستند المخزونَ وسطورَه مختلفان — <b>عطلُ بياناتٍ لا
+    /// تقريب</b> — <b>ويبقى ظاهراً</b> في المطابقة تحت الأب، لا يُبتلع في وعاء.</para>
+    ///
+    /// <para><b>ولا فرقَ في الضريبة أصلاً — بالبناء لا بالحظّ:</b> الأساسيّةُ وحدَها تحمل
+    /// ضريبةً (الصفريُّ والمعفى وخارجُ النطاق بنسبة صفر)، <b>وللمستند وعاءٌ أساسيٌّ واحدٌ على
+    /// الأكثر</b> — فتحويلُه هو تحويلُ ضريبة المستند حرفاً. <b>ولم يُكتب لها امتصاصٌ</b>: فرعٌ لا
+    /// يُبلَغ لا يُقاس، ويوحي بخطرٍ غير قائم. <b>وفئةٌ ثانيةٌ بنسبةٍ غير صفريّةٍ تكسر هذا</b> —
+    /// وتُمسكها هويّةُ <c>VatReturnBucketsReconcileTests</c> قبل أن تبلغ إقراراً.</para>
+    /// </summary>
+    private static IEnumerable<VatReturnBucket> DocumentBuckets(
+        IReadOnlyCollection<SalesInvoiceLine> lines, decimal documentDiscount, decimal rate,
+        decimal ledgerSubtotal, int sign)
+    {
+        if (lines.Count == 0)
+            return [];
+
+        var buckets = LineDocumentTotalsCalculator.ComputeSubtotals(lines, documentDiscount: documentDiscount)
+            .Select(s => new VatReturnBucket(
+                s.Category,
+                Math.Round(s.TaxableAmount * rate, 2, MidpointRounding.AwayFromZero),
+                Math.Round(s.VatAmount * rate, 2, MidpointRounding.AwayFromZero)))
+            .ToList();
+
+        var gap = ledgerSubtotal - buckets.Sum(b => b.TaxableAmount);
+        if (gap != 0m && Math.Abs(gap) <= 0.005m * (buckets.Count + 1))
+        {
+            var i = IndexOfLargestTaxable(buckets);
+            buckets[i] = buckets[i] with { TaxableAmount = buckets[i].TaxableAmount + gap };
+        }
+
+        return sign > 0
+            ? buckets
+            : buckets.Select(b => b with { TaxableAmount = -b.TaxableAmount, VatAmount = -b.VatAmount });
+    }
 
     /// <summary>
-    /// تجميع السطور في أوعية بالفئة، بنفس تقريب <c>ComputeSubtotals</c> — على مستوى **الوعاء**
-    /// لا السطر ولا المستند، وهو ما تفرضه دلالة <c>cac:TaxSubtotal</c> لدى الهيئة.
+    /// (ح-٤١) <b>المستخلصُ وعاءٌ أساسيٌّ بالريال</b> — ضريبتُه <c>TaxableAmount × SaudiVatRate</c>
+    /// بالبناء (<c>ProgressBilling.VatAmount</c>)، فلا فئةَ له سواها.
     /// </summary>
-    private static IReadOnlyList<VatReturnBucket> Aggregate(IReadOnlyList<SalesInvoiceLine> lines) =>
-        lines.Count == 0
-            ? []
-            : [.. LineDocumentTotalsCalculator.ComputeSubtotals(lines)
-                   .Select(s => new VatReturnBucket(s.Category, s.TaxableAmount, s.VatAmount))];
+    private static VatReturnBucket ProgressBillingBucket(ProgressBilling billing, int sign) =>
+        new(Brqosh.Domain.Tax.VatCategory.Standard, sign * billing.TaxableAmount, sign * billing.VatAmount);
+
+    /// <summary>أوّلُ الأكبر وعاءً — فالتعادلُ يُحسم بترتيب الفئة، حتميّاً.</summary>
+    private static int IndexOfLargestTaxable(IReadOnlyList<VatReturnBucket> buckets)
+    {
+        var best = 0;
+        for (var i = 1; i < buckets.Count; i++)
+            if (Math.Abs(buckets[i].TaxableAmount) > Math.Abs(buckets[best].TaxableAmount))
+                best = i;
+        return best;
+    }
+
+    /// <summary>
+    /// جمعُ أوعية المستندات بالفئة — <b>بعد</b> تقريب كلّ مستند، لا قبله: فالمستندُ يُقرّب
+    /// أوعيتَه لنفسه (<c>cac:TaxSubtotal</c>)، والإقرارُ يجمع ما قدّمته المستندات.
+    /// </summary>
+    private static IReadOnlyList<VatReturnBucket> SumByCategory(IEnumerable<VatReturnBucket> parts) =>
+        [.. parts.GroupBy(b => b.Category)
+                 .OrderBy(g => g.Key)
+                 .Select(g => new VatReturnBucket(g.Key, g.Sum(b => b.TaxableAmount), g.Sum(b => b.VatAmount)))];
 
     /// <summary>
     /// (CEEF-232 · ض-١) بادئاتُ المستندات الخمسة التي يقرؤها الإقرارُ أصلاً.

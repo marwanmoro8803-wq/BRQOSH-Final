@@ -1,3 +1,4 @@
+using Brqosh.Domain.Tax;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -66,25 +67,58 @@ public static class FinancialReportPdfGenerator
     /// محتوى PDF لا يُقرأ في الاختبار</b>، وهو عينُ ما فُعل بصفوف الشاشة في م1-١٠.</para>
     /// </summary>
     public static IReadOnlyList<(string Section, string Code, string Name, decimal Amount)> VatReturnRows(
-        VatReturnResult result) =>
-    [
-        ("مبيعات", "—", "مبيعات خاضعة (وعاء)", result.SalesSubtotal),
-        ("مبيعات", "—", "ضريبة المخرجات — مبيعات", result.OutputVat),
-        ("مستخلصات", "—", "مستخلصات أعمال (وعاء)", result.ProgressBillingsSubtotal),
-        ("مستخلصات", "—", "ضريبة المخرجات — مستخلصات", result.ProgressBillingsVat),
-        ("مردودات", "—", "إشعارات دائن (وعاء)", result.CreditNotesSubtotal),
-        ("مردودات", "—", "ضريبة مرتجعة", result.CreditNotesVat),
-        ("تسويات", "—", "تسوية إلغاء مستندات فترات سابقة (تُطرح)", result.CancelledOutputVat),
-        ("تسويات", "—", "ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", result.JournalOutputVat),
-        ("مبيعات", "—", "صافي ضريبة المخرجات", result.NetOutputVat),
-        ("مشتريات", "—", "مشتريات (وعاء)", result.PurchasesSubtotal),
-        ("مشتريات", "—", "ضريبة مدخلات قابلة للخصم", result.DeductibleInputVat),
-        ("مردودات مشتريات", "—", "إشعارات مدينة (وعاء)", result.DebitNotesSubtotal),
-        ("مردودات مشتريات", "—", "ضريبة مدخلات مُخفّضة", result.DebitNotesDeductibleVat),
-        ("تسويات", "—", "تسوية إلغاء مشتريات فترات سابقة (تُطرح)", result.CancelledInputVat),
-        ("تسويات", "—", "ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", result.JournalInputVat),
-        ("مشتريات", "—", "صافي ضريبة المدخلات", result.NetDeductibleInputVat),
-    ];
+        VatReturnResult result)
+    {
+        var rows = new List<(string Section, string Code, string Name, decimal Amount)>
+        {
+            ("مبيعات", "—", "مبيعات خاضعة (وعاء)", result.SalesSubtotal),
+            ("مبيعات", "—", "ضريبة المخرجات — مبيعات", result.OutputVat),
+            ("مستخلصات", "—", "مستخلصات أعمال (وعاء)", result.ProgressBillingsSubtotal),
+            ("مستخلصات", "—", "ضريبة المخرجات — مستخلصات", result.ProgressBillingsVat),
+            ("مردودات", "—", "إشعارات دائن (وعاء)", result.CreditNotesSubtotal),
+            ("مردودات", "—", "ضريبة مرتجعة", result.CreditNotesVat),
+            ("تسويات", "—", "تسوية إلغاء مستندات فترات سابقة (تُطرح)", result.CancelledOutputVat),
+            ("تسويات", "—", "ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", result.JournalOutputVat),
+            ("مبيعات", "—", "صافي ضريبة المخرجات", result.NetOutputVat),
+        };
+        AddBreakdown(rows, "مبيعات حسب الفئة", "صافي وعاء المبيعات (من المستندات)",
+            result.SalesBaseNet, result.Sales, result.JournalOutputVat);
+
+        rows.AddRange(
+        [
+            ("مشتريات", "—", "مشتريات (وعاء)", result.PurchasesSubtotal),
+            ("مشتريات", "—", "ضريبة مدخلات قابلة للخصم", result.DeductibleInputVat),
+            ("مردودات مشتريات", "—", "إشعارات مدينة (وعاء)", result.DebitNotesSubtotal),
+            ("مردودات مشتريات", "—", "ضريبة مدخلات مُخفّضة", result.DebitNotesDeductibleVat),
+            ("تسويات", "—", "تسوية إلغاء مشتريات فترات سابقة (تُطرح)", result.CancelledInputVat),
+            ("تسويات", "—", "ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", result.JournalInputVat),
+            ("مشتريات", "—", "صافي ضريبة المدخلات", result.NetDeductibleInputVat),
+        ]);
+        AddBreakdown(rows, "مشتريات حسب الفئة", "صافي وعاء المشتريات القابلة للخصم (من المستندات)",
+            result.PurchasesBaseNet, result.Purchases, result.JournalInputVat);
+
+        return rows;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤١ · tax-zatca#12) <b>والمطبوعُ يحمل الفئاتِ كالشاشة</b> — وكان
+    /// بلا تفكيكٍ أصلاً، <b>وهو الوثيقةُ التي يُقدَّم منها الإقرار</b>. ضريبةُ كلّ فئةٍ تحت
+    /// الصافي فوقها ومعها «بلا فئة» لِما قُيّد بلا مستند؛ ثمّ صافي الوعاء وأوعيتُه تحته.
+    /// </summary>
+    private static void AddBreakdown(
+        List<(string Section, string Code, string Name, decimal Amount)> rows,
+        string section, string baseLabel, decimal baseNet,
+        IReadOnlyList<VatReturnBucket> buckets, decimal uncategorisedVat)
+    {
+        foreach (var b in buckets.Where(b => b.VatAmount != 0m))
+            rows.Add((section, b.Category.UblCode(), $"منها ضريبة {b.Category.NameAr()}", b.VatAmount));
+        if (uncategorisedVat != 0m)
+            rows.Add((section, "—", "منها بلا فئة — مقيّدة بلا مستند", uncategorisedVat));
+
+        rows.Add((section, "—", baseLabel, baseNet));
+        foreach (var b in buckets)
+            rows.Add((section, b.Category.UblCode(), $"منها وعاء {b.Category.NameAr()}", b.TaxableAmount));
+    }
 
     public static byte[] VatReturn(string companyName, DateOnly from, DateOnly to,
         decimal outputVat, decimal inputVat, decimal netPayable) =>

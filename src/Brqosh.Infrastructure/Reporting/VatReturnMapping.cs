@@ -30,6 +30,8 @@ public static class VatReturnMapping
             CancelledInputVat: r.CancelledInputVat,
             JournalOutputVat: r.JournalOutputVat,
             JournalInputVat: r.JournalInputVat,
+            SalesBaseNet: r.SalesBaseNet,
+            PurchasesBaseNet: r.PurchasesBaseNet,
             GlVatNetPayableBalance: r.GlVatNetPayableBalance,
             Map(r.SalesByCategory),
             Map(r.PurchasesByCategory));

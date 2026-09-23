@@ -21,20 +21,8 @@ public static class VatReturnRows
         var rows = new List<Row>
         {
             new("مبيعات خاضعة (وعاء)", r.SalesSubtotal),
+            new("ضريبة المخرجات — مبيعات", r.OutputVat),
         };
-
-        // (CEEF-229 · م1-١٠) **التفكيكُ تحت الإجمالي مباشرةً — لا في تقريرٍ آخر.**
-        //
-        // نموذجُ الإقرار السعوديّ يفصل المبيعاتِ الخاضعة بالنسبة الأساسية عن الصادرات
-        // الصفرية عن المعفاة. ومجموعٌ كلّيٌّ وحده يُنتج نسبةً مخلوطة — ربعٌ فيه 1,000,000
-        // محلية و400,000 صادرات يقول **10.71%**، ولا وجود لها في نظامٍ ضريبيّ.
-        foreach (var bucket in r.SalesByCategory ?? [])
-            rows.Add(new Row($"منها {LabelFor(bucket.Code)} ({bucket.Code})", bucket.TaxableAmount, Indented: true));
-
-        rows.Add(new Row("ضريبة المخرجات — مبيعات", r.OutputVat));
-
-        foreach (var bucket in (r.SalesByCategory ?? []).Where(c => c.VatAmount != 0m))
-            rows.Add(new Row($"منها {LabelFor(bucket.Code)} ({bucket.Code})", bucket.VatAmount, Indented: true));
 
         rows.Add(new Row("مستخلصات أعمال (وعاء)", r.ProgressBillingsSubtotal));
         rows.Add(new Row("ضريبة المخرجات — مستخلصات", r.ProgressBillingsVat));
@@ -50,19 +38,58 @@ public static class VatReturnRows
         rows.Add(new Row("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", r.JournalOutputVat));
         rows.Add(new Row("صافي ضريبة المخرجات", r.NetOutputVat, Bold: true));
 
-        rows.Add(new Row("مشتريات (وعاء)", r.PurchasesSubtotal));
-        foreach (var bucket in r.PurchasesByCategory ?? [])
-            rows.Add(new Row($"منها {LabelFor(bucket.Code)} ({bucket.Code})", bucket.TaxableAmount, Indented: true));
+        // (CEEF-229 · م1-١٠) **التفكيكُ تحت الإجمالي مباشرةً — لا في تقريرٍ آخر.**
+        // نموذجُ الإقرار السعوديّ يفصل الأساسيَّ عن الصفريّ عن المعفى، ومجموعٌ كلّيٌّ وحده
+        // يُنتج نسبةً مخلوطةً لا وجود لها في نظامٍ ضريبيّ.
+        //
+        // (جاهزيّةُ الإطلاق · ح-٤١) **وتحت الأبِ الذي تجمع إليه فعلاً.** كانت الأوعيةُ تُعرض
+        // «منها» تحت وعاء **الفواتير وحدَها قبل الإشعارات**، وهي **صافيةٌ من الإشعارات** —
+        // فلا تجمع إليه متى وُجد إشعارٌ واحد. **والأبُ الآن الصافي**، والضريبةُ المقيّدة بلا
+        // مستندٍ «منها» بلا فئة: فهي في الصافي ولا وعاءَ لها يُخترع.
+        AddBreakdown(rows, null, r.NetOutputVat, r.SalesByCategory, r.JournalOutputVat, taxable: false);
+        AddBreakdown(rows, "صافي وعاء المبيعات (من المستندات)", r.SalesBaseNet,
+            r.SalesByCategory, r.JournalOutputVat, taxable: true);
 
+        rows.Add(new Row("مشتريات (وعاء)", r.PurchasesSubtotal));
         rows.Add(new Row("ضريبة مدخلات قابلة للخصم", r.DeductibleInputVat));
         rows.Add(new Row("إشعارات مدينة (وعاء)", r.DebitNotesSubtotal));
         rows.Add(new Row("ضريبة مدخلات مُخفّضة (إشعارات مدينة)", r.DebitNotesDeductibleVat));
         rows.Add(new Row("تسوية إلغاء مشتريات فترات سابقة (تُطرح)", r.CancelledInputVat));
         rows.Add(new Row("ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", r.JournalInputVat));
         rows.Add(new Row("صافي ضريبة المدخلات", r.NetDeductibleInputVat, Bold: true));
+        AddBreakdown(rows, null, r.NetDeductibleInputVat, r.PurchasesByCategory, r.JournalInputVat, taxable: false);
+        AddBreakdown(rows, "صافي وعاء المشتريات القابلة للخصم (من المستندات)", r.PurchasesBaseNet,
+            r.PurchasesByCategory, r.JournalInputVat, taxable: true);
+
         rows.Add(new Row("صافي الضريبة المستحقة/المستردة", r.NetVatPayable, Bold: true));
 
         return rows;
+    }
+
+    /// <summary>
+    /// (ح-٤١) <b>أوعيةُ الفئة «منها» تحت أبٍ تجمع إليه.</b> الوعاءُ تحت صافي الوعاء (سطرٌ
+    /// يُضاف هنا)؛ <b>والضريبةُ تحت صفّ الصافي القائم فوقها مباشرةً</b> (<paramref name="parent"/>
+    /// عدمٌ)، ومعها «بلا فئة» لِما قُيّد بلا مستند متى وُجد.
+    /// </summary>
+    private static void AddBreakdown(List<Row> rows, string? parent, decimal parentValue,
+        IReadOnlyList<VatReturnCategoryDto>? buckets, decimal uncategorised, bool taxable)
+    {
+        if (buckets is null)
+            return;
+
+        if (parent is not null)
+            rows.Add(new Row(parent, parentValue));
+
+        foreach (var b in buckets)
+        {
+            var value = taxable ? b.TaxableAmount : b.VatAmount;
+            if (!taxable && value == 0m)
+                continue;
+            rows.Add(new Row($"منها {LabelFor(b.Code)} ({b.Code})", value, Indented: true));
+        }
+
+        if (!taxable && uncategorised != 0m)
+            rows.Add(new Row("منها بلا فئة — مقيّدة بلا مستند", uncategorised, Indented: true));
     }
 
     /// <summary>
