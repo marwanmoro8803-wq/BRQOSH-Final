@@ -55,16 +55,9 @@ public partial class ZatcaInvoicesPage : UserControl
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);
 
-        var submitted = docs.Count(d =>
-            d.ComplianceStatus is ZatcaComplianceStatus.Reported
-                or ZatcaComplianceStatus.Cleared
-                or ZatcaComplianceStatus.Accepted);
-        var pending = docs.Count(d =>
-            d.ComplianceStatus is ZatcaComplianceStatus.ReadyToReport
-                or ZatcaComplianceStatus.ReadyToClear
-                or ZatcaComplianceStatus.Generated);
+        var (submitted, pending, simulated) = SummaryCounts([.. docs.Select(d => d.ComplianceStatus)]);
         ZatcaSummaryText.Text =
-            $"مستندات: {docs.Count} · مُرسل/معتمد: {submitted} · بانتظار الإرسال: {pending}";
+            $"مستندات: {docs.Count} · مُرسل/معتمد: {submitted} · بانتظار الإرسال: {pending} · محاكاة لم تُرسل: {simulated}";
     }
 
     /// <summary>
@@ -76,16 +69,61 @@ public partial class ZatcaInvoicesPage : UserControl
     /// كما هو</b> — أي يجعل الحارسَ يكذب، وهو ما يحذّر منه <c>I18nCoverageTests</c> نصّاً
     /// في شأن <c>MessageBox</c>.</para>
     /// </summary>
-    private static string StatusLabel(ZatcaComplianceStatus s) => s switch
+    private static string StatusLabel(ZatcaComplianceStatus s)
     {
-        ZatcaComplianceStatus.ReadyToReport => LocaleManager.T("جاهز للإبلاغ", "Ready to Report"),
-        ZatcaComplianceStatus.ReadyToClear => LocaleManager.T("جاهز للاعتماد", "Ready to Clear"),
-        ZatcaComplianceStatus.Reported => LocaleManager.T("مُبلَّغ", "Reported"),
-        ZatcaComplianceStatus.Cleared => LocaleManager.T("معتمد", "Cleared"),
-        ZatcaComplianceStatus.Accepted => LocaleManager.T("مقبول", "Accepted"),
-        ZatcaComplianceStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
-        _ => LocaleManager.T("مُولَّد", "Generated"),
-    };
+        var (arabic, english) = StatusNames(s);
+        return LocaleManager.T(arabic, english);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥٧ · ui-ux-i18n-printing#4) ‏<b>العربيُّ من <c>NameAr()</c> — والشاشةُ لا تشتقّه.</b>
+    ///
+    /// <para>‏<b>وكانت تشتقّه</b>: سبعةُ فروعٍ وفرعٌ افتراضيٌّ «مُولَّد» <b>يبتلع <c>SimulatedLocally</c></b> —
+    /// فالمحاكاةُ التي لم تصل الهيئةَ تُعرض «مُولَّداً» والمطبوعُ نفسُه يقول «محاكاة محلية — لم يُرسل للهيئة».
+    /// <b>والإنجليزيُّ هنا</b> لأنّ الكيانَ لا يملكه؛ ولكلّ حالةٍ اسمُها — لا فرعَ يجمع اثنتين.</para>
+    /// </summary>
+    internal static (string Arabic, string English) StatusNames(ZatcaComplianceStatus s) =>
+        (s.NameAr(), s switch
+        {
+            ZatcaComplianceStatus.Generated => "Generated",
+            ZatcaComplianceStatus.ReadyToReport => "Ready to Report",
+            ZatcaComplianceStatus.ReadyToClear => "Ready to Clear",
+            ZatcaComplianceStatus.Reported => "Reported",
+            ZatcaComplianceStatus.Cleared => "Cleared",
+            ZatcaComplianceStatus.Accepted => "Accepted",
+            ZatcaComplianceStatus.Rejected => "Rejected",
+            ZatcaComplianceStatus.SimulatedLocally => "Simulated locally — not sent to ZATCA",
+            _ => s.ToString(),
+        });
+
+    /// <summary>
+    /// (ح-٥٧) ‏<b>الملخّصُ يعدّ بما تملكه الشجرة</b> — «مُرسل» هو <c>IsAcknowledgedByAuthority()</c>،
+    /// <b>والمحاكاةُ تُعدّ وحدَها</b>: كانت لا مُرسلةً ولا منتظِرةً فتختفي من العدّ كلِّه.
+    /// </summary>
+    internal static (int Submitted, int Pending, int Simulated) SummaryCounts(
+        IReadOnlyCollection<ZatcaComplianceStatus> statuses) =>
+        (statuses.Count(s => s.IsAcknowledgedByAuthority()),
+         statuses.Count(s => s is ZatcaComplianceStatus.ReadyToReport
+             or ZatcaComplianceStatus.ReadyToClear
+             or ZatcaComplianceStatus.Generated),
+         statuses.Count(s => s is ZatcaComplianceStatus.SimulatedLocally));
+
+    /// <summary>(ح-٥٧) ‏ما وقع بعد الإرسال — <b>من الحالة التي عاد بها المستند</b>، لا من أنّ الاستدعاءَ لم يرمِ.</summary>
+    internal enum SubmitOutcome { Acknowledged, Simulated, Rejected, NotYetReceived }
+
+    /// <summary>
+    /// (ح-٥٧) ‏<b>وكان كلُّ إرسالٍ لم يرمِ «تم الإرسال بنجاح»</b> — والمحاكاةُ لا ترمي، فتنتهي
+    /// <c>SimulatedLocally</c> ويُقال للمستعمل إنّها أُرسلت. <b>والمقبولُ عند الهيئة وحدَه نجاح.</b>
+    /// </summary>
+    internal static SubmitOutcome OutcomeOf(ZatcaComplianceStatus status) =>
+        status.IsAcknowledgedByAuthority()
+            ? SubmitOutcome.Acknowledged
+            : status switch
+            {
+                ZatcaComplianceStatus.SimulatedLocally => SubmitOutcome.Simulated,
+                ZatcaComplianceStatus.Rejected => SubmitOutcome.Rejected,
+                _ => SubmitOutcome.NotYetReceived,
+            };
 
     private async void OnSubmit(object sender, RoutedEventArgs e)
     {
@@ -97,9 +135,28 @@ public partial class ZatcaInvoicesPage : UserControl
         try
         {
             using var facade = new DesktopAccountingFacade();
-            await facade.GetService<ZatcaSubmissionService>().SubmitAsync(row.Id);
+            var doc = await facade.GetService<ZatcaSubmissionService>().SubmitAsync(row.Id);
             await ReloadAsync();
-            UiDialog.Show("تم الإرسال بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            // ‏(ح-٥٧) **الرسالةُ من الحالة التي عاد بها المستند** — وكانت «تم الإرسال بنجاح» لكلّ ما لم يرمِ.
+            switch (OutcomeOf(doc.ComplianceStatus))
+            {
+                case SubmitOutcome.Acknowledged:
+                    UiDialog.Show("تم الإرسال — استلمت الهيئة المستند.", "BRQOSH",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    break;
+                case SubmitOutcome.Simulated:
+                    UiDialog.Show("محاكاة محلية — لم يُرسل المستند للهيئة، فالتكامل مضبوط على بيئة المحاكاة.", "BRQOSH",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    break;
+                case SubmitOutcome.Rejected:
+                    UiDialog.Show("رفضت الهيئة المستند — ورد الهيئة محفوظ مع المستند.", "BRQOSH",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    break;
+                default:
+                    UiDialog.Show("لم تستلم الهيئة المستند بعد.", "BRQOSH",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    break;
+            }
         }
         catch (Exception ex)
         {
