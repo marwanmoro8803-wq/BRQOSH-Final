@@ -1,4 +1,6 @@
 ﻿using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Brqosh.Domain.Accounting;
@@ -35,6 +37,16 @@ public class ZatcaConfigurationValidator(BrqoshDbContext db)
 
         if (!certOk) warnings.Add("ملف الشهادة غير موجود.");
         if (!keyOk) warnings.Add("ملف المفتاح الخاص غير موجود.");
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٥٢ · `tax-zatca#10`) ‏**وصلاحيّةُ الشهادة اليومَ لا وجودُ ملفِّها.**
+        // ‏كان «جاهز» يعني «الملفُّ موجود» — فشهادةٌ انتهت تمرّ، والإرسالُ في الإنتاج يمضي إلى الهيئة
+        // ‏**فيُرفض هناك ويُسجَّل المستندُ مرفوضاً** كأنّ العيبَ فيه. ولا إنذارَ قبل الانتهاء.
+        if (certOk)
+        {
+            var (usable, warning) = CertificateValidity(settings.CertificateFilePath, DateTime.UtcNow);
+            if (warning is not null) warnings.Add(warning);
+            certOk = usable;
+        }
         if (!apiOk) warnings.Add("عنوان API أو رمز المصادقة غير مضبوط.");
 
         // (CEEF-229 · Z-10) بيانات البائع النظامية — لا الرقم الضريبيّ وحده.
@@ -48,6 +60,44 @@ public class ZatcaConfigurationValidator(BrqoshDbContext db)
 
         var ready = certOk && keyOk && apiOk && sellerGaps.Count == 0;
         return new ZatcaConfigurationStatus(settings.IsEnabled, certOk, keyOk, apiOk, ready, warnings);
+    }
+
+    /// <summary>أيّامُ الإنذار قبل انتهاء شهادة CSID — والإرسالُ باقٍ فيها.</summary>
+    internal const int CsidExpiryWarningDays = 30;
+
+    /// <summary>
+    /// ‏(ح-٥٢) <b>أتصلح الشهادةُ اليوم؟</b> — منتهيةٌ أو لم تبدأ أو لا تُقرأ: لا إرسال. <b>وقاربت الانتهاء</b>
+    /// (ثلاثون يوماً): إنذارٌ والإرسالُ باقٍ — فالشهادةُ صالحةٌ اليوم، ومنعُ الإرسال بسبب الغد يُغلق حالةً مشروعة.
+    ///
+    /// <para>‏<b>والتجديدُ نفسُه ليس هنا</b>: مسارُ طلب CSID جديدٍ من الهيئة (<c>ZatcaCsidOnboardingService</c>)
+    /// هو ما يُعاد — والإنذارُ يقول متى.</para>
+    /// </summary>
+    internal static (bool Usable, string? Warning) CertificateValidity(string certificatePath, DateTime nowUtc)
+    {
+        X509Certificate2 cert;
+        try
+        {
+            cert = X509Certificate2.CreateFromPem(File.ReadAllText(certificatePath));
+        }
+        catch (CryptographicException ex)
+        {
+            return (false, $"شهادة CSID لا تُقرأ ({ex.Message}) — أعد تنزيلَها من مسار التسجيل.");
+        }
+
+        using (cert)
+        {
+            var notBefore = cert.NotBefore.ToUniversalTime();
+            var notAfter = cert.NotAfter.ToUniversalTime();
+
+            if (nowUtc > notAfter)
+                return (false, $"شهادة CSID انتهت في {notAfter:yyyy-MM-dd} — الهيئةُ ترفض كلَّ ما يُرسَل بها حتى تُجدَّد.");
+            if (nowUtc < notBefore)
+                return (false, $"شهادة CSID لا تصلح قبل {notBefore:yyyy-MM-dd} — تحقّق من ساعة الجهاز أو من الشهادة.");
+            if (notAfter - nowUtc <= TimeSpan.FromDays(CsidExpiryWarningDays))
+                return (true, $"شهادة CSID تنتهي في {notAfter:yyyy-MM-dd} — جدِّدها قبل ذلك.");
+
+            return (true, null);
+        }
     }
 }
 
