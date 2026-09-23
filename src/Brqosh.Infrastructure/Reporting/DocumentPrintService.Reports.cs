@@ -150,6 +150,21 @@ public partial class DocumentPrintService
         long companyId, long billingId, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
+        var data = await ProgressBillingRequestAsync(companyId, billingId, ct);
+
+        var pdf = ProgressBillingPdfGenerator.Generate(PrintBranding.FromCompany(company), data);
+        var fileName = $"brqosh-pb-{SanitizeFileName(data.BillingNumber)}.pdf";
+        await LogAsync(companyId, username, "ProgressBilling", data.BillingNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥٦ · ui-ux-i18n-printing#1) <b>ما يُطبع منه المستخلص — ويُقاس قبل أن يُرسَم</b>
+    /// (مذهبُ ح-٤٢). <b>وهو فاتورةٌ ضريبيّة</b>: نوعُها ونسبتُها وهويّةُ المشتري فيه.
+    /// </summary>
+    internal async Task<ProgressBillingPdfGenerator.BillingPrintData> ProgressBillingRequestAsync(
+        long companyId, long billingId, CancellationToken ct = default)
+    {
         var billing = await db.ProgressBillings.SingleAsync(b => b.CompanyId == companyId && b.Id == billingId, ct);
         var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == billing.CustomerId, ct);
         var project = await db.ConstructionProjects.SingleAsync(p => p.Id == billing.ProjectId, ct);
@@ -158,11 +173,10 @@ public partial class DocumentPrintService
             d.SourceDocumentId == billingId &&
             d.DocumentType == ZatcaDocumentType.ProgressBilling, ct);
 
-        var branding = PrintBranding.FromCompany(company);
         // ‏(ح-٥٣) المستخلصُ لعميلٍ مسجَّلٍ يُخلَّص — فرمزُه من القارئ الواحد. ولا بديلَ من
         // ‏الطور الأوّل هنا: لم يكن للمستخلص رمزٌ قبل أن يُولَّد مستندُه، ولا يُخترع الآن.
         var mark = ZatcaHandOverCopy.MarkFor(zatca, () => null);
-        var data = new ProgressBillingPdfGenerator.BillingPrintData(
+        return new ProgressBillingPdfGenerator.BillingPrintData(
             billing.BillingNumber ?? billing.Id.ToString(),
             billing.BillingDate,
             customer.NameAr,
@@ -174,16 +188,31 @@ public partial class DocumentPrintService
             billing.NetBillableAmount,
             billing.VatAmount,
             billing.GrandTotal,
+            Kind: BillingKind(zatca?.TransmissionMode, customer.SupportsStandardTaxInvoice),
+            VatRate: ProgressBilling.SaudiVatRate,
+            PartyVatNumber: customer.VatRegistrationNumber,
+            PartyAddress: customer.Address,
             mark.QrTlvBase64,
             zatca?.Icv,
             zatca?.ComplianceStatus.ToString(),
             mark.ClearanceNotice);
-
-        var pdf = ProgressBillingPdfGenerator.Generate(branding, data);
-        var fileName = $"brqosh-pb-{SanitizeFileName(billing.BillingNumber ?? billing.Id.ToString())}.pdf";
-        await LogAsync(companyId, username, "ProgressBilling", billing.BillingNumber ?? billing.Id.ToString(), ct);
-        return new PrintResult(pdf, fileName);
     }
+
+    /// <summary>
+    /// (ح-٥٦) <b>المستخلصُ فاتورةٌ ضريبيّةٌ أم مبسّطة</b> — <b>ما أُرسل للهيئة يحكم</b>: نوعُ المستند المُولَّد،
+    /// لا حالُ العميل اليوم (قد يُضاف رقمُه أو يُحذف بعد الإرسال). <b>وبلا مستندٍ فقاعدةُ المولِّد نفسُها</b>
+    /// (<c>TryGenerateForProgressBillingAsync</c>): عميلٌ يدعم الفاتورةَ الضريبيّة يُخلَّص، وغيرُه يُبلَّغ.
+    /// </summary>
+    internal static PrintDocumentKind BillingKind(ZatcaTransmissionMode? mode, bool supportsStandardTaxInvoice) =>
+        mode switch
+        {
+            ZatcaTransmissionMode.Clearance => PrintDocumentKind.StandardSalesInvoice,
+            ZatcaTransmissionMode.Reporting => PrintDocumentKind.SimplifiedSalesInvoice,
+            null => supportsStandardTaxInvoice
+                ? PrintDocumentKind.StandardSalesInvoice
+                : PrintDocumentKind.SimplifiedSalesInvoice,
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "نمطُ إرسالٍ غيرُ معروف."),
+        };
 
     public async Task<PrintResult> ExportZatcaDocumentAsync(
         long companyId, long zatcaDocumentId, string username, CancellationToken ct = default)

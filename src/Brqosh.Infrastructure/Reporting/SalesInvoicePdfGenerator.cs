@@ -576,7 +576,8 @@ public static class SalesInvoicePdfGenerator
         });
     }
 
-    private static string TitleFor(PrintDocumentKind kind) => kind switch
+    // ‏(ح-٥٦) داخليّةٌ — والمستخلصُ يأخذ عنوانَه منها لا من نصٍّ ثانٍ.
+    internal static string TitleFor(PrintDocumentKind kind) => kind switch
     {
         PrintDocumentKind.StandardSalesInvoice => "فاتورة ضريبية",
         PrintDocumentKind.PurchaseInvoice => "فاتورة مشتريات",

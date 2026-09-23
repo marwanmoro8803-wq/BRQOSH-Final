@@ -1,3 +1,4 @@
+using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -21,6 +22,12 @@ public static class ProgressBillingPdfGenerator
         decimal NetBillableAmount,
         decimal VatAmount,
         decimal GrandTotal,
+        // (جاهزيّةُ الإطلاق · ح-٥٦ · ui-ux-i18n-printing#1) ‏**المستخلصُ فاتورةٌ ضريبيّة** — نوعُها ونسبتُها
+        // ‏وهويّةُ المشتري **إلزاميّةٌ بلا افتراضيّ**: يُسمّيها كلُّ مُنتِج، فلا تُطبع «15%» لأنّ أحداً نسيها.
+        PrintDocumentKind Kind,
+        decimal VatRate,
+        string? PartyVatNumber,
+        string? PartyAddress,
         string? QrTlvBase64 = null,
         int? Icv = null,
         string? ComplianceStatus = null,
@@ -40,7 +47,7 @@ public static class ProgressBillingPdfGenerator
                 page.Margin(28);
                 page.DefaultTextStyle(x => branding.PageTextStyle( 11));
 
-                page.Header().Element(h => branding.RenderHeader(h, "مستخلص أعمال"));
+                page.Header().Element(h => branding.RenderHeader(h, Title(data)));
 
                 page.Content().PaddingVertical(12).Column(col =>
                 {
@@ -54,9 +61,12 @@ public static class ProgressBillingPdfGenerator
                         row.RelativeItem().Text($"رقم: {PrintText.Code(data.BillingNumber)}");
                         row.RelativeItem().AlignLeft().Text($"التاريخ: {PrintText.Date(data.BillingDate)}");
                     });
-                    col.Item().PaddingTop(6).Text($"العميل: {data.CustomerName}");
-                    col.Item().Text($"المشروع: {data.ProjectName}");
-                    col.Item().Text($"الفترة: {data.PeriodDescription}");
+                    // ‏(ح-٥٦) **المشتري بهويّته** — رقمُه الضريبيُّ وعنوانُه، كما على الفاتورة منذ CEEF-227.
+                    col.Item().PaddingTop(6).Column(inner =>
+                    {
+                        foreach (var (label, value) in PartyRows(data))
+                            inner.Item().Text($"{label}: {value}");
+                    });
 
                     col.Item().PaddingTop(16).Table(table =>
                     {
@@ -77,7 +87,7 @@ public static class ProgressBillingPdfGenerator
                         Row("نسبة المحتجز", $"{data.RetentionPercent:N2}%");
                         Row("مبلغ المحتجز", $"{data.RetentionAmount:N2} ر.س");
                         Row("صافي الذمة (قبل الضريبة)", $"{data.NetBillableAmount:N2} ر.س");
-                        Row("ضريبة 15%", $"{data.VatAmount:N2} ر.س");
+                        Row(VatLabel(data.VatRate), $"{data.VatAmount:N2} ر.س");
                         Row("الإجمالي المستحق", $"{data.GrandTotal:N2} ر.س", bold: true);
                     });
 
@@ -100,6 +110,34 @@ public static class ProgressBillingPdfGenerator
             });
         }).GeneratePdf();
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥٦ · ui-ux-i18n-printing#1) <b>عنوانُ الورقة عنوانُ الفاتورة</b> — ثمّ «مستخلص
+    /// أعمال» وصفاً. <b>وكان «مستخلص أعمال» وحدَه</b> ومستندُه عند الهيئة فاتورةٌ تُخلَّص أو تُبلَّغ، فيأخذ
+    /// المشتري ورقةً لا تقول إنّها فاتورةٌ ضريبيّة. والعنوانُ من <c>TitleFor</c> الفاتورةِ لا نصٌّ ثانٍ.
+    /// </summary>
+    internal static string Title(BillingPrintData data) =>
+        data.Kind is PrintDocumentKind.StandardSalesInvoice or PrintDocumentKind.SimplifiedSalesInvoice
+            ? $"{SalesInvoicePdfGenerator.TitleFor(data.Kind)} — مستخلص أعمال"
+            : throw new ArgumentOutOfRangeException(nameof(data), data.Kind,
+                "المستخلصُ فاتورةٌ ضريبيّةٌ أو مبسّطةٌ لا غير.");
+
+    /// <summary>(ح-٥٦) ‏المشتري وسياقُ المستخلص — <b>والرقمُ الضريبيُّ والعنوانُ «—» إن غابا</b>، كالفاتورة.</summary>
+    internal static IReadOnlyList<(string Label, string Value)> PartyRows(BillingPrintData data) =>
+    [
+        ("العميل", data.CustomerName),
+        ("الرقم الضريبي", string.IsNullOrWhiteSpace(data.PartyVatNumber) ? "—" : PrintText.Code(data.PartyVatNumber)),
+        ("العنوان", string.IsNullOrWhiteSpace(data.PartyAddress) ? "—" : data.PartyAddress),
+        ("المشروع", data.ProjectName),
+        ("الفترة", data.PeriodDescription),
+    ];
+
+    /// <summary>
+    /// (ح-٥٦) ‏<b>رأسُ الضريبة من النسبة التي حُسبت بها</b> — <c>ProgressBilling.SaudiVatRate</c> يمرّ في
+    /// البيانات. <b>وكان «ضريبة 15%» نصّاً</b>: تتغيّر نسبةُ الكيان فتبقى الورقةُ على ما كانت.
+    /// </summary>
+    internal static string VatLabel(decimal rate) =>
+        $"ضريبة {PrintText.Ltr((rate * 100m).ToString("0.##", CultureInfo.InvariantCulture) + "%")}";
 
     // (جاهزيّةُ الإطلاق · ح-٥٤) ‏**وكان يطبع اسمَ الحالة البرمجيّ** — «SimulatedLocally» و«ReadyToClear»
     // ‏على ورقةٍ عربيّة، وقد أُصلح ذلك في الفاتورة منذ CEEF-229. ‏السطرُ الآن سطرُها نفسُه.

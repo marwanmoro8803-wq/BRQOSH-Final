@@ -92,7 +92,8 @@ public class PrintedStatusIsArabicEverywhereTests
         ?? throw new InvalidOperationException("لا سطر.");
 
     private static ProgressBillingPdfGenerator.BillingPrintData Billing(int? icv, string? status) =>
-        new("PB-1", new DateOnly(2026, 7, 9), "عميل", "مشروع", "يوليو", 1_000m, 10m, 100m, 900m, 135m, 1_035m,
+        new("PB-1", new DateOnly(2026, 7, 9), "عميل", "مشروع", "يوليو", 1_000m, 10m, 100m, 900m, 150m, 1_150m,
+            PrintDocumentKind.StandardSalesInvoice, 0.15m, "311111111100003", "الرياض",
             Icv: icv, ComplianceStatus: status);
 
     /// <summary>

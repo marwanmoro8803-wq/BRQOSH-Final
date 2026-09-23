@@ -141,7 +141,8 @@ public class FinancialReportPdfTests
             PrintBranding.From("شركة", "310123456700003"),
             new ProgressBillingPdfGenerator.BillingPrintData(
                 "PB-001", new DateOnly(2026, 3, 1), "عميل", "مشروع", "مارس 2026",
-                100000m, 10m, 10000m, 90000m, 13500m, 103500m));
+                100000m, 10m, 10000m, 90000m, 15000m, 115000m,
+                PrintDocumentKind.StandardSalesInvoice, 0.15m, "311111111100003", "الرياض"));
         Assert.NotEmpty(pbPdf);
     }
 
