@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 17 بنداً ✅ و6 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 21 بنداً ✅ و6 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وواحدٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤١) — **بعضُها خارج هذا الحصر**،
+**وأربعةٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤٤) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -91,7 +91,7 @@
 - ✅ **`tax-zatca#11`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Fixed-asset sales post output VAT with no tax invoice and no e-invoice — ح-١٦ `70444ef`
 - ◐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT — ح-٤١ `21ce51e` — **الأوعيةُ بالريال بعد الخصم، وتشمل المستخلصَ والإلغاء، وتُطابق الصافي على الشاشة والمطبوع**؛ **ولا إسنادَ إلى صناديق النموذج** (نصُّه ليس في المستودع) **ولا احتسابَ عكسيّ**
 - ✅ **`tax-zatca#13`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Progress-billing cancellation document has no billing reference and no reason — ح-٣٦ `693f8ce`
-- ☐ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency — **وطباعةُ الإشعار المدين انضمّت إلى الصنف بـح-٣٩** (`ee47836`)، وكانت قبلُ متّسقةً في خطئها
+- ✅ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency — **وطباعةُ الإشعار المدين انضمّت إلى الصنف بـح-٣٩** (`ee47836`)، وكانت قبلُ متّسقةً في خطئها — ح-٤٢ `27af80a` — **الطباعاتُ الخمسُ بعملة المستند ومعها الريالُ إفصاحاً؛ والرمزُ الاحتياطيُّ على اصطلاح الـXML**
 - ☐ **`tax-zatca#15`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>The O-01 runbook and OPEN_ITEMS overstate readiness: onboarding steps are missing, the test environment was never exercised, and a live-CSID test reports Passed while doing nothing
 - ☐ **`tax-zatca#16`** · <sub>مؤكّد · في اليد · كبير · خطر</sub><br>G-42 re-measured: the product has one EGS unit and one CSID per company; there is no per-branch or per-device EGS onboarding, and POS-solution registration is external
 
@@ -192,10 +192,10 @@
 
 ## ui-ux-i18n-printing (10 major)
 
-- ☐ **`ui-ux-i18n-printing#0`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed credit note (إشعار دائن) lacks the buyer's VAT number and address, the original invoice number, and the reason
+- ✅ **`ui-ux-i18n-printing#0`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed credit note (إشعار دائن) lacks the buyer's VAT number and address, the original invoice number, and the reason — ح-٤٣ `1540120` — **ومعه الإشعارُ المدينُ ومستندُ الإلغاء**
 - ☐ **`ui-ux-i18n-printing#1`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Progress-billing PDF (the construction tax invoice) is not titled 'فاتورة ضريبية', has no buyer VAT number or address, hard-codes 15%, and prints the ZATCA status as a raw English enum
-- ☐ **`ui-ux-i18n-printing#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed sales invoice hides line and document discounts, so its columns do not add up to its totals
-- ☐ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س
+- ✅ **`ui-ux-i18n-printing#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed sales invoice hides line and document discounts, so its columns do not add up to its totals — ح-٤٤ `b9a24d9` — **وكانت النسبةُ تُطبع «14.25%» مع خصم المستند**
+- ✅ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س — ح-٤٢ `27af80a` — **وهو عينُ `tax-zatca#14` بعدسةٍ ثانية**
 - ☐ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن'
 - ☐ **`ui-ux-i18n-printing#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Pressing Enter in 14 dialogs immediately posts an unchangeable document, with the first customer or supplier preselected and no confirmation
 - ☐ **`ui-ux-i18n-printing#6`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sales invoice entry screen shows totals with 15% VAT on every line, including zero-rated and exempt lines
