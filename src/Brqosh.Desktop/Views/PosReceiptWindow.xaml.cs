@@ -26,7 +26,8 @@ public partial class PosReceiptWindow : Window
             // ‏مستندُ تخليص، وما لم يُعتمد منه لا يُعرض برمزٍ بل بتنبيه. والنصُّ داخل اللوحة
             // ‏نفسِها، فتبقى ظاهرةً ويُطوى الرمزُ وحدَه.
             var mark = ZatcaHandOverCopy.MarkFor(zatca, () => null);
-            ZatcaStatusText.Text = mark.ClearanceNotice ?? zatcaMessage ?? zatca.ComplianceStatus.ToString();
+            // ‏(ح-٥٤) ‏**والحالةُ بالعربيّة** — كانت اسمَها البرمجيّ حين لا رسالةَ مع الإيصال.
+            ZatcaStatusText.Text = mark.ClearanceNotice ?? zatcaMessage ?? zatca.ComplianceStatus.NameAr();
             if (mark.QrTlvBase64 is { } qr)
                 QrImage.Source = BuildQrImage(qr);
             else

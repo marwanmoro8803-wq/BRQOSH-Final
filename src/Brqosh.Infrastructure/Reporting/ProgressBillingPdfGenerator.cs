@@ -101,13 +101,8 @@ public static class ProgressBillingPdfGenerator
         }).GeneratePdf();
     }
 
-    private static string? BuildComplianceLine(BillingPrintData data)
-    {
-        var parts = new List<string>();
-        if (data.Icv is int icv)
-            parts.Add($"ICV: {icv}");
-        if (!string.IsNullOrWhiteSpace(data.ComplianceStatus))
-            parts.Add(data.ComplianceStatus);
-        return parts.Count == 0 ? null : string.Join(" · ", parts);
-    }
+    // (جاهزيّةُ الإطلاق · ح-٥٤) ‏**وكان يطبع اسمَ الحالة البرمجيّ** — «SimulatedLocally» و«ReadyToClear»
+    // ‏على ورقةٍ عربيّة، وقد أُصلح ذلك في الفاتورة منذ CEEF-229. ‏السطرُ الآن سطرُها نفسُه.
+    private static string? BuildComplianceLine(BillingPrintData data) =>
+        PrintedCompliance.Line(data.Icv, data.ComplianceStatus);
 }

@@ -592,24 +592,8 @@ public static class SalesInvoicePdfGenerator
         _ => "العميل",
     };
 
-    private static string? BuildComplianceLine(InvoicePrintOptions options)
-    {
-        var parts = new List<string>();
-        if (options.Icv is int icv)
-            parts.Add($"ICV: {icv}");
-
-        // (CEEF-229 · م0-١٠) الحالة تُطبع بالعربية، والمحاكاة تُعلَن صراحةً.
-        //
-        // كان يُطبع اسم الحالة البرمجيّ («Cleared») على فاتورة عربية — والأسوأ أن المحاكاة
-        // كانت تُعلَّم Cleared، فيقرأ المدقّق على الورقة أن الهيئة اعتمدت مستنداً لم ترَه.
-        if (!string.IsNullOrWhiteSpace(options.ComplianceStatus))
-        {
-            parts.Add(Enum.TryParse<Brqosh.Domain.Zatca.ZatcaComplianceStatus>(
-                options.ComplianceStatus, out var parsed)
-                ? parsed.NameAr()
-                : options.ComplianceStatus);
-        }
-
-        return parts.Count == 0 ? null : string.Join(" · ", parts);
-    }
+    // (CEEF-229 · م0-١٠ · ح-٥٤) ‏الحالةُ بالعربيّة والمحاكاةُ مُعلَنة — **من `PrintedCompliance` وحدَه**،
+    // ‏فلا يفترق سطرُ الفاتورة عن سطر المستخلص بتعديلٍ في أحدهما.
+    private static string? BuildComplianceLine(InvoicePrintOptions options) =>
+        PrintedCompliance.Line(options.Icv, options.ComplianceStatus);
 }
