@@ -30,21 +30,28 @@ public class DepreciationService(BrqoshDbContext db)
             foreach (var asset in assets)
             {
                 var sourceDoc = $"Depreciation:{asset.Code}";
-                var alreadyRan = await db.JournalEntries.AnyAsync(e =>
-                    e.CompanyId == companyId
-                    && e.SourceDocument == sourceDoc
-                    && e.EntryDate.Year == runDate.Year
-                    && e.EntryDate.Month == runDate.Month
-                    && e.Status != JournalEntryStatus.Draft, token);
-                if (alreadyRan)
-                    continue;
 
-                var amount = asset.ApplyDepreciation();
+                // ‏(جاهزيّةُ الإطلاق · ح-٥٨ · treasury-payroll-assets#11) ‏**آخرُ شهرٍ أُهلك — ثمّ كلُّ ما استحقّ بعده.**
+                // ‏وكان السؤالُ «هل أُهلك هذا الشهرُ بعينه؟» فيُحمَّل شهرٌ واحد: أصلٌ لم يُقتنَ بعدُ يُهلَك، وشهرٌ فات
+                // ‏لا يُستدرَك، وشهرٌ سابقٌ بعد لاحقه يُحمَّل ثانيةً. **والقائمُ من `WhereStanding`** (ح-٤٧) لا
+                // ‏`Status != Draft` — فالمعكوسُ ليس إهلاكاً قائماً.
+                var lastDepreciated = await db.JournalEntries
+                    .Where(e => e.CompanyId == companyId && e.SourceDocument == sourceDoc)
+                    .WhereStanding(db.JournalEntries)
+                    .OrderByDescending(e => e.EntryDate)
+                    .Select(e => (DateOnly?)e.EntryDate)
+                    .FirstOrDefaultAsync(token);
+
+                var months = asset.MonthsDue(lastDepreciated, runDate);
+                var amount = asset.ApplyDepreciation(months);
                 if (amount <= 0) continue;
 
+                // ‏**والاستدراكُ قيدٌ واحدٌ بتاريخ التشغيل** — أوّلُ فترةٍ مفتوحة، مذهبُ SAP وOracle؛ والفتراتُ التي
+                // ‏فاتت قد تكون أُقفلت، فلا يُكتب فيها.
                 var accum = await db.Accounts.SingleAsync(a => a.Id == asset.GlDepreciationAccountId, token);
                 var entry = JournalEntry.CreateDraft(companyId, runDate,
-                    $"إهلاك {asset.NameAr}", $"Depreciation:{asset.Code}");
+                    months == 1 ? $"إهلاك {asset.NameAr}" : $"إهلاك {asset.NameAr} — {months} أشهر (استدراك)",
+                    sourceDoc);
                 entry.AddLine(depExpense, amount, 0m, asset.NameAr);
                 entry.AddLine(accum, 0m, amount, "مجمع إهلاك");
                 var num = await new JournalEntryNumberGenerator(db).NextAsync(companyId, runDate);

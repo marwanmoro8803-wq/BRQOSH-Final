@@ -205,15 +205,36 @@ public class FixedAsset : IBranchScoped
             throw new AccountingException("الأصل غير نشط.");
     }
 
-    public decimal ApplyDepreciation()
+    public decimal ApplyDepreciation() => ApplyDepreciation(1);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥٨ · treasury-payroll-assets#11) ‏<b>أقساطُ عدّة أشهرٍ دفعةً — ولا تتجاوز القابلَ للإهلاك.</b>
+    /// </summary>
+    public decimal ApplyDepreciation(int months)
     {
         var monthly = MonthlyDepreciation;
-        if (monthly <= 0 || BookValue <= SalvageValue)
+        if (months <= 0 || monthly <= 0 || BookValue <= SalvageValue)
             return 0m;
 
-        var amount = Math.Min(monthly, BookValue - SalvageValue);
+        var amount = Math.Min(monthly * months, BookValue - SalvageValue);
         AccumulatedDepreciation += amount;
         return amount;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥٨ · treasury-payroll-assets#11) ‏<b>الأشهرُ المستحقّةُ حتى شهر التشغيل</b> — من الشهر
+    /// التالي لآخر شهرٍ أُهلك، <b>وإن لم يُهلَك قطّ فمن شهر الاقتناء</b> (اتّفاقيّةُ الشهر الكامل).
+    ///
+    /// <para>‏<b>وكان كلُّ تشغيلٍ شهراً واحداً</b>: أصلٌ يُقتنى بعد شهر التشغيل يُهلَك فيه، وشهرٌ لم يُشغَّل لا يُستدرَك
+    /// أبداً، وتشغيلُ شهرٍ سابقٍ بعد لاحقه يُحمّله ثانيةً. <b>وصفرٌ هنا يعني لا شيءَ مستحقّاً</b> — أصلٌ لم يُقتنَ
+    /// بعد، أو شهرٌ أُهلك قبلُ.</para>
+    /// </summary>
+    public int MonthsDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
+    {
+        static int Index(DateOnly d) => d.Year * 12 + d.Month;
+
+        var first = lastDepreciatedMonth is { } last ? Index(last) + 1 : Index(AcquisitionDate);
+        return Math.Max(0, Index(runDate) - first + 1);
     }
     public void AssignBranch(long branchId)
     {

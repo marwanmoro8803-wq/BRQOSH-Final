@@ -60,7 +60,9 @@ public class DepreciationServiceTests : IDisposable
 
         Assert.Equal(1, count);
         var reloaded = await _db.FixedAssets.SingleAsync(a => a.Id == asset.Id);
-        Assert.Equal(1000m, reloaded.AccumulatedDepreciation);
+        // ‏(جاهزيّةُ الإطلاق · ح-٥٨) ‏**يناير وفبراير — لا فبراير وحدَه.** الأصلُ في الخدمة منذ أوّل يناير ولم يُشغَّل
+        // ‏يناير؛ وكان هذا الاختبارُ يُثبت ١٬٠٠٠ — **أي يحرس الشهرَ الضائع** (treasury-payroll-assets#11).
+        Assert.Equal(2000m, reloaded.AccumulatedDepreciation);
         Assert.True(await _db.JournalEntries.AnyAsync(e => e.SourceDocument == "Depreciation:FA-DEP"));
     }
 
