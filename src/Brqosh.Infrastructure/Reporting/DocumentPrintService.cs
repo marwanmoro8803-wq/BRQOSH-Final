@@ -20,74 +20,97 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     public async Task<PrintResult> ExportSalesInvoiceAsync(
         long companyId, long invoiceId, string username, CancellationToken ct = default)
     {
+        var request = await SalesInvoiceRequestAsync(companyId, invoiceId, ct);
+        var pdf = SalesInvoicePdfGenerator.Generate(request);
+
+        var fileName = $"brqosh-inv-{SanitizeFileName(request.DocumentNumber)}.pdf";
+        await LogAsync(companyId, username, "SalesInvoice", request.DocumentNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>(ح-٤٢) ما تُطبع منه فاتورةُ المبيعات — يُقاس قبل أن يُرسَم.</summary>
+    internal async Task<SalesInvoicePdfGenerator.Request> SalesInvoiceRequestAsync(
+        long companyId, long invoiceId, CancellationToken ct = default)
+    {
         var (company, invoice, customerName, zatca) = await LoadSalesInvoiceAsync(companyId, invoiceId, ct);
         PrintPostedGuard.EnsureSalesInvoicePosted(invoice);
         var kind = ResolveSalesKind(invoice, zatca);
-        var lines = invoice.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
-        var branding = PrintBranding.FromCompany(company);
         // (CEEF-229 · م2-١٨) قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
         // الطرف كان موجوداً يوم صدور المستند، وحذفُه لاحقاً لا يُلغي المستند. وقراءةُ
         // المرشَّح كانت ترمي «Sequence contains no elements» بالإنجليزية داخل واجهةٍ
         // عربية، فتصير فاتورةٌ ضريبية سعودية **غير قابلة للطباعة أبداً** — وهي وثيقةٌ
         // يُلزم النظام السعوديّ بالاحتفاظ بها وإصدار نسخٍ منها.
         var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == invoice.CustomerId, ct);
+        var amounts = PrintedAmounts.Of(invoice.IsForeignCurrency, invoice.CurrencyCode, invoice.ExchangeRate,
+            invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.Subtotal, invoice.VatAmount);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: customerName,
             PartyVatNumber: customer.VatRegistrationNumber,
             PartyAddress: customer.Address,
             QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.PostedAtUtc, invoice.GrandTotal(), invoice.VatAmount),
+                         ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.PostedAtUtc, amounts.Total, amounts.Vat),
             Icv: zatca?.Icv,
-            ComplianceStatus: zatca?.ComplianceStatus.ToString());
+            ComplianceStatus: zatca?.ComplianceStatus.ToString(),
+            Currency: amounts.Currency);
 
-        var pdf = SalesInvoicePdfGenerator.Generate(
-            branding,
+        return new SalesInvoicePdfGenerator.Request(
+            PrintBranding.FromCompany(company),
             invoice.InvoiceNumber ?? invoice.Id.ToString(),
             invoice.InvoiceDate,
-            lines,
-            invoice.Subtotal,
-            invoice.VatAmount,
-            invoice.GrandTotal(),
+            LinesOf(invoice.Lines),
+            amounts.Subtotal, amounts.Vat, amounts.Total,
             options);
-
-        var fileName = $"brqosh-inv-{SanitizeFileName(invoice.InvoiceNumber ?? invoice.Id.ToString())}.pdf";
-        await LogAsync(companyId, username, "SalesInvoice", invoice.InvoiceNumber ?? invoice.Id.ToString(), ct);
-        return new PrintResult(pdf, fileName);
     }
 
     public async Task<PrintResult> ExportPurchaseInvoiceAsync(
         long companyId, long invoiceId, string username, CancellationToken ct = default)
     {
+        var request = await PurchaseInvoiceRequestAsync(companyId, invoiceId, ct);
+        var pdf = SalesInvoicePdfGenerator.Generate(request);
+
+        var fileName = $"brqosh-pi-{SanitizeFileName(request.DocumentNumber)}.pdf";
+        await LogAsync(companyId, username, "PurchaseInvoice", request.DocumentNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>(ح-٤٢) ما تُطبع منه فاتورةُ المشتريات.</summary>
+    internal async Task<SalesInvoicePdfGenerator.Request> PurchaseInvoiceRequestAsync(
+        long companyId, long invoiceId, CancellationToken ct = default)
+    {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var invoice = await db.PurchaseInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == invoiceId, ct);
         PrintPostedGuard.EnsurePurchaseInvoicePosted(invoice);
         var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == invoice.SupplierId, ct);
-        var lines = invoice.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
-        var branding = PrintBranding.FromCompany(company);
-        var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
-            PrintDocumentKind.PurchaseInvoice,
-            PartyName: supplier.NameAr);
+        var amounts = PrintedAmounts.Of(invoice.IsForeignCurrency, invoice.CurrencyCode, invoice.ExchangeRate,
+            invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.Subtotal, invoice.VatAmount);
 
-        var pdf = SalesInvoicePdfGenerator.Generate(
-            branding,
+        return new SalesInvoicePdfGenerator.Request(
+            PrintBranding.FromCompany(company),
             invoice.InvoiceNumber ?? invoice.Id.ToString(),
             invoice.InvoiceDate,
-            lines,
-            invoice.Subtotal,
-            invoice.VatAmount,
-            invoice.GrandTotal(),
-            options);
-
-        var fileName = $"brqosh-pi-{SanitizeFileName(invoice.InvoiceNumber ?? invoice.Id.ToString())}.pdf";
-        await LogAsync(companyId, username, "PurchaseInvoice", invoice.InvoiceNumber ?? invoice.Id.ToString(), ct);
-        return new PrintResult(pdf, fileName);
+            LinesOf(invoice.Lines),
+            amounts.Subtotal, amounts.Vat, amounts.Total,
+            new SalesInvoicePdfGenerator.InvoicePrintOptions(
+                PrintDocumentKind.PurchaseInvoice,
+                PartyName: supplier.NameAr,
+                Currency: amounts.Currency));
     }
 
     public async Task<PrintResult> ExportCreditNoteAsync(
         long companyId, long noteId, string username, CancellationToken ct = default)
+    {
+        var request = await CreditNoteRequestAsync(companyId, noteId, ct);
+        var pdf = SalesInvoicePdfGenerator.Generate(request);
+
+        var fileName = $"brqosh-cn-{SanitizeFileName(request.DocumentNumber)}.pdf";
+        await LogAsync(companyId, username, "CreditNote", request.DocumentNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>(ح-٤٢) ما يُطبع منه الإشعارُ الدائن.</summary>
+    internal async Task<SalesInvoicePdfGenerator.Request> CreditNoteRequestAsync(
+        long companyId, long noteId, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var note = await db.CreditNotes.SingleAsync(n => n.CompanyId == companyId && n.Id == noteId, ct);
@@ -98,31 +121,51 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             d.SourceDocumentId == noteId &&
             d.DocumentType == ZatcaDocumentType.CreditNote, ct);
 
-        var lines = note.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
-        var branding = PrintBranding.FromCompany(company);
+        var amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
+            note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.CreditNote,
             PartyName: customer.NameAr,
             QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, note.NoteDate, note.PostedAtUtc, note.GrandTotal(), note.VatAmount),
+                         ?? Phase1QrFallback(company, note.NoteDate, note.PostedAtUtc, amounts.Total, amounts.Vat),
             Icv: zatca?.Icv,
-            ComplianceStatus: zatca?.ComplianceStatus.ToString());
+            ComplianceStatus: zatca?.ComplianceStatus.ToString(),
+            Currency: amounts.Currency);
 
-        var pdf = SalesInvoicePdfGenerator.Generate(
-            branding,
+        return new SalesInvoicePdfGenerator.Request(
+            PrintBranding.FromCompany(company),
             note.NoteNumber ?? note.Id.ToString(),
             note.NoteDate,
-            lines,
-            note.Subtotal,
-            note.VatAmount,
-            note.GrandTotal(),
+            LinesOf(note.Lines),
+            amounts.Subtotal, amounts.Vat, amounts.Total,
             options);
-
-        var fileName = $"brqosh-cn-{SanitizeFileName(note.NoteNumber ?? note.Id.ToString())}.pdf";
-        await LogAsync(companyId, username, "CreditNote", note.NoteNumber ?? note.Id.ToString(), ct);
-        return new PrintResult(pdf, fileName);
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤٢ · tax-zatca#14) <b>مبالغُ المستند المطبوعة — بعملةٍ واحدة.</b>
+    ///
+    /// <para><b>وكانت كلُّ طباعةٍ تمرّر الإجماليّاتِ بالريال والسطورَ بعملة المستند</b> — خمسُ
+    /// طباعاتٍ بالخطأ نفسِه (الفاتورتان والإشعاران ومستندُ الإلغاء). <b>والقاعدةُ هنا مرّةً واحدة</b>: مستندٌ أجنبيٌّ يُطبع بعملته
+    /// (سطوراً وإجماليّاتٍ ورمزَ QR، كما في الـXML) ومعه الريالُ إفصاحاً؛ <b>ومستندٌ بالريال
+    /// يُطبع بأرقامه كما كان حرفاً</b> — لا يُقرأ منه <c>Foreign*</c> أصلاً، فصفوفٌ قديمةٌ لم
+    /// تُعبَّأ لا تُطبع أصفاراً.</para>
+    /// </summary>
+    internal sealed record PrintedAmounts(
+        decimal Subtotal, decimal Vat, SalesInvoicePdfGenerator.CurrencyDisclosure? Currency)
+    {
+        public decimal Total => Subtotal + Vat;
+
+        public static PrintedAmounts Of(bool isForeign, string currencyCode, decimal exchangeRate,
+            decimal foreignSubtotal, decimal foreignVat, decimal sarSubtotal, decimal sarVat) =>
+            isForeign
+                ? new(foreignSubtotal, foreignVat,
+                      new SalesInvoicePdfGenerator.CurrencyDisclosure(currencyCode, exchangeRate, sarSubtotal, sarVat))
+                : new(sarSubtotal, sarVat, null);
+    }
+
+    private static IReadOnlyList<SalesInvoicePdfGenerator.Line> LinesOf(IEnumerable<SalesInvoiceLine> lines) =>
+        [.. lines.Select(l =>
+            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory))];
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-١٦) <b>فاتورةُ بيع الأصل الثابت مطبوعةً — يأخذها المشتري.</b>
@@ -212,12 +255,28 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     public async Task<PrintResult> ExportZatcaCancellationAsync(
         long companyId, long zatcaDocumentId, string username, CancellationToken ct = default)
     {
+        var (request, auditType) = await ZatcaCancellationRequestAsync(companyId, zatcaDocumentId, ct);
+        var pdf = SalesInvoicePdfGenerator.Generate(request);
+
+        var fileName = $"brqosh-cancel-{SanitizeFileName(request.DocumentNumber)}.pdf";
+        await LogAsync(companyId, username, auditType, request.DocumentNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>
+    /// (ح-٤٢) ما يُطبع منه مستندُ الإلغاء — <b>بعملة ما أُلغي</b>: ح-٣٦ جعل الـXML يحمل عملةَ
+    /// مصدره، <b>والمطبوعُ بقي يخلط سطوراً بعملة الفاتورة بإجماليّاتٍ بالريال</b> — طباعةٌ
+    /// خامسةٌ بالعطل نفسِه لم يُسمِّها التدقيق.
+    /// </summary>
+    internal async Task<(SalesInvoicePdfGenerator.Request Request, string AuditType)> ZatcaCancellationRequestAsync(
+        long companyId, long zatcaDocumentId, CancellationToken ct = default)
+    {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var doc = await db.ZatcaEInvoiceDocuments.SingleAsync(
             d => d.CompanyId == companyId && d.Id == zatcaDocumentId, ct);
 
         var lines = new List<SalesInvoicePdfGenerator.Line>();
-        decimal subtotal, vat, total;
+        PrintedAmounts amounts;
         DateOnly date;
         string partyName, notes;
         var kind = PrintDocumentKind.CreditNote;
@@ -230,9 +289,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                     i => i.CompanyId == companyId && i.Id == doc.SourceDocumentId, ct);
                 lines.AddRange(invoice.Lines.Select(l => new SalesInvoicePdfGenerator.Line(
                     l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)));
-                subtotal = invoice.Subtotal;
-                vat = invoice.VatAmount;
-                total = invoice.GrandTotal();
+                amounts = PrintedAmounts.Of(invoice.IsForeignCurrency, invoice.CurrencyCode, invoice.ExchangeRate,
+                    invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.Subtotal, invoice.VatAmount);
                 date = invoice.CancelledAt ?? invoice.InvoiceDate;
                 partyName = (await db.Customers.IgnoreQueryFilters()
                     .SingleAsync(c => c.Id == invoice.CustomerId, ct)).NameAr;
@@ -246,9 +304,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                     b => b.CompanyId == companyId && b.Id == doc.SourceDocumentId, ct);
                 lines.Add(new SalesInvoicePdfGenerator.Line(
                     billing.PeriodDescription, 1m, billing.TaxableAmount, billing.TaxableAmount));
-                subtotal = billing.TaxableAmount;
-                vat = billing.VatAmount;
-                total = billing.TotalAmount;
+                // ‏المستخلصُ بالريال بالبناء — لا عملةَ له.
+                amounts = new PrintedAmounts(billing.TaxableAmount, billing.VatAmount, null);
                 date = billing.CancelledAt ?? billing.BillingDate;
                 partyName = (await db.Customers.IgnoreQueryFilters()
                     .SingleAsync(c => c.Id == billing.CustomerId, ct)).NameAr;
@@ -262,9 +319,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                     n => n.CompanyId == companyId && n.Id == doc.SourceDocumentId, ct);
                 lines.AddRange(note.Lines.Select(l => new SalesInvoicePdfGenerator.Line(
                     l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)));
-                subtotal = note.Subtotal;
-                vat = note.VatAmount;
-                total = note.GrandTotal();
+                amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
+                    note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
                 date = note.CancelledAt ?? note.NoteDate;
                 partyName = (await db.Customers.IgnoreQueryFilters()
                     .SingleAsync(c => c.Id == note.CustomerId, ct)).NameAr;
@@ -285,44 +341,50 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             QrTlvBase64: doc.QrTlvBase64,
             Icv: doc.Icv,
             ComplianceStatus: doc.ComplianceStatus.ToString(),
-            NotesAr: notes);
+            NotesAr: notes,
+            Currency: amounts.Currency);
 
-        var pdf = SalesInvoicePdfGenerator.Generate(
+        return (new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
-            doc.InvoiceNumber, date, lines, subtotal, vat, total, options);
-
-        var fileName = $"brqosh-cancel-{SanitizeFileName(doc.InvoiceNumber)}.pdf";
-        await LogAsync(companyId, username, doc.DocumentType.ToString(), doc.InvoiceNumber, ct);
-        return new PrintResult(pdf, fileName);
+            doc.InvoiceNumber, date, lines, amounts.Subtotal, amounts.Vat, amounts.Total, options),
+            doc.DocumentType.ToString());
     }
 
     public async Task<PrintResult> ExportDebitNoteAsync(
         long companyId, long noteId, string username, CancellationToken ct = default)
     {
+        var request = await DebitNoteRequestAsync(companyId, noteId, ct);
+        var pdf = SalesInvoicePdfGenerator.Generate(request);
+
+        var fileName = $"brqosh-dn-{SanitizeFileName(request.DocumentNumber)}.pdf";
+        await LogAsync(companyId, username, "DebitNote", request.DocumentNumber, ct);
+        return new PrintResult(pdf, fileName);
+    }
+
+    /// <summary>
+    /// (ح-٤٢) ما يُطبع منه الإشعارُ المدين — <b>وقد صار يحمل عملةً بـح-٣٩</b>، فانضمّ إلى
+    /// صنف الطباعة المختلطة يومَها وخرج منه هنا.
+    /// </summary>
+    internal async Task<SalesInvoicePdfGenerator.Request> DebitNoteRequestAsync(
+        long companyId, long noteId, CancellationToken ct = default)
+    {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var note = await db.DebitNotes.SingleAsync(n => n.CompanyId == companyId && n.Id == noteId, ct);
         PrintPostedGuard.EnsureDebitNotePosted(note);
         var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == note.SupplierId, ct);
-        var lines = note.Lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)).ToList();
-        var branding = PrintBranding.FromCompany(company);
-        var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
-            PrintDocumentKind.PurchaseDebitNote,
-            PartyName: supplier.NameAr);
+        var amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
+            note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
 
-        var pdf = SalesInvoicePdfGenerator.Generate(
-            branding,
+        return new SalesInvoicePdfGenerator.Request(
+            PrintBranding.FromCompany(company),
             note.NoteNumber ?? note.Id.ToString(),
             note.NoteDate,
-            lines,
-            note.Subtotal,
-            note.VatAmount,
-            note.GrandTotal(),
-            options);
-
-        var fileName = $"brqosh-dn-{SanitizeFileName(note.NoteNumber ?? note.Id.ToString())}.pdf";
-        await LogAsync(companyId, username, "DebitNote", note.NoteNumber ?? note.Id.ToString(), ct);
-        return new PrintResult(pdf, fileName);
+            LinesOf(note.Lines),
+            amounts.Subtotal, amounts.Vat, amounts.Total,
+            new SalesInvoicePdfGenerator.InvoicePrintOptions(
+                PrintDocumentKind.PurchaseDebitNote,
+                PartyName: supplier.NameAr,
+                Currency: amounts.Currency));
     }
 
     public async Task<PrintResult> ExportReceiptVoucherAsync(

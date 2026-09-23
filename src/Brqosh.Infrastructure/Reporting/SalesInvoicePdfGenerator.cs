@@ -33,7 +33,92 @@ public static class SalesInvoicePdfGenerator
         // (CEEF-227) الفاتورة الضريبية تلزمها بيانات المشتري لا اسمه وحده.
         string? PartyVatNumber = null,
         string? PartyAddress = null,
-        string? NotesAr = null);
+        string? NotesAr = null,
+        // (جاهزيّةُ الإطلاق · ح-٤٢) عدمٌ = مستندٌ بالريال.
+        CurrencyDisclosure? Currency = null);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤٢ · tax-zatca#14) <b>مستندٌ بعملةٍ أجنبيّة: رمزُها وسعرُها
+    /// وإفصاحُه بالريال.</b>
+    ///
+    /// <para><b>وكانت المطبوعةُ تخلط عملتين في صفحةٍ واحدة</b>: السطورُ بعملة المستند
+    /// والإجماليّاتُ بالريال، <b>والكلُّ موسومٌ «ر.س»</b>. وقاس المُدقِّقان: فاتورةٌ بـUSD
+    /// 1,000 بسعر 3.75 تُطبع سطراً بـ1,000 تحته «3,750.00 ر.س»، <b>ورأسُ عمود الضريبة
+    /// «ضريبة 56.25%»</b> — ضريبةٌ بالريال مقسومةٌ على وعاءٍ بالدولار — <b>وإجماليُّ كلّ سطرٍ
+    /// وعاءٌ بالدولار مضافاً إليه ضريبةٌ بالريال</b>.</para>
+    ///
+    /// <para><b>والصوابُ عملةٌ واحدةٌ للسطور والإجماليّات</b> — عملةُ المستند، وبها رمزُ QR
+    /// والـXML — <b>ثمّ الريالُ إفصاحاً مستقلّاً</b>: الضريبةُ بالريال إلزاميّةٌ متى خالفت
+    /// العملةُ الريال (BT-111).</para>
+    /// </summary>
+    public sealed record CurrencyDisclosure(
+        string Code, decimal ExchangeRate, decimal SubtotalSar, decimal VatSar)
+    {
+        public decimal TotalSar => SubtotalSar + VatSar;
+    }
+
+    /// <summary>
+    /// (ح-٤٢) <b>كلُّ ما تُطبع منه الصفحة</b> — يبنيه <c>DocumentPrintService</c> من المستند،
+    /// <b>ويُقاس قبل أن يُرسَم</b>: محتوى PDF لا يُقرأ في الاختبار.
+    /// </summary>
+    public sealed record Request(
+        PrintBranding Branding,
+        string DocumentNumber,
+        DateOnly Date,
+        IReadOnlyList<Line> Lines,
+        decimal Subtotal,
+        decimal Vat,
+        decimal Total,
+        InvoicePrintOptions Options);
+
+    /// <summary>
+    /// (ح-٤٢) <b>أرقامُ الصفحة كما تُطبع</b> — دالّةٌ صافية، <b>والرسمُ يقرأ منها وحدَها</b>.
+    /// </summary>
+    public sealed record PrintFigures(
+        string VatColumnHeader,
+        string VatRateLabel,
+        IReadOnlyList<decimal> LineVats,
+        IReadOnlyList<decimal> LineTotals,
+        string CurrencySuffix,
+        decimal Subtotal,
+        decimal Vat,
+        decimal Total,
+        CurrencyDisclosure? Sar);
+
+    /// <summary>
+    /// (ح-٤٢) أرقامُ الصفحة من الطلب. <b>والسطورُ والإجماليّاتُ بعملةٍ واحدة</b> — فتوزيعُ
+    /// الضريبة على السطور ونسبةُ الرأس صحيحان بلا استثناء.
+    /// </summary>
+    public static PrintFigures Figures(Request r)
+    {
+        var lines = r.Lines;
+        // النسبة محسوبة من الأرقام لا مثبّتة بـ«15%»: فاتورة صفرية أو معفاة أو بنسبة
+        // خليجية مختلفة كانت تُطبع بنسبة كاذبة.
+        //
+        // وتُحسب من **الوعاء الخاضع وحده** لا من إجمالي المستند: فاتورة فيها 1,000
+        // أساسيّ و500 صفريّ بضريبة 150.00 كانت تُخرِج 150/1500 = «10%» — نسبةٌ لا وجود
+        // لها في أي نظام ضريبيّ، تُطبع في رأس عمود الضريبة على مستند يراه المدقّق.
+        var mixed = lines.Select(l => l.Category).Distinct().Count() > 1;
+        var standardBase = lines.Where(l => l.Category == VatCategory.Standard).Sum(l => l.Total);
+        var vatRateLabel = PrintText.Ltr(standardBase == 0m
+            ? "%"
+            : (Math.Round(r.Vat / standardBase * 100m, 2, MidpointRounding.AwayFromZero)).ToString("0.##") + "%");
+        // مستند مختلط الفئات: لا نسبةَ واحدة تصفه، فتُعلن الفئة على كل سطر بدلاً من الرأس.
+        var vatColumnHeader = mixed ? "الضريبة" : $"ضريبة {vatRateLabel}";
+
+        var lineVats = AllocateLineVat(lines, r.Subtotal, r.Vat);
+        var lineTotals = lines.Select((l, i) => l.Total + lineVats[i]).ToList();
+
+        var currency = r.Options.Currency;
+        return new PrintFigures(
+            vatColumnHeader, vatRateLabel, lineVats, lineTotals,
+            currency is null ? "ر.س" : currency.Code,
+            r.Subtotal, r.Vat, r.Total, currency);
+    }
+
+    /// <summary>(ح-٤٢) يرسم الطلبَ — من <see cref="Figures"/> وحدَها.</summary>
+    public static byte[] Generate(Request r) =>
+        Generate(r.Branding, r.DocumentNumber, r.Date, r.Lines, r.Subtotal, r.Vat, r.Total, r.Options);
 
     public static byte[] Generate(
         string companyName, string vatNumber, string invoiceNumber, DateOnly date,
@@ -64,19 +149,20 @@ public static class SalesInvoicePdfGenerator
         var partyLabel = options.PartyLabel ?? PartyLabelFor(options.Kind);
         var qrPng = ZatcaQrImageHelper.TryCreatePng(options.QrTlvBase64);
         var compliance = BuildComplianceLine(options);
-        // النسبة محسوبة من الأرقام لا مثبّتة بـ«15%»: فاتورة صفرية أو معفاة أو بنسبة
-        // خليجية مختلفة كانت تُطبع بنسبة كاذبة.
-        //
-        // وتُحسب من **الوعاء الخاضع وحده** لا من إجمالي المستند: فاتورة فيها 1,000
-        // أساسيّ و500 صفريّ بضريبة 150.00 كانت تُخرِج 150/1500 = «10%» — نسبةٌ لا وجود
-        // لها في أي نظام ضريبيّ، تُطبع في رأس عمود الضريبة على مستند يراه المدقّق.
+
+        // (ح-٤٢) ‏**الأرقامُ من `Figures` وحدَها** — فما يُقاس هو ما يُرسَم.
+        var figures = Figures(new Request(branding, documentNumber, date, lines, subtotal, vat, total, options));
         var mixed = lines.Select(l => l.Category).Distinct().Count() > 1;
-        var standardBase = lines.Where(l => l.Category == VatCategory.Standard).Sum(l => l.Total);
-        var vatRateLabel = PrintText.Ltr(standardBase == 0m
-            ? "%"
-            : (Math.Round(vat / standardBase * 100m, 2, MidpointRounding.AwayFromZero)).ToString("0.##") + "%");
-        // مستند مختلط الفئات: لا نسبةَ واحدة تصفه، فتُعلن الفئة على كل سطر بدلاً من الرأس.
-        var vatColumnHeader = mixed ? "الضريبة" : $"ضريبة {vatRateLabel}";
+        var vatColumnHeader = figures.VatColumnHeader;
+        var vatRateLabel = figures.VatRateLabel;
+        var documentRows = new List<(string, string)>
+        {
+            ("رقم المستند", PrintText.Code(documentNumber)),
+            ("التاريخ", PrintText.Date(date)),
+            ("نوع المستند", title),
+        };
+        if (figures.Sar is { } fx)
+            documentRows.Add(("العملة", PrintText.Code(fx.Code)));
 
         return Document.Create(container =>
         {
@@ -97,12 +183,7 @@ public static class SalesInvoicePdfGenerator
                     // ── كتلتان متجاورتان: بيانات المستند · بيانات الطرف ──
                     col.Item().Row(row =>
                     {
-                        row.RelativeItem().Element(c => LabelBox(c, "بيانات المستند",
-                        [
-                            ("رقم المستند", PrintText.Code(documentNumber)),
-                            ("التاريخ", PrintText.Date(date)),
-                            ("نوع المستند", title),
-                        ]));
+                        row.RelativeItem().Element(c => LabelBox(c, "بيانات المستند", documentRows));
 
                         row.ConstantItem(12);
 
@@ -140,11 +221,11 @@ public static class SalesInvoicePdfGenerator
                             HeaderCell(h.Cell(), "الإجمالي");
                         });
 
-                        var lineVats = AllocateLineVat(lines, subtotal, vat);
                         var index = 0;
                         foreach (var line in lines)
                         {
-                            var lineVat = lineVats[index];
+                            var lineVat = figures.LineVats[index];
+                            var lineTotal = figures.LineTotals[index];
                             index++;
                             var shade = index % 2 == 0;
                             // على مستند مختلط الفئات تُعلَن فئة كل سطر بجوار مبلغ ضريبته —
@@ -160,7 +241,7 @@ public static class SalesInvoicePdfGenerator
                             BodyCell(table.Cell(), $"{line.Price:N2}", shade, center: true);
                             BodyCell(table.Cell(), $"{line.Total:N2}", shade, center: true);
                             BodyCell(table.Cell(), vatCell, shade, center: true);
-                            BodyCell(table.Cell(), $"{line.Total + lineVat:N2}", shade, center: true);
+                            BodyCell(table.Cell(), $"{lineTotal:N2}", shade, center: true);
                         }
                     });
 
@@ -191,7 +272,15 @@ public static class SalesInvoicePdfGenerator
 
                         row.ConstantItem(12);
 
-                        row.ConstantItem(220).AlignTop().Element(c => TotalsBox(c, subtotal, vat, total, vatRateLabel));
+                        row.ConstantItem(220).AlignTop().Column(side =>
+                        {
+                            side.Spacing(6);
+                            side.Item().Element(c => TotalsBox(c, figures.Subtotal, figures.Vat, figures.Total,
+                                vatRateLabel, figures.CurrencySuffix));
+                            // ‏(ح-٤٢) **والريالُ إفصاحٌ مستقلٌّ لا عملةٌ ثانيةٌ في الجدول.**
+                            if (figures.Sar is { } sar)
+                                side.Item().Element(c => SarDisclosureBox(c, sar));
+                        });
                     });
 
                     if (!string.IsNullOrWhiteSpace(options.NotesAr))
@@ -320,17 +409,36 @@ public static class SalesInvoicePdfGenerator
     }
 
     /// <summary>صندوق الإجماليات — السطر الأخير مميّز لأنه المبلغ المستحق.</summary>
-    private static void TotalsBox(IContainer container, decimal subtotal, decimal vat, decimal total, string vatRateLabel)
+    private static void TotalsBox(IContainer container, decimal subtotal, decimal vat, decimal total,
+        string vatRateLabel, string suffix)
     {
         container.Border(0.8f).BorderColor(BorderColour).Column(col =>
         {
-            TotalRow(col, "الإجمالي قبل الضريبة", subtotal, false, first: true);
-            TotalRow(col, $"ضريبة القيمة المضافة {vatRateLabel}", vat, false);
-            TotalRow(col, "الإجمالي شامل الضريبة", total, true);
+            TotalRow(col, "الإجمالي قبل الضريبة", subtotal, false, suffix, first: true);
+            TotalRow(col, $"ضريبة القيمة المضافة {vatRateLabel}", vat, false, suffix);
+            TotalRow(col, "الإجمالي شامل الضريبة", total, true, suffix);
         });
     }
 
-    private static void TotalRow(ColumnDescriptor col, string label, decimal value, bool emphasis, bool first = false)
+    /// <summary>
+    /// (ح-٤٢) <b>الإفصاحُ بالريال</b> لمستندٍ بعملةٍ أجنبيّة — سعرُ الصرف ثمّ الأرقامُ الثلاثة
+    /// كما في الدفاتر. <b>والضريبةُ بالريال منها إلزاميّة</b> (BT-111).
+    /// </summary>
+    private static void SarDisclosureBox(IContainer container, CurrencyDisclosure sar)
+    {
+        container.Border(0.8f).BorderColor(BorderColour).Column(col =>
+        {
+            col.Item().Background(BoxTitleFill).PaddingVertical(4).PaddingHorizontal(8)
+                .Text(PrintText.Ltr($"بالريال السعودي — 1 {sar.Code} = {sar.ExchangeRate:0.######} ر.س"))
+                .Bold().FontSize(9);
+            TotalRow(col, "الإجمالي قبل الضريبة", sar.SubtotalSar, false, "ر.س", first: true);
+            TotalRow(col, "ضريبة القيمة المضافة", sar.VatSar, false, "ر.س");
+            TotalRow(col, "الإجمالي شامل الضريبة", sar.TotalSar, false, "ر.س");
+        });
+    }
+
+    private static void TotalRow(ColumnDescriptor col, string label, decimal value, bool emphasis,
+        string suffix, bool first = false)
     {
         var item = col.Item();
         if (emphasis)
@@ -342,7 +450,7 @@ public static class SalesInvoicePdfGenerator
         {
             var labelSpan = row.RelativeItem().Text(label).FontSize(emphasis ? 10 : 9);
             var valueSpan = row.ConstantItem(96).AlignLeft()
-                .Text($"{value:N2} ر.س").FontSize(emphasis ? 11 : 9.5f);
+                .Text($"{value:N2} {suffix}").FontSize(emphasis ? 11 : 9.5f);
             if (emphasis)
             {
                 labelSpan.Bold();
