@@ -79,16 +79,19 @@ public record VatReturnResult(
     /// ولا في غيرها. <b>وبيعُ الأصل الثابت توريدٌ خاضعٌ نظاماً وترحيلُه قيدٌ لا فاتورة.</b>
     /// فيُقدَّم الإقرارُ ناقصاً بضريبةٍ حُصّلت فعلاً، وهي حالةُ المطالبة بالضريبة والغرامة
     /// معاً عند الفحص.</para>
+    ///
+    /// <para>(جاهزيّةُ الإطلاق · ح-٤٠) <b>والمعادلةُ في <c>VatReturnNet</c> لا هنا</b> —
+    /// مالكٌ واحدٌ للمطبوعة والشاشة، وكانت الشاشةُ تشتقّها بنفسها فتُسقط حدّين.</para>
     /// </summary>
-    public decimal NetOutputVat =>
-        OutputVat + ProgressBillingsVat - CreditNotesVat - CancelledOutputVat + JournalOutputVat;
+    public decimal NetOutputVat => Brqosh.Application.Reporting.VatReturnNet.Output(
+        OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat);
 
     /// <summary>
     /// (CEEF-232 · ض-١) والمدخلاتُ كذلك — <b>والاتجاهُ هنا في صالح المنشأة</b>: عماها عنه
     /// يجعلها تدفع ضريبةً خصمُها حقٌّ لها، <b>وهو عطلٌ لا يشتكي منه أحدٌ ويُكلّف مالاً كلَّ ربع</b>.
     /// </summary>
-    public decimal NetDeductibleInputVat =>
-        DeductibleInputVat - DebitNotesDeductibleVat - CancelledInputVat + JournalInputVat;
+    public decimal NetDeductibleInputVat => Brqosh.Application.Reporting.VatReturnNet.Input(
+        DeductibleInputVat, DebitNotesDeductibleVat, CancelledInputVat, JournalInputVat);
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
 
     /// <summary>

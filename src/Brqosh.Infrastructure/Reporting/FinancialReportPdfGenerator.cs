@@ -49,27 +49,42 @@ public static class FinancialReportPdfGenerator
 
     public static byte[] VatReturn(PrintBranding branding, VatReturnResult result)
     {
-        var rows = new List<(string Section, string Code, string Name, decimal Amount)>
-        {
-            ("مبيعات", "—", "مبيعات خاضعة (وعاء)", result.SalesSubtotal),
-            ("مبيعات", "—", "ضريبة المخرجات — مبيعات", result.OutputVat),
-            ("مستخلصات", "—", "مستخلصات أعمال (وعاء)", result.ProgressBillingsSubtotal),
-            ("مستخلصات", "—", "ضريبة المخرجات — مستخلصات", result.ProgressBillingsVat),
-            ("مردودات", "—", "إشعارات دائن (وعاء)", result.CreditNotesSubtotal),
-            ("مردودات", "—", "ضريبة مرتجعة", result.CreditNotesVat),
-            ("مبيعات", "—", "صافي ضريبة المخرجات", result.NetOutputVat),
-            ("مشتريات", "—", "مشتريات (وعاء)", result.PurchasesSubtotal),
-            ("مشتريات", "—", "ضريبة مدخلات قابلة للخصم", result.DeductibleInputVat),
-            ("مردودات مشتريات", "—", "إشعارات مدينة (وعاء)", result.DebitNotesSubtotal),
-            ("مردودات مشتريات", "—", "ضريبة مدخلات مُخفّضة", result.DebitNotesDeductibleVat),
-            ("مشتريات", "—", "صافي ضريبة المدخلات", result.NetDeductibleInputVat),
-        };
+        var rows = VatReturnRows(result);
 
         var label = result.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
         return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
             $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", rows,
             $"صافي الضريبة ({label}): {result.NetVatPayable:N2} ر.س");
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤٠) <b>سطورُ الإقرار المطبوع — دالّةٌ صافيةٌ تُقاس.</b>
+    ///
+    /// <para><b>وكان صافيه صحيحاً وسطورُه ناقصة</b>: يطبع صافيَ المخرجات بتسوية الإلغاء
+    /// والضريبةِ المقيّدة بلا مستند، <b>ولا يطبع سطراً لأيٍّ منهما</b> — فلا تجمع السطورُ
+    /// إلى الصافي تحتها في الوثيقة التي يُقدَّم منها الإقرار. <b>وأُخرجت إلى دالّةٍ لأنّ
+    /// محتوى PDF لا يُقرأ في الاختبار</b>، وهو عينُ ما فُعل بصفوف الشاشة في م1-١٠.</para>
+    /// </summary>
+    public static IReadOnlyList<(string Section, string Code, string Name, decimal Amount)> VatReturnRows(
+        VatReturnResult result) =>
+    [
+        ("مبيعات", "—", "مبيعات خاضعة (وعاء)", result.SalesSubtotal),
+        ("مبيعات", "—", "ضريبة المخرجات — مبيعات", result.OutputVat),
+        ("مستخلصات", "—", "مستخلصات أعمال (وعاء)", result.ProgressBillingsSubtotal),
+        ("مستخلصات", "—", "ضريبة المخرجات — مستخلصات", result.ProgressBillingsVat),
+        ("مردودات", "—", "إشعارات دائن (وعاء)", result.CreditNotesSubtotal),
+        ("مردودات", "—", "ضريبة مرتجعة", result.CreditNotesVat),
+        ("تسويات", "—", "تسوية إلغاء مستندات فترات سابقة (تُطرح)", result.CancelledOutputVat),
+        ("تسويات", "—", "ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", result.JournalOutputVat),
+        ("مبيعات", "—", "صافي ضريبة المخرجات", result.NetOutputVat),
+        ("مشتريات", "—", "مشتريات (وعاء)", result.PurchasesSubtotal),
+        ("مشتريات", "—", "ضريبة مدخلات قابلة للخصم", result.DeductibleInputVat),
+        ("مردودات مشتريات", "—", "إشعارات مدينة (وعاء)", result.DebitNotesSubtotal),
+        ("مردودات مشتريات", "—", "ضريبة مدخلات مُخفّضة", result.DebitNotesDeductibleVat),
+        ("تسويات", "—", "تسوية إلغاء مشتريات فترات سابقة (تُطرح)", result.CancelledInputVat),
+        ("تسويات", "—", "ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", result.JournalInputVat),
+        ("مشتريات", "—", "صافي ضريبة المدخلات", result.NetDeductibleInputVat),
+    ];
 
     public static byte[] VatReturn(string companyName, DateOnly from, DateOnly to,
         decimal outputVat, decimal inputVat, decimal netPayable) =>

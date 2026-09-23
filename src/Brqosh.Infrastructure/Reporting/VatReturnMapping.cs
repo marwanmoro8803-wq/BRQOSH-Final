@@ -24,7 +24,13 @@ public static class VatReturnMapping
             r.CreditNotesSubtotal, r.CreditNotesVat,
             r.PurchasesSubtotal, r.DeductibleInputVat,
             r.DebitNotesSubtotal, r.DebitNotesVat, r.DebitNotesDeductibleVat,
-            r.GlVatNetPayableBalance,
+            // ‏(جاهزيّةُ الإطلاق · ح-٤٠) **والحدودُ الأربعةُ تعبر الحدّ** — وكانت تُحسب في
+            // ‏الإقرار وتسقط هنا، فتقول الشاشةُ صافياً غيرَ المُقدَّم.
+            CancelledOutputVat: r.CancelledOutputVat,
+            CancelledInputVat: r.CancelledInputVat,
+            JournalOutputVat: r.JournalOutputVat,
+            JournalInputVat: r.JournalInputVat,
+            GlVatNetPayableBalance: r.GlVatNetPayableBalance,
             Map(r.SalesByCategory),
             Map(r.PurchasesByCategory));
 

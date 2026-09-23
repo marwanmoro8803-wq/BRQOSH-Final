@@ -40,6 +40,14 @@ public static class VatReturnRows
         rows.Add(new Row("ضريبة المخرجات — مستخلصات", r.ProgressBillingsVat));
         rows.Add(new Row("إشعارات دائن (وعاء)", r.CreditNotesSubtotal));
         rows.Add(new Row("ضريبة مرتجعة (إشعارات دائن)", r.CreditNotesVat));
+
+        // (جاهزيّةُ الإطلاق · ح-٤٠) **لكلّ حدٍّ في الصافي صفٌّ يراه المالك.**
+        //
+        // كان الصافي أدناه بلا هذين الحدّين أصلاً — `VatReturnDto` يشتقّه بمعادلةٍ أقدمَ من
+        // الإقرار. **فلمّا صار يحملهما لزم أن يُعرَضا**: صافٍ لا تجمع إليه السطورُ فوقه
+        // **رقمٌ لا يُراجَع**، ولا يعرف المالكُ من أين جاءه فرقُ بيع الأصل.
+        rows.Add(new Row("تسوية إلغاء مستندات فترات سابقة (تُطرح)", r.CancelledOutputVat));
+        rows.Add(new Row("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", r.JournalOutputVat));
         rows.Add(new Row("صافي ضريبة المخرجات", r.NetOutputVat, Bold: true));
 
         rows.Add(new Row("مشتريات (وعاء)", r.PurchasesSubtotal));
@@ -49,6 +57,8 @@ public static class VatReturnRows
         rows.Add(new Row("ضريبة مدخلات قابلة للخصم", r.DeductibleInputVat));
         rows.Add(new Row("إشعارات مدينة (وعاء)", r.DebitNotesSubtotal));
         rows.Add(new Row("ضريبة مدخلات مُخفّضة (إشعارات مدينة)", r.DebitNotesDeductibleVat));
+        rows.Add(new Row("تسوية إلغاء مشتريات فترات سابقة (تُطرح)", r.CancelledInputVat));
+        rows.Add(new Row("ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", r.JournalInputVat));
         rows.Add(new Row("صافي ضريبة المدخلات", r.NetDeductibleInputVat, Bold: true));
         rows.Add(new Row("صافي الضريبة المستحقة/المستردة", r.NetVatPayable, Bold: true));
 

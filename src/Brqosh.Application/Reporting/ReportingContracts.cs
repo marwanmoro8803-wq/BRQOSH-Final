@@ -136,6 +136,38 @@ public interface ICashFlowStatementQuery
 /// الترجمة (تمسح <c>src/Brqosh.Desktop</c> وحدها) فبقيت عربيةً عند التبديل إلى الإنجليزية.</para>
 public record VatReturnCategoryDto(string Code, decimal TaxableAmount, decimal VatAmount);
 
+/// <summary>
+/// (جاهزيّةُ الإطلاق · ح-٤٠) <b>صافي الإقرار — مالكٌ واحد.</b>
+///
+/// <para><b>وكان له مالكان</b>: <c>VatReturnResult</c> (يقرؤه المطبوع) و<c>VatReturnDto</c>
+/// (تقرؤه الشاشة)، <b>كلٌّ يشتقّ الصافيَ بنفسه</b>. فأُضيفت تسويةُ الإلغاء (CEEF-219)
+/// والضريبةُ المقيّدة بلا مستند (CEEF-232 · ض-١) إلى الأوّل <b>وبقي الثاني على المعادلة
+/// الأقدم</b> — فبلغ الإصلاحان المطبوعةَ ولم يبلغا الشاشة. وقِيس: ربعٌ يُقدَّم بـ١٤٬٨٠٠
+/// <b>والشاشةُ تقول ١٥٬٠٠٠</b>، وبيعُ أصلٍ ثابتٍ يختفي منها كلُّه.</para>
+/// </summary>
+public static class VatReturnNet
+{
+    /// <summary>
+    /// المخرجاتُ: المبيعاتُ والمستخلصات، <b>ناقصاً</b> الإشعاراتِ الدائنةَ وتسويةَ إلغاء
+    /// مستندات الفترات السابقة، <b>زائداً</b> ما قُيّد على المخرجات بلا مستند.
+    /// </summary>
+    public static decimal Output(
+        decimal outputVat, decimal progressBillingsVat, decimal creditNotesVat,
+        decimal cancelledOutputVat, decimal journalOutputVat) =>
+        outputVat + progressBillingsVat - creditNotesVat - cancelledOutputVat + journalOutputVat;
+
+    /// <summary>المدخلاتُ القابلةُ للخصم — بالبنية نفسِها.</summary>
+    public static decimal Input(
+        decimal deductibleInputVat, decimal debitNotesDeductibleVat,
+        decimal cancelledInputVat, decimal journalInputVat) =>
+        deductibleInputVat - debitNotesDeductibleVat - cancelledInputVat + journalInputVat;
+}
+
+/// <summary>
+/// (جاهزيّةُ الإطلاق · ح-٤٠) <b>والحقولُ الأربعة إلزاميّةٌ بلا قيمةٍ افتراضيّة</b> — وموضعُها
+/// قبل الاختياريّة عمداً. <b>فالافتراضيُّ صفراً هو بعينه ما أدخل العطل</b>: مُنشِئٌ لا يعرف
+/// الحدَّ يمرّر صفراً ولا يشكو أحد. <b>وبغير افتراضيٍّ يُسمّيه كلُّ مُنتِجٍ أو لا يُترجَم.</b>
+/// </summary>
 public record VatReturnDto(
     DateOnly FromDate,
     DateOnly ToDate,
@@ -150,12 +182,18 @@ public record VatReturnDto(
     decimal DebitNotesSubtotal,
     decimal DebitNotesVat,
     decimal DebitNotesDeductibleVat,
+    decimal CancelledOutputVat,
+    decimal CancelledInputVat,
+    decimal JournalOutputVat,
+    decimal JournalInputVat,
     decimal? GlVatNetPayableBalance = null,
     IReadOnlyList<VatReturnCategoryDto>? SalesByCategory = null,
     IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null)
 {
-    public decimal NetOutputVat => OutputVat + ProgressBillingsVat - CreditNotesVat;
-    public decimal NetDeductibleInputVat => DeductibleInputVat - DebitNotesDeductibleVat;
+    public decimal NetOutputVat => VatReturnNet.Output(
+        OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat);
+    public decimal NetDeductibleInputVat => VatReturnNet.Input(
+        DeductibleInputVat, DebitNotesDeductibleVat, CancelledInputVat, JournalInputVat);
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
     // (CEEF-229 · م2-١٦) null = «لا مطابقة ممكنة» وهو غير الصفر = «طابق تماماً».
     public decimal? GlVariance =>

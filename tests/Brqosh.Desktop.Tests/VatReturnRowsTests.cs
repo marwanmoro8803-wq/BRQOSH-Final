@@ -22,6 +22,8 @@ public class VatReturnRowsTests
         CreditNotesSubtotal: 0m, CreditNotesVat: 0m,
         PurchasesSubtotal: 0m, DeductibleInputVat: 0m,
         DebitNotesSubtotal: 0m, DebitNotesVat: 0m, DebitNotesDeductibleVat: 0m,
+        CancelledOutputVat: 0m, CancelledInputVat: 0m,
+        JournalOutputVat: 0m, JournalInputVat: 0m,
         GlVatNetPayableBalance: null,
         SalesByCategory:
         [
@@ -61,6 +63,43 @@ public class VatReturnRowsTests
 
         Assert.Equal(total, children);
         Assert.Equal(dto.SalesSubtotal, children);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤٠) <b>لكلّ حدٍّ في الصافي صفٌّ — والصفوفُ تُعيد الصافي.</b>
+    ///
+    /// <para>كان الصافي يُشتقّ في <c>VatReturnDto</c> بمعادلةٍ أقدمَ من الإقرار <b>ولا صفَّ
+    /// للحدّين الغائبين</b>. <b>والقياسُ بقيمٍ متمايزةٍ غيرِ صفريّة</b> — فصفٌّ يسقط أو يُقرأ
+    /// من حقلٍ آخر لا يختبئ خلف صفرٍ يساوي صفراً.</para>
+    /// </summary>
+    [Fact]
+    public void EveryTermOfTheNet_HasARow_AndTheRowsRebuildIt()
+    {
+        var dto = MixedQuarter() with
+        {
+            ProgressBillingsVat = 700m, CreditNotesVat = 1_100m,
+            CancelledOutputVat = 1_300m, JournalOutputVat = 1_900m,
+            DeductibleInputVat = 1_700m, DebitNotesDeductibleVat = 230m,
+            CancelledInputVat = 290m, JournalInputVat = 310m,
+        };
+        var rows = VatReturnRows.Build(dto);
+        decimal Row(string label) => rows.Single(r => r.Label == label).Value;
+
+        var output = Row("ضريبة المخرجات — مبيعات") + Row("ضريبة المخرجات — مستخلصات")
+            - Row("ضريبة مرتجعة (إشعارات دائن)")
+            - Row("تسوية إلغاء مستندات فترات سابقة (تُطرح)")
+            + Row("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)");
+        var input = Row("ضريبة مدخلات قابلة للخصم")
+            - Row("ضريبة مدخلات مُخفّضة (إشعارات مدينة)")
+            - Row("تسوية إلغاء مشتريات فترات سابقة (تُطرح)")
+            + Row("ضريبة مدخلات مقيّدة بلا مستند (تُضاف)");
+
+        // ‏**ورقمٌ مستقلٌّ لا الجمعُ وحدَه**: 150,000 + 700 − 1,100 − 1,300 + 1,900.
+        Assert.Equal(150_200m, output);
+        Assert.Equal(output, Row("صافي ضريبة المخرجات"));
+        Assert.Equal(1_490m, input);                          // 1,700 − 230 − 290 + 310
+        Assert.Equal(input, Row("صافي ضريبة المدخلات"));
+        Assert.Equal(148_710m, Row("صافي الضريبة المستحقة/المستردة"));
     }
 
     /// <summary>
