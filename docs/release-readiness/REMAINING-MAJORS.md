@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 34 بنداً ✅ و7 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 34 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وسبعةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٧) — **بعضُها خارج هذا الحصر**،
+**وثمانيةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٨) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -143,7 +143,7 @@
 - ☐ **`treasury-payroll-assets#8`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>WPS is marked closed (G-19) but the file is a home-grown CSV, not a bank WPS or Mudad upload format
 - ☐ **`treasury-payroll-assets#9`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Article 117 sick-pay tiers and statutory leave limits are never applied in payroll; the leave calculator's sick-pay functions are dead code
 - ☐ **`treasury-payroll-assets#10`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>Many treasury, asset and payroll postings cannot be reversed or corrected at all
-- ☐ **`treasury-payroll-assets#11`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Depreciation engine: future-dated assets are depreciated, a full month is charged regardless of acquisition date, missed months are never caught up, and only straight-line exists
+- ◐ **`treasury-payroll-assets#11`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Depreciation engine: future-dated assets are depreciated, a full month is charged regardless of acquisition date, missed months are never caught up, and only straight-line exists — ح-٥٨ `3acf7d6` — **الأصلُ الذي لم يُقتنَ لا يُهلَك، والشهرُ الفائتُ يُستدرَك** (قيدٌ واحدٌ بتاريخ التشغيل، مذهبُ SAP وOracle)، **ولا يُحمَّل شهرٌ مرّتين**؛ **وما بقي قرارٌ لا عطل**: اتّفاقيّةُ الشهر الكامل سياسةٌ للمالك، والخطُّ المستقيمُ وحدَه ناقص، والفجواتُ قبل آخر قيدٍ تصحيحُ فترةٍ سابقة (IAS 8)
 - ☐ **`treasury-payroll-assets#12`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Asset acquisition is cash-only, without VAT, without opening balances, and not atomic
 - ☐ **`treasury-payroll-assets#13`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Bank reconciliation, auto-matching and FX revaluation load the company's entire posted ledger into memory; no statement balance, reconciliation is per entry rather than per line
 
