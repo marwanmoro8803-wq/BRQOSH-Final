@@ -2,6 +2,7 @@
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -405,9 +406,9 @@ public class VatReturnQuery(BrqoshDbContext db)
             .Where(e => e.SourceDocument == null
                         || !CountedDocumentPrefixes.Any(pfx => e.SourceDocument.StartsWith(pfx)))
             // (CEEF-232 · ض-٣) ‏وزوجُ العكس يُستبعد **بطرفيه معاً** لا يُترك ليتقاصّ.
-            // ‏فالأصلُ المعكوس حالتُه `Reversed`، والعكسُ يُشار إليه بـ`ReversalEntryId`.
-            .Where(e => e.Status != JournalEntryStatus.Reversed
-                        && !db.JournalEntries.Any(x => x.ReversalEntryId == e.Id))
+            // ‏فالأصلُ المعكوس حالتُه `Reversed`، والعكسُ يُشار إليه بـ`ReversalEntryId` —
+            // ‏وهو سؤالُ «القائم» نفسُه، ومالكُه `StandingJournalEntries` (ح-٤٧).
+            .WhereStanding(db.JournalEntries)
             .Select(e => new
             {
                 TouchesNetVat = netId != null && e.Lines.Any(l => l.AccountId == netId),

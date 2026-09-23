@@ -9,6 +9,13 @@ namespace Brqosh.Infrastructure.Accounting;
 public record YearEndCloseResult(int Year, long ClosingEntryId, string EntryNumber, decimal NetIncome);
 
 /// <summary>
+/// ‏ما عُكس بإعادة فتح سنة — <b>قائمةٌ لا قيدٌ واحد</b>: قواعدُ ما قبل CEEF-229 قد تحمل للسنة الواحدة
+/// أكثرَ من قيد إقفالٍ قائم (سباقُ الإقفالين)، <b>وإعادةُ الفتح تعكسها كلَّها</b>. وسنةٌ ساكنةٌ
+/// أُقفلت بفتراتها وحدَها تُعيد القائمتين فارغتين.
+/// </summary>
+public record YearEndReopenResult(int Year, IReadOnlyList<long> ReversedEntryIds, IReadOnlyList<string> ReversalEntryNumbers);
+
+/// <summary>
 /// إقفال سنوي SOCPA: إغلاق الإيرادات والمصروفات في 3104 ثم ترحيل النتيجة إلى 3103،
 /// وإغلاق جميع الفترات المالية للسنة.
 /// </summary>
@@ -63,11 +70,16 @@ public class YearEndCloseService(BrqoshDbContext db)
             await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "YEAREND", year, token);
 
             // ‏الوسمُ يُحسب قبل الاستعلام: استدعاءُ تابعٍ داخل شجرة التعبير لا يُترجَم إلى SQL.
+            //
+            // ‏(جاهزيّةُ الإطلاق · ح-٤٧) ‏**والسؤالُ عن إقفالٍ قائمٍ لا عن أثرٍ باق.** كان
+            // ‏`Status != Draft` — **والمعكوسُ ليس مسودّة**، فسنةٌ أُعيد فتحُها لا تُقفَل ثانيةً
+            // ‏أبداً؛ **وعكسُ الإقفال يرث وسمَه** فيبقى `Posted` تحت المفتاح نفسِه. وهو عينُ عطل
+            // ‏ح-٣٨ في إعادة التقييم، **ومالكُ السؤال واحد**: `StandingJournalEntries`.
             var closeMark = SourceDocumentFor(year);
-            var existingClose = await db.JournalEntries.AnyAsync(e =>
-                e.CompanyId == companyId
-                && e.SourceDocument == closeMark
-                && e.Status != JournalEntryStatus.Draft, token);
+            var existingClose = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == closeMark)
+                .WhereStanding(db.JournalEntries)
+                .AnyAsync(token);
             if (existingClose)
                 throw new AccountingException($"السنة {year} مقفلة مسبقاً.");
 
@@ -190,6 +202,134 @@ public class YearEndCloseService(BrqoshDbContext db)
         }, ct);
     }
 
+    /// <summary>عرضُ عمود السبب في سجلّ التدقيق — وما زاد يرتدّ على PostgreSQL خطأَ قاعدةٍ خاماً.</summary>
+    private const int MaxReopenReasonLength = 512;
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٧ · <c>accounting-core#1</c>) <b>إعادةُ فتح سنةٍ مقفلة — وكانت
+    /// السنةُ المقفلةُ لا تُصحَّح أبداً.</b>
+    ///
+    /// <para>‏<b>وقِيس قبله:</b> سنةٌ أُقفلت بربح ١٬٠٠٠، ثمّ فُتح مارس بالمسار المشروع ورُحّلت فيه
+    /// فاتورةٌ فاتت بـ٥٠٠ — <b>فقُبلت</b>. ثمّ الإقفالُ ثانيةً ⟵ «السنة 2025 مقفلة مسبقاً»، <b>وعكسُ
+    /// قيد الإقفال ⟵ «مرتبط بمستند نظام»</b>. فبقي ٥٠٠ إيراداً في سنةٍ مقفلةٍ والأرباحُ المبقاةُ على
+    /// ١٬٠٠٠ — <b>ودفترُ سنةٍ اعتمدها المراجعُ يخالف قائمتَها ولا سبيلَ إلى ردّه</b>.</para>
+    ///
+    /// <para>‏<b>فالتصحيحُ ثلاثُ خطوات، كلٌّ منها مسارٌ قائم:</b> هذا التابعُ يعكس قيدَ الإقفال
+    /// (بتاريخه، فيعود الربحُ إلى قائمة السنة) <b>ويفتح ديسمبر وحدَه</b> — موضعَ القيد وعكسِه ·
+    /// ثمّ يُفتح من الجدول الشهرُ المُصحَّحُ بعينه ويُرحَّل فيه · ثمّ يُعاد الإقفالُ السنويّ.
+    /// <b>وبقيّةُ الأشهر تبقى مقفلة</b>: إعادةُ فتح سنةٍ لا تفتح اثنَي عشرَ شهراً صامتة.</para>
+    ///
+    /// <para>‏<b>والأصلُ يبقى في الدفتر معكوساً لا محذوفاً</b> — فالسجلُّ يقول: أُقفلت، ثمّ فُتحت
+    /// لسببٍ مكتوب، ثمّ أُقفلت ثانيةً.</para>
+    /// </summary>
+    public async Task<YearEndReopenResult> ReopenYearAsync(
+        long companyId, int year, string reason, string username, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureAdministrator();
+        username = SecurityContext.ResolveUsername(username);
+
+        // ‏**والسببُ إلزاميٌّ لا زينة**: إعادةُ فتح سنةٍ اعتمدها المراجعُ حدثٌ يُسأل عنه بعد سنة،
+        // ‏وسطرُ تدقيقٍ بلا سببٍ لا يُجيب. **ويُقاس طولُه قبل أن يُعكَس شيء.**
+        reason = (reason ?? "").Trim();
+        if (reason.Length == 0)
+            throw new AccountingException("إعادةُ فتح سنةٍ مقفلة تتطلّب سبباً — يُسجَّل في سجلّ التدقيق.");
+        if (reason.Length > MaxReopenReasonLength)
+            throw new AccountingException($"سببُ إعادة الفتح أطول من {MaxReopenReasonLength} حرفاً.");
+
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            // ‏**الأقفالُ نفسُها وبالترتيب نفسِه كالإقفال** — فإعادةُ الفتح وإقفالٌ متزامنٌ على
+            // ‏السنة نفسِها لا يتقاطعان، ولا يدخل ترحيلٌ بينهما.
+            await LedgerYearLock.AcquireForClosingAsync(db.Database, companyId, year, token);
+            await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "YEAREND", year, token);
+
+            var yearEnd = new DateOnly(year, 12, 31);
+
+            // ‏**وسنةٌ لاحقةٌ مقفلةٌ تُفتح أوّلاً** — فأرباحُ هذه السنة رصيدُ افتتاح التي بعدها،
+            // ‏وتلك أُقفلت عليه. والسؤالُ عن إقفالٍ **قائم** لا عن أثرٍ باق.
+            var laterClose = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId
+                            && e.EntryDate > yearEnd
+                            && e.SourceDocument != null
+                            && e.SourceDocument.StartsWith(ReportingJournalEntries.YearEndClosePrefix))
+                .WhereStanding(db.JournalEntries)
+                .OrderBy(e => e.EntryDate)
+                .Select(e => (DateOnly?)e.EntryDate)
+                .FirstOrDefaultAsync(token);
+            if (laterClose is DateOnly later)
+                throw new AccountingException(
+                    $"السنة {later.Year} مقفلةٌ بعد {year} — أعد فتحها أوّلاً: أرباحُ {year} رصيدُ افتتاحها.");
+
+            var closeMark = SourceDocumentFor(year);
+            var closes = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == closeMark)
+                .WhereStanding(db.JournalEntries)
+                .OrderBy(e => e.Id)
+                .ToListAsync(token);
+
+            var periods = await db.FiscalPeriods
+                .Where(p => p.CompanyId == companyId && p.StartDate.Year == year)
+                .ToListAsync(token);
+
+            // ‏**والسنةُ الساكنةُ تُقفَل بفتراتها وحدَها** (بلا قيد) — فمقفلةٌ عند `CloseYearAsync`
+            // ‏إن كان لها صفٌّ ولا مفتوحَ فيها. **والمعيارُ نفسُه هنا** لا معيارٌ ثانٍ.
+            if (closes.Count == 0
+                && (periods.Count == 0 || periods.Any(p => p.Status == FiscalPeriodStatus.Open)))
+                throw new AccountingException(
+                    $"السنة {year} غير مقفلة — لا قيدَ إقفالٍ قائمٌ لها ولا فتراتُها مقفلة.");
+
+            var backfilled = BackfillClosedMonths(companyId, year, periods);
+
+            var december = periods.Single(p => p.StartDate.Month == 12);
+            if (december.Status == FiscalPeriodStatus.Closed)
+                december.Reopen();
+            await db.SaveChangesAsync(token);
+
+            var reversals = new List<JournalEntry>();
+            foreach (var close in closes)
+            {
+                reversals.Add(await new JournalReversalService(db).ReverseAsync(
+                    companyId, close.Id, yearEnd, username, fromSourceDocument: true, token));
+            }
+
+            await new AuditService(db).LogAsync(companyId, username, "إعادة فتح سنة مالية",
+                "FiscalYear", year.ToString(),
+                (closes.Count == 0
+                    ? "سنةٌ ساكنة — فُتح ديسمبر ولا قيدَ يُعكس"
+                    : $"عُكس {string.Join("، ", closes.Select(c => c.EntryNumber))} "
+                      + $"بـ{string.Join("، ", reversals.Select(r => r.EntryNumber))} — وفُتح ديسمبر")
+                + (backfilled.Count == 0 ? "" : $" · أُنشئت مقفلةً: {string.Join("، ", backfilled)}"),
+                reason, token);
+
+            return new YearEndReopenResult(year,
+                closes.Select(c => c.Id).ToList(),
+                reversals.Select(r => r.EntryNumber ?? "").ToList());
+        }, ct);
+    }
+
+    /// <summary>
+    /// ‏<b>الردمُ الذي سمّاه تعليقُ <see cref="CloseAllYearPeriodsAsync"/> بنداً مستقلّاً.</b> سنةٌ
+    /// أُقفلت بنسخةٍ سابقةٍ لـح-١ <b>لا صفَّ لأشهرها الساكنة</b> — فلا يُفتح شهرٌ منها ولا يُرحَّل
+    /// فيه (حارسُ الشهر الساكن في <c>EnsurePeriodOpenAsync</c> يرى قيدَ الإقفال ولو معكوساً).
+    /// <b>فتُنشأ الغائبةُ مقفلةً</b> — فيصير لكلّ شهرٍ طريقُ فتحٍ مشروعٌ واحد، ولا يُفتح منها شيءٌ صامتاً.
+    /// </summary>
+    private List<string> BackfillClosedMonths(long companyId, int year, List<FiscalPeriod> periods)
+    {
+        var present = periods.Select(p => p.StartDate.Month).ToHashSet();
+        var created = new List<string>();
+        for (var month = 1; month <= 12; month++)
+        {
+            if (present.Contains(month)) continue;
+            var period = FiscalPeriod.Create(companyId, year, month);
+            period.Close();
+            db.FiscalPeriods.Add(period);
+            periods.Add(period);
+            created.Add(period.Code);
+        }
+
+        return created;
+    }
+
     /// <summary>
     /// ‏<b>يُقفل اثنَي عشرَ شهراً — وكان يُقفل الموجودَ منها وحدَه.</b>
     ///
@@ -211,7 +351,9 @@ public class YearEndCloseService(BrqoshDbContext db)
     ///
     /// <para>‏<b>ويبقى أثرٌ في قواعدَ أُقفلت بنسخةٍ سابقة:</b> شهرُها الساكنُ بلا صفّ. وحارسُ
     /// <c>EnsurePeriodOpenAsync</c> يمنع الترحيلَ فيه بوسم قيد الإقفال، <b>لكنّ إعادةَ فتحِه
-    /// تحتاج ردماً في مسار الترقية</b> — وهو مُدوَّنٌ بنداً مستقلّاً.</para>
+    /// تحتاج ردماً</b> — <b>ويقع عند إعادة فتح السنة</b> (<see cref="ReopenYearAsync"/>، ح-٤٧):
+    /// فمن أراد تصحيحَ سنةٍ كهذه فتحها، فنشأت أشهرُها الغائبةُ مقفلةً. <b>ولا ردمَ في مسار
+    /// الترقية نفسِه</b> — فسنةٌ لا تُفتح لا يُحتاج إلى صفوفها.</para>
     /// </summary>
     private async Task CloseAllYearPeriodsAsync(long companyId, int year, string username, CancellationToken token)
     {

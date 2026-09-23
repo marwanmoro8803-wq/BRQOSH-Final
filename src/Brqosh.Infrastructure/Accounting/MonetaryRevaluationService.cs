@@ -101,15 +101,12 @@ public class MonetaryRevaluationService(BrqoshDbContext db)
             // ‏**ومعكوسٌ لا أثرَ له في الدفتر** فلا يمنع تقييماً جديداً.
             // ‏**وليس هذا نقضاً لـح-٢٦**: ذاك في الأرصدة حيث يبقى المعكوسُ
             // ‏وعكسُه معاً، **وهذا سؤالُ وجودٍ لا سؤالُ مبلغ**.
-            var already = await db.JournalEntries.AnyAsync(e =>
-                e.CompanyId == companyId && e.SourceDocument == sourceDocument
-                && e.Status == JournalEntryStatus.Posted
-                // ‏**وقيدُ العكس يرث `SourceDocument` من أصله** (`CreateReversal`)،
-                // ‏**فيبقى `Posted` تحت المفتاح نفسِه بعد الإلغاء**. ولا وسمَ
-                // ‏يقول «أنا عكس» — **بل الأصلُ هو من يُشير إليه**. فالتمييزُ
-                // ‏أنّ لا قيدَ يُسمّيني عكساً له.
-                && !db.JournalEntries.Any(o =>
-                    o.CompanyId == companyId && o.ReversalEntryId == e.Id), token);
+            // ‏**وقيدُ العكس يرث `SourceDocument` من أصله فيبقى `Posted` تحت المفتاح نفسِه** —
+            // ‏فالسؤالُ «أيُّها قائم؟» لا «أيُّها مرحّل؟»، ومالكُه `StandingJournalEntries` (ح-٤٧).
+            var already = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == sourceDocument)
+                .WhereStanding(db.JournalEntries)
+                .AnyAsync(token);
 
             if (already)
                 throw new AccountingException(
@@ -171,15 +168,8 @@ public class MonetaryRevaluationService(BrqoshDbContext db)
             var keys = new[] { sourceDocument, $"{sourceDocument}:Reversal" };
 
             var entries = await db.JournalEntries
-                .Where(e => e.CompanyId == companyId
-                            && keys.Contains(e.SourceDocument)
-                            && e.Status == JournalEntryStatus.Posted
-                            // ‏**وقيدُ العكس يرث `SourceDocument` من أصله** (`CreateReversal`)،
-                            // ‏**فيبقى `Posted` تحت المفتاح نفسِه بعد الإلغاء**. ولا وسمَ
-                            // ‏يقول «أنا عكس» — **بل الأصلُ هو من يُشير إليه**. فالتمييزُ
-                            // ‏أنّ لا قيدَ يُسمّيني عكساً له.
-                            && !db.JournalEntries.Any(o =>
-                                o.CompanyId == companyId && o.ReversalEntryId == e.Id))
+                .Where(e => e.CompanyId == companyId && keys.Contains(e.SourceDocument))
+                .WhereStanding(db.JournalEntries)
                 .OrderBy(e => e.EntryDate)
                 .ToListAsync(token);
 

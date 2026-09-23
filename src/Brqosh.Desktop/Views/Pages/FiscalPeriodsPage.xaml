@@ -34,6 +34,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button DockPanel.Dock="Right" x:Name="YearEndBtn" Content="إقفال سنوي (SOCPA)"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnYearEndClose"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button DockPanel.Dock="Right" x:Name="ReopenYearBtn" Content="إعادة فتح سنة مقفلة"
+                        Padding="16,9" Click="OnReopenYear"/>
             </DockPanel>
         </Border>
 

@@ -26,7 +26,8 @@ public partial class FiscalPeriodsPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (ClosePeriodBtn, PermissionService.CanManageUsers),
                 (ReopenPeriodBtn, PermissionService.CanManageUsers),
-                (YearEndBtn, PermissionService.CanManageUsers));
+                (YearEndBtn, PermissionService.CanManageUsers),
+                (ReopenYearBtn, PermissionService.CanManageUsers));
             await ReloadAsync();
         };
     }
@@ -89,6 +90,51 @@ public partial class FiscalPeriodsPage : UserControl
                 AppServices.CompanyId, year, SecurityContext.ResolveUsername());
             UiDialog.Show(
                 $"تم إقفال السنة {result.Year}.\nصافي الدخل: {result.NetIncome:N2}\nالقيد: {result.EntryNumber}",
+                "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٧) <b>إعادةُ فتح سنةٍ مقفلة — ولم يكن للمشغّل طريقٌ إليها أصلاً.</b>
+    ///
+    /// <para>‏والرسائلُ نصوصٌ حرفيّةٌ لا مركّبة — فتُترجَم من السجلّ <b>ولا تنمو بها البقيّةُ غيرُ
+    /// القابلة للترجمة</b> (<c>DialogLocalizationTests</c>). ورقمُ القيد في سجلّ التدقيق لا في الحوار.
+    /// ونصّا الإدخال يمرّان بـ<see cref="UiDialog.Localize"/> لأنّ <c>TextInputDialog</c> لا يُترجم
+    /// ما يصله — <b>وحوارُ الإقفال السنويّ المجاور ما زال كذلك</b>، دَينٌ سابقٌ لا يُوسَّع هنا.</para>
+    /// </summary>
+    private async void OnReopenYear(object sender, RoutedEventArgs e)
+    {
+        var title = UiDialog.Localize("إعادة فتح سنة مقفلة");
+        var yearText = UiDialogs.PromptText(title, UiDialog.Localize("أدخل السنة المالية المقفلة:"),
+            (DateTime.Today.Year - 1).ToString());
+        if (yearText is null) return;
+        if (!int.TryParse(yearText.Trim(), out var year) || year < 2000 || year > 2100)
+        {
+            UiFeedback.ShowWarning("سنة غير صالحة.");
+            return;
+        }
+
+        // ‏السببُ يُتحقَّق منه في الخدمة (إلزاميٌّ وبحدّ) — فلا قاعدتان تفترقان.
+        var reason = UiDialogs.PromptText(title, UiDialog.Localize("سبب إعادة الفتح — يُسجَّل في سجلّ التدقيق:"));
+        if (reason is null) return;
+
+        var confirm = UiDialog.Show(
+            "سيُعكس قيد إقفال السنة المختارة ويُفتح ديسمبر وحده — ثم افتح الشهر المراد تصحيحه وأعد الإقفال السنوي. هل تريد المتابعة؟",
+            "BRQOSH — إعادة فتح سنة", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<YearEndCloseService>().ReopenYearAsync(
+                AppServices.CompanyId, year, reason, SecurityContext.ResolveUsername());
+            UiDialog.Show(
+                "أُعيد فتح السنة — صحِّح ثم أعد الإقفال السنوي.",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
