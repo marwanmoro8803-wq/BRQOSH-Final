@@ -30,12 +30,17 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 31 بنداً ✅ و7 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 33 بنداً ✅ و7 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وثلاثةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٣) — **بعضُها خارج هذا الحصر**،
+>
+> **وتصحيحٌ يُسجَّل**: رسالةُ ح-٥٤ (`b0db030`) تقول إنّ التدقيق لم يُسمِّ ما أغلقه — **وقد سمّاه
+> `ui-ux-i18n-printing#1`** بجزءٍ من سطره (الحالةُ بالاسم الإنجليزيّ على المستخلص)؛ ثمّ أغلق ح-٥٦
+> بقيّةَ السطر. **والرسالةُ المُودَعةُ لا تُعاد كتابتُها — فالتصحيحُ هنا.**
+
+**وستّةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٦) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -98,7 +103,7 @@
 ## manufacturing (11 major)
 
 - ✅ **`manufacturing#1`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Cancelling a completed work order corrupts inventory valuation (WAC and FIFO) instead of reversing it — ح-٣٠ `f03f801`
-- ☐ **`manufacturing#2`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No UI path to correct a completed work order: a wrong produced quantity is permanent
+- ✅ **`manufacturing#2`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No UI path to correct a completed work order: a wrong produced quantity is permanent — ح-٥٥ `a94a936` — **الصفحةُ تُلغي المكتملَ فتعكسه الخدمةُ** (قيدا الإكمال وطبقاتُ المخزون بأعيانها منذ ح-٣٠)، **بتأكيدٍ يقول إنّه عكسٌ لمرحَّلٍ ويُرفض إن صُرف شيءٌ من إنتاجه**، ثمّ يُصدَر أمرٌ بالكمّيّة الصحيحة؛ **والمعالجُ يسأل القرارَ ولا يكتب شرطَه بيده** — قياسٌ ثالثٌ لولاه لمرّ الانتكاسُ أخضر
 - ✅ **`manufacturing#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Completion posts stock and GL at the draft's OrderDate, not the completion date; the UI offers no completion date — ح-٣٤ `a795f87`
 - ☐ **`manufacturing#4`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No actual material issue, scrap, yield or by-product recording, and no partial completion: only standard backflush at completion
 - ☐ **`manufacturing#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>BOM edits after release silently change what open orders consume; no BOM snapshot, version or audit
@@ -193,7 +198,7 @@
 ## ui-ux-i18n-printing (10 major)
 
 - ✅ **`ui-ux-i18n-printing#0`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed credit note (إشعار دائن) lacks the buyer's VAT number and address, the original invoice number, and the reason — ح-٤٣ `1540120` — **ومعه الإشعارُ المدينُ ومستندُ الإلغاء**
-- ☐ **`ui-ux-i18n-printing#1`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Progress-billing PDF (the construction tax invoice) is not titled 'فاتورة ضريبية', has no buyer VAT number or address, hard-codes 15%, and prints the ZATCA status as a raw English enum
+- ✅ **`ui-ux-i18n-printing#1`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Progress-billing PDF (the construction tax invoice) is not titled 'فاتورة ضريبية', has no buyer VAT number or address, hard-codes 15%, and prints the ZATCA status as a raw English enum — ح-٥٤ `b0db030` (الحالةُ بالعربيّة) وح-٥٦ `5625e53` — **كلُّ أجزائه قيست فصحّت**: **العنوانُ «فاتورة ضريبية — مستخلص أعمال» أو المبسّطةُ بما أُرسل للهيئة**، **ورقمُ المشتري الضريبيُّ وعنوانُه**، **ورأسُ الضريبة من النسبة التي حُسبت بها**؛ والعملةُ ريالٌ أبداً — المستخلصُ بلا عملة
 - ✅ **`ui-ux-i18n-printing#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed sales invoice hides line and document discounts, so its columns do not add up to its totals — ح-٤٤ `b9a24d9` — **وكانت النسبةُ تُطبع «14.25%» مع خصم المستند**
 - ✅ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س — ح-٤٢ `27af80a` — **وهو عينُ `tax-zatca#14` بعدسةٍ ثانية**
 - ☐ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن'
