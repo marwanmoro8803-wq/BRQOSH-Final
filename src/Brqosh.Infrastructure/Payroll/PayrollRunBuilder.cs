@@ -69,12 +69,9 @@ public class PayrollRunBuilder(BrqoshDbContext db)
             var gosi = policy.ContributionFor(employee);
             var due = await advances.DueInstallmentAsync(companyId, employee.Id, ct);
 
-            // ‏**والقسطُ لا يبتلع الصافي.** استقطاعٌ يتجاوز ما بقي بعد التأمينات يُخرج
-            // ‏صافياً سالباً — **ويرفضه `AddLine` باسمه**. وترشيحٌ يقترح ما سيُرفض يجعل
-            // ‏الشاشةَ تعتذر عن حسابها هي. فيُحَدُّ بما يسع، **والباقي يُرحَّل إلى الشهر
-            // ‏التالي من تلقاء نفسه** لأنّ الرصيدَ مُشتقٌّ لا مُخزَّن.
-            var room = employee.GrossPay - gosi.Employee;
-            var deduction = Math.Max(0m, Math.Min(due, room));
+            // ‏**والمعاينةُ بالقاعدة نفسِها** — فلا تقترح الشاشةُ ما لن يُستقطع. (ولا غيابَ
+            // ‏في المعاينة: يُقرأ عند البناء، فالمعاينةُ على الأجر الكامل.)
+            var deduction = AdvanceDeduction(due, employee.GrossPay, gosi.Employee);
 
             result.Add(new PayrollCandidate(
                 employee.Id, employee.Code, employee.NameAr, employee.Nationality,
@@ -138,8 +135,6 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         {
             var gosi = policy.ContributionFor(employee);
             var due = await advances.DueInstallmentAsync(companyId, employee.Id, ct);
-            var room = employee.GrossPay - gosi.Employee;
-            var deduction = Math.Max(0m, Math.Min(due, room));
 
             var absence = unpaidDays.TryGetValue(employee.Id, out var days)
                 ? LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, days)
@@ -148,12 +143,40 @@ public class PayrollRunBuilder(BrqoshDbContext db)
             // ‏**ولا يتجاوز الخصمُ أجرَ الشهر** — فغيابُ الشهر كلِّه يُصفّر الأجر ولا يُسالبه.
             absence = Math.Min(absence, employee.GrossPay);
 
+            // ‏(ح-٤٩) ‏**والقسطُ من الأجر المستحقّ بعد الغياب** — وكان يُحسب قبله، فشهرُ غيابٍ
+            // ‏وعليه سُلفةٌ يُخرج صافياً سالباً **ويُسقط الدورةَ كلَّها**.
+            var deduction = AdvanceDeduction(due, employee.GrossPay - absence, gosi.Employee);
+
             run.AddEmployee(employee, policy,
                 Math.Round(deduction, 2, MidpointRounding.AwayFromZero),
                 Math.Round(absence, 2, MidpointRounding.AwayFromZero));
         }
 
         return run;
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٩ · <c>treasury-payroll-assets#6</c>) <b>قسطُ السُّلفة لا يأخذ أكثرَ
+    /// من نصف أجر الشهر — ولا يُسالب الصافي.</b> مالكٌ واحدٌ للقاعدة تستعمله المعاينةُ والبناء.
+    ///
+    /// <para>‏<b>وكان السقفُ «ما بقي بعد التأمينات» وحدَه</b> — فسُلفةٌ بقسطٍ كبيرٍ تأخذ الأجرَ كلَّه
+    /// (٧٬٢٢٠ من ٨٬٠٠٠ والصافي صفر)، <b>وتعليقُ <c>EmployeeAdvance.InstallmentAmount</c> يَعِد بحدّ
+    /// النصف ولا حارسَ في الشجرة</b>. والباقي يُرحَّل إلى الشهر التالي من تلقاء نفسه لأنّ الرصيدَ
+    /// مُشتقٌّ لا مُخزَّن.</para>
+    ///
+    /// <para>‏<b>والحدُّ عند الاستقطاع لا عند الإنشاء</b>: الأجرُ يتغيّر بعد السُّلفة (زيادةٌ · خفضٌ ·
+    /// غيابٌ بلا أجر)، <b>وحارسُ الإنشاء لا يرى إلا أجرَ يومِه</b>. والنصفُ يُقطع إلى الهللة لا يُقرَّب
+    /// — فلا يزيد عليه بكسر.</para>
+    ///
+    /// <para>‏<b>والحدُّ النظاميُّ الأدقّ قرارُ المالك لا الكود</b>: نظامُ العمل يحدّ استقطاعَ القرض
+    /// بعُشر الأجر إلّا برضا العامل، ومجموعَ الاستقطاعات بنصفه. والرضا لا يُمثَّل في النظام، <b>فالنصفُ
+    /// هنا حدُّ المعقوليّة الموثَّق</b> — لا قراءةٌ نهائيّةٌ للمادّة.</para>
+    /// </summary>
+    internal static decimal AdvanceDeduction(decimal dueInstallment, decimal wageDue, decimal gosiEmployee)
+    {
+        var half = Math.Floor(wageDue * 50m) / 100m;
+        var net = wageDue - gosiEmployee;
+        return Math.Max(0m, Math.Min(dueInstallment, Math.Min(half, net)));
     }
 
     /// <summary>

@@ -148,26 +148,75 @@ public class PayrollRealPathTests : IDisposable
     }
 
     /// <summary>
-    /// <b>والقسطُ لا يبتلع الصافي.</b>
+    /// <b>والقسطُ لا يأخذ أكثرَ من نصف أجر الشهر — ولا يُسالب الصافي.</b>
     ///
-    /// <para>قسطٌ يتجاوز ما بقي بعد التأمينات <b>يُخرج صافياً سالباً</b> ويرفضه
-    /// <c>AddLine</c> باسمه — <b>فتعتذر الشاشةُ عن حسابها هي</b>. فيُحَدُّ بما يسع،
-    /// <b>والباقي يُرحَّل إلى الشهر التالي من تلقاء نفسه</b> لأنّ الرصيدَ مُشتقّ.</para>
+    /// <para>‏(جاهزيّةُ الإطلاق · ح-٤٩ · <c>treasury-payroll-assets#6</c>) <b>كان هذا الاختبارُ يُثبت
+    /// العطلَ نفسَه</b>: سقفُه «ما بقي بعد التأمينات» — ٧٬٢٢٠ من ٨٬٠٠٠ — <b>والصافي صفر</b>. أي أنّ
+    /// سُلفةً تأخذ الأجرَ كلَّه، والموظّفُ يعمل شهراً بلا ريال. <b>وتعليقُ <c>InstallmentAmount</c>
+    /// يَعِد بحدّ النصف</b> — ولا حارسَ في الشجرة كلِّها.</para>
+    ///
+    /// <para><b>والباقي يُرحَّل إلى الشهر التالي من تلقاء نفسه</b> لأنّ الرصيدَ مُشتقّ.</para>
     /// </summary>
     [Fact]
-    public async Task AnInstallmentLargerThanTheNet_IsCappedNotRefused()
+    public async Task AnInstallmentLargerThanHalfTheWage_IsCappedAtHalf()
     {
         await SetupAsync();
 
-        // ‏سُلفةٌ بقسطٍ يفوق الصافي: ٨٠٠٠ − ٧٨٠ تأمينات = ٧٢٢٠ هو السقف.
+        // ‏قسطُ ٩٬٠٠٠ على أجرٍ ٨٬٠٠٠: السقفُ النصف — ٤٬٠٠٠ — والصافي ٨٬٠٠٠ − ٧٨٠ − ٤٬٠٠٠.
         await DisbursedAsync(_saudiId, amount: 20_000m, installment: 9_000m);
 
         var run = await new PayrollRunBuilder(_db)
             .BuildAsync(_companyId, 2026, 4, new DateOnly(2026, 4, 28));
 
         var line = run.Lines.Single(l => l.EmployeeId == _saudiId);
-        Assert.Equal(7_220m, line.AdvanceDeduction);
-        Assert.Equal(0m, line.NetPay);
+        Assert.Equal(4_000m, line.AdvanceDeduction);
+        Assert.Equal(3_220m, line.NetPay);
+    }
+
+    /// <summary>
+    /// ‏<b>والنصفُ من الأجر المستحقّ للشهر — لا من الأجر الاسميّ.</b>
+    ///
+    /// <para>‏عشرون يوماً بلا أجرٍ تُبقي ٢٬٦٦٦٫٦٧ من ٨٬٠٠٠. <b>وكان السقفُ يُحسب قبل الغياب</b>
+    /// (٨٬٠٠٠ − ٧٨٠) فيُستقطع قسطُ ٤٬٠٠٠ كاملاً <b>والصافي سالب</b> — فيرفض <c>AddLine</c>
+    /// السطرَ وتسقط الدورةُ كلُّها، <b>ولا يُصرف لأحدٍ راتبٌ</b> لأنّ موظّفاً واحداً غاب وعليه سُلفة.</para>
+    /// </summary>
+    [Fact]
+    public async Task AnUnpaidMonth_CapsTheInstallmentAtHalfWhatIsDue()
+    {
+        await SetupAsync();
+        await DisbursedAsync(_saudiId, amount: 20_000m, installment: 4_000m);
+
+        var leave = LeaveRequest.Create(_companyId, _saudiId, "LV-UNPAID", LeaveType.Unpaid,
+            new DateOnly(2026, 4, 1), new DateOnly(2026, 4, 20));
+        leave.Approve(new DateOnly(2026, 4, 1), "admin");
+        _db.LeaveRequests.Add(leave);
+        await _db.SaveChangesAsync();
+
+        var run = await new PayrollRunBuilder(_db)
+            .BuildAsync(_companyId, 2026, 4, new DateOnly(2026, 4, 28));
+
+        var line = run.Lines.Single(l => l.EmployeeId == _saudiId);
+        var due = line.GrossPay;   // ‏المستحقُّ بعد الغياب — `FullGrossPay` هو الاسميّ
+        Assert.Equal(2_666.67m, due);
+        Assert.True(line.AdvanceDeduction <= due / 2m,
+            $"استُقطع {line.AdvanceDeduction} من أجرٍ مستحقٍّ {due} — أكثرُ من نصفه.");
+        Assert.Equal(1_333.33m, line.AdvanceDeduction);
+        Assert.True(line.NetPay >= 0m, $"الصافي {line.NetPay} سالب.");
+    }
+
+    /// <summary>
+    /// ‏<b>والمعاينةُ تعرض السقفَ نفسَه</b> — فشاشةُ الترشيح لا تقترح ما لن يُستقطع.
+    /// </summary>
+    [Fact]
+    public async Task ThePreview_ShowsTheSameHalfWageCap()
+    {
+        await SetupAsync();
+        await DisbursedAsync(_saudiId, amount: 20_000m, installment: 9_000m);
+
+        var candidates = await new PayrollRunBuilder(_db)
+            .CandidatesAsync(_companyId, new DateOnly(2026, 4, 28));
+
+        Assert.Equal(4_000m, candidates.Single(c => c.EmployeeId == _saudiId).AdvanceDeduction);
     }
 
     /// <summary>
