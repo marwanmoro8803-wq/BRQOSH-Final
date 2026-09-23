@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 30 بنداً ✅ و7 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 31 بنداً ✅ و7 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**واثنان وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٢) — **بعضُها خارج هذا الحصر**،
+**وثلاثةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٣) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -86,7 +86,7 @@
 
 - ✅ **`tax-zatca#7`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cancellation credit notes for discounted or foreign-currency invoices are internally inconsistent (measured with the repo's own validator); credit notes have no currency at all — ح-٣٥ `67b3635` وح-٣٦ `693f8ce` — **وهو عينُ `o2c#10` و`o2c#11` بعدسةٍ ثالثة**؛ **وفاتني وسمُه حينها**
 - ☐ **`tax-zatca#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No automatic retry or offline queue; transient HTTP errors are recorded as Rejected; rejected documents have no correction or reissue path
-- ☐ **`tax-zatca#9`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Standard tax invoices can be printed before clearance and always carry the local QR; the ZATCA-cleared XML is never used, despite the claim that it is what the buyer receives
+- ✅ **`tax-zatca#9`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Standard tax invoices can be printed before clearance and always carry the local QR; the ZATCA-cleared XML is never used, despite the claim that it is what the buyer receives — ح-٥٣ `43cbf72` — **المعتمدةُ تُطبع برمز الهيئة من نسختها، و«عرض XML» يفتح المعتمد**؛ **وما لم يُعتمد أو رُفض يُطبع بلا رمزٍ وبتنبيهٍ أنّه ليس فاتورةً نافذة** (والطباعةُ باقيةٌ قراراً: نسخةٌ داخليّة)؛ **وقارئٌ واحدٌ لستّة مواضع وحارسٌ بنيويّ**
 - ◐ **`tax-zatca#10`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No CSID expiry check and no renewal flow — ح-٥٢ `1a1b25b` — **الشهادةُ المنتهيةُ والتي لم تبدأ والتي لا تُقرأ تمنع الإرسالَ بسببها الحقيقيّ، والإنذارُ قبل ثلاثين يوماً**؛ **ومسارُ التجديد نفسُه لم يُبنَ** (البديلُ القائم: إعادةُ التسجيل من أوّله)
 - ✅ **`tax-zatca#11`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Fixed-asset sales post output VAT with no tax invoice and no e-invoice — ح-١٦ `70444ef`
 - ◐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT — ح-٤١ `21ce51e` — **الأوعيةُ بالريال بعد الخصم، وتشمل المستخلصَ والإلغاء، وتُطابق الصافي على الشاشة والمطبوع**؛ **ولا إسنادَ إلى صناديق النموذج** (نصُّه ليس في المستودع) **ولا احتسابَ عكسيّ**
