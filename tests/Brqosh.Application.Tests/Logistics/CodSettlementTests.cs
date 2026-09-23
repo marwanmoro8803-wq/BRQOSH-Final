@@ -6,6 +6,7 @@ using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Logistics;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Reporting;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Application.Tests.Logistics;
@@ -243,6 +244,29 @@ public class CodSettlementTests : IDisposable
 
         Assert.Throws<AccountingException>(() => shipment.Return(new DateOnly(2026, 3, 6)));
         Assert.True(shipment.CodCollected);
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٨ · <c>sector-modules#8</c>) <b>التوريدُ للتاجر يخرج من حساب البنك
+    /// نفسِه — لا من الأب <c>1102</c>.</b> والشاشةُ تستدعيه بلا حساب، <b>فكان كلُّ توريدٍ يُقيَّد
+    /// على الأب</b> والكشفُ في الابن — فرقٌ في التسوية البنكيّة لا يُغلق.
+    /// </summary>
+    [Fact]
+    public async Task Remittance_LeavesTheBankAccount_NotItsParent()
+    {
+        await SetupAsync();
+        var bank = await new BankAccountService(_db).CreateAsync(
+            _companyId, "B1", "البنك الأول", "مصرف الرياض", "1234567890",
+            "SA0380000000608010167519", isDefault: true);
+        var bankGl = (await _db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId)).Code;
+
+        var ids = await DeliveredAsync(("WB-B1", 700m), ("WB-B2", 300m));
+        var service = new CodSettlementService(_db);
+        await service.CollectAsync(_companyId, ids, new DateOnly(2026, 3, 5));
+        await service.RemitAsync(_companyId, _shipperId, new DateOnly(2026, 3, 10));
+
+        Assert.Equal(-1_000m, await BalanceAsync(bankGl));
+        Assert.Equal(0m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
     }
 
     // ── تهيئة ───────────────────────────────────────────────────────────────

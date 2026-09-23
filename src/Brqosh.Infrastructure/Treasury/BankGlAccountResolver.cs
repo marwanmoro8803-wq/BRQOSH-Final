@@ -1,4 +1,5 @@
 using Brqosh.Domain.Accounting;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,4 +57,19 @@ public static class BankGlAccountResolver
         return await db.Accounts.SingleAsync(
             a => a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashAtBanks, ct);
     }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٨ · <c>sector-modules#8</c>) <b>نقدُ البنك لمسارٍ يقبل كوداً صريحاً</b>
+    /// — الصريحُ كما هو، <b>وغيابُه يُحلّ من هنا لا من قيمةٍ افتراضيّة</b>.
+    ///
+    /// <para>‏وكانت المداخلُ القطاعيّةُ (الصيانة · التأمين · توريدُ الدفع عند الاستلام) تأخذ
+    /// <c>string cashAccountCode = CashAtBanks</c> — <b>الأبَ <c>1102</c> بعينه</b>. والشاشاتُ لا
+    /// تمرّر حساباً، <b>فوقع نقدُها كلُّه على الأب والكشفُ في الابن</b>: الانشقاقُ الذي أُغلق هنا
+    /// في م2-١٥ للبيع والسندات، <b>عائداً من بابٍ آخرَ بقيمةٍ افتراضيّةٍ حسنةِ الشكل</b>.</para>
+    /// </summary>
+    public static async Task<Account> ResolveCodeAsync(
+        BrqoshDbContext db, long companyId, string? explicitCode, CancellationToken ct = default) =>
+        explicitCode is null
+            ? await ResolveAsync(db, companyId, ct: ct)
+            : await SystemAccountProvisioning.EnsureAsync(db, companyId, explicitCode, ct);
 }

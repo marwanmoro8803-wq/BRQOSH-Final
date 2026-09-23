@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.RealEstate;
 using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Sales;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Application.Tests.RealEstate;
@@ -213,7 +214,81 @@ public class MaintenancePostingTests : IDisposable
         Assert.Equal(2_000m, rows[0].OwnerCost);
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٨ · <c>sector-modules#8</c>) <b>نقدُ الصيانة يخرج من حساب البنك
+    /// نفسِه — لا من الأب <c>1102</c>.</b>
+    ///
+    /// <para>‏كلُّ حسابٍ بنكيٍّ ابنٌ تحت <c>1102</c>، <b>والأبُ يقبل الترحيلَ أيضاً</b>. فمسارٌ يُقيّد
+    /// على الأب يَشقّ نقدَ البنك: الكشفُ في الابن والمالُ في الأب، <b>ويبقى في التسوية البنكيّة فرقٌ
+    /// لا يُغلق</b>. وهو عينُ ما أصلحه CEEF-229 (م2-١٥) في البيع والسندات — <b>وبقيت المداخلُ
+    /// القطاعيّةُ على الأب بقيمةٍ افتراضيّة</b>، وكلُّ شاشةٍ تستدعيها بلا حساب.</para>
+    /// </summary>
+    [Fact]
+    public async Task MaintenanceCash_LeavesTheBankAccount_NotItsParent()
+    {
+        await SetupAsync();
+        var bankGl = await OpenBankAccountAsync();
+        var order = await CompletedDamageOrderAsync(total: 1000m, tenantShare: 0m);
+
+        await new MaintenanceOrderService(_db).PostAsync(_companyId, order.Id, new DateOnly(2026, 5, 20));
+
+        Assert.Equal(-1_000m, await ExactBalanceAsync(bankGl));
+        Assert.Equal(0m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
+    }
+
+    /// <summary>
+    /// ‏<b>وتأمينُ المستأجر يدخل حسابَ البنك ويخرج منه</b> — استلامُه وردُّه.
+    /// </summary>
+    [Fact]
+    public async Task DepositCash_EntersAndLeavesTheBankAccount_NotItsParent()
+    {
+        await SetupAsync();
+        var bankGl = await OpenBankAccountAsync();
+        var deposits = new SecurityDepositService(_db);
+
+        await deposits.ReceiveAsync(_companyId, _leaseId, new DateOnly(2026, 1, 5), "admin");
+        Assert.Equal(10_000m, await ExactBalanceAsync(bankGl));
+
+        await deposits.ReturnAsync(_companyId, _leaseId, new DateOnly(2026, 6, 30), 0m, "admin");
+        Assert.Equal(0m, await ExactBalanceAsync(bankGl));
+
+        Assert.Equal(0m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
+    }
+
+    /// <summary>
+    /// ‏<b>ومنشأةٌ بلا حسابٍ بنكيٍّ بعدُ تُقيّد على الأب</b> — السقوطُ المقصودُ في
+    /// <c>BankGlAccountResolver</c> (شاهدُ ضبط): رفضُ القيد لأنّ لا ابنَ له يُغلق حالةً مشروعة.
+    /// </summary>
+    [Fact]
+    public async Task WithNoBankAccountYet_TheParentIsTheBank()
+    {
+        await SetupAsync();
+
+        await new SecurityDepositService(_db).ReceiveAsync(_companyId, _leaseId, new DateOnly(2026, 1, 5), "admin");
+
+        Assert.Equal(10_000m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
+    }
+
     // ── تهيئة ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// ‏رصيدُ الحساب بعينه من سطور القيود — <b>لا بالبادئة</b>: فالبادئةُ <c>1102</c> تضمّ الأبَ
+    /// وأبناءه معاً، <b>وهي بعينها ما أخفى الانشقاقَ عن هويّة التدفّقات النقديّة</b>.
+    /// </summary>
+    private async Task<decimal> ExactBalanceAsync(string code) =>
+        await _db.JournalEntries.AsNoTracking()
+            .WhereReportable(_companyId)
+            .SelectMany(e => e.Lines)
+            .Where(l => l.AccountCode == code)
+            .SumAsync(l => l.Debit - l.Credit);
+
+    private async Task<string> OpenBankAccountAsync()
+    {
+        var bank = await new BankAccountService(_db).CreateAsync(
+            _companyId, "B1", "البنك الأول", "مصرف الرياض", "1234567890",
+            "SA0380000000608010167519", isDefault: true);
+        return (await _db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId)).Code;
+    }
 
     private async Task<decimal> BalanceAsync(string prefix)
     {

@@ -4,6 +4,7 @@ using Brqosh.Domain.Logistics;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Logistics;
@@ -99,7 +100,7 @@ public class CodSettlementService(BrqoshDbContext db)
     /// لا يقابله حقّ، <b>والشركةُ دفعت من مالها وهي تظنّها أمانة</b>.</para>
     /// </summary>
     public async Task<CodRemittanceResult> RemitAsync(long companyId, long shipperCustomerId,
-        DateOnly on, string cashAccountCode = SaudiChartOfAccounts.SystemCodes.CashAtBanks,
+        DateOnly on, string? cashAccountCode = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -143,11 +144,14 @@ public class CodSettlementService(BrqoshDbContext db)
                         && s.CodCollected && !s.CodRemitted)
             .SumAsync(s => s.CodAmount, ct);
 
-    private async Task<long> PostAsync(long companyId, DateOnly on, string cashAccountCode,
+    private async Task<long> PostAsync(long companyId, DateOnly on, string? cashAccountCode,
         decimal amount, bool debitCash, string memo, string sourceDocument, string auditDetails,
         CancellationToken ct)
     {
-        var cash = await SystemAccountProvisioning.EnsureAsync(db, companyId, cashAccountCode, ct);
+        // ‏(جاهزيّةُ الإطلاق · ح-٤٨ · `sector-modules#8`) ‏**التوريدُ من البنك بمالكه لا بقيمةٍ
+        // ‏افتراضيّة.** كان `RemitAsync` يأخذ `= CashAtBanks` — **الأبَ `1102`** — والشاشةُ لا
+        // ‏تمرّر حساباً، فيُقيَّد كلُّ توريدٍ على الأب والكشفُ في الابن: عينُ انشقاق م2-١٥.
+        var cash = await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, ct);
         var payable = await SystemAccountProvisioning.EnsureAsync(db, companyId, CodPayableCode, ct);
 
         await FinancialPostingSupport.ValidateAsync(

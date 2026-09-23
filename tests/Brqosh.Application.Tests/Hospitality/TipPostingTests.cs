@@ -5,6 +5,7 @@ using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Hospitality;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Reporting;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Application.Tests.Hospitality;
@@ -161,6 +162,41 @@ public class TipPostingTests : IDisposable
 
         Assert.Equal(0m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.TipsPayable));
     }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٤٨ · <c>sector-modules#8</c>) <b>إكراميةُ البطاقة تدخل حسابَ البنك
+    /// نفسَه — لا الأبَ <c>1102</c>.</b>
+    ///
+    /// <para>‏والاختبارُ المجاور يقيس «البطاقةُ تدخل البنك» <b>بالبادئة</b> <c>1102</c> — فيضمّ
+    /// الأبَ وأبناءه ويمرّ على الشقّ نفسِه. <b>وهنا الحسابُ بعينه</b>.</para>
+    /// </summary>
+    [Fact]
+    public async Task CardTips_LandInTheBankAccount_NotItsParent()
+    {
+        await SetupAsync();
+        var bank = await new BankAccountService(_db).CreateAsync(
+            _companyId, "B1", "البنك الأول", "مصرف الرياض", "1234567890",
+            "SA0380000000608010167519", isDefault: true);
+        var bankGl = (await _db.Accounts.SingleAsync(a => a.Id == bank.GlAccountId)).Code;
+
+        var pool = TipPool.Open(_companyId, new DateOnly(2026, 6, 1));
+        pool.Collect(TipSource.Card, 200m);
+        pool.DistributeEvenly([5L]);
+        _db.TipPools.Add(pool);
+        await _db.SaveChangesAsync();
+
+        await new TipPoolService(_db).CloseAndPostAsync(_companyId, pool.Id, new DateOnly(2026, 6, 1));
+
+        Assert.Equal(200m, await ExactBalanceAsync(bankGl));
+        Assert.Equal(0m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
+    }
+
+    private async Task<decimal> ExactBalanceAsync(string code) =>
+        await _db.JournalEntries.AsNoTracking()
+            .WhereReportable(_companyId)
+            .SelectMany(e => e.Lines)
+            .Where(l => l.AccountCode == code)
+            .SumAsync(l => l.Debit - l.Credit);
 
     private async Task<decimal> BalanceAsync(string prefix)
     {

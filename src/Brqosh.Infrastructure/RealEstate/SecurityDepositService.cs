@@ -4,6 +4,7 @@ using Brqosh.Domain.RealEstate;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.RealEstate;
@@ -28,7 +29,7 @@ public class SecurityDepositService(BrqoshDbContext db)
     /// <para><b>ولا يُقبض إلا مرّةً</b> — والحارسُ في العقد لا هنا، فالقيدُ يتبع الحالة.</para>
     /// </summary>
     public async Task<long> ReceiveAsync(long companyId, long leaseId, DateOnly on,
-        string username, string cashAccountCode = SaudiChartOfAccounts.SystemCodes.CashAtBanks,
+        string username, string? cashAccountCode = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -39,7 +40,8 @@ public class SecurityDepositService(BrqoshDbContext db)
             var lease = await LeaseAsync(companyId, leaseId, token);
             lease.RecordDepositReceived(on);
 
-            var cash = await SystemAccountProvisioning.EnsureAsync(db, companyId, cashAccountCode, token);
+            // ‏(ح-٤٨) البنكُ من مالكه لا من قيمةٍ افتراضيّة — انظر `BankGlAccountResolver.ResolveCodeAsync`.
+            var cash = await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, token);
             var held = await SystemAccountProvisioning.EnsureAsync(
                 db, companyId, SaudiChartOfAccounts.SystemCodes.TenantSecurityDeposits, token);
 
@@ -78,7 +80,7 @@ public class SecurityDepositService(BrqoshDbContext db)
     /// </summary>
     public async Task<long> ReturnAsync(long companyId, long leaseId, DateOnly on,
         decimal forfeited, string username,
-        string cashAccountCode = SaudiChartOfAccounts.SystemCodes.CashAtBanks,
+        string? cashAccountCode = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -107,7 +109,8 @@ public class SecurityDepositService(BrqoshDbContext db)
 
             var refunded = lease.SecurityDeposit - lease.DepositForfeited;
 
-            var cash = await SystemAccountProvisioning.EnsureAsync(db, companyId, cashAccountCode, token);
+            // ‏(ح-٤٨) البنكُ من مالكه لا من قيمةٍ افتراضيّة — انظر `BankGlAccountResolver.ResolveCodeAsync`.
+            var cash = await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, token);
             var held = await SystemAccountProvisioning.EnsureAsync(
                 db, companyId, SaudiChartOfAccounts.SystemCodes.TenantSecurityDeposits, token);
             var income = lease.DepositForfeited > 0m

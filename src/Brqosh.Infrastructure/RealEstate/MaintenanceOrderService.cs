@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.RealEstate;
@@ -52,7 +53,7 @@ public class MaintenanceOrderService(BrqoshDbContext db)
     /// قائمٍ يُقيّد مصروفاً يزيد غداً</b> فيفترق القيدُ عن سنده.</para>
     /// </remarks>
     public async Task<MaintenancePostingResult> PostAsync(long companyId, long orderId, DateOnly on,
-        string cashAccountCode = SaudiChartOfAccounts.SystemCodes.CashAtBanks,
+        string? cashAccountCode = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -101,7 +102,8 @@ public class MaintenanceOrderService(BrqoshDbContext db)
                 : await db.Accounts.SingleAsync(
                     a => a.Id == asset.GlAssetAccountId && a.CompanyId == companyId, token);
 
-            var cash = await SystemAccountProvisioning.EnsureAsync(db, companyId, cashAccountCode, token);
+            // ‏(ح-٤٨) البنكُ من مالكه لا من قيمةٍ افتراضيّة — انظر `BankGlAccountResolver.ResolveCodeAsync`.
+            var cash = await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, on, PostingDocumentKind.JournalEntry,

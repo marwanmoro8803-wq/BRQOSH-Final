@@ -4,6 +4,7 @@ using Brqosh.Domain.Hospitality;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Hospitality;
@@ -46,7 +47,7 @@ public class TipPoolService(BrqoshDbContext db)
     /// </remarks>
     public async Task<TipPoolPostingResult> CloseAndPostAsync(long companyId, long poolId,
         DateOnly on, string cashAccountCode = SaudiChartOfAccounts.SystemCodes.CashOnHand,
-        string bankAccountCode = SaudiChartOfAccounts.SystemCodes.CashAtBanks,
+        string? bankAccountCode = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -76,7 +77,12 @@ public class TipPoolService(BrqoshDbContext db)
 
             if (pool.CollectedCard > 0m)
             {
-                var bank = await ResolveAsync(companyId, bankAccountCode, token);
+                // ‏(جاهزيّةُ الإطلاق · ح-٤٨ · `sector-modules#8`) ‏**البنكُ من مالكه لا من قيمةٍ
+                // ‏افتراضيّة.** كان `= CashAtBanks` — **الأبَ `1102`** — والشاشةُ لا تمرّر حساباً،
+                // ‏فتقع كلُّ إكراميةِ بطاقةٍ على الأب والكشفُ في الابن: عينُ انشقاق م2-١٥.
+                var bank = bankAccountCode is null
+                    ? await BankGlAccountResolver.ResolveAsync(db, companyId, ct: token)
+                    : await ResolveAsync(companyId, bankAccountCode, token);
                 accountIds.Add(bank.Id);
                 entry.AddLine(bank, pool.CollectedCard, 0m, "إكرامياتٌ على البطاقة");
             }
