@@ -3,6 +3,7 @@ using Brqosh.Domain.Construction;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Purchasing;
 using Brqosh.Infrastructure.Sales;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Reporting;
@@ -158,6 +159,9 @@ public partial class DocumentPrintService
             d.DocumentType == ZatcaDocumentType.ProgressBilling, ct);
 
         var branding = PrintBranding.FromCompany(company);
+        // ‏(ح-٥٣) المستخلصُ لعميلٍ مسجَّلٍ يُخلَّص — فرمزُه من القارئ الواحد. ولا بديلَ من
+        // ‏الطور الأوّل هنا: لم يكن للمستخلص رمزٌ قبل أن يُولَّد مستندُه، ولا يُخترع الآن.
+        var mark = ZatcaHandOverCopy.MarkFor(zatca, () => null);
         var data = new ProgressBillingPdfGenerator.BillingPrintData(
             billing.BillingNumber ?? billing.Id.ToString(),
             billing.BillingDate,
@@ -170,9 +174,10 @@ public partial class DocumentPrintService
             billing.NetBillableAmount,
             billing.VatAmount,
             billing.GrandTotal,
-            zatca?.QrTlvBase64,
+            mark.QrTlvBase64,
             zatca?.Icv,
-            zatca?.ComplianceStatus.ToString());
+            zatca?.ComplianceStatus.ToString(),
+            mark.ClearanceNotice);
 
         var pdf = ProgressBillingPdfGenerator.Generate(branding, data);
         var fileName = $"brqosh-pb-{SanitizeFileName(billing.BillingNumber ?? billing.Id.ToString())}.pdf";

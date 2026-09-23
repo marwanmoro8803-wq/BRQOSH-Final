@@ -42,7 +42,10 @@ public static class SalesInvoicePdfGenerator
         // ‏كان الإشعارُ الدائنُ المطبوعُ بلا رقم الفاتورة الأصليّة ولا السبب — وكلاهما في
         // ‏المستند وفي الـXML — **فلا يُطابقه مدقّقٌ بفاتورة، ولا يخصم به المشتري مدخلاتِه**.
         string? ReferenceDocumentNumber = null,
-        string? ReasonAr = null);
+        string? ReasonAr = null,
+        // (جاهزيّةُ الإطلاق · ح-٥٣ · tax-zatca#9) ‏**مستندُ تخليصٍ لم يُعتمد يقول ذلك على الورقة** —
+        // ‏يُملأ من `ZatcaHandOverCopy.MarkFor` وحدَه، ومعه يغيب الرمز.
+        string? ClearanceNotice = null);
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٤٢ · tax-zatca#14) <b>مستندٌ بعملةٍ أجنبيّة: رمزُها وسعرُها
@@ -252,6 +255,10 @@ public static class SalesInvoicePdfGenerator
                 {
                     col.Spacing(10);
 
+                    // ‏(ح-٥٣) **التنبيهُ أوّلَ الصفحة** — قبل أيّ رقمٍ يُقرأ.
+                    if (!string.IsNullOrWhiteSpace(options.ClearanceNotice))
+                        col.Item().Element(c => ClearanceNoticeBox(c, options.ClearanceNotice));
+
                     // ── كتلتان متجاورتان: بيانات المستند · بيانات الطرف ──
                     col.Item().Row(row =>
                     {
@@ -448,6 +455,8 @@ public static class SalesInvoicePdfGenerator
     private const string HeaderFill = "#E2E8F0";
     private const string RowFill = "#F5F7FA";
     private const string BoxTitleFill = "#EDF1F6";
+    private const string NoticeColour = "#B91C1C";
+    private const string NoticeFill = "#FEF2F2";
 
     /// <summary>صندوق معنون بصفوف «تسمية: قيمة» — لبيانات المستند والطرف.</summary>
     private static void LabelBox(IContainer container, string title, IReadOnlyList<(string Label, string Value)> rows)
@@ -508,6 +517,15 @@ public static class SalesInvoicePdfGenerator
     /// (ح-٤٤) <b>الخصمُ مُفصَحاً</b>: الإجماليُّ قبله، ثمّ الخصمُ — ومنه خصمُ المستند متى وُجد.
     /// <b>ويجمع إلى «الإجمالي قبل الضريبة» تحته</b>.
     /// </summary>
+    /// <summary>
+    /// (ح-٥٣) <b>مستندُ تخليصٍ لم تعتمده الهيئة</b> — بإطارٍ أحمرَ لا يُخطئه قارئ، فلا تُسلَّم
+    /// الورقةُ على أنّها فاتورةٌ نافذة.
+    /// </summary>
+    internal static void ClearanceNoticeBox(IContainer container, string notice) =>
+        container.Border(1.5f).BorderColor(NoticeColour).Background(NoticeFill)
+            .PaddingVertical(6).PaddingHorizontal(10)
+            .Text(notice).Bold().FontSize(10.5f).FontColor(NoticeColour);
+
     private static void DiscountBox(IContainer container, PrintFigures f)
     {
         container.Border(0.8f).BorderColor(BorderColour).Column(col =>

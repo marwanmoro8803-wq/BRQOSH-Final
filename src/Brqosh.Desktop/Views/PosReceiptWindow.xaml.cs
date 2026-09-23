@@ -4,6 +4,7 @@ using System.Windows.Media.Imaging;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
+using Brqosh.Infrastructure.Zatca;
 using QRCoder;
 
 namespace Brqosh.Desktop.Views;
@@ -21,8 +22,15 @@ public partial class PosReceiptWindow : Window
 
         if (zatca is not null)
         {
-            ZatcaStatusText.Text = zatcaMessage ?? zatca.ComplianceStatus.ToString();
-            QrImage.Source = BuildQrImage(zatca.QrTlvBase64);
+            // ‏(جاهزيّةُ الإطلاق · ح-٥٣) **الرمزُ من القارئ الواحد** — بيعُ نقطةٍ لعميلٍ مسجَّلٍ
+            // ‏مستندُ تخليص، وما لم يُعتمد منه لا يُعرض برمزٍ بل بتنبيه. والنصُّ داخل اللوحة
+            // ‏نفسِها، فتبقى ظاهرةً ويُطوى الرمزُ وحدَه.
+            var mark = ZatcaHandOverCopy.MarkFor(zatca, () => null);
+            ZatcaStatusText.Text = mark.ClearanceNotice ?? zatcaMessage ?? zatca.ComplianceStatus.ToString();
+            if (mark.QrTlvBase64 is { } qr)
+                QrImage.Source = BuildQrImage(qr);
+            else
+                QrImage.Visibility = Visibility.Collapsed;
             QrPanel.Visibility = Visibility.Visible;
         }
         else

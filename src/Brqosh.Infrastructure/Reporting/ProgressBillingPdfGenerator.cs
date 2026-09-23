@@ -23,7 +23,9 @@ public static class ProgressBillingPdfGenerator
         decimal GrandTotal,
         string? QrTlvBase64 = null,
         int? Icv = null,
-        string? ComplianceStatus = null);
+        string? ComplianceStatus = null,
+        // (جاهزيّةُ الإطلاق · ح-٥٣) ‏المستخلصُ لعميلٍ مسجَّلٍ يُخلَّص — وما لم يُعتمد يقول ذلك.
+        string? ClearanceNotice = null);
 
     public static byte[] Generate(PrintBranding branding, BillingPrintData data)
     {
@@ -42,6 +44,11 @@ public static class ProgressBillingPdfGenerator
 
                 page.Content().PaddingVertical(12).Column(col =>
                 {
+                    // ‏(ح-٥٣) **التنبيهُ أوّلَ الصفحة** — بالصندوق نفسِه الذي تحمله الفاتورة.
+                    if (!string.IsNullOrWhiteSpace(data.ClearanceNotice))
+                        col.Item().PaddingBottom(10).Element(c =>
+                            SalesInvoicePdfGenerator.ClearanceNoticeBox(c, data.ClearanceNotice));
+
                     col.Item().Row(row =>
                     {
                         row.RelativeItem().Text($"رقم: {PrintText.Code(data.BillingNumber)}");

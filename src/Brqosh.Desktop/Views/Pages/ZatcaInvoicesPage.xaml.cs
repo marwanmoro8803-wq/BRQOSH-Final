@@ -132,13 +132,17 @@ public partial class ZatcaInvoicesPage : UserControl
 
         await using var db = AppServices.CreateDb();
         var doc = await db.ZatcaEInvoiceDocuments.SingleAsync(d => d.Id == row.Id);
-        var path = !string.IsNullOrEmpty(doc.SignedXmlFilePath) && File.Exists(doc.SignedXmlFilePath)
-            ? doc.SignedXmlFilePath
-            : doc.XmlFilePath;
+        // ‏(جاهزيّةُ الإطلاق · ح-٥٣) **ما يُعرض ويُنسخ للمشتري هو المعتمدُ متى اعتُمد** — وكان
+        // ‏نسختَنا الموقَّعةَ أبداً. والمعتمدُ إن ضاع لا تحلّ نسختُنا محلَّه صامتةً.
+        var path = ZatcaHandOverCopy.XmlPathFor(doc);
 
-        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+        if (path is null)
         {
-            UiDialog.Show("ملف XML غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (doc.ComplianceStatus == ZatcaComplianceStatus.Cleared)
+                UiDialog.Show("النسخة المعتمدة من الهيئة غير موجودة على القرص — استعِدها قبل تسليمها للمشتري.",
+                    "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            else
+                UiDialog.Show("ملف XML غير موجود.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

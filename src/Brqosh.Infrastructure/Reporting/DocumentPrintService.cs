@@ -8,6 +8,7 @@ using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Retail;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Reporting;
@@ -43,16 +44,20 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == invoice.CustomerId, ct);
         var amounts = PrintedAmounts.Of(invoice.IsForeignCurrency, invoice.CurrencyCode, invoice.ExchangeRate,
             invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.Subtotal, invoice.VatAmount);
+        // ‏(ح-٥٣ · tax-zatca#9) **الرمزُ المطبوعُ يختاره قارئٌ واحد**: المعتمدُ من الهيئة، أو
+        // ‏رمزُنا حيث هو النافذ، أو لا رمزَ وتنبيهٌ — وكان رمزُنا أبداً، اعتُمدت أم لم تُعتمد.
+        var mark = ZatcaHandOverCopy.MarkFor(zatca,
+            () => Phase1QrFallback(company, invoice.InvoiceDate, invoice.PostedAtUtc, amounts.Total, amounts.Vat));
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: customerName,
             PartyVatNumber: customer.VatRegistrationNumber,
             PartyAddress: customer.Address,
-            QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, invoice.InvoiceDate, invoice.PostedAtUtc, amounts.Total, amounts.Vat),
+            QrTlvBase64: mark.QrTlvBase64,
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString(),
-            Currency: amounts.Currency);
+            Currency: amounts.Currency,
+            ClearanceNotice: mark.ClearanceNotice);
 
         return new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
@@ -128,6 +133,9 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
         // ‏(ح-٤٣) **رقمُ الفاتورة التي يُصحّحها** — قراءةٌ تتجاوز المرشّحات: المستندُ تاريخيّ.
         var original = await OriginalSalesInvoiceNumberAsync(note.OriginalInvoiceId, ct);
+        // ‏(ح-٥٣) الإشعارُ لفاتورةٍ ضريبيّةٍ يُخلَّص كذلك — فرمزُه من القارئ الواحد.
+        var mark = ZatcaHandOverCopy.MarkFor(zatca,
+            () => Phase1QrFallback(company, note.NoteDate, note.PostedAtUtc, amounts.Total, amounts.Vat));
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             PrintDocumentKind.CreditNote,
             PartyName: customer.NameAr,
@@ -135,13 +143,13 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             // ‏بلا رقمه الضريبيّ ولا عنوانه، والفاتورةُ في الملفّ نفسِه تمرّرهما.
             PartyVatNumber: customer.VatRegistrationNumber,
             PartyAddress: customer.Address,
-            QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, note.NoteDate, note.PostedAtUtc, amounts.Total, amounts.Vat),
+            QrTlvBase64: mark.QrTlvBase64,
             Icv: zatca?.Icv,
             ComplianceStatus: zatca?.ComplianceStatus.ToString(),
             Currency: amounts.Currency,
             ReferenceDocumentNumber: original,
-            ReasonAr: note.Reason);
+            ReasonAr: note.Reason,
+            ClearanceNotice: mark.ClearanceNotice);
 
         return new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
@@ -238,15 +246,18 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         };
 
         var branding = PrintBranding.FromCompany(company);
+        // ‏(ح-٥٣) وبيعُ الأصل لمشترٍ مسجَّلٍ فاتورةٌ ضريبيّةٌ تُخلَّص — فرمزُه من القارئ الواحد.
+        var mark = ZatcaHandOverCopy.MarkFor(zatca,
+            () => Phase1QrFallback(company, invoiceDate, null, proceeds + vat, vat));
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             zatca?.TransmissionMode == ZatcaTransmissionMode.Reporting
                 ? PrintDocumentKind.SimplifiedSalesInvoice
                 : PrintDocumentKind.StandardSalesInvoice,
             PartyName: buyerName,
-            QrTlvBase64: zatca?.QrTlvBase64
-                         ?? Phase1QrFallback(company, invoiceDate, null, proceeds + vat, vat),
+            QrTlvBase64: mark.QrTlvBase64,
             Icv: zatca?.Icv,
-            ComplianceStatus: zatca?.ComplianceStatus.ToString());
+            ComplianceStatus: zatca?.ComplianceStatus.ToString(),
+            ClearanceNotice: mark.ClearanceNotice);
 
         var pdf = SalesInvoicePdfGenerator.Generate(
             branding, invoiceNumber, invoiceDate, lines, proceeds, vat, proceeds + vat, options);
@@ -366,17 +377,21 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                     $"نوعُ المستند {doc.DocumentType} ليس مستندَ إلغاء.");
         }
 
+        // ‏(ح-٥٣) **ورمزُ الإلغاء المعتمدُ رمزُ الهيئة** — وهويّتُه هو لا مصدرِه (ح-١٩) باقية:
+        // ‏المستندُ الممرَّرُ مستندُ الإلغاء نفسُه. ولا بديلَ من الطور الأوّل: المستندُ موجودٌ أبداً.
+        var mark = ZatcaHandOverCopy.MarkFor(doc, () => null);
         var options = new SalesInvoicePdfGenerator.InvoicePrintOptions(
             kind,
             PartyName: partyName,
             PartyVatNumber: party.VatRegistrationNumber,
             PartyAddress: party.Address,
-            QrTlvBase64: doc.QrTlvBase64,
+            QrTlvBase64: mark.QrTlvBase64,
             Icv: doc.Icv,
             ComplianceStatus: doc.ComplianceStatus.ToString(),
             NotesAr: notes,
             Currency: amounts.Currency,
-            ReferenceDocumentNumber: reference);
+            ReferenceDocumentNumber: reference,
+            ClearanceNotice: mark.ClearanceNotice);
 
         return (new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),

@@ -668,6 +668,7 @@ public static partial class UiBilingualRegistry
         ["النزيل *"] = "Guest *",
         ["النسب تتغير بقرار الهيئة — والمنشأة تملكها لا البرنامج"] = "Rates change by authority decision — the establishment owns them, not the software",
         ["النسخ الاحتياطي والاستعادة"] = "Backup & Restore",
+        ["النسخة المعتمدة من الهيئة غير موجودة على القرص — استعِدها قبل تسليمها للمشتري."] = "The copy cleared by the authority is missing from disk — restore it before handing it to the buyer.",
         ["النهاية"] = "End",
         ["النوع"] = "Type",
         ["النوع *"] = "Type",

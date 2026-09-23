@@ -231,6 +231,11 @@ public class ForeignDocumentsPrintInOneCurrencyTests : IDisposable
         }
         var doc = await _db.ZatcaEInvoiceDocuments.SingleAsync(
             d => d.DocumentType == ZatcaDocumentType.InvoiceCancel && d.SourceDocumentId == invoice.Id);
+        // ‏(ح-٥٣) **والإرسالُ الذي يليه في المسار الحقيقيّ** (`SalesInvoiceCancellationService`) —
+        // ‏في المحاكاة يصير «محاكاةً محلّيّة» فيُطبع برمزه. وكان الاختبارُ يطبع مستندَ تخليصٍ
+        // ‏«جاهزاً للاعتماد» برمز، **وهو بعينه ما يمنعه ح-٥٣**: تجاوزَ الإرسالَ فحرس العطل.
+        await ZatcaAutoSubmissionHelper.TrySubmitDocumentAsync(_db, _companyId, doc);
+        Assert.Equal(ZatcaComplianceStatus.SimulatedLocally, doc.ComplianceStatus);
 
         var (request, _) = await Print().ZatcaCancellationRequestAsync(_companyId, doc.Id);
         var figures = SalesInvoicePdfGenerator.Figures(request);
