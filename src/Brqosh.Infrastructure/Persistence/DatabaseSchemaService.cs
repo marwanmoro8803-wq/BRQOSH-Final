@@ -93,6 +93,10 @@ public class DatabaseSchemaService(BrqoshDbContext db)
         }
         else if (historyExists && appliedCount > 0)
         {
+            // ‏(ح-٥١) **خارج الـ`try` عمداً** — فالتقاطُ `InvalidOperationException` أدناه كان
+            // ‏سيبتلع الرفضَ ويُكمل بالمُرقِّع، وهو عينُ الإقلاع الصامت الذي يُمنع هنا.
+            await EnsureNotNewerThanThisBuildAsync(ct);
+
             try
             {
                 await db.Database.MigrateAsync(ct);
@@ -112,6 +116,40 @@ public class DatabaseSchemaService(BrqoshDbContext db)
         }
 
         await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-٥١ · <c>data-upgrade-performance#7</c>) <b>محطّةٌ بإصدارٍ أقدمَ لا تعمل على
+    /// قاعدةٍ رقّاها إصدارٌ أحدث.</b>
+    ///
+    /// <para>‏المحطّاتُ تتشارك قاعدةً واحدة، <b>و<c>MigrateAsync</c> يتجاهل هجرةً مسجَّلةً لا يعرفها</b> —
+    /// فيمضي الإقلاعُ صامتاً والإصدارُ الأقدمُ يكتب بلا ما أُضيف بعده من أعمدةٍ وقواعد. <b>فالرفضُ عند
+    /// الإقلاع برسالةٍ تقول ما يُفعل</b>، وسطحُ المكتب يعرضها ويُغلق (<c>App.OnStartup</c>).</para>
+    ///
+    /// <para>‏<b>والحدُّ المعلَن:</b> قاعدةٌ أُنشئت قبل سجلّ الهجرات (مسارُ المُرقِّع وحدَه، <c>appliedCount == 0</c>)
+    /// لا تاريخَ فيها يُقارَن — فلا يبلغها هذا الحارس.</para>
+    /// </summary>
+    private async Task EnsureNotNewerThanThisBuildAsync(CancellationToken ct)
+    {
+        var applied = await db.Database.GetAppliedMigrationsAsync(ct);
+        var unknown = MigrationsUnknownToThisBuild(applied, db.Database.GetMigrations());
+        if (unknown.Count == 0)
+            return;
+
+        throw new InvalidOperationException(
+            $"قاعدةُ البيانات رُقّيت بإصدارٍ أحدثَ من هذا البرنامج — فيها {unknown.Count} هجرةً لا يعرفها "
+            + $"(آخرُها «{unknown[^1]}»). حدِّث البرنامج على هذه المحطّة قبل تشغيله: الإصدارُ الأقدمُ يكتب "
+            + "بلا الأعمدة والقواعد التي أُضيفت بعده.");
+    }
+
+    /// <summary>‏الهجراتُ المسجَّلةُ في القاعدة ولا يعرفها هذا البناء — مرتَّبةً، فآخرُها أحدثُها.</summary>
+    internal static IReadOnlyList<string> MigrationsUnknownToThisBuild(
+        IEnumerable<string> applied, IEnumerable<string> known)
+    {
+        var knownSet = new HashSet<string>(known, StringComparer.Ordinal);
+        return applied.Where(m => !knownSet.Contains(m))
+            .OrderBy(m => m, StringComparer.Ordinal)
+            .ToList();
     }
 
     public static bool IsIgnorableSchemaConflict(Exception ex)
