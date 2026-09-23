@@ -45,13 +45,16 @@ public class ConsolidatedBalanceSheetQuery(BrqoshDbContext db, ExchangeRateServi
         var liabilities = new Dictionary<string, (string NameAr, decimal Amount, HashSet<long> Companies)>(StringComparer.OrdinalIgnoreCase);
         var equity = new Dictionary<string, (string NameAr, decimal Amount, HashSet<long> Companies)>(StringComparer.OrdinalIgnoreCase);
 
-        decimal consolidatedCurrentYearEarnings = 0m;
+        decimal consolidatedUnclosedEarnings = 0m;
+        // ‏(ح-٤٥) هل تُرجِم شيءٌ أصلاً؟ — فالفرقُ لا يكون «احتياطيَ ترجمة» إلّا حيث وقعت ترجمة.
+        var anyTranslation = false;
 
         foreach (var company in companies)
         {
             var closingRate = await ConsolidatedFxRateResolver.ResolveAsync(
                 rateService, company, group.ReportingCurrencyCode, asOfDate, null,
                 FxRateKind.Closing, fxRatesFromFunctionalToReporting, ct);
+            anyTranslation |= closingRate != 1m;
 
             var bs = await new BalanceSheetQuery(db).ExecuteAsync(company.Id, asOfDate);
 
@@ -62,12 +65,10 @@ public class ConsolidatedBalanceSheetQuery(BrqoshDbContext db, ExchangeRateServi
             foreach (var row in bs.Equity.Where(e => e.AccountCode != "3999"))
                 Accumulate(equity, row, closingRate, company.Id);
 
-            var yearStart = new DateOnly(asOfDate.Year, 1, 1);
-            var pnl = await new IncomeStatementQuery(db).ExecuteAsync(company.Id, yearStart, asOfDate);
-            var avgRate = await ConsolidatedFxRateResolver.ResolveAsync(
-                rateService, company, group.ReportingCurrencyCode, asOfDate, yearStart,
-                FxRateKind.Average, fxRatesFromFunctionalToReporting, ct);
-            consolidatedCurrentYearEarnings += FxConversion.Convert(pnl.NetIncome, avgRate);
+            var (earnings, translated) = await UnclosedEarningsAsync(
+                company, group.ReportingCurrencyCode, asOfDate, fxRatesFromFunctionalToReporting, ct);
+            consolidatedUnclosedEarnings += earnings;
+            anyTranslation |= translated;
         }
 
         var eliminations = await IntercompanyEliminationHelper.ComputeByAccountAsync(
@@ -77,19 +78,29 @@ public class ConsolidatedBalanceSheetQuery(BrqoshDbContext db, ExchangeRateServi
         ApplyBalanceSheetEliminations(liabilities, eliminations, AccountType.Liability);
         ApplyBalanceSheetEliminations(equity, eliminations, AccountType.Equity);
 
-        if (consolidatedCurrentYearEarnings != 0)
+        if (consolidatedUnclosedEarnings != 0)
         {
             if (!equity.TryGetValue("3999", out var cy))
-                cy = ("أرباح العام الجاري (موحّدة)", 0m, []);
+                cy = ("أرباح غير مقفلة (موحّدة)", 0m, []);
             cy.Companies.UnionWith(companies.Select(c => c.Id));
-            equity["3999"] = (cy.NameAr, cy.Amount + consolidatedCurrentYearEarnings, cy.Companies);
+            equity["3999"] = (cy.NameAr, cy.Amount + consolidatedUnclosedEarnings, cy.Companies);
         }
 
         var assetTotal = assets.Values.Sum(v => v.Amount);
         var liabilityTotal = liabilities.Values.Sum(v => v.Amount);
         var equityTotal = equity.Values.Sum(v => v.Amount);
         var ctaPlug = assetTotal - liabilityTotal - equityTotal;
-        if (ctaPlug != 0)
+
+        // (جاهزيّةُ الإطلاق · ح-٤٥) ‏**والفرقُ «احتياطيُ ترجمة» حيث وقعت ترجمةٌ فقط.**
+        //
+        // ‏بطريقة السعر الجاري فرقُ الترجمة هو الموازنُ بتعريفه — الأصولُ بسعر الإقفال والأرباحُ
+        // ‏بالمتوسّط — **فيبقى حيث تُرجِمت شركةٌ واحدةٌ على الأقلّ**. **أمّا مجموعةٌ لا ترجمةَ فيها
+        // ‏فكلُّ فرقٍ خطأُ توحيدٍ لا ترجمة** — قيدٌ بين شركتين سجّلته إحداهما، مثلاً — **فلا يُدفن
+        // ‏في 3106 ليقول التقريرُ «متوازن»**، بل يبقى ظاهراً: «✗ غير متوازن» على الشاشة.
+        //
+        // ‏**والحدُّ المعلَن:** في مجموعةٍ مُترجَمةٍ يبقى الخطأُ الحقيقيُّ داخل 3106 مع الترجمة —
+        // ‏فصلُهما يحتاج حقوقَ الملكية بأسعارها التاريخيّة، **وهي تُترجَم هنا بسعر الإقفال**.
+        if (ctaPlug != 0 && anyTranslation)
         {
             if (!equity.TryGetValue(SaudiChartOfAccounts.SystemCodes.TranslationReserve, out var cta))
                 cta = ("احتياطي ترجمة العملات (موحّد)", 0m, []);
@@ -105,6 +116,51 @@ public class ConsolidatedBalanceSheetQuery(BrqoshDbContext db, ExchangeRateServi
             ToRows(assets, AccountType.Asset),
             ToRows(liabilities, AccountType.Liability),
             ToRows(equity, AccountType.Equity));
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤٥ · accounting-core#5) <b>أرباحُ الشركة غير المقفلة منذ التأسيس —
+    /// كلُّ سنةٍ بمتوسّط سنتِها.</b>
+    ///
+    /// <para><b>وكان الموحَّدُ يأخذ السنةَ التقويميّةَ الجاريةَ وحدَها</b> ويُسقط 3999 المفرد
+    /// (التراكميَّ منذ التأسيس)، <b>فيُرحَّل ربحُ كلّ سنةٍ سابقةٍ لم تُقفل إلى «احتياطي ترجمة»</b>
+    /// — ولو كانت المجموعةُ كلُّها بالريال. <b>وهو عينُ ما أصلحه CEEF-201 (ع-R1) في المركز
+    /// المفرد</b> ولم يبلغ الموحَّد.</para>
+    ///
+    /// <para><b>و<c>excludeYearEndClosing: false</c> كما في المركز المفرد حرفاً</b>: قيدُ الإقفال
+    /// يُصفّر السنةَ المقفلة فتساهم بصفر، <b>وأرباحُها في حساب حقوق الملكية المجموع أعلاه</b> —
+    /// فلا ازدواج. <b>وكان الافتراضيُّ يستثني قيدَ الإقفال</b>، فسنةٌ جاريةٌ أُقفلت في آخر يومها
+    /// تُحسب مرّتين: في 3999 وفي الحساب الذي نُقلت إليه.</para>
+    /// </summary>
+    private async Task<(decimal Earnings, bool Translated)> UnclosedEarningsAsync(
+        Brqosh.Domain.Companies.Company company, string reportingCurrency, DateOnly asOfDate,
+        IReadOnlyDictionary<long, decimal>? manualRates, CancellationToken ct)
+    {
+        var first = await db.JournalEntries
+            .Where(e => e.CompanyId == company.Id && e.EntryDate <= asOfDate)
+            .MinAsync(e => (DateOnly?)e.EntryDate, ct);
+        if (first is null)
+            return (0m, false);
+
+        var total = 0m;
+        var translated = false;
+        for (var year = first.Value.Year; year <= asOfDate.Year; year++)
+        {
+            var from = new DateOnly(year, 1, 1);
+            var to = year == asOfDate.Year ? asOfDate : new DateOnly(year, 12, 31);
+            var pnl = await new IncomeStatementQuery(db)
+                .ExecuteAsync(company.Id, from, to, excludeYearEndClosing: false);
+            if (pnl.NetIncome == 0m)
+                continue;
+
+            var average = await ConsolidatedFxRateResolver.ResolveAsync(
+                rateService, company, reportingCurrency, to, from,
+                FxRateKind.Average, manualRates, ct);
+            translated |= average != 1m;
+            total += FxConversion.Convert(pnl.NetIncome, average);
+        }
+
+        return (total, translated);
     }
 
     private static void ApplyBalanceSheetEliminations(
