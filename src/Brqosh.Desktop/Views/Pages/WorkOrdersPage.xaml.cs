@@ -130,16 +130,34 @@ public partial class WorkOrdersPage : UserControl
             UiDialog.Show("لا يوجد قيد إكمال مرتبط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٥٥ · <c>manufacturing#2</c>) <b>الأمرُ المكتملُ يُلغى من الصفحة — وكانت ترفضه.</b>
+    ///
+    /// <para><c>WorkOrderService.CancelAsync</c> يعكس المكتملَ منذ أمد: قيدا الإكمال، وحركاتُ المخزون
+    /// بطبقاتها بأعيانها (ح-٣٠)، <b>ويرفض إن صُرف شيءٌ من إنتاجه</b>. <b>والصفحةُ كانت تمنعه</b> بـ«اختر
+    /// أمر إنتاج مسودة أو صادراً» — فكمّيّةُ إنتاجٍ خاطئةٌ دائمة، لا تُصحَّح إلّا بقيدٍ يدويٍّ يُفسد الطبقات.
+    /// <b>والتصحيحُ الآن: يُلغى المكتملُ فتُعكس آثارُه، ثمّ يُصدَر أمرٌ بالكمّيّة الصحيحة.</b></para>
+    /// </summary>
+    internal static bool CanCancel(WorkOrderStatus status) => status is not WorkOrderStatus.Cancelled;
+
+    /// <summary>(ح-٥٥) <b>إلغاءُ المكتمل عكسٌ لمرحَّل</b> — فيُسأل عنه بتأكيدٍ يقول ذلك.</summary>
+    internal static bool ReversesPostings(WorkOrderStatus status) => status is WorkOrderStatus.Completed;
+
     private async void OnCancel(object sender, RoutedEventArgs e)
     {
-        if (Grid.SelectedItem is not OrderRow row ||
-            row.Status is WorkOrderStatus.Completed or WorkOrderStatus.Cancelled)
+        if (Grid.SelectedItem is not OrderRow row || !CanCancel(row.Status))
         {
-            UiDialog.Show("اختر أمر إنتاج مسودة أو صادراً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            UiDialog.Show("اختر أمر إنتاج لم يُلغَ.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (UiDialog.Show($"إلغاء أمر الإنتاج {row.OrderNumber ?? row.Id.ToString()}؟", "BRQOSH",
+        if (ReversesPostings(row.Status))
+        {
+            if (UiDialog.Show("أمر الإنتاج مكتمل — سيُعكس قيدا إكماله وحركات مخزونه بتاريخ اليوم، ويُرفض العكس إن صُرف شيء من إنتاجه. ثم أصدِر أمراً بالكمية الصحيحة. هل تريد المتابعة؟",
+                    "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+        }
+        else if (UiDialog.Show($"إلغاء أمر الإنتاج {row.OrderNumber ?? row.Id.ToString()}؟", "BRQOSH",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
