@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 33 بنداً ✅ و7 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 34 بنداً ✅ و7 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -39,8 +39,11 @@
 > **وتصحيحٌ يُسجَّل**: رسالةُ ح-٥٤ (`b0db030`) تقول إنّ التدقيق لم يُسمِّ ما أغلقه — **وقد سمّاه
 > `ui-ux-i18n-printing#1`** بجزءٍ من سطره (الحالةُ بالاسم الإنجليزيّ على المستخلص)؛ ثمّ أغلق ح-٥٦
 > بقيّةَ السطر. **والرسالةُ المُودَعةُ لا تُعاد كتابتُها — فالتصحيحُ هنا.**
+>
+> **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
+> الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وستّةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٦) — **بعضُها خارج هذا الحصر**،
+**وسبعةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٧) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -201,7 +204,7 @@
 - ✅ **`ui-ux-i18n-printing#1`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Progress-billing PDF (the construction tax invoice) is not titled 'فاتورة ضريبية', has no buyer VAT number or address, hard-codes 15%, and prints the ZATCA status as a raw English enum — ح-٥٤ `b0db030` (الحالةُ بالعربيّة) وح-٥٦ `5625e53` — **كلُّ أجزائه قيست فصحّت**: **العنوانُ «فاتورة ضريبية — مستخلص أعمال» أو المبسّطةُ بما أُرسل للهيئة**، **ورقمُ المشتري الضريبيُّ وعنوانُه**، **ورأسُ الضريبة من النسبة التي حُسبت بها**؛ والعملةُ ريالٌ أبداً — المستخلصُ بلا عملة
 - ✅ **`ui-ux-i18n-printing#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed sales invoice hides line and document discounts, so its columns do not add up to its totals — ح-٤٤ `b9a24d9` — **وكانت النسبةُ تُطبع «14.25%» مع خصم المستند**
 - ✅ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س — ح-٤٢ `27af80a` — **وهو عينُ `tax-zatca#14` بعدسةٍ ثانية**
-- ☐ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن'
+- ✅ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن' — ح-١٥ `0aa2510` (النوعُ بالاسم) وح-٥٧ `37eb075` — **الحالةُ من `NameAr()` فالمحاكاةُ محاكاةٌ لا «مُولَّد»**، **والرسالةُ بعد الإرسال من الحالة التي عاد بها المستند** — المقبولُ عند الهيئة وحدَه نجاح؛ **والملخّصُ يعدّ المحاكاةَ وحدَها**
 - ☐ **`ui-ux-i18n-printing#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Pressing Enter in 14 dialogs immediately posts an unchangeable document, with the first customer or supplier preselected and no confirmation
 - ☐ **`ui-ux-i18n-printing#6`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sales invoice entry screen shows totals with 15% VAT on every line, including zero-rated and exempt lines
 - ☐ **`ui-ux-i18n-printing#7`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>'محاسبة عامة' (General) and real-estate profiles have no supplier, purchase-invoice or product screens, so the payment-voucher screen they do show cannot be used, and the profile cannot be changed later
