@@ -21,7 +21,9 @@ public static class SalesInvoicePdfGenerator
         decimal Qty,
         decimal Price,
         decimal Total,
-        VatCategory Category = VatCategory.Standard);
+        VatCategory Category = VatCategory.Standard,
+        // (جاهزيّةُ الإطلاق · ح-٤٤) ‏خصمُ السطر مبلغاً — `Qty × Price − Discount = Total`.
+        decimal Discount = 0m);
 
     public record InvoicePrintOptions(
         PrintDocumentKind Kind = PrintDocumentKind.SimplifiedSalesInvoice,
@@ -74,6 +76,10 @@ public static class SalesInvoicePdfGenerator
         decimal Subtotal,
         decimal Vat,
         decimal Total,
+        // (جاهزيّةُ الإطلاق · ح-٤٤) ‏**خصمُ المستند — إلزاميٌّ بلا افتراضيّ، ولا يُستنتَج.**
+        // ‏استنتاجُه `Σ السطور − الوعاء` كان سيُخرج قبل ح-٤٢ «خصماً» قدرُه −٢٬٧٥٠ لفاتورةٍ
+        // ‏دولاريّة — **رقمٌ حسنُ الشكل مصنوعٌ من خلط عملتين**. فيُسمّيه كلُّ مُنتِج.
+        decimal DocumentDiscount,
         InvoicePrintOptions Options);
 
     /// <summary>
@@ -88,7 +94,17 @@ public static class SalesInvoicePdfGenerator
         decimal Subtotal,
         decimal Vat,
         decimal Total,
-        CurrencyDisclosure? Sar);
+        CurrencyDisclosure? Sar,
+        // (ح-٤٤) ‏خصمُ كلّ سطرٍ (خصمُه + حصّتُه من خصم المستند) ووعاؤه بعدهما.
+        IReadOnlyList<decimal> LineDiscounts,
+        IReadOnlyList<decimal> LineTaxables,
+        decimal GrossTotal,
+        decimal DiscountTotal,
+        decimal DocumentDiscount)
+    {
+        /// <summary>(ح-٤٤) يُرسَم عمودُ الخصم وصفوفُه متى وُجد خصمٌ — وإلّا فالمطبوعةُ كما كانت.</summary>
+        public bool HasDiscount => DiscountTotal != 0m;
+    }
 
     /// <summary>
     /// (ح-٤٢) أرقامُ الصفحة من الطلب. <b>والسطورُ والإجماليّاتُ بعملةٍ واحدة</b> — فتوزيعُ
@@ -104,26 +120,64 @@ public static class SalesInvoicePdfGenerator
         // أساسيّ و500 صفريّ بضريبة 150.00 كانت تُخرِج 150/1500 = «10%» — نسبةٌ لا وجود
         // لها في أي نظام ضريبيّ، تُطبع في رأس عمود الضريبة على مستند يراه المدقّق.
         var mixed = lines.Select(l => l.Category).Distinct().Count() > 1;
-        var standardBase = lines.Where(l => l.Category == VatCategory.Standard).Sum(l => l.Total);
+
+        // (جاهزيّةُ الإطلاق · ح-٤٤ · ui-ux-i18n-printing#2) ‏**خصمُ المستند يُوزَّع على السطور
+        // ‏للعرض**، فكلُّ عمودٍ يجمع إلى إجماليّه: `الكمّيّة × السعر − الخصم = الخاضع`،
+        // ‏و`Σ الخاضع = الوعاء`، و`Σ الضريبة = الضريبة`، و`Σ الإجمالي = الإجمالي`. **وكان
+        // ‏عمودُ الإجمالي يزيد على الإجماليّ المطبوع بقدر خصم المستند، والخصمُ لا يظهر**.
+        var shares = AllocateDocumentDiscount(lines, r.DocumentDiscount);
+        var taxables = lines.Select((l, i) => l.Total - shares[i]).ToList();
+        var lineDiscounts = lines.Select((l, i) => l.Discount + shares[i]).ToList();
+
+        // ‏(ح-٤٤) **والنسبةُ من الوعاء الذي حُسبت عليه الضريبة — بعد خصم المستند.** وكانت
+        // ‏تُقسَم على الوعاء قبله فتُطبع «14.25%» لفاتورةٍ بخمسة عشر.
+        var standardBase = lines.Select((l, i) => (l, i))
+            .Where(x => x.l.Category == VatCategory.Standard).Sum(x => taxables[x.i]);
         var vatRateLabel = PrintText.Ltr(standardBase == 0m
             ? "%"
             : (Math.Round(r.Vat / standardBase * 100m, 2, MidpointRounding.AwayFromZero)).ToString("0.##") + "%");
         // مستند مختلط الفئات: لا نسبةَ واحدة تصفه، فتُعلن الفئة على كل سطر بدلاً من الرأس.
         var vatColumnHeader = mixed ? "الضريبة" : $"ضريبة {vatRateLabel}";
 
-        var lineVats = AllocateLineVat(lines, r.Subtotal, r.Vat);
-        var lineTotals = lines.Select((l, i) => l.Total + lineVats[i]).ToList();
+        var lineVats = AllocateLineVat(
+            [.. lines.Select((l, i) => l with { Total = taxables[i] })], r.Subtotal, r.Vat);
+        var lineTotals = taxables.Select((taxable, i) => taxable + lineVats[i]).ToList();
 
         var currency = r.Options.Currency;
         return new PrintFigures(
             vatColumnHeader, vatRateLabel, lineVats, lineTotals,
             currency is null ? "ر.س" : currency.Code,
-            r.Subtotal, r.Vat, r.Total, currency);
+            r.Subtotal, r.Vat, r.Total, currency,
+            lineDiscounts, taxables,
+            GrossTotal: lines.Sum(l => l.Total + l.Discount),
+            DiscountTotal: lineDiscounts.Sum(),
+            DocumentDiscount: r.DocumentDiscount);
+    }
+
+    /// <summary>
+    /// (ح-٤٤) حصّةُ كلّ سطرٍ من خصم المستند — بنسبة صافيه، <b>والباقي على أكبر سطر</b>
+    /// (مذهبُ <see cref="AllocateLineVat"/> نفسُه): فمجموعُ الحصص يساوي الخصمَ حرفاً.
+    /// </summary>
+    internal static IReadOnlyList<decimal> AllocateDocumentDiscount(IReadOnlyList<Line> lines, decimal discount)
+    {
+        var shares = new decimal[lines.Count];
+        var net = lines.Sum(l => l.Total);
+        if (discount == 0m || lines.Count == 0 || net == 0m)
+            return shares;
+
+        for (var i = 0; i < lines.Count; i++)
+            shares[i] = Math.Round(discount * lines[i].Total / net, 2, MidpointRounding.AwayFromZero);
+
+        var largest = 0;
+        for (var i = 1; i < lines.Count; i++)
+            if (Math.Abs(lines[i].Total) > Math.Abs(lines[largest].Total))
+                largest = i;
+        shares[largest] += discount - shares.Sum();
+        return shares;
     }
 
     /// <summary>(ح-٤٢) يرسم الطلبَ — من <see cref="Figures"/> وحدَها.</summary>
-    public static byte[] Generate(Request r) =>
-        Generate(r.Branding, r.DocumentNumber, r.Date, r.Lines, r.Subtotal, r.Vat, r.Total, r.Options);
+    public static byte[] Generate(Request r) => Render(r, Figures(r));
 
     public static byte[] Generate(
         string companyName, string vatNumber, string invoiceNumber, DateOnly date,
@@ -149,14 +203,22 @@ public static class SalesInvoicePdfGenerator
         decimal total,
         InvoicePrintOptions? options = null)
     {
-        options ??= new InvoicePrintOptions();
+        // ‏(ح-٤٤) المدخلُ القديمُ بلا خصمِ مستند — طباعاتُ المستندات الخمسة تمرّ من `Request`.
+        var request = new Request(branding, documentNumber, date, lines, subtotal, vat, total, 0m,
+            options ?? new InvoicePrintOptions());
+        return Render(request, Figures(request));
+    }
+
+    /// <summary>(ح-٤٢ · ح-٤٤) يرسم الصفحةَ من أرقامها — <b>ولا رقمَ يُحسب هنا</b>.</summary>
+    private static byte[] Render(Request request, PrintFigures figures)
+    {
+        var (branding, documentNumber, date, lines, _, _, _, _, options) = request;
         var title = TitleFor(options.Kind);
         var partyLabel = options.PartyLabel ?? PartyLabelFor(options.Kind);
         var qrPng = ZatcaQrImageHelper.TryCreatePng(options.QrTlvBase64);
         var compliance = BuildComplianceLine(options);
 
         // (ح-٤٢) ‏**الأرقامُ من `Figures` وحدَها** — فما يُقاس هو ما يُرسَم.
-        var figures = Figures(new Request(branding, documentNumber, date, lines, subtotal, vat, total, options));
         var mixed = lines.Select(l => l.Category).Distinct().Count() > 1;
         var vatColumnHeader = figures.VatColumnHeader;
         var vatRateLabel = figures.VatRateLabel;
@@ -215,6 +277,8 @@ public static class SalesInvoicePdfGenerator
                             c.RelativeColumn(4);       // الصنف
                             c.RelativeColumn(1.1f);    // الكمية
                             c.RelativeColumn(1.4f);    // السعر
+                            if (figures.HasDiscount)
+                                c.RelativeColumn(1.3f);  // الخصم (ح-٤٤)
                             c.RelativeColumn(1.6f);    // الخاضع للضريبة
                             c.RelativeColumn(1.4f);    // الضريبة
                             c.RelativeColumn(1.6f);    // الإجمالي
@@ -226,6 +290,8 @@ public static class SalesInvoicePdfGenerator
                             HeaderCell(h.Cell(), "الصنف");
                             HeaderCell(h.Cell(), "الكمية");
                             HeaderCell(h.Cell(), "السعر");
+                            if (figures.HasDiscount)
+                                HeaderCell(h.Cell(), "الخصم");
                             HeaderCell(h.Cell(), "الخاضع للضريبة");
                             HeaderCell(h.Cell(), vatColumnHeader);
                             HeaderCell(h.Cell(), "الإجمالي");
@@ -236,6 +302,8 @@ public static class SalesInvoicePdfGenerator
                         {
                             var lineVat = figures.LineVats[index];
                             var lineTotal = figures.LineTotals[index];
+                            var lineDiscount = figures.LineDiscounts[index];
+                            var lineTaxable = figures.LineTaxables[index];
                             index++;
                             var shade = index % 2 == 0;
                             // على مستند مختلط الفئات تُعلَن فئة كل سطر بجوار مبلغ ضريبته —
@@ -249,7 +317,10 @@ public static class SalesInvoicePdfGenerator
                             BodyCell(table.Cell(), line.Description, shade);
                             BodyCell(table.Cell(), $"{line.Qty:N2}", shade, center: true);
                             BodyCell(table.Cell(), $"{line.Price:N2}", shade, center: true);
-                            BodyCell(table.Cell(), $"{line.Total:N2}", shade, center: true);
+                            // ‏(ح-٤٤) **الخصمُ يُطبع**، والخاضعُ بعده — `الكمّيّة × السعر − الخصم`.
+                            if (figures.HasDiscount)
+                                BodyCell(table.Cell(), $"{lineDiscount:N2}", shade, center: true);
+                            BodyCell(table.Cell(), $"{lineTaxable:N2}", shade, center: true);
                             BodyCell(table.Cell(), vatCell, shade, center: true);
                             BodyCell(table.Cell(), $"{lineTotal:N2}", shade, center: true);
                         }
@@ -285,6 +356,9 @@ public static class SalesInvoicePdfGenerator
                         row.ConstantItem(220).AlignTop().Column(side =>
                         {
                             side.Spacing(6);
+                            // ‏(ح-٤٤) **والخصمُ مُفصَحٌ عنه قبل الوعاء** — ومنه خصمُ المستند.
+                            if (figures.HasDiscount)
+                                side.Item().Element(c => DiscountBox(c, figures));
                             side.Item().Element(c => TotalsBox(c, figures.Subtotal, figures.Vat, figures.Total,
                                 vatRateLabel, figures.CurrencySuffix));
                             // ‏(ح-٤٢) **والريالُ إفصاحٌ مستقلٌّ لا عملةٌ ثانيةٌ في الجدول.**
@@ -427,6 +501,21 @@ public static class SalesInvoicePdfGenerator
             TotalRow(col, "الإجمالي قبل الضريبة", subtotal, false, suffix, first: true);
             TotalRow(col, $"ضريبة القيمة المضافة {vatRateLabel}", vat, false, suffix);
             TotalRow(col, "الإجمالي شامل الضريبة", total, true, suffix);
+        });
+    }
+
+    /// <summary>
+    /// (ح-٤٤) <b>الخصمُ مُفصَحاً</b>: الإجماليُّ قبله، ثمّ الخصمُ — ومنه خصمُ المستند متى وُجد.
+    /// <b>ويجمع إلى «الإجمالي قبل الضريبة» تحته</b>.
+    /// </summary>
+    private static void DiscountBox(IContainer container, PrintFigures f)
+    {
+        container.Border(0.8f).BorderColor(BorderColour).Column(col =>
+        {
+            TotalRow(col, "الإجمالي قبل الخصم", f.GrossTotal, false, f.CurrencySuffix, first: true);
+            TotalRow(col, "الخصم", -f.DiscountTotal, false, f.CurrencySuffix);
+            if (f.DocumentDiscount != 0m)
+                TotalRow(col, "منه خصمٌ على المستند", -f.DocumentDiscount, false, f.CurrencySuffix);
         });
     }
 

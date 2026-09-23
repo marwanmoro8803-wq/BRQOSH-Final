@@ -60,6 +60,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             invoice.InvoiceDate,
             LinesOf(invoice.Lines),
             amounts.Subtotal, amounts.Vat, amounts.Total,
+            invoice.DocumentDiscountAmount,
             options);
     }
 
@@ -91,6 +92,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             invoice.InvoiceDate,
             LinesOf(invoice.Lines),
             amounts.Subtotal, amounts.Vat, amounts.Total,
+            // ‏(ح-٤٤) فاتورةُ الشراء بلا خصمِ مستندٍ في النطاق — صفرٌ مُسمًّى لا افتراضيّ.
+            DocumentDiscount: 0m,
             new SalesInvoicePdfGenerator.InvoicePrintOptions(
                 PrintDocumentKind.PurchaseInvoice,
                 PartyName: supplier.NameAr,
@@ -146,6 +149,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             note.NoteDate,
             LinesOf(note.Lines),
             amounts.Subtotal, amounts.Vat, amounts.Total,
+            note.DocumentDiscountAmount,
             options);
     }
 
@@ -180,7 +184,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
 
     private static IReadOnlyList<SalesInvoicePdfGenerator.Line> LinesOf(IEnumerable<SalesInvoiceLine> lines) =>
         [.. lines.Select(l =>
-            new SalesInvoicePdfGenerator.Line(l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory))];
+            new SalesInvoicePdfGenerator.Line(
+                l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory, l.DiscountAmount))];
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-١٦) <b>فاتورةُ بيع الأصل الثابت مطبوعةً — يأخذها المشتري.</b>
@@ -292,6 +297,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
 
         var lines = new List<SalesInvoicePdfGenerator.Line>();
         PrintedAmounts amounts;
+        decimal documentDiscount;
         DateOnly date;
         string partyName, notes;
         // ‏(ح-٤٣) هويّةُ المشتري والمستندُ الأصليّ — مستندُ الإلغاء إشعارٌ ضريبيٌّ كغيره.
@@ -305,8 +311,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             {
                 var invoice = await db.SalesInvoices.SingleAsync(
                     i => i.CompanyId == companyId && i.Id == doc.SourceDocumentId, ct);
-                lines.AddRange(invoice.Lines.Select(l => new SalesInvoicePdfGenerator.Line(
-                    l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)));
+                lines.AddRange(LinesOf(invoice.Lines));
+                documentDiscount = invoice.DocumentDiscountAmount;
                 amounts = PrintedAmounts.Of(invoice.IsForeignCurrency, invoice.CurrencyCode, invoice.ExchangeRate,
                     invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.Subtotal, invoice.VatAmount);
                 date = invoice.CancelledAt ?? invoice.InvoiceDate;
@@ -324,8 +330,9 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                     b => b.CompanyId == companyId && b.Id == doc.SourceDocumentId, ct);
                 lines.Add(new SalesInvoicePdfGenerator.Line(
                     billing.PeriodDescription, 1m, billing.TaxableAmount, billing.TaxableAmount));
-                // ‏المستخلصُ بالريال بالبناء — لا عملةَ له.
+                // ‏المستخلصُ بالريال بالبناء — لا عملةَ له ولا خصمَ مستند.
                 amounts = new PrintedAmounts(billing.TaxableAmount, billing.VatAmount, null);
+                documentDiscount = 0m;
                 date = billing.CancelledAt ?? billing.BillingDate;
                 party = await db.Customers.IgnoreQueryFilters()
                     .SingleAsync(c => c.Id == billing.CustomerId, ct);
@@ -339,8 +346,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             {
                 var note = await db.CreditNotes.SingleAsync(
                     n => n.CompanyId == companyId && n.Id == doc.SourceDocumentId, ct);
-                lines.AddRange(note.Lines.Select(l => new SalesInvoicePdfGenerator.Line(
-                    l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory)));
+                lines.AddRange(LinesOf(note.Lines));
+                documentDiscount = note.DocumentDiscountAmount;
                 amounts = PrintedAmounts.Of(note.IsForeignCurrency, note.CurrencyCode, note.ExchangeRate,
                     note.ForeignSubtotal, note.ForeignVatAmount, note.Subtotal, note.VatAmount);
                 date = note.CancelledAt ?? note.NoteDate;
@@ -373,7 +380,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
 
         return (new SalesInvoicePdfGenerator.Request(
             PrintBranding.FromCompany(company),
-            doc.InvoiceNumber, date, lines, amounts.Subtotal, amounts.Vat, amounts.Total, options),
+            doc.InvoiceNumber, date, lines, amounts.Subtotal, amounts.Vat, amounts.Total,
+            documentDiscount, options),
             doc.DocumentType.ToString());
     }
 
@@ -413,6 +421,8 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             note.NoteDate,
             LinesOf(note.Lines),
             amounts.Subtotal, amounts.Vat, amounts.Total,
+            // ‏(ح-٤٤) الإشعارُ المدينُ بلا خصمِ مستندٍ في النطاق.
+            DocumentDiscount: 0m,
             new SalesInvoicePdfGenerator.InvoicePrintOptions(
                 PrintDocumentKind.PurchaseDebitNote,
                 PartyName: supplier.NameAr,
