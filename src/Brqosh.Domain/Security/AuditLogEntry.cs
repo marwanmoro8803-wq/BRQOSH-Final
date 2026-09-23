@@ -78,7 +78,7 @@ public class AuditLogEntry
     /// </summary>
     public string ComputeHash()
     {
-        var canonical = string.Join('',
+        var canonical = string.Join('\u001F',
             CompanyId.ToString(),
             Sequence.ToString(),
             Username,
