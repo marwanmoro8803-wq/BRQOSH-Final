@@ -8,7 +8,7 @@ namespace Brqosh.Api.Tests;
 /// (م-٤ · ن-١٦) <b>خمسةُ مساراتِ كتابةٍ كانت بلا حارسِ دورٍ إطلاقاً.</b>
 ///
 /// <para>عرفُ المستودع أن تفحص خدماتُ البنية الصلاحيّةَ بنفسها — ويُطبَّق في
-/// <c>FxClosingTranslationService:25</c> فعلاً. <b>لكنّ أربعاً من خمسِ خدماتٍ على مسارات
+/// <c>FxClosingTranslationService.TranslatePeriodAsync</c> فعلاً. <b>لكنّ أربعاً من خمسِ خدماتٍ على مسارات
 /// الكتابة لا تذكر <c>SecurityContext</c> إطلاقاً</b>، واثنتان تكتبان عبر <c>DbContext</c>
 /// مباشرةً في <c>Program.cs</c> بلا خدمةٍ أصلاً.</para>
 ///

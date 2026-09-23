@@ -120,7 +120,7 @@ public class ExchangeRateService(BrqoshDbContext db) : IExchangeRateService
         // ‏الواجهةُ ترفض بـ403 قبل بلوغ هذا السطر، **وهذا يُغطّي ما لا مسارَ له**: سطحُ
         // ‏المكتب يستدعي هذه الدالّةَ عبر `FxRateSyncService`، ومن يُضيف مستدعياً غداً
         // ‏لا يمرّ بحارس الواجهة. **وعرفُ المستودع أن تفحص الخدمةُ بنفسها** — يُطبَّق في
-        // ‏`FxClosingTranslationService:25` — وكان غائباً هنا كلّيّاً.
+        // ‏`FxClosingTranslationService.TranslatePeriodAsync` — وكان غائباً هنا كلّيّاً.
         SecurityContext.EnsureCanPostAccounting();
 
         var entity = ExchangeRate.Create(companyId, fromCurrency, toCurrency, effectiveDate, rate, source);

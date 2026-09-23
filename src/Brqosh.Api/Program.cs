@@ -447,10 +447,22 @@ app.MapPost("/api/v1/companies/{companyId:long}/fx-closing-translation", async (
     if (companyId <= 0) return Results.BadRequest(new { error = "companyId required" });
     var tenantReject = await RejectTenantCompanyAsync(db, companyId, ct);
     if (tenantReject is not null) return tenantReject;
-    var entry = await service.TranslatePeriodAsync(companyId, from, to, "api", ct);
-    return entry is null
+    // (جاهزيّةُ الإطلاق · ح-٤٦) ‏فرقُ الترجمة يُحسب ويُعاد ولا يُرحَّل — **IAS 21 يجعله في
+    // ‏القوائم المُترجَمة لا في دفاتر المنشأة**. و`posted` باقٍ في الردّ `false` دائماً كي لا
+    // ‏يقرأ عميلٌ قديمٌ غيابَه ترحيلاً.
+    var figure = await service.TranslatePeriodAsync(companyId, from, to, "api", ct);
+    return figure is null
         ? Results.Ok(new { posted = false, message = "no_translation_required" })
-        : Results.Ok(new { posted = true, entryId = entry.Id, entryNumber = entry.EntryNumber });
+        : Results.Ok(new
+        {
+            posted = false,
+            functionalCurrency = figure.FunctionalCurrency,
+            reportingCurrency = figure.ReportingCurrency,
+            netIncome = figure.NetIncome,
+            averageRate = figure.AverageRate,
+            closingRate = figure.ClosingRate,
+            cta = figure.Cta,
+        });
 });
 
 app.MapGet("/api/v1/billing-plans", async (IBillingPlanCatalog catalog, CancellationToken ct) =>

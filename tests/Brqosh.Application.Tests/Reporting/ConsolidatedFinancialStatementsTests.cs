@@ -62,37 +62,31 @@ public class ConsolidatedFinancialStatementsTests : IDisposable
         Assert.True(result.IsBalanced, $"A={result.TotalAssets} L+E={result.TotalLiabilitiesAndEquity}");
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٤٦) <b>كان هذا الاختبارُ يُثبت القيدَ نفسَه</b> — مدين 4107 / دائن 3106
+    /// في دفاتر التابعة — <b>أي يحرس العطل</b>. فصار يُثبت الحسابَ وحده: فرقُ الترجمة يُحسب بسعرَي
+    /// المتوسّط والإقفال <b>ويُعاد، ولا يدخل الدفاتر</b> (IAS 21).
+    /// </summary>
     [Fact]
-    public async Task FxClosingTranslation_posts_cta_for_rate_spread()
+    public async Task FxClosingTranslation_computes_the_cta_and_posts_nothing()
     {
-        var (groupId, companyId) = await SeedUsdGroupCompanyAsync();
+        var (_, companyId) = await SeedUsdGroupCompanyAsync();
         await PostCashSaleAsync(companyId, 100m);
         await _rates.RecordRateAsync(companyId, "USD", "SAR", new DateOnly(2026, 7, 1), 3.70m);
         await _rates.RecordRateAsync(companyId, "USD", "SAR", new DateOnly(2026, 7, 15), 3.70m);
         await _rates.RecordRateAsync(companyId, "USD", "SAR", new DateOnly(2026, 7, 31), 3.75m);
+        var entriesBefore = await _db.JournalEntries.CountAsync(e => e.CompanyId == companyId);
 
-        var entry = await new FxClosingTranslationService(_db, _rates).TranslatePeriodAsync(
+        var figure = await new FxClosingTranslationService(_db, _rates).TranslatePeriodAsync(
             companyId, new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31), "admin");
 
-        Assert.NotNull(entry);
-        Assert.Equal(JournalEntryStatus.Posted, entry!.Status);
+        Assert.NotNull(figure);
         var avg = await _rates.GetAverageRateAsync(
             companyId, "USD", "SAR", new DateOnly(2026, 7, 1), new DateOnly(2026, 7, 31));
         var closing = await _rates.GetRateAsync(companyId, "USD", "SAR", new DateOnly(2026, 7, 31));
-        var expectedCta = FxTranslationCalculator.ComputePeriodCtaAdjustment(100m, avg, closing);
-        var cta = await _db.Accounts.SingleAsync(a =>
-            a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.TranslationReserve);
-        var ctaLine = entry.Lines.Single(l => l.AccountId == cta.Id);
-        if (expectedCta > 0)
-        {
-            Assert.Equal(0m, ctaLine.Debit);
-            Assert.Equal(expectedCta, ctaLine.Credit);
-        }
-        else
-        {
-            Assert.Equal(Math.Abs(expectedCta), ctaLine.Debit);
-            Assert.Equal(0m, ctaLine.Credit);
-        }
+        Assert.Equal(FxTranslationCalculator.ComputePeriodCtaAdjustment(100m, avg, closing), figure!.Cta);
+        Assert.NotEqual(0m, figure.Cta);
+        Assert.Equal(entriesBefore, await _db.JournalEntries.CountAsync(e => e.CompanyId == companyId));
     }
 
     private async Task<(long GroupId, long CompanyId)> SeedUsdGroupCompanyAsync()
