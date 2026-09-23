@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 25 بنداً ✅ و6 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 27 بنداً ✅ و6 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وسبعةٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤٧) — **بعضُها خارج هذا الحصر**،
+**وتسعةٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤٩) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -130,7 +130,7 @@
 - ☐ **`treasury-payroll-assets#3`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No flow ever clears Salaries Payable (2108) or GOSI Payable (2109), and the payment voucher only pays suppliers
 - ☐ **`treasury-payroll-assets#4`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No proration and an incomplete final settlement: leavers get no pay for their last partial month, joiners get a full month, advances are not recovered
 - ✅ **`treasury-payroll-assets#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Payslip net pay leaves out the advance (and absence) deduction, so it disagrees with the WPS file and the journal — ح-٢٤ `fda1146`
-- ☐ **`treasury-payroll-assets#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Advance installments can take an employee's entire net wage; the documented half-wage guard does not exist
+- ✅ **`treasury-payroll-assets#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Advance installments can take an employee's entire net wage; the documented half-wage guard does not exist — ح-٤٩ `96c9fcd` — **وقِيس أسوأَ ممّا سُمّي: شهرُ غيابٍ وعليه سُلفةٌ يُسقط بناءَ الدورة كلِّها؛ والاختبارُ القائمُ كان يُثبت الصافيَ صفراً**
 - ☐ **`treasury-payroll-assets#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>GOSI policy has a single Saudi rate per company and cannot handle contributor groups under the 2024 Social Insurance Law
 - ☐ **`treasury-payroll-assets#8`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>WPS is marked closed (G-19) but the file is a home-grown CSV, not a bank WPS or Mudad upload format
 - ☐ **`treasury-payroll-assets#9`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Article 117 sick-pay tiers and statutory leave limits are never applied in payroll; the leave calculator's sick-pay functions are dead code
@@ -146,7 +146,7 @@
 - ☐ **`sector-modules#5`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Reservation cancellation and no-show cannot be done from the UI or any service, and deposits have no refund or forfeit path
 - ☐ **`sector-modules#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>Hotel reservation deposits are booked with no VAT at receipt. KSA treats advance consideration as a tax point.
 - ☐ **`sector-modules#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Rent billed in advance (quarterly, semi-annual, annual) is recognised as revenue on the invoice date, not over the lease period
-- ☐ **`sector-modules#8`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sector cash postings default to the parent bank account 1102, reintroducing the split-cash defect CEEF-229 م2-١٥ fixed for POS
+- ✅ **`sector-modules#8`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sector cash postings default to the parent bank account 1102, reintroducing the split-cash defect CEEF-229 م2-١٥ fixed for POS — ح-٤٨ `d544005` — **خمسةُ مداخلَ وثماني شاشات، والحلُّ عبر `BankGlAccountResolver`؛ واختبارٌ قائمٌ مرّ عليه لأنّه يقيس بالبادئة**
 - ☐ **`sector-modules#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>Project costing is not integrated with purchasing, AP, payroll or input VAT. The only cost source is a manual dialog that always credits petty cash.
 - ☐ **`sector-modules#10`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>On a second workstation, the navigation follows the profile chosen in that machine's setup wizard, not the company's stored profile. Sector screens can be hidden.
 - ☐ **`sector-modules#11`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Real Estate and General profiles lack Purchasing, and maintenance orders post gross cost with no supplier and no input VAT
