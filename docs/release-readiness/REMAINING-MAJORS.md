@@ -30,12 +30,12 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 23 بنداً ✅ و6 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 25 بنداً ✅ و6 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
 > **والعطلُ الواحدُ يُملَأ تحت ثلاثة عناوين** — فالعدُّ الخامُ يُبالِغ في ما بقي.
-**وستّةٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤٦) — **بعضُها خارج هذا الحصر**،
+**وسبعةٌ وأربعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٤٧) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -71,8 +71,8 @@
 
 ## accounting-core (10 major)
 
-- ☐ **`accounting-core#1`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>A closed year cannot be corrected: its periods can be reopened and posted to, but year-end close cannot be re-run or reversed
-- ☐ **`accounting-core#2`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>MASTER §2ب claims 'year-end close and its reversal' are proven automatically, but no reversal exists in code or tests
+- ✅ **`accounting-core#1`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>A closed year cannot be corrected: its periods can be reopened and posted to, but year-end close cannot be re-run or reversed — ح-٤٧ `c213029` — **وأصلُ الحلقة `Status != Draft` كما في ح-٣٨؛ فصار للسنة إعادةُ فتحٍ تعكس إقفالاتِها القائمةَ كلَّها وتفتح ديسمبر وحدَه، بزرٍّ للمشغّل**
+- ✅ **`accounting-core#2`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>MASTER §2ب claims 'year-end close and its reversal' are proven automatically, but no reversal exists in code or tests — ح-٤٧ `c213029` — **صارت الدعوى صادقةً بما قِيس لا بتعديل نصِّها، وسطرُ ر-٥ يقول إنّها سبقت وجودَ العكس**
 - ✅ **`accounting-core#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Bank FX revaluation ignores reversed entries but counts their reversals, posting a fictitious FX gain or loss — ح-٢٥ `bee1546`
 - ✅ **`accounting-core#4`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>FX closing translation posts a reporting-currency translation adjustment (CTA) into the subsidiary's own P&L (4107/5217 against 3106) — ح-٤٦ `7a5f53b` — **وكان مبلغاً بالريال في دفترٍ بالدولار وبالإشارة المقلوبة، والموحَّدُ يطبّقه مرّتين؛ فصار حساباً يُعاد لا قيداً**
 - ✅ **`accounting-core#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Consolidated balance sheet shows prior-year unclosed profit as 'Currency translation reserve', even in an all-SAR group — ح-٤٥ `493dad2` — **وكلُّ سنةٍ غيرِ مقفلةٍ بمتوسّط سنتِها، وفرقٌ لا ترجمةَ وراءه يُعلَن «غيرَ متوازن» لا «احتياطيَ ترجمة»**؛ **والسنةُ المقفلةُ في آخر يومها كانت تُحسب مرّتين**
