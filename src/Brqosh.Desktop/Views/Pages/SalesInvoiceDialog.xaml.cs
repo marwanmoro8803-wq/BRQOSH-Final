@@ -165,12 +165,34 @@ public partial class SalesInvoiceDialog : Window
     private decimal DocumentDiscount() =>
         NumericInput.TryParsePositive(DocumentDiscountBox.Text, out var value) ? value : 0m;
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٦٠) <b>مجاميعُ الشاشة من الموزِّع الذي يُرحِّل — لا بصيغةٍ ثانية.</b>
+    ///
+    /// <para><b>ما كان:</b> حوارا البيع والشراء يضربان الوعاءَ كلَّه في النسبة الأساسية
+    /// ويتجاهلان فئةَ السطر — <b>فسطرُ تصديرٍ صفريٌّ يُعرض عليه خمسةَ عشرَ بالمئة</b> والمُرحَّلُ
+    /// صفر. وخصمُ المستند كان يُطرح من الإجمالي، <b>والنطاقُ يوزّعه على الأوعية</b>. والحوارات
+    /// الثلاثة تشترك في <see cref="LineRow"/>، فتشترك هنا في حسابه.</para>
+    ///
+    /// <para><b>والخصمُ الزائد عن الصافي يُقصّ عند العرض</b>: النطاقُ يرفضه عند الحفظ، وبلا
+    /// قصٍّ يأخذ الوعاءُ الأخيرُ باقياً سالباً فتُعرض ضريبةٌ سالبة.</para>
+    /// </summary>
+    internal static (decimal Subtotal, decimal Vat) TotalsOf(IEnumerable<LineRow> rows, decimal documentDiscount)
+    {
+        var lines = rows
+            .Where(r => r.Quantity != 0m || r.UnitPrice != 0m)
+            .Select(r => new SalesInvoiceLine(
+                r.Description ?? "", r.Quantity, r.UnitPrice, r.ProductId, r.VatCategory,
+                r.TaxExemptionReasonCode, r.TaxExemptionReason, DiscountPercent: r.DiscountPercent))
+            .ToList();
+
+        var net = Math.Max(lines.Sum(l => l.LineTotal), 0m);
+        return LineDocumentTotalsCalculator.Compute(
+            lines, documentDiscount: Math.Clamp(documentDiscount, 0m, net));
+    }
+
     private void UpdateTotals()
     {
-        var subtotal = _rows.Sum(r => r.LineTotal) - DocumentDiscount();
-        if (subtotal < 0m) subtotal = 0m;
-
-        var vat = Math.Round(subtotal * SalesInvoice.SaudiVatRate, 2, MidpointRounding.AwayFromZero);
+        var (subtotal, vat) = TotalsOf(_rows, DocumentDiscount());
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");
         TotalText.Text = (subtotal + vat).ToString("N2");

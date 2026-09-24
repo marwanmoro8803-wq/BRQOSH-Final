@@ -128,15 +128,8 @@ public partial class CreditNoteDialog : Window
     {
         // ‏(ح-٦) ‏**والمعروضُ هو المُرحَّل** — وكان يعرض حاصلاً خامّاً بلا خصمِ مستند،
         // ‏فيرى المستخدمُ رقماً ويُرحَّل غيرُه. والحسابُ من الموزِّع نفسِه لا بصيغةٍ ثانية.
-        var lines = _rows
-            .Where(r => r.Quantity != 0m || r.UnitPrice != 0m)
-            .Select(r => new SalesInvoiceLine(
-                r.Description ?? "", r.Quantity, r.UnitPrice, r.ProductId, r.VatCategory,
-                r.TaxExemptionReasonCode, r.TaxExemptionReason, DiscountPercent: r.DiscountPercent))
-            .ToList();
-
-        var (subtotal, vat) = LineDocumentTotalsCalculator.Compute(
-            lines, documentDiscount: DocumentDiscountShare());
+        // ‏(ح-٦٠) ‏وصار البناءُ مشتركاً مع حوارَي البيع والشراء — كانا يضربان في النسبة.
+        var (subtotal, vat) = SalesInvoiceDialog.TotalsOf(_rows, DocumentDiscountShare());
 
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");

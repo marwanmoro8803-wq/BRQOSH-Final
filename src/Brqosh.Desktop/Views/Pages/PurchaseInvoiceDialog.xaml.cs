@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
-using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Ui;
@@ -64,8 +63,9 @@ public partial class PurchaseInvoiceDialog : Window
 
     private void UpdateTotals()
     {
-        var subtotal = _rows.Sum(r => r.LineTotal);
-        var vat = Math.Round(subtotal * SalesInvoice.SaudiVatRate, 2, MidpointRounding.AwayFromZero);
+        // ‏(ح-٦٠) ‏**والمعروضُ هو المُقيَّد ذمّةً للمورّد** — وكان يضرب الوعاءَ كلَّه في النسبة
+        // ‏الأساسية فيُحمِّل السطرَ المعفى ضريبةً لا يُطالِب بها المورّد.
+        var (subtotal, vat) = SalesInvoiceDialog.TotalsOf(_rows, documentDiscount: 0m);
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");
         TotalText.Text = (subtotal + vat).ToString("N2");
