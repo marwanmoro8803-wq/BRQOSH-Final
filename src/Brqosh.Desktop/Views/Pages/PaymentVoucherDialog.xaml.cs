@@ -57,8 +57,7 @@ public partial class PaymentVoucherDialog : Window
             .Select(s => new SupplierOption(s.Id, s.NameAr))
             .ToListAsync();
         SupplierCombo.ItemsSource = suppliers;
-        if (suppliers.Count > 0)
-            SupplierCombo.SelectedIndex = 0;
+        // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private async Task LoadBanksAsync()

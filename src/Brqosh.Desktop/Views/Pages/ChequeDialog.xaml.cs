@@ -45,8 +45,7 @@ public partial class ChequeDialog : Window
                 .ToListAsync();
         }
 
-        if (PartyCombo.Items.Count > 0)
-            PartyCombo.SelectedIndex = 0;
+        // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private async Task LoadBanksAsync()

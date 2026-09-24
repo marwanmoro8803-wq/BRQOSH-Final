@@ -60,8 +60,7 @@ public partial class ReceiptVoucherDialog : Window
             .Select(c => new CustomerOption(c.Id, c.IsActive ? c.NameAr : $"{c.NameAr} (موقوف)"))
             .ToList();
         CustomerCombo.ItemsSource = customers;
-        if (customers.Count > 0)
-            CustomerCombo.SelectedIndex = 0;
+        // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private async Task LoadBanksAsync()

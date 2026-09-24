@@ -44,8 +44,7 @@ public partial class PurchaseInvoiceDialog : Window
         SupplierCombo.ItemsSource = suppliers
             .Select(s => new SupplierOption(s.Id, s.IsVatRegistered, s.NameAr))
             .ToList();
-        if (suppliers.Count > 0)
-            SupplierCombo.SelectedIndex = 0;
+        // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private void OnSupplierSelected(object sender, SelectionChangedEventArgs e)

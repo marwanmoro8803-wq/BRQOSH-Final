@@ -9,7 +9,7 @@
             <TextBlock Text="المبلغ" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="AmountBox" Style="{StaticResource AppTextBox}"/>
             <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                <Button Content="ترحيل" Style="{StaticResource PrimaryButton}" Padding="24,8" Click="OnOk" IsDefault="True"/>
+                <Button Content="ترحيل" Style="{StaticResource PrimaryButton}" Padding="24,8" Click="OnOk"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Padding="24,8" Margin="12,0,0,0" Click="OnCancel" IsCancel="True"/>
             </StackPanel>
         </StackPanel>

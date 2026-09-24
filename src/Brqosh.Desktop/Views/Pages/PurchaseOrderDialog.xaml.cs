@@ -30,8 +30,7 @@ public partial class PurchaseOrderDialog : Window
             .OrderBy(s => s.NameAr)
             .Select(s => new SupplierOption(s.Id, s.NameAr))
             .ToListAsync();
-        if (SupplierCombo.Items.Count > 0)
-            SupplierCombo.SelectedIndex = 0;
+        // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     /// <summary>(CEEF-229 · م2-٢٠) أصنافُ عمود الاختيار — لم يكن للحوار قائمة أصناف أصلاً.</summary>

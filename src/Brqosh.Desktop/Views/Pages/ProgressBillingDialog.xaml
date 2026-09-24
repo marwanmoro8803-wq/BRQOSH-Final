@@ -32,7 +32,7 @@
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" Margin="0,12,0,0" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-            <Button Content="حفظ وترحيل" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
+            <Button Content="حفظ وترحيل" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave"/>
             <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
         </StackPanel>
     </StackPanel>

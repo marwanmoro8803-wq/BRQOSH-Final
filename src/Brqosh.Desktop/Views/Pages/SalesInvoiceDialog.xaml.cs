@@ -141,8 +141,7 @@ public partial class SalesInvoiceDialog : Window
             .Select(c => new CustomerOption(c.Id, c.NameAr))
             .ToListAsync();
         CustomerCombo.ItemsSource = customers;
-        if (customers.Count > 0)
-            CustomerCombo.SelectedIndex = 0;
+        // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private void OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) =>

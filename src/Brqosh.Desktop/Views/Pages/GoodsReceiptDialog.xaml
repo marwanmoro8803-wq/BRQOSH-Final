@@ -70,7 +70,7 @@
             <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}"
                        Visibility="Collapsed" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="13"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                <Button Content="ترحيل الاستلام" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost" IsDefault="True"/>
+                <Button Content="ترحيل الاستلام" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
             </StackPanel>
         </DockPanel>
