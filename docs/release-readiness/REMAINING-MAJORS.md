@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 38 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 39 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**واثنان وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٢) — **بعضُها خارج هذا الحصر**،
+**وثلاثةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٣) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -229,7 +229,7 @@
 ## evidence-integrity (8 major)
 
 - ◐ **`evidence-integrity#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>MASTER.md verdict (CONDITIONAL GO, 97%) predates the 51-finding forensic audit and was never recomputed — `0815835` — **الحكمُ صار NO-GO**؛ **ولم يُنشَر رقمٌ بديل**
-- ☐ **`evidence-integrity#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Coverage gate double-counts Brqosh.Domain; the published per-assembly and merged numbers are artifacts, and the gate is blind to Domain.Tests losing coverage
+- ✅ **`evidence-integrity#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Coverage gate double-counts Brqosh.Domain; the published per-assembly and merged numbers are artifacts, and the gate is blind to Domain.Tests losing coverage — ح-٦٣ `c590171` — **المفتاحُ مسارٌ مطلق** (`<source>` + `filename`)، وتقريرٌ بلا جذرٍ واحدٍ يُرفض ولا يُخمَّن؛ Domain **81.50%** (كانت تُنشر ~52%) والمدموجُ **64.38%**؛ **وسقّاطةُ Domain 0.80 فوق ما تعطيه المشاريعُ الأخرى وحدَها (78.28%)** — فضياعُ `Domain.Tests` يُسقطها وكان يمرّ على 0.46؛ ثلاثةُ اختباراتٍ تُشغّل البوّابةَ نفسَها بـ`pwsh`، وحالةُ `coverage-two-roots` في `verify-gates`
 - ◐ **`evidence-integrity#3`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No critical journey covers manufacturing, and no test asserts finished-goods cost, quantity or WIP amounts — ح-١٣ وح-٣٠ — **التكلفةُ صارت مؤكّدةً بمبلغ**؛ ولا رحلةَ حرجةً بعد
 - ☐ **`evidence-integrity#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>verify-gates.ps1: five of fifteen sensitivity cases do not exercise the real gate, and there is no recorded full run of the current fifteen
 - ☐ **`evidence-integrity#5`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>CI has not run on the 46 audited commits; 'CI chain green' is a local re-run, and the version bump behind the upgrade fix only happens in CI
