@@ -48,11 +48,14 @@ function Test-GateFails([scriptblock]$Action) {
     return ($LASTEXITCODE -ne 0)
 }
 
-function New-Cobertura([string]$Path, [hashtable]$Rates) {
+# ‏(ح-٦٣) ‏بجذرٍ `<source>` كما يكتبه coverlet — فالبوّابةُ تبني المفتاحَ منه وترفض تقريراً بلا جذر.
+# ‏و`-BareNames` يُحاكي تقريرَ `Domain.Tests`: جذرُه مجلّدُ التجميعة، فالاسمُ بلا البادئة.
+function New-Cobertura([string]$Path, [hashtable]$Rates, [string]$Source = 'C:\gatecheck\src\', [switch]$BareNames) {
     $sb = [Text.StringBuilder]::new()
-    [void]$sb.AppendLine('<coverage><packages>')
+    [void]$sb.AppendLine("<coverage><sources><source>$Source</source></sources><packages>")
     foreach ($name in $Rates.Keys) {
-        [void]$sb.AppendLine("  <package name=`"$name`"><classes><class filename=`"$name/X.cs`"><lines>")
+        $fileName = if ($BareNames) { 'X.cs' } else { "$name/X.cs" }
+        [void]$sb.AppendLine("  <package name=`"$name`"><classes><class filename=`"$fileName`"><lines>")
         for ($i = 1; $i -le 100; $i++) {
             $hits = if ($i -le $Rates[$name]) { 1 } else { 0 }
             [void]$sb.AppendLine("    <line number=`"$i`" hits=`"$hits`"/>")
@@ -159,7 +162,7 @@ $cases['ui-emoji'] = {
 $cases['coverage-absent'] = {
     $dir = Join-Path $tmp "cov-absent"
     New-Cobertura (Join-Path $dir "run\coverage.cobertura.xml") @{
-        'Brqosh.Infrastructure' = 90; 'Brqosh.Domain' = 60; 'Brqosh.Application' = 80; 'Brqosh.Api' = 75
+        'Brqosh.Infrastructure' = 90; 'Brqosh.Domain' = 90; 'Brqosh.Application' = 80; 'Brqosh.Api' = 75
     }   # ‏Brqosh.Desktop غائبةٌ عمداً
     $bit = Test-GateFails { & "$root\scripts\check-coverage.ps1" -ResultsDir $dir }
     Add-Result 'coverage-absent' 'check-coverage' $bit 'Brqosh.Desktop بلا تقرير'
@@ -169,7 +172,7 @@ $cases['coverage-absent'] = {
 $cases['coverage-floor'] = {
     $dir = Join-Path $tmp "cov-floor"
     New-Cobertura (Join-Path $dir "run\coverage.cobertura.xml") @{
-        'Brqosh.Infrastructure' = 90; 'Brqosh.Domain' = 60; 'Brqosh.Application' = 80
+        'Brqosh.Infrastructure' = 90; 'Brqosh.Domain' = 90; 'Brqosh.Application' = 80
         'Brqosh.Api' = 75; 'Brqosh.Desktop' = 10
     }
     $bit = Test-GateFails { & "$root\scripts\check-coverage.ps1" -ResultsDir $dir }
@@ -179,13 +182,34 @@ $cases['coverage-floor'] = {
 # ── ٦ · (ن-١٤) التغطية: تقريرٌ بائتٌ يرفع الرقمَ بلا سببٍ في الكود ───────────────
 $cases['coverage-stale'] = {
     $dir = Join-Path $tmp "cov-stale"
-    $rates = @{ 'Brqosh.Infrastructure' = 90; 'Brqosh.Domain' = 60; 'Brqosh.Application' = 80; 'Brqosh.Api' = 75 }
+    $rates = @{ 'Brqosh.Infrastructure' = 90; 'Brqosh.Domain' = 90; 'Brqosh.Application' = 80; 'Brqosh.Api' = 75 }
     New-Cobertura (Join-Path $dir "old\coverage.cobertura.xml") ($rates + @{ 'Brqosh.Desktop' = 90 })
     New-Cobertura (Join-Path $dir "new\coverage.cobertura.xml") ($rates + @{ 'Brqosh.Desktop' = 5 })
     $old = Join-Path $dir "old\coverage.cobertura.xml"
     (Get-Item $old).LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddDays(-5)
     $bit = Test-GateFails { & "$root\scripts\check-coverage.ps1" -ResultsDir $dir }
     Add-Result 'coverage-stale' 'check-coverage' $bit 'قديمٌ 90% فوق حديثٍ 5%'
+}
+
+# ── ٦ب · (ح-٦٣) التغطية: السطرُ الواحدُ تحت جذرين يُعدّ مرّةً ───────────────────
+# ‏تقريرُ Domain.Tests جذرُه `src\Brqosh.Domain\` والباقي `src\` — والأسطرُ نفسُها في الاثنين.
+# ‏والشرطُ السقوطُ **بالعدد الصحيح**: كانت البوّابةُ تسقط هنا أيضاً لكن بـ140 / 200، فالسقوطُ
+# ‏وحدَه لا يشهد بأنّ السطرَ عُدَّ مرّةً (درسُ م-٦: الحالةُ تشترط سببَها).
+$cases['coverage-two-roots'] = {
+    $dir = Join-Path $tmp "cov-roots"
+    New-Cobertura (Join-Path $dir "domain\coverage.cobertura.xml") @{ 'Brqosh.Domain' = 70 } `
+        -Source 'C:\gatecheck\src\Brqosh.Domain\' -BareNames
+    New-Cobertura (Join-Path $dir "app\coverage.cobertura.xml") @{
+        'Brqosh.Infrastructure' = 99; 'Brqosh.Domain' = 70; 'Brqosh.Application' = 99
+        'Brqosh.Api' = 99; 'Brqosh.Desktop' = 99
+    }
+    # ‏**في عمليّةٍ مستقلّة كما يُشغّلها CI** — لا `Invoke-GateCapture`: البوّابةُ تسقط بـ`Write-Error`، وتحت
+    # ‏`Stop` في هذه الجلسة يصير رمياً يُبقي الاستثناءَ وحدَه ويضيع الجدولُ الذي يحمل العدد. كشفه أوّلُ تشغيل:
+    # ‏الحالةُ أعلنت نفسَها عمياءَ والبوّابةُ تسقط كما يجب.
+    $ErrorActionPreference = 'Continue'
+    $out = & ([Environment]::ProcessPath) -NoProfile -NonInteractive -File "$root\scripts\check-coverage.ps1" -ResultsDir $dir 2>&1 | Out-String
+    $bit = ($LASTEXITCODE -ne 0) -and ($out -match 'Brqosh\.Domain\s+70%\s+70 / 100')
+    Add-Result 'coverage-two-roots' 'check-coverage' $bit 'Domain 70% بجذرين ⟸ يسقط بـ70 / 100 لا 140 / 200'
 }
 
 # ── ٧ · (ن-٠٦) «صفرُ متخطًّى»: تخطٍّ مُعلَن ─────────────────────────────────────

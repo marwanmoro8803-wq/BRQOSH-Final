@@ -37,9 +37,13 @@ param(
     # (Infrastructure 79.75% · Domain 47.53% · Application 74.61% · Api 70.35%)،
     # ويوم 2026-08-29 بعد إدخال Desktop إلى القياس لأوّل مرّة (22.55%).
     # كلُّ عتبةٍ دون المقيس بهامشٍ ضيّق يمنع الرفرفة ولا يسمح بانحدارٍ حقيقيّ.
+    # ‏(ح-٦٣) **ورقمُ Domain أعلاه (47.53%) كان مقامُه مضاعفاً** — انظر `Resolve-CoveredPath`.
+    # ‏أُعيد قياسُها يوم 2026-09-24 بمفتاحٍ مطلق: **81.50%**، وبإسقاط تقارير Domain.Tests
+    # ‏(ما تعطيه المشاريعُ الأخرى وحدَها): 78.28%. **والسقّاطةُ بينهما عمداً** — فضياعُ
+    # ‏مشروع اختبار Domain كلِّه يُسقطها، وكان يمرّ على 46%.
     [hashtable]$Floors = @{
         "Brqosh.Infrastructure" = 0.78
-        "Brqosh.Domain"         = 0.46
+        "Brqosh.Domain"         = 0.80
         "Brqosh.Application"    = 0.73
         "Brqosh.Api"            = 0.68
         "Brqosh.Desktop"        = 0.21
@@ -52,7 +56,8 @@ param(
 
     # يقبله المستدعون القدامى (run-external-gates.ps1) ويُطبَّق على المجموع الكلّي المدموج.
     # 52.78% مقيسة يوم 2026-08-29 بخمس تجميعات — وكانت 68.55% بأربع.
-    [double]$MinimumLineRate = 0.52,
+    # ‏(ح-٦٣) وأسطرُ Domain فيه كانت مرّتين؛ المدموجُ بمفتاحٍ مطلق 64.38% يوم 2026-09-24.
+    [double]$MinimumLineRate = 0.63,
 
     # ‏(م-٠ · ن-١٤) نافذةُ الحداثة: تقاريرُ تشغيلةٍ واحدةٍ تُكتب في دقائق. والقيمةُ سخيّةٌ
     # ‏عمداً (حزمةُ Application وحدَها ‏9 دقائق) — فالمقصودُ منعُ **يوم** لا منعُ دقيقة.
@@ -89,12 +94,35 @@ if ($stale.Count -gt 0) {
     exit 1
 }
 
-# اتّحادُ الأسطر لكل تجميعة: المفتاح (ملف المصدر، رقم السطر) فلا يُحتسب سطرٌ مرّتين.
+# ‏(ح-٦٣ · evidence-integrity#2) ‏**المفتاحُ مسارٌ مطلق — وكان السطرُ الواحدُ مفتاحين.**
+#
+# ‏السطرُ أدناه كان يقول «فلا يُحتسب سطرٌ مرّتين» والمفتاحُ `filename` كما يكتبه coverlet —
+# ‏**نسبيّاً إلى `<source>`، والجذرُ هو البادئةُ المشتركةُ لما جهّزه مشروعُ الاختبار**.
+# ‏و`Domain.Tests` لا يُجهّز إلا `Brqosh.Domain`، فجذرُه `src\Brqosh.Domain\` واسمُ الملفّ
+# ‏`Manufacturing\WorkOrder.cs`؛ والمشاريعُ الأخرى جذرُها `src\` والاسمُ `Brqosh.Domain\Manufacturing\WorkOrder.cs`.
+# ‏فكانت أسطرُ Domain تُعدّ مرّتين: قِيس على تقارير الشجرة مقامٌ **12024 = 2 × 6012**.
+#
+# ‏والرقمُ الناقصُ ليس الضررَ كلَّه: السقّاطةُ عُويِرت عليه، فلو ضاع تقريرُ `Domain.Tests` كلُّه
+# ‏لقرأت البوّابةُ ما تعطيه المشاريعُ الأخرى وحدَها (78.28%) — **ومرّت**.
+#
+# ‏وتقريرٌ لا يُعرف جذرُه **يُرفض ولا يُخمَّن**: التخمينُ بالاسم العاري هو العطلُ نفسُه.
+function Resolve-CoveredPath([string]$FileName, [object[]]$Sources, [string]$Report) {
+    if ([IO.Path]::IsPathRooted($FileName)) { $full = $FileName }
+    elseif ($Sources.Count -eq 1) { $full = [IO.Path]::Combine([string]$Sources[0], $FileName) }
+    else {
+        throw ("$Report`: '$FileName' is relative and the report has $($Sources.Count) <source> root(s), " +
+            "so its absolute path is unknown. Keying it by the bare name is what counted Brqosh.Domain twice.")
+    }
+    return [IO.Path]::GetFullPath($full).ToLowerInvariant()
+}
+
+# اتّحادُ الأسطر لكل تجميعة: المفتاح (المسارُ المطلق، رقم السطر) فلا يُحتسب سطرٌ مرّتين.
 $total = @{}
 $covered = @{}
 
 foreach ($file in $files) {
     [xml]$doc = Get-Content -LiteralPath $file.FullName
+    $sources = @($doc.coverage.sources.source | Where-Object { $_ })
     foreach ($pkg in $doc.coverage.packages.package) {
         $name = $pkg.name
         if (-not $total.ContainsKey($name)) {
@@ -102,7 +130,7 @@ foreach ($file in $files) {
             $covered[$name] = [System.Collections.Generic.HashSet[string]]::new()
         }
         foreach ($cls in $pkg.classes.class) {
-            $fn = $cls.filename
+            $fn = Resolve-CoveredPath $cls.filename $sources $file.FullName
             foreach ($line in $cls.lines.line) {
                 $key = "$fn#$($line.number)"
                 [void]$total[$name].Add($key)
