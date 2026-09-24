@@ -75,8 +75,8 @@ cd C:\Users\qc\Projects\BRQOSH
 # CI-safe (2k–5k)
 .\scripts\ops\run-stress-benchmark.ps1
 
-# هدف 1M — VM مخصّصة
-.\scripts\ops\run-stress-benchmark.ps1 -FullMillion
+# هدف 1M — VM مخصّصة، على خادم PostgreSQL للاختبار (ح-٥٩)
+.\scripts\ops\run-stress-benchmark.ps1 -FullMillion -Postgres
 ```
 
 أرشفة: زمن التنفيذ، CPU/RAM، سجلات PostgreSQL → `dist/evidence/O-04-stress/`

@@ -27,8 +27,11 @@ dotnet test Brqosh.sln
 ### التشغيل
 
 ```powershell
-.\scripts\ops\run-stress-benchmark.ps1 -FullMillion
+.\scripts\ops\run-stress-benchmark.ps1 -FullMillion -Postgres
 ```
+
+`-Postgres` يُشغّل على خادم PostgreSQL للاختبار (`brqosh_t_*`) ويشترطه (`BRQOSH_REQUIRE_PG=1`)؛ وبدونه
+SQLite بالذاكرة — **ليس قياساً لـO-04**. (ح-٥٩: قبلها كان `-FullMillion` لا يغيّر شيئاً — ألفا قيدٍ على SQLite.)
 
 ### ما يُؤرشف
 
