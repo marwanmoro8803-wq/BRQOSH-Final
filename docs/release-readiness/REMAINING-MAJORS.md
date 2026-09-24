@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 37 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 38 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وواحدٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦١) — **بعضُها خارج هذا الحصر**،
+**واثنان وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٢) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -188,7 +188,7 @@
 - ☐ **`installer-deployment-ops#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No release pipeline: CI never builds the MSI, and the only MSI on disk is an unsigned local 1.0.0 that the shipped-versions gate deliberately exempts
 - ☐ **`installer-deployment-ops#3`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Code-signing hook only accepts a PFX file, which CAs no longer issue; 'hook ready, waiting for certificate' is false
 - ☐ **`installer-deployment-ops#4`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>Package and payload are unsigned today (certificate is a third-party dependency)
-- ☐ **`installer-deployment-ops#5`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>.NET launch condition passes on any Desktop runtime version; the '9 or newer' message is also wrong for .NET 10
+- ✅ **`installer-deployment-ops#5`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>.NET launch condition passes on any Desktop runtime version; the '9 or newer' message is also wrong for .NET 10 — ح-٦٢ `21708ef` — **ملفٌّ بإصدار 9 تحت مجلّدات الإصدارات** لا المجلّدُ الأب؛ **و`FileSearch` بلا `Id`** — بـ`Id` يبنيه WiX صامتاً ولا يُوجد أبداً فيُرفض كلُّ جهاز؛ **مقيسٌ بتشغيل `AppSearch` بلا تثبيت**: المشحونةُ ⟵ المجلّدُ الأب، والمُصلَحةُ ⟵ 9.0.17 (ومسبارٌ: ٦ ⟵ 6.0.36 ضابطٌ موجب · ٨ و١٠ ⟵ لا شيء)؛ **والتنصيبُ الحيُّ على جهازٍ بلا 9 يبقى NOT TESTED (VM)**
 - ☐ **`installer-deployment-ops#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>.NET 9 runtime support ends about 8 weeks after launch, and no document plans for it
 - ☐ **`installer-deployment-ops#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Licence and password bypass: the environment can be downgraded to development, which enables BRQOSH_UITEST auto-admin login and the 30-day trial
 - ☐ **`installer-deployment-ops#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No licence-expiry warning, and expiry locks the owner out of all books with no read-only mode

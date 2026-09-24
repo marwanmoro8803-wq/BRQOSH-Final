@@ -3074,9 +3074,10 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-٥٩ | `f0e7f91` | `scripts/ops/run-stress-benchmark.ps1` · `Performance/JournalStressLoadTests.cs` | **«وضعُ المليون» يُشغّل ألفين على SQLite** (`data-upgrade-performance#3`) — فرعا السكربت متطابقان، والاختبارُ يقصّ عند مئة ألف، ولا طريقَ إلى PostgreSQL، **والوثيقةُ تقول «1,000,000»**؛ **والسكربتُ يُقرأ نصّاً ويُربط بثوابت الاختبار** |
 | ح-٦٠ | `9e34a87` | `SalesInvoiceDialog.xaml.cs` · `PurchaseInvoiceDialog.xaml.cs` · `CreditNoteDialog.xaml.cs` | **شاشتا البيع والشراء تضربان الوعاءَ كلَّه في ١٥٪** (`ui-ux-i18n-printing#6`) — وتتجاهلان فئةَ السطر، **وفي البيع يُطرح خصمُ المستند من الإجمالي** والنطاقُ يوزّعه؛ **والمعروضُ صار من الموزِّع الذي يُرحِّل ويُقابَل بما يبنيه زرُّ الحفظ** |
 | ح-٦١ | `658dac4` | خمسةَ عشرَ حوارَ ترحيل (XAML) · ستّةٌ منها (الشيفرة) · `EnterDoesNotPostTests.cs` | **«Enter» يُرحِّل مستنداً لا يُعدَّل لأوّل طرفٍ أبجديّاً** (`ui-ux-i18n-printing#5`) — والتدقيقُ سمّى أربعةَ عشر، **والقاعدةُ بالمعنى وجدت الخامسَ عشر**؛ **ويُقاس بنيويّاً لا بإطلاق `Loaded`** — فتحميلُ الأطراف يمرّ بـ`AppServices` الذي لا يُعيد توجيهَه اختبار |
+| ح-٦٢ | `21708ef` | `installer/brqosh.wxs` · `TheInstallerRequiresTheRuntimeItRunsOnTests.cs` | **فحصُ .NET في المُنصِّب يُرضيه أيُّ إصدار** (`installer-deployment-ops#5`) — `DirectorySearch` على المجلّد الأب؛ **والتعليقُ يصف فحصَ سجلٍّ لم يُنفَّذ**، والرسالةُ تَعِد بـ«أو أحدث»؛ **ويُقاس بتشغيل `AppSearch` في جلسةٍ لا تُثبِّت** |
 
-**والقياسُ عند آخر إيداع (`658dac4`):** `Brqosh.Domain.Tests` **٢٤٥/٢٤٥** ·
-`Brqosh.Application.Tests` **١٩٠٠/١٩٠٠** · `Brqosh.Desktop.Tests` **٣٩٦/٣٩٦** ·
+**والقياسُ عند آخر إيداع (`21708ef`):** `Brqosh.Domain.Tests` **٢٤٥/٢٤٥** ·
+`Brqosh.Application.Tests` **١٩٠٠/١٩٠٠** · `Brqosh.Desktop.Tests` **٤٠١/٤٠١** ·
 **صفرٌ متخطًّى** · الماسحُ الأمنيُّ `EXIT=0`.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
