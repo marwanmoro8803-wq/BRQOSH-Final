@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 35 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 36 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وتسعةٌ وخمسون إغلاقاً في الحملة كلِّها** (ح-١…ح-٥٩) — **بعضُها خارج هذا الحصر**،
+**وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٠) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -169,7 +169,7 @@
 - ✅ **`security-licensing-tenancy#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Deactivating or demoting a user does not end their open session — ح-٥٠ `c72acca` — **والآليّةُ كانت قائمةً (`SessionVersion` يقرؤه سطحُ المكتب) ومستدعيها الوحيدُ استردادُ الواتساب**
 - ☐ **`security-licensing-tenancy#5`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>In-app RBAC and the tamper-evident audit chain are not a real boundary: every workstation holds a DB-owner credential and the chain has no key
 - ☐ **`security-licensing-tenancy#6`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>The pen-test gate O-05 has never run, and its scope (the API) is not what ships
-- ☐ **`security-licensing-tenancy#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No in-product password recovery for the seeded administrator in production
+- ☐ **`security-licensing-tenancy#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No in-product password recovery for the seeded administrator in production — **مقيسٌ — قرارُ المالك**: `CreateInitialAdminAsync` يُنشئ المديرَ **بلا هاتف**، و`WhatsAppNotificationChannelFactory` في الإنتاج بلا WhatsApp مُهيّأٍ يُعيد `UnavailableOtpNotificationChannel` — **فكلمةُ مرورٍ منسيّةٌ إغلاقٌ تامّ**؛ والطرقُ: (أ) هاتفٌ إلزاميٌّ عند التهيئة مع WhatsApp · (ب) مفتاحُ استعادةٍ يُعرض مرّةً عند التهيئة · (ج) أداةٌ محلّيّةٌ لمدير ويندوز — **وتُعيد مسألةَ ن-٢٢** (أدواتٌ تفتح الدفاتر بلا إذن) · (د) رمزٌ موقَّعٌ من المورّد — **ولم يُنفَّذ أيٌّ منها: المفاضلةُ بين الأمن والاستعادة ليست قراري**
 - ✅ **`security-licensing-tenancy#8`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Privilege changes and other security events are not written to the audit trail — ح-٥٠ `c72acca` — **خمسةُ أحداثٍ في السلسلة، ولا سرَّ في تفاصيلها (مقيس)؛ وهو والبندُ #4 أصلٌ واحد**
 - ☐ **`security-licensing-tenancy#9`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and all shipped binaries are unsigned
 
@@ -206,7 +206,7 @@
 - ✅ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س — ح-٤٢ `27af80a` — **وهو عينُ `tax-zatca#14` بعدسةٍ ثانية**
 - ✅ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن' — ح-١٥ `0aa2510` (النوعُ بالاسم) وح-٥٧ `37eb075` — **الحالةُ من `NameAr()` فالمحاكاةُ محاكاةٌ لا «مُولَّد»**، **والرسالةُ بعد الإرسال من الحالة التي عاد بها المستند** — المقبولُ عند الهيئة وحدَه نجاح؛ **والملخّصُ يعدّ المحاكاةَ وحدَها**
 - ☐ **`ui-ux-i18n-printing#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Pressing Enter in 14 dialogs immediately posts an unchangeable document, with the first customer or supplier preselected and no confirmation
-- ☐ **`ui-ux-i18n-printing#6`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sales invoice entry screen shows totals with 15% VAT on every line, including zero-rated and exempt lines
+- ✅ **`ui-ux-i18n-printing#6`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sales invoice entry screen shows totals with 15% VAT on every line, including zero-rated and exempt lines — ح-٦٠ `9e34a87` — **وشاشةُ الشراء بالعطل نفسِه** (كشفها القياس)؛ **والشاشتان تحسبان بالموزِّع الذي يُرحِّل** (`LineDocumentTotalsCalculator`) لا بصيغةٍ ثانية، **وخصمُ المستند يُوزَّع على الأوعية** كما في النطاق؛ **والمعروضُ يُقابَل بما يبنيه زرُّ الحفظ** على خيط STA، والإشعارُ الدائنُ ضابطٌ موجب
 - ☐ **`ui-ux-i18n-printing#7`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>'محاسبة عامة' (General) and real-estate profiles have no supplier, purchase-invoice or product screens, so the payment-voucher screen they do show cannot be used, and the profile cannot be changed later
 - ☐ **`ui-ux-i18n-printing#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>POS has no printable receipt: the receipt window only closes, and printing means an A4 PDF of the last POS invoice from any shift
 - ☐ **`ui-ux-i18n-printing#9`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>The published '100% translated' claim covers only fixed literal strings; English mode still shows Arabic statuses, summaries, VAT-return lines and message text
