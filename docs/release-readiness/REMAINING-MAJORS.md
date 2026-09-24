@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 36 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 37 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٠) — **بعضُها خارج هذا الحصر**،
+**وواحدٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦١) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -205,7 +205,7 @@
 - ✅ **`ui-ux-i18n-printing#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Printed sales invoice hides line and document discounts, so its columns do not add up to its totals — ح-٤٤ `b9a24d9` — **وكانت النسبةُ تُطبع «14.25%» مع خصم المستند**
 - ✅ **`ui-ux-i18n-printing#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Foreign-currency sales invoice prints line amounts in the document currency but totals in SAR, all labelled ر.س — ح-٤٢ `27af80a` — **وهو عينُ `tax-zatca#14` بعدسةٍ ثانية**
 - ✅ **`ui-ux-i18n-printing#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>ZATCA invoices screen reports 'تم الإرسال بنجاح' for simulated submissions, labels them 'مُولَّد', and labels progress billings 'إشعار دائن' — ح-١٥ `0aa2510` (النوعُ بالاسم) وح-٥٧ `37eb075` — **الحالةُ من `NameAr()` فالمحاكاةُ محاكاةٌ لا «مُولَّد»**، **والرسالةُ بعد الإرسال من الحالة التي عاد بها المستند** — المقبولُ عند الهيئة وحدَه نجاح؛ **والملخّصُ يعدّ المحاكاةَ وحدَها**
-- ☐ **`ui-ux-i18n-printing#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Pressing Enter in 14 dialogs immediately posts an unchangeable document, with the first customer or supplier preselected and no confirmation
+- ✅ **`ui-ux-i18n-printing#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Pressing Enter in 14 dialogs immediately posts an unchangeable document, with the first customer or supplier preselected and no confirmation — ح-٦١ `658dac4` — **خمسةَ عشرَ لا أربعةَ عشر**: القاعدةُ بالمعنى (زرٌّ افتراضيٌّ نصُّه «ترحيل/اعتماد» أو معالجُه `OnPost/OnApprove`) وجدت «ترحيل الاستبعاد» أيضاً؛ **و`IsDefault` نُزع منها كلِّها وبقي على أزرار الحفظ**، **والطرفُ لا يُختار سلفاً في ستّة حوارات ترحيل**؛ **والتأكيدُ قبل الترحيل لم يُضف** — الترحيلُ صار يشترط اختيارَ الطرف ونقرةً على زرٍّ اسمُه «ترحيل»
 - ✅ **`ui-ux-i18n-printing#6`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sales invoice entry screen shows totals with 15% VAT on every line, including zero-rated and exempt lines — ح-٦٠ `9e34a87` — **وشاشةُ الشراء بالعطل نفسِه** (كشفها القياس)؛ **والشاشتان تحسبان بالموزِّع الذي يُرحِّل** (`LineDocumentTotalsCalculator`) لا بصيغةٍ ثانية، **وخصمُ المستند يُوزَّع على الأوعية** كما في النطاق؛ **والمعروضُ يُقابَل بما يبنيه زرُّ الحفظ** على خيط STA، والإشعارُ الدائنُ ضابطٌ موجب
 - ☐ **`ui-ux-i18n-printing#7`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>'محاسبة عامة' (General) and real-estate profiles have no supplier, purchase-invoice or product screens, so the payment-voucher screen they do show cannot be used, and the profile cannot be changed later
 - ☐ **`ui-ux-i18n-printing#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>POS has no printable receipt: the receipt window only closes, and printing means an A4 PDF of the last POS invoice from any shift
