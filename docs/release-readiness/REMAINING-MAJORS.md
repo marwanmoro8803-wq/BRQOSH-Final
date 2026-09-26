@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 40 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 41 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وأربعةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٤) — **بعضُها خارج هذا الحصر**،
+**وخمسةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٥) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -234,5 +234,5 @@
 - ☐ **`evidence-integrity#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>verify-gates.ps1: five of fifteen sensitivity cases do not exercise the real gate, and there is no recorded full run of the current fifteen
 - ☐ **`evidence-integrity#5`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>CI has not run on the 46 audited commits; 'CI chain green' is a local re-run, and the version bump behind the upgrade fix only happens in CI
 - ✅ **`evidence-integrity#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The tenant-mismatch API tests exit before asserting anything, yet OPEN_ITEMS cites them as guarding tenant default-deny — ح-٦٤ `1860fa5` — **قِيس العمى أوّلاً**: الاختباراتُ القديمةُ مرّت كلُّها والحارسُ مُعطَّل؛ صارت تُنشئ مستأجرَها عبر `/api/v1/tenants/provision` وتسأل: مستأجرٌ غريب ⟵ 403 · مستأجرٌ حقيقيٌّ آخر ⟵ 403 · وضعُ SaaS بلا ترويسة ⟵ 403 · المستأجرُ نفسُه ⟵ 200 (ضابطٌ موجب)؛ طفرتان في الحارس تُسقطانها بالاسم
-- ☐ **`evidence-integrity#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>OPEN_ITEMS §3 publishes false or contradictory figures, and PERFORMANCE_BUDGETS is stale
+- ✅ **`evidence-integrity#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>OPEN_ITEMS §3 publishes false or contradictory figures, and PERFORMANCE_BUDGETS is stale — ح-٦٥ `a5732a6` — **«FullScenario 13/13» ليس في الحزمة**: ٢٦٤٤ اسماً عند `e2f2a41` ولا واحدٌ منها، وشاهدُ الضبط Golden = ٨؛ صفٌّ يدّعي «ضمن الحزمة» يُسمّي صنفَه وعددُه يُقرأ بالانعكاس (`TheLastMeasurementNamesWhatTheSuiteRunsTests`)، ورأسُ `OPEN_ITEMS` يبلغ آخرَ إغلاق (`TheHeaderReachesTheLastClosureTests`)؛ التغطيةُ والمُشغِّلُ الخارجيُّ وO-06 بتواريخها؛ وPERFORMANCE_BUDGETS على Release وPostgreSQL، كلُّ صنفٍ وحده ثلاثاً
 - ☐ **`evidence-integrity#8`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>MARKET_LAUNCH_GAP_ANALYSIS.md is two months stale, wrong in both directions, and still linked as the launch-gap detail
