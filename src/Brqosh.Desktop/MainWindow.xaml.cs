@@ -128,7 +128,6 @@ public partial class MainWindow : Window
         if (_companyBinding) return;
         if (CompanyCombo.SelectedItem is not CompanyOption opt) return;
         await ApplyCompanyContextAsync(opt, reloadBranches: true);
-        BuildNavigation();
         Navigate(_activePageKey, NavTitleFor(_activePageKey));
     }
 
@@ -153,7 +152,6 @@ public partial class MainWindow : Window
         CompanyCombo.SelectedItem = target;
         _companyBinding = false;
         await ApplyCompanyContextAsync(target, reloadBranches: true);
-        BuildNavigation();
         Navigate("dashboard", NavTitleFor("dashboard"));
     }
 
@@ -161,6 +159,12 @@ public partial class MainWindow : Window
     {
         AppServices.CompanyId = company.Id;
         AppServices.TouchSession();
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٦٦ · sector-modules#10) **القوائمُ تتبع نظامَ المنشأة المطبَّقة — هنا لا عند مستدعيها.**
+        // ‏كان هذا يُحدّث النظامَ والشارةَ ولا يُعيد بناءَ القوائم، وأوّلُ بناءٍ يقع في المُنشئ قبل أن
+        // ‏يُربَط هذا (`BindCompaniesAsync` بلا انتظار) — فتبقى قوائمُ نظامٍ والشارةُ تُسمّي غيرَه حتى
+        // ‏تبديل اللغة. والقوائمُ تُبنى من `_setup.Profile` وحدَه، فالمقارنةُ قبل التعيين دقيقة.
+        var profileChanged = _setup.Profile != company.Profile;
         _setup = _setup with
         {
             Profile = company.Profile,
@@ -168,6 +172,11 @@ public partial class MainWindow : Window
         };
         CompanyNameText.Text = company.Display;
         ProfileBadge.Text = ProfileLabel(company.Profile);
+        if (profileChanged)
+        {
+            BuildNavigation();
+            SetActiveNav(_activePageKey);
+        }
         if (reloadBranches)
             await BindBranchesAsync();
         UpdateSessionStatus();

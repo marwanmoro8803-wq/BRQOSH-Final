@@ -31,7 +31,7 @@ public class DatabaseBootstrapService(BrqoshDbContext db)
         if (!await db.InventoryBalances.AnyAsync(b => b.CompanyId == company.Id, ct))
             await new InventoryService(db).RebuildBalancesFromMovementsAsync(company.Id, ct);
 
-        return new CompanyBootstrapResult(company.Id, company.NameAr);
+        return new CompanyBootstrapResult(company.Id, company.NameAr, company.Profile);
     }
 
     /// <summary>
@@ -105,7 +105,12 @@ public class DatabaseBootstrapService(BrqoshDbContext db)
     }
 }
 
-public record CompanyBootstrapResult(long CompanyId, string CompanyName);
+/// <param name="Profile">
+/// (جاهزيّةُ الإطلاق · ح-٦٦ · sector-modules#10) <b>نظامُ العمل المخزَّنُ في القاعدة — لا المطلوب.</b>
+/// على قاعدةٍ فيها منشأةٌ يُعيد <see cref="DatabaseInitializer"/> المنشأةَ القائمة ويتجاهل النظامَ المطلوب،
+/// فالمطلوبُ اختيارُ معالجِ هذا الجهاز وحدَه. ويتبنّاه المُقلِع فتُبنى القوائمُ لنظام المنشأة.
+/// </param>
+public record CompanyBootstrapResult(long CompanyId, string CompanyName, BusinessProfile Profile);
 
 /// <summary>
 /// هويّةُ القاعدة كما وُجدت. <see cref="SchemaPresent"/> يعني وجودَ مخطَّط BRQOSH؛

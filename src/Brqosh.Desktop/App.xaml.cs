@@ -226,6 +226,25 @@ public partial class App : System.Windows.Application
                     .InitializeAsync(setup!.CompanyName, setup.VatRegistrationNumber, setup.Profile,
                         adminUsername, adminPassword, setup.CountryTemplateId);
                 AppServices.CompanyId = result.CompanyId;
+
+                // ‏(جاهزيّةُ الإطلاق · ح-٦٦ · sector-modules#10) **نظامُ العمل نظامُ المنشأة المخزَّن، لا اختيارُ هذا الجهاز.**
+                //
+                // ‏جهازٌ ثانٍ يُعَدّ على قاعدةٍ قائمة: معالجُه يبدأ على أوّل نظامٍ في القائمة، و`InitializeAsync`
+                // ‏يُعيد المنشأةَ القائمةَ ويتجاهل الاختيار. فكانت القوائمُ تُبنى لنظامِ المعالج — **فتختفي شاشاتُ
+                // ‏القطاع وبياناتُها في القاعدة** — والشارةُ بجوارها تُسمّي نظامَ المنشأة. فيُتبنّى المخزَّنُ ويُحفظ.
+                if (result.Profile != setup.Profile)
+                {
+                    setup = setup with { Profile = result.Profile };
+                    try
+                    {
+                        _setupStore.Save(setup);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        // ‏تعذّرُ الحفظ لا يمنع الإقلاع — التبنّي قائمٌ في هذه الجلسة ويُعاد عند كلّ إقلاع.
+                        CrashLog.Write(ex, "setup-profile-adopt");
+                    }
+                }
             }
             catch (Exception ex)
             {
