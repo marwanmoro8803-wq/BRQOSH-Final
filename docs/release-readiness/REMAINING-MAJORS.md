@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 41 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 42 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وخمسةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٥) — **بعضُها خارج هذا الحصر**،
+**وستّةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٦) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق.
 
 ---
@@ -156,7 +156,7 @@
 - ☐ **`sector-modules#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Rent billed in advance (quarterly, semi-annual, annual) is recognised as revenue on the invoice date, not over the lease period
 - ✅ **`sector-modules#8`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sector cash postings default to the parent bank account 1102, reintroducing the split-cash defect CEEF-229 م2-١٥ fixed for POS — ح-٤٨ `d544005` — **خمسةُ مداخلَ وثماني شاشات، والحلُّ عبر `BankGlAccountResolver`؛ واختبارٌ قائمٌ مرّ عليه لأنّه يقيس بالبادئة**
 - ☐ **`sector-modules#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>Project costing is not integrated with purchasing, AP, payroll or input VAT. The only cost source is a manual dialog that always credits petty cash.
-- ☐ **`sector-modules#10`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>On a second workstation, the navigation follows the profile chosen in that machine's setup wizard, not the company's stored profile. Sector screens can be hidden.
+- ✅ **`sector-modules#10`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>On a second workstation, the navigation follows the profile chosen in that machine's setup wizard, not the company's stored profile. Sector screens can be hidden. — ح-٦٦ `1943ab0` — **جذرُه في الإقلاع لا في النافذة**: `CompanyBootstrapResult` لم يكن يحمل النظامَ فبقي المُقلِعُ على اختيار المعالج؛ صار يحمل النظامَ المخزَّن ويتبنّاه `App` قبل `new MainWindow(`، و`ApplyCompanyContextAsync` يُعيد بناءَ القوائم حين يتغيّر النظام — جهازان على ملفّ SQLite واحدٍ يُسقطانه بالسلوك
 - ☐ **`sector-modules#11`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Real Estate and General profiles lack Purchasing, and maintenance orders post gross cost with no supplier and no input VAT
 - ☐ **`sector-modules#12`** · <sub>بلا تحقّق · خارج المستودع · كبير · خارجيّ</sub><br>No NPHIES integration for insurance claims, and no Ejar link for leases
 
