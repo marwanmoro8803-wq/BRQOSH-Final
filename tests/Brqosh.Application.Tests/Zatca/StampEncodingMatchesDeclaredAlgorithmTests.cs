@@ -1,3 +1,4 @@
+using System.Formats.Asn1;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
@@ -79,8 +80,8 @@ public class StampEncodingMatchesDeclaredAlgorithmTests : IDisposable
     /// <b>القياسُ الحاكم:</b> الوسمُ المُعلَن هو <c>ecdsa-sha256</c>، <b>والقيمةُ
     /// أربعةٌ وستّون بايتاً</b> — أي <c>r‖s</c> لمنحنًى من ٢٥٦ بت كما يُلزم <c>RFC 6931</c>.
     ///
-    /// <para><b>وDER يُستبعَد صراحةً</b>: تسلسلُ DER يبدأ بـ<c>0x30</c> ويتجاوز طولُه
-    /// الأربعةَ والستّين — <b>فالنفيُ مقيسٌ لا مُفترَض</b>.</para>
+    /// <para><b>وDER يُستبعَد صراحةً</b> — <b>ببنيته لا بأوّل بايت</b> (<see cref="IsDerEcdsaSignature"/>):
+    /// القيمةُ لا تُقرأ تسلسلاً كاملاً من عددين صحيحين. <b>فالنفيُ مقيسٌ لا مُفترَض</b>.</para>
     /// </summary>
     [Fact]
     public async Task TheSignatureValue_IsP1363_AsTheDeclaredAlgorithmRequires()
@@ -89,7 +90,70 @@ public class StampEncodingMatchesDeclaredAlgorithmTests : IDisposable
 
         Assert.Equal(EcdsaSha256, signature.Method);
         Assert.Equal(64, signature.Value.Length);
-        Assert.NotEqual(0x30, signature.Value[0]);
+        Assert.False(IsDerEcdsaSignature(signature.Value),
+            "‏القيمةُ تسلسلُ DER كاملٌ من عددين صحيحين — والوسمُ المُعلَن يُلزم r‖s بطولٍ ثابت.");
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٦٧) <b>توقيعُ DER يُعرَف ببنيته — تسلسلٌ من عددين صحيحين يستغرق القيمةَ كلَّها — لا
+    /// بأوّل بايت.</b>
+    ///
+    /// <para><b>ما كان:</b> <c>Assert.NotEqual(0x30, signature.Value[0])</c>. <b>و<c>r</c> في <c>r‖s</c> عشوائيّ</b>
+    /// (ECDSA يختار <c>k</c> عشوائيّاً في كلّ توقيع)، فأوّلُ بايتٍ منه <c>0x30</c> مرّةً في كلّ ٢٥٦ توقيعاً تقريباً — <b>فيسقط
+    /// الاختبارُ على توقيع P1363 صحيحٍ تماماً</b>. وقد سقط فعلاً: «Expected: Not 48 · Actual: 48» في بوّابات شجرة وثائق
+    /// ح-٦٦ (2026-09-26 21:14)، والحزمةُ نفسُها خضراءُ قبلها وبعدها.</para>
+    /// </summary>
+    internal static bool IsDerEcdsaSignature(byte[] value)
+    {
+        try
+        {
+            var reader = new AsnReader(value, AsnEncodingRules.DER);
+            var sequence = reader.ReadSequence();
+            sequence.ReadInteger();
+            sequence.ReadInteger();
+            sequence.ThrowIfNotEmpty();
+            reader.ThrowIfNotEmpty();
+            return true;
+        }
+        catch (AsnContentException)
+        {
+            // ‏ليست بنيةَ DER — وهذا هو الجوابُ المطلوب لا خطأٌ يُبتلع.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// <b>الحالةُ التي سقط عليها الحكمُ القديم — مصنوعةً لا منتظَرة:</b> توقيعُ P1363 <b>صحيحٌ يُتحقَّق منه</b> وأوّلُ بايتٍ
+    /// فيه <c>0x30</c>. يُوقَّع حتى يظهر (نحو ٢٥٦ محاولةً في المتوسّط؛ والسقفُ يجعل الإخفاقَ دون ‎e⁻⁷⁸).
+    /// </summary>
+    [Fact]
+    public void AP1363SignatureThatBeginsWith0x30_IsNotMistakenForDer()
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var data = new byte[32];
+        byte[]? found = null;
+        for (var i = 0; i < 20_000 && found is null; i++)
+        {
+            BitConverter.GetBytes(i).CopyTo(data, 0);
+            var candidate = key.SignData(data, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
+            if (candidate[0] == 0x30)
+                found = candidate;
+        }
+
+        Assert.NotNull(found);
+        Assert.True(key.VerifyData(data, found!, HashAlgorithmName.SHA256, DSASignatureFormat.IeeeP1363FixedFieldConcatenation));
+        Assert.Equal(64, found!.Length);
+        Assert.False(IsDerEcdsaSignature(found));
+    }
+
+    /// <summary><b>شاهدُ ضبطٍ موجب:</b> توقيعُ DER حقيقيٌّ يُعرَف DER — وإلّا فالحكمُ أعلاه يقول «لا» لكلّ شيء.</summary>
+    [Fact]
+    public void ARealDerSignature_IsRecognisedAsDer()
+    {
+        using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var der = key.SignData(new byte[32], HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
+
+        Assert.True(IsDerEcdsaSignature(der));
     }
 
     /// <summary>
