@@ -13,10 +13,12 @@ public class InventoryPerformanceTests : IDisposable
     private readonly long _companyId;
     private readonly long _warehouseId;
     private readonly long _productId;
+    private readonly Xunit.Abstractions.ITestOutputHelper _output;
 
-    public InventoryPerformanceTests()
+    public InventoryPerformanceTests(Xunit.Abstractions.ITestOutputHelper output)
     {
-        _db = BrqoshDbContextFactory.Create(DatabaseProvider.Sqlite, "Data Source=:memory:");
+        _output = output;
+        _db =BrqoshDbContextFactory.Create(DatabaseProvider.Sqlite, "Data Source=:memory:");
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
@@ -55,6 +57,9 @@ public class InventoryPerformanceTests : IDisposable
         sw.Stop();
 
         Assert.Equal(movementCount, onHand);
+        // ‏(ح-٦٥) ‏الرقمُ يُطبع عند النجاح أيضاً — وكان لا يظهر إلّا في رسالة السقوط، فنشرت
+        // ‏PERFORMANCE_BUDGETS «ناجحٌ ضمن الحدّ» بلا رقمٍ للاستعلام وحده.
+        _output.WriteLine($"[أداء · رصيد المخزون] {movementCount} حركةً · الاستعلام وحده {sw.Elapsed.TotalMilliseconds:N2}ms");
         Assert.True(sw.ElapsedMilliseconds < 500,
             $"استعلام الرصيد استغرق {sw.ElapsedMilliseconds}ms لـ {movementCount} حركة — المتوقع أقل من 500ms");
     }
