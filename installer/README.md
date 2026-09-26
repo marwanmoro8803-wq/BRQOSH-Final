@@ -123,7 +123,7 @@ dotnet publish tools/VendorLicenseIssuer/VendorLicenseIssuer.csproj -c Release -
 1. شاشة إعدادات زاتكا داخل البرنامج  
 2. معالج CSID (OTP من بوابة فاتورة)  
 3. بيئة Simulation ثم Production بعد الاعتماد  
-4. التحقق باختبار `ZatcaLiveCsidTests` عند توفر OTP  
+4. مسبارُ `tools/ZatcaLiveCsidProbe` عند توفر OTP — **على بوّابة المطوّرين أو المحاكاة وحدَهما** (`docs/ZATCA_LIVE_CSID.md`)  
 
 ---
 
