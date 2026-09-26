@@ -3078,9 +3078,10 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-٦١ | `658dac4` | خمسةَ عشرَ حوارَ ترحيل (XAML) · ستّةٌ منها (الشيفرة) · `EnterDoesNotPostTests.cs` | **«Enter» يُرحِّل مستنداً لا يُعدَّل لأوّل طرفٍ أبجديّاً** (`ui-ux-i18n-printing#5`) — والتدقيقُ سمّى أربعةَ عشر، **والقاعدةُ بالمعنى وجدت الخامسَ عشر**؛ **ويُقاس بنيويّاً لا بإطلاق `Loaded`** — فتحميلُ الأطراف يمرّ بـ`AppServices` الذي لا يُعيد توجيهَه اختبار |
 | ح-٦٢ | `21708ef` | `installer/brqosh.wxs` · `TheInstallerRequiresTheRuntimeItRunsOnTests.cs` | **فحصُ .NET في المُنصِّب يُرضيه أيُّ إصدار** (`installer-deployment-ops#5`) — `DirectorySearch` على المجلّد الأب؛ **والتعليقُ يصف فحصَ سجلٍّ لم يُنفَّذ**، والرسالةُ تَعِد بـ«أو أحدث»؛ **ويُقاس بتشغيل `AppSearch` في جلسةٍ لا تُثبِّت** |
 | ح-٦٣ | `c590171` | `scripts/check-coverage.ps1` · `scripts/ops/verify-gates.ps1` · `TheCoverageGateCountsEachLineOnceTests.cs` | **بوّابةُ التغطية تعدّ أسطرَ Domain مرّتين** (`evidence-integrity#2`) — جذرا `<source>` والمفتاحُ الاسمُ العاري؛ **وسقّاطةُ Domain (46%) عُويِرت على الرقم الخاطئ فكان ضياعُ `Domain.Tests` كلِّه يمرّ** |
+| ح-٦٤ | `1860fa5` | `TenantMiddlewareTests.cs` | **اختبارا عزل المستأجر كانا يرجعان قبل أيّ تأكيد** (`evidence-integrity#6`) — قاعدةٌ فارغةٌ فـ`return;`، **ومرّا والحارسُ مُعطَّل** (قِيس بطفرةٍ في شجرةٍ معزولة)؛ وهما من «سبع حزم الحراسة» في §2ب |
 
-**والقياسُ عند آخر إيداع (`c590171`):** `Brqosh.Domain.Tests` **٢٤٥/٢٤٥** ·
-`Brqosh.Application.Tests` **١٩٠٣/١٩٠٣** · `Brqosh.Desktop.Tests` **٤٠١/٤٠١** ·
+**والقياسُ عند آخر إيداع (`1860fa5`):** `Brqosh.Domain.Tests` **٢٤٥/٢٤٥** ·
+`Brqosh.Application.Tests` **١٩٠٣/١٩٠٣** · `Brqosh.Desktop.Tests` **٤٠١/٤٠١** · `Brqosh.Api.Tests` **٩٥/٩٥** ·
 **صفرٌ متخطًّى** · الماسحُ الأمنيُّ `EXIT=0`.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
@@ -3191,7 +3192,7 @@ false`)، **والموحَّدُ بقي على ربح السنة الجارية 
 
 | الأولوية | البند | الحالة |
 |----------|-------|--------|
-| P0 | API auth + tenant default-deny | ✅ **مغلق ومحروس** — مفتاحٌ إلزاميٌّ في الإنتاج (`ApiSecuritySettings.EnsureProductionApiKey`) و`TenantGuard` على كلّ مسار، وسبعُ حزمِ حراسة: `ApiKeyGuardTests` · `ProductionApiSecurityStartupTests` · `TenantIsolationListingTests` · `TenantMiddlewareTests` · `ApiRoleEscalationTests` · `ApiRateLimitMiddlewareTests` · `WebhookUrlValidatorTests`. **والسطرُ كان بائتاً** |
+| P0 | API auth + tenant default-deny | ✅ **مغلق ومحروس** — مفتاحٌ إلزاميٌّ في الإنتاج (`ApiSecuritySettings.EnsureProductionApiKey`) و`TenantGuard` على كلّ مسار، وسبعُ حزمِ حراسة: `ApiKeyGuardTests` · `ProductionApiSecurityStartupTests` · `TenantIsolationListingTests` · `TenantMiddlewareTests` · `ApiRoleEscalationTests` · `ApiRateLimitMiddlewareTests` · `WebhookUrlValidatorTests`. **والسطرُ كان بائتاً** — **⚠ (ح-٦٤ `1860fa5`): `TenantMiddlewareTests` لم يكن يحرس شيئاً** — يرجع صامتاً على قاعدةٍ فارغة، **ومرّ والحارسُ مُعطَّل**؛ صار يُنشئ مستأجرَه ويسقط بطفرتين في الحارس |
 | P0 | O-01…O-05 حي | ⏭ خارجي |
 | P1 | G-27 XAML sweep كامل | ✅ CEEF-145 · `XamlUiLocalizer` + registry 100% |
 | P1 | G-19 WPS | ✅ CEEF-231 · ط2-٧ — **وكان الملفُّ يخرج بصفر سجلّات** لواجبٍ إلزاميٍّ نظاماً |
