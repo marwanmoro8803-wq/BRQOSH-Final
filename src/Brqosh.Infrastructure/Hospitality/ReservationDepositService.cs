@@ -64,17 +64,27 @@ public class ReservationDepositService(BrqoshDbContext db)
                 db, companyId, SaudiChartOfAccounts.SystemCodes.CashOnHand, token);
             var advances = await SystemAccountProvisioning.EnsureAsync(
                 db, companyId, SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers, token);
+            var vatOutput = await SystemAccountProvisioning.EnsureAsync(
+                db, companyId, SaudiChartOfAccounts.SystemCodes.VatOutput, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, on, PostingDocumentKind.JournalEntry,
-                accountIds: [cash.Id, advances.Id], ct: token);
+                accountIds: [cash.Id, advances.Id, vatOutput.Id], ct: token);
 
             var entry = JournalEntry.CreateDraft(companyId, on,
                 $"عربون حجز {reservation.ReservationNumber}",
                 sourceDocument: $"{TakenPrefix}{reservationId}");
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٨١ · `sector-modules#6`) ‏**والعربونُ نقطةُ استحقاقٍ للضريبة — يوم القبض.**
+            //
+            // ‏كان يُقيَّد كلُّه التزاماً في `2105` بلا ضريبة، **فتُستحقّ ضريبتُه يوم المغادرة لا يوم القبض**: عربونُ
+            // ‏فبراير لإقامةِ مارس يغيب عن إقرار فبراير. ونظامُ الضريبة يجعل المقابلَ المقبوضَ مقدّماً نقطةَ استحقاق.
+            // ‏**فالعربونُ شاملٌ للضريبة**: صافيه التزامٌ، وضريبتُه مخرجاتٌ تبلغ إقرارَ شهرها (قيدٌ ليس مستنداً محسوباً).
+            var (net, vat) = SplitVatInclusive(amount);
             entry.AddLine(cash, amount, 0m, "قبض عربون حجز");
-            entry.AddLine(advances, 0m, amount, "عربون حجز — التزام");
+            entry.AddLine(advances, 0m, net, "عربون حجز — التزام (صافياً من الضريبة)");
+            if (vat > 0m)
+                entry.AddLine(vatOutput, 0m, vat, "ضريبةُ العربون — تُستحقّ عند القبض");
 
             var number = await new JournalEntryNumberGenerator(db).NextAsync(companyId, on);
             entry.Post(number);
@@ -99,7 +109,10 @@ public class ReservationDepositService(BrqoshDbContext db)
     internal async Task<decimal> ApplyOnCheckOutAsync(
         long companyId, long reservationId, DateOnly on, CancellationToken ct = default)
     {
-        var outstanding = await OutstandingAsync(companyId, reservationId, ct);
+        // ‏(ح-٨١) ‏**صافي العربون وضريبتُه كلٌّ من حسابه** — وعربونٌ قُبض قبل هذا بلا ضريبةٍ يُنزَل كلُّه كما كان.
+        var net = await OutstandingOnAsync(companyId, reservationId, SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers, ct);
+        var vat = await OutstandingOnAsync(companyId, reservationId, SaudiChartOfAccounts.SystemCodes.VatOutput, ct);
+        var outstanding = net + vat;
         if (outstanding <= 0m)
             return 0m;
 
@@ -112,7 +125,18 @@ public class ReservationDepositService(BrqoshDbContext db)
             $"إنزال عربون حجز {reservationId}",
             sourceDocument: $"{AppliedPrefix}{reservationId}");
 
-        entry.AddLine(advances, outstanding, 0m, "إنزال عربون على فاتورة المغادرة");
+        if (net > 0m)
+            entry.AddLine(advances, net, 0m, "إنزال عربون على فاتورة المغادرة");
+
+        // ‏(ح-٨١) ‏**وضريبةُ العربون تُردّ من المخرجات** — ففاتورةُ المغادرة تحمل ضريبةَ الإقامة كلِّها، ومنها ما
+        // ‏استُحقّ عند القبض؛ وبلا هذا تُدفع ضريبةُ العربون مرّتين.
+        if (vat > 0m)
+        {
+            var vatOutput = await SystemAccountProvisioning.EnsureAsync(
+                db, companyId, SaudiChartOfAccounts.SystemCodes.VatOutput, ct);
+            entry.AddLine(vatOutput, vat, 0m, "ضريبةُ العربون المستحقّةُ سلفاً — تُخصم من ضريبة الفاتورة");
+        }
+
         entry.AddLine(receivable, 0m, outstanding, "تخفيض ذمة النزيل بالعربون");
 
         var number = await new JournalEntryNumberGenerator(db).NextAsync(companyId, on);
@@ -125,19 +149,35 @@ public class ReservationDepositService(BrqoshDbContext db)
 
     /// <summary>العربونُ المقبوضُ ولم يُنزَل بعد — <b>يُقرأ من الأستاذ لا من حقل</b>.</summary>
     internal async Task<decimal> OutstandingAsync(
-        long companyId, long reservationId, CancellationToken ct = default)
+        long companyId, long reservationId, CancellationToken ct = default) =>
+        await OutstandingOnAsync(companyId, reservationId, SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers, ct)
+        + await OutstandingOnAsync(companyId, reservationId, SaudiChartOfAccounts.SystemCodes.VatOutput, ct);
+
+    /// <summary>(ح-٨١) ما بقي من العربون على حسابٍ بعينه — المقبوضُ ناقصاً المُنزَل.</summary>
+    private async Task<decimal> OutstandingOnAsync(
+        long companyId, long reservationId, string accountCode, CancellationToken ct)
     {
-        var taken = await SumAsync(companyId, $"{TakenPrefix}{reservationId}", ct);
-        var applied = await SumAsync(companyId, $"{AppliedPrefix}{reservationId}", ct);
+        var taken = await SumAsync(companyId, $"{TakenPrefix}{reservationId}", accountCode, ct);
+        var applied = await SumAsync(companyId, $"{AppliedPrefix}{reservationId}", accountCode, ct);
         return Math.Round(taken - applied, 2, MidpointRounding.AwayFromZero);
     }
 
-    /// <summary>مجموعُ ما دائنَ حسابُ الدفعات المقدَّمة في قيودِ مصدرٍ بعينه.</summary>
-    private async Task<decimal> SumAsync(long companyId, string sourceDocument, CancellationToken ct)
+    /// <summary>
+    /// (ح-٨١) <b>العربونُ شاملٌ للضريبة</b> — صافيه وضريبتُه بالنسبة الأساسيّة، والضريبةُ مقرَّبةٌ والصافي باقيه فمجموعُهما
+    /// المقبوضُ بالهللة.
+    /// </summary>
+    internal static (decimal Net, decimal Vat) SplitVatInclusive(decimal gross)
+    {
+        var vat = Math.Round(gross * VatCalculator.SaudiVatRate / (1m + VatCalculator.SaudiVatRate), 2,
+            MidpointRounding.AwayFromZero);
+        return (gross - vat, vat);
+    }
+
+    /// <summary>مجموعُ ما دائنَ حسابٌ بعينه في قيودِ مصدرٍ بعينه.</summary>
+    private async Task<decimal> SumAsync(long companyId, string sourceDocument, string accountCode, CancellationToken ct)
     {
         var accountId = await db.Accounts
-            .Where(a => a.CompanyId == companyId
-                        && a.Code == SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers)
+            .Where(a => a.CompanyId == companyId && a.Code == accountCode)
             .Select(a => (long?)a.Id)
             .FirstOrDefaultAsync(ct);
         if (accountId is null) return 0m;

@@ -3,6 +3,7 @@ using Brqosh.Domain.Construction;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
+using Brqosh.Infrastructure.Hospitality;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -412,6 +413,8 @@ public class VatReturnQuery(BrqoshDbContext db)
             .Select(e => new
             {
                 TouchesNetVat = netId != null && e.Lines.Any(l => l.AccountId == netId),
+                DepositVatOffset = e.SourceDocument != null
+                                   && e.SourceDocument.StartsWith(ReservationDepositService.AppliedPrefix),
                 Lines = e.Lines
                     .Where(l => l.AccountId == outputId || l.AccountId == inputId)
                     .Select(l => new { l.AccountId, l.Debit, l.Credit })
@@ -454,6 +457,13 @@ public class VatReturnQuery(BrqoshDbContext db)
             // ‏لا ناقصاً. وهو خطأٌ في جانب المنشأة لا جانب الهيئة، **وطريقُه الصحيح إشعارٌ دائن**
             // ‏لا قيدٌ يدويّ — وهو مستندٌ محسوبٌ أصلاً.
             if (entryOutput > 0m) outputVat += entryOutput;
+
+            // ‏(جاهزيّةُ الإطلاق · ح-٨١) ‏**ونقصٌ ثانٍ معلومٌ غيرُ السداد: ردُّ ضريبة العربون عند إنزاله.**
+            //
+            // ‏ضريبةُ العربون أُقرّت في شهر قبضه (نقطةُ استحقاق)، وفاتورةُ المغادرة تحمل ضريبةَ الإقامة كلِّها —
+            // ‏فالإنزالُ يردّ ما أُقرّ سلفاً. **وإهمالُه (كما يُهمَل النقصُ عامّةً) يُقرّ ضريبةَ العربون مرّتين.**
+            // ‏ويُعرف بمصدره لا بإشارته: لا يُقرأ كلُّ نقصٍ خصماً، بل هذا وحدَه.
+            else if (entryOutput < 0m && entry.DepositVatOffset) outputVat += entryOutput;
             if (entryInput > 0m) inputVat += entryInput;
         }
 

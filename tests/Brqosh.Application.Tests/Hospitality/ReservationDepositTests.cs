@@ -5,6 +5,7 @@ using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Hospitality;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,12 +68,89 @@ public class ReservationDepositTests : IDisposable
         await new ReservationDepositService(_db)
             .TakeAsync(_companyId, reservation.Id, 400m, Booked, "admin");
 
-        Assert.Equal(-400m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers));
+        // ‏(ح-٨١) ‏**والعربونُ شاملٌ للضريبة**: ٣٤٧٫٨٣ التزاماً و٥٢٫١٧ ضريبةً مستحقّةً يوم القبض — وكان ٤٠٠ التزاماً بلا ضريبة.
+        Assert.Equal(-347.83m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers));
+        Assert.Equal(-52.17m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.VatOutput));
         Assert.Equal(400m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.CashOnHand));
         Assert.Equal(revenueBefore, await BalanceAsync("4101"));
 
         // ‏**ولا ذمّةَ على النزيل بعد** — فالتوريدُ لم يقع، والدفترُ المساعد يقول صفراً.
         Assert.Equal(0m, await SubledgerAsync());
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨١ · <c>sector-modules#6</c>) <b>وضريبةُ العربون لا تُدفع مرّتين</b> — فاتورةُ المغادرة تحمل ضريبةَ
+    /// الإقامة كلِّها (١٥٠)، ومنها ما استُحقّ عند القبض (٥٢٫١٧) فيُردّ من المخرجات عند الإنزال: <b>المخرجاتُ ١٥٠ لا ٢٠٢٫١٧</b>.
+    /// </summary>
+    [Fact]
+    public async Task AtCheckOut_TheDepositsVat_IsNotChargedTwice()
+    {
+        await SetupAsync();
+        var reservation = await BookedReservationAsync("R-V1");
+        await new ReservationDepositService(_db).TakeAsync(_companyId, reservation.Id, 400m, Booked, "admin");
+
+        await new FolioService(_db).CheckInAsync(_companyId, reservation.Id);
+        await new FolioService(_db).CheckOutAsync(_companyId, reservation.Id, CheckOut);
+
+        Assert.Equal(-150m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.VatOutput));
+        Assert.Equal(0m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers));
+        Assert.Equal(750m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AccountsReceivable));
+    }
+
+    /// <summary>
+    /// (ح-٨١) <b>وضريبةُ العربون تبلغ إقرارَ شهر قبضه</b> — فبرايرُ يُقرّ ٥٢٫١٧، ومارسُ ما بقي (١٥٠ − ٥٢٫١٧)، والمجموعُ ضريبةُ
+    /// الإقامة حرفاً. <b>وكان فبرايرُ صفراً ومارسُ ١٥٠.</b>
+    /// </summary>
+    [Fact]
+    public async Task TheDepositsVat_ReachesTheReturnOfTheMonthItWasReceived()
+    {
+        await SetupAsync();
+        var reservation = await BookedReservationAsync("R-V2");
+        await new ReservationDepositService(_db).TakeAsync(_companyId, reservation.Id, 400m, Booked, "admin");
+        await new FolioService(_db).CheckInAsync(_companyId, reservation.Id);
+        await new FolioService(_db).CheckOutAsync(_companyId, reservation.Id, CheckOut);
+
+        var february = await new VatReturnQuery(_db).ExecuteAsync(_companyId, new(2026, 2, 1), new(2026, 2, 28));
+        var march = await new VatReturnQuery(_db).ExecuteAsync(_companyId, new(2026, 3, 1), new(2026, 3, 31));
+
+        Assert.Equal(52.17m, february.NetOutputVat);
+        Assert.Equal(97.83m, march.NetOutputVat);
+    }
+
+    /// <summary>
+    /// (ح-٨١) <b>شاهدُ ضبط — عربونٌ قُبض قبل الإصلاح</b> بلا سطر ضريبة يُنزَل كلُّه كما كان: الذمّةُ ٧٥٠ والمخرجاتُ ضريبةُ الفاتورة.
+    /// </summary>
+    [Fact]
+    public async Task ADepositTakenBeforeTheFix_IsStillAppliedWhole()
+    {
+        await SetupAsync();
+        var reservation = await BookedReservationAsync("R-V3");
+        var cash = await _db.Accounts.SingleAsync(a =>
+            a.CompanyId == _companyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashOnHand);
+        var advances = await _db.Accounts.SingleAsync(a =>
+            a.CompanyId == _companyId && a.Code == SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers);
+        var legacy = Brqosh.Domain.Accounting.JournalEntry.CreateDraft(_companyId, Booked, "عربون حجز قديم",
+            $"{ReservationDepositService.TakenPrefix}{reservation.Id}");
+        legacy.AddLine(cash, 400m, 0m, "قبض");
+        legacy.AddLine(advances, 0m, 400m, "التزام");
+        legacy.Post("JE-LEGACY-DEP");
+        _db.JournalEntries.Add(legacy);
+        await _db.SaveChangesAsync();
+
+        await new FolioService(_db).CheckInAsync(_companyId, reservation.Id);
+        await new FolioService(_db).CheckOutAsync(_companyId, reservation.Id, CheckOut);
+
+        Assert.Equal(750m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AccountsReceivable));
+        Assert.Equal(0m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers));
+        Assert.Equal(-150m, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.VatOutput));
+    }
+
+    /// <summary><b>والتقسيمُ بالهللة</b> — ٤٠٠ ⟵ ٣٤٧٫٨٣ و٥٢٫١٧؛ و١١٥ ⟵ ١٠٠ و١٥.</summary>
+    [Fact]
+    public void TheDepositSplit_IsVatInclusive_ToTheHalala()
+    {
+        Assert.Equal((347.83m, 52.17m), ReservationDepositService.SplitVatInclusive(400m));
+        Assert.Equal((100m, 15m), ReservationDepositService.SplitVatInclusive(115m));
     }
 
     /// <summary>
