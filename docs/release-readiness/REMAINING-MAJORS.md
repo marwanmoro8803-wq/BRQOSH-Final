@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 42 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 43 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وسبعةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٧) — **بعضُها خارج هذا الحصر**،
+**وثمانيةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٨) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، فلا بندَ له هنا.
 
 ---
@@ -100,7 +100,7 @@
 - ◐ **`tax-zatca#12`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>VAT return: the per-category breakdown ignores document discounts and currency (measured); there is no mapping to official return boxes and no reverse-charge or import VAT — ح-٤١ `21ce51e` — **الأوعيةُ بالريال بعد الخصم، وتشمل المستخلصَ والإلغاء، وتُطابق الصافي على الشاشة والمطبوع**؛ **ولا إسنادَ إلى صناديق النموذج** (نصُّه ليس في المستودع) **ولا احتسابَ عكسيّ**
 - ✅ **`tax-zatca#13`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Progress-billing cancellation document has no billing reference and no reason — ح-٣٦ `693f8ce`
 - ✅ **`tax-zatca#14`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Printed foreign-currency tax invoices mix currencies: lines in document currency, totals in SAR, QR in document currency — **وطباعةُ الإشعار المدين انضمّت إلى الصنف بـح-٣٩** (`ee47836`)، وكانت قبلُ متّسقةً في خطئها — ح-٤٢ `27af80a` — **الطباعاتُ الخمسُ بعملة المستند ومعها الريالُ إفصاحاً؛ والرمزُ الاحتياطيُّ على اصطلاح الـXML**
-- ☐ **`tax-zatca#15`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>The O-01 runbook and OPEN_ITEMS overstate readiness: onboarding steps are missing, the test environment was never exercised, and a live-CSID test reports Passed while doing nothing
+- ✅ **`tax-zatca#15`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>The O-01 runbook and OPEN_ITEMS overstate readiness: onboarding steps are missing, the test environment was never exercised, and a live-CSID test reports Passed while doing nothing — ح-٦٨ `8f2897b` — **الاختبارُ الحيُّ صار مسباراً** (`tools/ZatcaLiveCsidProbe`: جذرٌ مؤقّتٌ قبل المفتاح، ولا طلبَ بلا رمز، ولا إنتاج) — **لأنّ «التخطّي المُعلَن» المقترَح يُسقط خطوةَ CI التي تشترط صفراً**؛ وحارسٌ: لا اختبارَ يقرأ رمزَ الهيئة؛ **وO-01 أُعيدت كتابتُه على ما يصحّ** («ما لم يُبنَ — داخلَ المستودع»، والفواتيرُ في المحاكاة وحدَها)، و«مختبَرةٌ على بيئة الاختبار» صُحّحت هي و«O-01 خارجيّ» في مواضعها الثلاثة
 - ☐ **`tax-zatca#16`** · <sub>مؤكّد · في اليد · كبير · خطر</sub><br>G-42 re-measured: the product has one EGS unit and one CSID per company; there is no per-branch or per-device EGS onboarding, and POS-solution registration is external
 
 ## manufacturing (11 major)
