@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 47 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 48 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**واثنان وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٢) — **بعضُها خارج هذا الحصر**،
+**وثلاثةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٣) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، فلا بندَ له هنا.
 
 ---
@@ -231,7 +231,7 @@
 - ◐ **`evidence-integrity#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>MASTER.md verdict (CONDITIONAL GO, 97%) predates the 51-finding forensic audit and was never recomputed — `0815835` — **الحكمُ صار NO-GO**؛ **ولم يُنشَر رقمٌ بديل**
 - ✅ **`evidence-integrity#2`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Coverage gate double-counts Brqosh.Domain; the published per-assembly and merged numbers are artifacts, and the gate is blind to Domain.Tests losing coverage — ح-٦٣ `c590171` — **المفتاحُ مسارٌ مطلق** (`<source>` + `filename`)، وتقريرٌ بلا جذرٍ واحدٍ يُرفض ولا يُخمَّن؛ Domain **81.50%** (كانت تُنشر ~52%) والمدموجُ **64.38%**؛ **وسقّاطةُ Domain 0.80 فوق ما تعطيه المشاريعُ الأخرى وحدَها (78.28%)** — فضياعُ `Domain.Tests` يُسقطها وكان يمرّ على 0.46؛ ثلاثةُ اختباراتٍ تُشغّل البوّابةَ نفسَها بـ`pwsh`، وحالةُ `coverage-two-roots` في `verify-gates`
 - ✅ **`evidence-integrity#3`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No critical journey covers manufacturing, and no test asserts finished-goods cost, quantity or WIP amounts — ح-١٣ وح-٣٠ — **التكلفةُ صارت مؤكّدةً بمبلغ**؛ **والرحلةُ الحرجة منذ ح-٧١ `483f318`** (ر-١٣): الكمّيّةُ والتكلفةُ ورصيدُ WIP مؤكّدةٌ بمبالغها، وتكلفةُ المبيعات بعد بيع التامّ
-- ☐ **`evidence-integrity#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>verify-gates.ps1: five of fifteen sensitivity cases do not exercise the real gate, and there is no recorded full run of the current fifteen
+- ✅ **`evidence-integrity#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>verify-gates.ps1: five of fifteen sensitivity cases do not exercise the real gate, and there is no recorded full run of the current fifteen — ح-٧٣ `be34284` — **كلُّ بوّابةٍ في ملفٍّ واحدٍ يُشغّله خطُّها واختبارُ حساسيّتها معاً** (`scripts/assert-no-skipped-tests.ps1` · `assert-tests-executed.ps1` · `assert-version-not-shipped.ps1`): قِيس قبلُ أنّ كسرَ بوّابة CI يترك `verify-gates` أخضر، وبعدُ أنّ كسرَ السكربت يُسقطه؛ وحالةُ الدفتر لا تمسّ الدفترَ المُتعقَّب؛ **وتشغيلةٌ كاملةٌ مُسجَّلة: عضّت ١٧ · عمياء ٠** — وحارسٌ يُسقط أيَّ نسخةٍ ثانيةٍ من منطق البوّابة
 - ☐ **`evidence-integrity#5`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>CI has not run on the 46 audited commits; 'CI chain green' is a local re-run, and the version bump behind the upgrade fix only happens in CI
 - ✅ **`evidence-integrity#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The tenant-mismatch API tests exit before asserting anything, yet OPEN_ITEMS cites them as guarding tenant default-deny — ح-٦٤ `1860fa5` — **قِيس العمى أوّلاً**: الاختباراتُ القديمةُ مرّت كلُّها والحارسُ مُعطَّل؛ صارت تُنشئ مستأجرَها عبر `/api/v1/tenants/provision` وتسأل: مستأجرٌ غريب ⟵ 403 · مستأجرٌ حقيقيٌّ آخر ⟵ 403 · وضعُ SaaS بلا ترويسة ⟵ 403 · المستأجرُ نفسُه ⟵ 200 (ضابطٌ موجب)؛ طفرتان في الحارس تُسقطانها بالاسم
 - ✅ **`evidence-integrity#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>OPEN_ITEMS §3 publishes false or contradictory figures, and PERFORMANCE_BUDGETS is stale — ح-٦٥ `a5732a6` — **«FullScenario 13/13» ليس في الحزمة**: ٢٦٤٤ اسماً عند `e2f2a41` ولا واحدٌ منها، وشاهدُ الضبط Golden = ٨؛ صفٌّ يدّعي «ضمن الحزمة» يُسمّي صنفَه وعددُه يُقرأ بالانعكاس (`TheLastMeasurementNamesWhatTheSuiteRunsTests`)، ورأسُ `OPEN_ITEMS` يبلغ آخرَ إغلاق (`TheHeaderReachesTheLastClosureTests`)؛ التغطيةُ والمُشغِّلُ الخارجيُّ وO-06 بتواريخها؛ وPERFORMANCE_BUDGETS على Release وPostgreSQL، كلُّ صنفٍ وحده ثلاثاً
