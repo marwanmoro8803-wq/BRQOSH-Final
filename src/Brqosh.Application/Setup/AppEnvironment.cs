@@ -26,6 +26,17 @@ public static class AppEnvironmentConfig
 
     public static bool IsProduction => Current == AppEnvironment.Production;
 
+    /// <summary>
+    /// ‏(ح-٧٥) <b>هل هذه ثنائيّةٌ مشحونة؟</b> — <c>BRQOSH_SHIPPED</c> يُعرَّف حين يبني <c>installer/publish.ps1</c>
+    /// ‏بـ<c>-p:BrqoshShipped=true</c> وحدَه (<c>Directory.Build.props</c>). وفيها لا تُقرأ البيئةُ أصلاً.
+    /// </summary>
+    public static bool IsShippedBuild =>
+#if BRQOSH_SHIPPED
+        true;
+#else
+        false;
+#endif
+
     /// <summary>للاختبارات فقط — يتجاوز متغير البيئة دون تلويث العملية إن أُزيل في finally.</summary>
     public static void ForceForTests(AppEnvironment? environment)
     {
@@ -59,10 +70,26 @@ public static class AppEnvironmentConfig
     /// <c>BRQOSH_TEST=1</c> الذي يضبطه harness الاختبارات (انظر <c>test.runsettings</c>
     /// و<c>TestEnvironmentInitializer</c> في مشاريع الاختبار).
     /// </summary>
-    private static AppEnvironment Resolve() => Decide(
+    private static AppEnvironment Resolve() => DecideForBuild(
+        IsShippedBuild,
         ResolveAuthoritative(),
         Environment.GetEnvironmentVariable("BRQOSH_ENV"),
         Environment.GetEnvironmentVariable("BRQOSH_TEST"));
+
+    /// <summary>
+    /// ‏(ح-٧٥ · security-licensing-tenancy#0 · installer-deployment-ops#7) <b>في الثنائيّة المشحونة: إنتاجٌ، بلا شرط.</b>
+    ///
+    /// <para><b>ما كان:</b> المصدرُ الرسميُّ (متغيّرُ الجهاز · ملفُّ العلامة) يحتاج مسؤولَ Windows ليُكتب — <b>ومسؤولُ
+    /// Windows المحلّيُّ هو صاحبُ الجهاز في المنشأة الصغيرة</b>. فكتابتُه «development» تجعل <see cref="Decide"/>
+    /// يُرجع تطويراً، فتعود الفترةُ التجريبيّة ويُفتح <c>BRQOSH_UITEST</c>: <b>دخولٌ آليٌّ بحساب المدير بلا كلمة
+    /// مرور، وترخيصٌ مُتجاوَز</b>. و«معطّلٌ قسرياً في الإنتاج» كان صحيحاً — والإنتاجُ نفسُه قابلٌ للخفض.</para>
+    ///
+    /// <para><b>والقرار:</b> الثنائيّةُ التي يبنيها <c>installer/publish.ps1</c> لا تسأل. وغيرُها يسأل كما كان —
+    /// فالاختباراتُ والبوّاباتُ والتشغيلاتُ الحيّةُ بلا تغيير. <b>ودالةٌ نقيّةٌ</b> ليُقاس الفرعُ المشحونُ بكلّ
+    /// تركيبات المدخلات، وهو لا يُبنى في أيّ تشغيلة اختبار.</para>
+    /// </summary>
+    internal static AppEnvironment DecideForBuild(bool shipped, AppEnvironment? authoritative, string? processEnv, string? testFlag) =>
+        shipped ? AppEnvironment.Production : Decide(authoritative, processEnv, testFlag);
 
     /// <summary>
     /// (CEEF-229 · م0-١٢) قرار البيئة — دالة نقيّة، كل مدخلاتها ظاهرة.

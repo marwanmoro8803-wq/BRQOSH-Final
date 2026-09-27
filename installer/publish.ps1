@@ -29,7 +29,9 @@ if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 Write-Host "رقمُ البناء: $BuildNumber" -ForegroundColor DarkGray
 dotnet publish (Join-Path $Root "src\Brqosh.Desktop\Brqosh.Desktop.csproj") `
     -c Release -r win-x64 --self-contained false `
-    -o $OutDir -p:PublishSingleFile=false -p:BrqoshBuildNumber=$BuildNumber
+    -o $OutDir -p:PublishSingleFile=false -p:BrqoshBuildNumber=$BuildNumber -p:BrqoshShipped=true
+# ‏(ح-٧٥) ‏`BrqoshShipped` يجعل الثنائيّةَ لا تعرف غيرَ الإنتاج — لا متغيّرُ بيئةٍ ولا ملفُّ علامةٍ ولا مسؤولٌ محلّيٌّ
+# ‏يخفضها إلى تطويرٍ يفتح `BRQOSH_UITEST` والفترةَ التجريبيّة. **وهذا السكربتُ وحدَه يمرّرها.**
 if ($LASTEXITCODE -ne 0) {
     Write-Host "dotnet publish فشل (exit=$LASTEXITCODE) — لا حزمةَ تُبنى من شجرةٍ ناقصة." -ForegroundColor Red
     exit $LASTEXITCODE

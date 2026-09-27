@@ -71,4 +71,19 @@
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
   </PropertyGroup>
 
+  <!--
+    ‏(ح-٧٥ · security-licensing-tenancy#0 · installer-deployment-ops#7) **الثنائيّةُ المشحونة لا تعرف غيرَ الإنتاج.**
+
+    ‏**ما كان:** البيئةُ تُقرأ عند التشغيل من متغيّرٍ بنطاق الجهاز أو ملفّ علامةٍ في مجلّد التثبيت — وكلاهما
+    ‏يكتبه **مسؤولُ Windows المحلّيّ**، وهو في كلّ منشأةٍ صغيرةٍ صاحبُ الجهاز نفسُه. فـ«development» هناك
+    ‏تُعيد الفترةَ التجريبيّة وتفتح `BRQOSH_UITEST`: دخولٌ آليٌّ بحساب المدير بلا كلمة مرور، وترخيصٌ مُتجاوَز.
+
+    ‏**والإصلاح:** `installer/publish.ps1` **وحدَه** يمرّر `-p:BrqoshShipped=true`، فيُعرَّف `BRQOSH_SHIPPED`
+    ‏في كلّ مشروع، و`AppEnvironmentConfig` يُرجع Production بلا قراءة — لا متغيّرٌ ولا ملفٌّ ولا مسؤولٌ يخفضها.
+    ‏والبناءُ العاديُّ (اختباراتٌ · بوّابات · CI · تشغيلاتٌ حيّةٌ بـ`BRQOSH_UITEST`) كما هو.
+  -->
+  <PropertyGroup Condition="'$(BrqoshShipped)' == 'true'">
+    <DefineConstants>$(DefineConstants);BRQOSH_SHIPPED</DefineConstants>
+  </PropertyGroup>
+
 </Project>
