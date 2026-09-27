@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 48 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 50 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وأربعةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٤) — **بعضُها خارج هذا الحصر**،
+**وخمسةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٥) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -162,7 +162,7 @@
 
 ## security-licensing-tenancy (10 major)
 
-- ☐ **`security-licensing-tenancy#0`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>A local Windows admin can switch off both the license check and the login by downgrading the environment
+- ✅ **`security-licensing-tenancy#0`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>A local Windows admin can switch off both the license check and the login by downgrading the environment — ح-٧٥ `45db5b2` — **الثنائيّةُ المشحونة لا تعرف غيرَ الإنتاج**: `publish.ps1` وحدَه يبني بـ`-p:BrqoshShipped=true` فـ`DecideForBuild` يُرجع إنتاجاً بلا قراءة — **قِيس على الثنائيّة المبنيّة**: `BRQOSH_ENV=development` ⟵ قبلُ `Development`، وبعدُ `Production`؛ فيسقط معاً `BRQOSH_UITEST` والفترةُ التجريبيّة؛ **ويسري على الحزم المبنيّة بعده** (حزمةُ `dist` 1.0.0 قبله)
 - ☐ **`security-licensing-tenancy#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>License expiry is still not enforced against clock rollback or a long-running session, though ت-١٢ is marked closed
 - ☐ **`security-licensing-tenancy#2`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>License Tier and Features are never enforced, so any license unlocks every edition, module and company count
 - ◐ **`security-licensing-tenancy#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>The ZATCA e-invoicing private key is written to disk in plaintext — ح-٢٠ `3dfe3c6` — **مُثبَّتٌ باختبار**؛ **والمفاضلةُ قرارُ المالك**
@@ -190,7 +190,7 @@
 - ☐ **`installer-deployment-ops#4`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>Package and payload are unsigned today (certificate is a third-party dependency)
 - ✅ **`installer-deployment-ops#5`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>.NET launch condition passes on any Desktop runtime version; the '9 or newer' message is also wrong for .NET 10 — ح-٦٢ `21708ef` — **ملفٌّ بإصدار 9 تحت مجلّدات الإصدارات** لا المجلّدُ الأب؛ **و`FileSearch` بلا `Id`** — بـ`Id` يبنيه WiX صامتاً ولا يُوجد أبداً فيُرفض كلُّ جهاز؛ **مقيسٌ بتشغيل `AppSearch` بلا تثبيت**: المشحونةُ ⟵ المجلّدُ الأب، والمُصلَحةُ ⟵ 9.0.17 (ومسبارٌ: ٦ ⟵ 6.0.36 ضابطٌ موجب · ٨ و١٠ ⟵ لا شيء)؛ **والتنصيبُ الحيُّ على جهازٍ بلا 9 يبقى NOT TESTED (VM)**
 - ☐ **`installer-deployment-ops#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>.NET 9 runtime support ends about 8 weeks after launch, and no document plans for it
-- ☐ **`installer-deployment-ops#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Licence and password bypass: the environment can be downgraded to development, which enables BRQOSH_UITEST auto-admin login and the 30-day trial
+- ✅ **`installer-deployment-ops#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Licence and password bypass: the environment can be downgraded to development, which enables BRQOSH_UITEST auto-admin login and the 30-day trial — ح-٧٥ `45db5b2` — **الثنائيّةُ المشحونة لا تعرف غيرَ الإنتاج**: `publish.ps1` وحدَه يبني بـ`-p:BrqoshShipped=true` فـ`DecideForBuild` يُرجع إنتاجاً بلا قراءة — **قِيس على الثنائيّة المبنيّة**: `BRQOSH_ENV=development` ⟵ قبلُ `Development`، وبعدُ `Production`؛ فيسقط معاً `BRQOSH_UITEST` والفترةُ التجريبيّة؛ **ويسري على الحزم المبنيّة بعده** (حزمةُ `dist` 1.0.0 قبله)
 - ☐ **`installer-deployment-ops#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No licence-expiry warning, and expiry locks the owner out of all books with no read-only mode
 - ☐ **`installer-deployment-ops#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No supported multi-workstation or multi-user deployment: each Windows account re-runs the setup wizard, which silently adopts whatever company is in the database
 - ☐ **`installer-deployment-ops#10`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Automatic backups only work where pg_dump is installed locally; the MSI neither ships nor checks for it, and the guide points to scripts that are not shipped
