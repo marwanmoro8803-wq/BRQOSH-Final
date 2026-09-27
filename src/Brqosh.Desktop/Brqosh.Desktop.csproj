@@ -12,6 +12,9 @@
 
   <ItemGroup>
     <Content Include="..\..\config\templates\**\*.json" Link="config\templates\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- (جاهزيّةُ الإطلاق · commercial-readiness#12) إشعاراتُ الطرف الثالث تُشحن بجوار البرنامج — والمُنصِّبُ يحصد مجلّدَ النشر كلَّه.
+         تُولَّد بـ scripts/third_party_notices.py، ويُسقط TheShippedPackagesAreAllNoticedTests الحزمةَ إن لم تطابق ما يُشحن. -->
+    <Content Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>
