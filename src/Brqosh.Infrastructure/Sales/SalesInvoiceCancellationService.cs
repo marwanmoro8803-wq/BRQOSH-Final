@@ -7,6 +7,7 @@ using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Platform;
+using Brqosh.Infrastructure.RealEstate;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,11 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
 
             await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, cancellationDate, username, fromSourceDocument: true, token);
+
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٩) ‏**وفاتورةُ إيجارٍ مؤجَّلٍ يُعكس تأجيلُها واعترافاتُها معها** — وإلّا بقي المقبوضُ
+            // ‏مقدّماً سالباً والإيرادُ يُكتسب عن فاتورةٍ لم تعد قائمة.
+            await new LeaseRentRecognition(db).WithdrawForCancelledInvoiceAsync(
+                companyId, invoiceId, cancellationDate, username, token);
 
             var sourceDoc = $"SalesInvoice:{invoice.InvoiceNumber}";
             var issueMovements = await db.StockMovements

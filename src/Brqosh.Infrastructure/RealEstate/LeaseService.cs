@@ -111,6 +111,11 @@ public class LeaseService(BrqoshDbContext db)
 
             lease.Terminate(on, unit);
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٩) ‏**ولا يُكتسب إيجارُ شهرٍ بعد الإنهاء** — تُعكس اعترافاتُه بتواريخها، ويبقى غيرُ
+            // ‏المكتسب في 2117 مستحقّاً للمستأجر.
+            await new LeaseRentRecognition(db).WithdrawAfterTerminationAsync(
+                lease, on, SecurityContext.ResolveUsername(), token);
+
             if (lease.RecurringPlanId is long planId)
             {
                 var plan = await db.RecurringInvoicePlans

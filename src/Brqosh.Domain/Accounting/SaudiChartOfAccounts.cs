@@ -102,6 +102,10 @@ public static class SaudiChartOfAccounts
         // ‏يُوزَّع على النُّدُل فيُقيَّد مصروفاً: **فيتضخّم طرفا القائمة معاً**.
         new("2116", "إكراميات مستحقة للعاملين", "Tips Payable to Staff", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
+        // (جاهزيّةُ الإطلاق · ح-٧٩) ‏**الإيجارُ المقبوضُ مقدّماً التزامٌ حتى يُكتسب.** فاتورةُ ربعٍ أو سنةٍ مقدَّماً كانت إيراداً
+        // ‏كلُّها يومَها — فيُعلَن ربحُ أشهرٍ لم تمضِ وتُدفع عليه زكاة، ولا يظهر ما يُستحقّ للمستأجر إن أنهى العقد.
+        new("2117", "إيرادات إيجار مقبوضة مقدّماً", "Unearned Rent Revenue", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
+
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
         new("2202", "مخصص مكافأة نهاية الخدمة", "End of Service Benefits Provision", AccountType.Liability, "22", IsGroup: false),
@@ -234,6 +238,9 @@ public static class SaudiChartOfAccounts
 
         /// <summary>(CEEF-230 · ط3-٣د) إكرامياتٌ مستحقّةٌ للعاملين — التزامٌ لا إيراد.</summary>
         public const string TipsPayable = "2116";
+
+        /// <summary>(جاهزيّةُ الإطلاق · ح-٧٩) إيجارٌ مقبوضٌ مقدّماً — التزامٌ يُكتسب شهراً بشهر.</summary>
+        public const string UnearnedRent = "2117";
 
         /// <summary>(CEEF-230 · ط3-٤ب) عُهَدُ رحلات التوصيل — أصلٌ يُسوَّى مع السائق.</summary>
         public const string TripCashFloat = "1117";

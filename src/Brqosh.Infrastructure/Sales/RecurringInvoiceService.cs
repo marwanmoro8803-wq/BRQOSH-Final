@@ -2,6 +2,7 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.RealEstate;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
@@ -125,6 +126,10 @@ public class RecurringInvoiceService(BrqoshDbContext db)
                     discountPercent: line.DiscountPercent);
 
             await new SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
+
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٩) ‏**وفاتورةُ عقد إيجارٍ تُغطّي أكثرَ من شهرٍ يُؤجَّل ما زاد على شهرها الأوّل** — في
+            // ‏المعاملة نفسِها، فلا تُرى فاتورةٌ رُحّلت بلا تأجيلها. وخطّةٌ ليست لعقدٍ لا تُمسّ.
+            await new LeaseRentRecognition(db).DeferAsync(plan, invoice, occurrence, token);
 
             db.RecurringInvoiceRuns.Add(RecurringInvoiceRun.Create(
                 plan.CompanyId, plan.Id, occurrence, invoice.Id));
