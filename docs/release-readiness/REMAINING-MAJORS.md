@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 50 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 51 بنداً ✅ و10 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وخمسةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٥) — **بعضُها خارج هذا الحصر**،
+**وستّةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٦) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -88,7 +88,7 @@
 - ☐ **`accounting-core#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No go-live migration path for opening balances: no opening trial balance, no open AR/AP invoices, no supplier import
 - ✅ **`accounting-core#8`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>A monetary (AR/AP) revaluation run with a wrong rate cannot be undone: the error message says 'reverse it', but reversal and re-run are both refused — ح-٣٨ `81080d0`
 - ✅ **`accounting-core#9`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No product feature can verify the audit-log hash chain: AuditChainVerifier has zero callers outside tests — ح-٢٩ `d59f2e1`
-- ☐ **`accounting-core#10`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>SOCPA reviewer package (O-02) is a stale 41-line stub; it points the reviewer at a tool that writes into whatever live database is configured, and claims 'In-repo prep: PASS'
+- ✅ **`accounting-core#10`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>SOCPA reviewer package (O-02) is a stale 41-line stub; it points the reviewer at a tool that writes into whatever live database is configured, and claims 'In-repo prep: PASS' — ح-٧٦ `ee527a9` — **الحزمةُ أُعيدت كتابتُها**: المرجعُ الحاضر، وإعادةُ الإنتاج باختبارات المحاسبة والضريبة (SQLite في الذاكرة — لا قاعدةَ تُلمس)، ولا تشغيلَ للأداة؛ **والصنفُ كلُّه**: سبعُ تعليماتٍ في الأدلّة الحيّة كانت تُرسل إلى تشغيلها بلا عزل — منها الخطوةُ السادسةُ في دليل التنصيب وقائمةُ تحقّق الإنتاج بعد الترقية — صُحّحت، وحارسٌ يُسقط أيَّ تعليمةٍ بلا عزل
 
 ## tax-zatca (10 major)
 
@@ -217,12 +217,12 @@
 - ☐ **`commercial-readiness#5`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Licence tiers and features are signed but never enforced, so any licence unlocks every module; per-machine binding is not reflected in pricing
 - ☐ **`commercial-readiness#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Licence expiry locks customers out of their own statutory books with no warning and no read-only mode
 - ◐ **`commercial-readiness#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The shipped support screen shows a placeholder phone number, internal tags and an SLA that contradicts both GTM drafts; no helpdesk exists — ح-٧٠ `1fa2d57` — **ضاق ولم يُغلق**: لا وسمَ داخليٌّ (G-10 · G-31 · G-32 · G-69-C) ولا «MVP» ولا هاتفٌ مؤقّتٌ في أيّ نصٍّ معروضٍ أو ترجمته — وحارسٌ على الصنف؛ **والقنواتُ والباقاتُ من `config/support.json` الذي يعتمده المورّد، وبدونه «لم تعتمد بعد»**. **ويبقى عند المالك**: اعتمادُ اتّفاقيّة مستوى الخدمة وقنواتها، ومكتبُ دعمٍ حقيقيّ
-- ☐ **`commercial-readiness#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No Arabic user manual; the only install guide sends pilot customers to a developer tool that writes to the books
+- ◐ **`commercial-readiness#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No Arabic user manual; the only install guide sends pilot customers to a developer tool that writes to the books — ح-٧٦ `ee527a9` — **نصفُه**: دليلُ التنصيب لا يُرسل إلى الأداة بعد — الخطوةُ السادسة «تحقّقٌ لا يكتب: دخولٌ وفتحُ ميزان المراجعة» — وحارسٌ على كلّ تعليمةٍ بتشغيلها بلا عزل؛ **ويبقى دليلُ مستخدمٍ عربيّ**
 - ☐ **`commercial-readiness#9`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>No release pipeline: every shippable MSI is a local, unnumbered 1.0.0 build with no changelog and no update channel
 - ☐ **`commercial-readiness#10`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and executable are unsigned
 - ☐ **`commercial-readiness#11`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · ناقص</sub><br>No prices, and licence issuance cannot be reconciled with the vendor's own ZATCA invoices
 - ✅ **`commercial-readiness#12`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>No third-party licence notices ship with the product — ح-٦٩ `92ec3ee` — **تسعٌ وثلاثون حزمةً مشحونةً لها إشعارٌ في `THIRD-PARTY-NOTICES.txt`** يُولَّد من `Brqosh.Desktop.deps.json` ومن الحزم نفسِها بلا شبكة، ويُنسخ إلى النشر فيحصده المُنصِّب (قِيس بنشرٍ إلى مجلّدٍ مؤقّت)؛ وحارسٌ في الاتّجاهين؛ **وبندٌ للمالك: ترخيصُ QuestPDF المجتمعيُّ مشروطٌ بدخلٍ دون مليون دولار**
-- ☐ **`commercial-readiness#13`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-02 not done: no independent SOCPA or accounting review, and the reviewer package predates the audit that found a year-end-close S0
+- ◐ **`commercial-readiness#13`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-02 not done: no independent SOCPA or accounting review, and the reviewer package predates the audit that found a year-end-close S0 — ح-٧٦ `ee527a9` — **الحزمةُ لم تعد سابقةً للتدقيق**: تُحيل إلى MASTER وREMAINING وOPEN_ITEMS §1ل الحاضرة، والتاريخيُّ موسوم، وتُعيد الإنتاجَ باختباراتٍ لا تلمس قاعدة؛ **والمراجعةُ المستقلّةُ نفسُها لم تُجرَ — خارجيّة**
 - ☐ **`commercial-readiness#14`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-05 not done: no penetration test or ZAP run, and the recorded 'static scan PASS' points at an empty log
 - ☐ **`commercial-readiness#15`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Data migration covers only chart of accounts and customers; no opening balances, suppliers, items or open invoices
 
