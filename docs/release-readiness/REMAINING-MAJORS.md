@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 43 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 44 بنداً ✅ و8 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وثمانيةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٨) — **بعضُها خارج هذا الحصر**،
+**وتسعةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٩) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، فلا بندَ له هنا.
 
 ---
@@ -221,7 +221,7 @@
 - ☐ **`commercial-readiness#9`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>No release pipeline: every shippable MSI is a local, unnumbered 1.0.0 build with no changelog and no update channel
 - ☐ **`commercial-readiness#10`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and executable are unsigned
 - ☐ **`commercial-readiness#11`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · ناقص</sub><br>No prices, and licence issuance cannot be reconciled with the vendor's own ZATCA invoices
-- ☐ **`commercial-readiness#12`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>No third-party licence notices ship with the product
+- ✅ **`commercial-readiness#12`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>No third-party licence notices ship with the product — ح-٦٩ `92ec3ee` — **تسعٌ وثلاثون حزمةً مشحونةً لها إشعارٌ في `THIRD-PARTY-NOTICES.txt`** يُولَّد من `Brqosh.Desktop.deps.json` ومن الحزم نفسِها بلا شبكة، ويُنسخ إلى النشر فيحصده المُنصِّب (قِيس بنشرٍ إلى مجلّدٍ مؤقّت)؛ وحارسٌ في الاتّجاهين؛ **وبندٌ للمالك: ترخيصُ QuestPDF المجتمعيُّ مشروطٌ بدخلٍ دون مليون دولار**
 - ☐ **`commercial-readiness#13`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-02 not done: no independent SOCPA or accounting review, and the reviewer package predates the audit that found a year-end-close S0
 - ☐ **`commercial-readiness#14`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-05 not done: no penetration test or ZAP run, and the recorded 'static scan PASS' points at an empty log
 - ☐ **`commercial-readiness#15`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Data migration covers only chart of accounts and customers; no opening balances, suppliers, items or open invoices
