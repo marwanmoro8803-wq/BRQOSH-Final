@@ -41,13 +41,15 @@ pwsh ./scripts/ops/verify-gates.ps1 -Only coverage-stale
 | `coverage-absent` | `check-coverage` | تجميعةٌ متوقَّعةٌ بلا تقرير |
 | `coverage-floor` | `check-coverage` | تجميعةٌ تحت سقّاطتها |
 | `coverage-stale` | `check-coverage` | تقريرٌ بائتٌ يرفع الرقمَ بلا سببٍ في الكود |
-| `skip-declared` | «صفرُ متخطًّى» | `notExecuted=3` |
-| `skip-attr-missing` | «صفرُ متخطًّى» | `Counters` بلا سمة — لا تُقرأ صفراً |
-| `skip-trx-count` | «صفرُ متخطًّى» | ملفٌّ واحدٌ لأربعة مشاريع (دهس) |
-| `zero-tests` | `run-external-gates` | `total=0` — صفرُ تنفيذٍ برمزِ نجاح |
+| `coverage-two-roots` | `check-coverage` | **السطرُ الواحدُ تحت جذرين** (`src\` و`src\Brqosh.Domain\`) — يسقط **بالعدد الصحيح** (70 / 100 لا 140 / 200)، فالسقوطُ وحدَه لا يشهد بأنّ السطرَ عُدَّ مرّة (ح-٦٣) |
+| `skip-declared` | `assert-no-skipped-tests` | `notExecuted=3` |
+| `skip-attr-missing` | `assert-no-skipped-tests` | `Counters` بلا سمة — لا تُقرأ صفراً |
+| `skip-trx-count` | `assert-no-skipped-tests` | ملفٌّ واحدٌ لأربعة مشاريع (دهس) |
+| `zero-tests` | `assert-tests-executed` | `total=0` — صفرُ تنفيذٍ برمزِ نجاح |
 | `runner-propagates` | `run-external-gates` | استدعاءُ الماسح بلا غلاف |
 | `probe-requires-pg` | `SchemaCoverageProbe` | خادمٌ غائبٌ تحت `BRQOSH_REQUIRE_PG=1` |
-| `shipped-version` | `build-msi` | رقمُ إصدارٍ مُسجَّلٌ مشحوناً سلفاً |
+| `shipped-version` | `assert-version-not-shipped` | رقمُ إصدارٍ مُسجَّلٌ مشحوناً — **على دفترٍ مؤقّت** |
+| `gate-scripts-clean` | **شاهدُ ضبط** | لا عيب: السكربتاتُ الثلاثة **تمرّ** على مدخلٍ نظيف — فسقوطُها أعلاه عضّةٌ لا عطل |
 | `upgrade-no-advance` | `verify-upgrade-path` | حزمةٌ مقابل نفسِها — الإصدارُ لا يتقدّم |
 
 ## عهدان يلتزمهما السكربت
@@ -55,6 +57,12 @@ pwsh ./scripts/ops/verify-gates.ps1 -Only coverage-stale
 **١. لا يُعدّل ملفّاً في شجرة العمل تعديلاً باقياً.** العيوبُ إمّا في ملفّاتٍ مؤقّتةٍ تُحذف، أو في مجلّداتٍ اصطناعيّةٍ خارج المستودع، أو بنسخةٍ احتياطيّةٍ تُستعاد في `finally`.
 
 **٢. يتحقّق من ذلك بنفسه.** يلتقط `git status --porcelain` **قبل** الزرع ويقارنه **بعد** الإزالة. والمقارنةُ ليست بشجرةٍ نظيفة — قد تكون متّسخةً بعملٍ جارٍ مشروع — بل بحالتها عند البدء. والسؤالُ: **هل لوّثتُها أنا؟**
+
+**٣. (ح-٧٣) يُشغّل البوّابةَ نفسَها لا نسخةً منها.** «صفرُ متخطًّى» و«كم نُفِّذ» ودفترُ الإصدارات كانت مكتوبةً في `ci.yml` و`run-external-gates.ps1` و`build-msi.ps1`، **وهذا السكربتُ يختبر نسخاً منها تُكتب فيه** — فقِيس: كسرُ بوّابة CI الحقيقيّة ترك `-Only skip-declared` **برمز 0**. صارت كلُّ واحدةٍ سكربتاً في `scripts/` يستدعيه خطُّها وتُشغّله الحالةُ في عمليّةٍ مستقلّةٍ كما يُشغّله CI — **فكسرُه يُسقط الحالةَ برمز 1**. والحارسُ `TheSensitivityTestRunsTheRealGatesTests` يُسقط أيَّ نسخةٍ ثانيةٍ من منطقها في أيّ ملفّ.
+
+## آخرُ تشغيلةٍ كاملةٍ مُسجَّلة
+
+**2026-09-27 على شجرة `be34284`:** عضّت **١٧** · عمياء **٠** · المجموع **١٧** — والشجرةُ بعدها كما قبلها، `exit=0`. **والعددُ هنا يتبع الجدولَ أعلاه**، والحارسُ `TheGateSensitivityGuideListsEveryCaseTests` يُسقط الدليلَ إن غابت عنه حالةٌ أو سمّى حالةً لا وجودَ لها.
 
 ## متى يُشغَّل
 
