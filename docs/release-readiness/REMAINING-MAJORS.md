@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 52 بنداً ✅ و11 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 53 بنداً ✅ و11 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وثمانيةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٨) — **بعضُها خارج هذا الحصر**،
+**وتسعةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٩) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -154,7 +154,7 @@
 - ☐ **`sector-modules#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Hotel room revenue is not accrued night by night in the GL, despite the screen and service claiming it is; in-house nights at period end are missing from revenue
 - ☐ **`sector-modules#5`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Reservation cancellation and no-show cannot be done from the UI or any service, and deposits have no refund or forfeit path
 - ☐ **`sector-modules#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>Hotel reservation deposits are booked with no VAT at receipt. KSA treats advance consideration as a tax point.
-- ☐ **`sector-modules#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Rent billed in advance (quarterly, semi-annual, annual) is recognised as revenue on the invoice date, not over the lease period
+- ✅ **`sector-modules#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Rent billed in advance (quarterly, semi-annual, annual) is recognised as revenue on the invoice date, not over the lease period — ح-٧٩ `9b04ff3` — **يُكتسب شهراً بشهر**: فاتورةُ الدورة تبقى، ويُرحَّل معها قيدُ تأجيلٍ إلى `2117` إيرادات إيجار مقبوضة مقدّماً وقيدُ اعترافٍ لكلّ شهرٍ مؤرَّخٌ بشهره (ربعٌ بـ٣٬٠٠٠ ⟵ ألفٌ لكلّ شهر؛ سنويٌّ من يوليو ⟵ نصفُه مقبوضٌ مقدّماً آخرَ السنة)، والضريبةُ في الفاتورة كما هي؛ **والإلغاءُ والإنهاءُ يسحبان ما لم يُكتسب**. **وحدُّه**: الاعترافُ بالشهر لا باليوم، والإشعارُ الدائنُ على فاتورة إيجارٍ لا يمسّ التأجيل، وخطّةٌ دوريّةٌ ليست لعقد إيجارٍ لا تُؤجَّل
 - ✅ **`sector-modules#8`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Sector cash postings default to the parent bank account 1102, reintroducing the split-cash defect CEEF-229 م2-١٥ fixed for POS — ح-٤٨ `d544005` — **خمسةُ مداخلَ وثماني شاشات، والحلُّ عبر `BankGlAccountResolver`؛ واختبارٌ قائمٌ مرّ عليه لأنّه يقيس بالبادئة**
 - ☐ **`sector-modules#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>Project costing is not integrated with purchasing, AP, payroll or input VAT. The only cost source is a manual dialog that always credits petty cash.
 - ✅ **`sector-modules#10`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>On a second workstation, the navigation follows the profile chosen in that machine's setup wizard, not the company's stored profile. Sector screens can be hidden. — ح-٦٦ `1943ab0` — **جذرُه في الإقلاع لا في النافذة**: `CompanyBootstrapResult` لم يكن يحمل النظامَ فبقي المُقلِعُ على اختيار المعالج؛ صار يحمل النظامَ المخزَّن ويتبنّاه `App` قبل `new MainWindow(`، و`ApplyCompanyContextAsync` يُعيد بناءَ القوائم حين يتغيّر النظام — جهازان على ملفّ SQLite واحدٍ يُسقطانه بالسلوك
