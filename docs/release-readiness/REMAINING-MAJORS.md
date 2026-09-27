@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 44 بنداً ✅ و8 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 44 بنداً ✅ و9 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وتسعةٌ وستّون إغلاقاً في الحملة كلِّها** (ح-١…ح-٦٩) — **بعضُها خارج هذا الحصر**،
+**وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٠) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، فلا بندَ له هنا.
 
 ---
@@ -216,7 +216,7 @@
 - ◐ **`commercial-readiness#4`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Published readiness numbers are stale: MASTER's 97% predates the 7-S0 forensic audit and was never recomputed — `0815835` — كما فوق
 - ☐ **`commercial-readiness#5`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Licence tiers and features are signed but never enforced, so any licence unlocks every module; per-machine binding is not reflected in pricing
 - ☐ **`commercial-readiness#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Licence expiry locks customers out of their own statutory books with no warning and no read-only mode
-- ☐ **`commercial-readiness#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The shipped support screen shows a placeholder phone number, internal tags and an SLA that contradicts both GTM drafts; no helpdesk exists
+- ◐ **`commercial-readiness#7`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The shipped support screen shows a placeholder phone number, internal tags and an SLA that contradicts both GTM drafts; no helpdesk exists — ح-٧٠ `1fa2d57` — **ضاق ولم يُغلق**: لا وسمَ داخليٌّ (G-10 · G-31 · G-32 · G-69-C) ولا «MVP» ولا هاتفٌ مؤقّتٌ في أيّ نصٍّ معروضٍ أو ترجمته — وحارسٌ على الصنف؛ **والقنواتُ والباقاتُ من `config/support.json` الذي يعتمده المورّد، وبدونه «لم تعتمد بعد»**. **ويبقى عند المالك**: اعتمادُ اتّفاقيّة مستوى الخدمة وقنواتها، ومكتبُ دعمٍ حقيقيّ
 - ☐ **`commercial-readiness#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No Arabic user manual; the only install guide sends pilot customers to a developer tool that writes to the books
 - ☐ **`commercial-readiness#9`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>No release pipeline: every shippable MSI is a local, unnumbered 1.0.0 build with no changelog and no update channel
 - ☐ **`commercial-readiness#10`** · <sub>بلا تحقّق · خارج المستودع · صغير · خارجيّ</sub><br>The MSI and executable are unsigned
