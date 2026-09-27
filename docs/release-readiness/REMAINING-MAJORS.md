@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 53 بنداً ✅ و11 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 54 بنداً ✅ و11 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وتسعةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٩) — **بعضُها خارج هذا الحصر**،
+**وثمانون إغلاقاً في الحملة كلِّها** (ح-١…ح-٨٠) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -150,7 +150,7 @@
 
 ## sector-modules (10 major)
 
-- ☐ **`sector-modules#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Construction IFRS 15: revenue deferred to 2105 is never released, and costs running ahead of billing are never recognised
+- ✅ **`sector-modules#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Construction IFRS 15: revenue deferred to 2105 is never released, and costs running ahead of billing are never recognised — ح-٨٠ `f656317` — **تسويةٌ تراكميّةٌ بنسبة الإنجاز بعد كلّ حدث**: المكتسبُ = القيمةُ × (التكلفة ÷ التقدير)، والفرقُ عن المعترَف به يُطلق المؤجَّلَ في `2105` أوّلاً ثمّ يرفع أصلَ العقد في `1113` (والسالبُ بالعكس) ثمّ يُقاصّان — بعد التكلفة والمستخلص وإلغائه ومراجعة التقدير؛ **وحدُّه**: `1113` يستعيره التصنيع (`manufacturing#8`)، ولا أوامرُ تغيير، **ولا اعترافَ مقدَّماً بخسارة العقد المتوقَّعة**
 - ☐ **`sector-modules#4`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Hotel room revenue is not accrued night by night in the GL, despite the screen and service claiming it is; in-house nights at period end are missing from revenue
 - ☐ **`sector-modules#5`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Reservation cancellation and no-show cannot be done from the UI or any service, and deposits have no refund or forfeit path
 - ☐ **`sector-modules#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>Hotel reservation deposits are booked with no VAT at receipt. KSA treats advance consideration as a tax point.
