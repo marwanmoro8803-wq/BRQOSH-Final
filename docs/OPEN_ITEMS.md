@@ -1413,7 +1413,7 @@ package` بخيار `vulnerable` **يُعيد صفراً ولو وجد**، فب�
   [مدير·محاسب·صرّاف] **نقلٌ حرفيٌّ** عن `VisitBillingService.cs:48` = `EnsureCanPost`.
   ومنعُ الصرّافِ منها يجعل تخويلاً قرّره المستودعُ أصلاً **غيرَ قابلٍ للبلوغ من الواجهة**.
 - `PatientsPage.xaml:43` تعرض **رقمَ الهوية** ومعه تاريخُ الميلاد. **وحمايةُ البيانات
-  الشخصيّة (G-30) لم تبدأ** — `MARKET_LAUNCH_GAP_ANALYSIS.md:88` يضعها ❌/❌ · P1.
+  الشخصيّة (G-30) لم تبدأ** — `MARKET_LAUNCH_GAP_ANALYSIS.md:95` (لقطةٌ تاريخيّة) يضعها ❌/❌ · P1.
   فمُنحت [مدير·محاسب] **وشُدِّدت عمداً**.
 
 **والقاعدةُ التي جرى عليها القرار:** حيث حسمت طبقةُ الخدمة، يُنقَل عنها؛ وحيث لم تحسم،
@@ -3210,7 +3210,7 @@ false`)، **والموحَّدُ بقي على ربح السنة الجارية 
 | P1 | G-16 GOSI | ✅ CEEF-231 · ط2-٨ — النِّسَبُ تُملَك من الشاشة، **وكانت مثبَّتةً في الشيفرة** |
 | P2 | V13-C SaaS · V13-E compliance | ⏭ |
 
-- **تفصيل:** [`docs/MARKET_LAUNCH_GAP_ANALYSIS.md`](MARKET_LAUNCH_GAP_ANALYSIS.md)
+- **تفصيل:** الحالةُ الحاضرة في [`release-readiness/MASTER.md`](release-readiness/MASTER.md)، وما بقي مفتوحاً في [`release-readiness/REMAINING-MAJORS.md`](release-readiness/REMAINING-MAJORS.md) — **و[`MARKET_LAUNCH_GAP_ANALYSIS.md`](MARKET_LAUNCH_GAP_ANALYSIS.md) لقطةٌ تاريخيّة (2026-07-10) نُقضت في الاتّجاهين** (ح-٧٢)
 
 ---
 
@@ -3314,7 +3314,7 @@ false`)، **والموحَّدُ بقي على ربح السنة الجارية 
 - `design-system/MASTER.md`
 - `docs/ops/MASTER_EXTERNAL_GATES_RUNBOOK.md`
 - `docs/ROADMAP.md`
-- `docs/MARKET_LAUNCH_GAP_ANALYSIS.md` — فجوات الإطلاق السوقي V13+
+- `docs/MARKET_LAUNCH_GAP_ANALYSIS.md` — فجوات الإطلاق السوقي V13+ — **لقطةٌ تاريخيّة (2026-07-10) لا مرجعٌ حاضر**
 - `تقارير/CEEF-116_V12_Plan_Formal_Closure.md`
 - `تقارير/CEEF-119_O01_O05_Execution_Wave.md`
 - `تقارير/CEEF-120_Supreme_Audit_Closure.md` — تدقيق شامل + توحيد وثائقي (2026-07-10)

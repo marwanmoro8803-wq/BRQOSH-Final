@@ -105,7 +105,7 @@ Attempt 3 → fail → report what was tried + blocker to user
 
 ## 5. Gap Analysis
 
-`docs/MARKET_LAUNCH_GAP_ANALYSIS.md` — 69 gaps
+`docs/MARKET_LAUNCH_GAP_ANALYSIS.md` — 69 gaps — **historical snapshot (2026-07-10), superseded in both directions**: the current verdict is `docs/release-readiness/MASTER.md`, open items `docs/release-readiness/REMAINING-MAJORS.md`
 
 | Question | Answer |
 |----------|--------|

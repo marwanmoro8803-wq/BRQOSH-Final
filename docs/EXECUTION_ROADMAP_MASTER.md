@@ -104,7 +104,7 @@
 | O-04 Load 1M | ⏭ | بيئة أجهزة |
 | O-05 OWASP ZAP | ⏭ | ماسح حي |
 | Global Platform SaaS | ⏭ | إعادة تصميم استراتيجي — `docs/مهم` |
-| V13+ إطلاق سوقي | 🔶 | [`docs/MARKET_LAUNCH_GAP_ANALYSIS.md`](MARKET_LAUNCH_GAP_ANALYSIS.md) · خطة V13+ في `.cursor/plans/` |
+| V13+ إطلاق سوقي | 🔶 | الحالةُ الحاضرة [`release-readiness/MASTER.md`](release-readiness/MASTER.md) · [`MARKET_LAUNCH_GAP_ANALYSIS.md`](MARKET_LAUNCH_GAP_ANALYSIS.md) لقطةٌ تاريخيّة (2026-07-10) · خطة V13+ في `.cursor/plans/` |
 
 **الأمر عند الجاهزية للتشغيل الحي:**
 
