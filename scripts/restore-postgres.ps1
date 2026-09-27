@@ -43,7 +43,7 @@ try {
         # pg_restore may return 1 for non-fatal warnings
         throw "pg_restore failed with exit $LASTEXITCODE"
     }
-    Write-Host "Restore completed. Verify with FullScenarioAudit / smoke login." -ForegroundColor Green
+    Write-Host "Restore completed. Verify with a smoke login and the trial balance - never with FullScenarioAudit, which writes into these books (H76)." -ForegroundColor Green
 }
 finally {
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue

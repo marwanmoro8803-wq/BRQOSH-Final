@@ -44,7 +44,7 @@ cd C:\Users\qc\Projects\BRQOSH
 **المرجع:** `docs/ops/O-02_SOCPA_REVIEWER_PACKAGE.md`
 
 1. تسليم الحزمة للمراجع المستقل
-2. تشغيل `FullScenarioAudit` على بيئة المراجع
+2. إعادةُ الإنتاج باختبارات المحاسبة كما في الحزمة — **لا `FullScenarioAudit` على بيئة المراجع** (تكتب في دفاترها؛ ولا جذرَ معزولاً مُهيّأً لها بعد · ح-٧٦)
 3. جلسة محاسبية P0/P1 (سيناريوهات CEEF-023)
 4. تقرير موقّع PDF → `dist/evidence/O-02-socpa/`
 
@@ -60,7 +60,7 @@ cd C:\Users\qc\Projects\BRQOSH
 1. بناء MSI في CI أو محلياً
 2. VM Windows نظيف (بدون .NET SDK)
 3. تثبيت MSI + تشغيل البرنامج
-4. `FullScenarioAudit` + لقطة شاشة QA-AUDIT
+4. `FullScenarioAudit` **على قاعدة الـVM الاختباريّة المعزولة وحدَها** + لقطة شاشة QA-AUDIT
 5. (اختياري) توقيع ميداني للمثبت
 
 **الحكم:** ⏭ خارجي حتى لقطة VM

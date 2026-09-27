@@ -751,7 +751,7 @@ gantt
 ### 7.3 تشغيل التدقيق
 
 ```powershell
-cd tools\FullScenarioAudit && dotnet run
+.\scripts\ops\run-external-gates.ps1   # يعزل جذرَ البيانات قبل FullScenarioAudit — لا تُشغّلها مباشرةً (ح-٧٦)
 cd ..\UiAudit && .\run-audit.ps1
 dotnet test Brqosh.sln -c Release
 ```
