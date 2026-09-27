@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 51 بنداً ✅ و10 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 52 بنداً ✅ و11 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وستّةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٦) — **بعضُها خارج هذا الحصر**،
+**وسبعةٌ وسبعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٧٧) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -109,7 +109,7 @@
 - ✅ **`manufacturing#2`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No UI path to correct a completed work order: a wrong produced quantity is permanent — ح-٥٥ `a94a936` — **الصفحةُ تُلغي المكتملَ فتعكسه الخدمةُ** (قيدا الإكمال وطبقاتُ المخزون بأعيانها منذ ح-٣٠)، **بتأكيدٍ يقول إنّه عكسٌ لمرحَّلٍ ويُرفض إن صُرف شيءٌ من إنتاجه**، ثمّ يُصدَر أمرٌ بالكمّيّة الصحيحة؛ **والمعالجُ يسأل القرارَ ولا يكتب شرطَه بيده** — قياسٌ ثالثٌ لولاه لمرّ الانتكاسُ أخضر
 - ✅ **`manufacturing#3`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Completion posts stock and GL at the draft's OrderDate, not the completion date; the UI offers no completion date — ح-٣٤ `a795f87`
 - ☐ **`manufacturing#4`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No actual material issue, scrap, yield or by-product recording, and no partial completion: only standard backflush at completion
-- ☐ **`manufacturing#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>BOM edits after release silently change what open orders consume; no BOM snapshot, version or audit
+- ✅ **`manufacturing#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>BOM edits after release silently change what open orders consume; no BOM snapshot, version or audit — ح-٧٧ `6e46a1c` — **الوصفةُ تُجمَّد عند الإصدار**: `WorkOrder.Release` ينسخ البنودَ وتكاليفَ التحويل، والإكمالُ يقرأ وصفةَ الأمر لا القائمة (٦ خاماتٍ والوحدةُ ٣٥ — لا ٨ و٥٣٫٩ بعد تعديلٍ لاحق)؛ **والصادرُ قبل الترقية يُجمّده المُرقِّعُ** عند الإقلاع، وصادرٌ بلا وصفةٍ يُرفض؛ **وتعديلُ القائمة يُسجَّل بفرقه** (`BillOfMaterialsService`). **ولا رقمَ إصدارٍ على القائمة نفسِها** — تاريخُها في سجلّ التدقيق ووصفةِ كلّ أمر
 - ☐ **`manufacturing#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Batch/lot-tracked raw materials or finished goods cannot go through a work order at all
 - ☐ **`manufacturing#7`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Work orders always use the company's default warehouse for both components and output
 - ☐ **`manufacturing#8`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>'WIP' is cosmetic: it never carries a balance, uses the construction account 'Work in Progress - Unbilled', and assistant/template claims say otherwise
@@ -194,7 +194,7 @@
 - ☐ **`installer-deployment-ops#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No licence-expiry warning, and expiry locks the owner out of all books with no read-only mode
 - ☐ **`installer-deployment-ops#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No supported multi-workstation or multi-user deployment: each Windows account re-runs the setup wizard, which silently adopts whatever company is in the database
 - ☐ **`installer-deployment-ops#10`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Automatic backups only work where pg_dump is installed locally; the MSI neither ships nor checks for it, and the guide points to scripts that are not shipped
-- ☐ **`installer-deployment-ops#11`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Upgrades to production DBs cannot be rolled back, and no client-version guard stops old workstations writing to a migrated schema; the MASTER §9 rollback evidence is unrelated
+- ◐ **`installer-deployment-ops#11`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Upgrades to production DBs cannot be rolled back, and no client-version guard stops old workstations writing to a migrated schema; the MASTER §9 rollback evidence is unrelated — ح-٥١ `a916c42` — **نصفُه أُغلق ولم يُسجَّل هنا**: محطّةٌ بإصدارٍ أقدمَ **تُرفض عند الإقلاع** على قاعدةٍ رقّاها إصدارٌ أحدث (`EnsureNotNewerThanThisBuildAsync` · `AnOlderBuildRefusesANewerSchemaTests`) — وحدُّه المعلَن: قاعدةٌ بلا سجلّ هجراتٍ لا تاريخَ فيها يُقارَن؛ **ويبقى الرجوعُ عن ترقيةٍ على قاعدة الإنتاج، وبرهانُ MASTER §9 الذي لا يخصّها**
 - ☐ **`installer-deployment-ops#12`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Update channel is not operable: manual file picker only, no publisher tool for signed manifests, staging never called, and it trusts the licence key
 - ☐ **`installer-deployment-ops#13`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Installer shows no end-user licence agreement or commercial terms
 
