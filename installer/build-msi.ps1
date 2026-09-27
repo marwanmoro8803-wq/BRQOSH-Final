@@ -133,14 +133,8 @@ Write-Host "الإصدار: $ProductVersion   (البصمة: $InformationalVersi
 # ‏صحيحاً: إصداران بالرقم نفسِه لا يُميَّزان في «إضافة وإزالة البرامج» ولا في سجلّ عطل
 # ‏ولا في بلاغِ عميل. فالتساوي يُمنع هنا، ويُنقذ هناك.
 $Ledger = Join-Path $PSScriptRoot "shipped-versions.txt"
-if (Test-Path $Ledger) {
-    $shipped = @(Get-Content $Ledger | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
-    if ($shipped -contains $ProductVersion) {
-        Write-Host "الإصدار $ProductVersion مُسجَّلٌ مشحوناً في $Ledger." -ForegroundColor Red
-        Write-Host "ارفع BrqoshVersionPrefix أو مرّر BrqoshBuildNumber مختلفاً — ولا تشحن رقمين متطابقين." -ForegroundColor Red
-        exit 1
-    }
-}
+# ‏(ح-٧٣) ‏البوّابةُ في ملفٍّ يُشغّله `verify-gates.ps1` أيضاً — وعلى دفترٍ مؤقّتٍ هناك لا على هذا.
+& (Join-Path $PSScriptRoot "..\scripts\assert-version-not-shipped.ps1") -Version $ProductVersion -Ledger $Ledger
 
 # (CEEF-236 · ر-ك · م-٣٢) ‏**‏-arch x64 — والحزمةُ كانت تُبنى ٣٢-بت بالافتراض.**
 #

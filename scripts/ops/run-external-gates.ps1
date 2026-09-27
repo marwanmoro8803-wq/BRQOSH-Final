@@ -67,26 +67,9 @@ dotnet test Brqosh.sln -c Release --nologo -v q `
     --logger "trx;LogFilePrefix=results" --results-directory $trxDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-$trx = @(Get-ChildItem $trxDir -Recurse -Filter *.trx -ErrorAction SilentlyContinue)
-$projects = @(Get-ChildItem (Join-Path $root "tests") -Recurse -Filter *.Tests.csproj)
-if ($trx.Count -ne $projects.Count) {
-    Write-Error "‏ملفّاتُ trx $($trx.Count) لا تساوي مشاريعَ الاختبار $($projects.Count) — تغطيةُ الحكم أضيقُ ممّا يدّعي."
-    exit 1
-}
-$executed = 0
-foreach ($f in $trx) {
-    $counters = ([xml](Get-Content $f.FullName)).TestRun.ResultSummary.Counters
-    if ($null -eq $counters -or $null -eq $counters.total) {
-        Write-Error "‏$($f.Name): لا عدّاداتٍ في الـtrx — لا يُقرأ غيابُها صفراً."
-        exit 1
-    }
-    $executed += [int]$counters.total
-}
-if ($executed -le 0) {
-    Write-Error "‏رمزُ الخروج صفرٌ ولم يُنفَّذ اختبارٌ واحد — بوّابةٌ تُخضّر العدم."
-    exit 1
-}
-Write-Host "‏نُفِّذ $executed اختباراً على $($trx.Count) مشروعاً." -ForegroundColor Green
+# ‏(ح-٧٣) ‏البوّابةُ في ملفٍّ يُشغّله `verify-gates.ps1` أيضاً — لا نسخةَ هنا تنحرف عن المُختبَرة.
+# ‏ورميُها يوقف هذا المُشغّلَ برمز 1 كما كان `exit 1` — قِيس تحت `Continue`.
+& "$root\scripts\assert-tests-executed.ps1" -ResultsDir $trxDir -TestsDir (Join-Path $root "tests")
 
 Write-Host ""
 # ‏(م-٥ · ن-٢٢) ‏**بوّابةٌ تُشغَّل يوميّاً لا تكتب في دفاترِ أحد.**

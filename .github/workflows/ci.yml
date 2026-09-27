@@ -170,26 +170,8 @@ jobs:
       - name: Assert nothing was skipped
         shell: pwsh
         run: |
-          # ‏العددُ مشتقٌّ من الشجرة لا مكتوبٌ بيد: مشروعٌ جديدٌ يُحتسب من نفسِه.
-          $projects = @(Get-ChildItem tests -Recurse -Filter *.Tests.csproj)
-          $trx = @(Get-ChildItem TestResults -Recurse -Filter *.trx -ErrorAction SilentlyContinue)
-          if ($trx.Count -eq 0) { throw 'لا ملفَّ نتائج (.trx) — لا يمكن إثباتُ عدم التخطّي.' }
-          if ($trx.Count -ne $projects.Count) {
-            throw ("‏عددُ ملفّات trx $($trx.Count) لا يساوي عددَ مشاريع الاختبار $($projects.Count). " +
-                   "‏إمّا دُهست ملفّاتٌ (تحقّق من LogFilePrefix) أو لم يُشغَّل مشروع — " +
-                   "‏وفي الحالتين الحكمُ أدناه يغطّي أقلَّ ممّا يدّعي.")
-          }
-          $skipped = 0
-          foreach ($f in $trx) {
-            $x = [xml](Get-Content $f.FullName)
-            $counters = $x.TestRun.ResultSummary.Counters
-            if ($null -eq $counters -or $null -eq $counters.notExecuted) {
-              throw "‏$($f.Name): لا سمةَ notExecuted في Counters — trx مشوَّهةٌ لا تُقرأ صفراً."
-            }
-            $skipped += [int]$counters.notExecuted
-          }
-          if ($skipped -gt 0) { throw "‏$skipped اختباراً تُخطّى — والبوّابةُ تشترط صفراً." }
-          Write-Host "‏صفرُ متخطًّى — على $($trx.Count) مشروعاً من $($projects.Count)."
+          # ‏(ح-٧٣) ‏البوّابةُ في ملفٍّ يُشغّله `verify-gates.ps1` أيضاً — لا نسخةَ هنا تنحرف عن المُختبَرة.
+          ./scripts/assert-no-skipped-tests.ps1 -ResultsDir TestResults -TestsDir tests
 
       # (CEEF-229 · م2-٣) بوابة واحدة مُلزِمة، تدمج تقارير cobertura كلَّها اتّحاداً وتحكم
       # لكل تجميعة بعتبتها. حُذفت الخطوة «المعلوماتية» الثانية: كانت هي **الصادقة الوحيدة**

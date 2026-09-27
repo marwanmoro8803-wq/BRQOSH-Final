@@ -126,6 +126,21 @@ function Invoke-GateCapture([scriptblock]$Action) {
     catch { return @{ Failed = $true; Output = ($_ | Out-String) } }
 }
 
+# ‏(ح-٧٣ · evidence-integrity#4) ‏يُشغّل **سكربتَ البوّابة نفسَه** في عمليّةٍ مستقلّةٍ كما يُشغّله CI — لا نسخةً
+# ‏منه هنا. كانت حالاتُ «صفرُ متخطًّى» و«كم نُفِّذ» ودفترُ الإصدارات تختبر نسخاً تُكتب بيدٍ في هذا الملفّ،
+# ‏فتعديلُ البوّابة الحقيقيّة لا يراه — وحالتُها تبقى «عضّت». ويُعيد رمزَ الخروج: 0 مرّ، وغيرُه سقط.
+function Invoke-GateScript([string]$Script, [string[]]$Arguments) {
+    & pwsh -NoProfile -File (Join-Path $root $Script) @Arguments *> $null
+    return $LASTEXITCODE
+}
+
+# ‏مشاريعُ اختبارٍ اصطناعيّة — فالعددُ يُشتقّ كما يُشتقّ في CI: من مجلّدٍ لا من رقمٍ مكتوب.
+function New-FakeTests([string]$Dir, [int]$Count) {
+    New-Item -ItemType Directory -Path $Dir -Force | Out-Null
+    1..$Count | ForEach-Object { Set-Content (Join-Path $Dir "P$_.Tests.csproj") '' }
+    return $Dir
+}
+
 # ── ٢ب · (م-٦) مدخلُ سماحٍ ميّت: يجب أن يُسقط الماسحَ ويُسمّى ──────────────────
 $cases['dead-allowlist'] = {
     $scan = Join-Path $root "scripts\security-static-scan.ps1"
@@ -222,8 +237,8 @@ $cases['skip-declared'] = {
 <Counters total="100" executed="97" passed="97" failed="0" notExecuted="3" />
 </ResultSummary></TestRun>
 '@
-    $bit = Test-GateFails { Invoke-SkipGate -Dir $dir -ExpectedProjects 1 }
-    Add-Result 'skip-declared' 'assert-no-skips' $bit 'notExecuted=3'
+    $bit = (Invoke-GateScript 'scripts\assert-no-skipped-tests.ps1' @('-ResultsDir', $dir, '-TestsDir', (New-FakeTests (Join-Path $tmp "tests-skip-declared") 1))) -ne 0
+    Add-Result 'skip-declared' 'assert-no-skipped-tests' $bit 'notExecuted=3'
 }
 
 # ── ٨ · (ن-٠٦) «صفرُ متخطًّى»: سمةٌ غائبةٌ تُقرأ صفراً ───────────────────────────
@@ -236,8 +251,8 @@ $cases['skip-attr-missing'] = {
 <Counters total="100" executed="100" passed="100" failed="0" />
 </ResultSummary></TestRun>
 '@
-    $bit = Test-GateFails { Invoke-SkipGate -Dir $dir -ExpectedProjects 1 }
-    Add-Result 'skip-attr-missing' 'assert-no-skips' $bit 'Counters بلا notExecuted'
+    $bit = (Invoke-GateScript 'scripts\assert-no-skipped-tests.ps1' @('-ResultsDir', $dir, '-TestsDir', (New-FakeTests (Join-Path $tmp "tests-skip-attr-missing") 1))) -ne 0
+    Add-Result 'skip-attr-missing' 'assert-no-skipped-tests' $bit 'Counters بلا notExecuted'
 }
 
 # ── ٩ · (ن-٠٦) «صفرُ متخطًّى»: ملفّاتٌ أقلُّ من المشاريع (دهس) ───────────────────
@@ -250,8 +265,8 @@ $cases['skip-trx-count'] = {
 <Counters total="10" executed="10" passed="10" failed="0" notExecuted="0" />
 </ResultSummary></TestRun>
 '@
-    $bit = Test-GateFails { Invoke-SkipGate -Dir $dir -ExpectedProjects 4 }
-    Add-Result 'skip-trx-count' 'assert-no-skips' $bit 'ملفٌّ واحدٌ لأربعة مشاريع'
+    $bit = (Invoke-GateScript 'scripts\assert-no-skipped-tests.ps1' @('-ResultsDir', $dir, '-TestsDir', (New-FakeTests (Join-Path $tmp "tests-skip-trx-count") 4))) -ne 0
+    Add-Result 'skip-trx-count' 'assert-no-skipped-tests' $bit 'ملفٌّ واحدٌ لأربعة مشاريع'
 }
 
 # ── ١٠ · (ن-١١) تشغيلةٌ نفّذت صفرَ اختبارٍ يجب ألّا تُخضَّر ─────────────────────
@@ -268,8 +283,8 @@ $cases['zero-tests'] = {
 <Counters total="0" executed="0" passed="0" failed="0" notExecuted="0" />
 </ResultSummary></TestRun>
 '@
-    $bit = Test-GateFails { Invoke-ExecutedGate -Dir $dir -ExpectedProjects 1 }
-    Add-Result 'zero-tests' 'run-external-gates' $bit 'trx بـ total=0 ⟸ صفرُ تنفيذٍ برمزِ نجاح'
+    $bit = (Invoke-GateScript 'scripts\assert-tests-executed.ps1' @('-ResultsDir', $dir, '-TestsDir', (New-FakeTests (Join-Path $tmp "tests-zero") 1))) -ne 0
+    Add-Result 'zero-tests' 'assert-tests-executed' $bit 'trx بـ total=0 ⟸ صفرُ تنفيذٍ برمزِ نجاح'
 }
 
 # ── ١١ · (ن-١٠) المُشغّل: فشلٌ أمنيٌّ يجب أن يوقفه ─────────────────────────────
@@ -293,26 +308,35 @@ $cases['probe-requires-pg'] = {
 
 # ── ١٣ · (م-١ · ن-٠١) دفترُ الإصدارات: رقمٌ مُسجَّلٌ مشحوناً يجب أن يُسقط البناء ──
 $cases['shipped-version'] = {
-    $ledger = Join-Path $root "installer\shipped-versions.txt"
-    $backup = Join-Path $tmp "ledger.bak"
-    $existed = Test-Path $ledger
-    if ($existed) { Copy-Item $ledger $backup -Force }
-    try {
-        # ‏الإصدارُ الحاليُّ للثنائيّة المنشورة — نسجّله مشحوناً فيجب أن يُرفض بناؤه.
-        $exe = Join-Path $root "dist\BRQOSH\Brqosh.Desktop.exe"
-        if (-not (Test-Path $exe)) { Add-Result 'shipped-version' 'build-msi' $false 'لا ثنائيّةً منشورةً — الحالةُ لا تُقاس'; return }
-        $v = (($(Get-Item $exe).VersionInfo.FileVersion) -split '\.')[0..2] -join '.'
-        Add-Content -LiteralPath $ledger -Value $v -Encoding UTF8
-        # ‏نُشغّل منطقَ البوّابة وحدَه لا البناءَ كلَّه (‏دقائق مقابل ثوانٍ).
-        $bit = Test-GateFails {
-            $shipped = @(Get-Content $ledger | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
-            if ($shipped -contains $v) { throw "‏الإصدار $v مُسجَّلٌ مشحوناً." }
-        }
-        Add-Result 'shipped-version' 'build-msi' $bit "‏$v مُسجَّلٌ في الدفتر"
-    }
-    finally {
-        if ($existed) { Copy-Item $backup $ledger -Force } else { Remove-Item $ledger -Force -ErrorAction SilentlyContinue }
-    }
+    # ‏(ح-٧٣) ‏على دفترٍ مؤقّتٍ خارج الشجرة، وبسكربت البوّابة نفسِه. كانت الحالةُ تُعيد كتابةَ منطق البناء
+    # ‏بدل أن تُشغّله، **وتُلحق رقماً بدفتر الإصدارات المُتعقَّب نفسِه** ثمّ تُعيده — ولا ثنائيّةَ منشورةً تلزم.
+    $ledger = Join-Path $tmp "shipped-versions.txt"
+    Set-Content $ledger "# مشحون`n1.2.3"
+    $bit = (Invoke-GateScript 'scripts\assert-version-not-shipped.ps1' @('-Version', '1.2.3', '-Ledger', $ledger)) -ne 0
+    Add-Result 'shipped-version' 'assert-version-not-shipped' $bit '1.2.3 مُسجَّلٌ في الدفتر'
+}
+
+# ── ١٣ب · (ح-٧٣) شاهدُ ضبط: سكربتاتُ البوّابات تمرّ على مدخلٍ نظيف ───────────────
+# ‏وإلّا فسقوطُها أعلاه قد يكون عطلاً فيها لا عضّةً على العيب — وبوّابةٌ تسقط دائماً تُسقط CI وحدَه.
+$cases['gate-scripts-clean'] = {
+    $dir = Join-Path $tmp "trx-clean"
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    Set-Content (Join-Path $dir "a.trx") @'
+<?xml version="1.0" encoding="UTF-8"?>
+<TestRun><ResultSummary outcome="Completed">
+<Counters total="10" executed="10" passed="10" failed="0" notExecuted="0" />
+</ResultSummary></TestRun>
+'@
+    $tests = New-FakeTests (Join-Path $tmp "tests-clean") 1
+    $ledger = Join-Path $tmp "ledger-clean.txt"
+    Set-Content $ledger "1.2.3"
+    $codes = @(
+        Invoke-GateScript 'scripts\assert-no-skipped-tests.ps1' @('-ResultsDir', $dir, '-TestsDir', $tests)
+        Invoke-GateScript 'scripts\assert-tests-executed.ps1' @('-ResultsDir', $dir, '-TestsDir', $tests)
+        Invoke-GateScript 'scripts\assert-version-not-shipped.ps1' @('-Version', '1.2.4', '-Ledger', $ledger)
+    )
+    $bit = @($codes | Where-Object { $_ -ne 0 }).Count -eq 0
+    Add-Result 'gate-scripts-clean' 'شاهدُ ضبط' $bit "مدخلٌ نظيف ⟸ يمرّ (الرموز: $($codes -join ' · '))"
 }
 
 # ── ١٤ · (م-١ · ن-٠١) مِعْيَرُ الترقية: إصدارٌ لا يتقدّم يجب أن يُسقطه ──────────
@@ -322,35 +346,6 @@ $cases['upgrade-no-advance'] = {
     # ‏الحزمةُ نفسُها طرفاً للمقارنة: الإصدارُ لا يتقدّم بالتعريف، فيجب السقوط.
     $bit = Test-GateFails { & "$root\scripts\ops\verify-upgrade-path.ps1" -PackageA $msi -PackageB $msi }
     Add-Result 'upgrade-no-advance' 'verify-upgrade-path' $bit 'حزمةٌ مقابل نفسِها ⟸ لا تقدّم'
-}
-
-# ‏نسخةُ بوّابة «صفرُ متخطًّى» كما في ci.yml حرفاً — تُختبر هنا لا في CI وحدَه.
-function Invoke-SkipGate {
-    param([string]$Dir, [int]$ExpectedProjects)
-    $trx = @(Get-ChildItem $Dir -Recurse -Filter *.trx -ErrorAction SilentlyContinue)
-    if ($trx.Count -eq 0) { throw 'لا ملفَّ نتائج (.trx).' }
-    if ($trx.Count -ne $ExpectedProjects) { throw "‏ملفّاتُ trx $($trx.Count) لا تساوي المشاريعَ $ExpectedProjects." }
-    $skipped = 0
-    foreach ($f in $trx) {
-        $counters = ([xml](Get-Content $f.FullName)).TestRun.ResultSummary.Counters
-        if ($null -eq $counters -or $null -eq $counters.notExecuted) { throw "‏$($f.Name): لا سمةَ notExecuted." }
-        $skipped += [int]$counters.notExecuted
-    }
-    if ($skipped -gt 0) { throw "‏$skipped اختباراً تُخطّى." }
-}
-
-# ‏نسخةُ حارسِ «كم نُفِّذ فعلاً؟» كما في run-external-gates.ps1 حرفاً.
-function Invoke-ExecutedGate {
-    param([string]$Dir, [int]$ExpectedProjects)
-    $trx = @(Get-ChildItem $Dir -Recurse -Filter *.trx -ErrorAction SilentlyContinue)
-    if ($trx.Count -ne $ExpectedProjects) { throw "‏ملفّاتُ trx $($trx.Count) لا تساوي المشاريعَ $ExpectedProjects." }
-    $executed = 0
-    foreach ($f in $trx) {
-        $counters = ([xml](Get-Content $f.FullName)).TestRun.ResultSummary.Counters
-        if ($null -eq $counters -or $null -eq $counters.total) { throw "‏$($f.Name): لا عدّاداتٍ." }
-        $executed += [int]$counters.total
-    }
-    if ($executed -le 0) { throw "‏صفرُ اختباراتٍ نُفِّذت — بوّابةٌ تُخضّر العدم." }
 }
 
 # ── التشغيل ─────────────────────────────────────────────────────────────────────
