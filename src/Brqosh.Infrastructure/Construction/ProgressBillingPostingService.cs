@@ -55,6 +55,9 @@ public class ProgressBillingPostingService(BrqoshDbContext db)
             billing.LinkJournalEntry(entry.Id);
             await db.SaveChangesAsync(token);
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**والمستخلصُ يُعاد إلى موضعه من الإنجاز** — ما فُوتر فوق المكتسب التزامُ عقد، وما سبقه أصلُ عقد.
+            await new ContractRevenueTrueUp(db).ApplyAsync(billing.CompanyId, billing.ProjectId, billing.BillingDate, token);
+
             await DomainEventHub.PublishAsync(new DocumentPostedEvent(
                 billing.CompanyId, "ProgressBilling", billing.Id, billing.BillingNumber!), token);
             await DomainEventHub.PublishAsync(new JournalEntryPostedEvent(

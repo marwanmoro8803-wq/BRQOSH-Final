@@ -42,6 +42,9 @@ public class ProgressBillingCancellationService(BrqoshDbContext db)
             billing.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**وإلغاءُ المستخلص يُعيد العقدَ إلى ما اكتُسب** بتاريخ الإلغاء.
+            await new ContractRevenueTrueUp(db).ApplyAsync(companyId, billing.ProjectId, cancellationDate, token);
+
             await new AuditService(db).LogAsync(companyId, username, "إلغاء مستخلص أعمال",
                 "ProgressBilling", billing.BillingNumber ?? billing.Id.ToString(), "تم عكس القيد");
 

@@ -31,6 +31,9 @@ public class ConstructionProjectService(BrqoshDbContext db)
         project.Update(nameAr, customerId, startDate, endDate, contractValue, retentionPercent, location, status,
             estimatedTotalCost);
         await db.SaveChangesAsync(ct);
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**ومراجعةُ التقدير أو قيمة العقد لحاقٌ تراكميّ** — يُقيَّد يومَ المراجعة.
+        await new ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, DateOnly.FromDateTime(DateTime.Today), ct);
     }
 
     public async Task ReplaceBoqAsync(long companyId, long projectId, IReadOnlyList<BoqItem> items,

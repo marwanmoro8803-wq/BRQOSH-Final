@@ -48,6 +48,9 @@ public class ProjectCostService(BrqoshDbContext db)
                 await db.SaveChangesAsync(token);
             }
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**والتكلفةُ تُغيّر نسبةَ الإنجاز فيُسوّى إيرادُ العقد** — قُيّدت هنا أو جاءت من مستندٍ آخر.
+            await new ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, costDate, token);
+
             await new AuditService(db).LogAsync(companyId, username, "تسجيل تكلفة مشروع",
                 "ConstructionProject", projectId.ToString(), $"{amount:N2} — {description}");
 
