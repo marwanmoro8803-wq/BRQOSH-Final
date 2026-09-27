@@ -24,7 +24,8 @@ public static class BrqoshDbContextFactory
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             // نزاهة: حارس ثبات سجل التدقيق يجب أن يسري على كل السياقات — بما فيها مسار سطح المكتب
             // (المصنع)، لا مسار DI فقط. إغلاق ح-3 (CEEF-200).
-            .AddInterceptors(new AuditLogImmutabilityInterceptor());
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏وحارسُ الفترة المقفلة عند الحفظ — بالسُّنّة نفسِها: المساران معاً.
+            .AddInterceptors(new AuditLogImmutabilityInterceptor(), new ClosedPeriodPostingInterceptor());
         switch (provider)
         {
             case DatabaseProvider.PostgreSql:

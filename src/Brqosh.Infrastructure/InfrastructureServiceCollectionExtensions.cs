@@ -48,7 +48,8 @@ public static class InfrastructureServiceCollectionExtensions
                     maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null));
             else
                 options.UseSqlite(connectionString);
-            options.AddInterceptors(new AuditLogImmutabilityInterceptor());
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏وحارسُ الفترة المقفلة عند الحفظ — كما في المصنع.
+            options.AddInterceptors(new AuditLogImmutabilityInterceptor(), new ClosedPeriodPostingInterceptor());
         });
 
         services.AddScoped<IPostingPolicy, SaudiPostingPolicy>();

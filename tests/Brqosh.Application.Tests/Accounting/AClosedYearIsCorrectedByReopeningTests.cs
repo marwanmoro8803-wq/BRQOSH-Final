@@ -355,8 +355,19 @@ public class AClosedYearIsCorrectedByReopeningTests : IDisposable
             copy.AddClosingLine(account, line.Debit, line.Credit, line.Description);
         }
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏**والسباقُ يُعاد كما وقع**: الإقفالان رُحِّلا وديسمبرُ مفتوح — كلاهما مرّ
+        // ‏من حارس الفترة — ثمّ أُقفلت الفترات. **وكتابتُه في ديسمبر مقفلٍ يرفضها الدفترُ الآن**
+        // ‏(`ClosedPeriodPostingInterceptor`)، فيُفتح ديسمبرُ للتجهيز ويُقفل بعده.
+        var december = await _db.FiscalPeriods.SingleAsync(p =>
+            p.CompanyId == _companyId && p.Code == $"{original.EntryDate.Year}-12");
+        december.Reopen();
+        await _db.SaveChangesAsync();
+
         copy.Post($"JV-RACE-{entryId}");
         _db.JournalEntries.Add(copy);
+        await _db.SaveChangesAsync();
+
+        december.Close();
         await _db.SaveChangesAsync();
     }
 

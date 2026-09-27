@@ -186,6 +186,12 @@ public class EntityLevelClosingTests : IDisposable
             .SingleAsync(e => e.CompanyId == _companyId
                               && e.SourceDocument == $"YearEndClose:{Year}");
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏**والعكسُ في ديسمبر مقفلٍ يرفضه الدفترُ الآن** — فيُفتح ديسمبرُ أوّلاً كما
+        // ‏تفعل `ReopenYearAsync`؛ والسؤالُ هنا عن وسم العكس لا عن مسار إعادة الفتح.
+        var december = await _db.FiscalPeriods.SingleAsync(p => p.CompanyId == _companyId && p.Code == $"{Year}-12");
+        december.Reopen();
+        await _db.SaveChangesAsync();
+
         var reversal = closing.CreateReversal(new DateOnly(Year, 12, 31));
         reversal.Post("JE-REV-EL");
         _db.JournalEntries.Add(reversal);
