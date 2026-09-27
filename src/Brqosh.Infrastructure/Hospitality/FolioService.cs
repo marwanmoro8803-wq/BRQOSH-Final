@@ -120,18 +120,27 @@ public class FolioService(BrqoshDbContext db)
                 .SingleOrDefaultAsync(f => f.ReservationId == reservation.Id && !f.IsSettled, token)
                 ?? throw new AccountingException("لا حسابَ مفتوحاً لهذا الحجز.");
 
-            var added = 0;
+            var added = new List<(DateOnly Night, decimal Rate)>();
             var last = asOf < reservation.CheckOutDate ? asOf : reservation.CheckOutDate.AddDays(-1);
 
             for (var night = reservation.CheckInDate; night <= last; night = night.AddDays(1))
             {
                 if (folio.HasRoomNight(night)) continue;
                 folio.AddRoomNight(night, reservation.RatePerNight);
-                added++;
+                added.Add((night, reservation.RatePerNight));
             }
 
-            if (added > 0) await db.SaveChangesAsync(token);
-            return added;
+            if (added.Count > 0)
+            {
+                await db.SaveChangesAsync(token);
+
+                // (جاهزيّةُ الإطلاق · ح-٨٢) ‏**والليلةُ تبلغ الأستاذَ في شهرها** — كانت تُقيَّد في حساب النزيل وحدَه، فيُقفل
+                // ‏الشهرُ ناقصاً إيرادَ كلِّ مقيم. **وما أُضيف للتوّ وحدَه** — فتشغيلٌ ثانٍ لا يستحقّ الليلةَ مرّتين.
+                await new RoomNightAccrual(db).AccrueAsync(
+                    reservation.CompanyId, folio.Id, reservation.ReservationNumber, added, token);
+            }
+
+            return added.Count;
         }, ct);
 
     /// <summary>يُضيف رسماً غيرَ ليليّ — مطعمٌ أو غسيلٌ أو ثلاجة.</summary>
@@ -189,6 +198,10 @@ public class FolioService(BrqoshDbContext db)
                 invoice.AddLine(charge.Description, 1m, charge.Amount, vatCategory: charge.VatCategory);
 
             await new SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
+
+            // (جاهزيّةُ الإطلاق · ح-٨٢) ‏**والفاتورةُ تحمل الليالي كلَّها، فيُطلَق ما استُحقّ منها** — وإلّا اعتُرف بإيرادها
+            // ‏مرّتين: في شهرها وفي شهر المغادرة.
+            await new RoomNightAccrual(db).ReleaseAsync(companyId, folio.Id, on, token);
 
             // (CEEF-232 · ح-١) ‏**والعربونُ يُنزَل هنا — داخلَ معاملة المغادرة نفسِها.**
             //

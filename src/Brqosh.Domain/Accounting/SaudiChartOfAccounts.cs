@@ -57,6 +57,10 @@ public static class SaudiChartOfAccounts
         // ‏على رصيده**: صفرُه بعد التسوية شرطُ صحّتها.
         new("1117", "عُهَد رحلات التوصيل", "Trip Cash Floats", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
+        // (جاهزيّةُ الإطلاق · ح-٨٢) ‏**ليلةُ الإقامة إيرادُ شهرها وإن لم تُفوتَر.** فالفاتورةُ يومَ المغادرة، وكانت ليالي
+        // ‏المقيم آخرَ الشهر لا تبلغ الأستاذ — فيُقفل ديسمبرُ ناقصاً إيرادَ كلِّ نزيلٍ لم يغادر. **والمغادرةُ تُطلقه.**
+        new("1118", "إيرادات إقامة مستحقة غير مفوترة", "Accrued Room Revenue - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+
         new("12", "الأصول غير المتداولة", "Non-Current Assets", AccountType.Asset, "1", IsGroup: true),
         new("1201", "الأراضي", "Land", AccountType.Asset, "12", IsGroup: false),
         new("1202", "المباني والإنشاءات", "Buildings & Constructions", AccountType.Asset, "12", IsGroup: false),
@@ -244,6 +248,9 @@ public static class SaudiChartOfAccounts
 
         /// <summary>(CEEF-230 · ط3-٤ب) عُهَدُ رحلات التوصيل — أصلٌ يُسوَّى مع السائق.</summary>
         public const string TripCashFloat = "1117";
+
+        /// <summary>(جاهزيّةُ الإطلاق · ح-٨٢) إيرادُ ليالٍ مضت ولم تُفوتَر — أصلٌ تُطلقه فاتورةُ المغادرة.</summary>
+        public const string AccruedRevenue = "1118";
     }
 
     /// <summary>
