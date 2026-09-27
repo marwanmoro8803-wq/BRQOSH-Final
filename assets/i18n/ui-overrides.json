@@ -13,8 +13,6 @@
   "BRQOSH — خطأ في التشغيل": "BRQOSH — Startup error",
   "CSID · شهادة · بيئة محاكاة/إنتاج": "CSID · Certificate · Simulation/Production environment",
   "Domain events · تتبع · Observability": "Domain events · Tracing · Observability",
-  "G-31 · SLA · قنوات التواصل · تذاكر الدعم (MVP)": "G-31 · SLA · Contact channels · Support tickets (MVP)",
-  "G-32 · خطط الاشتراك · حدود الشركات": "G-32 · Subscription plans · Company limits",
   "GL · ترحيل · عكس · تدقيق": "GL · Posting · Reversal · Audit",
   "GRN · مطابقة ثلاثية · حركة مخزون": "GRN · Three-way match · Stock movement",
   "IBAN · عملات · إعادة تقييم FX": "IBAN · Currencies · FX revaluation",
@@ -254,7 +252,6 @@
   "الانحراف": "Variance",
   "الباقة": "Plan",
   "البداية": "Start",
-  "البريد: support@brqosh.sa · الهاتف: 9200XXXXXX (MVP — يُحدَّث عند الإطلاق)": "Email: support@brqosh.sa · Phone: 9200XXXXXX (MVP — updated at launch)",
   "البند": "Item",
   "البنود النقدية تُترجم بسعر الإقفال — والقيد يُعكس في اليوم التالي": "Monetary items are translated at the closing rate — and the entry reverses the next day",
   "البوالص والتحصيل": "Waybills & COD",
@@ -829,7 +826,6 @@
   "فوترة الزيارة": "Bill Visit",
   "فيلا": "Villa",
   "فُعِّل العقد وأُنشئت خطة فوترته الدورية.": "The contract is active and its recurring billing plan has been created.",
-  "قائمة الشركات النشطة — G-69-C": "Active companies list — G-69-C",
   "قائمة الطعام والوصفات": "Menu & Recipes",
   "قائمة مواد (BOM)": "Bill of materials (BOM)",
   "قاعة": "Hall",
@@ -1118,5 +1114,12 @@
   "المشتري": "Buyer",
   "المعاملة الضريبية": "VAT Treatment",
   "ترحيل الاستبعاد": "Post Disposal",
-  "عائد البيع/الخردة — قبل الضريبة": "Sale/Scrap Proceeds — Before VAT"
+  "عائد البيع/الخردة — قبل الضريبة": "Sale/Scrap Proceeds — Before VAT",
+  "قنوات التواصل · مستويات الخدمة · تذاكر الدعم": "Contact channels · Service levels · Support tickets",
+  "خطط الاشتراك · حدود الشركات": "Subscription plans · Company limits",
+  "قائمة الشركات النشطة": "Active companies",
+  "البريد:": "Email:",
+  "الهاتف:": "Phone:",
+  "لم تعتمد قنوات الدعم ولا مستويات الخدمة لهذه النسخة بعد.": "Support channels and service levels have not been approved for this version yet.",
+  "تذاكر الدعم لا تدار من داخل البرنامج في هذه النسخة.": "Support tickets are not managed inside the application in this version."
 }

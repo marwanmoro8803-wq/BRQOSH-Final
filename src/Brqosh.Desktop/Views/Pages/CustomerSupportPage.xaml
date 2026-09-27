@@ -13,13 +13,16 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource PageTitleText}" Text="دعم العملاء" FontSize="18"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
-                           Text="G-31 · SLA · قنوات التواصل · تذاكر الدعم (MVP)"/>
+                           Text="قنوات التواصل · مستويات الخدمة · تذاكر الدعم"/>
             </StackPanel>
         </Border>
 
+        <!-- (commercial-readiness#7) القنواتُ والباقاتُ من config/support.json الذي يعتمده المورّد — وبدونه تقول الشاشةُ ذلك. -->
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock FontWeight="SemiBold" Text="مستويات الخدمة (SLA)" Margin="0,0,0,8"/>
+                <TextBlock x:Name="SupportStateText" Foreground="{StaticResource TextSecondaryBrush}"
+                           TextWrapping="Wrap" Margin="0,0,0,8"/>
                 <DataGrid x:Name="SlaGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
                           FontSize="14" RowHeight="32" MaxHeight="140">
                     <DataGrid.Columns>
@@ -28,8 +31,14 @@
                         <DataGridTextColumn Header="ساعات العمل" Binding="{Binding Hours}" Width="160"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <TextBlock Margin="0,12,0,0" Foreground="{StaticResource TextSecondaryBrush}"
-                           Text="البريد: support@brqosh.sa · الهاتف: 9200XXXXXX (MVP — يُحدَّث عند الإطلاق)"/>
+                <StackPanel x:Name="EmailRow" Orientation="Horizontal" Margin="0,12,0,0">
+                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="البريد:" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="EmailText" FlowDirection="LeftToRight"/>
+                </StackPanel>
+                <StackPanel x:Name="PhoneRow" Orientation="Horizontal" Margin="0,4,0,0">
+                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="الهاتف:" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="PhoneText" FlowDirection="LeftToRight"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 

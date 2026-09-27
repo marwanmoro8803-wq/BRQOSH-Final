@@ -13,7 +13,7 @@
             <StackPanel>
                 <TextBlock Style="{StaticResource PageTitleText}" Text="الباقات والتسعير" FontSize="18"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
-                           Text="G-32 · خطط الاشتراك · حدود الشركات"/>
+                           Text="خطط الاشتراك · حدود الشركات"/>
             </StackPanel>
         </Border>
 

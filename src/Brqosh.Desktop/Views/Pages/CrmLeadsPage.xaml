@@ -17,7 +17,7 @@
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="العملاء المحتملون" FontSize="16"/>
-                    <TextBlock Style="{StaticResource PageSubtitleText}" Text="CRM · G-10 · Leads"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}" Text="CRM · Leads"/>
                 </StackPanel>
             </DockPanel>
         </Border>
