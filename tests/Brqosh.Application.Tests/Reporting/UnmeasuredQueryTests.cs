@@ -125,7 +125,7 @@ public class UnmeasuredQueryTests : IDisposable
         await _db.SaveChangesAsync();
 
         var order = WorkOrder.CreateDraft(_companyId, bom.Id, new DateOnly(2026, 5, 1), 10m);
-        order.Release("WO-1");
+        order.Release("WO-1", bom);
         _db.WorkOrders.Add(order);
         await _db.SaveChangesAsync();
 
@@ -158,7 +158,7 @@ public class UnmeasuredQueryTests : IDisposable
         await _db.SaveChangesAsync();
 
         var order = WorkOrder.CreateDraft(_companyId, bom.Id, new DateOnly(2026, 5, 1), 7m);
-        order.Release("WO-2");
+        order.Release("WO-2", bom);
         _db.WorkOrders.Add(order);
         await _db.SaveChangesAsync();
 

@@ -20,10 +20,13 @@ public class WorkOrderService(BrqoshDbContext db)
             SecurityContext.EnsureCanPost();
 
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏**والوصفةُ تُجمَّد عند الإصدار** — فتُقرأ القائمةُ قبل حجز الرقم،
+            // ‏وقائمةٌ لا تُوجد تُسقط الإصدارَ قبل أن يُستهلك رقمٌ من المتسلسلة.
+            var bom = await db.BillsOfMaterials.SingleAsync(b => b.CompanyId == companyId && b.Id == order.BomId, token);
             var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.WorkOrders.Where(w => w.CompanyId == companyId).Select(w => w.OrderNumber),
                 "WO", order.OrderDate.Year, companyId);
-            order.Release(number);
+            order.Release(number, bom);
             await db.SaveChangesAsync(token);
             return order;
         }, ct);
@@ -56,6 +59,19 @@ public class WorkOrderService(BrqoshDbContext db)
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
             var completedOn = completionDate ?? DateOnly.FromDateTime(DateTime.Today);
             var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == order.BomId, token);
+
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٧ · ‏`manufacturing#5`) ‏**الوصفةُ وصفةُ الأمر يومَ صدوره — لا وصفةُ القائمة اليوم.**
+            //
+            // ‏كان هذا يقرأ `bom.Lines` و`bom.LabourCostPerUnit` و`bom.OverheadRatePercent` **وقتَ الإكمال**؛
+            // ‏فقائمةٌ تُعدَّل بين الإصدار والإكمال **تُغيّر ما يُصرَف من المخزون وبكم يدخل التامُّ** لأمرٍ لم
+            // ‏يُطلب له ذلك. **والقائمةُ هنا للمنتَج وكمّيّة الدفعة وحدَهما** — وكلاهما لا يتغيّر بعد إنشائها.
+            //
+            // ‏**وأمرٌ صادرٌ بلا وصفةٍ مجمَّدة يُرفض** ولا يُستكمَل من قائمة اليوم: المُرقِّعُ يُجمّد عند الإقلاع
+            // ‏كلَّ أمرٍ صدر قبل الترقية، فبقاءُ واحدٍ بلا وصفةٍ خللٌ يُقال لا يُغطّى.
+            if (order.Status == WorkOrderStatus.Released && !order.RecipeFrozen)
+                throw new AccountingException(
+                    $"أمر الإنتاج {order.OrderNumber} صادرٌ بلا وصفةٍ مجمَّدة — ألغِه وأصدره من جديد.");
+
             var inv = new InventoryService(db);
             var warehouse = await inv.GetDefaultWarehouseAsync(companyId);
 
@@ -64,7 +80,7 @@ public class WorkOrderService(BrqoshDbContext db)
             decimal materialCost = 0;
             var costing = new InventoryCostingService(db);
 
-            foreach (var line in bom.Lines)
+            foreach (var line in order.Materials)
             {
                 var qty = Math.Round(line.Quantity * scale, 4, MidpointRounding.AwayFromZero);
                 // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**مفتاحُ الاستهلاك هو مفتاحُ الحركة بعينه.**
@@ -97,9 +113,9 @@ public class WorkOrderService(BrqoshDbContext db)
             // ‏**والنصيبُ على (الموادّ + الأجر)** لا على الموادّ وحدَها، فالأجرُ جزءٌ من
             // ‏وعاء التحميل. **وصفرٌ يُبقي الحسابَ كما كان حرفاً.**
             var labourCost = Math.Round(
-                bom.LabourCostPerUnit * producedQuantity, 2, MidpointRounding.AwayFromZero);
+                order.RecipeLabourCostPerUnit * producedQuantity, 2, MidpointRounding.AwayFromZero);
             var overheadCost = Math.Round(
-                (materialCost + labourCost) * bom.OverheadRatePercent / 100m,
+                (materialCost + labourCost) * order.RecipeOverheadRatePercent / 100m,
                 2, MidpointRounding.AwayFromZero);
 
             var conversionCost = labourCost + overheadCost;

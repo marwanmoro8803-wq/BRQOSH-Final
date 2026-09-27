@@ -146,6 +146,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ConstructionProjectService>();
         services.AddScoped<ProjectCostService>();
         services.AddScoped<WorkOrderService>();
+        services.AddScoped<BillOfMaterialsService>();
         services.AddScoped<SalesOrderService>();
         services.AddScoped<SalesQuotationService>();
         services.AddScoped<CrmService>();

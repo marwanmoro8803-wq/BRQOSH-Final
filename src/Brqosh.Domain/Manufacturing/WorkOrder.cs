@@ -11,6 +11,24 @@ public enum WorkOrderStatus
     Cancelled = 3,
 }
 
+/// <summary>
+/// (جاهزيّةُ الإطلاق · ح-٧٧ · <c>manufacturing#5</c>) <b>بندٌ من وصفة الأمر كما كان يومَ صدوره</b> — مكوّنٌ وكمّيّتُه
+/// لإنتاج <c>OutputQuantity</c> من قائمة الموادّ.
+/// </summary>
+public class WorkOrderMaterial
+{
+    public long ComponentProductId { get; private set; }
+    public decimal Quantity { get; private set; }
+
+    private WorkOrderMaterial() { }
+
+    internal WorkOrderMaterial(long componentProductId, decimal quantity)
+    {
+        ComponentProductId = componentProductId;
+        Quantity = quantity;
+    }
+}
+
 /// <summary>أمر إنتاج — يُنفَّذ من BOM ويُرحَّل عند الاكتمال.</summary>
 public class WorkOrder : IBranchScoped
 {
@@ -25,6 +43,31 @@ public class WorkOrder : IBranchScoped
     public WorkOrderStatus Status { get; private set; } = WorkOrderStatus.Draft;
     public long? CompletionJournalEntryId { get; private set; }
     public string Notes { get; private set; }
+
+    private readonly List<WorkOrderMaterial> _materials = [];
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٧٧ · <c>manufacturing#5</c>) <b>وصفةُ الأمر — تُجمَّد عند إصداره، ولا تتبع القائمةَ بعده.</b>
+    ///
+    /// <para><b>ما كان:</b> الإكمالُ يقرأ بنودَ قائمة الموادّ وتكاليفَ تحويلها <b>يومَ الإكمال</b>. فقائمةٌ تُعدَّل بين
+    /// الإصدار والإكمال <b>تُغيّر ما يستهلكه أمرٌ صادرٌ وبكم يدخل تامُّه — بلا أثر</b>: أمرٌ صدر لثلاث وحداتٍ من الخامة
+    /// للوحدة يُكمَل بأربع لأنّ أحداً عدّل القائمةَ لأوامرَ قادمة.</para>
+    ///
+    /// <para><b>والإصدارُ هو الالتزام</b> — عنده يُحجَز الرقمُ ويبدأ التنفيذ؛ فالمسودّةُ تتبع القائمةَ حتى تصدر.</para>
+    /// </summary>
+    public IReadOnlyList<WorkOrderMaterial> Materials => _materials.AsReadOnly();
+
+    /// <summary>(ح-٧٧) أجرُ الوحدة كما كان في القائمة يومَ الإصدار.</summary>
+    public decimal RecipeLabourCostPerUnit { get; private set; }
+
+    /// <summary>(ح-٧٧) نسبةُ تحميل التكاليف الصناعيّة كما كانت يومَ الإصدار.</summary>
+    public decimal RecipeOverheadRatePercent { get; private set; }
+
+    /// <summary>
+    /// (ح-٧٧) <b>جُمِّدت الوصفة</b> — بالإصدار، أو بالمُرقِّع لأمرٍ صدر قبل الترقية. <b>وأمرٌ صادرٌ بلا وصفةٍ مجمَّدة
+    /// لا يُكمَل</b>: لا يُستكمَل من قائمة اليوم.
+    /// </summary>
+    public bool RecipeFrozen { get; private set; }
 
     private WorkOrder()
     {
@@ -52,11 +95,26 @@ public class WorkOrder : IBranchScoped
             Math.Round(plannedQuantity, 4, MidpointRounding.AwayFromZero), (notes ?? "").Trim());
     }
 
-    public void Release(string orderNumber)
+    /// <summary>
+    /// إصدارُ الأمر — <b>وتجميدُ وصفته من قائمة موادّه</b> (ح-٧٧): البنودُ وتكاليفُ التحويل كما هي الآن، فتعديلُ
+    /// القائمة بعده لا يمسّه. <b>ولا إصدارَ بلا القائمة</b> — فلا طريقَ إلى أمرٍ صادرٍ بلا وصفة.
+    /// </summary>
+    public void Release(string orderNumber, BillOfMaterials bom)
     {
         EnsureStatus(WorkOrderStatus.Draft, "إصدار الأمر");
         if (string.IsNullOrWhiteSpace(orderNumber))
             throw new AccountingException("رقم أمر الإنتاج مطلوب.");
+        ArgumentNullException.ThrowIfNull(bom);
+        if (bom.Id != BomId)
+            throw new AccountingException("قائمة المواد لا تخصّ هذا الأمر.");
+
+        _materials.Clear();
+        foreach (var line in bom.Lines)
+            _materials.Add(new WorkOrderMaterial(line.ComponentProductId, line.Quantity));
+        RecipeLabourCostPerUnit = bom.LabourCostPerUnit;
+        RecipeOverheadRatePercent = bom.OverheadRatePercent;
+        RecipeFrozen = true;
+
         OrderNumber = orderNumber.Trim();
         Status = WorkOrderStatus.Released;
     }

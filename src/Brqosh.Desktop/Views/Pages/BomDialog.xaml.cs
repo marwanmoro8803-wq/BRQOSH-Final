@@ -6,6 +6,8 @@ using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Manufacturing;
+using Brqosh.Infrastructure.Manufacturing;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -81,27 +83,29 @@ public partial class BomDialog : Window
             if (lines.Count == 0)
                 throw new AccountingException("أضف مكوّناً واحداً على الأقل.");
 
-            await using var db = AppServices.CreateDb();
-
             if (_editBomId is long bomId)
             {
-                var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == bomId);
-                bom.Rename(NameBox.Text);
-                bom.ReplaceLines(lines);
-                bom.SetConversionCosts(ConversionNumber(LabourBox.Text, "أجر العمالة المباشرة"),
-                    ConversionNumber(OverheadBox.Text, "نسبة التكاليف الصناعية"));
+                // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏**التعديلُ عبر الخدمة لا من النافذة** — فيُسجَّل في سجلّ التدقيق
+                // ‏بما تغيّر، والأوامرُ الصادرةُ تبقى على وصفتها المجمَّدة.
+                using var facade = new DesktopAccountingFacade();
+                await facade.GetService<BillOfMaterialsService>().UpdateAsync(AppServices.CompanyId, bomId,
+                    NameBox.Text, lines,
+                    ConversionNumber(LabourBox.Text, "أجر العمالة المباشرة"),
+                    ConversionNumber(OverheadBox.Text, "نسبة التكاليف الصناعية"),
+                    SecurityContext.ResolveUsername());
             }
             else
             {
+                await using var db = AppServices.CreateDb();
                 var bom = BillOfMaterials.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text, productId);
                 foreach (var (pid, qty) in lines)
                     bom.AddLine(pid, qty);
                 bom.SetConversionCosts(ConversionNumber(LabourBox.Text, "أجر العمالة المباشرة"),
                     ConversionNumber(OverheadBox.Text, "نسبة التكاليف الصناعية"));
                 db.BillsOfMaterials.Add(bom);
+                await db.SaveChangesAsync();
             }
 
-            await db.SaveChangesAsync();
             DialogResult = true;
             Close();
         }

@@ -2147,6 +2147,17 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<bool>("RecipeFrozen")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("RecipeLabourCostPerUnit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("RecipeOverheadRatePercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -5444,6 +5455,39 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Brqosh.Domain.Manufacturing.WorkOrder", b =>
+                {
+                    b.OwnsMany("Brqosh.Domain.Manufacturing.WorkOrderMaterial", "Materials", b1 =>
+                        {
+                            b1.Property<long>("id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("bigint");
+
+                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<long>("id"));
+
+                            b1.Property<long>("ComponentProductId")
+                                .HasColumnType("bigint");
+
+                            b1.Property<decimal>("Quantity")
+                                .HasPrecision(18, 4)
+                                .HasColumnType("numeric(18,4)");
+
+                            b1.Property<long>("work_order_id")
+                                .HasColumnType("bigint");
+
+                            b1.HasKey("id");
+
+                            b1.HasIndex("work_order_id");
+
+                            b1.ToTable("work_order_materials", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("work_order_id");
+                        });
+
+                    b.Navigation("Materials");
                 });
 
             modelBuilder.Entity("Brqosh.Domain.Payroll.PayrollRun", b =>

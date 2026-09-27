@@ -1533,6 +1533,19 @@ public class BrqoshDbContext : DbContext
             entity.Property(w => w.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(w => new { w.CompanyId, w.OrderNumber });
             entity.HasIndex(w => w.BomId);
+
+            // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏وصفةُ الأمر المجمَّدة عند إصداره — بدقّة قائمة الموادّ نفسِها.
+            entity.Property(w => w.RecipeLabourCostPerUnit).HasPrecision(18, 2);
+            entity.Property(w => w.RecipeOverheadRatePercent).HasPrecision(9, 4);
+            entity.OwnsMany(w => w.Materials, materials =>
+            {
+                materials.ToTable("work_order_materials");
+                materials.WithOwner().HasForeignKey("work_order_id");
+                materials.Property<long>("id");
+                materials.HasKey("id");
+                materials.Property(m => m.Quantity).HasPrecision(18, 4);
+            });
+            entity.Navigation(w => w.Materials).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         modelBuilder.Entity<PosShift>(entity =>
