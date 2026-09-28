@@ -219,11 +219,28 @@ public class Reservation : IBranchScoped
         room.Release();
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٣) <b>لا يُلغى إلّا حجزٌ قائم</b> — فحجزٌ نزل صاحبُه يُغادر ولا يُلغى، <b>وحجزٌ أُلغي أو غاب
+    /// صاحبُه لا يُلغى ثانيةً</b>: وإلّا سُوّي عربونُه مرّتين.
+    /// </summary>
     public void Cancel()
     {
-        if (Status == ReservationStatus.CheckedIn || Status == ReservationStatus.CheckedOut)
-            throw new AccountingException("حجزٌ نزل صاحبُه لا يُلغى.");
+        if (Status != ReservationStatus.Booked)
+            throw new AccountingException("لا يُلغى إلا حجزٌ قائمٌ لم ينزل صاحبُه.");
         Status = ReservationStatus.Cancelled;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٣) <b>لم يحضر</b> — حجزٌ قائمٌ مضى يومُ وصوله. <b>ولا قبله</b>: فالنزيلُ لم يتأخّر بعد، ومصادرةُ
+    /// عربونه يومئذٍ مصادرةٌ بلا سبب.
+    /// </summary>
+    public void MarkNoShow(DateOnly on)
+    {
+        if (Status != ReservationStatus.Booked)
+            throw new AccountingException("لا يُسجَّل غيابٌ إلا على حجزٍ قائم.");
+        if (on < CheckInDate)
+            throw new AccountingException($"لا يُسجَّل غيابٌ قبل يوم الوصول ({CheckInDate:yyyy-MM-dd}).");
+        Status = ReservationStatus.NoShow;
     }
 
     public void AssignBranch(long branchId)

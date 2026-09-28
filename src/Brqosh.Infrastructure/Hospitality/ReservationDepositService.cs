@@ -8,6 +8,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Hospitality;
 
+/// <summary>(جاهزيّةُ الإطلاق · ح-٨٣) ما يُصنع بعربون حجزٍ أُلغي أو غاب صاحبُه.</summary>
+public enum DepositOutcome
+{
+    /// <summary>يُردّ إلى النزيل — صافيه وضريبتُه.</summary>
+    Refund = 0,
+
+    /// <summary>يُصادَر إيراداً — وضريبتُه باقيةٌ مستحقّة: المصادَرُ مقابلٌ لتوريدٍ خاضع.</summary>
+    Forfeit = 1,
+}
+
 /// <summary>
 /// (CEEF-232 · ح-١) <b>عربونُ الحجز — مالٌ يُقبض قبل أن يُستحقّ.</b>
 ///
@@ -37,6 +47,12 @@ public class ReservationDepositService(BrqoshDbContext db)
     /// <summary>بادئةُ مصدر قيد إنزال العربون على فاتورة المغادرة.</summary>
     public const string AppliedPrefix = "ReservationDepositApplied:";
 
+    /// <summary>(ح-٨٣) بادئةُ مصدر قيد ردّ العربون عند الإلغاء أو الغياب.</summary>
+    public const string RefundedPrefix = "ReservationDepositRefunded:";
+
+    /// <summary>(ح-٨٣) بادئةُ مصدر قيد مصادرة العربون عند الإلغاء أو الغياب.</summary>
+    public const string ForfeitedPrefix = "ReservationDepositForfeited:";
+
     /// <summary>
     /// يقبض عربوناً على حجزٍ قائم — <b>ويُقيّده التزاماً لا إيراداً</b>.
     /// </summary>
@@ -58,8 +74,8 @@ public class ReservationDepositService(BrqoshDbContext db)
 
             // ‏**ولا يُقبض عربونٌ على حجزٍ غادر صاحبُه** — فالتصفيةُ وقعت، **وعربونٌ بعدها
             // ‏يبقى في `2105` بلا فاتورةٍ يُنزَل عليها**: التزامٌ خالدٌ تجاه نزيلٍ رحل.
-            if (reservation.Status is ReservationStatus.CheckedOut or ReservationStatus.Cancelled)
-                throw new AccountingException("لا يُقبض عربونٌ على حجزٍ مُغادَرٍ أو مُلغى.");
+            if (reservation.Status is ReservationStatus.CheckedOut or ReservationStatus.Cancelled or ReservationStatus.NoShow)
+                throw new AccountingException("لا يُقبض عربونٌ على حجزٍ مُغادَرٍ أو مُلغى أو غاب صاحبُه.");
 
             var cash = await SystemAccountProvisioning.EnsureAsync(
                 db, companyId, SaudiChartOfAccounts.SystemCodes.CashOnHand, token);
@@ -148,19 +164,93 @@ public class ReservationDepositService(BrqoshDbContext db)
         return outstanding;
     }
 
-    /// <summary>العربونُ المقبوضُ ولم يُنزَل بعد — <b>يُقرأ من الأستاذ لا من حقل</b>.</summary>
-    internal async Task<decimal> OutstandingAsync(
+    /// <summary>
+    /// العربونُ الذي يحتجزه الفندقُ الآن — <b>يُقرأ من الأستاذ لا من حقل</b>، صافيه وضريبتُه. وهو ما تسأله الشاشةُ قبل
+    /// الإلغاء: يُردّ أم يُصادَر.
+    /// </summary>
+    public async Task<decimal> HeldAsync(
         long companyId, long reservationId, CancellationToken ct = default) =>
         await OutstandingOnAsync(companyId, reservationId, SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers, ct)
         + await OutstandingOnAsync(companyId, reservationId, SaudiChartOfAccounts.SystemCodes.VatOutput, ct);
 
-    /// <summary>(ح-٨١) ما بقي من العربون على حسابٍ بعينه — المقبوضُ ناقصاً المُنزَل.</summary>
+    /// <summary>
+    /// (ح-٨١) ما بقي من العربون على حسابٍ بعينه — المقبوضُ ناقصاً ما أُنزل أو رُدّ أو صُودر.
+    ///
+    /// <para>(ح-٨٣) <b>ومجموعُ الدائن ناقصاً المدين في قيود كلّ مصدرٍ يحمل إشارتَه</b>: القبضُ موجبٌ، والإنزالُ والردُّ
+    /// والمصادرةُ سالبة — فتُجمع. <b>وكان الإنزالُ يُطرح بإشارته فيُضاعَف</b>: عربونٌ أُنزل يُقرأ ضعفَه، ولم يُرَ لأنّ السؤالَ
+    /// لم يُسأل بعد الإنزال قطّ — حتى صار الإلغاءُ يسأله.</para>
+    /// </summary>
     private async Task<decimal> OutstandingOnAsync(
         long companyId, long reservationId, string accountCode, CancellationToken ct)
     {
-        var taken = await SumAsync(companyId, $"{TakenPrefix}{reservationId}", accountCode, ct);
-        var applied = await SumAsync(companyId, $"{AppliedPrefix}{reservationId}", accountCode, ct);
-        return Math.Round(taken - applied, 2, MidpointRounding.AwayFromZero);
+        var held = 0m;
+        foreach (var prefix in new[] { TakenPrefix, AppliedPrefix, RefundedPrefix, ForfeitedPrefix })
+            held += await SumAsync(companyId, $"{prefix}{reservationId}", accountCode, ct);
+        return Math.Round(held, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٣) <b>حجزٌ أُلغي أو غاب صاحبُه — وعربونُه يُردّ أو يُصادَر.</b> وكان لا مسارَ له إلّا الإنزالُ عند
+    /// المغادرة، فيبقى التزاماً خالداً في <c>2105</c>.
+    ///
+    /// <para><b>الردُّ</b>: مدين <c>2105</c> بالصافي و<c>2106</c> بالضريبة، دائن النقد بالإجمالي — والإقرارُ يقرأ ردَّ الضريبة
+    /// خصماً في شهره. <b>والمصادرةُ</b>: مدين <c>2105</c>، دائن الإيراد بالصافي — <b>والضريبةُ باقية</b>، فالمصادَرُ مقابلٌ
+    /// لتوريدٍ خاضع؛ وعربونٌ قُبض قبل ح-٨١ بلا ضريبةٍ تُستخرج ضريبتُه الآن.</para>
+    /// </summary>
+    internal async Task SettleOnCancellationAsync(
+        long companyId, Reservation reservation, DateOnly on, DepositOutcome outcome, CancellationToken ct)
+    {
+        var net = await OutstandingOnAsync(companyId, reservation.Id, SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers, ct);
+        var vat = await OutstandingOnAsync(companyId, reservation.Id, SaudiChartOfAccounts.SystemCodes.VatOutput, ct);
+        if (net + vat <= 0m)
+            return;
+
+        // ‏**والمالُ يتحرّك هنا** — فحارسُ القبض نفسُه: من لا يقبض العربونَ لا يردّه ولا يصادره.
+        SecurityContext.EnsureCanPostAccounting();
+
+        var advances = await SystemAccountProvisioning.EnsureAsync(
+            db, companyId, SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers, ct);
+        var vatOutput = await SystemAccountProvisioning.EnsureAsync(
+            db, companyId, SaudiChartOfAccounts.SystemCodes.VatOutput, ct);
+        var counter = await SystemAccountProvisioning.EnsureAsync(db, companyId,
+            outcome == DepositOutcome.Refund
+                ? SaudiChartOfAccounts.SystemCodes.CashOnHand
+                : SaudiChartOfAccounts.SystemCodes.SalesRevenue, ct);
+
+        await FinancialPostingSupport.ValidateAsync(
+            db, companyId, on, PostingDocumentKind.JournalEntry,
+            accountIds: [advances.Id, vatOutput.Id, counter.Id], ct: ct);
+
+        var refund = outcome == DepositOutcome.Refund;
+        var entry = JournalEntry.CreateDraft(companyId, on,
+            (refund ? "ردّ عربون حجز " : "مصادرة عربون حجز ") + reservation.ReservationNumber,
+            sourceDocument: $"{(refund ? RefundedPrefix : ForfeitedPrefix)}{reservation.Id}");
+
+        if (net > 0m)
+            entry.AddLine(advances, net, 0m, refund ? "ردّ العربون — التزامٌ يُقضى" : "مصادرة العربون — التزامٌ يسقط");
+
+        if (refund)
+        {
+            if (vat > 0m)
+                entry.AddLine(vatOutput, vat, 0m, "ضريبةُ العربون المردود — تُخصم من مخرجات شهر الردّ");
+            entry.AddLine(counter, 0m, net + vat, "ردّ العربون إلى النزيل");
+        }
+        else
+        {
+            // ‏**وعربونٌ قُبض قبل ح-٨١ بلا ضريبة** (net = الإجماليّ، vat = صفر) — المصادَرُ شاملٌ للضريبة، فتُستخرج الآن.
+            var (revenue, due) = vat > 0m ? (net, 0m) : SplitVatInclusive(net);
+            entry.AddLine(counter, 0m, revenue, "عربونٌ مصادَرٌ — إيرادُ الغرفة التي حُجزت ولم تُشغَل");
+            if (due > 0m)
+                entry.AddLine(vatOutput, 0m, due, "ضريبةُ عربونٍ مصادَرٍ قُبض بلا ضريبة");
+        }
+
+        entry.Post(await new JournalEntryNumberGenerator(db).NextAsync(companyId, on, ct));
+        db.JournalEntries.Add(entry);
+        await db.SaveChangesAsync(ct);
+
+        await FinancialPostingSupport.AuditPostAsync(
+            db, companyId, "ReservationDeposit", reservation.ReservationNumber,
+            reason: refund ? "ردّ عربون حجز" : "مصادرة عربون حجز", details: $"المبلغ {net + vat:N2}", ct: ct);
     }
 
     /// <summary>

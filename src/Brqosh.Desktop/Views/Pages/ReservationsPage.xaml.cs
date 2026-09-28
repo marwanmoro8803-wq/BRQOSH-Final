@@ -36,6 +36,10 @@ public partial class ReservationsPage : UserControl
                 (CheckInBtn, PermissionService.CanPost),
                 (AccrueBtn, PermissionService.CanPost),
                 (CheckOutBtn, PermissionService.CanPost),
+                // ‏(ح-٨٣) **وحارسُ الإلغاء والغياب حارسُ خدمتهما** — `FolioService` = `EnsureCanPost`؛ وعربونٌ محتجَزٌ
+                // ‏يُردّ أو يُصادَر بحارس القبض نفسِه (`EnsureCanPostAccounting`) فيُرفَض باسمه لمن لا يملكه.
+                (CancelBookingBtn, PermissionService.CanPost),
+                (NoShowBtn, PermissionService.CanPost),
                 // ‏(ن-١٨) **الزرُّ يُطابق حارسَ خدمتِه**: `ReservationDepositService.cs:46`
                 // ‏هو `EnsureCanPostAccounting` — والصرّافُ يسقط فيه. وكان `CanPost` هنا
                 // ‏يُظهره له، **وهو فرقٌ لم يُرَ لأنّ `reservations` لم يكن في جدول الأدوار
@@ -154,6 +158,69 @@ public partial class ReservationsPage : UserControl
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<FolioService>().CheckOutAsync(AppServices.CompanyId, row.Id,
                 DateOnly.FromDateTime(DateTime.Today));
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٣ · <c>sector-modules#5</c>) <b>إلغاءُ الحجز — وكان لا زرَّ له ولا خدمة</b>، فيبقى الحجزُ
+    /// «محجوزاً» وعربونُه التزاماً خالداً.
+    /// </summary>
+    private async void OnCancelBooking(object sender, RoutedEventArgs e) => await CloseBookingAsync(noShow: false);
+
+    /// <summary>(ح-٨٣) <b>لم يحضر النزيل</b> — من يوم الوصول لا قبله؛ والخدمةُ ترفض ما قبله باسمه.</summary>
+    private async void OnNoShow(object sender, RoutedEventArgs e) => await CloseBookingAsync(noShow: true);
+
+    /// <summary>
+    /// <b>والعربونُ يُسأل عنه قبل الإغلاق</b>: يُردّ إلى النزيل أم يُصادَر إيراداً — قرارُ الموظّف في كلّ حجز، <b>ولا يُفترض
+    /// عنه</b>. وبلا عربونٍ يكفي التأكيد.
+    /// </summary>
+    private async Task CloseBookingAsync(bool noShow)
+    {
+        if (Grid.SelectedItem is not Row row) return;
+        if (!row.IsBooked)
+        {
+            UiFeedback.ShowWarning("لا يُلغى ولا يُسجَّل غيابٌ إلا على حجزٍ قائم.");
+            return;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var held = await facade.GetService<ReservationDepositService>().HeldAsync(AppServices.CompanyId, row.Id);
+
+            var outcome = DepositOutcome.Refund;
+            if (held > 0m)
+            {
+                var answer = UiDialog.Show("للحجز عربونٌ محتجَز. نعم: يُردّ إلى النزيل · لا: يُصادَر إيراداً",
+                    $"{row.Number} · {held:N2}", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                if (answer == MessageBoxResult.Cancel || answer == MessageBoxResult.None)
+                    return;
+                outcome = answer == MessageBoxResult.Yes ? DepositOutcome.Refund : DepositOutcome.Forfeit;
+            }
+            else if (noShow)
+            {
+                if (UiDialog.Show("تسجيل عدم حضور النزيل؟", row.Number,
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+            }
+            else if (UiDialog.Show("إلغاء الحجز؟", row.Number,
+                         MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var folios = facade.GetService<FolioService>();
+            if (noShow)
+                await folios.MarkNoShowAsync(AppServices.CompanyId, row.Id, today, outcome);
+            else
+                await folios.CancelAsync(AppServices.CompanyId, row.Id, today, outcome);
+
             await ReloadAsync();
         }
         catch (Exception ex)

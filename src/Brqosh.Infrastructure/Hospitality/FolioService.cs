@@ -226,6 +226,47 @@ public class FolioService(BrqoshDbContext db)
         return invoiceId;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٣ · <c>sector-modules#5</c>) <b>يُلغي حجزاً قائماً — وعربونُه يُردّ أو يُصادَر.</b>
+    ///
+    /// <para><b>وكان لا خدمةَ ولا زرّ</b>: <c>Reservation.Cancel()</c> بلا مستدعٍ واحد، فحجزٌ أُلغي يبقى «محجوزاً»
+    /// وعربونُه التزاماً خالداً في <c>2105</c>.</para>
+    /// </summary>
+    public Task CancelAsync(long companyId, long reservationId, DateOnly on, DepositOutcome deposit,
+        CancellationToken ct = default) =>
+        CloseBookingAsync(companyId, reservationId, on, deposit, noShow: false, ct);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٣) <b>لم يحضر النزيل</b> — من يوم الوصول لا قبله؛ وعربونُه يُردّ أو يُصادَر.
+    /// </summary>
+    public Task MarkNoShowAsync(long companyId, long reservationId, DateOnly on, DepositOutcome deposit,
+        CancellationToken ct = default) =>
+        CloseBookingAsync(companyId, reservationId, on, deposit, noShow: true, ct);
+
+    private async Task CloseBookingAsync(long companyId, long reservationId, DateOnly on, DepositOutcome deposit,
+        bool noShow, CancellationToken ct)
+    {
+        SecurityContext.EnsureCanPost();
+
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var reservation = await db.Reservations
+                .SingleOrDefaultAsync(r => r.Id == reservationId && r.CompanyId == companyId, token)
+                ?? throw new AccountingException("الحجز غير موجود.");
+
+            if (noShow) reservation.MarkNoShow(on);
+            else reservation.Cancel();
+
+            // ‏**والعربونُ في المعاملة نفسِها** — فإلغاءٌ ينجح وتسويةٌ تفشل تترك حجزاً مُلغى بعربونٍ لا يُسأل عنه أبداً.
+            await new ReservationDepositService(db).SettleOnCancellationAsync(companyId, reservation, on, deposit, token);
+
+            await db.SaveChangesAsync(token);
+            await new AuditService(db).LogAsync(companyId, SecurityContext.ResolveUsername(),
+                noShow ? "لم يحضر" : "إلغاء", "Reservation", reservation.ReservationNumber,
+                $"العربون: {(deposit == DepositOutcome.Refund ? "يُردّ" : "يُصادَر")}", null, token);
+        }, ct);
+    }
+
     private static string FirstLine(Exception ex)
     {
         var deepest = ex;

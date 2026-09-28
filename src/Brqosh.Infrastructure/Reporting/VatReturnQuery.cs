@@ -414,7 +414,8 @@ public class VatReturnQuery(BrqoshDbContext db)
             {
                 TouchesNetVat = netId != null && e.Lines.Any(l => l.AccountId == netId),
                 DepositVatOffset = e.SourceDocument != null
-                                   && e.SourceDocument.StartsWith(ReservationDepositService.AppliedPrefix),
+                                   && (e.SourceDocument.StartsWith(ReservationDepositService.AppliedPrefix)
+                                       || e.SourceDocument.StartsWith(ReservationDepositService.RefundedPrefix)),
                 Lines = e.Lines
                     .Where(l => l.AccountId == outputId || l.AccountId == inputId)
                     .Select(l => new { l.AccountId, l.Debit, l.Credit })
@@ -463,6 +464,7 @@ public class VatReturnQuery(BrqoshDbContext db)
             // ‏ضريبةُ العربون أُقرّت في شهر قبضه (نقطةُ استحقاق)، وفاتورةُ المغادرة تحمل ضريبةَ الإقامة كلِّها —
             // ‏فالإنزالُ يردّ ما أُقرّ سلفاً. **وإهمالُه (كما يُهمَل النقصُ عامّةً) يُقرّ ضريبةَ العربون مرّتين.**
             // ‏ويُعرف بمصدره لا بإشارته: لا يُقرأ كلُّ نقصٍ خصماً، بل هذا وحدَه.
+            // ‏(ح-٨٣) **وردُّ العربون عند الإلغاء مثلُه** — ضريبةُ مالٍ رُدّ تخرج من إقرار شهر الردّ.
             else if (entryOutput < 0m && entry.DepositVatOffset) outputVat += entryOutput;
             if (entryInput > 0m) inputVat += entryInput;
         }

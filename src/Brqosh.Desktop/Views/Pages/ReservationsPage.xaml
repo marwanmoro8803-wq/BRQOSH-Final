@@ -32,6 +32,12 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="DepositBtn" DockPanel.Dock="Right" Content="قبض عربون"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnTakeDeposit"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="NoShowBtn" DockPanel.Dock="Right" Content="لم يحضر"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnNoShow"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="CancelBookingBtn" DockPanel.Dock="Right" Content="إلغاء الحجز"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCancelBooking"/>
             </DockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">

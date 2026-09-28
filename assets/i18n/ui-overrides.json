@@ -1121,5 +1121,11 @@
   "البريد:": "Email:",
   "الهاتف:": "Phone:",
   "لم تعتمد قنوات الدعم ولا مستويات الخدمة لهذه النسخة بعد.": "Support channels and service levels have not been approved for this version yet.",
-  "تذاكر الدعم لا تدار من داخل البرنامج في هذه النسخة.": "Support tickets are not managed inside the application in this version."
+  "تذاكر الدعم لا تدار من داخل البرنامج في هذه النسخة.": "Support tickets are not managed inside the application in this version.",
+  "إلغاء الحجز": "Cancel booking",
+  "لم يحضر": "No-show",
+  "لا يُلغى ولا يُسجَّل غيابٌ إلا على حجزٍ قائم.": "Only an active booking can be cancelled or marked as a no-show.",
+  "للحجز عربونٌ محتجَز. نعم: يُردّ إلى النزيل · لا: يُصادَر إيراداً": "This booking holds a deposit. Yes: refund it to the guest · No: forfeit it as revenue",
+  "تسجيل عدم حضور النزيل؟": "Mark the guest as a no-show?",
+  "إلغاء الحجز؟": "Cancel this booking?"
 }
