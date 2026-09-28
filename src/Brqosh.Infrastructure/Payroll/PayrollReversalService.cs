@@ -27,6 +27,11 @@ public class PayrollReversalService(BrqoshDbContext db)
             if (run.JournalEntryId is not long entryId)
                 throw new AccountingException("الدورة بلا قيد محاسبي مرتبط.");
 
+            // (جاهزيّةُ الإطلاق · ح-٨٤) ‏**ولا تُعكس دورةٌ خرج مالُها** — فعكسُها يُعيد `2108` مديناً بما صُرف والمالُ خارجٌ،
+            // ‏ويبقى الالتزامُ سالباً لا يُفسَّر. والصرفُ نفسُه بلا عكسٍ بعد (`treasury-payroll-assets#10`).
+            if (await new PayrollPaymentService(db).AnyPaidAsync(companyId, runId, token))
+                throw new AccountingException("صُرفت رواتبُ الدورة أو سُدِّدت تأميناتُها — ولا تُعكس دورةٌ خرج مالُها.");
+
             await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, reversalDate);
 
             await new JournalReversalService(db).ReverseAsync(

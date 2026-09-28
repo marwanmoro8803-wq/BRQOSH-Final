@@ -29,6 +29,15 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="SettleEosBtn" DockPanel.Dock="Right" Content="تصفية نهاية الخدمة"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnSettleEndOfService"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="PaySalariesBtn" Content="صرف الرواتب" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="0,0,8,0" Click="OnPaySalaries"/>
+                    <Button x:Name="PayGosiBtn" Content="سداد التأمينات" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="0,0,8,0" Click="OnPayGosi"/>
+                    <Button x:Name="PayEosBtn" Content="دفع مستحق نهاية الخدمة" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Click="OnPayEndOfService"/>
+                </StackPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"

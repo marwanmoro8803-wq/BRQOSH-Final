@@ -79,6 +79,9 @@ public static class InfrastructureServiceCollectionExtensions
         // ‏النظاميُّ لا يجري، والتزامٌ يتراكم لا يظهر في الميزانية.
         services.AddScoped<Payroll.EndOfServiceAccrualService>();
         services.AddScoped<Payroll.EndOfServiceSettlementService>();
+
+        // (جاهزيّةُ الإطلاق · ح-٨٤) ‏صرفُ الرواتب وسدادُ التأمينات ودفعُ مستحقّ نهاية الخدمة — وكان `2108` و`2109` لا يُدينهما شيء.
+        services.AddScoped<Payroll.PayrollPaymentService>();
         services.AddScoped<Payroll.LeaveRequestService>();
         services.AddScoped<Payroll.LeaveAccrualService>();
         services.AddScoped<Payroll.LeaveBalanceQuery>();

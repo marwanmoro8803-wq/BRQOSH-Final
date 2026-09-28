@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Payroll;
+using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Payroll;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,11 @@ public partial class PayrollPage : UserControl
                 (PostBtn, PermissionService.CanPostAccounting),
                 (ReverseBtn, PermissionService.CanCancelOrReverse),
                 (AccrueEosBtn, PermissionService.CanPostAccounting),
-                (SettleEosBtn, PermissionService.CanPostAccounting));
+                (SettleEosBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٨٤) **والصرفُ بحارس خدمته** — `PayrollPaymentService` = `EnsureCanPostAccounting`.
+                (PaySalariesBtn, PermissionService.CanPostAccounting),
+                (PayGosiBtn, PermissionService.CanPostAccounting),
+                (PayEosBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
     }
@@ -249,5 +254,99 @@ public partial class PayrollPage : UserControl
         {
             UiFeedback.ShowWarning(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٤ · <c>treasury-payroll-assets#3</c>) <b>صرفُ رواتب الدورة المحدّدة — وكان <c>2108</c> يُدان ولا يُمَسّ</b>:
+    /// الرواتبُ تُدفع خارج الدفاتر، والالتزامُ يتراكم شهراً بعد شهر.
+    /// </summary>
+    private async void OnPaySalaries(object sender, RoutedEventArgs e) => await PayRunAsync(gosi: false);
+
+    /// <summary>(ح-٨٤) <b>سدادُ تأمينات الدورة</b> — حصّتا الموظّف وصاحب العمل؛ وكان <c>2109</c> لا يُدينه شيء.</summary>
+    private async void OnPayGosi(object sender, RoutedEventArgs e) => await PayRunAsync(gosi: true);
+
+    private async Task PayRunAsync(bool gosi)
+    {
+        if (Grid.SelectedItem is not RunRow row || row.Status != PayrollRunStatus.Posted)
+        {
+            UiDialog.Show("اختر دورة رواتب مرحّلة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (AskPaymentMethod() is not ReceiptMethod method)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var payments = facade.GetService<PayrollPaymentService>();
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var entry = gosi
+                ? await payments.PayGosiAsync(AppServices.CompanyId, row.Id, today, method)
+                : await payments.PaySalariesAsync(AppServices.CompanyId, row.Id, today, method);
+
+            await ReloadAsync();
+            UiDialog.Show("قُيّد الصرف وصُفّي المستحقّ.", entry.EntryNumber ?? "BRQOSH",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (ح-٨٤) <b>دفعُ مستحقّ نهاية الخدمة</b> — ما قيّدته التصفيةُ في <c>2108</c> (المكافأةُ وبدلُ الإجازة)، وكان لا يدفعه شيء.
+    /// </summary>
+    private async void OnPayEndOfService(object sender, RoutedEventArgs e)
+    {
+        var codeDialog = new TextInputDialog("دفع مستحق نهاية الخدمة", "رمز الموظّف:", "")
+            { Owner = Window.GetWindow(this) };
+        if (codeDialog.ShowDialog() != true)
+            return;
+
+        var code = (codeDialog.Value ?? "").Trim();
+        if (code.Length == 0)
+        {
+            UiFeedback.ShowWarning("أدخل رمز الموظّف.");
+            return;
+        }
+
+        if (AskPaymentMethod() is not ReceiptMethod method)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var employee = await facade.Db.Employees
+                .FirstOrDefaultAsync(x => x.CompanyId == AppServices.CompanyId && x.Code == code);
+            if (employee is null)
+            {
+                UiFeedback.ShowWarning("لا يوجد موظّف بهذا الرمز.");
+                return;
+            }
+
+            var entry = await facade.GetService<PayrollPaymentService>().PayEndOfServiceAsync(
+                AppServices.CompanyId, employee.Id, DateOnly.FromDateTime(DateTime.Today), method);
+
+            UiDialog.Show("قُيّد الصرف وصُفّي المستحقّ.", entry.EntryNumber ?? "BRQOSH",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary><b>ومن أين يخرج المال</b> — سؤالٌ صريحٌ لا يُفترض: البنكُ الافتراضيّ أو الصندوق.</summary>
+    private static ReceiptMethod? AskPaymentMethod()
+    {
+        var answer = UiDialog.Show("طريقة الصرف — نعم: تحويلٌ من الحساب البنكيّ الافتراضيّ · لا: نقداً من الصندوق", "BRQOSH",
+            MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        if (answer == MessageBoxResult.Yes)
+            return ReceiptMethod.Bank;
+        if (answer == MessageBoxResult.No)
+            return ReceiptMethod.Cash;
+        return null;
     }
 }
