@@ -82,6 +82,15 @@ public static class InfrastructureServiceCollectionExtensions
 
         // (جاهزيّةُ الإطلاق · ح-٨٤) ‏صرفُ الرواتب وسدادُ التأمينات ودفعُ مستحقّ نهاية الخدمة — وكان `2108` و`2109` لا يُدينهما شيء.
         services.AddScoped<Payroll.PayrollPaymentService>();
+
+        // (جاهزيّةُ الإطلاق · ح-٨٥) ‏**أربعٌ تطلبها الشاشاتُ بـ`GetService<T>` ولم تكن تُحَلّ** — ثلاثٌ تُبنى بـ`new` داخل محوِّلات
+        // ‏حالات الاستخدام وحدَها، ورابعةٌ مسجَّلةٌ بواجهتها لا بصنفها (`IDataMigrationService`)؛ فكان استيرادُ كشف البنك
+        // ‏ومطابقتُه الآليّةُ وشاشةُ مركز النقد وشاشةُ ترحيل البيانات ترمي «No service for type».
+        // ‏والحارسُ `EveryServiceTheDesktopAsksForResolvesTests` يقرأ الطلبَ من مصدر الشاشات ويُحلّه من هذه الحاوية.
+        services.AddScoped<Treasury.BankStatementImportService>();
+        services.AddScoped<Treasury.BankStatementMatcherService>();
+        services.AddScoped<Treasury.CashMovementReportService>();
+        services.AddScoped<Setup.CsvDataMigrationService>();
         services.AddScoped<Payroll.LeaveRequestService>();
         services.AddScoped<Payroll.LeaveAccrualService>();
         services.AddScoped<Payroll.LeaveBalanceQuery>();
