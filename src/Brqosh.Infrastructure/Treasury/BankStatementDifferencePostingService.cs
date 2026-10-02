@@ -47,9 +47,10 @@ public sealed class BankStatementDifferencePostingService(BrqoshDbContext db)
                     .AnyAsync(token))
                 throw new AccountingException("السطرُ بلا قيد فروقٍ قائمٍ يُعكس — والمطابَقُ لسندٍ يُصحَّح بعكس السند.");
 
+            // ‏(ح-٩٠) تُلغى تسويتُه أوّلاً — فهو مُسوًّى منذ ترحيله، وحارسُ الدفتر يرفض عكسَ المُسوّى.
+            await new BankReconciliationQuery(db).UnreconcileAsync(companyId, statement.BankAccountId, entryId);
             await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, reversalDate, username, fromSourceDocument: true, token);
-            await new BankReconciliationQuery(db).UnreconcileAsync(companyId, statement.BankAccountId, entryId);
             stmtLine.Unmatch();
             await db.SaveChangesAsync(token);
         }, ct);

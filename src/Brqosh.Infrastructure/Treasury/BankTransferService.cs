@@ -64,8 +64,8 @@ public class BankTransferService(BrqoshDbContext db)
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٨٩ · <c>treasury-payroll-assets#10</c>) <b>عكسُ تحويلٍ بنكيّ</b> — وكان لا يُعكس أبداً: العكسُ العامُّ
     /// يرفض قيداً له مستند، ولا خدمةَ تعكسه. <b>والقائمُ وحدَه يُعكس</b> (<c>WhereStanding</c>: لا المعكوسُ ولا قيدُ العكس نفسُه)،
-    /// <b>والمُسوّى مع البنك يُرفض حتى تُلغى تسويتُه</b> — وإلّا بقي في التسوية قيدٌ صار صفراً؛ <b>وسطرُ الكشف المطابَقُ له يُحرَّر</b>
-    /// فيُطابَق بالتحويل الصحيح.
+    /// <b>والمُسوّى مع البنك يُرفض حتى تُلغى تسويتُه، وسطرُ الكشف المطابَقُ له يُحرَّر</b> — وهما في <c>JournalReversalService</c> لكلّ
+    /// عكسٍ منذ ح-٩٠، لا هنا وحدَه.
     /// </summary>
     public async Task<JournalEntry> ReverseAsync(
         long companyId, long journalEntryId, DateOnly reversalDate, string username, CancellationToken ct = default)
@@ -82,23 +82,8 @@ public class BankTransferService(BrqoshDbContext db)
             if (!isStandingTransfer)
                 throw new AccountingException("لا تحويلَ بنكيّاً قائماً بهذا القيد يُعكس.");
 
-            if (await db.ReconciledBankEntries.AnyAsync(
-                    r => r.CompanyId == companyId && r.JournalEntryId == journalEntryId, token))
-                throw new AccountingException(
-                    "التحويلُ مُسوًّى مع كشف البنك — ألغِ تسويتَه من شاشة التسوية البنكيّة ثمّ اعكسه.");
-
-            var reversal = await new JournalReversalService(db).ReverseAsync(
+            return await new JournalReversalService(db).ReverseAsync(
                 companyId, journalEntryId, reversalDate, username, fromSourceDocument: true, token);
-
-            var statements = await db.BankStatements
-                .Include(s => s.Lines)
-                .Where(s => s.CompanyId == companyId && s.Lines.Any(l => l.MatchedJournalEntryId == journalEntryId))
-                .ToListAsync(token);
-            foreach (var line in statements.SelectMany(s => s.Lines).Where(l => l.MatchedJournalEntryId == journalEntryId))
-                line.Unmatch();
-            await db.SaveChangesAsync(token);
-
-            return reversal;
         }, ct);
     }
 }

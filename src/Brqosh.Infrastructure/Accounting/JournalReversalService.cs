@@ -37,6 +37,14 @@ public class JournalReversalService(BrqoshDbContext db)
                     "هذا القيد مرتبط بمستند نظام — يُصحَّح من المستند المصدر (فاتورة، سند، حركة مخزون...) وليس بالعكس المباشر.");
             }
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٠ · found#4) **المُسوّى مع كشف البنك لا يُعكس حتى تُلغى تسويتُه** — مذهبُ المقاصّة:
+            // ‏البندُ المُقاصُّ لا يُعكس قبل فكّ مقاصّته. وكان السندُ المعكوسُ يبقى «مُسوًّى» برصيده وعكسُه خارج التسوية،
+            // ‏وكلُّ عكسٍ يمرّ من هنا (سنداتٌ ورواتبُ وتحويلاتٌ ويدويّ) — فالحارسُ هنا لا في كلّ خدمة.
+            if (await db.ReconciledBankEntries.AnyAsync(
+                    r => r.CompanyId == companyId && r.JournalEntryId == entryId, token))
+                throw new AccountingException(
+                    "القيدُ مُسوًّى مع كشف البنك — ألغِ تسويتَه من شاشة التسوية البنكيّة ثمّ اعكسه.");
+
             var posting = new JournalPostingService(db);
             await posting.EnsurePeriodOpenAsync(companyId, reversalDate);
 
@@ -48,6 +56,15 @@ public class JournalReversalService(BrqoshDbContext db)
             await db.SaveChangesAsync(token);
 
             original.LinkReversalEntry(reversal.Id);
+
+            // ‏(ح-٩٠) **وسطرُ الكشف المطابَقُ له يُحرَّر** — وكان `Unmatch` لا يستدعيه شيء، فيبقى السطرُ مقفولاً على قيدٍ معكوسٍ
+            // ‏أبداً: لا يُطابَق بغيره ولا يُرحَّل فرقاً.
+            var statements = await db.BankStatements
+                .Include(s => s.Lines)
+                .Where(s => s.CompanyId == companyId && s.Lines.Any(l => l.MatchedJournalEntryId == entryId))
+                .ToListAsync(token);
+            foreach (var line in statements.SelectMany(s => s.Lines).Where(l => l.MatchedJournalEntryId == entryId))
+                line.Unmatch();
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "عكس قيد",
