@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **واحدٌ وتسعون إغلاقاً ح-١…ح-٩١**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **اثنان وتسعون إغلاقاً ح-١…ح-٩٢**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-٩١ (2026-09-20…10-03)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-٩٢ (2026-09-20…10-03)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3107,10 +3107,11 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-٨٩ | `c1446e4` | `Treasury/BankTransferService.cs` · `BankStatementDifferencePostingService.cs` · `BankTransfersPage` · `BankStatementsPage` · `ABankTransferAndABankDifferenceCanBeReversedTests.cs` | **تحويلٌ بنكيٌّ أو فرقُ كشفٍ أُدخل خطأً يبقى في الأستاذ أبداً** (`treasury-payroll-assets#10` ◐) — لا خدمةَ تعكسهما والعكسُ العامُّ يرفض قيداً له مستند؛ صارا يُعكسان بحارس الحالة: القائمُ وحدَه، والمُسوّى يُرفض، والسطرُ يُحرَّر، ولا يُعكس قيدُ سندٍ من باب الفرق؛ ثمانيةُ براهين؛ **وبقيت أربعُ عائلاتٍ بلا عكس** |
 | ح-٩٠ | `d56d1cf` | `Accounting/JournalReversalService.cs` · `Treasury/BankTransferService.cs` · `BankStatementDifferencePostingService.cs` · `AReversedVoucherLeavesTheBankReconciliationTests.cs` | **السندُ المعكوسُ يبقى «مُسوًّى» وسطرُ كشفه مقفولاً عليه** (`found#4` ✅ — كشفه ح-٨٩) — الحارسُ والتحريرُ نُقلا من التحويل إلى الدفتر فشملا السنداتِ والرواتبَ واليدويّ؛ برهانان على صنفَي ح-٨٩ وح-٩٠ معاً |
 | ح-٩١ | `0dc8baa` | `Payroll/EmployeeAdvanceService.cs` · `EndOfServiceSettlementService.cs` · `PayrollPaymentService.cs` · `Domain/Payroll/EmployeeAdvance.cs` · `EmployeeAdvancesPage` · `PayrollPage` · `AnAdvanceAndAFinalSettlementCanBeReversedTests.cs` | **صرفُ السُّلفة وتصفيةُ نهاية الخدمة لا يُعكسان** (`treasury-payroll-assets#10` ◐) — و`Cancel()` يقول «اعكسْ صرفَها» ولا عكس، و«مُصفًّى» من `Posted || Reversed` (صنفُ ح-٤٧)؛ صارا يُعكسان بحارس الحالة، وصار لعكس دفع نهاية الخدمة بابٌ؛ سبعةُ براهين؛ **ويبقى الأصلُ الثابت** |
+| ح-٩٢ | `c5a41ec` | `Assets/DepreciationService.cs` · `Domain/Assets/FixedAsset.cs` · `FixedAssetsPage` · `ADepreciationRunCanBeReversedTests.cs` | **تشغيلُ إهلاكٍ بتاريخٍ خطأٍ يبقى** (`treasury-payroll-assets#10` ◐) — لا عكسَ له، والمجمَّعُ على سجلّ الأصل لا ينقص بعكس القيد؛ صار يُعكس الأحدثُ لأصلٍ لم يُستبعَد وينقص المجمَّعُ معه؛ خمسةُ براهين؛ **ويبقى الاقتناءُ والاستبعاد** |
 
-**والقياسُ عند آخر إيداع (`0dc8baa`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2033/2033** · `Brqosh.Desktop.Tests` **410/410** · `Brqosh.Api.Tests` **95/95** ·
-بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **64.97%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
+**والقياسُ عند آخر إيداع (`c5a41ec`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
+`Brqosh.Application.Tests` **2037/2037** · `Brqosh.Desktop.Tests` **410/410** · `Brqosh.Api.Tests` **95/95** ·
+بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **64.98%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
 
