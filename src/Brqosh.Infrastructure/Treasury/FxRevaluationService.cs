@@ -109,18 +109,17 @@ public class FxRevaluationService(BrqoshDbContext db)
         // ‏`Posted` و`Reversed` معاً — وتعليقُها يقول: «استبعادُ المعكوسة كان يشوّه
         // ‏التقاريرَ التاريخية بعد الإلغاء لاحقاً (ACC-001)». **وثمانيةُ قُرّاءٍ يستعملونها،
         // ‏وهذا لم يكن منهم.**
-        var entries = await db.JournalEntries
+        //
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٣ · treasury-payroll-assets#13) **وسطورُ البنك وحدَها من القاعدة** — وكان يُحمّل كلَّ قيدٍ حتى التاريخ
+        // ‏بسطوره كلِّها، لكلّ بنكٍ أجنبيٍّ في الدفعة، ثمّ يُرشّح الحسابَ في الذاكرة.
+        var lines = await db.JournalEntries
             .WhereReportable(companyId, to: asOfDate)
+            .SelectMany(e => e.Lines, (e, l) => new { l.AccountId, l.Debit, l.Credit })
+            .Where(x => x.AccountId == glAccountId)
+            .Select(x => new { x.Debit, x.Credit })
             .ToListAsync(ct);
 
-        decimal balance = 0m;
-        foreach (var entry in entries)
-        {
-            foreach (var line in entry.Lines.Where(l => l.AccountId == glAccountId))
-                balance += line.Debit - line.Credit;
-        }
-
-        return balance;
+        return lines.Sum(x => x.Debit - x.Credit);
     }
 
     internal async Task EnsureFxAccountsAsync(long companyId, CancellationToken ct = default)

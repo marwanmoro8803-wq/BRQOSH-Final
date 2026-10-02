@@ -38,27 +38,28 @@ public class BankReconciliationQuery(BrqoshDbContext db)
             .Select(r => r.JournalEntryId)
             .ToListAsync()).ToHashSet();
 
-        var entries = await db.JournalEntries
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٣ · treasury-payroll-assets#13) **سطورُ البنك وحدَها من القاعدة** — وكان يُحمّل كلَّ قيدٍ في الفترة بسطوره
+        // ‏كلِّها (السطورُ مملوكةٌ تُحمَّل معه) ثمّ يُرشّح الحسابَ في الذاكرة: شاشةُ التسوية والمطابقةُ الآليّةُ تقرآن الدفترَ كلَّه لحسابٍ واحد.
+        var lines = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
                 && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                 && e.EntryDate >= from && e.EntryDate <= to)
-            .OrderBy(e => e.EntryDate).ThenBy(e => e.EntryNumber)
+            .SelectMany(e => e.Lines, (e, l) => new
+            {
+                e.Id, e.EntryDate, e.EntryNumber, EntryDescription = e.Description,
+                l.AccountId, l.Description, l.Debit, l.Credit,
+            })
+            .Where(x => x.AccountId == glAccountId)
+            .OrderBy(x => x.EntryDate).ThenBy(x => x.EntryNumber)
             .ToListAsync();
 
-        var lines = new List<BankBookLine>();
-        foreach (var entry in entries)
-        {
-            foreach (var line in entry.Lines.Where(l => l.AccountId == glAccountId))
-            {
-                lines.Add(new BankBookLine(
-                    entry.Id, entry.EntryDate, entry.EntryNumber,
-                    line.Description ?? entry.Description,
-                    line.Debit, line.Credit,
-                    reconciledIds.Contains(entry.Id)));
-            }
-        }
-
-        return lines;
+        return lines
+            .Select(x => new BankBookLine(
+                x.Id, x.EntryDate, x.EntryNumber,
+                x.Description ?? x.EntryDescription,
+                x.Debit, x.Credit,
+                reconciledIds.Contains(x.Id)))
+            .ToList();
     }
 
     public async Task<decimal> GetOpeningBalanceAsync(
@@ -67,20 +68,18 @@ public class BankReconciliationQuery(BrqoshDbContext db)
         var bank = await db.BankAccounts.SingleAsync(b => b.CompanyId == companyId && b.Id == bankAccountId);
         var glAccountId = bank.GlAccountId;
 
-        var entries = await db.JournalEntries
+        // ‏(ح-٩٣) **وكان يُحمّل كلَّ قيدٍ قبل الفترة** — تاريخَ المنشأة كلَّه — لرصيد حسابٍ واحد. والجمعُ في الذاكرة على سطور البنك وحدَها:
+        // ‏SQLite لا يجمع `decimal`.
+        var lines = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
                 && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                 && e.EntryDate < from)
+            .SelectMany(e => e.Lines, (e, l) => new { l.AccountId, l.Debit, l.Credit })
+            .Where(x => x.AccountId == glAccountId)
+            .Select(x => new { x.Debit, x.Credit })
             .ToListAsync();
 
-        decimal balance = 0m;
-        foreach (var entry in entries)
-        {
-            foreach (var line in entry.Lines.Where(l => l.AccountId == glAccountId))
-                balance += line.Debit - line.Credit;
-        }
-
-        return balance;
+        return lines.Sum(x => x.Debit - x.Credit);
     }
 
     public async Task<BankReconciliationSummary> GetSummaryAsync(
