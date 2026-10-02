@@ -13,7 +13,7 @@ namespace Brqosh.Infrastructure.Payroll;
 /// </summary>
 public record EndOfServiceSettlementResult(
     long EmployeeId, decimal Provisioned, decimal Benefit, decimal Adjustment, long JournalEntryId,
-    decimal UnusedLeaveDays = 0m, decimal LeavePay = 0m);
+    decimal UnusedLeaveDays = 0m, decimal LeavePay = 0m, decimal AdvanceRecovered = 0m);
 
 /// <summary>
 /// (CEEF-232 · ر-١) <b>تصفيةُ نهاية الخدمة — الطرفُ الذي يُبرئ المخصّص.</b>
@@ -159,6 +159,21 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
                 entry.AddLine(payable, 0m, leavePay, "بدل إجازة — المادة 111");
             }
 
+            // (جاهزيّةُ الإطلاق · ح-٨٧ · `treasury-payroll-assets#4`) ‏**والسُّلفةُ القائمةُ تُستردّ من المستحقّات** — وكانت تبقى
+            // ‏ديناً على موظّفٍ رحل وتُدفع له مستحقّاتُه كاملة. **والاستردادُ لا يتجاوز ما يُستحقّ له** (المكافأة وبدل الإجازة):
+            // ‏فما زاد يبقى قائماً في `1116` ديناً يُطالَب به لا يُخصم من شيءٍ لا وجودَ له.
+            var advanceOwed = (await new EmployeeAdvanceService(db).BalancesAsync(companyId, employeeId, token))
+                .Sum(b => b.Outstanding);
+            var recovered = Math.Round(Math.Min(Math.Max(0m, advanceOwed), Math.Max(0m, benefit + leavePay)),
+                2, MidpointRounding.AwayFromZero);
+            if (recovered > 0m)
+            {
+                var advances = await SystemAccountProvisioning.EnsureAsync(
+                    db, companyId, SaudiChartOfAccounts.SystemCodes.EmployeeAdvances, token);
+                entry.AddLine(payable, recovered, 0m, "استرداد سلفة الموظّف من مستحقّاته");
+                entry.AddLine(advances, 0m, recovered, "سداد سلفة من المخالصة النهائيّة");
+            }
+
             if (entry.Lines.Count == 0)
                 throw new AccountingException("لا مستحقّ ولا مخصّص لهذا الموظّف — لا قيدَ للتصفية.");
 
@@ -171,11 +186,14 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
                 db, companyId, "EndOfServiceSettlement", employee.Code,
                 reason: "تصفية مكافأة نهاية الخدمة",
                 details: $"المخصَّص {provisioned:N2} · المستحقّ {benefit:N2} · الفرق {adjustment:N2}"
-                       + $" · بدل إجازة {leavePay:N2} عن {unusedDays:N2} يوماً",
+                       + $" · بدل إجازة {leavePay:N2} عن {unusedDays:N2} يوماً · سلفةٌ مستردّة {recovered:N2}",
                 ct: token);
 
+            // ‏(ح-٨٧) ‏والسُّلفةُ المستردّةُ كلُّها تُقفل هنا — كما يُقفلها ترحيلُ الرواتب.
+            await new EmployeeAdvanceService(db).RefreshStatusesAsync(companyId, token);
+
             return new EndOfServiceSettlementResult(
-                employeeId, provisioned, benefit, adjustment, entry.Id, unusedDays, leavePay);
+                employeeId, provisioned, benefit, adjustment, entry.Id, unusedDays, leavePay, recovered);
         }, ct);
     }
 

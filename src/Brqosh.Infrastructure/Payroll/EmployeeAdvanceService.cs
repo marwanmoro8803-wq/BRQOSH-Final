@@ -3,6 +3,7 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Payroll;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
@@ -113,6 +114,23 @@ public class EmployeeAdvanceService(BrqoshDbContext db)
             .GroupBy(l => l.EmployeeId!.Value)
             .Select(g => new { EmployeeId = g.Key, Total = g.Sum(l => l.AdvanceDeduction) })
             .ToDictionaryAsync(x => x.EmployeeId, x => x.Total, ct);
+
+        // (جاهزيّةُ الإطلاق · ح-٨٧) ‏**والمستردُّ في المخالصة النهائيّة سدادٌ كالمستقطَع من الراتب** — دائنُ `1116` في قيد التصفية.
+        // ‏وكان الرصيدُ يُشتقّ من سطور الرواتب وحدَها، فسُلفةٌ تُستردّ من مستحقّات المغادر تبقى «قائمةً» ديناً على موظّفٍ رحل.
+        var settled = await db.JournalEntries
+            .WhereReportable(companyId)
+            .Where(e => e.SourceDocument != null
+                        && e.SourceDocument.StartsWith(EndOfServiceSettlementService.SourceDocumentPrefix))
+            .SelectMany(e => e.Lines, (e, l) => new { e.SourceDocument, l.AccountCode, l.Debit, l.Credit })
+            .Where(x => x.AccountCode == SaudiChartOfAccounts.SystemCodes.EmployeeAdvances)
+            .ToListAsync(ct);
+
+        foreach (var line in settled)
+        {
+            var key = line.SourceDocument![EndOfServiceSettlementService.SourceDocumentPrefix.Length..];
+            if (long.TryParse(key, out var settledEmployee) && employeeIds.Contains(settledEmployee))
+                deductions[settledEmployee] = deductions.GetValueOrDefault(settledEmployee) + line.Credit - line.Debit;
+        }
 
         // ‏**والسدادُ يُطفئ الأقدمَ أوّلاً**: موظّفٌ بسُلفتين، والمُستقطَعُ إجماليٌّ في سطر
         // ‏الرواتب. **وتوزيعُه بالتساوي يُبقي الأقدمَ مفتوحةً إلى الأبد**، والأقدمُ هي
