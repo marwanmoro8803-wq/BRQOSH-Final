@@ -208,6 +208,20 @@ public class FixedAsset : IBranchScoped
     public decimal ApplyDepreciation() => ApplyDepreciation(1);
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩٢) <b>يُنقص المجمَّعَ بما أُهلك في قيدٍ عُكس</b> — وإلّا بقي السجلُّ أقلَّ قيمةً من الأستاذ، ولا يُهلَك الشهرُ
+    /// ثانيةً بمبلغه. <b>ولا على أصلٍ مُستبعَد</b>: الاستبعادُ أقفل المجمَّعَ كلَّه.
+    /// </summary>
+    public void UndoDepreciation(decimal amount)
+    {
+        if (!IsActive)
+            throw new AccountingException("لا يُعكس إهلاكُ أصلٍ مُستبعَد.");
+        if (amount <= 0m || amount > AccumulatedDepreciation)
+            throw new AccountingException("مبلغُ الإهلاك المعكوس لا يطابق مجمَّعَ الأصل.");
+
+        AccumulatedDepreciation -= amount;
+    }
+
+    /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٥٨ · treasury-payroll-assets#11) ‏<b>أقساطُ عدّة أشهرٍ دفعةً — ولا تتجاوز القابلَ للإهلاك.</b>
     /// </summary>
     public decimal ApplyDepreciation(int months)

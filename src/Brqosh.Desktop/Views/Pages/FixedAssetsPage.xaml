@@ -19,7 +19,9 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button Content="عرض قيد الاقتناء" Padding="16,9" Margin="0,0,8,0" Click="OnViewJournal"/>
                     <Button Content="عرض قيد الاستبعاد" Padding="16,9" Margin="0,0,8,0" Click="OnViewDisposalJournal"/>
-                    <Button x:Name="RunDepreciationBtn" Content="تشغيل إهلاك شهري" Padding="16,9" Click="OnRunDepreciation"/>
+                    <Button x:Name="RunDepreciationBtn" Content="تشغيل إهلاك شهري" Padding="16,9" Margin="0,0,8,0" Click="OnRunDepreciation"/>
+                    <Button x:Name="ReverseDepreciationBtn" Content="عكس تشغيل الإهلاك" Style="{StaticResource SoftDangerButton}"
+                            Padding="16,9" Click="OnReverseDepreciation"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="DisposeBtn" DockPanel.Dock="Right" Content="استبعاد"

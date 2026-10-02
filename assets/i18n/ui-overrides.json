@@ -1151,5 +1151,9 @@
   "رمز الموظّف المراد عكس تصفيته:": "Code of the employee whose settlement to reverse:",
   "تاريخ قيد عكس التصفية:": "Settlement reversal date:",
   "دُفع مستحقّ نهاية الخدمة — أتعكس الدفع ثمّ التصفية؟": "The end-of-service dues were paid — reverse the payment and then the settlement?",
-  "عُكست تصفية نهاية الخدمة.": "The end-of-service settlement was reversed."
+  "عُكست تصفية نهاية الخدمة.": "The end-of-service settlement was reversed.",
+  "عكس تشغيل الإهلاك": "Reverse depreciation run",
+  "تاريخ التشغيل المراد عكسه:": "Date of the run to reverse:",
+  "تاريخ قيد عكس الإهلاك:": "Depreciation reversal date:",
+  "عُكس تشغيل الإهلاك وعاد مجمَّع الأصول إلى ما قبله.": "The depreciation run was reversed and accumulated depreciation restored."
 }

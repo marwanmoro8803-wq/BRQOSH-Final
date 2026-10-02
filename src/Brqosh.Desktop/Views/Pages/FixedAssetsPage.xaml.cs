@@ -29,6 +29,8 @@ public partial class FixedAssetsPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (AddBtn, PermissionService.CanPostAccounting),
                 (RunDepreciationBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٩٢) وعكسُ التشغيل بحارس العكس.
+                (ReverseDepreciationBtn, PermissionService.CanCancelOrReverse),
                 (DisposeBtn, PermissionService.CanCancelOrReverse));
             await ReloadAsync();
         };
@@ -164,6 +166,36 @@ public partial class FixedAssetsPage : UserControl
                     ? $"تم ترحيل إهلاك {count} أصل."
                     : "لا توجد أصول تحتاج إهلاكاً.",
                 "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩٢) <b>عكسُ تشغيل الإهلاك بتاريخه</b> — آخرُه لكلّ أصل؛ وكان تشغيلٌ بتاريخٍ خطأٍ يبقى، والتشغيلُ يأخذ تاريخَ اليوم
+    /// فلا يُصحَّح بتشغيلٍ آخر.
+    /// </summary>
+    private async void OnReverseDepreciation(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this)!;
+        var runDate = UiDialogs.PromptAccountingDate(owner, "عكس تشغيل الإهلاك", "تاريخ التشغيل المراد عكسه:");
+        if (runDate is null)
+            return;
+        var reversalDate = UiDialogs.PromptAccountingDate(owner, "تاريخ العكس", "تاريخ قيد عكس الإهلاك:");
+        if (reversalDate is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var count = await facade.GetService<DepreciationService>().ReverseRunAsync(
+                AppServices.CompanyId, runDate.Value, reversalDate.Value, SecurityContext.ResolveUsername());
+
+            UiDialog.Show("عُكس تشغيل الإهلاك وعاد مجمَّع الأصول إلى ما قبله.", $"{count:N0}",
+                MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
         catch (Exception ex)

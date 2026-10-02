@@ -9,6 +9,8 @@ namespace Brqosh.Infrastructure.Assets;
 
 public class DepreciationService(BrqoshDbContext db)
 {
+    private const string SourcePrefix = "Depreciation:";
+
     public async Task<int> RunMonthlyAsync(long companyId, DateOnly runDate, string username,
         CancellationToken ct = default)
     {
@@ -29,7 +31,7 @@ public class DepreciationService(BrqoshDbContext db)
 
             foreach (var asset in assets)
             {
-                var sourceDoc = $"Depreciation:{asset.Code}";
+                var sourceDoc = $"{SourcePrefix}{asset.Code}";
 
                 // ‏(جاهزيّةُ الإطلاق · ح-٥٨ · treasury-payroll-assets#11) ‏**آخرُ شهرٍ أُهلك — ثمّ كلُّ ما استحقّ بعده.**
                 // ‏وكان السؤالُ «هل أُهلك هذا الشهرُ بعينه؟» فيُحمَّل شهرٌ واحد: أصلٌ لم يُقتنَ بعدُ يُهلَك، وشهرٌ فات
@@ -68,6 +70,56 @@ public class DepreciationService(BrqoshDbContext db)
             }
 
             return count;
+        }, ct);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩٢ · <c>treasury-payroll-assets#10</c>) <b>عكسُ تشغيل الإهلاك بتاريخه</b> — وكان لا يُعكس: العكسُ العامُّ يرفض
+    /// قيداً له مستند، والمجمَّعُ على السجلّ لا ينقص بعكس القيد. <b>والأحدثُ وحدَه لكلّ أصل</b> — فعكسُ تشغيلٍ ولاحقُه قائمٌ يُخرج الشهورَ
+    /// من وسط السلسلة، ويستدركها التشغيلُ التالي فوق اللاحق؛ <b>ولا لأصلٍ مُستبعَد</b>؛ <b>ولا تشغيلَ بذلك التاريخ ⟵ رفضٌ باسمه</b>.
+    /// </summary>
+    public async Task<int> ReverseRunAsync(long companyId, DateOnly runDate, DateOnly reversalDate, string username,
+        CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var runEntries = await db.JournalEntries
+                .Include(e => e.Lines)
+                .Where(e => e.CompanyId == companyId && e.EntryDate == runDate
+                            && e.SourceDocument != null && e.SourceDocument.StartsWith(SourcePrefix))
+                .WhereStanding(db.JournalEntries)
+                .ToListAsync(token);
+            if (runEntries.Count == 0)
+                throw new AccountingException("لا تشغيلَ إهلاكٍ قائماً بهذا التاريخ يُعكس.");
+
+            foreach (var entry in runEntries)
+            {
+                var code = entry.SourceDocument![SourcePrefix.Length..];
+                var asset = await db.FixedAssets.SingleAsync(a => a.CompanyId == companyId && a.Code == code, token);
+                if (!asset.IsActive)
+                    throw new AccountingException($"الأصل {asset.Code} مُستبعَد — لا يُعكس إهلاكُه.");
+
+                var later = await db.JournalEntries
+                    .Where(e => e.CompanyId == companyId && e.SourceDocument == entry.SourceDocument && e.EntryDate > runDate)
+                    .WhereStanding(db.JournalEntries)
+                    .AnyAsync(token);
+                if (later)
+                    throw new AccountingException($"للأصل {asset.Code} إهلاكٌ أحدثُ قائم — يُعكس الأحدثُ أوّلاً.");
+
+                var amount = entry.Lines
+                    .Where(l => l.AccountId == asset.GlDepreciationAccountId)
+                    .Sum(l => l.Credit - l.Debit);
+                await new JournalReversalService(db).ReverseAsync(
+                    companyId, entry.Id, reversalDate, username, fromSourceDocument: true, token);
+                asset.UndoDepreciation(amount);
+            }
+
+            await db.SaveChangesAsync(token);
+            await new AuditService(db).LogAsync(companyId, username, "عكس إهلاك شهري",
+                "FixedAsset", runDate.ToString("yyyy-MM-dd"), $"{runEntries.Count} أصل");
+            return runEntries.Count;
         }, ct);
     }
 }
