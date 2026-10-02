@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 57 بنداً ✅ و12 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 57 بنداً ✅ و13 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وخمسةٌ وثمانون إغلاقاً في الحملة كلِّها** (ح-١…ح-٨٥) — **بعضُها خارج هذا الحصر**،
+**وستّةٌ وثمانون إغلاقاً في الحملة كلِّها** (ح-١…ح-٨٦) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -137,7 +137,7 @@
 
 - ✅ **`treasury-payroll-assets#2`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Cheque deposit, clearing, bounce and cancel entries are dated on the cheque date, not the date the user enters — ح-٣٢ `c134b5e`
 - ✅ **`treasury-payroll-assets#3`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No flow ever clears Salaries Payable (2108) or GOSI Payable (2109), and the payment voucher only pays suppliers — ح-٨٤ `db81372` — **`PayrollPaymentService` وثلاثةُ أزرار**: صرفُ رواتب الدورة (`2108`) وسدادُ تأميناتها (`2109`) ودفعُ مستحقّ نهاية الخدمة (`2108`) من البنك الافتراضيّ أو الصندوق، **والمستحقُّ من قيد الترحيل نفسِه ناقصاً المصروف** فلا صرفَ مرّتين ولا لدورةٍ عُكست، وعكسُ دورةٍ صُرفت يُرفض؛ **وحدُّه**: الصرفُ كلُّه أو لا شيء، والصرفُ نفسُه بلا عكس (`#10`)، وملفُّ حماية الأجور لا يُربط به (`#8`)
-- ☐ **`treasury-payroll-assets#4`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No proration and an incomplete final settlement: leavers get no pay for their last partial month, joiners get a full month, advances are not recovered
+- ◐ **`treasury-payroll-assets#4`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No proration and an incomplete final settlement: leavers get no pay for their last partial month, joiners get a full month, advances are not recovered — ح-٨٦ `736038c` — **المغادرُ والملتحقُ في منتصف الشهر يُصرف لهما ما عملا**: الأهليّةُ بشهر الدورة لا بيوم الصرف (في البناء والمعاينة وحارس `AddEmployee`)، والمنتهيةُ خدمتُه يُقرأ بتاريخ انتهائه لا بعلَم النشاط، وما لم يُعمل يُخصم كالغياب بلا أجر (÷٣٠)؛ **ويبقى**: استردادُ السُّلفة من المخالصة النهائيّة
 - ✅ **`treasury-payroll-assets#5`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Payslip net pay leaves out the advance (and absence) deduction, so it disagrees with the WPS file and the journal — ح-٢٤ `fda1146`
 - ✅ **`treasury-payroll-assets#6`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>Advance installments can take an employee's entire net wage; the documented half-wage guard does not exist — ح-٤٩ `96c9fcd` — **وقِيس أسوأَ ممّا سُمّي: شهرُ غيابٍ وعليه سُلفةٌ يُسقط بناءَ الدورة كلِّها؛ والاختبارُ القائمُ كان يُثبت الصافيَ صفراً**
 - ☐ **`treasury-payroll-assets#7`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>GOSI policy has a single Saudi rate per company and cannot handle contributor groups under the 2024 Social Insurance Law
