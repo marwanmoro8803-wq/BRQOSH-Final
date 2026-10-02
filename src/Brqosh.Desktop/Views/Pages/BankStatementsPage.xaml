@@ -21,6 +21,8 @@
                             Padding="18,9" Click="OnImport"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ReverseDifferenceBtn" DockPanel.Dock="Right" Content="عكس قيد الفروق"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Margin="8,0,0,0" Click="OnReverseDifference"/>
                 <Button x:Name="PostDifferenceBtn" DockPanel.Dock="Right" Content="ترحيل السطر فرقًا"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnPostDifference"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>

@@ -23,6 +23,8 @@
                             Padding="18,9" Click="OnNewTransfer"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ReverseTransferBtn" Content="عكس التحويل" Style="{StaticResource SoftDangerButton}"
+                        Padding="16,9" Margin="8,0,0,0" DockPanel.Dock="Right" Click="OnReverseTransfer"/>
                 <Button Content="عرض القيد" Padding="16,9" DockPanel.Dock="Right" Click="OnViewJournal"/>
                 <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
                         CornerRadius="20" Padding="12,5" VerticalAlignment="Center">

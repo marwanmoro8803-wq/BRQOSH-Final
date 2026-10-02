@@ -13,6 +13,8 @@ namespace Brqosh.Infrastructure.Treasury;
 /// <summary>تحويل بين حسابين بنكيين — LIFECYCLE-65–66.</summary>
 public class BankTransferService(BrqoshDbContext db)
 {
+    private const string SourcePrefix = "BankTransfer:";
+
     public async Task<JournalEntry> TransferAsync(
         long companyId, long fromBankAccountId, long toBankAccountId,
         decimal amount, DateOnly transferDate, string? reference = null,
@@ -40,7 +42,7 @@ public class BankTransferService(BrqoshDbContext db)
 
             var description = $"تحويل بنكي {from.Code} → {to.Code}";
             var entry = JournalEntry.CreateDraft(companyId, transferDate, description,
-                $"BankTransfer:{reference ?? Guid.NewGuid().ToString("N")}");
+                $"{SourcePrefix}{reference ?? Guid.NewGuid().ToString("N")}");
             entry.AssignBranch(await new BranchAssignmentService(db)
                 .ResolveBranchIdAsync(companyId, BranchSessionContext.PreferredBranchId, token));
             entry.AddLine(toGl, amount, 0m, description);
@@ -56,6 +58,47 @@ public class BankTransferService(BrqoshDbContext db)
                 companyId, "BankTransfer", fromBankAccountId, posted.EntryNumber!), token);
 
             return posted;
+        }, ct);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٩ · <c>treasury-payroll-assets#10</c>) <b>عكسُ تحويلٍ بنكيّ</b> — وكان لا يُعكس أبداً: العكسُ العامُّ
+    /// يرفض قيداً له مستند، ولا خدمةَ تعكسه. <b>والقائمُ وحدَه يُعكس</b> (<c>WhereStanding</c>: لا المعكوسُ ولا قيدُ العكس نفسُه)،
+    /// <b>والمُسوّى مع البنك يُرفض حتى تُلغى تسويتُه</b> — وإلّا بقي في التسوية قيدٌ صار صفراً؛ <b>وسطرُ الكشف المطابَقُ له يُحرَّر</b>
+    /// فيُطابَق بالتحويل الصحيح.
+    /// </summary>
+    public async Task<JournalEntry> ReverseAsync(
+        long companyId, long journalEntryId, DateOnly reversalDate, string username, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var isStandingTransfer = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.Id == journalEntryId
+                            && e.SourceDocument != null && e.SourceDocument.StartsWith(SourcePrefix))
+                .WhereStanding(db.JournalEntries)
+                .AnyAsync(token);
+            if (!isStandingTransfer)
+                throw new AccountingException("لا تحويلَ بنكيّاً قائماً بهذا القيد يُعكس.");
+
+            if (await db.ReconciledBankEntries.AnyAsync(
+                    r => r.CompanyId == companyId && r.JournalEntryId == journalEntryId, token))
+                throw new AccountingException(
+                    "التحويلُ مُسوًّى مع كشف البنك — ألغِ تسويتَه من شاشة التسوية البنكيّة ثمّ اعكسه.");
+
+            var reversal = await new JournalReversalService(db).ReverseAsync(
+                companyId, journalEntryId, reversalDate, username, fromSourceDocument: true, token);
+
+            var statements = await db.BankStatements
+                .Include(s => s.Lines)
+                .Where(s => s.CompanyId == companyId && s.Lines.Any(l => l.MatchedJournalEntryId == journalEntryId))
+                .ToListAsync(token);
+            foreach (var line in statements.SelectMany(s => s.Lines).Where(l => l.MatchedJournalEntryId == journalEntryId))
+                line.Unmatch();
+            await db.SaveChangesAsync(token);
+
+            return reversal;
         }, ct);
     }
 }

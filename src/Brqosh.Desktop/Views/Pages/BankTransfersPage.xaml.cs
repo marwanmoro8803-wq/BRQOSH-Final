@@ -3,6 +3,8 @@ using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Domain.Accounting;
+using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Ui;
 
@@ -19,7 +21,9 @@ public partial class BankTransfersPage : UserControl
         Loaded += async (_, _) =>
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
-                (NewTransferBtn, PermissionService.CanPostAccounting));
+                (NewTransferBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٨٩) وعكسُ التحويل بحارس العكس.
+                (ReverseTransferBtn, PermissionService.CanCancelOrReverse));
             await UiFeedback.RunSafeAsync(ReloadAsync);
         };
     }
@@ -57,6 +61,37 @@ public partial class BankTransfersPage : UserControl
         var dialog = new BankTransferDialog { Owner = Window.GetWindow(this) };
         if (dialog.ShowDialog() == true)
             await UiFeedback.RunSafeAsync(ReloadAsync);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٩) <b>عكسُ التحويل المحدّد</b> بتاريخٍ يُسأل عنه — <b>وكان تحويلٌ أُدخل خطأً يبقى في الأستاذ أبداً.</b>
+    /// </summary>
+    private async void OnReverseTransfer(object sender, RoutedEventArgs e)
+    {
+        if (TransfersGrid.SelectedItem is not TransferRow row)
+        {
+            UiDialog.Show("اختر تحويلاً من القائمة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var reversalDate = UiDialogs.PromptAccountingDate(
+            Window.GetWindow(this)!, "تاريخ العكس", "تاريخ قيد عكس التحويل:");
+        if (reversalDate is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<BankTransferService>().ReverseAsync(
+                AppServices.CompanyId, row.Id, reversalDate.Value, SecurityContext.ResolveUsername());
+            UiDialog.Show("عُكس التحويل وعاد الحسابان إلى ما كانا عليه.", row.EntryNumber ?? "BRQOSH",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
     }
 
     private void OnViewJournal(object sender, RoutedEventArgs e) => ViewSelectedJournal();

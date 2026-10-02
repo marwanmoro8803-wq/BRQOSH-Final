@@ -18,6 +18,43 @@ public sealed record BankDifferencePostingResult(
 /// <summary>ترحيل سطر كشف غير مطابق بقيد تسوية — M4.7 / LIFECYCLE-68.</summary>
 public sealed class BankStatementDifferencePostingService(BrqoshDbContext db)
 {
+    private const string DifferenceSource = "BankStatementDifference";
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٩ · <c>treasury-payroll-assets#10</c>) <b>عكسُ قيد فرق سطر الكشف</b> — وكان لا يُعكس أبداً، ففرقٌ رُحِّل
+    /// على حسابٍ خطأٍ يبقى. <b>يُعكس القيدُ القائمُ وحدَه، وتُلغى تسويتُه، ويُحرَّر السطرُ</b> فيُرحَّل من جديد أو يُطابَق؛
+    /// <b>والسطرُ المطابَقُ لغير قيد فروقٍ يُرفض</b> — فقيدُ السند يُصحَّح بعكس السند وتخصيصاته لا من هنا.
+    /// </summary>
+    public Task ReverseAsync(
+        long companyId, long bankStatementId, int lineIndex, DateOnly reversalDate, string username,
+        CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+        return UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var statement = await db.BankStatements
+                .Include(s => s.Lines)
+                .SingleAsync(s => s.CompanyId == companyId && s.Id == bankStatementId, token);
+            if (lineIndex < 0 || lineIndex >= statement.Lines.Count)
+                throw new AccountingException("سطر الكشف غير موجود.");
+
+            var stmtLine = statement.Lines.ElementAt(lineIndex);
+            if (stmtLine.MatchedJournalEntryId is not long entryId
+                || !await db.JournalEntries
+                    .Where(e => e.CompanyId == companyId && e.Id == entryId && e.SourceDocument == DifferenceSource)
+                    .WhereStanding(db.JournalEntries)
+                    .AnyAsync(token))
+                throw new AccountingException("السطرُ بلا قيد فروقٍ قائمٍ يُعكس — والمطابَقُ لسندٍ يُصحَّح بعكس السند.");
+
+            await new JournalReversalService(db).ReverseAsync(
+                companyId, entryId, reversalDate, username, fromSourceDocument: true, token);
+            await new BankReconciliationQuery(db).UnreconcileAsync(companyId, statement.BankAccountId, entryId);
+            stmtLine.Unmatch();
+            await db.SaveChangesAsync(token);
+        }, ct);
+    }
+
     public Task<BankDifferencePostingResult> PostUnmatchedLineAsync(
         long companyId,
         long bankStatementId,
@@ -53,7 +90,7 @@ public sealed class BankStatementDifferencePostingService(BrqoshDbContext db)
 
             var description = $"فروق بنكية — {stmtLine.Description}";
             var entry = JournalEntry.CreateDraft(
-                companyId, stmtLine.TransactionDate, description, "BankStatementDifference");
+                companyId, stmtLine.TransactionDate, description, DifferenceSource);
 
             if (entry.BranchId is null)
                 entry.AssignBranch(await new BranchAssignmentService(db)

@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
+using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
@@ -41,7 +42,9 @@ public partial class BankStatementsPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (ImportBtn, PermissionService.CanPostAccounting),
                 (MatchBtn, PermissionService.CanPostAccounting),
-                (PostDifferenceBtn, PermissionService.CanPostAccounting));
+                (PostDifferenceBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٨٩) وعكسُ قيد الفروق بحارس العكس.
+                (ReverseDifferenceBtn, PermissionService.CanCancelOrReverse));
 
             await LoadBanksAsync();
             await ReloadAsync();
@@ -183,6 +186,38 @@ public partial class BankStatementsPage : UserControl
 
             SummaryText.Text = $"طُوبق {report.MatchedCount:N0} سطرًا · "
                 + $"وبقي {report.UnmatchedAfter:N0} غير مطابق من {report.UnmatchedBefore:N0}.";
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٩) <b>عكسُ قيد فروق السطر المحدّد</b> — فيُحرَّر السطرُ ويُرحَّل من جديد على الحساب الصحيح. <b>وكان فرقٌ
+    /// رُحِّل على حسابٍ خطأٍ يبقى.</b>
+    /// </summary>
+    private async void OnReverseDifference(object sender, RoutedEventArgs e)
+    {
+        if (StatementsGrid.SelectedItem is not StatementRow statement) return;
+        if (LinesGrid.SelectedItem is not LineRow line || !line.IsMatched)
+        {
+            UiFeedback.ShowWarning("اختر سطراً مطابَقاً بقيد فروق.");
+            return;
+        }
+
+        var reversalDate = UiDialogs.PromptAccountingDate(
+            Window.GetWindow(this)!, "تاريخ العكس", "تاريخ قيد عكس الفروق:");
+        if (reversalDate is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<BankStatementDifferencePostingService>().ReverseAsync(
+                AppServices.CompanyId, statement.Id, line.Index, reversalDate.Value, SecurityContext.ResolveUsername());
+
+            await ReloadAsync();
         }
         catch (Exception ex)
         {

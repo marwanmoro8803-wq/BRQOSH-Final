@@ -1138,5 +1138,11 @@
   "عكس صرف الدورة": "Reverse run payment",
   "تاريخ قيد عكس الصرف:": "Payment reversal date:",
   "لا صرفَ قائماً يُعكس.": "There is no standing payment to reverse.",
-  "عُكس صرف الدورة وعاد المستحقّ قائماً.": "The run payment was reversed and the liability is outstanding again."
+  "عُكس صرف الدورة وعاد المستحقّ قائماً.": "The run payment was reversed and the liability is outstanding again.",
+  "عكس التحويل": "Reverse transfer",
+  "تاريخ قيد عكس التحويل:": "Transfer reversal date:",
+  "عُكس التحويل وعاد الحسابان إلى ما كانا عليه.": "The transfer was reversed and both accounts are restored.",
+  "عكس قيد الفروق": "Reverse difference entry",
+  "تاريخ قيد عكس الفروق:": "Difference reversal date:",
+  "اختر سطراً مطابَقاً بقيد فروق.": "Select a line matched by a difference entry."
 }
