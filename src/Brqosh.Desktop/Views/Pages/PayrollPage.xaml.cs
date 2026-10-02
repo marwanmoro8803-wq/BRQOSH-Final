@@ -27,6 +27,8 @@ public partial class PayrollPage : UserControl
                 (ReverseBtn, PermissionService.CanCancelOrReverse),
                 (AccrueEosBtn, PermissionService.CanPostAccounting),
                 (SettleEosBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٩١) وعكسُ التصفية بحارس العكس.
+                (ReverseSettleEosBtn, PermissionService.CanCancelOrReverse),
                 // ‏(ح-٨٤) **والصرفُ بحارس خدمته** — `PayrollPaymentService` = `EnsureCanPostAccounting`.
                 (PaySalariesBtn, PermissionService.CanPostAccounting),
                 (PayGosiBtn, PermissionService.CanPostAccounting),
@@ -251,6 +253,64 @@ public partial class PayrollPage : UserControl
             UiDialog.Show("قُيّدت تصفية مكافأة نهاية الخدمة.",
                 $"{result.Benefit:N2} · {result.Adjustment:N2}",
                 MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩١) <b>عكسُ تصفية نهاية الخدمة</b> — فيُصفّى الموظّفُ من جديد بالسبب الصحيح. <b>وإن دُفع المستحقُّ سُئل المستخدمُ</b>
+    /// أيعكس الدفعَ ثمّ التصفية — ولا يُعكس الدفعُ صامتاً؛ وكان عكسُ دفع نهاية الخدمة (ح-٨٨) بلا زرٍّ أصلاً.
+    /// </summary>
+    private async void OnReverseEndOfServiceSettlement(object sender, RoutedEventArgs e)
+    {
+        var codeDialog = new TextInputDialog("عكس تصفية نهاية الخدمة",
+            "رمز الموظّف المراد عكس تصفيته:", "")
+            { Owner = Window.GetWindow(this) };
+        if (codeDialog.ShowDialog() != true)
+            return;
+
+        var code = (codeDialog.Value ?? "").Trim();
+        if (code.Length == 0)
+        {
+            UiFeedback.ShowWarning("أدخل رمز الموظّف.");
+            return;
+        }
+
+        var reversalDate = UiDialogs.PromptAccountingDate(
+            Window.GetWindow(this)!, "تاريخ العكس", "تاريخ قيد عكس التصفية:");
+        if (reversalDate is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var employee = await facade.Db.Employees
+                .FirstOrDefaultAsync(x => x.CompanyId == AppServices.CompanyId && x.Code == code);
+            if (employee is null)
+            {
+                UiFeedback.ShowWarning("لا يوجد موظّف بهذا الرمز.");
+                return;
+            }
+
+            var username = SecurityContext.ResolveUsername();
+            var payments = facade.GetService<PayrollPaymentService>();
+            if (await payments.EndOfServicePaidAsync(AppServices.CompanyId, employee.Id) > 0m)
+            {
+                if (UiDialog.Show("دُفع مستحقّ نهاية الخدمة — أتعكس الدفع ثمّ التصفية؟", employee.NameAr,
+                        MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return;
+                await payments.ReverseEndOfServicePaymentAsync(
+                    AppServices.CompanyId, employee.Id, reversalDate.Value, username);
+            }
+
+            await facade.GetService<EndOfServiceSettlementService>().ReverseAsync(
+                AppServices.CompanyId, employee.Id, reversalDate.Value, username);
+
+            await ReloadAsync();
+            UiDialog.Show("عُكست تصفية نهاية الخدمة.", employee.NameAr, MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

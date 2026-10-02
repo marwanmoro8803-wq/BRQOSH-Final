@@ -85,6 +85,37 @@ public class EmployeeAdvanceService(BrqoshDbContext db)
     }
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩١ · <c>treasury-payroll-assets#10</c>) <b>عكسُ صرف السُّلفة</b> — وكان لا يُعكس: العكسُ العامُّ يرفض قيداً له
+    /// مستند. <b>ولا يُعكس صرفٌ استُقطع منه</b> — من الرواتب أو من المخالصة: عكسُه يُطفئ ديناً سُدِّد بعضُه، فيصير المستقطَعُ مالاً بلا سبب.
+    /// وتعود السُّلفةُ «معتمدةً» فتُلغى أو تُصرف من جديد.
+    /// </summary>
+    public async Task ReverseDisbursementAsync(long companyId, long advanceId, DateOnly reversalDate, string username,
+        CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var advance = await db.EmployeeAdvances
+                .SingleOrDefaultAsync(a => a.Id == advanceId && a.CompanyId == companyId, token)
+                ?? throw new AccountingException("السُّلفة غير موجودة.");
+            if (advance.Status != AdvanceStatus.Outstanding || advance.JournalEntryId is not long entryId)
+                throw new AccountingException("لا يُعكس إلا صرفُ سُلفةٍ قائمةٍ لم تُسدَّد.");
+
+            var balance = (await BalancesAsync(companyId, advance.EmployeeId, token))
+                .Single(b => b.AdvanceId == advanceId);
+            if (balance.Deducted > 0m)
+                throw new AccountingException(
+                    $"استُقطع من السُّلفة {balance.Deducted:N2} — لا يُعكس صرفُها؛ تُسدَّد أو يُعكس ما استُقطع أوّلاً.");
+
+            await new JournalReversalService(db).ReverseAsync(
+                companyId, entryId, reversalDate, username, fromSourceDocument: true, token);
+            advance.ReverseDisbursement();
+            await db.SaveChangesAsync(token);
+        }, ct);
+    }
+
+    /// <summary>
     /// أرصدةُ السُّلَف المفتوحة لموظّفٍ — أو للمنشأة كلِّها.
     /// </summary>
     /// <remarks>

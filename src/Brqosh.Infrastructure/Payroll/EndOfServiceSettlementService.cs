@@ -197,24 +197,60 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
         }, ct);
     }
 
-    /// <summary>هل صُفّيت مستحقّاتُ الموظّف — <b>يُقرأ من الدفتر لا من حقل</b>.</summary>
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩١ · <c>treasury-payroll-assets#10</c>) <b>عكسُ تصفية نهاية الخدمة</b> — وكانت لا تُعكس، فتصفيةٌ بسببٍ خطأٍ
+    /// (استقالةٌ قُيّدت فصلاً) تبقى. <b>والمدفوعُ يُرفض حتى يُعكس دفعُه</b> — وإلّا خرج المالُ ولا التزامَ يقابله؛ <b>والسُّلفةُ التي استردّتها
+    /// تعود قائمة</b>؛ <b>ويُصفّى الموظّفُ من جديد</b>.
+    /// </summary>
+    public async Task ReverseAsync(long companyId, long employeeId, DateOnly reversalDate, string username,
+        CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var standing = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == SourceDocumentPrefix + employeeId)
+                .WhereStanding(db.JournalEntries)
+                .Select(e => e.Id)
+                .ToListAsync(token);
+            if (standing.Count == 0)
+                throw new AccountingException("لا تصفيةَ قائمةً لهذا الموظّف تُعكس.");
+
+            if (await new PayrollPaymentService(db).EndOfServicePaidAsync(companyId, employeeId, token) > 0m)
+                throw new AccountingException("دُفع مستحقُّ نهاية الخدمة — اعكس الدفعَ أوّلاً ثمّ التصفية.");
+
+            foreach (var id in standing)
+                await new JournalReversalService(db).ReverseAsync(
+                    companyId, id, reversalDate, username, fromSourceDocument: true, token);
+
+            // ‏والسُّلفةُ التي استردّتها التصفيةُ تعود قائمة — فالاستردادُ كان سدادَها وقد ارتدّ.
+            await new EmployeeAdvanceService(db).RefreshStatusesAsync(companyId, token);
+        }, ct);
+    }
+
+    /// <summary>
+    /// هل صُفّيت مستحقّاتُ الموظّف — <b>يُقرأ من الدفتر لا من حقل</b>. <b>ومن القائم</b> (ح-٩١): وكان <c>Posted || Reversed</c>، فتصفيةٌ
+    /// عُكست تبقى «تمّت» ولا يُصفّى الموظّفُ ثانيةً.
+    /// </summary>
     internal static Task<bool> IsSettledAsync(
         BrqoshDbContext db, long companyId, long employeeId, CancellationToken ct = default) =>
-        db.JournalEntries.AnyAsync(
-            e => e.CompanyId == companyId
-                 && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
-                 && e.SourceDocument == SourceDocumentPrefix + employeeId, ct);
+        db.JournalEntries
+            .Where(e => e.CompanyId == companyId && e.SourceDocument == SourceDocumentPrefix + employeeId)
+            .WhereStanding(db.JournalEntries)
+            .AnyAsync(ct);
 
     /// <summary>مُعرِّفاتُ مَن صُفّيت مستحقّاتُهم — لاستبعادهم من التخصيص الشهريّ.</summary>
     internal static async Task<HashSet<long>> SettledEmployeeIdsAsync(
         BrqoshDbContext db, long companyId, DateOnly asOf, CancellationToken ct = default)
     {
+        // ‏(ح-٩١) **ومن القائم** — فمَن عُكست تصفيتُه يعود إلى التخصيص الشهريّ حتى يُصفّى من جديد.
         var sources = await db.JournalEntries
             .Where(e => e.CompanyId == companyId
-                        && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate <= asOf
                         && e.SourceDocument != null
                         && e.SourceDocument.StartsWith(SourceDocumentPrefix))
+            .WhereStanding(db.JournalEntries)
             .Select(e => e.SourceDocument!)
             .ToListAsync(ct);
 

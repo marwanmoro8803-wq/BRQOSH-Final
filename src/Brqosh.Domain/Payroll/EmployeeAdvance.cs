@@ -151,6 +151,20 @@ public class EmployeeAdvance : IBranchScoped
         Status = AdvanceStatus.Outstanding;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩١) <b>يُعيدها «معتمدةً» بعد عكسِ صرفها</b> — فتُلغى أو تُصرف من جديد. وكان <c>Cancel</c> يقول «اعكسْ صرفَها»
+    /// ولا عكسَ للصرف. <b>والسؤالُ عن السداد في الخدمة</b>: المستقطَعُ يُشتقّ من الدورات لا من حقلٍ هنا.
+    /// </summary>
+    public void ReverseDisbursement()
+    {
+        if (Status != AdvanceStatus.Outstanding)
+            throw new AccountingException("لا يُعكس إلا صرفُ سُلفةٍ قائمةٍ لم تُسدَّد.");
+
+        Status = AdvanceStatus.Approved;
+        DisbursedOn = null;
+        JournalEntryId = null;
+    }
+
     public void Cancel()
     {
         if (Status == AdvanceStatus.Outstanding)

@@ -1144,5 +1144,12 @@
   "عُكس التحويل وعاد الحسابان إلى ما كانا عليه.": "The transfer was reversed and both accounts are restored.",
   "عكس قيد الفروق": "Reverse difference entry",
   "تاريخ قيد عكس الفروق:": "Difference reversal date:",
-  "اختر سطراً مطابَقاً بقيد فروق.": "Select a line matched by a difference entry."
+  "اختر سطراً مطابَقاً بقيد فروق.": "Select a line matched by a difference entry.",
+  "عكس صرف السلفة": "Reverse advance disbursement",
+  "تاريخ قيد عكس صرف السلفة:": "Advance disbursement reversal date:",
+  "عكس تصفية نهاية الخدمة": "Reverse end-of-service settlement",
+  "رمز الموظّف المراد عكس تصفيته:": "Code of the employee whose settlement to reverse:",
+  "تاريخ قيد عكس التصفية:": "Settlement reversal date:",
+  "دُفع مستحقّ نهاية الخدمة — أتعكس الدفع ثمّ التصفية؟": "The end-of-service dues were paid — reverse the payment and then the settlement?",
+  "عُكست تصفية نهاية الخدمة.": "The end-of-service settlement was reversed."
 }

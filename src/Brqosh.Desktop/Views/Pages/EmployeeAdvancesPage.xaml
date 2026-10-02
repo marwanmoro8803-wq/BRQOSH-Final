@@ -21,6 +21,8 @@
                             Padding="18,9" Click="OnAdd"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ReverseDisburseBtn" DockPanel.Dock="Right" Content="عكس صرف السلفة"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Margin="8,0,0,0" Click="OnReverseDisbursement"/>
                 <Button x:Name="DisburseBtn" DockPanel.Dock="Right" Content="صرف السلفة"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnDisburse"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>

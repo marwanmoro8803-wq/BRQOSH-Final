@@ -136,6 +136,10 @@ public class PayrollPaymentService(BrqoshDbContext db)
     public Task<decimal> GosiPaidAsync(long companyId, long runId, CancellationToken ct = default) =>
         PaidAsync(companyId, $"{GosiPrefix}{runId}", GosiPayable, ct);
 
+    /// <summary>(ح-٩١) ما دُفع قائماً من مستحقّ نهاية الخدمة — تسأله التصفيةُ قبل عكسها، وتسأله الشاشة.</summary>
+    public Task<decimal> EndOfServicePaidAsync(long companyId, long employeeId, CancellationToken ct = default) =>
+        PaidAsync(companyId, $"{EndOfServicePrefix}{employeeId}", SalariesPayable, ct);
+
     /// <summary>هل صُرف من الدورة شيء — رواتبُ أو تأمينات. <b>وحارسُ العكس يسأله</b>.</summary>
     internal async Task<bool> AnyPaidAsync(long companyId, long runId, CancellationToken ct) =>
         await PaidAsync(companyId, $"{SalariesPrefix}{runId}", SalariesPayable, ct) > 0m

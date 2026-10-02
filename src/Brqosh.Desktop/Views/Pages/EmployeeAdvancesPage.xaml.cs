@@ -6,6 +6,7 @@ using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Payroll;
 using Brqosh.Infrastructure.Payroll;
+using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Desktop.Views.Pages;
@@ -33,6 +34,8 @@ public partial class EmployeeAdvancesPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (AddBtn, PermissionService.CanPost),
                 (DisburseBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٩١) وعكسُ الصرف بحارس العكس.
+                (ReverseDisburseBtn, PermissionService.CanCancelOrReverse),
                 (RefreshBtn, PermissionService.CanPostAccounting));
             await ReloadAsync();
         };
@@ -104,6 +107,36 @@ public partial class EmployeeAdvancesPage : UserControl
             await facade.GetService<EmployeeAdvanceService>().DisburseAsync(
                 AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today),
                 SaudiChartOfAccounts.SystemCodes.CashOnHand);
+
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩١) <b>عكسُ صرف السُّلفة المحدّدة</b> — ما لم يُستقطع منها شيء؛ فتعود «معتمدةً» وتُلغى أو تُصرف من جديد.
+    /// </summary>
+    private async void OnReverseDisbursement(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row)
+        {
+            UiFeedback.ShowWarning("اختر سُلفةً أولاً.");
+            return;
+        }
+
+        var reversalDate = UiDialogs.PromptAccountingDate(
+            Window.GetWindow(this)!, "تاريخ العكس", "تاريخ قيد عكس صرف السلفة:");
+        if (reversalDate is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<EmployeeAdvanceService>().ReverseDisbursementAsync(
+                AppServices.CompanyId, row.Id, reversalDate.Value, SecurityContext.ResolveUsername());
 
             await ReloadAsync();
         }
