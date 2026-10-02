@@ -17,9 +17,11 @@ public record PayrollCandidate(
     decimal OtherAllowance,
     decimal GosiEmployee,
     decimal GosiEmployer,
-    decimal AdvanceDeduction)
+    decimal AdvanceDeduction,
+    decimal Proration = 0m)
 {
-    public decimal GrossPay => BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
+    /// <summary>(ح-٨٦) والأجرُ بعد خصم ما لم يُعمل من الشهر — ملتحقٌ أو مغادرٌ في منتصفه.</summary>
+    public decimal GrossPay => BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance - Proration;
     public decimal NetPay => GrossPay - GosiEmployee - AdvanceDeduction;
 }
 
@@ -56,28 +58,36 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     {
         var policy = await PolicyAsync(companyId, ct);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٨٦) ‏**والمعاينةُ بشهر يوم الصرف لا بيومه** — والدورةُ تُبنى ممّن تُرشّحهم؛ فمغادرٌ في منتصف الشهر
+        // ‏لا يُرشَّح لا يُصرف له شيء. **والمنتهيةُ خدمتُه غيرُ «نشط»** (`Terminate`) فيُقرأ بتاريخ انتهائه لا بعلَمه.
+        var monthStart = new DateOnly(payDate.Year, payDate.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
         var employees = await db.Employees
-            .Where(e => e.CompanyId == companyId && e.IsActive)
+            .Where(e => e.CompanyId == companyId
+                        && (e.IsActive || (e.TerminationDate != null && e.TerminationDate >= monthStart)))
             .OrderBy(e => e.Code)
             .ToListAsync(ct);
 
         var advances = new EmployeeAdvanceService(db);
         var result = new List<PayrollCandidate>();
 
-        foreach (var employee in employees.Where(e => e.IsEmployedOn(payDate)))
+        foreach (var employee in employees.Where(e => e.IsEmployedDuring(monthStart, monthEnd)))
         {
             var gosi = policy.ContributionFor(employee);
             var due = await advances.DueInstallmentAsync(companyId, employee.Id, ct);
+            var proration = Math.Min(employee.GrossPay, LeaveEntitlementCalculator.LeaveCompensation(
+                employee.GrossPay, employee.DaysNotEmployedIn(monthStart, monthEnd)));
 
             // ‏**والمعاينةُ بالقاعدة نفسِها** — فلا تقترح الشاشةُ ما لن يُستقطع. (ولا غيابَ
             // ‏في المعاينة: يُقرأ عند البناء، فالمعاينةُ على الأجر الكامل.)
-            var deduction = AdvanceDeduction(due, employee.GrossPay, gosi.Employee);
+            var deduction = AdvanceDeduction(due, employee.GrossPay - proration, gosi.Employee);
 
             result.Add(new PayrollCandidate(
                 employee.Id, employee.Code, employee.NameAr, employee.Nationality,
                 employee.BasicSalary, employee.HousingAllowance, employee.TransportAllowance,
                 employee.OtherAllowance, gosi.Employee, gosi.Employer,
-                Math.Round(deduction, 2, MidpointRounding.AwayFromZero)));
+                Math.Round(deduction, 2, MidpointRounding.AwayFromZero),
+                Math.Round(proration, 2, MidpointRounding.AwayFromZero)));
         }
 
         return result;
@@ -98,7 +108,12 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     {
         var policy = await PolicyAsync(companyId, ct);
 
-        var query = db.Employees.Where(e => e.CompanyId == companyId && e.IsActive);
+        // ‏(جاهزيّةُ الإطلاق · ح-٨٦) ‏**والمغادرُ في الشهر يُقرأ بتاريخ انتهاء خدمته** — `Terminate` يُطفئ علَمَ النشاط، فكان يسقط
+        // ‏من الدورة قبل أن يُسأل عن تاريخه.
+        var monthStart = new DateOnly(year, month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var query = db.Employees.Where(e => e.CompanyId == companyId
+            && (e.IsActive || (e.TerminationDate != null && e.TerminationDate >= monthStart)));
         if (employeeIds is { Count: > 0 })
             query = query.Where(e => employeeIds.Contains(e.Id));
 
@@ -114,10 +129,10 @@ public class PayrollRunBuilder(BrqoshDbContext db)
                     $"موظفون مطلوبون غير موجودين أو غير نشطين: {string.Join("، ", missing)}.");
         }
 
-        var eligible = employees.Where(e => e.IsEmployedOn(payDate)).ToList();
+        var eligible = employees.Where(e => e.IsEmployedDuring(monthStart, monthEnd)).ToList();
         if (eligible.Count == 0)
             throw new AccountingException(
-                $"لا يوجد موظفٌ على رأس العمل في {payDate:yyyy-MM-dd} — ولا تُبنى دورةٌ بلا سطور.");
+                $"لا يوجد موظفٌ على رأس العمل في شهر {year:D4}-{month:D2} — ولا تُبنى دورةٌ بلا سطور.");
 
         var run = PayrollRun.CreateDraft(companyId, year, month, payDate);
         var advances = new EmployeeAdvanceService(db);
@@ -127,8 +142,6 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         // ‏**وخصمٌ يُترك للمستخدم يُنسى**: الموظّفُ غاب شهراً بلا أجر ويقبض راتبَه كاملاً
         // ‏لأنّ أحداً لم يكتب الخصم. **والسجلُّ موجودٌ ومعتمَد** — فالقراءةُ منه أوثقُ من
         // ‏ذاكرةِ محاسب، **وهي اللحظةُ نفسُها التي تُقرأ فيها أقساطُ السُّلَف**.
-        var monthStart = new DateOnly(year, month, 1);
-        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
         var unpaidDays = await UnpaidLeaveDaysAsync(companyId, monthStart, monthEnd, ct);
 
         foreach (var employee in eligible)
@@ -136,8 +149,12 @@ public class PayrollRunBuilder(BrqoshDbContext db)
             var gosi = policy.ContributionFor(employee);
             var due = await advances.DueInstallmentAsync(companyId, employee.Id, ct);
 
-            var absence = unpaidDays.TryGetValue(employee.Id, out var days)
-                ? LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, days)
+            // ‏(ح-٨٦) ‏**وما لم يُعمل من الشهر يُخصم كالغياب بلا أجر** — ملتحقٌ في العشرين يُصرف له أحدَ عشرَ يوماً لا شهرٌ كامل،
+            // ‏ومغادرٌ في الخامس عشر خمسةَ عشرَ يوماً لا صفر. **وبالأساس نفسِه** (الأجرُ ÷ ٣٠) فلا يختلف يومُ الغياب عن يوم الالتحاق.
+            var notWorked = employee.DaysNotEmployedIn(monthStart, monthEnd)
+                            + (unpaidDays.TryGetValue(employee.Id, out var days) ? days : 0m);
+            var absence = notWorked > 0m
+                ? LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, notWorked)
                 : 0m;
 
             // ‏**ولا يتجاوز الخصمُ أجرَ الشهر** — فغيابُ الشهر كلِّه يُصفّر الأجر ولا يُسالبه.

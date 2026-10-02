@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Accounting;
+﻿using System.Globalization;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Companies;
 
 namespace Brqosh.Domain.Payroll;
@@ -225,17 +226,28 @@ public class PayrollRun : IBranchScoped
         if (employee.CompanyId != CompanyId)
             throw new AccountingException($"الموظف «{employee.NameAr}» ليس من هذه المنشأة.");
 
-        // ‏**ولا يُدرَج مَن ليس على رأس العمل في يوم الصرف**: موظّفٌ انتهت خدمتُه في
-        // ‏مارس لا يُصرف له راتبُ أبريل. وحارسٌ في النطاق أوثقُ من ترشيحٍ في شاشة.
-        if (!employee.IsEmployedOn(PayDate))
+        // ‏**ولا يُدرَج مَن لم يعمل يوماً في شهر الدورة**: موظّفٌ انتهت خدمتُه في مارس لا يُصرف له راتبُ أبريل.
+        // ‏(جاهزيّةُ الإطلاق · ح-٨٦) ‏**والحارسُ بالشهر لا بيوم الصرف** — وكان يرفض مغادراً في الخامس عشر لأنّه ليس على رأس العمل
+        // ‏يومَ الصرف، فلا يُصرف له نصفُ شهرٍ عمله. وحارسٌ في النطاق أوثقُ من ترشيحٍ في شاشة.
+        var (monthStart, monthEnd) = PeriodBounds();
+        if (!employee.IsEmployedDuring(monthStart, monthEnd))
             throw new AccountingException(
-                $"«{employee.NameAr}» ليس على رأس العمل في {PayDate:yyyy-MM-dd}.");
+                $"«{employee.NameAr}» ليس على رأس العمل في شهر الدورة {PeriodCode}.");
 
         var gosi = policy.ContributionFor(employee);
 
         AddLine(employee.NameAr, employee.BasicSalary, employee.HousingAllowance,
             employee.TransportAllowance, gosi.Employee, gosi.Employer,
             employee.Id, employee.OtherAllowance, advanceDeduction, absenceDeduction);
+    }
+
+    /// <summary>(جاهزيّةُ الإطلاق · ح-٨٦) أوّلُ شهر الدورة وآخرُه — من رمزها <c>yyyy-MM</c>.</summary>
+    public (DateOnly Start, DateOnly End) PeriodBounds()
+    {
+        var year = int.Parse(PeriodCode[..4], CultureInfo.InvariantCulture);
+        var month = int.Parse(PeriodCode[5..7], CultureInfo.InvariantCulture);
+        var start = new DateOnly(year, month, 1);
+        return (start, start.AddMonths(1).AddDays(-1));
     }
 
     /// <summary>الأساسيُّ وحده — وهو ما يذهب إلى حساب الرواتب والأجور.</summary>

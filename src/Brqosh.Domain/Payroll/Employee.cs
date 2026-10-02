@@ -182,6 +182,23 @@ public class Employee : IBranchScoped
     public bool IsEmployedOn(DateOnly date) =>
         HireDate <= date && (TerminationDate is null || TerminationDate >= date);
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٦) <b>على رأس العمل يوماً واحداً على الأقلّ بين التاريخين</b> — فيُدرَج في دورة شهره ويُصرف له
+    /// ما عمل؛ لا «يومَ الصرف» وحدَه، فمغادرٌ في الخامس عشر يعمل نصفَ الشهر ولا يكون على رأس العمل يومَ الصرف.
+    /// </summary>
+    public bool IsEmployedDuring(DateOnly from, DateOnly to) =>
+        HireDate <= to && (TerminationDate is null || TerminationDate >= from);
+
+    /// <summary>(ح-٨٦) أيّامُ الفترة التي لم يكن فيها على رأس العمل — قبل التعيين وبعد انتهاء الخدمة.</summary>
+    public int DaysNotEmployedIn(DateOnly from, DateOnly to)
+    {
+        var before = HireDate > from ? Math.Min(HireDate.DayNumber, to.DayNumber + 1) - from.DayNumber : 0;
+        var after = TerminationDate is DateOnly end && end < to
+            ? to.DayNumber - Math.Max(end.DayNumber, from.DayNumber - 1)
+            : 0;
+        return Math.Max(0, before) + Math.Max(0, after);
+    }
+
     /// <summary>إجماليُّ الأجر الشهريّ.</summary>
     public decimal GrossPay => BasicSalary + HousingAllowance + TransportAllowance + OtherAllowance;
 
