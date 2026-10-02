@@ -36,7 +36,9 @@
                     <Button x:Name="PayGosiBtn" Content="سداد التأمينات" Style="{StaticResource SecondaryButton}"
                             Padding="16,9" Margin="0,0,8,0" Click="OnPayGosi"/>
                     <Button x:Name="PayEosBtn" Content="دفع مستحق نهاية الخدمة" Style="{StaticResource SecondaryButton}"
-                            Padding="16,9" Click="OnPayEndOfService"/>
+                            Padding="16,9" Margin="0,0,8,0" Click="OnPayEndOfService"/>
+                    <Button x:Name="ReversePaymentBtn" Content="عكس صرف الدورة" Style="{StaticResource SoftDangerButton}"
+                            Padding="16,9" Click="OnReversePayment"/>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="16"/>

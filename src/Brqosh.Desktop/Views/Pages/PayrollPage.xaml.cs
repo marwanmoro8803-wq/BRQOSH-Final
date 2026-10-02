@@ -30,7 +30,9 @@ public partial class PayrollPage : UserControl
                 // ‏(ح-٨٤) **والصرفُ بحارس خدمته** — `PayrollPaymentService` = `EnsureCanPostAccounting`.
                 (PaySalariesBtn, PermissionService.CanPostAccounting),
                 (PayGosiBtn, PermissionService.CanPostAccounting),
-                (PayEosBtn, PermissionService.CanPostAccounting));
+                (PayEosBtn, PermissionService.CanPostAccounting),
+                // ‏(ح-٨٨) وعكسُ الصرف بحارس العكس — كعكس الدورة نفسِها.
+                (ReversePaymentBtn, PermissionService.CanCancelOrReverse));
             await ReloadAsync();
         };
     }
@@ -331,6 +333,53 @@ public partial class PayrollPage : UserControl
 
             UiDialog.Show("قُيّد الصرف وصُفّي المستحقّ.", entry.EntryNumber ?? "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٨) <b>عكسُ صرف الدورة المحدّدة</b> — رواتبُها وتأميناتُها ما كان منهما قائماً؛ وبعده تُعكس الدورةُ نفسُها إن
+    /// لزم. <b>وكانت دورةٌ صُرفت خطأً لا تُصحَّح أبداً.</b>
+    /// </summary>
+    private async void OnReversePayment(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not RunRow row || row.Status != PayrollRunStatus.Posted)
+        {
+            UiDialog.Show("اختر دورة رواتب مرحّلة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var reversalDate = UiDialogs.PromptAccountingDate(
+            Window.GetWindow(this)!, "تاريخ العكس", "تاريخ قيد عكس الصرف:");
+        if (reversalDate is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var payments = facade.GetService<PayrollPaymentService>();
+            var username = SecurityContext.ResolveUsername();
+            var reversed = 0;
+            if (await payments.SalariesPaidAsync(AppServices.CompanyId, row.Id) > 0m)
+            {
+                await payments.ReverseSalariesPaymentAsync(AppServices.CompanyId, row.Id, reversalDate.Value, username);
+                reversed++;
+            }
+            if (await payments.GosiPaidAsync(AppServices.CompanyId, row.Id) > 0m)
+            {
+                await payments.ReverseGosiPaymentAsync(AppServices.CompanyId, row.Id, reversalDate.Value, username);
+                reversed++;
+            }
+
+            if (reversed == 0)
+                UiFeedback.ShowWarning("لا صرفَ قائماً يُعكس.");
+            else
+                UiDialog.Show("عُكس صرف الدورة وعاد المستحقّ قائماً.", row.PeriodCode,
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            await ReloadAsync();
         }
         catch (Exception ex)
         {

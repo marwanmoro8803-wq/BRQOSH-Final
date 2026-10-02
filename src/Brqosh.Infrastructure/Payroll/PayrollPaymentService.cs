@@ -85,6 +85,57 @@ public class PayrollPaymentService(BrqoshDbContext db)
         }, ct);
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٨٨ · <c>treasury-payroll-assets#10</c>) <b>عكسُ صرف رواتب الدورة</b> — وكان الصرفُ لا يُعكس، فدورةٌ صُرفت
+    /// خطأً لا تُصحَّح: عكسُها يُرفض لأنّها صُرفت (ح-٨٤)، وصرفُها لا عكسَ له. والقيدُ العكسيُّ يُقاصّ قيدَ الصرف فيعود المستحقُّ قائماً.
+    /// </summary>
+    public Task ReverseSalariesPaymentAsync(long companyId, long runId, DateOnly reversalDate, string username,
+        CancellationToken ct = default) =>
+        ReversePaymentAsync(companyId, $"{SalariesPrefix}{runId}", reversalDate, username, ct);
+
+    /// <summary>(ح-٨٨) عكسُ سداد تأمينات الدورة.</summary>
+    public Task ReverseGosiPaymentAsync(long companyId, long runId, DateOnly reversalDate, string username,
+        CancellationToken ct = default) =>
+        ReversePaymentAsync(companyId, $"{GosiPrefix}{runId}", reversalDate, username, ct);
+
+    /// <summary>(ح-٨٨) عكسُ دفع مستحقّ نهاية الخدمة.</summary>
+    public Task ReverseEndOfServicePaymentAsync(long companyId, long employeeId, DateOnly reversalDate, string username,
+        CancellationToken ct = default) =>
+        ReversePaymentAsync(companyId, $"{EndOfServicePrefix}{employeeId}", reversalDate, username, ct);
+
+    /// <summary>
+    /// (ح-٨٨) <b>كلُّ قيد صرفٍ قائمٍ تحت المفتاح يُعكس</b> — «القائمُ» بمالكه (<c>WhereStanding</c>): المعكوسُ وعكسُه لا يُعكسان ثانيةً.
+    /// <b>ولا صرفَ قائماً ⟵ رفضٌ باسمه</b> لا نجاحٌ صامت.
+    /// </summary>
+    private async Task ReversePaymentAsync(long companyId, string key, DateOnly reversalDate, string username,
+        CancellationToken ct)
+    {
+        SecurityContext.EnsureCanCancelOrReverse();
+        username = SecurityContext.ResolveUsername(username);
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var standing = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == key)
+                .WhereStanding(db.JournalEntries)
+                .Select(e => e.Id)
+                .ToListAsync(token);
+            if (standing.Count == 0)
+                throw new AccountingException("لا صرفَ قائماً يُعكس.");
+
+            foreach (var id in standing)
+                await new JournalReversalService(db).ReverseAsync(companyId, id, reversalDate, username,
+                    fromSourceDocument: true, token);
+        }, ct);
+    }
+
+    /// <summary>(ح-٨٨) ما صُرف قائماً من رواتب الدورة — تسأله الشاشةُ قبل العكس.</summary>
+    public Task<decimal> SalariesPaidAsync(long companyId, long runId, CancellationToken ct = default) =>
+        PaidAsync(companyId, $"{SalariesPrefix}{runId}", SalariesPayable, ct);
+
+    /// <summary>(ح-٨٨) ما سُدِّد قائماً من تأمينات الدورة.</summary>
+    public Task<decimal> GosiPaidAsync(long companyId, long runId, CancellationToken ct = default) =>
+        PaidAsync(companyId, $"{GosiPrefix}{runId}", GosiPayable, ct);
+
     /// <summary>هل صُرف من الدورة شيء — رواتبُ أو تأمينات. <b>وحارسُ العكس يسأله</b>.</summary>
     internal async Task<bool> AnyPaidAsync(long companyId, long runId, CancellationToken ct) =>
         await PaidAsync(companyId, $"{SalariesPrefix}{runId}", SalariesPayable, ct) > 0m

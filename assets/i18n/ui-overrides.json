@@ -1134,5 +1134,9 @@
   "اختر دورة رواتب مرحّلة.": "Select a posted payroll run.",
   "قُيّد الصرف وصُفّي المستحقّ.": "The payment was posted and the liability cleared.",
   "رمز الموظّف:": "Employee code:",
-  "طريقة الصرف — نعم: تحويلٌ من الحساب البنكيّ الافتراضيّ · لا: نقداً من الصندوق": "Payment method — Yes: transfer from the default bank account · No: cash from the till"
+  "طريقة الصرف — نعم: تحويلٌ من الحساب البنكيّ الافتراضيّ · لا: نقداً من الصندوق": "Payment method — Yes: transfer from the default bank account · No: cash from the till",
+  "عكس صرف الدورة": "Reverse run payment",
+  "تاريخ قيد عكس الصرف:": "Payment reversal date:",
+  "لا صرفَ قائماً يُعكس.": "There is no standing payment to reverse.",
+  "عُكس صرف الدورة وعاد المستحقّ قائماً.": "The run payment was reversed and the liability is outstanding again."
 }
