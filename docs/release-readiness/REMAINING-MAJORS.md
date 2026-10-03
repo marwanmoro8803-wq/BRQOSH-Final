@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 59 بنداً ✅ و14 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 60 بنداً ✅ و14 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وأربعةٌ وتسعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٩٤) — **بعضُها خارج هذا الحصر**،
+**وخمسةٌ وتسعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٩٥) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -135,7 +135,7 @@
 - ✅ **`order-to-cash-procure-to-pay-inventory#10`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Credit note against a foreign-currency invoice copies foreign unit prices into a SAR document, and the ZATCA credit note is issued in SAR — ح-٣٥ `67b3635`
 - ✅ **`order-to-cash-procure-to-pay-inventory#11`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>ZATCA cancellation document for a sales invoice omits the document discount and currency, so its UBL totals are inconsistent with its lines — ح-٣٦ `693f8ce`
 - ☐ **`order-to-cash-procure-to-pay-inventory#12`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Sales, returns and PO invoices always use the default warehouse, while receipts, counts and transfers can target any warehouse
-- ☐ **`order-to-cash-procure-to-pay-inventory#13`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No customer credit limit exists anywhere
+- ✅ **`order-to-cash-procure-to-pay-inventory#13`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No customer credit limit exists anywhere — ح-٩٥ `6d4b925` — **حدُّ ائتمان العميل يوقف البيعَ الآجلَ الذي يتجاوزه**: `Customer.CreditLimit` (فارغُه بلا حدٍّ كما كان، والسالبُ يُرفض) وعمودٌ وهجرةٌ بـ`IF NOT EXISTS` ومُرقِّعٌ قبل ترقيعات المزوّد، والترحيلُ يرفض ما يجعل المفتوحَ مع الفاتورة فوق الحدّ — قبل تخصيص الرقم، وبيعُ نقطة البيع خارجه — وحقلٌ في نافذة العميل؛ **وحدُّه**: لا عند أمر البيع ولا المستخلص، ولا تجاوزَ بإذن
 - ✅ **`order-to-cash-procure-to-pay-inventory#14`** · <sub>مؤكّد · في اليد · كبير · عطل</sub><br>Landed cost 'credit payables' posts to AP control 2101 with no supplier, breaking the payables subledger identity; it also has no VAT and no reversal — ح-٢٧ `04aef12`
 - ☐ **`order-to-cash-procure-to-pay-inventory#15`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>Launch rubric has no procure-to-pay, inventory or returns journey: 97% readiness never measured these flows live or end-to-end
 
