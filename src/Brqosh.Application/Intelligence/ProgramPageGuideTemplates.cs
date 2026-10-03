@@ -31,8 +31,8 @@ public static class ProgramPageGuideTemplates
                 "تقرير ربحية: إيرادات المشروع − تكاليف مباشرة وغير مباشرة. يعتمد على مستندات مرحّلة.",
                 "Profitability: project revenue minus direct/indirect costs. Requires posted documents."),
             ["wip"] = (
-                "أعمال تحت التشغيل: رصيد أوامر الإنتاج غير المغلقة · يُصفّر عند إغلاق أمر الإنتاج.",
-                "WIP: open work order balances · cleared when work order closes."),
+                "أعمال تحت التشغيل: أوامر الإنتاج الصادرة غير المكتملة — كمّيّاتٌ لا أرصدة؛ الموادّ تُصرف وتُكلَّف عند الإكمال.",
+                "WIP: released work orders not yet completed — quantities, not balances; materials are issued and costed on completion."),
             ["pos_shifts"] = (
                 "وردية POS: افتح قبل البيع · أغلق في نهاية اليوم · راجع الفروقات النقدية.",
                 "POS shift: open before sales · close end of day · review cash variances."),

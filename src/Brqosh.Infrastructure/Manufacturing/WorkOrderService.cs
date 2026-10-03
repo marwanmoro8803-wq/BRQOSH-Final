@@ -142,7 +142,14 @@ public class WorkOrderService(BrqoshDbContext db)
             var posting = new JournalPostingService(db);
             await posting.EnsurePeriodOpenAsync(companyId, completedOn);
 
-            var wip = await AccountAsync(companyId, "1113", token);
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٨ · ‏`manufacturing#8`) ‏**تحت التشغيل حسابُ المصنع — لا أصلُ عقود المقاولات (1113).**
+            // ‏ويُنشأ من القالب لمنشأةٍ قائمةٍ لا تحمله، **وحسابٌ بالرمز نفسِه ليس أصلاً قابلاً للترحيل يُرفض باسمه** — فرمزٌ
+            // ‏أنشأه المالكُ لغرضٍ آخر لا يُحمَّل بإنتاج المصنع صامتاً.
+            var wip = await SystemAccountProvisioning.EnsureAsync(
+                db, companyId, SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess, token);
+            if (wip.IsGroup || wip.Type != AccountType.Asset)
+                throw new AccountingException(
+                    $"الحساب {wip.Code} «{wip.NameAr}» ليس حسابَ أصلٍ قابلاً للترحيل — وهو رمزُ الإنتاج تحت التشغيل؛ صحّحه من دليل الحسابات.");
             var inventory = await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory, token);
             var entry = JournalEntry.CreateDraft(companyId, completedOn,
                 $"إكمال أمر إنتاج {order.OrderNumber}", $"WorkOrderComplete:{order.Id}");

@@ -61,6 +61,12 @@ public static class SaudiChartOfAccounts
         // ‏المقيم آخرَ الشهر لا تبلغ الأستاذ — فيُقفل ديسمبرُ ناقصاً إيرادَ كلِّ نزيلٍ لم يغادر. **والمغادرةُ تُطلقه.**
         new("1118", "إيرادات إقامة مستحقة غير مفوترة", "Accrued Room Revenue - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
+        // (جاهزيّةُ الإطلاق · ح-٩٨ · `manufacturing#8`) ‏**إنتاجُ أوامر التصنيع تحت التشغيل — حسابُه لا أصلُ عقود المقاولات.**
+        // ‏كان أمرُ الإنتاج يمرّ بـ1113 «أعمال تحت التنفيذ (مستخلصات غير مفوترة)» — وهو أصلُ عقود المقاولات (ح-٨٠) — فتدخل حركةُ
+        // ‏المصنع كشفَ حساب المقاولات. **ويُصفَّر بإكمال الأمر**: الصرفُ والتحميلُ والاستلامُ في لحظةٍ واحدة؛ والصرفُ الجزئيُّ
+        // ‏قبل الإكمال بندُ `manufacturing#4`.
+        new("1119", "إنتاج تحت التشغيل (أوامر الإنتاج)", "Work in Process - Production Orders", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+
         new("12", "الأصول غير المتداولة", "Non-Current Assets", AccountType.Asset, "1", IsGroup: true),
         new("1201", "الأراضي", "Land", AccountType.Asset, "12", IsGroup: false),
         new("1202", "المباني والإنشاءات", "Buildings & Constructions", AccountType.Asset, "12", IsGroup: false),
@@ -225,6 +231,9 @@ public static class SaudiChartOfAccounts
         public const string SubcontractorCosts = "5104";
         public const string AdvancesFromCustomers = "2105";
         public const string WorkInProgress = "1113";
+
+        /// <summary>(ح-٩٨) إنتاجُ أوامر التصنيع تحت التشغيل — منفصلٌ عن أعمال المقاولات تحت التنفيذ (<see cref="WorkInProgress"/>).</summary>
+        public const string ProductionWorkInProcess = "1119";
         public const string UnrealizedFxGain = "4107";
         public const string UnrealizedFxLoss = "5217";
 

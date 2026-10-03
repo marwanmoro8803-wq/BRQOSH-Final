@@ -102,12 +102,12 @@ public class TheManufacturingJourneyCostsWhatItConsumesTests : IDisposable
     {
         await SetupAsync();
         var inventoryBefore = await BalanceAsync(SaudiChartOfAccounts.SystemCodes.Inventory);
-        var wipBefore = await BalanceAsync(SaudiChartOfAccounts.SystemCodes.WorkInProgress);
+        var wipBefore = await BalanceAsync(SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess);
 
         await ProduceTwoAsync();
 
         Assert.Equal(inventoryBefore, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.Inventory));
-        Assert.Equal(wipBefore, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.WorkInProgress));
+        Assert.Equal(wipBefore, await BalanceAsync(SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess));
     }
 
     // ── تهيئة ───────────────────────────────────────────────────────────────

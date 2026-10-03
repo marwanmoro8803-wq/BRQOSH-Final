@@ -92,7 +92,7 @@ public class ConversionCostReachesTheProductTests : IDisposable
         await SetupAsync(labourPerUnit: 5m, overheadPercent: 10m);
         await CompleteAsync(produced: 10m);
 
-        Assert.Equal(0m, await LedgerAsync(SaudiChartOfAccounts.SystemCodes.WorkInProgress));
+        Assert.Equal(0m, await LedgerAsync(SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess));
     }
 
     // ── شواهدُ الضبط ────────────────────────────────────────────────────────

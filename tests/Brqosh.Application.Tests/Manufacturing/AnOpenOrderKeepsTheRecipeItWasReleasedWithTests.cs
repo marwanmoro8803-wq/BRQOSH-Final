@@ -272,7 +272,7 @@ public class AnOpenOrderKeepsTheRecipeItWasReleasedWithTests : IDisposable
         (await _db.JournalEntries
             .Where(e => e.CompanyId == _companyId && e.SourceDocument == $"WorkOrderComplete:{orderId}")
             .SelectMany(e => e.Lines)
-            .Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.WorkInProgress)
+            .Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess)
             .Select(l => l.Debit).ToListAsync())
         .Sum();
 
