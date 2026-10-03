@@ -1162,5 +1162,8 @@
   "مهلة السداد يجب أن تكون عدداً صحيحاً من الأيام.": "Payment terms must be a whole number of days.",
   "مستودع المواد (تُصرف منه)": "Materials warehouse (issued from)",
   "مستودع الإنتاج (يُسلَّم إليه)": "Output warehouse (delivered to)",
-  "(المستودع الافتراضي)": "(Default warehouse)"
+  "(المستودع الافتراضي)": "(Default warehouse)",
+  "أصلٌ قائمٌ قبل بدء التشغيل (رصيد افتتاحي)": "Owned before go-live (opening balance)",
+  "تاريخ الرصيد الافتتاحي *": "Opening balance date *",
+  "مجمع الإهلاك حتى تاريخه": "Accumulated depreciation to date"
 }

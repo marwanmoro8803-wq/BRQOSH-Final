@@ -44,6 +44,15 @@ public partial class FixedAssetDialog : Window
         AssetAccountCombo.IsEnabled = false;
         DepAccountCombo.IsEnabled = false;
         FundingCombo.IsEnabled = false;
+        OpeningCheck.IsEnabled = false;
+    }
+
+    /// <summary>(جاهزيّةُ الإطلاق · ح-١٠٠) الرصيدُ الافتتاحيُّ لا يُدفع من شيء — فطريقةُ الدفع تُعطَّل ويظهر تاريخُه ومجمّعُه.</summary>
+    private void OnOpeningToggled(object sender, RoutedEventArgs e)
+    {
+        var opening = OpeningCheck.IsChecked == true;
+        OpeningPanel.Visibility = opening ? Visibility.Visible : Visibility.Collapsed;
+        FundingCombo.IsEnabled = !opening;
     }
 
     private async Task LoadAccountsAsync()
@@ -111,6 +120,24 @@ public partial class FixedAssetDialog : Window
                 throw new AccountingException("القيمة المتبقية غير صالحة.");
             if (!int.TryParse(LifeBox.Text, out var life) || life <= 0)
                 throw new AccountingException("العمر الإنتاجي غير صالح.");
+
+            if (OpeningCheck.IsChecked == true)
+            {
+                if (OpeningDateBox.SelectedDate is null)
+                    throw new AccountingException("تاريخ الرصيد الافتتاحي مطلوب.");
+                if (!NumericInput.TryParse(AccumulatedBox.Text, out var accumulated) || accumulated < 0)
+                    throw new AccountingException("مجمع الإهلاك الافتتاحي غير صالح.");
+
+                // ‏(جاهزيّةُ الإطلاق · ح-١٠٠) **أصلٌ قائمٌ قبل بدء التشغيل برصيده الافتتاحيّ** — لا اقتناءٌ يُدان به الصندوق،
+                // ‏ولا يُهلَك ما أُهلك قبل الدفاتر ثانيةً.
+                var openingAsset = FixedAsset.CreateOpening(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
+                    DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId,
+                    accumulated, DateOnly.FromDateTime(OpeningDateBox.SelectedDate.Value));
+                await facade.GetService<FixedAssetAcquisitionPostingService>().PostOpeningAsync(openingAsset);
+                DialogResult = true;
+                Close();
+                return;
+            }
 
             if (FundingCombo.SelectedItem is not FundingOption funding)
                 throw new AccountingException("اختر طريقة الدفع.");

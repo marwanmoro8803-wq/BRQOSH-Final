@@ -635,6 +635,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("fixed_assets", "DisposalProceeds", "NUMERIC(18,2) NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalVatCategory", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalVatExemptionCode", "character varying(64) NULL", ct);
+        // (جاهزيّةُ الإطلاق · ح-١٠٠) آخرُ يومٍ أُهلك قبل الدفاتر — لأصلٍ قائمٍ يُدخَل برصيده الافتتاحيّ.
+        await EnsurePgColumnAsync("fixed_assets", "DepreciatedThrough", "DATE NULL", ct);
         await EnsurePgColumnAsync("app_users", "MustChangePasswordOnNextLogin", "BOOLEAN NOT NULL DEFAULT false", ct);
         await EnsurePgColumnAsync("app_users", "MobilePhoneE164", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
@@ -735,6 +737,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalProceeds", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalVatCategory", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalVatExemptionCode", "TEXT NULL", ct);
+        // (جاهزيّةُ الإطلاق · ح-١٠٠) آخرُ يومٍ أُهلك قبل الدفاتر — انظر النظيرَ في مسار PostgreSQL أعلاه.
+        await EnsureSqliteColumnAsync("fixed_assets", "DepreciatedThrough", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MustChangePasswordOnNextLogin", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MobilePhoneE164", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);

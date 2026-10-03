@@ -292,6 +292,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateOnly?>("DepreciatedThrough")
+                        .HasColumnType("date");
+
                     b.Property<long?>("DisposalBuyerCustomerId")
                         .HasColumnType("bigint");
 

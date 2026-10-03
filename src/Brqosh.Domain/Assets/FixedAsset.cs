@@ -25,6 +25,15 @@ public class FixedAsset : IBranchScoped
     public long GlAssetAccountId { get; private set; }
     public long GlDepreciationAccountId { get; private set; }
     public long? AcquisitionJournalEntryId { get; private set; }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٠ · <c>treasury-payroll-assets#12</c>) <b>آخرُ يومٍ أُهلك قبل الدفاتر</b> — لأصلٍ قائمٍ قبل بدء التشغيل
+    /// يُدخَل برصيده الافتتاحيّ (<see cref="CreateOpening"/>). <b>وفارغُه لأصلٍ يُقتنى في الدفاتر</b>: إهلاكُه من شهر اقتنائه.
+    ///
+    /// <para>وكان الأصلُ القائمُ لا يُدخَل إلا اقتناءً جديداً بتكلفته كلِّها — <b>فيستدرك التشغيلُ الأوّلُ كلَّ شهرٍ منذ اقتنائه الأصليّ</b>،
+    /// وقد أُهلك في الدفاتر السابقة، ويُحمّله على سنة التشغيل.</para>
+    /// </summary>
+    public DateOnly? DepreciatedThrough { get; private set; }
     public long? DisposalJournalEntryId { get; private set; }
     public bool IsActive { get; private set; } = true;
 
@@ -104,6 +113,34 @@ public class FixedAsset : IBranchScoped
             Math.Round(acquisitionCost, 2, MidpointRounding.AwayFromZero),
             Math.Round(salvageValue, 2, MidpointRounding.AwayFromZero),
             usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٠) <b>أصلٌ قائمٌ قبل بدء التشغيل — بمجمّع إهلاكه حتى نهاية الشهر السابق لتاريخ الرصيد الافتتاحيّ.</b>
+    ///
+    /// <para><b>والمجمّعُ لا يتجاوز القابلَ للإهلاك</b> (التكلفة ناقص القيمة المتبقية) ولا يقلّ عن الصفر، <b>والرصيدُ الافتتاحيُّ بعد شهر
+    /// الاقتناء</b> — وإلّا فهو اقتناءٌ في الدفاتر لا رصيدٌ قبلها.</para>
+    /// </summary>
+    public static FixedAsset CreateOpening(long companyId, string code, string nameAr, DateOnly acquisitionDate,
+        decimal acquisitionCost, decimal salvageValue, int usefulLifeMonths,
+        long glAssetAccountId, long glDepreciationAccountId,
+        decimal accumulatedDepreciation, DateOnly openingDate)
+    {
+        var asset = Create(companyId, code, nameAr, acquisitionDate, acquisitionCost, salvageValue,
+            usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
+
+        var accumulated = Math.Round(accumulatedDepreciation, 2, MidpointRounding.AwayFromZero);
+        if (accumulated < 0m || accumulated > asset.AcquisitionCost - asset.SalvageValue)
+            throw new AccountingException(
+                "مجمّعُ الإهلاك الافتتاحيّ بين الصفر والقابلِ للإهلاك (التكلفة ناقص القيمة المتبقية).");
+
+        var openingMonth = new DateOnly(openingDate.Year, openingDate.Month, 1);
+        if (openingMonth <= new DateOnly(acquisitionDate.Year, acquisitionDate.Month, 1))
+            throw new AccountingException("تاريخُ الرصيد الافتتاحيّ بعد شهر الاقتناء — وإلّا فهو اقتناءٌ في الدفاتر.");
+
+        asset.AccumulatedDepreciation = accumulated;
+        asset.DepreciatedThrough = openingMonth.AddDays(-1);
+        return asset;
     }
 
     /// <summary>
@@ -242,12 +279,18 @@ public class FixedAsset : IBranchScoped
     /// <para>‏<b>وكان كلُّ تشغيلٍ شهراً واحداً</b>: أصلٌ يُقتنى بعد شهر التشغيل يُهلَك فيه، وشهرٌ لم يُشغَّل لا يُستدرَك
     /// أبداً، وتشغيلُ شهرٍ سابقٍ بعد لاحقه يُحمّله ثانيةً. <b>وصفرٌ هنا يعني لا شيءَ مستحقّاً</b> — أصلٌ لم يُقتنَ
     /// بعد، أو شهرٌ أُهلك قبلُ.</para>
+    ///
+    /// <para>(ح-١٠٠) <b>ولأصلٍ قائمٍ قبل الدفاتر فمن الشهر التالي لـ<see cref="DepreciatedThrough"/></b> — ما أُهلك قبلها لا يُهلَك ثانيةً.</para>
     /// </summary>
     public int MonthsDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
     {
         static int Index(DateOnly d) => d.Year * 12 + d.Month;
 
-        var first = lastDepreciatedMonth is { } last ? Index(last) + 1 : Index(AcquisitionDate);
+        var first = Index(AcquisitionDate);
+        if (DepreciatedThrough is { } through)
+            first = Math.Max(first, Index(through) + 1);
+        if (lastDepreciatedMonth is { } last)
+            first = Math.Max(first, Index(last) + 1);
         return Math.Max(0, Index(runDate) - first + 1);
     }
     public void AssignBranch(long branchId)

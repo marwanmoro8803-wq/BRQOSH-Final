@@ -37,12 +37,7 @@ public class FixedAssetAcquisitionPostingService(BrqoshDbContext db)
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var source = $"FixedAsset:{asset.Code}";
-            if (asset.AcquisitionJournalEntryId is not null
-                || await db.JournalEntries
-                    .Where(e => e.CompanyId == asset.CompanyId && e.SourceDocument == source)
-                    .WhereStanding(db.JournalEntries)
-                    .AnyAsync(token))
-                throw new AccountingException($"اقتناءُ الأصل {asset.Code} مُرحَّلٌ مسبقاً — لا يُقيَّد ثانيةً.");
+            await EnsureNotPostedAsync(asset, source, token);
 
             // ‏**الأصلُ الجديدُ يُضاف داخل المعاملة** — فإن رُفض الترحيلُ بعدها ارتدّ معه، ولا يبقى أصلٌ بلا قيد.
             if (db.Entry(asset).State == EntityState.Detached)
@@ -85,6 +80,82 @@ public class FixedAssetAcquisitionPostingService(BrqoshDbContext db)
 
             return entry;
         }, ct);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٠ · <c>treasury-payroll-assets#12</c>) <b>رصيدٌ افتتاحيٌّ لأصلٍ قائمٍ قبل بدء التشغيل</b> — مدين الأصل
+    /// بتكلفته، ودائن مجمّع الإهلاك بما أُهلك قبل الدفاتر، <b>والصافي على الأرباح المبقاة (3103)</b> كما يفعل افتتاحيُّ المخزون.
+    /// <b>ولا نقدَ يخرج</b>: وكان الأصلُ القائمُ لا يُدخَل إلا اقتناءً يُدان به الصندوقُ بتكلفته كلِّها وبتاريخ اقتنائه الأصليّ.
+    ///
+    /// <para><b>بتاريخ أوّل يومٍ بعد <see cref="FixedAsset.DepreciatedThrough"/></b>، <b>وبوسم الاقتناء نفسِه</b> — فلا يُرحَّل مرّتين،
+    /// ولا يُرحَّل اقتناءٌ فوقه؛ والأصلُ الجديدُ يُضاف داخل المعاملة كالاقتناء.</para>
+    /// </summary>
+    public async Task<JournalEntry> PostOpeningAsync(FixedAsset asset, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanPostAccounting();
+        if (asset.DepreciatedThrough is not { } through)
+            throw new AccountingException($"الأصل {asset.Code} ليس رصيداً افتتاحيّاً — يُرحَّل اقتناءً.");
+        var openingDate = through.AddDays(1);
+
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var source = $"FixedAsset:{asset.Code}";
+            await EnsureNotPostedAsync(asset, source, token);
+            if (db.Entry(asset).State == EntityState.Detached)
+                db.FixedAssets.Add(asset);
+
+            await FinancialPostingSupport.ValidateAsync(
+                db, asset.CompanyId, openingDate, PostingDocumentKind.FixedAsset, ct: token);
+            await BranchAssignmentHelper.EnsureAssignedAsync(asset, db, ct: token);
+
+            var assetAccount = await db.Accounts.SingleAsync(
+                a => a.Id == asset.GlAssetAccountId && a.CompanyId == asset.CompanyId, token);
+            var accumulated = await db.Accounts.SingleAsync(
+                a => a.Id == asset.GlDepreciationAccountId && a.CompanyId == asset.CompanyId, token);
+            var retained = await db.Accounts.SingleAsync(
+                a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.RetainedEarnings, token);
+
+            var entry = JournalEntry.CreateDraft(
+                asset.CompanyId, openingDate,
+                $"رصيد افتتاحي لأصل ثابت {asset.Code} — {asset.NameAr}",
+                source);
+            entry.AddLine(assetAccount, asset.AcquisitionCost, 0m, "رصيد افتتاحي — تكلفة الأصل");
+            if (asset.AccumulatedDepreciation > 0m)
+                entry.AddLine(accumulated, 0m, asset.AccumulatedDepreciation, "رصيد افتتاحي — مجمع الإهلاك");
+            if (asset.BookValue > 0m)
+                entry.AddLine(retained, 0m, asset.BookValue, "رصيد افتتاحي — صافي الأصل");
+
+            var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(asset.CompanyId, openingDate);
+            entry.Post(entryNumber);
+            db.JournalEntries.Add(entry);
+            await db.SaveChangesAsync(token);
+
+            asset.LinkAcquisitionJournal(entry.Id);
+            await db.SaveChangesAsync(token);
+
+            await DomainEventHub.PublishAsync(new DocumentPostedEvent(
+                asset.CompanyId, "FixedAssetOpening", asset.Id, asset.Code), token);
+            await DomainEventHub.PublishAsync(new JournalEntryPostedEvent(
+                asset.CompanyId, entry.Id, entry.EntryNumber!, openingDate), token);
+            await FinancialPostingSupport.AuditPostAsync(
+                db, asset.CompanyId, "FixedAsset", asset.Code,
+                reason: "رصيد افتتاحي لأصل ثابت", ct: token);
+
+            return entry;
+        }, ct);
+    }
+
+    /// <summary>
+    /// ‏الأصلُ مربوطٌ بقيدٍ أو قيدٌ قائمٌ (<c>WhereStanding</c>) بوسمه — <b>اقتناءً كان أو رصيداً افتتاحيّاً</b>، فلا يُقيَّد ثانيةً.
+    /// </summary>
+    private async Task EnsureNotPostedAsync(FixedAsset asset, string source, CancellationToken token)
+    {
+        if (asset.AcquisitionJournalEntryId is not null
+            || await db.JournalEntries
+                .Where(e => e.CompanyId == asset.CompanyId && e.SourceDocument == source)
+                .WhereStanding(db.JournalEntries)
+                .AnyAsync(token))
+            throw new AccountingException($"اقتناءُ الأصل {asset.Code} مُرحَّلٌ مسبقاً — لا يُقيَّد ثانيةً.");
     }
 
     /// <summary>

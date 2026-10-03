@@ -38,7 +38,21 @@
         <ComboBox x:Name="DepAccountCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 
         <TextBlock Text="طريقة الدفع" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="FundingCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" Margin="0,0,0,4"/>
+        <ComboBox x:Name="FundingCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" Margin="0,0,0,14"/>
+
+        <CheckBox x:Name="OpeningCheck" Content="أصلٌ قائمٌ قبل بدء التشغيل (رصيد افتتاحي)" FontSize="14" Margin="0,0,0,10"
+                  Checked="OnOpeningToggled" Unchecked="OnOpeningToggled"/>
+        <Grid x:Name="OpeningPanel" Visibility="Collapsed" Margin="0,0,0,4">
+            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="تاريخ الرصيد الافتتاحي *" Style="{StaticResource FieldLabel}"/>
+                <DatePicker x:Name="OpeningDateBox" FontSize="14"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="مجمع الإهلاك حتى تاريخه" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="AccumulatedBox" Style="{StaticResource AppTextBox}" Text="0"/>
+            </StackPanel>
+        </Grid>
 
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
 
