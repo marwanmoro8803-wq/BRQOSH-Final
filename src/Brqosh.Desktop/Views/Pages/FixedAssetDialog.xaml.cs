@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
+using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Assets;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Ui;
@@ -11,6 +12,9 @@ namespace Brqosh.Desktop.Views.Pages;
 public partial class FixedAssetDialog : Window
 {
     public record AccountOption(long Id, string Display);
+
+    /// <summary>(جاهزيّةُ الإطلاق · ح-٩٩) من أين دُفع الأصل: الصندوقُ نقداً، أو بنكٌ قائم.</summary>
+    public record FundingOption(ReceiptMethod Method, long? BankAccountId, string Display);
 
     private readonly long? _assetId;
 
@@ -39,6 +43,7 @@ public partial class FixedAssetDialog : Window
         LifeBox.IsReadOnly = true;
         AssetAccountCombo.IsEnabled = false;
         DepAccountCombo.IsEnabled = false;
+        FundingCombo.IsEnabled = false;
     }
 
     private async Task LoadAccountsAsync()
@@ -52,6 +57,16 @@ public partial class FixedAssetDialog : Window
 
         AssetAccountCombo.ItemsSource = accounts.Where(a => a.Display.StartsWith("12") && !a.Display.StartsWith("1207")).ToList();
         DepAccountCombo.ItemsSource = accounts.Where(a => a.Display.StartsWith("1207")).ToList();
+
+        var banks = await db.BankAccounts
+            .Where(b => b.CompanyId == AppServices.CompanyId && b.IsActive)
+            .OrderByDescending(b => b.IsDefault).ThenBy(b => b.Code)
+            .Select(b => new { b.Id, b.Code, b.NameAr })
+            .ToListAsync();
+        FundingCombo.ItemsSource = new[] { new FundingOption(ReceiptMethod.Cash, null, "نقداً (الصندوق)") }
+            .Concat(banks.Select(b => new FundingOption(ReceiptMethod.Bank, b.Id, $"{b.Code} — {b.NameAr}")))
+            .ToList();
+        FundingCombo.SelectedIndex = 0;
 
         if (_assetId is long id)
         {
@@ -97,12 +112,16 @@ public partial class FixedAssetDialog : Window
             if (!int.TryParse(LifeBox.Text, out var life) || life <= 0)
                 throw new AccountingException("العمر الإنتاجي غير صالح.");
 
+            if (FundingCombo.SelectedItem is not FundingOption funding)
+                throw new AccountingException("اختر طريقة الدفع.");
+
             var assetNew = FixedAsset.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
                 DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId);
-            db.FixedAssets.Add(assetNew);
-            await db.SaveChangesAsync();
 
-            await facade.GetService<FixedAssetAcquisitionPostingService>().PostAcquisitionAsync(assetNew);
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٩) **الأصلُ يُحفظ مع قيد اقتنائه في معاملةٍ واحدة** — وكان يُحفظ هنا أوّلاً،
+            // ‏فترحيلٌ يُرفض بعده يُبقي أصلاً بلا قيد.
+            await facade.GetService<FixedAssetAcquisitionPostingService>()
+                .PostAcquisitionAsync(assetNew, funding.Method, funding.BankAccountId);
 
             DialogResult = true;
             Close();
