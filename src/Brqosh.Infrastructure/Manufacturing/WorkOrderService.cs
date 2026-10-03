@@ -73,7 +73,14 @@ public class WorkOrderService(BrqoshDbContext db)
                     $"أمر الإنتاج {order.OrderNumber} صادرٌ بلا وصفةٍ مجمَّدة — ألغِه وأصدره من جديد.");
 
             var inv = new InventoryService(db);
-            var warehouse = await inv.GetDefaultWarehouseAsync(companyId);
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٧ · ‏`manufacturing#7`) ‏**مستودعا الأمر — لا الافتراضيُّ أبداً.**
+            //
+            // ‏كان هذا `GetDefaultWarehouseAsync` للصرف والاستلام معاً؛ فمصنعٌ يحفظ خاماته في غير الافتراضيّ **لا يُكمل أمراً**
+            // ‏(الاستهلاكُ يطلب طبقاتِ الخامة في الافتراضيّ فلا يجدها)، والتامُّ يدخل الافتراضيَّ ولو كان له مستودع.
+            // ‏**والفارغُ هو الافتراضيّ** كما كان كلُّ أمرٍ قبله؛ **والمستودعُ يُسأل هنا قبل أيّ صرف** — فمستودعٌ أُوقف بعد
+            // ‏الإصدار يُرفض باسمه ولا تُرحَّل حركةٌ ولا قيد.
+            var materialsWarehouseId = await WarehouseForAsync(inv, companyId, order.MaterialsWarehouseId, "مستودع الموادّ", token);
+            var outputWarehouseId = await WarehouseForAsync(inv, companyId, order.OutputWarehouseId, "مستودع الإنتاج", token);
 
             var scale = producedQuantity / bom.OutputQuantity;
             var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
@@ -97,7 +104,7 @@ public class WorkOrderService(BrqoshDbContext db)
                 // ‏الاستهلاك، فيصير المفتاحُ `WorkOrder:` — وهو عينُ صنفِ العطل المسجَّل
                 // ‏في التدقيق للإشعار المدين (`DebitNote:` فارغاً).
                 var (totalCost, componentUnitCost) = await costing.ConsumeForIssueAsync(
-                    companyId, line.ComponentProductId, warehouse.Id, qty,
+                    companyId, line.ComponentProductId, materialsWarehouseId, qty,
                     $"WorkOrder:{order.Id}", token);
                 materialCost += totalCost;
                 issueLines.Add((line.ComponentProductId, qty, componentUnitCost));
@@ -125,10 +132,10 @@ public class WorkOrderService(BrqoshDbContext db)
                 ? Math.Round(totalProductionCost / producedQuantity, 4, MidpointRounding.AwayFromZero)
                 : 0m;
 
-            await inv.PostDocumentMovementAsync(companyId, warehouse.Id, StockMovementType.Issue,
+            await inv.PostDocumentMovementAsync(companyId, materialsWarehouseId, StockMovementType.Issue,
                 completedOn, $"صرف مواد — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}", issueLines);
 
-            await inv.PostDocumentMovementAsync(companyId, warehouse.Id, StockMovementType.Receipt,
+            await inv.PostDocumentMovementAsync(companyId, outputWarehouseId, StockMovementType.Receipt,
                 completedOn, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
                 [(bom.FinishedProductId, producedQuantity, unitCost)]);
 
@@ -266,6 +273,25 @@ public class WorkOrderService(BrqoshDbContext db)
             await inv.ReverseDocumentMovementAsync(movement);
             movement.MarkCancelled();
         }
+    }
+
+    /// <summary>
+    /// (ح-٩٧) <b>مستودعُ الأمر إن اختير — في المنشأة وغيرُ موقوف — وإلا الافتراضيّ.</b> والرفضُ يُسمّي الدورَ والمستودع:
+    /// فالمالكُ يعرف أيَّ مستودعٍ أوقفه، ولا يقرأ «طبقات FIFO غير كافية» عن مستودعٍ لم يقصده.
+    /// </summary>
+    private async Task<long> WarehouseForAsync(InventoryService inv, long companyId, long? chosenId, string role,
+        CancellationToken ct)
+    {
+        if (chosenId is not long id)
+            return (await inv.GetDefaultWarehouseAsync(companyId)).Id;
+
+        var warehouse = await db.Warehouses.SingleOrDefaultAsync(w => w.CompanyId == companyId && w.Id == id, ct)
+            ?? throw new AccountingException($"{role} المختارُ لهذا الأمر غير موجود في المنشأة.");
+        if (!warehouse.IsActive)
+            throw new AccountingException(
+                $"{role} «{warehouse.NameAr}» موقوف — فعِّله من شاشة المستودعات، أو ألغِ الأمرَ وأنشئه بمستودعٍ آخر.");
+
+        return warehouse.Id;
     }
 
     private async Task<Account> AccountAsync(long companyId, string code, CancellationToken ct) =>

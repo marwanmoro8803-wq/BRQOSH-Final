@@ -16,6 +16,13 @@
         <TextBlock Text="الكمية المخططة *" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="QtyBox" Style="{StaticResource AppTextBox}" Text="1" Margin="0,0,0,14"/>
 
+        <!-- (جاهزيّةُ الإطلاق · ح-٩٧) مستودعا الأمر — وكان الافتراضيَّ أبداً؛ والفارغُ هو الافتراضيّ كما كان. -->
+        <TextBlock Text="مستودع المواد (تُصرف منه)" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="MaterialsWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+
+        <TextBlock Text="مستودع الإنتاج (يُسلَّم إليه)" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="OutputWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+
         <TextBlock Text="ملاحظات" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="NotesBox" Style="{StaticResource AppTextBox}" MinHeight="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,4"/>
 

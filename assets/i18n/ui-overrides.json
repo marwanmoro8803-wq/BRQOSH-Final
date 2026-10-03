@@ -1159,5 +1159,8 @@
   "حد الائتمان (اختياري — فارغ يعني بلا حد)": "Credit limit (optional — empty means no limit)",
   "حد الائتمان يجب أن يكون رقماً غير سالب.": "The credit limit must be a non-negative number.",
   "مهلة السداد بالأيام (0 = نقداً)": "Payment terms in days (0 = cash)",
-  "مهلة السداد يجب أن تكون عدداً صحيحاً من الأيام.": "Payment terms must be a whole number of days."
+  "مهلة السداد يجب أن تكون عدداً صحيحاً من الأيام.": "Payment terms must be a whole number of days.",
+  "مستودع المواد (تُصرف منه)": "Materials warehouse (issued from)",
+  "مستودع الإنتاج (يُسلَّم إليه)": "Output warehouse (delivered to)",
+  "(المستودع الافتراضي)": "(Default warehouse)"
 }

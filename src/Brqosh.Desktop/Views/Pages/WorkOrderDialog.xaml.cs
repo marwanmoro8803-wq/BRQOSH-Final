@@ -11,6 +11,11 @@ public partial class WorkOrderDialog : Window
 {
     public record BomOption(long Id, string Display);
 
+    /// <summary>(ح-٩٧) خيارُ مستودع — <c>Id</c> الفارغُ هو الافتراضيّ.</summary>
+    public record WarehouseOption(long? Id, string Display);
+
+    private const string DefaultWarehouseChoice = "(المستودع الافتراضي)";
+
     public WorkOrderDialog()
     {
         InitializeComponent();
@@ -28,6 +33,18 @@ public partial class WorkOrderDialog : Window
             .ToListAsync();
         if (BomCombo.Items.Count > 0)
             BomCombo.SelectedIndex = 0;
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٧) ‏المستودعاتُ القائمة — والأوّلُ «الافتراضيّ» فلا يتغيّر شيءٌ لمن لا يختار.
+        var choices = new List<WarehouseOption> { new(null, DefaultWarehouseChoice) };
+        choices.AddRange(await db.Warehouses
+            .Where(w => w.CompanyId == AppServices.CompanyId && w.IsActive)
+            .OrderBy(w => w.Code)
+            .Select(w => new WarehouseOption(w.Id, $"{w.Code} — {w.NameAr}"))
+            .ToListAsync());
+        MaterialsWarehouseCombo.ItemsSource = choices;
+        OutputWarehouseCombo.ItemsSource = choices;
+        MaterialsWarehouseCombo.SelectedIndex = 0;
+        OutputWarehouseCombo.SelectedIndex = 0;
     }
 
     private async void OnSave(object sender, RoutedEventArgs e)
@@ -43,6 +60,8 @@ public partial class WorkOrderDialog : Window
 
             var order = WorkOrder.CreateDraft(AppServices.CompanyId, bomId,
                 DateOnly.FromDateTime(DateBox.SelectedDate.Value), qty, NotesBox.Text);
+            // ‏(ح-٩٧) ‏مستودعا الأمر — الفارغُ هو الافتراضيّ؛ والمستودعُ يُسأل عند الإكمال.
+            order.SetWarehouses(MaterialsWarehouseCombo.SelectedValue as long?, OutputWarehouseCombo.SelectedValue as long?);
 
             await using var db = AppServices.CreateDb();
             db.WorkOrders.Add(order);

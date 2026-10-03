@@ -69,6 +69,15 @@ public class WorkOrder : IBranchScoped
     /// </summary>
     public bool RecipeFrozen { get; private set; }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩٧ · <c>manufacturing#7</c>) <b>مستودعُ الموادّ — منه تُصرف الخامات.</b> وفارغُه هو المستودعُ الافتراضيّ
+    /// كما كان كلُّ أمرٍ قبله؛ <b>والاستلامُ والجردُ والتحويلُ تختار أيَّ مستودع</b>، فالتصنيعُ وحدَه كان حبيسَ الافتراضيّ.
+    /// </summary>
+    public long? MaterialsWarehouseId { get; private set; }
+
+    /// <summary>(ح-٩٧) <b>مستودعُ الإنتاج — إليه يُسلَّم التامّ.</b> وفارغُه الافتراضيّ.</summary>
+    public long? OutputWarehouseId { get; private set; }
+
     private WorkOrder()
     {
         Notes = null!;
@@ -144,6 +153,21 @@ public class WorkOrder : IBranchScoped
     }
 
     public void LinkCompletionJournal(long journalEntryId) => CompletionJournalEntryId = journalEntryId;
+
+    /// <summary>
+    /// (ح-٩٧) يضبط مستودعَي الأمر — <b>والفارغُ هو الافتراضيّ</b>. <b>ولا يُغيَّر لأمرٍ مكتملٍ أو ملغى</b>: حركاتُه مرحَّلةٌ في
+    /// مستودعاتها، والإلغاءُ يعكس كلَّ حركةٍ في مستودعها هي. <b>والمستودعُ نفسُه يُسأل عند الإكمال</b> (في المنشأة وغيرُ موقوف).
+    /// </summary>
+    public void SetWarehouses(long? materialsWarehouseId, long? outputWarehouseId)
+    {
+        if (Status is WorkOrderStatus.Completed or WorkOrderStatus.Cancelled)
+            throw new AccountingException("لا يُغيَّر مستودعُ أمرٍ مكتملٍ أو ملغى.");
+        if (materialsWarehouseId is <= 0 || outputWarehouseId is <= 0)
+            throw new AccountingException("المستودع غير صالح.");
+
+        MaterialsWarehouseId = materialsWarehouseId;
+        OutputWarehouseId = outputWarehouseId;
+    }
 
     private void EnsureStatus(WorkOrderStatus expected, string operation)
     {

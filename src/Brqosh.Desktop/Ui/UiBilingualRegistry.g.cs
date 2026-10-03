@@ -6,6 +6,7 @@ public static partial class UiBilingualRegistry
 {
     public static IReadOnlyDictionary<string, string> Map { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["(المستودع الافتراضي)"] = "(Default warehouse)",
         ["1 — توليد المفتاح و CSR"] = "1 — Generate key and CSR",
         ["12 حرفاً على الأقل مع حرف كبير وصغير ورقم ورمز خاص."] = "At least 12 characters, with upper and lower case, a digit and a symbol.",
         ["2 — شهادة الامتثال (Compliance CSID)"] = "2  Certificate Compliance Compliance CSID",
@@ -1505,6 +1506,8 @@ public static partial class UiBilingualRegistry
         ["مستخلص رقم 1"] = "Progress billing #1",
         ["مستخلصات أعمال (وعاء)"] = "Progress billings (base)",
         ["مستودع افتراضي"] = "Default warehouse",
+        ["مستودع الإنتاج (يُسلَّم إليه)"] = "Output warehouse (delivered to)",
+        ["مستودع المواد (تُصرف منه)"] = "Materials warehouse (issued from)",
         ["مستودع الوجهة *"] = "Destination warehouse *",
         ["مستودع جديد"] = "New warehouse",
         ["مستويات الخدمة (SLA)"] = "Service levels (SLA)",

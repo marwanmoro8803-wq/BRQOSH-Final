@@ -204,6 +204,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏يبني SELECT بكلّ أعمدة النموذج.
         await EnsureCustomerCreditLimitColumnAsync(isPg, ct);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٧) ‏مستودعا أمر الإنتاج — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن الأمر
+        // ‏يبني SELECT بكلّ أعمدة النموذج.
+        await EnsureWorkOrderWarehouseColumnsAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -295,6 +299,20 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("customers", "CreditLimit", "NUMERIC(18,2) NULL", ct);
         else
             await EnsureSqliteColumnAsync("customers", "CreditLimit", "TEXT NULL", ct);
+    }
+
+    private async Task EnsureWorkOrderWarehouseColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("work_orders", isPg, ct))
+            return;
+
+        foreach (var column in new[] { "MaterialsWarehouseId", "OutputWarehouseId" })
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("work_orders", column, "BIGINT NULL", ct);
+            else
+                await EnsureSqliteColumnAsync("work_orders", column, "INTEGER NULL", ct);
+        }
     }
 
     private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)

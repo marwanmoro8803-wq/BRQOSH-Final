@@ -2127,6 +2127,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("CompletionJournalEntryId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("MaterialsWarehouseId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasMaxLength(1024)
@@ -2138,6 +2141,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<string>("OrderNumber")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
+
+                    b.Property<long?>("OutputWarehouseId")
+                        .HasColumnType("bigint");
 
                     b.Property<decimal>("PlannedQuantity")
                         .HasPrecision(18, 4)
