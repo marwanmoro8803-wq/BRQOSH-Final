@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Sales;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ public partial class CustomerDialog : Window
         VatBox.Text = customer.VatRegistrationNumber;
         PhoneBox.Text = customer.Phone;
         AddressBox.Text = customer.Address;
+        CreditLimitBox.Text = customer.CreditLimit?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "";
         Title = "تعديل عميل";
     }
 
@@ -53,6 +55,16 @@ public partial class CustomerDialog : Window
             if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
                 throw new ArgumentException("الرقم الضريبي للعميل يجب أن يتكون من 15 رقماً.");
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٥) حدُّ الائتمان — فارغُه بلا حدّ، وغيرُ الرقم يُقال باسمه قبل الحفظ.
+            decimal? creditLimit = null;
+            var limitText = CreditLimitBox.Text.Trim();
+            if (limitText.Length > 0)
+            {
+                if (!NumericInput.TryParseNonNegative(limitText, out var parsed))
+                    throw new ArgumentException("حد الائتمان يجب أن يكون رقماً غير سالب.");
+                creditLimit = parsed;
+            }
+
             await using var db = AppServices.CreateDb();
             Customer saved;
             if (_customerId is long id)
@@ -66,6 +78,8 @@ public partial class CustomerDialog : Window
                     AppServices.CompanyId, NameBox.Text, VatBox.Text, PhoneBox.Text, AddressBox.Text);
                 db.Customers.Add(saved);
             }
+
+            saved.SetCreditLimit(creditLimit);
 
             // (CEEF-229 · م1-١ب) هويةُ المشتري تُحفظ لصاحب الرقم الضريبيّ وحده — وفاتورتُه
             // تذهب إلى المقاصّة قبل التسليم، فطرفُها المشتري معرَّف.

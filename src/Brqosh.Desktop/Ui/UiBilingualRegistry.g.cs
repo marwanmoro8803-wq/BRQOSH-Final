@@ -918,6 +918,8 @@ public static partial class UiBilingualRegistry
         ["حج"] = "Hajj",
         ["حجز"] = "Reservation",
         ["حجز جديد"] = "New Reservation",
+        ["حد الائتمان (اختياري — فارغ يعني بلا حد)"] = "Credit limit (optional — empty means no limit)",
+        ["حد الائتمان يجب أن يكون رقماً غير سالب."] = "The credit limit must be a non-negative number.",
         ["حدّد التاريخ أولاً."] = "Select the date first.",
         ["حدّد الفترة أولاً."] = "Select the period first.",
         ["حدّد تاريخ الإقفال أولاً."] = "Select the closing date first.",

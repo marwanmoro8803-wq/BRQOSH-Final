@@ -69,6 +69,21 @@ public class Customer : ISoftDeletable
         PaymentTermDays = days;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩٥ · <c>order-to-cash-procure-to-pay-inventory#13</c>) <b>حدُّ ائتمان العميل</b> — أقصى ما يُترك عليه مفتوحاً
+    /// من ذمم. <b>وفارغُه يعني بلا حدّ</b> كما كان كلُّ عميلٍ قبله؛ <b>وصفرُه يعني نقداً لا آجلاً</b>.
+    /// </summary>
+    public decimal? CreditLimit { get; private set; }
+
+    /// <summary>يضبط حدَّ الائتمان — و<c>null</c> يرفعه.</summary>
+    public void SetCreditLimit(decimal? limit)
+    {
+        if (limit < 0m)
+            throw new Domain.Accounting.AccountingException("حدّ الائتمان لا يكون سالباً.");
+
+        CreditLimit = limit is decimal value ? Math.Round(value, 2, MidpointRounding.AwayFromZero) : null;
+    }
+
     public static Customer Create(long companyId, string nameAr, string vatNumber = "", string phone = "", string address = "")
     {
         if (string.IsNullOrWhiteSpace(nameAr))

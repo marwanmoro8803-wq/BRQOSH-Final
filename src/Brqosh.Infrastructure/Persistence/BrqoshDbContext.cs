@@ -294,6 +294,8 @@ public class BrqoshDbContext : DbContext
             entity.Property(c => c.Phone).HasMaxLength(32);
             entity.Property(c => c.Address).HasMaxLength(512);
             entity.Property(c => c.ModifiedBy).HasMaxLength(128);
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٥) حدُّ الائتمان — وفارغُه بلا حدّ.
+            entity.Property(c => c.CreditLimit).HasPrecision(18, 2);
 
             // (CEEF-229 · م1-١ب) هوية المشتري النظامية — العروضُ تطابق أعمدة BrqoshSchemaUpdater
             // حرفاً بحرف، فلا يختلف تركيبٌ جديد (EnsureCreated من النموذج) عن تركيبٍ مُرقَّع.

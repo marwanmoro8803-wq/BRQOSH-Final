@@ -71,6 +71,11 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             db, invoice.CompanyId, invoice.InvoiceDate, PostingDocumentKind.SalesInvoice,
             documentKey: invoice.InvoiceNumber);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٥ · order-to-cash#13) **حدُّ ائتمان العميل** — قبل استهلاك الطبقات وتخصيص الرقم. والبيعُ
+        // ‏الآجلُ وحدَه: بيعُ نقطة البيع نقدٌ أو بطاقة يُقيَّد على الصندوق أو البنك ولا يمسّ الذمّة (`DebitAccountForSaleAsync`).
+        if (invoice.PosShiftId is null || invoice.PosPaymentMethod is null)
+            await EnsureWithinCreditLimitAsync(invoice, ct);
+
         var inv = new InventoryService(db);
 
 
@@ -199,6 +204,27 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
     }
 
 
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-٩٥ · <c>order-to-cash-procure-to-pay-inventory#13</c>) <b>البيعُ الآجلُ لا يتجاوز حدَّ ائتمان العميل</b> — المفتوحُ
+    /// عليه (<c>CustomerBalanceQuery</c>: الفواتيرُ والمستخلصاتُ بعد الإشعارات والمقبوض) زائداً إجماليَّ هذه الفاتورة بضريبتها.
+    /// <b>وكان لا حدَّ في الشجرة كلِّها</b> — عميلٌ متعثّرٌ يُباع له بلا سقف. <b>وبلا حدٍّ ⟵ كما كان.</b>
+    /// </summary>
+    private async Task EnsureWithinCreditLimitAsync(SalesInvoice invoice, CancellationToken ct)
+    {
+        var limit = await db.Customers
+            .Where(c => c.CompanyId == invoice.CompanyId && c.Id == invoice.CustomerId)
+            .Select(c => c.CreditLimit)
+            .SingleOrDefaultAsync(ct);
+        if (limit is not decimal cap)
+            return;
+
+        var open = (await new CustomerBalanceQuery(db).ForCustomerAsync(invoice.CompanyId, invoice.CustomerId)).Balance;
+        var total = invoice.GrandTotal();
+        if (open + total > cap)
+            throw new AccountingException(
+                $"تتجاوز الفاتورةُ حدَّ ائتمان العميل: المفتوحُ {open:N2} والفاتورةُ {total:N2} والحدُّ {cap:N2}.");
+    }
 
     private async Task<Account> DebitAccountForSaleAsync(SalesInvoice invoice)
 

@@ -1155,5 +1155,7 @@
   "عكس تشغيل الإهلاك": "Reverse depreciation run",
   "تاريخ التشغيل المراد عكسه:": "Date of the run to reverse:",
   "تاريخ قيد عكس الإهلاك:": "Depreciation reversal date:",
-  "عُكس تشغيل الإهلاك وعاد مجمَّع الأصول إلى ما قبله.": "The depreciation run was reversed and accumulated depreciation restored."
+  "عُكس تشغيل الإهلاك وعاد مجمَّع الأصول إلى ما قبله.": "The depreciation run was reversed and accumulated depreciation restored.",
+  "حد الائتمان (اختياري — فارغ يعني بلا حد)": "Credit limit (optional — empty means no limit)",
+  "حد الائتمان يجب أن يكون رقماً غير سالب.": "The credit limit must be a non-negative number."
 }

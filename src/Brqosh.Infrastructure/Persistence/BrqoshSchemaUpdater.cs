@@ -200,6 +200,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏للأمر فتُحمَّل معه في كلّ استعلام، و EF يبني SELECT بكلّ أعمدة النموذج.
         await EnsureWorkOrderRecipeSchemaAsync(isPg, ct);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٥) ‏حدُّ ائتمان العميل — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن العميل
+        // ‏يبني SELECT بكلّ أعمدة النموذج.
+        await EnsureCustomerCreditLimitColumnAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -280,6 +284,17 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("otp_challenges", "FailedAttempts", "INTEGER NOT NULL DEFAULT 0", ct);
         else
             await EnsureSqliteColumnAsync("otp_challenges", "FailedAttempts", "INTEGER NOT NULL DEFAULT 0", ct);
+    }
+
+    private async Task EnsureCustomerCreditLimitColumnAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("customers", isPg, ct))
+            return;
+
+        if (isPg)
+            await EnsurePgColumnAsync("customers", "CreditLimit", "NUMERIC(18,2) NULL", ct);
+        else
+            await EnsureSqliteColumnAsync("customers", "CreditLimit", "TEXT NULL", ct);
     }
 
     private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)

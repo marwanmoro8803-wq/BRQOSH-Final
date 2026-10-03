@@ -24,6 +24,10 @@
         <TextBlock Text="العنوان" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
+        <!-- (جاهزيّةُ الإطلاق · ح-٩٥) حدُّ الائتمان — يوقف البيعَ الآجلَ الذي يتجاوزه؛ وفارغُه بلا حدّ. -->
+        <TextBlock Text="حد الائتمان (اختياري — فارغ يعني بلا حد)" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="CreditLimitBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
         <!-- (CEEF-229 · م1-١ب) هوية المشتري النظامية — تلزم الفاتورة القياسية (B2B) وحدها،
              فتظهر عند إدخال رقم ضريبيّ من خمس عشرة خانة وتُخفى دونه. والعميلُ النقديّ لا
              يُسأل عن حيّه. -->
