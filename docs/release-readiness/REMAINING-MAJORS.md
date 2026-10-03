@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 60 بنداً ✅ و14 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 61 بنداً ✅ و14 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**وستّةٌ وتسعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٩٦) — **بعضُها خارج هذا الحصر**،
+**وسبعةٌ وتسعون إغلاقاً في الحملة كلِّها** (ح-١…ح-٩٧) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -124,7 +124,7 @@
 - ☐ **`manufacturing#4`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No actual material issue, scrap, yield or by-product recording, and no partial completion: only standard backflush at completion
 - ✅ **`manufacturing#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>BOM edits after release silently change what open orders consume; no BOM snapshot, version or audit — ح-٧٧ `6e46a1c` — **الوصفةُ تُجمَّد عند الإصدار**: `WorkOrder.Release` ينسخ البنودَ وتكاليفَ التحويل، والإكمالُ يقرأ وصفةَ الأمر لا القائمة (٦ خاماتٍ والوحدةُ ٣٥ — لا ٨ و٥٣٫٩ بعد تعديلٍ لاحق)؛ **والصادرُ قبل الترقية يُجمّده المُرقِّعُ** عند الإقلاع، وصادرٌ بلا وصفةٍ يُرفض؛ **وتعديلُ القائمة يُسجَّل بفرقه** (`BillOfMaterialsService`). **ولا رقمَ إصدارٍ على القائمة نفسِها** — تاريخُها في سجلّ التدقيق ووصفةِ كلّ أمر
 - ☐ **`manufacturing#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Batch/lot-tracked raw materials or finished goods cannot go through a work order at all
-- ☐ **`manufacturing#7`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Work orders always use the company's default warehouse for both components and output
+- ✅ **`manufacturing#7`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Work orders always use the company's default warehouse for both components and output — ح-٩٧ `a0ed8b8` — **أمرُ الإنتاج يصرف من مستودع موادّه ويُسلِّم إلى مستودع إنتاجه**: `MaterialsWarehouseId` و`OutputWarehouseId` على الأمر (فارغُهما الافتراضيّ كما كان) وعمودان بهجرةٍ بـ`IF NOT EXISTS` ومُرقِّع، والإكمالُ يستهلك طبقاتِ مستودع الموادّ ويسأل عن المستودعين قبل أيّ صرف (الموقوفُ يُرفض باسمه)، والإلغاءُ يُعيد كلَّ حركةٍ إلى مستودعها، وحقلان في نافذة الأمر؛ **وحدُّه**: يُختاران عند إنشاء المسودّة ولا شاشةَ لتغييرهما بعده
 - ☐ **`manufacturing#8`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>'WIP' is cosmetic: it never carries a balance, uses the construction account 'Work in Progress - Unbilled', and assistant/template claims say otherwise
 - ☐ **`manufacturing#9`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>No manufacturing reports: no production cost sheet, material usage/variance or production summary
 - ✅ **`manufacturing#10`** · <sub>مؤكّد · في اليد · صغير · دعوى</sub><br>Release rubric omits manufacturing: no critical journey, and the live evidence cannot detect cost errors, yet the verdict is 97% CONDITIONAL GO with no manufacturing residual risk — ح-٧١ `483f318` — **رحلةٌ حرجةٌ تقيس المال** (ر-١٣ في `MASTER` §2ب): شراءٌ بطبقتين ⟵ أمرُ إنتاج ⟵ بيعُ التامّ، وتكلفةُ المبيعات = ما استهلكه التصنيعُ حرفاً، والمخزونُ الباقي في الطبقات والحساب معاً — **وشاهدٌ يقول لماذا لم يكفِ الميزان**: قيدا الأمر صافيهما صفرٌ أيّاً كانت تكلفةُ الوحدة؛ **وفجواتُ التصنيع المفتوحة خطرٌ متبقٍّ عند المالك (ر-م)**
