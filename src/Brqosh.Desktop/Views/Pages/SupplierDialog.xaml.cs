@@ -1,4 +1,5 @@
 using System.Windows;
+using Brqosh.Desktop.Ui;
 using Brqosh.Domain.Purchasing;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ public partial class SupplierDialog : Window
         VatBox.Text = supplier.VatRegistrationNumber;
         PhoneBox.Text = supplier.Phone;
         AddressBox.Text = supplier.Address;
+        PaymentTermsBox.Text = supplier.PaymentTermDays.ToString(System.Globalization.CultureInfo.InvariantCulture);
         Title = "تعديل مورد";
     }
 
@@ -28,18 +30,24 @@ public partial class SupplierDialog : Window
             if (vat.Length > 0 && (vat.Length != 15 || !vat.All(char.IsDigit)))
                 throw new ArgumentException("الرقم الضريبي للمورد يجب أن يتكون من 15 رقماً.");
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٦) مهلةُ السداد — فارغُها نقد، وغيرُ العدد الصحيح يُقال باسمه؛ وحدُّ السنة في المجال.
+            var paymentTerms = PaymentTermsInput.Parse(PaymentTermsBox.Text);
+
             await using var db = AppServices.CreateDb();
+            Supplier supplier;
             if (_supplierId is long id)
             {
-                var supplier = await db.Suppliers.SingleAsync(s => s.Id == id);
+                supplier = await db.Suppliers.SingleAsync(s => s.Id == id);
                 supplier.Update(NameBox.Text, VatBox.Text, PhoneBox.Text, AddressBox.Text);
             }
             else
             {
-                var supplier = Supplier.Create(
+                supplier = Supplier.Create(
                     AppServices.CompanyId, NameBox.Text, VatBox.Text, PhoneBox.Text, AddressBox.Text);
                 db.Suppliers.Add(supplier);
             }
+
+            supplier.SetPaymentTerms(paymentTerms);
 
             await db.SaveChangesAsync();
             DialogResult = true;

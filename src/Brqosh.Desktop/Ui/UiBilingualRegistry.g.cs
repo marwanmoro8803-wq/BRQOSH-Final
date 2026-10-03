@@ -1571,6 +1571,8 @@ public static partial class UiBilingualRegistry
         ["منها خاضعة بنسبة صفر (Z)"] = "of which zero-rated (Z)",
         ["منها معفاة (E)"] = "of which exempt (E)",
         ["مهلة السداد (يوم)"] = "Payment Terms (days)",
+        ["مهلة السداد بالأيام (0 = نقداً)"] = "Payment terms in days (0 = cash)",
+        ["مهلة السداد يجب أن تكون عدداً صحيحاً من الأيام."] = "Payment terms must be a whole number of days.",
         ["موازنة"] = "Budget",
         ["موازنة سنوية"] = "Annual Budget",
         ["مواقع تخزين · افتراضي · جرد"] = "Storage locations · Default · Stock count",

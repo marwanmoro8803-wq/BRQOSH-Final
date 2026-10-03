@@ -21,7 +21,11 @@
         <TextBox x:Name="PhoneBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <TextBlock Text="العنوان" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
+        <!-- (جاهزيّةُ الإطلاق · ح-٩٦) مهلةُ السداد — يقرؤها تنبّؤُ التدفّق النقديّ للدائن؛ وكانت لا تُضبط من أيّ مكان. -->
+        <TextBlock Text="مهلة السداد بالأيام (0 = نقداً)" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="PaymentTermsBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
 
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                    Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>

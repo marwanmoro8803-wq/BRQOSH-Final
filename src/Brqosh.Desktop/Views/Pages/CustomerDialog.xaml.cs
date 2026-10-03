@@ -23,6 +23,7 @@ public partial class CustomerDialog : Window
         PhoneBox.Text = customer.Phone;
         AddressBox.Text = customer.Address;
         CreditLimitBox.Text = customer.CreditLimit?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        PaymentTermsBox.Text = customer.PaymentTermDays.ToString(System.Globalization.CultureInfo.InvariantCulture);
         Title = "تعديل عميل";
     }
 
@@ -65,6 +66,9 @@ public partial class CustomerDialog : Window
                 creditLimit = parsed;
             }
 
+            // ‏(جاهزيّةُ الإطلاق · ح-٩٦) مهلةُ السداد — فارغُها نقد، وغيرُ العدد الصحيح يُقال باسمه؛ وحدُّ السنة في المجال.
+            var paymentTerms = PaymentTermsInput.Parse(PaymentTermsBox.Text);
+
             await using var db = AppServices.CreateDb();
             Customer saved;
             if (_customerId is long id)
@@ -80,6 +84,7 @@ public partial class CustomerDialog : Window
             }
 
             saved.SetCreditLimit(creditLimit);
+            saved.SetPaymentTerms(paymentTerms);
 
             // (CEEF-229 · م1-١ب) هويةُ المشتري تُحفظ لصاحب الرقم الضريبيّ وحده — وفاتورتُه
             // تذهب إلى المقاصّة قبل التسليم، فطرفُها المشتري معرَّف.

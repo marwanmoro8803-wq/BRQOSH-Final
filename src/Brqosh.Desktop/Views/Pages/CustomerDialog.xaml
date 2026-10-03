@@ -28,6 +28,10 @@
         <TextBlock Text="حد الائتمان (اختياري — فارغ يعني بلا حد)" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="CreditLimitBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
+        <!-- (جاهزيّةُ الإطلاق · ح-٩٦) مهلةُ السداد — يقرؤها تنبّؤُ التدفّق النقديّ؛ وكانت لا تُضبط من أيّ مكان. -->
+        <TextBlock Text="مهلة السداد بالأيام (0 = نقداً)" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="PaymentTermsBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+
         <!-- (CEEF-229 · م1-١ب) هوية المشتري النظامية — تلزم الفاتورة القياسية (B2B) وحدها،
              فتظهر عند إدخال رقم ضريبيّ من خمس عشرة خانة وتُخفى دونه. والعميلُ النقديّ لا
              يُسأل عن حيّه. -->
