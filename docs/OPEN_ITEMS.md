@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **تسعةٌ وتسعون إغلاقاً ح-١…ح-٩٩**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةُ إغلاقٍ ح-١…ح-١٠٠**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-٩٩ (2026-09-20…10-03)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٠٠ (2026-09-20…10-03)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3115,10 +3115,11 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-٩٧ | `a0ed8b8` | `Domain/Manufacturing/WorkOrder.cs` · `Manufacturing/WorkOrderService.cs` · `BrqoshSchemaUpdater` · `Migrations/*_AddWorkOrderWarehouses` · `WorkOrderDialog` · `AWorkOrderDrawsAndDeliversThroughItsOwnWarehousesTests.cs` | **أمرُ الإنتاج حبيسُ المستودع الافتراضيّ** (`manufacturing#7` ✅) — قِيس: خامةٌ في «مستودع المصنع» والإكمالُ يُرفض «المتوفر 0.00»؛ صار للأمر مستودعا موادٍّ وإنتاج (هجرةٌ ومُرقِّع)، والوارد-أوّلاً يُكلَّف بطبقات مستودع الموادّ؛ سبعةُ براهين |
 | ح-٩٨ | `a48a055` | `SaudiChartOfAccounts` · `Manufacturing/WorkOrderService.cs` · `CashFlowStatementService` · `ProgramWorkflowKnowledge` · `ProgramPageGuideTemplates` · `ProductionWipIsItsOwnAccountTests.cs` | **«تحت التشغيل» على أصل عقود المقاولات (1113) والمساعدُ يدّعي رصيداً** (`manufacturing#8` ◐) — قِيس: 1113 يُدان ويُدان بـ٣٠ في اللحظة نفسِها؛ صار حسابُه 1119 والدعوى تقول ما يقع؛ خمسةُ براهين؛ **والرصيدُ بين الإصدار والإكمال `manufacturing#4`** |
 | ح-٩٩ | `7dad542` | `Assets/FixedAssetAcquisitionPostingService.cs` · `FixedAssetDialog.xaml(.cs)` · `AnAssetIsAcquiredWholeFromWhereItWasPaidTests.cs` | **اقتناءُ الأصل في معاملتين ومن الصندوق أبداً** (`treasury-payroll-assets#12` ◐) — قِيس: ترحيلٌ في فترةٍ مقفلةٍ يُبقي الأصلَ بلا قيدٍ ويُهلكه التشغيلُ التالي، والترحيلُ الثاني يُقيّد اقتناءً ثانياً؛ صار معاملةً واحدةً ومن الصندوق أو بنكٍ يُختار؛ ستّةُ براهين؛ **والموردُ بالضريبة والأرصدةُ الافتتاحيّةُ قائمان** |
+| ح-١٠٠ | `4aaaa68` | `Domain/Assets/FixedAsset.cs` · `Assets/FixedAssetAcquisitionPostingService.cs` · `BrqoshSchemaUpdater` · هجرة `AddFixedAssetDepreciatedThrough` · `FixedAssetDialog.xaml(.cs)` · `AnAssetOwnedBeforeTheBooksOpensWithItsDepreciationTests.cs` | **الأصلُ القائمُ قبل التشغيل لا يُدخَل إلا اقتناءً من الصندوق** (`treasury-payroll-assets#12` ◐) — قِيس: الصندوقُ دائنٌ بـ١٢٬٠٠٠ بتاريخ ٢٠٢٣ والتشغيلُ الأوّلُ يستدرك ٣٨ شهراً (٧٬٦٠٠) على سنة التشغيل؛ صار رصيداً افتتاحيّاً على 3103 و«أُهلك حتى» يحدّ الاستدراك؛ ثمانيةُ براهين؛ **والموردُ بالضريبة قائم** |
 
-**والقياسُ عند آخر إيداع (`7dad542`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2066/2066** · `Brqosh.Desktop.Tests` **410/410** · `Brqosh.Api.Tests` **95/95** ·
-بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.00%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
+**والقياسُ عند آخر إيداع (`4aaaa68`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
+`Brqosh.Application.Tests` **2073/2073** · `Brqosh.Desktop.Tests` **410/410** · `Brqosh.Api.Tests` **95/95** ·
+بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.04%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
 
