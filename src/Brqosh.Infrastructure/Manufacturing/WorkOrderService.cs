@@ -49,8 +49,12 @@ public class WorkOrderService(BrqoshDbContext db)
     /// <b>فهذا نقلُ نمطٍ قائمٍ لا اختراع</b> — واختيارُ الوسيط الاختياريّ
     /// <b>يُبقي كلّ موضعِ نداءٍ قائماً ويُصحّح سلوكَه معاً</b>.</para>
     /// </summary>
+    /// <param name="outputBatchNumber">(جاهزيّةُ الإطلاق · ح-١٠١ · <c>manufacturing#6</c>) دفعةُ الإنتاج — <b>مطلوبةٌ لمنتجٍ تامٍّ
+    /// متتبَّع</b> ومرفوضةٌ لغيره.</param>
+    /// <param name="outputExpiry">صلاحيةُ دفعة الإنتاج إن كانت لها صلاحية.</param>
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
-        string username, DateOnly? completionDate = null, CancellationToken ct = default)
+        string username, DateOnly? completionDate = null, string? outputBatchNumber = null,
+        DateOnly? outputExpiry = null, CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPost();
         username = SecurityContext.ResolveUsername(username);
@@ -82,10 +86,27 @@ public class WorkOrderService(BrqoshDbContext db)
             var materialsWarehouseId = await WarehouseForAsync(inv, companyId, order.MaterialsWarehouseId, "مستودع الموادّ", token);
             var outputWarehouseId = await WarehouseForAsync(inv, companyId, order.OutputWarehouseId, "مستودع الإنتاج", token);
 
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠١ · ‏`manufacturing#6`) ‏**التامُّ المتتبَّعُ يدخل بدفعته — ويُسأل عنها قبل أيّ صرف.**
+            // ‏وكان كلُّ أمرٍ لصنفٍ متتبَّعٍ — خامةً أو تامّاً — يُرفض عند المَخنَق «لا يحمل هذا السطرُ هويّةً»: فلا يمرّ أمرٌ واحد.
+            var finished = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == bom.FinishedProductId, token);
+            // ‏والفارغُ والمسافاتُ لا دفعة؛ والتشذيبُ في `StockMovement.AddLine` نفسِه (تشذيبٌ ثانٍ هنا لم يعضّ فأُزيل).
+            var outputBatch = string.IsNullOrWhiteSpace(outputBatchNumber) ? null : outputBatchNumber;
+            if (finished.IsTracked && outputBatch is null)
+                throw new AccountingException(
+                    $"المنتج التامّ «{finished.NameAr}» يُتتبَّع بالدفعة — أدخِل رقمَ دفعة الإنتاج لإكمال الأمر {order.OrderNumber}.");
+            // ‏ودفعةٌ لتامٍّ لا يُتتبَّع يرفضها المَخنَقُ نفسُه باسمه (`ApplyBatchDeltaAsync`) — فلا حارسَ ثانٍ هنا.
+
             var scale = producedQuantity / bom.OutputQuantity;
-            var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+            var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
             decimal materialCost = 0;
             var costing = new InventoryCostingService(db);
+            var allocator = new BatchAllocationService(db);
+            var materialIds = order.Materials.Select(m => m.ComponentProductId).Distinct().ToList();
+            var trackedMaterials = (await db.Products.IgnoreQueryFilters()
+                    .Where(p => materialIds.Contains(p.Id) && p.Tracking != InventoryTracking.None)
+                    .Select(p => p.Id)
+                    .ToListAsync(token))
+                .ToHashSet();
 
             foreach (var line in order.Materials)
             {
@@ -107,7 +128,17 @@ public class WorkOrderService(BrqoshDbContext db)
                     companyId, line.ComponentProductId, materialsWarehouseId, qty,
                     $"WorkOrder:{order.Id}", token);
                 materialCost += totalCost;
-                issueLines.Add((line.ComponentProductId, qty, componentUnitCost));
+                if (!trackedMaterials.Contains(line.ComponentProductId))
+                {
+                    issueLines.Add((line.ComponentProductId, qty, componentUnitCost, null, null));
+                    continue;
+                }
+
+                // ‏(ح-١٠١) ‏**والخامةُ المتتبَّعةُ تُصرف بالأقدم انتهاءً — سطرٌ لكلّ دفعة** (`BatchAllocationService`، كما يفعل المطبخ):
+                // ‏فالمَخنَقُ يُنقص كلَّ دفعةٍ بعينها، والمنتهيةُ لا تُخصَّص، ونقصُ الساري يُرفض باسم الخامة قبل أيّ ترحيل.
+                foreach (var draw in await allocator.AllocateAsync(
+                             companyId, line.ComponentProductId, materialsWarehouseId, qty, completedOn, token))
+                    issueLines.Add((line.ComponentProductId, draw.Quantity, componentUnitCost, draw.BatchNumber, draw.ExpiryDate));
             }
 
             // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل تدخل التكلفة — وكانت الموادُّ وحدَها.**
@@ -137,7 +168,7 @@ public class WorkOrderService(BrqoshDbContext db)
 
             await inv.PostDocumentMovementAsync(companyId, outputWarehouseId, StockMovementType.Receipt,
                 completedOn, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
-                [(bom.FinishedProductId, producedQuantity, unitCost)]);
+                [(bom.FinishedProductId, producedQuantity, unitCost, outputBatch, outputBatch is null ? null : outputExpiry)]);
 
             var posting = new JournalPostingService(db);
             await posting.EnsurePeriodOpenAsync(companyId, completedOn);
@@ -195,6 +226,19 @@ public class WorkOrderService(BrqoshDbContext db)
 
             return order;
         }, ct);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠١) <b>هل منتجُ الأمر التامُّ متتبَّع</b> — فتسأل الشاشةُ عن دفعة الإنتاج قبل الإكمال.
+    /// </summary>
+    public async Task<bool> OutputIsTrackedAsync(long companyId, long workOrderId, CancellationToken ct = default)
+    {
+        var bomId = await db.WorkOrders.Where(w => w.CompanyId == companyId && w.Id == workOrderId)
+            .Select(w => w.BomId).SingleAsync(ct);
+        var productId = await db.BillsOfMaterials.Where(b => b.CompanyId == companyId && b.Id == bomId)
+            .Select(b => b.FinishedProductId).SingleAsync(ct);
+        return await db.Products.IgnoreQueryFilters().Where(p => p.Id == productId)
+            .Select(p => p.Tracking != InventoryTracking.None).SingleAsync(ct);
     }
 
     public async Task CancelAsync(long companyId, long workOrderId, string username,

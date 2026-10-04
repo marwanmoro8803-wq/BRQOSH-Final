@@ -106,7 +106,33 @@ public partial class WorkOrdersPage : UserControl
         {
             using var facade = new DesktopAccountingFacade();
             var username = SecurityContext.ResolveUsername();
-            await facade.GetService<WorkOrderService>().CompleteAsync(AppServices.CompanyId, row.Id, qty, username);
+            var service = facade.GetService<WorkOrderService>();
+
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠١) **المنتجُ التامُّ المتتبَّعُ يدخل بدفعته** — فتُسأل دفعةُ الإنتاج وصلاحيتُها قبل الإكمال؛
+            // ‏والخاماتُ المتتبَّعةُ تُصرف بالأقدم انتهاءً في الخدمة بلا سؤال.
+            string? batch = null;
+            DateOnly? expiry = null;
+            if (await service.OutputIsTrackedAsync(AppServices.CompanyId, row.Id))
+            {
+                var batchDialog = new TextInputDialog("دفعة الإنتاج", "رقم دفعة الإنتاج:") { Owner = Window.GetWindow(this) };
+                if (batchDialog.ShowDialog() != true)
+                    return;
+                // ‏والفارغُ يمضي إلى الخدمة فترفضه باسم المنتج — لا يُبتلع هنا صامتاً.
+                batch = batchDialog.Value;
+
+                var expiryDialog = new TextInputDialog("دفعة الإنتاج", "تاريخ الصلاحية (اختياري، yyyy-MM-dd):")
+                    { Owner = Window.GetWindow(this) };
+                if (expiryDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(expiryDialog.Value))
+                {
+                    if (!DateOnly.TryParseExact(expiryDialog.Value.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                            DateTimeStyles.None, out var parsed))
+                        throw new Brqosh.Domain.Accounting.AccountingException("تاريخ الصلاحية غير صالح — الصيغة yyyy-MM-dd.");
+                    expiry = parsed;
+                }
+            }
+
+            await service.CompleteAsync(AppServices.CompanyId, row.Id, qty, username,
+                outputBatchNumber: batch, outputExpiry: expiry);
             UiDialog.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
