@@ -1,5 +1,7 @@
+using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
+using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -56,10 +58,59 @@ public class SalesOrderService(BrqoshDbContext db)
                 throw new Domain.Accounting.AccountingException("يُنشأ الفاتورة من أمر بيع مؤكد فقط.");
 
             var invoice = SalesInvoice.CreateDraft(companyId, order.CustomerId, invoiceDate);
+
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٤ · `order-to-cash-procure-to-pay-inventory#7`) ‏**الصنفُ المتتبَّعُ يُخصَّص له الأقدمُ
+            // ‏انتهاءً عند التحويل** — وكان السطرُ يُبنى بلا دفعةٍ فيرفضه المَخنَقُ، فلا يُفوتَر دواءٌ ولا غذاءٌ من أمرِ بيع.
+            // ‏**والتخصيصُ لكلّ صنفٍ مرّةً بمجموع كمّياته** ثمّ يُوزَّع على سطوره بالترتيب — فسطران لصنفٍ واحدٍ لا يسحبان الدفعةَ مرّتين.
+            // ‏ونقصُ الساري يرميه المُخصِّصُ نفسُه باسم الصنف ولا يُلتقط: فلا فاتورةَ ولا وسمَ على الأمر (المعاملةُ تتراجع).
+            // ‏**والمرشِّحُ مرشِّحُ الترحيل نفسُه** (`IsStockable() && IsTracked`) — فخدمةٌ موسومةٌ بالتتبّع لا تُخصَّص ولا تُرفض.
+            var inv = new InventoryService(db);
+            var products = await inv.LoadProductsForLinesAsync(companyId, order.Lines.Select(l => l.ProductId));
+            var trackedIds = order.Lines
+                .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable() && p.IsTracked)
+                .Select(l => l.ProductId!.Value).Distinct().ToList();
+            var draws = new Dictionary<long, List<BatchDraw>>();
+            if (trackedIds.Count > 0)
+            {
+                // ‏المستودعُ هو الذي يصرف منه `SalesInvoicePostingService` — وإلا خُصِّصت دفعةٌ من مستودعٍ غير الذي يُنقَص.
+                var warehouse = await inv.GetDefaultWarehouseAsync(companyId);
+                var allocator = new BatchAllocationService(db);
+                foreach (var trackedId in trackedIds)
+                {
+                    var wanted = order.Lines.Where(l => l.ProductId == trackedId).Sum(l => l.Quantity);
+                    draws[trackedId] = (await allocator.AllocateAsync(
+                        companyId, trackedId, warehouse.Id, wanted, invoiceDate, token)).ToList();
+                }
+            }
+
             // ‏(م-٥ · ن-٥٢) الثلاثيُّ الضريبيُّ يعبر التحويل — انظر `PurchaseOrderService`.
             foreach (var line in order.Lines)
-                invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
-                    line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
+            {
+                if (line.ProductId is not long productId || !draws.TryGetValue(productId, out var available))
+                {
+                    invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                        line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
+                    continue;
+                }
+
+                // ‏سطرٌ للفاتورة لكلّ دفعةٍ يسحب منها هذا السطر، وما بقي من دفعةٍ يُترك لسطر الأمر التالي.
+                var remaining = line.Quantity;
+                while (remaining > 0m)
+                {
+                    // ‏المُخصِّصُ يقبل نقصاً دون ٠٫٠٠٠١ — فيُرفض هنا باسم الصنف لا بخطأ فهرسٍ خامّ.
+                    if (available.Count == 0)
+                        throw new Domain.Accounting.AccountingException(
+                            $"لا يبقى من دفعات '{products[productId].NameAr}' السارية ما يستوعب أمرَ البيع.");
+                    var draw = available[0];
+                    var take = Math.Min(remaining, draw.Quantity);
+                    invoice.AddLine(line.Description, take, line.UnitPrice, line.ProductId,
+                        line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason,
+                        batchNumber: draw.BatchNumber);
+                    remaining -= take;
+                    if (take >= draw.Quantity) available.RemoveAt(0);
+                    else available[0] = draw with { Quantity = draw.Quantity - take };
+                }
+            }
 
             await new SalesInvoicePostingService(db).PostAsync(invoice);
             order.MarkInvoiced(invoice.Id);
