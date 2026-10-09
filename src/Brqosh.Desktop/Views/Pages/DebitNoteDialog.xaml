@@ -32,6 +32,10 @@
                 <TextBox x:Name="PriceBox" Style="{StaticResource AppTextBox}" Text="0"/>
             </StackPanel>
         </Grid>
+        <!-- (جاهزيّةُ الإطلاق · ح-١٠٥) الدفعةُ المُرجَعة للصنف المتتبَّع — سطرُ فاتورة الشراء لا يحملها،
+             فتُسمّى هنا؛ وتُترك فارغةً حين لا يبقى إلا دفعةٌ واحدة. -->
+        <TextBlock Text="الدفعة (للصنف المتتبَّع)" Style="{StaticResource FieldLabel}" Margin="0,10,0,0"/>
+        <TextBox x:Name="BatchBox" Style="{StaticResource AppTextBox}"/>
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" Margin="0,12,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button Content="ترحيل" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>

@@ -102,7 +102,8 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
 
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
-        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
+        string? batchNumber = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -110,7 +111,9 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٥ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**والدفعةُ المرتجَعةُ تُسمّى** — فيخرج المرتجعُ إلى المورّد منها وحدَها لا من أقدم ما استُلم.
+            BatchNumber: string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim()));
         RecalculateTotals();
     }
 

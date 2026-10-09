@@ -104,7 +104,8 @@ public partial class DebitNoteDialog : Window
                 AppServices.CompanyId, inv.Id,
                 DateOnly.FromDateTime(DateBox.SelectedDate.Value),
                 ReasonBox.Text,
-                [new RequestedReturn(line.Index, qty, price)]);
+                [new RequestedReturn(line.Index, qty, price,
+                    string.IsNullOrWhiteSpace(BatchBox.Text) ? null : BatchBox.Text.Trim())]);
 
             await facade.GetService<DebitNotePostingService>().PostAsync(note);
             DialogResult = true;

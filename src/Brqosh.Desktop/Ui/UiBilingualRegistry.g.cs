@@ -436,6 +436,7 @@ public static partial class UiBilingualRegistry
         ["الخطورة"] = "Severity",
         ["الداخل"] = "Inflows",
         ["الدفعات والصلاحية"] = "Batches & Expiry",
+        ["الدفعة (للصنف المتتبَّع)"] = "Batch (tracked items)",
         ["الدور"] = "Role",
         ["الدورية"] = "Frequency",
         ["الدورية *"] = "Frequency *",

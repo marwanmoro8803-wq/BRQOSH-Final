@@ -1,6 +1,8 @@
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Tax;
+using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,8 +21,10 @@ public sealed record ReturnableInvoiceLine(
     public decimal Returnable => InvoiceQuantity - AlreadyReturned;
 }
 
-/// <summary>ما يطلب المستخدمُ إرجاعَه: سطرٌ بعينه وكمّيّةٌ منه.</summary>
-public sealed record RequestedReturn(int LineIndex, decimal Quantity, decimal? UnitPrice = null);
+/// <summary>
+/// ما يطلب المستخدمُ إرجاعَه: سطرٌ بعينه وكمّيّةٌ منه — <b>والدفعةُ التي يُرجعها</b> للصنف المتتبَّع (ح-١٠٥).
+/// </summary>
+public sealed record RequestedReturn(int LineIndex, decimal Quantity, decimal? UnitPrice = null, string? BatchNumber = null);
 
 /// <summary>
 /// (جاهزيّةُ الإطلاق · ح-٣٧) <b>الإشعارُ المدين يُرجع السطرَ الذي اختاره المستخدم —
@@ -96,6 +100,16 @@ public class DebitNoteDraftBuilder(BrqoshDbContext db)
         if (invoice.IsForeignCurrency)
             note.SetCurrency(invoice.CurrencyCode, invoice.ExchangeRate);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٥) ‏**ولا يُخمِّن الإشعارُ المدينُ دفعةً من الشاشة.** سطرُ فاتورة الشراء لا يحمل دفعة، والدفعاتُ على
+        // ‏الاستلام — فإن بقيت للصنف المتتبَّع دفعتان أو أكثر ولم تُسمَّ واحدة، رُفض الطلبُ بأسمائها وكمّيّاتها؛ وإلا خرج مرتجعُ دفعةٍ
+        // ‏مسحوبةٍ أو تالفةٍ من غيرها بلا خطأ، واختلف رصيدُ الدفعات عن الرفّ.
+        var inv = new InventoryService(db);
+        var products = await inv.LoadProductsForLinesAsync(companyId, invoice.Lines.Select(l => l.ProductId));
+        var held = products.Values.Any(p => p.IsTracked && p.IsStockable())
+            ? await new DebitNotePostingService(db).ReceivedBatchesStillHeldAsync(
+                invoice, (await inv.GetDefaultWarehouseAsync(companyId)).Id, products, ct)
+            : [];
+
         foreach (var want in requested)
         {
             if (want.LineIndex < 0 || want.LineIndex >= returnable.Count)
@@ -113,11 +127,22 @@ public class DebitNoteDraftBuilder(BrqoshDbContext db)
                     + $"أُرجع سابقاً {line.AlreadyReturned:N2}).");
 
             var source = invoice.Lines[want.LineIndex];
+            if (string.IsNullOrWhiteSpace(want.BatchNumber) && source.ProductId is long pid
+                && products.TryGetValue(pid, out var product) && product.IsTracked && product.IsStockable())
+            {
+                var batches = held.Where(b => b.ProductId == pid && b.BatchNumber is not null && b.Left > 0m).ToList();
+                if (batches.Count > 1)
+                    throw new AccountingException(
+                        $"حدِّد الدفعةَ المُرجَعة من «{source.Description}»: "
+                        + string.Join("، ", batches.Select(b => $"{b.BatchNumber} ({b.Left:N2})")) + ".");
+            }
+
             note.AddLine(
                 source.Description, want.Quantity, want.UnitPrice ?? source.UnitPrice,
                 source.ProductId,
                 // ‏(م-٥ · ن-٥٢) ‏**الثلاثيُّ الضريبيُّ يعبر التحويل** — كما في أمر الشراء.
-                source.VatCategory, source.TaxExemptionReasonCode, source.TaxExemptionReason);
+                source.VatCategory, source.TaxExemptionReasonCode, source.TaxExemptionReason,
+                batchNumber: want.BatchNumber);
         }
 
         return note;

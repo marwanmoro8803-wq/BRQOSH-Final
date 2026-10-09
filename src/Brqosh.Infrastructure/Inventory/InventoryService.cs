@@ -135,7 +135,8 @@ public class InventoryService(BrqoshDbContext db)
     /// <summary>‏التحميلُ الحاملُ لهويّة الدفعة — وهو ما تستعمله المسارات المحوَّلة.</summary>
     public async Task<StockMovement> PostDocumentMovementAsync(long companyId, long warehouseId,
         StockMovementType type, DateOnly date, string description, string sourceDocument,
-        IEnumerable<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> lines)
+        IEnumerable<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> lines,
+        bool expiredMayLeave = false)
     {
         var costing = new InventoryCostingService(db);
         var movement = StockMovement.CreateDraft(companyId, date, type, warehouseId, description, sourceDocument: sourceDocument);
@@ -164,7 +165,7 @@ public class InventoryService(BrqoshDbContext db)
                 }
                 // التحقق من كفاية الطبقات FIFO (إن وُجدت) — التكلفة تُستهلك من المستدعي عبر CostingService
                 await ApplyBalanceDeltaAsync(companyId, warehouseId, line.ProductId, -line.Quantity,
-                    BatchRef.From(line.BatchNumber, line.ExpiryDate), date, type);
+                    BatchRef.From(line.BatchNumber, line.ExpiryDate), date, type, expiredMayLeave);
             }
         }
 
@@ -554,9 +555,9 @@ public class InventoryService(BrqoshDbContext db)
     /// أخطرُ من رفضه</b>: المستخدم يظنّ التتبّعَ عاملاً وهو مثقوب.</para>
     /// </summary>
     private async Task ApplyBalanceDeltaAsync(long companyId, long warehouseId, long productId,
-        decimal delta, BatchRef? batch, DateOnly onDate, StockMovementType type)
+        decimal delta, BatchRef? batch, DateOnly onDate, StockMovementType type, bool expiredMayLeave = false)
     {
-        await ApplyBatchDeltaAsync(companyId, warehouseId, productId, delta, batch, onDate, type);
+        await ApplyBatchDeltaAsync(companyId, warehouseId, productId, delta, batch, onDate, type, expiredMayLeave);
 
         var balance = await FindBalanceAsync(companyId, warehouseId, productId);
 
@@ -595,7 +596,7 @@ public class InventoryService(BrqoshDbContext db)
     /// </list>
     /// </summary>
     private async Task ApplyBatchDeltaAsync(long companyId, long warehouseId, long productId,
-        decimal delta, BatchRef? batch, DateOnly onDate, StockMovementType type)
+        decimal delta, BatchRef? batch, DateOnly onDate, StockMovementType type, bool expiredMayLeave = false)
     {
         var product = await db.Products.IgnoreQueryFilters().SingleAsync(x => x.Id == productId);
 
@@ -641,7 +642,9 @@ public class InventoryService(BrqoshDbContext db)
 
         row.EnsureExpiry(batch.Value.Expiry);
 
-        if (delta < 0 && type == StockMovementType.Issue && row.IsExpiredOn(onDate))
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٥) ‏**والمنتهيةُ تخرج إلى مورّدها وحدَه** — `expiredMayLeave` يمرّره مرتجعُ المشتريات لا غيرُه،
+        // ‏وافتراضيُّه الرفض: فالبيعُ والصرفُ والمطبخُ والإنتاجُ على حالها. وكان مرتجعُ الدفعة المنتهية يُدفع إلى الإتلاف فيضيع رصيدُ المورّد.
+        if (delta < 0 && type == StockMovementType.Issue && !expiredMayLeave && row.IsExpiredOn(onDate))
             throw new AccountingException(
                 $"الدفعة «{row.BatchNumber}» من '{product.NameAr}' منتهيةُ الصلاحية في "
                 + $"{row.ExpiryDate:yyyy-MM-dd} — لا تُباع. أخرِجْها بتسويةِ إتلاف.");

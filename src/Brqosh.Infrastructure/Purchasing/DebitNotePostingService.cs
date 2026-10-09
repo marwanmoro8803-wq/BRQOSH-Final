@@ -61,19 +61,30 @@ public class DebitNotePostingService(BrqoshDbContext db)
             var inv = new InventoryService(db);
             var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
             decimal inventoryReduction = 0;
-            var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+            var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
             var costing = new InventoryCostingService(db);
             var warehouse = await inv.GetDefaultWarehouseAsync(note.CompanyId);
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٥ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يخرج من الدفعات التي دخل بها.**
+            // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ متتبَّعٌ إلى مورّده أبداً.
+            var received = await ReceivedBatchesStillHeldAsync(invoice, warehouse.Id, products, token);
 
             foreach (var line in note.Lines)
             {
                 if (line.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
                 {
+                    // ‏**وتُحسم الدفعاتُ قبل استهلاك الطبقات** — فمرتجعٌ يُرفض لا يمسّ التكلفة.
+                    var draws = p.IsTracked
+                        ? DrawReturnedBatches(p, line.Quantity, line.BatchNumber, received)
+                        : null;
                     var (total, unit) = await costing.ConsumeForIssueAsync(
                         note.CompanyId, pid, warehouse.Id, line.Quantity,
                         $"DebitNote:{noteNumber}", token);
                     inventoryReduction += total;
-                    issueLines.Add((pid, line.Quantity, unit));
+                    if (draws is null)
+                        issueLines.Add((pid, line.Quantity, unit, null, null));
+                    else
+                        foreach (var draw in draws)
+                            issueLines.Add((pid, draw.Quantity, unit, draw.Batch, draw.Expiry));
                 }
             }
 
@@ -116,11 +127,153 @@ public class DebitNotePostingService(BrqoshDbContext db)
             {
                 await inv.PostDocumentMovementAsync(note.CompanyId, warehouse.Id,
                     StockMovementType.Issue, note.NoteDate,
-                    $"صرف من إشعار مدين {noteNumber}", $"DebitNote:{noteNumber}", issueLines);
+                    $"صرف من إشعار مدين {noteNumber}", $"DebitNote:{noteNumber}", issueLines,
+                    // ‏**والمنتهيةُ تعود إلى مورّدها** — وهو أشيعُ مرتجعات الصيدليّة؛ والبيعُ يبقى يرفضها.
+                    expiredMayLeave: true);
                 await db.SaveChangesAsync(token);
             }
 
             return note;
         }, ct);
+    }
+
+    /// <summary>‏دفعةٌ استُلمت لفاتورةٍ، وما يصلح إرجاعُه منها الآن.</summary>
+    internal sealed class ReceivedBatch(long productId, string? batchNumber, DateOnly? expiryDate)
+    {
+        public long ProductId { get; } = productId;
+        public string? BatchNumber { get; } = batchNumber;
+        public DateOnly? ExpiryDate { get; } = expiryDate;
+        public decimal Received { get; private set; }
+
+        /// <summary>‏ما يصلح إرجاعُه: المستلَمُ ناقصَ المُرجَع سلفاً، ومقيَّداً بما بقي ماديّاً في المستودع.</summary>
+        public decimal Left { get; set; }
+
+        public void Arrived(decimal quantity) => Received += quantity;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٥) <b>ما استُلم من كلّ دفعةٍ ولا يزال يصلح للإرجاع</b> — من سطور حركات الاستلام نفسِها
+    /// (إذونُ استلام أمر الشراء الذي تُفوتَر به الفاتورة، وإدخالُ الفاتورة نفسِها)، <b>بترتيب الاستلام</b>، ناقصاً ما أرجعته
+    /// الإشعاراتُ المرحَّلة سلفاً على أمر الشراء نفسِه (فالإذنُ يخدم فواتيرَ عدّة)، <b>ثمّ مقيَّداً بما بقي ماديّاً</b> من
+    /// الدفعة في المستودع الذي يخرج منه المرتجع — <b>فبعضُها قد بيع</b>، وليس كالمرتجع من العميل الذي يعود فيه ما خرج.
+    /// وغيرُ المتتبَّع لا يُقرأ هنا.
+    /// </summary>
+    internal async Task<List<ReceivedBatch>> ReceivedBatchesStillHeldAsync(PurchaseInvoice invoice, long warehouseId,
+        IReadOnlyDictionary<long, Product> products, CancellationToken ct)
+    {
+        var tracked = products.Values.Where(p => p.IsTracked).Select(p => p.Id).ToHashSet();
+        var received = new List<ReceivedBatch>();
+        if (tracked.Count == 0)
+            return received;
+
+        var receiptSources = new List<string>();
+        if (!string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            receiptSources.Add($"PurchaseInvoice:{invoice.InvoiceNumber}");
+        if (invoice.PurchaseOrderId is long poId)
+        {
+            var receiptNumbers = await db.GoodsReceipts.AsNoTracking()
+                .Where(g => g.CompanyId == invoice.CompanyId && g.PurchaseOrderId == poId
+                            && g.Status == GoodsReceiptStatus.Posted && g.ReceiptNumber != null)
+                .Select(g => g.ReceiptNumber!)
+                .ToListAsync(ct);
+            receiptSources.AddRange(receiptNumbers.Select(n => $"GoodsReceipt:{n}"));
+        }
+
+        // ‏**وترتيبُ الاستلام مُصرَّحٌ به لا حادث** — السطورُ مملوكةٌ بلا عمود ترتيب، وEF لا يُرتّب السطورَ داخل الحركة،
+        // ‏فتُرتَّب هنا بمفتاح الحركة ثمّ بمفتاح السطر الظلّيّ (ووصلٌ مسطّحٌ لأنّ SQLite لا يدعم `APPLY`).
+        var receipts = await db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == invoice.CompanyId && receiptSources.Contains(m.SourceDocument!)
+                        && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Receipt)
+            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, LineId = EF.Property<long>(l, "id"), Line = l })
+            .OrderBy(x => x.MovementId).ThenBy(x => x.LineId)
+            .ToListAsync(ct);
+        foreach (var line in receipts.Select(x => x.Line).Where(l => tracked.Contains(l.ProductId)))
+        {
+            var row = received.FirstOrDefault(r => r.ProductId == line.ProductId && r.BatchNumber == line.BatchNumber);
+            if (row is null)
+                received.Add(row = new ReceivedBatch(line.ProductId, line.BatchNumber, line.ExpiryDate));
+            row.Arrived(line.Quantity);
+        }
+
+        var invoiceIds = invoice.PurchaseOrderId is long order
+            ? await db.PurchaseInvoices.AsNoTracking()
+                .Where(i => i.CompanyId == invoice.CompanyId && i.PurchaseOrderId == order)
+                .Select(i => i.Id).ToListAsync(ct)
+            : [invoice.Id];
+        var returnNumbers = await db.DebitNotes.AsNoTracking()
+            .Where(n => n.CompanyId == invoice.CompanyId && invoiceIds.Contains(n.OriginalPurchaseInvoiceId)
+                        && n.Status == DebitNoteStatus.Posted && n.NoteNumber != null)
+            .Select(n => n.NoteNumber!)
+            .ToListAsync(ct);
+        var returnSources = returnNumbers.Select(n => $"DebitNote:{n}").ToList();
+        var returns = await db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == invoice.CompanyId && returnSources.Contains(m.SourceDocument!)
+                        && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Issue)
+            .ToListAsync(ct);
+        var returned = returns.SelectMany(m => m.Lines).Where(l => tracked.Contains(l.ProductId))
+            .GroupBy(l => (l.ProductId, l.BatchNumber))
+            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+
+        var held = await db.StockBatches.AsNoTracking()
+            .Where(b => b.CompanyId == invoice.CompanyId && b.WarehouseId == warehouseId && tracked.Contains(b.ProductId))
+            .ToListAsync(ct);
+        foreach (var row in received)
+        {
+            var notReturned = row.Received - returned.GetValueOrDefault((row.ProductId, row.BatchNumber));
+            // ‏وما دخل بلا دفعةٍ (قبل التتبّع) يبقى مرشَّحاً بكمّيته كي يُرفض باسمه عند بلوغه، لا أن يُسكَت عنه.
+            var onHand = row.BatchNumber is null
+                ? notReturned
+                : held.Where(b => b.ProductId == row.ProductId && b.BatchNumber == row.BatchNumber).Sum(b => b.Quantity);
+            row.Left = Math.Max(0m, Math.Min(notReturned, onHand));
+        }
+
+        return received;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٥) <b>يُقسّم كمّيةَ المرتجع على الدفعات المستلَمة</b> بترتيب الاستلام، وينقص ما خرج منها فلا
+    /// يخرج من دفعةٍ أكثرُ ممّا بقي فيها ولو تكرّر الصنفُ في الإشعار. <b>والدفعةُ التي يسمّيها السطرُ يخرج منها وحدَها.</b>
+    /// <b>وما استُلم قبل أن يُتتبَّع الصنفُ لا تُعرف دفعتُه — فيُرفض باسمه</b> ولا يُخمَّن. وما لا تغطّيه الدفعاتُ الباقيةُ
+    /// يُرفض باسمه كذلك.
+    /// </summary>
+    private static List<(string? Batch, DateOnly? Expiry, decimal Quantity)> DrawReturnedBatches(
+        Product product, decimal quantity, string? namedBatch, List<ReceivedBatch> received)
+    {
+        var draws = new List<(string? Batch, DateOnly? Expiry, decimal Quantity)>();
+        var remaining = quantity;
+        var candidates = received.Where(r => r.ProductId == product.Id && r.Left > 0m);
+        if (!string.IsNullOrWhiteSpace(namedBatch))
+        {
+            var named = candidates.FirstOrDefault(r => r.BatchNumber == namedBatch);
+            if (named is null || named.Left < quantity)
+                throw new AccountingException(
+                    $"لا يبقى من الدفعة '{namedBatch}' من '{product.NameAr}' المستلَمة في هذه الفاتورة ما يستوعب مرتجعاً بـ{quantity:N2}.");
+            candidates = [named];
+        }
+
+        // ‏**وصفُّ ما قبل التتبّع لا يحجب ما تغطّيه الدفعات** — يُتخطّى، ولا يُرفض باسمه إلا إن بقي ما لا تغطّيه؛
+        // ‏فالتتبّعُ لا يُفعَّل إلا والرصيدُ صفر، وما دخل قبله لا يكون قائماً.
+        var pretracked = false;
+        foreach (var row in candidates)
+        {
+            if (remaining <= 0m) break;
+            if (row.BatchNumber is null)
+            {
+                pretracked = true;
+                continue;
+            }
+            var take = Math.Min(remaining, row.Left);
+            draws.Add((row.BatchNumber, row.ExpiryDate, take));
+            row.Left -= take;
+            remaining -= take;
+        }
+
+        if (remaining > 0m && pretracked)
+            throw new AccountingException(
+                $"استُلم '{product.NameAr}' لهذه الفاتورة قبل أن يُتتبَّع بالدفعة — فلا يُعرف من أيّ دفعةٍ يخرج المرتجع.");
+        if (remaining > 0m)
+            throw new AccountingException(
+                $"لا يبقى من دفعات '{product.NameAr}' المستلَمة في هذه الفاتورة ما يستوعب مرتجعاً بـ{quantity:N2}.");
+        return draws;
     }
 }
