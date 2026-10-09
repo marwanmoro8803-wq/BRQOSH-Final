@@ -2404,12 +2404,18 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsurePgColumnAsync(table, "DiscountPercent", "NUMERIC(9,4) NOT NULL DEFAULT 0", ct);
                 // (CEEF-230 · ط1-١) ‏وحدةُ السطر — على الثمانية أنفسِها للسبب نفسِه.
                 await EnsurePgColumnAsync(table, "UnitCode", "character varying(16) NULL", ct);
+                // ‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏انتهاءُ الدفعة المشتراة — لفاتورة الشراء وحدَها.
+                if (table == "purchase_invoice_lines")
+                    await EnsurePgColumnAsync(table, "ExpiryDate", "DATE NULL", ct);
             }
             else
             {
                 await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
                 await EnsureSqliteColumnAsync(table, "DiscountPercent", "TEXT NOT NULL DEFAULT '0'", ct);
                 await EnsureSqliteColumnAsync(table, "UnitCode", "TEXT NULL", ct);
+                // ‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏انتهاءُ الدفعة المشتراة — لفاتورة الشراء وحدَها.
+                if (table == "purchase_invoice_lines")
+                    await EnsureSqliteColumnAsync(table, "ExpiryDate", "TEXT NULL", ct);
             }
         }
 

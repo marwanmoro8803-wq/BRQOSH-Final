@@ -124,7 +124,10 @@ public partial class PurchaseInvoiceDialog : Window
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
         {
-            invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory);
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**الدفعةُ وانتهاؤها** تسافران مع السطر — وبغيرهما يرفض المَخنَقُ الصنفَ المتتبَّع.
+            invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId, row.VatCategory,
+                batchNumber: row.BatchNumber,
+                expiryDate: row.ExpiryDate is DateTime d ? DateOnly.FromDateTime(d) : null);
         }
 
         return invoice;

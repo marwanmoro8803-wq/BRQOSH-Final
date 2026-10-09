@@ -346,7 +346,13 @@ public record SalesInvoiceLine(
     /// وحدَهما يقبلان الوحدة. وبقيّةُ المستندات الستّة التي تشترك في هذا السجلّ لا تُمرّرها
     /// — <b>فالمُصرِّفُ يضمن ألّا توجد وحدةٌ في مسارٍ لا يُحوّلها</b>، بلا حارسٍ يُنسى.</para>
     /// </summary>
-    string? UnitCode = null)
+    string? UnitCode = null,
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**انتهاءُ الدفعة المشتراة** —
+    /// ‏لفاتورة الشراء المباشرة وحدَها (تُهمَل في بقيّة المستندات التي تشترك في هذا السجلّ ولا عمودَ لها).
+    /// </summary>
+    DateOnly? ExpiryDate = null)
 {
     /// <summary>القيمةُ قبل الخصم — وهي ما يُعرض للعميل سعراً معلَناً.</summary>
     public decimal GrossAmount => Math.Round(Quantity * UnitPrice, 2, MidpointRounding.AwayFromZero);
@@ -363,4 +369,16 @@ public record SalesInvoiceLine(
     /// أكبرَ من الواجب.</para>
     /// </summary>
     public decimal LineTotal => GrossAmount - DiscountAmount;
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏**منشئٌ بلا الانتهاء لـEF وحدَه** — العمودُ مُهمَلٌ في ثمانية جداولَ من التسعة،
+    /// ‏فلا يجد EF خاصيّةً يربط بها وسيطَ المنشئ الأوّل؛ وهذا يُطابق خصائصَه المخزَّنة كلَّها.
+    /// </summary>
+    public SalesInvoiceLine(string Description, decimal Quantity, decimal UnitPrice, long? ProductId,
+        Tax.VatCategory VatCategory, string? TaxExemptionReasonCode, string? TaxExemptionReason,
+        string? BatchNumber, decimal DiscountPercent, string? UnitCode)
+        : this(Description, Quantity, UnitPrice, ProductId, VatCategory, TaxExemptionReasonCode,
+            TaxExemptionReason, BatchNumber, DiscountPercent, UnitCode, null)
+    {
+    }
 }

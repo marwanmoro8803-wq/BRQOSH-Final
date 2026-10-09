@@ -31,6 +31,9 @@ public partial class SalesInvoiceDialog : Window
         /// <summary>‏(جاهزيّةُ الإطلاق · ح-١٠٢) ‏دفعةُ السطر — يملؤها المرتجعُ من سطر الفاتورة، فيعود إليها بعينها.</summary>
         public string? BatchNumber { get; set; }
 
+        /// <summary>‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏انتهاءُ الدفعة المشتراة — لشاشة الشراء المباشر وحدَها.</summary>
+        public DateTime? ExpiryDate { get; set; }
+
         public decimal Quantity
         {
             get => _quantity;

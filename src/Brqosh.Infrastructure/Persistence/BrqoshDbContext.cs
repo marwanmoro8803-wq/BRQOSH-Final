@@ -353,6 +353,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("sales_invoice_id");
@@ -396,6 +397,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("credit_note_id");
@@ -481,6 +483,8 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**انتهاءُ دفعة الشراء المباشر** — لفاتورة الشراء وحدَها.
+                lines.Property(l => l.ExpiryDate);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("purchase_invoice_id");
@@ -1129,6 +1133,7 @@ public class BrqoshDbContext : DbContext
                 // ‏تُرفض بعده — أمّا فرضُ السقف على التسعة فثمانيةُ تضييقاتٍ لمكسبٍ أصغر،
                 // ‏وتُترك بنداً مستقلّاً إن أُريد سقفٌ موحّد.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
             });
@@ -1286,6 +1291,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("purchase_order_id");
@@ -1319,6 +1325,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("purchase_request_id");
@@ -1418,6 +1425,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("debit_note_id");
@@ -1653,6 +1661,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("sales_quotation_id");
@@ -1684,6 +1693,7 @@ public class BrqoshDbContext : DbContext
                 // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
+                lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
                 lines.WithOwner().HasForeignKey("sales_order_id");

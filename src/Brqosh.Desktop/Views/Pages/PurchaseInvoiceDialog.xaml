@@ -77,6 +77,16 @@
                                                 SelectedValuePath="Value"
                                                 DisplayMemberPath="Display"
                                                 ItemsSource="{Binding Source={x:Static ui:VatCategoryOptions.All}}"/>
+                    <!-- (جاهزيّةُ الإطلاق · ح-١٠٨) رقمُ الدفعة وصلاحيتُها — لشراء الدواء والغذاء مباشرةً بلا أمر. -->
+                    <DataGridTextColumn Header="رقم الدفعة" Binding="{Binding BatchNumber}" Width="130"/>
+                    <DataGridTemplateColumn Header="تاريخ الصلاحية" Width="150">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <DatePicker SelectedDate="{Binding ExpiryDate, UpdateSourceTrigger=PropertyChanged}"
+                                            BorderThickness="0" FontSize="13"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="الإجمالي" Binding="{Binding LineTotal, StringFormat=N2}" Width="130" IsReadOnly="True"/>
                 </DataGrid.Columns>
             </DataGrid>

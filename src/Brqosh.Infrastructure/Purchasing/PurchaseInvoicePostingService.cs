@@ -67,7 +67,9 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             if (invoice.PurchaseOrderId is null)
                 await EnsureNoOpenAccrualForUnlinkedInvoiceAsync(invoice, products, ct);
             decimal inventorySubtotal = 0;
-            var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**الدفعةُ وانتهاؤها** تسافران مع السطر إلى حركة الاستلام —
+            // ‏وكان التحميلُ القديمُ يُسقطهما فيرفض المَخنَقُ الصنفَ المتتبَّع.
+            var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
 
             // (CEEF-229 · م1-١٩) **مع إذنِ استلامٍ لا يُمَسّ 1107 إطلاقاً.**
             //
@@ -111,7 +113,8 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 {
                     inventorySubtotal += lineTotalSar;
                     receiptLines.Add((pid, line.Quantity,
-                        Math.Round(line.UnitPrice * rate, 2, MidpointRounding.AwayFromZero)));
+                        Math.Round(line.UnitPrice * rate, 2, MidpointRounding.AwayFromZero),
+                        line.BatchNumber, line.ExpiryDate));
                     continue;
                 }
 

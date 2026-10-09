@@ -83,7 +83,8 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
 
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
-        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
+        string? batchNumber = null, DateOnly? expiryDate = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -91,7 +92,12 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         if (quantity <= 0 || unitPrice < 0)
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**الدفعةُ وانتهاؤها** — ‏يحملهما سطرُ الشراء المباشر إلى حركة الاستلام؛ ‏والانتهاءُ بلا دفعةٍ لا معنى له.
+        var batch = string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim();
+        if (expiryDate is not null && batch is null)
+            throw new AccountingException("تاريخُ الانتهاء يلزمه رقمُ دفعة — حدّد الدفعةَ أو اترك الانتهاء فارغاً.");
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
+            BatchNumber: batch, ExpiryDate: expiryDate));
         RecalculateTotals();
     }
 

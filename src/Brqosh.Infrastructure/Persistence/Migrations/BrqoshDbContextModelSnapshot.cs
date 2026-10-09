@@ -5720,6 +5720,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                                 .HasPrecision(9, 4)
                                 .HasColumnType("numeric(9,4)");
 
+                            b1.Property<DateOnly?>("ExpiryDate")
+                                .HasColumnType("date");
+
                             b1.Property<long?>("ProductId")
                                 .HasColumnType("bigint");
 
