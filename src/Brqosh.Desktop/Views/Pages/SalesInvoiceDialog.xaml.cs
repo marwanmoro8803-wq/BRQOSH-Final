@@ -28,6 +28,9 @@ public partial class SalesInvoiceDialog : Window
         public long? ProductId { get; set; }
         public string? Description { get; set; }
 
+        /// <summary>‏(جاهزيّةُ الإطلاق · ح-١٠٢) ‏دفعةُ السطر — يملؤها المرتجعُ من سطر الفاتورة، فيعود إليها بعينها.</summary>
+        public string? BatchNumber { get; set; }
+
         public decimal Quantity
         {
             get => _quantity;

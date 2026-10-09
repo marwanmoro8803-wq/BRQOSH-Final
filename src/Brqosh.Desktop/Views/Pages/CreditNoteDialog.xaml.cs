@@ -79,17 +79,19 @@ public partial class CreditNoteDialog : Window
 
         _invoice = invoice;
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٢) ‏**والمُرجَعُ سلفاً يُطرح من دفعته لا من الصنف كلِّه** — وكان مرتجعٌ بخمسٍ من فاتورةٍ
+        // ‏بسطرين (٤ من دفعةٍ و٣ من أخرى) يُخفي السطرين معاً، فلا يُرجَع الباقي من الشاشة أبداً.
         var alreadyReturned = postedNotes
             .SelectMany(n => n.Lines)
             .Where(l => l.ProductId is not null)
-            .GroupBy(l => l.ProductId!.Value)
+            .GroupBy(l => (l.ProductId!.Value, l.BatchNumber))
             .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
 
         _rows.Clear();
         foreach (var line in invoice.Lines)
         {
             var returnable = line.Quantity
-                - (line.ProductId is long pid ? alreadyReturned.GetValueOrDefault(pid) : 0m);
+                - (line.ProductId is long pid ? alreadyReturned.GetValueOrDefault((pid, line.BatchNumber)) : 0m);
             if (returnable <= 0m)
                 continue;
 
@@ -97,6 +99,7 @@ public partial class CreditNoteDialog : Window
             {
                 ProductId = line.ProductId,
                 Description = line.Description,
+                BatchNumber = line.BatchNumber,
                 Quantity = returnable,
                 UnitPrice = line.UnitPrice,
                 VatCategory = line.VatCategory,
@@ -170,7 +173,7 @@ public partial class CreditNoteDialog : Window
             foreach (var row in _rows.Where(r => !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
                 note.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice,
                     row.ProductId, row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason,
-                    discountPercent: row.DiscountPercent);
+                    discountPercent: row.DiscountPercent, batchNumber: row.BatchNumber);
 
             // ‏(جاهزيّةُ الإطلاق · ح-٦) ‏**وحصّةُ المرتجع من خصم المستند.**
             //

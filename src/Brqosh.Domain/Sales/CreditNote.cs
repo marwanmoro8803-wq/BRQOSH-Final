@@ -193,7 +193,7 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
         string? taxExemptionReasonCode = null, string? taxExemptionReason = null,
-        decimal discountPercent = 0m)
+        decimal discountPercent = 0m, string? batchNumber = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(description))
@@ -226,7 +226,10 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
             throw new AccountingException("نسبةُ خصم السطر بين صفرٍ ومئة.");
 
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory,
-            taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(), DiscountPercent: discountPercent));
+            taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٢) ‏**والدفعةُ المرتجَعةُ تُسمّى** — تنسخها الشاشةُ من سطر الفاتورة، فيعود المرتجعُ إليها لا إلى أقدم ما بيع.
+            BatchNumber: string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim(),
+            DiscountPercent: discountPercent));
         RecalculateTotals();
     }
 

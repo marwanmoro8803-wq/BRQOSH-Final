@@ -70,7 +70,10 @@ public class CreditNotePostingService(BrqoshDbContext db)
         var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
         var originalCosts = await ResolveOriginalSaleUnitCostsAsync(invoice, ct);
         decimal cogsReversal = 0;
-        var returnLines = new List<(long ProductId, decimal Qty, decimal UnitCost)>();
+        var returnLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٢ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يعود إلى دفعاته.**
+        // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ بإشعارٍ دائنٍ أبداً.
+        var soldOut = await SoldBatchesStillOutAsync(invoice, previousCredits, products, ct);
 
         foreach (var line in note.Lines)
         {
@@ -79,9 +82,20 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 var unitCost = originalCosts.TryGetValue(pid, out var original)
                     ? original
                     : product.WeightedAverageCost;
-                var cost = Math.Round(line.Quantity * unitCost, 2, MidpointRounding.AwayFromZero);
-                cogsReversal += cost;
-                returnLines.Add((pid, line.Quantity, unitCost));
+                if (!product.IsTracked)
+                {
+                    cogsReversal += Math.Round(line.Quantity * unitCost, 2, MidpointRounding.AwayFromZero);
+                    returnLines.Add((pid, line.Quantity, unitCost, null, null));
+                    continue;
+                }
+
+                // ‏**وكلُّ دفعةٍ تعود بتكلفتها هي** — وكانت تكلفةُ آخر سطرٍ للصنف تُعكس على الكلّ، وسطورُ الصنف
+                // ‏المتتبَّع سطرٌ لكلّ دفعةٍ بطبقاتٍ مختلفة: مرتجعُ أربعٍ بعشرةٍ يُعكس بثمانيةٍ وأربعين لا بأربعين.
+                foreach (var draw in DrawReturnedBatches(product, line.Quantity, line.BatchNumber, soldOut))
+                {
+                    cogsReversal += Math.Round(draw.Quantity * draw.UnitCost, 2, MidpointRounding.AwayFromZero);
+                    returnLines.Add((pid, draw.Quantity, draw.UnitCost, draw.Batch, draw.Expiry));
+                }
             }
         }
 
@@ -186,6 +200,112 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"الكمية المرتجعة {quantity:N2} تتجاوز المتاح للإرجاع {returnable:N2} من هذا الصنف.");
         }
+    }
+
+    /// <summary>‏دفعةٌ بيع منها صنفٌ متتبَّع، وما بقي منها عند العميل بعد ما أُرجع سلفاً.</summary>
+    private sealed class SoldBatch(long productId, string? batchNumber, DateOnly? expiryDate)
+    {
+        public long ProductId { get; } = productId;
+        public string? BatchNumber { get; } = batchNumber;
+        public DateOnly? ExpiryDate { get; } = expiryDate;
+        public decimal Out { get; set; }
+        public decimal Sold { get; private set; }
+        private decimal _cost;
+
+        /// <summary>‏تكلفةُ ما خرج من هذه الدفعة — متوسّطاً موزوناً إن تعدّدت سطورُها.</summary>
+        public decimal UnitCost => Sold == 0m ? 0m : _cost / Sold;
+
+        public void Issued(decimal quantity, decimal unitCost)
+        {
+            Sold += quantity;
+            Out += quantity;
+            _cost += quantity * unitCost;
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٢) <b>ما بيع من كلّ دفعةٍ ولم يُرجَع بعد</b> — من سطور حركة البيع نفسِها (وهي تحمل الدفعة
+    /// منذ CEEF-230) ناقصاً سطورَ مرتجعات الإشعارات المرحّلة قبله على الفاتورة نفسِها؛ <b>بترتيب البيع</b>، فيعود المرتجعُ
+    /// إلى الدفعات بالترتيب الذي خرج به. وغيرُ المتتبَّع لا يُقرأ هنا.
+    /// </summary>
+    private async Task<List<SoldBatch>> SoldBatchesStillOutAsync(SalesInvoice invoice,
+        IReadOnlyList<CreditNote> previousCredits, IReadOnlyDictionary<long, Product> products, CancellationToken ct)
+    {
+        var tracked = products.Values.Where(p => p.IsTracked).Select(p => p.Id).ToHashSet();
+        var sold = new List<SoldBatch>();
+        if (tracked.Count == 0 || string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            return sold;
+
+        var saleSource = $"SalesInvoice:{invoice.InvoiceNumber}";
+        // ‏**وترتيبُ البيع مُصرَّحٌ به لا حادث** — السطورُ مملوكةٌ بلا عمود ترتيب، وEF لا يُرتّب السطورَ داخل الحركة،
+        // ‏فتُرتَّب هنا بمفتاح الحركة ثمّ بمفتاح السطر الظلّيّ.
+        var sales = await db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == invoice.CompanyId && m.SourceDocument == saleSource
+                        && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Issue)
+            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, LineId = EF.Property<long>(l, "id"), Line = l })
+            .OrderBy(x => x.MovementId).ThenBy(x => x.LineId)
+            .ToListAsync(ct);
+        foreach (var line in sales.Select(x => x.Line).Where(l => tracked.Contains(l.ProductId)))
+        {
+            var row = sold.FirstOrDefault(s => s.ProductId == line.ProductId && s.BatchNumber == line.BatchNumber);
+            if (row is null)
+                sold.Add(row = new SoldBatch(line.ProductId, line.BatchNumber, line.ExpiryDate));
+            row.Issued(line.Quantity, line.UnitCost);
+        }
+
+        var returnSources = previousCredits.Where(n => n.NoteNumber is not null)
+            .Select(n => $"CreditNote:{n.NoteNumber}").ToList();
+        var returns = await db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == invoice.CompanyId && returnSources.Contains(m.SourceDocument!)
+                        && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.SalesReturn)
+            .ToListAsync(ct);
+        foreach (var line in returns.SelectMany(m => m.Lines).Where(l => tracked.Contains(l.ProductId)))
+        {
+            var row = sold.FirstOrDefault(s => s.ProductId == line.ProductId && s.BatchNumber == line.BatchNumber);
+            if (row is not null)
+                row.Out -= line.Quantity;
+        }
+
+        return sold;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٢) <b>يُقسّم كمّيّةَ المرتجع على دفعات البيع</b>، وينقص ما خرج منها فلا يُرجَع إلى دفعةٍ
+    /// أكثرُ ممّا بيع منها ولو تكرّر الصنفُ في الإشعار. <b>والدفعةُ التي يسمّيها سطرُ الإشعار يعود إليها وحدَها</b> — فالشاشةُ
+    /// تنسخها من سطر الفاتورة، ومرتجعُ الدفعة القريبة الانتهاء لا يُقيَّد على البعيدة؛ <b>وبترتيب البيع حين لا يُسمّي</b>.
+    /// <b>وما بيع قبل أن يُتتبَّع الصنفُ لا يُعرف إلى أيّ دفعةٍ يعود — فيُرفض باسمه</b> ولا يُخمَّن.
+    /// </summary>
+    private static List<(string? Batch, DateOnly? Expiry, decimal Quantity, decimal UnitCost)> DrawReturnedBatches(
+        Product product, decimal quantity, string? namedBatch, List<SoldBatch> soldOut)
+    {
+        var draws = new List<(string? Batch, DateOnly? Expiry, decimal Quantity, decimal UnitCost)>();
+        var remaining = quantity;
+        var candidates = soldOut.Where(s => s.ProductId == product.Id && s.Out > 0m);
+        if (!string.IsNullOrWhiteSpace(namedBatch))
+        {
+            var named = candidates.FirstOrDefault(s => s.BatchNumber == namedBatch);
+            if (named is null || named.Out < quantity)
+                throw new AccountingException(
+                    $"لا يبقى من الدفعة '{namedBatch}' من '{product.NameAr}' المبيعة في هذه الفاتورة ما يستوعب مرتجعاً بـ{quantity:N2}.");
+            candidates = [named];
+        }
+
+        foreach (var row in candidates)
+        {
+            if (remaining <= 0m) break;
+            if (row.BatchNumber is null)
+                throw new AccountingException(
+                    $"بيع '{product.NameAr}' في هذه الفاتورة قبل أن يُتتبَّع بالدفعة — فلا يُعرف إلى أيّ دفعةٍ يعود المرتجع.");
+            var take = Math.Min(remaining, row.Out);
+            draws.Add((row.BatchNumber, row.ExpiryDate, take, row.UnitCost));
+            row.Out -= take;
+            remaining -= take;
+        }
+
+        if (remaining > 0m)
+            throw new AccountingException(
+                $"لا يبقى من دفعات '{product.NameAr}' المبيعة في هذه الفاتورة ما يستوعب مرتجعاً بـ{quantity:N2}.");
+        return draws;
     }
 
     private async Task<Dictionary<long, decimal>> ResolveOriginalSaleUnitCostsAsync(
