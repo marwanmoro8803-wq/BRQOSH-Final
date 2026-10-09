@@ -139,7 +139,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
     /// </summary>
     public JournalEntry Post(string noteNumber, Account purchasesOrInventory, Account vatInput,
         Account payable, decimal inventoryReduction = 0m, Account? inventoryAccount = null,
-        Account? purchasesExpense = null, bool vatDeductible = true)
+        Account? purchasesExpense = null, bool vatDeductible = true, Account? priceVariance = null)
     {
         EnsureDraft();
         if (_lines.Count == 0) throw new AccountingException("إشعار المدين بلا سطور.");
@@ -167,6 +167,18 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
         var nonInv = (vatDeductible ? Subtotal : this.GrandTotal()) - inventoryReduction;
         if (nonInv > 0)
             entry.AddLine(purchasesExpense ?? purchasesOrInventory, 0m, nonInv, "تخفيض مشتريات/مصروف");
+        else if (nonInv < 0)
+        {
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٧ · كشفه العمل) ‏**مرتجعٌ مُسعَّرٌ دون تكلفته: الفرقُ خسارةٌ تتحمّلها
+            // ‏المنشأة — مدينٌ في «فروق أسعار المشتريات» 5108.** كانت الفروعُ تسكت عن `nonInv < 0`
+            // ‏فيخرج القيدُ غيرَ متوازنٍ ويُرفض، فيستحيل أن يُدائن المورّدُ بأقلَّ من تكلفة ما يُرجَع.
+            // ‏**دائنُ المخزون يبقى = الطبقاتِ المستهلكة** فلا ينفصل الأستاذُ عنها، ولا يُدان المخزون.
+            // ‏والفرقُ بين سعر الاستلام المحمول وسعر الرد هو تعريفُ فرق السعر، ويتّسق مع
+            // ‏غير القابل للخصم (الوعاءُ هناك GrandTotal).
+            if (priceVariance is null)
+                throw new AccountingException("حساب فروق أسعار المشتريات مطلوب لمرتجعٍ مُسعَّر دون تكلفته.");
+            entry.AddLine(priceVariance, -nonInv, 0m, "خسارة مرتجع مُسعَّر دون التكلفة");
+        }
 
         if (vatDeductible && VatAmount > 0)
             entry.AddLine(vatInput, 0m, VatAmount, "تخفيض ضريبة المدخلات 15%");

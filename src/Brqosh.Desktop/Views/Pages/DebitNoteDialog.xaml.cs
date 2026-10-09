@@ -42,6 +42,12 @@ public partial class DebitNoteDialog : Window
             .ToList();
 
         InvoiceBox.SelectionChanged += async (_, _) => await LoadLinesAsync();
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٧) ‏**السعرُ يُملأ من سطر الفاتورة** — وكان يبدأ بصفر، فخطأُ كتابةٍ يصير مرتجعاً دون التكلفة.
+        LineBox.SelectionChanged += (_, _) =>
+        {
+            if (LineBox.SelectedItem is LineOption picked)
+                PriceBox.Text = picked.UnitPrice.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
+        };
         if (InvoiceBox.Items.Count > 0) InvoiceBox.SelectedIndex = 0;
     }
 
@@ -107,7 +113,8 @@ public partial class DebitNoteDialog : Window
                 [new RequestedReturn(line.Index, qty, price,
                     string.IsNullOrWhiteSpace(BatchBox.Text) ? null : BatchBox.Text.Trim())]);
 
-            await facade.GetService<DebitNotePostingService>().PostAsync(note);
+            await facade.GetService<DebitNotePostingService>().PostAsync(note,
+                acceptBelowCost: AcceptBelowCostBox.IsChecked == true);
             DialogResult = true;
             Close();
         }

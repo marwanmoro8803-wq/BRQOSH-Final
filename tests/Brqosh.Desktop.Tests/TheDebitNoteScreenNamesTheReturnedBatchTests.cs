@@ -33,6 +33,19 @@ public class TheDebitNoteScreenNamesTheReturnedBatchTests
         Assert.Contains("BatchBox.Text", call, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// ‏(ح-١٠٧ · <c>found#7</c>) <b>وما دون التكلفة يُؤكَّد في الشاشة، والسعرُ يُملأ من سطر الفاتورة</b> — وكان يبدأ بصفر، فخطأُ كتابةٍ
+    /// يصير مرتجعاً دون التكلفة؛ والخدمةُ ترفضه بلا تأكيد.
+    /// </summary>
+    [Fact]
+    public void BelowCost_IsConfirmedOnScreen_AndThePriceIsPrefilled()
+    {
+        Assert.Contains("x:Name=\"AcceptBelowCostBox\"", Page("DebitNoteDialog.xaml"), StringComparison.Ordinal);
+        var source = Page("DebitNoteDialog.xaml.cs");
+        Assert.Contains("acceptBelowCost: AcceptBelowCostBox.IsChecked == true", source, StringComparison.Ordinal);
+        Assert.Contains("PriceBox.Text = picked.UnitPrice", source, StringComparison.Ordinal);
+    }
+
     private static string RepositoryRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

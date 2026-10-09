@@ -15,7 +15,7 @@ namespace Brqosh.Infrastructure.Purchasing;
 
 public class DebitNotePostingService(BrqoshDbContext db)
 {
-    public async Task<DebitNote> PostAsync(DebitNote note, CancellationToken ct = default)
+    public async Task<DebitNote> PostAsync(DebitNote note, CancellationToken ct = default, bool acceptBelowCost = false)
     {
         SecurityContext.EnsureCanPost();
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
@@ -30,6 +30,10 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 throw new AccountingException("لا يصدر إشعار مدين إلا على فاتورة مرحّلة.");
             if (invoice.SupplierId != note.SupplierId)
                 throw new AccountingException("مورد الإشعار لا يطابق فاتورة المشتريات.");
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٧ · ‏`found#7`) ‏**وعملةُ الإشعار عملةُ فاتورته وسعرُها** — وإلّا قورنت قيمةٌ بالدولار بطبقاتٍ بالريال.
+            if (note.CurrencyCode != invoice.CurrencyCode || note.ExchangeRate != invoice.ExchangeRate)
+                throw new AccountingException(
+                    $"عملةُ الإشعار ({note.CurrencyCode} @ {note.ExchangeRate}) لا تطابق فاتورته ({invoice.CurrencyCode} @ {invoice.ExchangeRate}).");
 
             await BranchAssignmentHelper.EnsureAssignedAsync(note, db, invoice.BranchId, token);
 
@@ -67,6 +71,8 @@ public class DebitNotePostingService(BrqoshDbContext db)
             // ‏(جاهزيّةُ الإطلاق · ح-١٠٥ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يخرج من الدفعات التي دخل بها.**
             // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ متتبَّعٌ إلى مورّده أبداً.
             var received = await ReceivedBatchesStillHeldAsync(invoice, warehouse.Id, products, token);
+            // ‏(ح-١٠٧) ‏**وتحت FIFO تُستهلك طبقاتُ هذه الفاتورة وإذوناتِها أوّلاً** — وكانت أقدمُ طبقات المستودع، فيُقاس فرقُ سعرٍ لم يقع.
+            var receiptSources = await ReceiptSourcesAsync(invoice, token);
 
             foreach (var line in note.Lines)
             {
@@ -78,7 +84,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
                         : null;
                     var (total, unit) = await costing.ConsumeForIssueAsync(
                         note.CompanyId, pid, warehouse.Id, line.Quantity,
-                        $"DebitNote:{noteNumber}", token);
+                        $"DebitNote:{noteNumber}", token, preferredSources: receiptSources);
                     inventoryReduction += total;
                     if (draws is null)
                         issueLines.Add((pid, line.Quantity, unit, null, null));
@@ -98,8 +104,22 @@ public class DebitNotePostingService(BrqoshDbContext db)
                     a.CompanyId == note.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.Inventory, token)
                 : null;
 
+            // (جاهزيّةُ الإطلاق · ح-١٠٧) ‏**المرتجعُ المُسعَّر دون التكلفة يحتاج حسابَ الفرق** — يُوفَّر
+            // ‏عند الحاجة فقط كي لا يُنشأ لمن لا يستعمله.
+            note.RecalculateTotals();
+            var credited = invoice.VatDeductible ? note.Subtotal : note.GrandTotal();
+            // ‏(ح-١٠٧) ‏**وما دون التكلفة لا يُرحَّل إلا بتأكيدٍ صريح** — فالرفضُ القديمُ كان الحارسَ الوحيدَ على خطأ كتابة السعر،
+            // ‏والفرقُ بلا تأكيدٍ خسارةٌ صامتة. والرسالةُ تُسمّي المبالغَ الثلاثة كي يُقرَّر بها.
+            if (inventoryReduction > credited && !acceptBelowCost)
+                throw new AccountingException(
+                    $"يُدائَن المرتجعُ بـ{credited:N2} وتكلفتُه {inventoryReduction:N2} — والفرقُ {inventoryReduction - credited:N2} "
+                    + "خسارةٌ في «فروق أسعار المشتريات». راجِع السعر، أو أكِّد المرتجعَ دون التكلفة إن كان مقصوداً.");
+            var variance = inventoryReduction > credited
+                ? await PurchaseAccountProvisioning.PriceVarianceAsync(db, note.CompanyId, token)
+                : null;
+
             var entry = note.Post(noteNumber, purchases, vatInput, payable, inventoryReduction, inventory, purchases,
-                invoice.VatDeductible);
+                invoice.VatDeductible, variance);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(note.CompanyId, note.NoteDate, token);
             entry.Post(entryNumber);
 
@@ -137,6 +157,25 @@ public class DebitNotePostingService(BrqoshDbContext db)
         }, ct);
     }
 
+    /// <summary>‏مصادرُ ما دخل لهذه الفاتورة: إدخالُها نفسُه وإذونُ استلام أمر الشراء المرحَّلة.</summary>
+    private async Task<List<string>> ReceiptSourcesAsync(PurchaseInvoice invoice, CancellationToken ct)
+    {
+        var receiptSources = new List<string>();
+        if (!string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            receiptSources.Add($"PurchaseInvoice:{invoice.InvoiceNumber}");
+        if (invoice.PurchaseOrderId is long poId)
+        {
+            var receiptNumbers = await db.GoodsReceipts.AsNoTracking()
+                .Where(g => g.CompanyId == invoice.CompanyId && g.PurchaseOrderId == poId
+                            && g.Status == GoodsReceiptStatus.Posted && g.ReceiptNumber != null)
+                .Select(g => g.ReceiptNumber!)
+                .ToListAsync(ct);
+            receiptSources.AddRange(receiptNumbers.Select(n => $"GoodsReceipt:{n}"));
+        }
+
+        return receiptSources;
+    }
+
     /// <summary>‏دفعةٌ استُلمت لفاتورةٍ، وما يصلح إرجاعُه منها الآن.</summary>
     internal sealed class ReceivedBatch(long productId, string? batchNumber, DateOnly? expiryDate)
     {
@@ -166,18 +205,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
         if (tracked.Count == 0)
             return received;
 
-        var receiptSources = new List<string>();
-        if (!string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
-            receiptSources.Add($"PurchaseInvoice:{invoice.InvoiceNumber}");
-        if (invoice.PurchaseOrderId is long poId)
-        {
-            var receiptNumbers = await db.GoodsReceipts.AsNoTracking()
-                .Where(g => g.CompanyId == invoice.CompanyId && g.PurchaseOrderId == poId
-                            && g.Status == GoodsReceiptStatus.Posted && g.ReceiptNumber != null)
-                .Select(g => g.ReceiptNumber!)
-                .ToListAsync(ct);
-            receiptSources.AddRange(receiptNumbers.Select(n => $"GoodsReceipt:{n}"));
-        }
+        var receiptSources = await ReceiptSourcesAsync(invoice, ct);
 
         // ‏**وترتيبُ الاستلام مُصرَّحٌ به لا حادث** — السطورُ مملوكةٌ بلا عمود ترتيب، وEF لا يُرتّب السطورَ داخل الحركة،
         // ‏فتُرتَّب هنا بمفتاح الحركة ثمّ بمفتاح السطر الظلّيّ (ووصلٌ مسطّحٌ لأنّ SQLite لا يدعم `APPLY`).

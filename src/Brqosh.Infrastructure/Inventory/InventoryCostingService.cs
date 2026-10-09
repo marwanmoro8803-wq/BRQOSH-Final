@@ -68,7 +68,7 @@ public class InventoryCostingService(BrqoshDbContext db)
     /// </summary>
     public async Task<(decimal TotalCost, decimal UnitCost)> ConsumeForIssueAsync(
         long companyId, long productId, long warehouseId, decimal qty,
-        string sourceDocument, CancellationToken ct = default)
+        string sourceDocument, CancellationToken ct = default, IReadOnlyCollection<string>? preferredSources = null)
     {
         var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId, ct);
         if (!product.IsStockable())
@@ -82,7 +82,7 @@ public class InventoryCostingService(BrqoshDbContext db)
             return (total, product.WeightedAverageCost);
         }
 
-        return await ConsumeFifoAsync(companyId, productId, warehouseId, qty, sourceDocument, ct);
+        return await ConsumeFifoAsync(companyId, productId, warehouseId, qty, sourceDocument, ct, preferredSources);
     }
 
     public async Task OnSalesReturnAsync(
@@ -206,7 +206,7 @@ public class InventoryCostingService(BrqoshDbContext db)
 
     private async Task<(decimal TotalCost, decimal UnitCost)> ConsumeFifoAsync(
         long companyId, long productId, long warehouseId, decimal qty,
-        string sourceDocument, CancellationToken ct)
+        string sourceDocument, CancellationToken ct, IReadOnlyCollection<string>? preferredSources = null)
     {
         var layers = await db.InventoryCostLayers
             .Where(l => l.CompanyId == companyId
@@ -228,6 +228,12 @@ public class InventoryCostingService(BrqoshDbContext db)
                 .ThenBy(l => l.Id)
                 .ToListAsync(ct);
         }
+
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٧) ‏**مصادرُ مفضَّلةٌ تُستهلك أوّلاً** — مرتجعُ المشتريات يُخرج طبقاتِ فاتورته لا أقدمَ ما في المستودع،
+        // ‏ثمّ ما بقي بترتيب FIFO نفسِه. وبلا تفضيلٍ لا يتغيّر شيء.
+        if (preferredSources is { Count: > 0 })
+            layers = layers.OrderBy(l => preferredSources.Contains(l.SourceDocument) ? 0 : 1)
+                .ThenBy(l => l.ReceivedDate).ThenBy(l => l.Id).ToList();
 
         var available = layers.Sum(l => l.RemainingQuantity);
         if (available + 0.0001m < qty)
