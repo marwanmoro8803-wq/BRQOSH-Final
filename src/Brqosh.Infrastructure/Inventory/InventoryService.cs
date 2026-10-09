@@ -22,6 +22,10 @@ namespace Brqosh.Infrastructure.Inventory;
 /// </summary>
 public class InventoryService(BrqoshDbContext db)
 {
+    // ‏(جاهزيّةُ الإطلاق · ح-١١٢) ‏**مصادرُ عُكست تكلفتُها في وحدة العمل هذه، باتّجاهها.** الطبقاتُ مفتاحُها المستند لا الحركة، والإلغاءُ يعكس
+    // ‏حركةً حركة — فمستندٌ بحركتين (فاتورةٌ ووصفةُ مطبخها، إشعارٌ مدينٌ من مستودعين) كانت تُرمَّم طبقاتُه مرّتين.
+    private readonly HashSet<(string Source, bool Inbound)> _costReversed = [];
+
     public async Task<Warehouse> GetDefaultWarehouseAsync(long companyId)
     {
         var warehouse = await db.Warehouses
@@ -441,9 +445,14 @@ public class InventoryService(BrqoshDbContext db)
             // مربوطاً بالمستند، فيُعاد بعينه.
             if (!string.IsNullOrWhiteSpace(movement.SourceDocument))
             {
+                // ‏(ح-١١٢) ‏رُمِّم المستهلَكُ كلُّه باسم المستند مع حركته الأولى — فلا يُرمَّم ثانيةً.
+                if (_costReversed.Contains((movement.SourceDocument, false)))
+                    return;
                 var costing = new InventoryCostingService(db);
                 var restored = await costing.RestoreConsumedLayersAsync(
                     movement.CompanyId, movement.SourceDocument);
+                if (restored)
+                    _costReversed.Add((movement.SourceDocument, false));
 
                 // (جاهزيّةُ الإطلاق · ح-٣١ب) ‏**و«لا سجلّ» لا يُبتلع.**
                 //
@@ -483,12 +492,18 @@ public class InventoryService(BrqoshDbContext db)
 
         // (CEEF-229 · م0-٣ب) وللداخل: تُزال الطبقةُ التي أنشأها هذا المستند بعينها.
         // ‏وإن لم توجد طبقاتٌ (منشأةٌ على المتوسط المرجّح) فالعكسُ بحساب المتوسط وحده.
+        // ‏(ح-١١٢) ‏وطبقاتُ المستند كلُّها أُزيلت مع حركته الأولى — فلا تسقط الثانيةُ إلى عكس المتوسّط ثانيةً.
+        if (!string.IsNullOrWhiteSpace(movement.SourceDocument) && _costReversed.Contains((movement.SourceDocument, true)))
+            return;
         var layersRemoved = !string.IsNullOrWhiteSpace(movement.SourceDocument)
             && await new InventoryCostingService(db)
                 .ReverseReceiptLayersAsync(movement.CompanyId, movement.SourceDocument);
 
         if (layersRemoved)
+        {
+            _costReversed.Add((movement.SourceDocument!, true));
             return;
+        }
 
         // (CEEF-229 · م0-٥ / I-NEW-2) ‏**التجميعُ بالصنف قبل عكس التكلفة.**
         //
