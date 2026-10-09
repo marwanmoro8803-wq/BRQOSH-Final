@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 61 بنداً ✅ و17 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 61 بنداً ✅ و18 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ وإغلاقٌ واحدٌ في الحملة كلِّها** (ح-١…ح-١٠١) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وإغلاقان في الحملة كلِّها** (ح-١…ح-١٠٢) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -135,7 +135,7 @@
 - ✅ **`order-to-cash-procure-to-pay-inventory#4`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Stock-count surpluses (and manual adjustments in) are credited straight to retained earnings instead of the income statement — ح-٢٣ `e46e028`
 - ✅ **`order-to-cash-procure-to-pay-inventory#5`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Debit note under FIFO records its layer consumption under the empty key 'DebitNote:', and cancellation creates a new layer instead of restoring the consumed ones (the م0-٣ defect class again) — ح-٣١ `1076202`
 - ✅ **`order-to-cash-procure-to-pay-inventory#6`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Debit note screen can return only the invoice's first product, whatever the user types; it ignores VAT category and has no per-product quantity check against the invoice — ح-٣٧ `90da002`
-- ☐ **`order-to-cash-procure-to-pay-inventory#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Batch- or serial-tracked products cannot be returned, stock-counted, sold through a sales order, or bought through the PO auto-GRN or a manual purchase invoice
+- ◐ **`order-to-cash-procure-to-pay-inventory#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>Batch- or serial-tracked products cannot be returned, stock-counted, sold through a sales order, or bought through the PO auto-GRN or a manual purchase invoice — ح-١٠٢ `f5f9898` — **المرتجعُ المتتبَّعُ يعود إلى الدفعات التي بيع منها**: الشاشةُ تنسخ دفعةَ سطر الفاتورة إلى الإشعار فيعود إليها وحدَها (ودفعةٌ مسمّاةٌ لا تستوعبه تُرفض باسمها)، وبلا اسمٍ يُقسَّم على دفعات حركة البيع بترتيبها ناقصاً ما أرجعته الإشعاراتُ قبله؛ وكلُّ دفعةٍ تُعكس بتكلفتها، والمُرجَعُ سلفاً يُطرح في الشاشة من دفعته، وما بيع قبل التتبّع يُرفض باسمه؛ **ويبقى — ولذا ◐**: الجردُ، والبيعُ عبر أمر البيع، والاستلامُ الآليّ من أمر الشراء، وفاتورةُ الشراء اليدويّة، ومرتجعُ المشتريات (الإشعارُ المدين)؛ **والمرتجعُ يدخل المستودعَ الافتراضيَّ لا مستودعَ البيع** (`#12`)
 - ☐ **`order-to-cash-procure-to-pay-inventory#8`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Order-to-cash is broken in the UI: sales orders are one free-text line with no product or VAT category, and quotation→order conversion and quotation accept/reject have no UI
 - ✅ **`order-to-cash-procure-to-pay-inventory#9`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>Invoicing a sales order back-dates the tax invoice to the order date, and does it outside one transaction — ح-٣٣ `77ed9dc`
 - ✅ **`order-to-cash-procure-to-pay-inventory#10`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Credit note against a foreign-currency invoice copies foreign unit prices into a SAR document, and the ZATCA credit note is issued in SAR — ح-٣٥ `67b3635`
