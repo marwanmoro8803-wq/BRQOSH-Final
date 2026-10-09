@@ -65,12 +65,15 @@ public class DebitNotePostingService(BrqoshDbContext db)
             var inv = new InventoryService(db);
             var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
             decimal inventoryReduction = 0;
-            var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
+            var issueLines = new List<(long WarehouseId, long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
             var costing = new InventoryCostingService(db);
-            var warehouse = await inv.GetDefaultWarehouseAsync(note.CompanyId);
+            var defaultWarehouse = await inv.GetDefaultWarehouseAsync(note.CompanyId);
             // ‏(جاهزيّةُ الإطلاق · ح-١٠٥ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يخرج من الدفعات التي دخل بها.**
             // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ متتبَّعٌ إلى مورّده أبداً.
-            var received = await ReceivedBatchesStillHeldAsync(invoice, warehouse.Id, products, token);
+            var received = await ReceivedBatchesStillHeldAsync(invoice, products, token);
+            // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المرتجعُ يخرج من المستودع الذي دخلت إليه بضاعةُ الفاتورة** —
+            // ‏المتتبَّعُ من مستودع دفعته، وغيرُ المتتبَّع من أوّل مستودعٍ استلمه، وإلا الافتراضيّ. وتغييرُ الافتراضيّ بعد الشراء لا يُحوِّله.
+            var receiptWarehouses = await ReceiptWarehousesAsync(invoice, token);
             // ‏(ح-١٠٧) ‏**وتحت FIFO تُستهلك طبقاتُ هذه الفاتورة وإذوناتِها أوّلاً** — وكانت أقدمُ طبقات المستودع، فيُقاس فرقُ سعرٍ لم يقع.
             var receiptSources = await ReceiptSourcesAsync(invoice, token);
 
@@ -82,15 +85,22 @@ public class DebitNotePostingService(BrqoshDbContext db)
                     var draws = p.IsTracked
                         ? DrawReturnedBatches(p, line.Quantity, line.BatchNumber, received)
                         : null;
-                    var (total, unit) = await costing.ConsumeForIssueAsync(
-                        note.CompanyId, pid, warehouse.Id, line.Quantity,
-                        $"DebitNote:{noteNumber}", token, preferredSources: receiptSources);
-                    inventoryReduction += total;
-                    if (draws is null)
-                        issueLines.Add((pid, line.Quantity, unit, null, null));
-                    else
-                        foreach (var draw in draws)
-                            issueLines.Add((pid, draw.Quantity, unit, draw.Batch, draw.Expiry));
+                    // ‏**استهلاكٌ لكلّ مستودعٍ يخرج منه السطر** (واحدٌ لغير المتتبَّع) — ومنطقُ ح-١٠٧ كما هو داخل كلٍّ منها.
+                    var perWarehouse = draws is null
+                        ? [(WarehouseId: receiptWarehouses.GetValueOrDefault(pid, defaultWarehouse.Id), Quantity: line.Quantity)]
+                        : draws.GroupBy(d => d.WarehouseId).Select(g => (WarehouseId: g.Key, Quantity: g.Sum(d => d.Quantity))).ToList();
+                    foreach (var (whId, whQty) in perWarehouse)
+                    {
+                        var (total, unit) = await costing.ConsumeForIssueAsync(
+                            note.CompanyId, pid, whId, whQty,
+                            $"DebitNote:{noteNumber}", token, preferredSources: receiptSources);
+                        inventoryReduction += total;
+                        if (draws is null)
+                            issueLines.Add((whId, pid, whQty, unit, null, null));
+                        else
+                            foreach (var draw in draws.Where(d => d.WarehouseId == whId))
+                                issueLines.Add((whId, pid, draw.Quantity, unit, draw.Batch, draw.Expiry));
+                    }
                 }
             }
 
@@ -145,11 +155,16 @@ public class DebitNotePostingService(BrqoshDbContext db)
 
             if (issueLines.Count > 0)
             {
-                await inv.PostDocumentMovementAsync(note.CompanyId, warehouse.Id,
-                    StockMovementType.Issue, note.NoteDate,
-                    $"صرف من إشعار مدين {noteNumber}", $"DebitNote:{noteNumber}", issueLines,
-                    // ‏**والمنتهيةُ تعود إلى مورّدها** — وهو أشيعُ مرتجعات الصيدليّة؛ والبيعُ يبقى يرفضها.
-                    expiredMayLeave: true);
+                // ‏حركةٌ لكلّ مستودع، بمفتاح المستند نفسِه — والإلغاءُ يعكس كلَّ حركاته.
+                foreach (var group in issueLines.GroupBy(l => l.WarehouseId))
+                {
+                    await inv.PostDocumentMovementAsync(note.CompanyId, group.Key,
+                        StockMovementType.Issue, note.NoteDate,
+                        $"صرف من إشعار مدين {noteNumber}", $"DebitNote:{noteNumber}",
+                        group.Select(l => (l.ProductId, l.Qty, l.UnitCost, l.BatchNumber, l.ExpiryDate)).ToList(),
+                        // ‏**والمنتهيةُ تعود إلى مورّدها** — وهو أشيعُ مرتجعات الصيدليّة؛ والبيعُ يبقى يرفضها.
+                        expiredMayLeave: true);
+                }
                 await db.SaveChangesAsync(token);
             }
 
@@ -176,10 +191,31 @@ public class DebitNotePostingService(BrqoshDbContext db)
         return receiptSources;
     }
 
+    /// <summary>
+    /// (ح-١١١) <b>المستودعُ الذي دخل إليه كلُّ صنفٍ لهذه الفاتورة</b> — أوّلُ مستودعٍ بترتيب الاستلام؛ وما لم يدخل بحركةٍ
+    /// (قبل أن تُسجَّل) لا مفتاحَ له فيرجع الاستدعاءُ إلى الافتراضيّ.
+    /// </summary>
+    internal async Task<Dictionary<long, long>> ReceiptWarehousesAsync(PurchaseInvoice invoice, CancellationToken ct)
+    {
+        var sources = await ReceiptSourcesAsync(invoice, ct);
+        var rows = await db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == invoice.CompanyId && sources.Contains(m.SourceDocument!)
+                        && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Receipt)
+            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, m.WarehouseId, l.ProductId })
+            .OrderBy(x => x.MovementId)
+            .ToListAsync(ct);
+        var first = new Dictionary<long, long>();
+        foreach (var r in rows)
+            first.TryAdd(r.ProductId, r.WarehouseId);
+        return first;
+    }
+
     /// <summary>‏دفعةٌ استُلمت لفاتورةٍ، وما يصلح إرجاعُه منها الآن.</summary>
-    internal sealed class ReceivedBatch(long productId, string? batchNumber, DateOnly? expiryDate)
+    internal sealed class ReceivedBatch(long productId, string? batchNumber, DateOnly? expiryDate, long warehouseId)
     {
         public long ProductId { get; } = productId;
+        /// <summary>‏(ح-١١١) المستودعُ الذي دخلت إليه الدفعة — ومنه يخرج مرتجعُها.</summary>
+        public long WarehouseId { get; } = warehouseId;
         public string? BatchNumber { get; } = batchNumber;
         public DateOnly? ExpiryDate { get; } = expiryDate;
         public decimal Received { get; private set; }
@@ -197,7 +233,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
     /// الدفعة في المستودع الذي يخرج منه المرتجع — <b>فبعضُها قد بيع</b>، وليس كالمرتجع من العميل الذي يعود فيه ما خرج.
     /// وغيرُ المتتبَّع لا يُقرأ هنا.
     /// </summary>
-    internal async Task<List<ReceivedBatch>> ReceivedBatchesStillHeldAsync(PurchaseInvoice invoice, long warehouseId,
+    internal async Task<List<ReceivedBatch>> ReceivedBatchesStillHeldAsync(PurchaseInvoice invoice,
         IReadOnlyDictionary<long, Product> products, CancellationToken ct)
     {
         var tracked = products.Values.Where(p => p.IsTracked).Select(p => p.Id).ToHashSet();
@@ -212,14 +248,16 @@ public class DebitNotePostingService(BrqoshDbContext db)
         var receipts = await db.StockMovements.AsNoTracking()
             .Where(m => m.CompanyId == invoice.CompanyId && receiptSources.Contains(m.SourceDocument!)
                         && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Receipt)
-            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, LineId = EF.Property<long>(l, "id"), Line = l })
+            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, m.WarehouseId, LineId = EF.Property<long>(l, "id"), Line = l })
             .OrderBy(x => x.MovementId).ThenBy(x => x.LineId)
             .ToListAsync(ct);
-        foreach (var line in receipts.Select(x => x.Line).Where(l => tracked.Contains(l.ProductId)))
+        foreach (var entry in receipts.Where(x => tracked.Contains(x.Line.ProductId)))
         {
-            var row = received.FirstOrDefault(r => r.ProductId == line.ProductId && r.BatchNumber == line.BatchNumber);
+            var line = entry.Line;
+            var row = received.FirstOrDefault(r => r.ProductId == line.ProductId && r.BatchNumber == line.BatchNumber
+                                                   && r.WarehouseId == entry.WarehouseId);
             if (row is null)
-                received.Add(row = new ReceivedBatch(line.ProductId, line.BatchNumber, line.ExpiryDate));
+                received.Add(row = new ReceivedBatch(line.ProductId, line.BatchNumber, line.ExpiryDate, entry.WarehouseId));
             row.Arrived(line.Quantity);
         }
 
@@ -238,20 +276,22 @@ public class DebitNotePostingService(BrqoshDbContext db)
             .Where(m => m.CompanyId == invoice.CompanyId && returnSources.Contains(m.SourceDocument!)
                         && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Issue)
             .ToListAsync(ct);
-        var returned = returns.SelectMany(m => m.Lines).Where(l => tracked.Contains(l.ProductId))
-            .GroupBy(l => (l.ProductId, l.BatchNumber))
-            .ToDictionary(g => g.Key, g => g.Sum(l => l.Quantity));
+        var returned = returns.SelectMany(m => m.Lines.Select(l => (m.WarehouseId, Line: l)))
+            .Where(x => tracked.Contains(x.Line.ProductId))
+            .GroupBy(x => (x.Line.ProductId, x.Line.BatchNumber, x.WarehouseId))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Line.Quantity));
 
         var held = await db.StockBatches.AsNoTracking()
-            .Where(b => b.CompanyId == invoice.CompanyId && b.WarehouseId == warehouseId && tracked.Contains(b.ProductId))
+            .Where(b => b.CompanyId == invoice.CompanyId && tracked.Contains(b.ProductId))
             .ToListAsync(ct);
         foreach (var row in received)
         {
-            var notReturned = row.Received - returned.GetValueOrDefault((row.ProductId, row.BatchNumber));
+            var notReturned = row.Received - returned.GetValueOrDefault((row.ProductId, row.BatchNumber, row.WarehouseId));
             // ‏وما دخل بلا دفعةٍ (قبل التتبّع) يبقى مرشَّحاً بكمّيته كي يُرفض باسمه عند بلوغه، لا أن يُسكَت عنه.
             var onHand = row.BatchNumber is null
                 ? notReturned
-                : held.Where(b => b.ProductId == row.ProductId && b.BatchNumber == row.BatchNumber).Sum(b => b.Quantity);
+                : held.Where(b => b.ProductId == row.ProductId && b.BatchNumber == row.BatchNumber
+                                && b.WarehouseId == row.WarehouseId).Sum(b => b.Quantity);
             row.Left = Math.Max(0m, Math.Min(notReturned, onHand));
         }
 
@@ -264,19 +304,20 @@ public class DebitNotePostingService(BrqoshDbContext db)
     /// <b>وما استُلم قبل أن يُتتبَّع الصنفُ لا تُعرف دفعتُه — فيُرفض باسمه</b> ولا يُخمَّن. وما لا تغطّيه الدفعاتُ الباقيةُ
     /// يُرفض باسمه كذلك.
     /// </summary>
-    private static List<(string? Batch, DateOnly? Expiry, decimal Quantity)> DrawReturnedBatches(
+    private static List<(string? Batch, DateOnly? Expiry, decimal Quantity, long WarehouseId)> DrawReturnedBatches(
         Product product, decimal quantity, string? namedBatch, List<ReceivedBatch> received)
     {
-        var draws = new List<(string? Batch, DateOnly? Expiry, decimal Quantity)>();
+        var draws = new List<(string? Batch, DateOnly? Expiry, decimal Quantity, long WarehouseId)>();
         var remaining = quantity;
         var candidates = received.Where(r => r.ProductId == product.Id && r.Left > 0m);
         if (!string.IsNullOrWhiteSpace(namedBatch))
         {
-            var named = candidates.FirstOrDefault(r => r.BatchNumber == namedBatch);
-            if (named is null || named.Left < quantity)
+            // ‏(ح-١١١) ‏**والمسمّاةُ تُؤخذ من كلّ مستودعٍ استُلمت فيه** — وكان أوّلُ صفوفها وحدَه، فلا يُرجَع منها فوق ما في مستودعها الأوّل.
+            var named = candidates.Where(r => r.BatchNumber == namedBatch).ToList();
+            if (named.Sum(r => r.Left) < quantity)
                 throw new AccountingException(
                     $"لا يبقى من الدفعة '{namedBatch}' من '{product.NameAr}' المستلَمة في هذه الفاتورة ما يستوعب مرتجعاً بـ{quantity:N2}.");
-            candidates = [named];
+            candidates = named;
         }
 
         // ‏**وصفُّ ما قبل التتبّع لا يحجب ما تغطّيه الدفعات** — يُتخطّى، ولا يُرفض باسمه إلا إن بقي ما لا تغطّيه؛
@@ -291,7 +332,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 continue;
             }
             var take = Math.Min(remaining, row.Left);
-            draws.Add((row.BatchNumber, row.ExpiryDate, take));
+            draws.Add((row.BatchNumber, row.ExpiryDate, take, row.WarehouseId));
             row.Left -= take;
             remaining -= take;
         }

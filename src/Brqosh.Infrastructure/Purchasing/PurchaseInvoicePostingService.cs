@@ -31,6 +31,11 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             await FinancialPostingSupport.ValidateAsync(
                 db, invoice.CompanyId, invoice.InvoiceDate, PostingDocumentKind.PurchaseInvoice, ct: ct);
             var inv = new InventoryService(db);
+            // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الشراءُ المباشر يدخل مستودعَ الفاتورة — لا الافتراضيَّ أبداً.**
+            // ‏يُسأل المستودعُ هنا قبل أيّ قيد: موقوفٌ أو مفقودٌ يُرفض باسمه فلا يُرحَّل شيء. والفارغُ هو الافتراضيّ كما كان.
+            var receiptWarehouse = invoice.WarehouseId is null
+                ? null
+                : await ResolveWarehouseAsync(db, inv, invoice.CompanyId, invoice.WarehouseId, ct);
 
             var duplicate = await db.PurchaseInvoices.AnyAsync(i =>
                 i.CompanyId == invoice.CompanyId
@@ -183,7 +188,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             if (receiptLines.Count > 0)
             {
-                var warehouse = await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
+                var warehouse = receiptWarehouse ?? await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
                 await inv.PostDocumentMovementAsync(invoice.CompanyId, warehouse.Id,
                     Domain.Inventory.StockMovementType.Receipt, invoice.InvoiceDate,
                     $"إدخال من فاتورة مشتريات {invoiceNumber}",
@@ -401,6 +406,24 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             return released;
         }
+    }
+
+    /// <summary>
+    /// (ح-١١١) <b>المستودعُ المختار إن وُجد — في المنشأة وغيرُ موقوف — وإلا الافتراضيّ.</b> والرفضُ يُسمّي المستودع.
+    /// </summary>
+    internal static async Task<Warehouse> ResolveWarehouseAsync(
+        BrqoshDbContext db, InventoryService inv, long companyId, long? warehouseId, CancellationToken ct)
+    {
+        if (warehouseId is not long id)
+            return await inv.GetDefaultWarehouseAsync(companyId);
+
+        var warehouse = await db.Warehouses.SingleOrDefaultAsync(w => w.CompanyId == companyId && w.Id == id, ct)
+            ?? throw new AccountingException("المستودع المختار لهذه الفاتورة غير موجود في المنشأة.");
+        if (!warehouse.IsActive)
+            throw new AccountingException(
+                $"المستودع «{warehouse.NameAr}» موقوف — فعِّله من شاشة المستودعات، أو اختر مستودعاً آخر للفاتورة.");
+
+        return warehouse;
     }
 
     private async Task<Account> SystemAccountAsync(long companyId, string code) =>

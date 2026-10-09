@@ -261,6 +261,21 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
 
     public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١١١ · <c>order-to-cash-procure-to-pay-inventory#12</c>) <b>المستودعُ الذي يُستلم إليه الشراءُ المباشر.</b> وفارغُه
+    /// المستودعُ الافتراضيّ كما كانت كلُّ فاتورةٍ قبله. <b>ولا يُغيَّر بعد الترحيل</b>: حركةُ الاستلام مرحَّلةٌ في مستودعها، والمرتجعُ يخرج منه.
+    /// </summary>
+    public long? WarehouseId { get; private set; }
+
+    /// <summary>(ح-١١١) يضبط مستودعَ الاستلام — والفارغُ هو الافتراضيّ؛ والمستودعُ نفسُه يُسأل عند الترحيل.</summary>
+    public void SetWarehouse(long? warehouseId)
+    {
+        if (warehouseId is <= 0)
+            throw new AccountingException("المستودع غير صالح.");
+        EnsureDraft();
+        WarehouseId = warehouseId;
+    }
+
     public void LinkPurchaseOrder(long purchaseOrderId)
     {
         if (purchaseOrderId <= 0)

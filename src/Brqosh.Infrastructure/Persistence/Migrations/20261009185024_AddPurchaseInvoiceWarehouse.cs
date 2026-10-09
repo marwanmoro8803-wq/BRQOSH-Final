@@ -1,0 +1,28 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace Brqosh.Infrastructure.Persistence.Migrations
+{
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١١١ · order-to-cash-procure-to-pay-inventory#12) مستودعُ فاتورة المشتريات — عمودٌ يقبل الفراغ، وفارغُه المستودعُ
+    /// الافتراضيّ كما كانت كلُّ فاتورةٍ قبله؛ فلا تعبئةَ ولا تغيُّرَ لفاتورةٍ قائمة.
+    ///
+    /// <para><b>مُطاوِعةٌ للتكرار</b> على سُنّة الهجرات قبلها — <c>BrqoshSchemaUpdater</c> يُضيف العمودَ عند الإقلاع كذلك،
+    /// والمولَّدُ (<c>AddColumn</c>) يرمي على ما هو موجود. والنوعُ ما ولّده <c>dotnet ef</c> حرفاً: <c>bigint</c> يقبل الفراغ.</para>
+    /// </summary>
+    public partial class AddPurchaseInvoiceWarehouse : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql("""ALTER TABLE purchase_invoices ADD COLUMN IF NOT EXISTS "WarehouseId" bigint NULL;""");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql("""ALTER TABLE purchase_invoices DROP COLUMN IF EXISTS "WarehouseId";""");
+        }
+    }
+}

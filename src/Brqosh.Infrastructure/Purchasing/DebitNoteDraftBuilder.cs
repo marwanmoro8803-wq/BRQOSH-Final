@@ -107,7 +107,7 @@ public class DebitNoteDraftBuilder(BrqoshDbContext db)
         var products = await inv.LoadProductsForLinesAsync(companyId, invoice.Lines.Select(l => l.ProductId));
         var held = products.Values.Any(p => p.IsTracked && p.IsStockable())
             ? await new DebitNotePostingService(db).ReceivedBatchesStillHeldAsync(
-                invoice, (await inv.GetDefaultWarehouseAsync(companyId)).Id, products, ct)
+                invoice, products, ct)   // ‏(ح-١١١) كلُّ دفعةٍ في مستودع استلامها
             : [];
 
         foreach (var want in requested)
@@ -130,11 +130,13 @@ public class DebitNoteDraftBuilder(BrqoshDbContext db)
             if (string.IsNullOrWhiteSpace(want.BatchNumber) && source.ProductId is long pid
                 && products.TryGetValue(pid, out var product) && product.IsTracked && product.IsStockable())
             {
-                var batches = held.Where(b => b.ProductId == pid && b.BatchNumber is not null && b.Left > 0m).ToList();
+                // ‏(ح-١١١) ‏**الدفعةُ اسمٌ لا صفّ** — دفعةٌ استُلمت في مستودعين صفّان، فتُعَدّ مرّةً بمجموعها لا دفعتين.
+                var batches = held.Where(b => b.ProductId == pid && b.BatchNumber is not null && b.Left > 0m)
+                    .GroupBy(b => b.BatchNumber!).Select(g => (Batch: g.Key, Left: g.Sum(b => b.Left))).ToList();
                 if (batches.Count > 1)
                     throw new AccountingException(
                         $"حدِّد الدفعةَ المُرجَعة من «{source.Description}»: "
-                        + string.Join("، ", batches.Select(b => $"{b.BatchNumber} ({b.Left:N2})")) + ".");
+                        + string.Join("، ", batches.Select(b => $"{b.Batch} ({b.Left:N2})")) + ".");
             }
 
             note.AddLine(

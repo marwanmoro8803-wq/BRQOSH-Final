@@ -13,6 +13,8 @@ public partial class PurchaseInvoiceDialog : Window
 {
     public record SupplierOption(long Id, bool IsVatRegistered, string Display);
 
+    private const string DefaultWarehouseChoice = "(المستودع الافتراضي)";
+
     private readonly ObservableCollection<SalesInvoiceDialog.LineRow> _rows = [];
     private List<SalesInvoiceDialog.ProductOption> _products = [];
 
@@ -21,7 +23,7 @@ public partial class PurchaseInvoiceDialog : Window
         InitializeComponent();
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
-        Loaded += async (_, _) => { await LoadSuppliersAsync(); await LoadProductsAsync(); };
+        Loaded += async (_, _) => { await LoadSuppliersAsync(); await LoadWarehousesAsync(); await LoadProductsAsync(); };
     }
 
     private async Task LoadProductsAsync()
@@ -32,6 +34,20 @@ public partial class PurchaseInvoiceDialog : Window
             .Select(p => new SalesInvoiceDialog.ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
             .ToListAsync();
         ProductColumn.ItemsSource = _products;   // (م2-٢٠) بلا هذا يبقى العمود فارغاً
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏المستودعاتُ القائمة — والأوّلُ «الافتراضيّ».
+        await using var db = AppServices.CreateDb();
+        var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, DefaultWarehouseChoice) };
+        choices.AddRange(await db.Warehouses
+            .Where(w => w.CompanyId == AppServices.CompanyId && w.IsActive)
+            .OrderBy(w => w.Code)
+            .Select(w => new SalesInvoiceDialog.WarehouseOption(w.Id, w.Code + " — " + w.NameAr))
+            .ToListAsync());
+        WarehouseCombo.ItemsSource = choices;
+        WarehouseCombo.SelectedIndex = 0;
     }
 
     private async Task LoadSuppliersAsync()
@@ -120,6 +136,9 @@ public partial class PurchaseInvoiceDialog : Window
         // ‏المجاميع. وكان المستوردُ يُدخل فاتورةَ الدولار محوَّلةً بيده، **فتضيع القيمةُ
         // ‏الأصلية ولا يُحسب فرقُ عملةٍ محقَّقٌ عند السداد**.
         ApplyCurrency(invoice);
+
+        // ‏(ح-١١١) ‏مستودعُ الاستلام — الفارغُ هو الافتراضيّ؛ والمستودعُ يُسأل عند الترحيل.
+        invoice.SetWarehouse(WarehouseCombo.SelectedValue as long?);
 
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))

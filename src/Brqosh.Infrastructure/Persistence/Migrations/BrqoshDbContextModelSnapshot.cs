@@ -2851,6 +2851,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<bool>("VatDeductible")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("WarehouseId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PurchaseOrderId");

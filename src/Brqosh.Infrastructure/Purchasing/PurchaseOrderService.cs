@@ -30,7 +30,7 @@ public class PurchaseOrderService(BrqoshDbContext db)
     }
 
     public async Task<PurchaseInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId,
-        string supplierInvoiceReference, DateOnly invoiceDate, bool vatDeductible) =>
+        string supplierInvoiceReference, DateOnly invoiceDate, bool vatDeductible, long? warehouseId = null) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
         {
             SecurityContext.EnsureCanPost();
@@ -56,7 +56,9 @@ public class PurchaseOrderService(BrqoshDbContext db)
                     throw new Domain.Accounting.AccountingException(
                         $"الصنف '{tracked.NameAr}' يُتتبَّع بالدفعة — استلِمه بإذن استلامٍ يُسجّل دفعتَه وانتهاءها، ثمّ أنشئ الفاتورة من الأمر.");
 
-                var warehouse = await new InventoryService(db).GetDefaultWarehouseAsync(companyId);
+                // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الاستلامُ الآليُّ يدخل المستودعَ المختار** — لا الافتراضيَّ أبداً؛ والموقوفُ يُرفض باسمه.
+                var warehouse = await PurchaseInvoicePostingService.ResolveWarehouseAsync(
+                    db, new InventoryService(db), companyId, warehouseId, ct);
                 var receipt = GoodsReceipt.CreateDraft(
                     companyId, order.SupplierId, orderId, warehouse.Id, invoiceDate);
                 foreach (var line in order.Lines)
@@ -78,6 +80,7 @@ public class PurchaseOrderService(BrqoshDbContext db)
                     line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
             invoice.LinkPurchaseOrder(orderId);
+            invoice.SetWarehouse(warehouseId);
             await new PurchaseInvoicePostingService(db).PostAsync(invoice);
             order.MarkFulfilled();
             await db.SaveChangesAsync(ct);
