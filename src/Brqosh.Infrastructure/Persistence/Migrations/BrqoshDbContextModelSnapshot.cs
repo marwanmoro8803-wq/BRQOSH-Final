@@ -3402,6 +3402,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<int>("TransactionCount")
                         .HasColumnType("integer");
 
+                    b.Property<long?>("WarehouseId")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "BranchId");
@@ -3619,6 +3622,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
+
+                    b.Property<long?>("WarehouseId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 

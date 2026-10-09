@@ -1108,6 +1108,7 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<RecurringInvoicePlan>(entity =>
         {
             entity.ToTable("recurring_invoice_plans");
+            entity.Property(p => p.WarehouseId);   // ‏(ح-١١٤) مستودعُ الصرف — فارغُه الافتراضيّ
             entity.Property(p => p.Code).HasMaxLength(32).IsRequired();
             entity.Property(p => p.Description).HasMaxLength(512).IsRequired();
             entity.Property(p => p.Frequency).HasConversion<string>().HasMaxLength(16);
@@ -1563,6 +1564,7 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<PosShift>(entity =>
         {
             entity.ToTable("pos_shifts");
+            entity.Property(s => s.WarehouseId);   // ‏(ح-١١٤) مستودعُ البيع — فارغُه الافتراضيّ
             entity.Property(s => s.CashierName).HasMaxLength(128).IsRequired();
             entity.Property(s => s.OpeningCash).HasPrecision(18, 2);
             entity.Property(s => s.ClosingCash).HasPrecision(18, 2);

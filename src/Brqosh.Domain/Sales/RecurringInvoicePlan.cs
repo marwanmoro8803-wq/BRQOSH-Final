@@ -60,6 +60,9 @@ public class RecurringInvoicePlan : IBranchScoped
 
     public DateTime CreatedAtUtc { get; private set; }
 
+    /// <summary>(ح-١١٤ · <c>order-to-cash-procure-to-pay-inventory#12</c>) <b>مستودعُ صرف فواتير الخطة</b> — فارغُه المستودعُ الافتراضيّ كما كانت كلُّ خطة.</summary>
+    public long? WarehouseId { get; private set; }
+
     public IReadOnlyList<SalesInvoiceLine> Lines => _lines.AsReadOnly();
 
     // EF Core
@@ -155,6 +158,16 @@ public class RecurringInvoicePlan : IBranchScoped
     /// بلا فاتورة — <b>وإيرادٌ يضيع بلا أثرٍ أسوأُ من فاتورةٍ تُعاد</b>.</para>
     /// </summary>
     public void MarkGenerated() => OccurrencesGenerated++;
+
+    /// <summary>(ح-١١٤) يضبط مستودعَ صرف الفواتير المولَّدة — <b>والفارغُ هو الافتراضيّ</b>؛ ولا تُعدَّل خطةٌ منتهية.</summary>
+    public void SetWarehouse(long? warehouseId)
+    {
+        if (warehouseId is <= 0)
+            throw new AccountingException("المستودع غير صالح.");
+        if (Status == RecurringPlanStatus.Ended)
+            throw new AccountingException("الخطة منتهية — لا تُعدَّل.");
+        WarehouseId = warehouseId;
+    }
 
     public void Pause()
     {

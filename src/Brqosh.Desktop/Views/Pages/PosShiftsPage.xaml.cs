@@ -50,8 +50,23 @@ public partial class PosShiftsPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (OpenBtn, PermissionService.CanPost),
                 (CloseBtn, PermissionService.CanPost));
+            await LoadWarehousesAsync();
             await ReloadAsync();
         };
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٤ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏المستودعاتُ الفعّالة — والأوّلُ «الافتراضيّ».
+        await using var db = AppServices.CreateDb();
+        var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, "(المستودع الافتراضي)") };
+        choices.AddRange(await db.Warehouses
+            .Where(w => w.CompanyId == AppServices.CompanyId && w.IsActive)
+            .OrderBy(w => w.Code)
+            .Select(w => new SalesInvoiceDialog.WarehouseOption(w.Id, w.Code + " — " + w.NameAr))
+            .ToListAsync());
+        ShiftWarehouseCombo.ItemsSource = choices;
+        ShiftWarehouseCombo.SelectedIndex = 0;
     }
 
     private async Task ReloadAsync()
@@ -119,7 +134,8 @@ public partial class PosShiftsPage : UserControl
 
         try
         {
-            var shift = PosShift.Open(AppServices.CompanyId, nameDialog.Value.Trim(), cash);
+            var shift = PosShift.Open(AppServices.CompanyId, nameDialog.Value.Trim(), cash,
+                ShiftWarehouseCombo.SelectedValue as long?);   // ‏(ح-١١٤) مستودعُ بيع الوردية
             using var facade = new DesktopAccountingFacade();
             var db = facade.Db;
             db.PosShifts.Add(shift);

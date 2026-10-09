@@ -73,6 +73,8 @@ public class PosSaleService(BrqoshDbContext db)
             }
 
             invoice.MarkPosSale(shiftId, paymentMethod);
+            // ‏(جاهزيّةُ الإطلاق · ح-١١٤ · ‏`order-to-cash-procure-to-pay-inventory#12`) **ومستودعُ الوردية هو مستودعُ الصرف** — وفارغُه الافتراضيّ.
+            invoice.SetWarehouse(shift.WarehouseId);
 
             // (CEEF-230 · ط6-٧) ‏**والتوليدُ يقع هنا الآن** — داخل `PostCoreAsync` نفسِه،
             // ‏فلا يُستدعى بعده. وكان يُستدعى صراحةً في آخر هذه المعاملة، **وهو ما جعله

@@ -30,6 +30,9 @@ public class PosShift : IBranchScoped
     public decimal CashSales { get; private set; }
 
     public int TransactionCount { get; private set; }
+
+    /// <summary>(ح-١١٤ · <c>order-to-cash-procure-to-pay-inventory#12</c>) <b>مستودعُ بيع الوردية</b> — فارغُه المستودعُ الافتراضيّ كما كانت كلُّ وردية.</summary>
+    public long? WarehouseId { get; private set; }
     public PosShiftStatus Status { get; private set; } = PosShiftStatus.Open;
 
     private PosShift()
@@ -45,15 +48,17 @@ public class PosShift : IBranchScoped
         OpenedAtUtc = DateTime.UtcNow;
     }
 
-    public static PosShift Open(long companyId, string cashierName, decimal openingCash = 0m)
+    public static PosShift Open(long companyId, string cashierName, decimal openingCash = 0m, long? warehouseId = null)
     {
+        if (warehouseId is <= 0)
+            throw new AccountingException("المستودع غير صالح.");
         if (string.IsNullOrWhiteSpace(cashierName))
             throw new AccountingException("اسم الكاشير مطلوب.");
         if (openingCash < 0)
             throw new AccountingException("النقد الافتتاحي لا يكون سالباً.");
 
         return new PosShift(companyId, cashierName.Trim(),
-            Math.Round(openingCash, 2, MidpointRounding.AwayFromZero));
+            Math.Round(openingCash, 2, MidpointRounding.AwayFromZero)) { WarehouseId = warehouseId };
     }
 
     /// <summary>

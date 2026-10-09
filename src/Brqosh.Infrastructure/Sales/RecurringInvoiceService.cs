@@ -120,6 +120,8 @@ public class RecurringInvoiceService(BrqoshDbContext db)
                 throw new AccountingException("الخطة بلا سطور.");
 
             var invoice = SalesInvoice.CreateDraft(plan.CompanyId, plan.CustomerId, occurrence);
+            // ‏(جاهزيّةُ الإطلاق · ح-١١٤ · ‏`order-to-cash-procure-to-pay-inventory#12`) **وفاتورةُ الخطة تصرف من مستودع الخطة** — وفارغُه الافتراضيّ.
+            invoice.SetWarehouse(plan.WarehouseId);
             foreach (var line in plan.Lines)
                 invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
                     line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason,

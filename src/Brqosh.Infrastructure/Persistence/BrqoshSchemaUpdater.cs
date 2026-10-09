@@ -212,6 +212,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏يبني SELECT بكلّ أعمدة النموذج.
         await EnsureSalesInvoiceWarehouseColumnAsync(isPg, ct);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٤) ‏مستودعُ الوردية والخطة الدورية — **قبل ترقيعات المزوّد للسبب نفسه**.
+        await EnsurePosShiftAndRecurringPlanWarehouseColumnsAsync(isPg, ct);
+
         // ‏(جاهزيّةُ الإطلاق · ح-١١١) ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePurchaseInvoiceWarehouseColumnAsync(isPg, ct);
 
@@ -319,6 +322,20 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsurePgColumnAsync("work_orders", column, "BIGINT NULL", ct);
             else
                 await EnsureSqliteColumnAsync("work_orders", column, "INTEGER NULL", ct);
+        }
+    }
+
+    private async Task EnsurePosShiftAndRecurringPlanWarehouseColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        foreach (var table in new[] { "pos_shifts", "recurring_invoice_plans" })
+        {
+            if (!await TableExistsAsync(table, isPg, ct))
+                continue;
+
+            if (isPg)
+                await EnsurePgColumnAsync(table, "WarehouseId", "BIGINT NULL", ct);
+            else
+                await EnsureSqliteColumnAsync(table, "WarehouseId", "INTEGER NULL", ct);
         }
     }
 

@@ -23,6 +23,12 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button DockPanel.Dock="Right" x:Name="CloseBtn" Content="إغلاق المحدد"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCloseShift"/>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <!-- (جاهزيّةُ الإطلاق · ح-١١٤) مستودعُ بيع الوردية التي تُفتح — والأوّلُ «الافتراضيّ». -->
+                <ComboBox x:Name="ShiftWarehouseCombo" DockPanel.Dock="Right" FontSize="14" Padding="10,8" MinWidth="200"
+                          VerticalAlignment="Center" DisplayMemberPath="Display" SelectedValuePath="Id"/>
+                <TextBlock DockPanel.Dock="Right" Text="المستودع" VerticalAlignment="Center"
+                           Margin="0,0,10,0" Style="{StaticResource FieldLabel}"/>
             </DockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
