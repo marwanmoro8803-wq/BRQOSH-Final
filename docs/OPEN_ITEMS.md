@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ واثنا عشرَ إغلاقاً ح-١…ح-١١٢**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ وثلاثةَ عشرَ إغلاقاً ح-١…ح-١١٣**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٢ (2026-09-20…10-09)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٣ (2026-09-20…10-10)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3128,10 +3128,11 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١١٠ | `51188f9` | `Domain/Sales/SalesInvoice.cs` · `Sales/SalesInvoicePostingService.cs` · `Sales/CreditNotePostingService.cs` · `Sales/SalesOrderService.cs` · هجرة `AddSalesInvoiceWarehouse` · `BrqoshSchemaUpdater` · `SalesInvoiceDialog.xaml(.cs)` · `ASaleLeavesFromItsOwnWarehouseTests.cs` · `TheSalesDialogChoosesTheIssuingWarehouseTests.cs` | **البيعُ والمرتجعُ على المستودع الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ◐) — صار البيعُ من مستودعه والمرتجعُ إلى مستودع حركة بيعه؛ ثلاثةُ براهين؛ **نفّذه Sonnet**؛ **وجهةُ المشتريات قائمة** |
 | ح-١١٢ | `94e895e` | `Inventory/InventoryService.cs` · `TwoMovementsOfOneSourceAreReversedOnceTests.cs` | **مستندٌ بحركتين تُعكس تكلفتُه مرّتين** (`found#8` — كشفه العمل) — قِيس: الطبقةُ ١٠ لا ٨، والمتوسّطُ ٥٠ لا ٣٠؛ صار يُعكس مرّةً لكلّ مصدرٍ واتّجاه؛ برهانان؛ **كشفه Fable في مراجعة ح-١١١ — وهو قائمٌ قبله في وصفة المطبخ** |
 | ح-١١١ | `4ae3b3e` | `Domain/Purchasing/PurchaseInvoice.cs` · `Purchasing/PurchaseInvoicePostingService.cs` · `PurchaseOrderService.cs` · `DebitNotePostingService.cs` · `DebitNoteDraftBuilder.cs` · هجرة `AddPurchaseInvoiceWarehouse` · `PurchaseInvoiceDialog.xaml(.cs)` · `APurchaseEntersItsOwnWarehouseTests.cs` · `ThePurchaseDialogChoosesTheReceivingWarehouseTests.cs` | **الشراءُ والمرتجعُ إليه على المستودع الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ◐) — صار الشراءُ إلى مستودعه والمرتجعُ من مستودعات استلامه؛ أربعةُ براهين؛ **نفّذه Sonnet، ونقضه Fable** (الإلغاءُ من مستودعين يُرمّم مرّتين ⟵ ح-١١٢، والدفعةُ في مستودعين) |
+| ح-١١٣ | `1cbc4b1` | `SalesOrdersPage.xaml(.cs)` · `PurchaseOrdersPage.xaml(.cs)` · `TheOrderScreensChooseTheWarehouseTests.cs` | **فوترةُ الأوامر من الشاشة على الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ◐) — الخدمتان تقبلان المستودعَ منذ ح-١١٠ وح-١١١ والشاشتان لا تُمرّرانه؛ صارتا تختارانه؛ قياسٌ بنيويٌّ (غائبٌ على `HEAD`)؛ **نفّذه Sonnet** |
 
-**والقياسُ عند آخر إيداع (`4ae3b3e`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2157/2157** · `Brqosh.Desktop.Tests` **423/423** · `Brqosh.Api.Tests` **95/95** ·
-بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.3%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
+**والقياسُ عند آخر إيداع (`1cbc4b1`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
+`Brqosh.Application.Tests` **2157/2157** · `Brqosh.Desktop.Tests` **425/425** · `Brqosh.Api.Tests` **95/95** ·
+بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.27%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
 
