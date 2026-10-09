@@ -102,7 +102,10 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
         var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
             string? BatchNumber, DateOnly? ExpiryDate)>();
         var costing = new InventoryCostingService(db);
-        var warehouse = await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**البيعُ يُصرف من مستودع الفاتورة — لا الافتراضيِّ أبداً.**
+        // ‏والفارغُ هو الافتراضيّ كما كانت كلُّ فاتورةٍ قبله؛ **والمستودعُ يُسأل هنا قبل أيّ صرف** — فمستودعٌ أُوقف بعد
+        // ‏اختياره يُرفض باسمه ولا تُرحَّل حركةٌ ولا قيد. والإلغاءُ يعكس كلَّ حركةٍ في مستودعها هي.
+        var warehouse = await ResolveWarehouseAsync(inv, invoice, ct);
 
         foreach (var (productId, entered, batchNumber, unitCode) in stockLines)
         {
@@ -180,7 +183,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             invoice.CompanyId, invoice.InvoiceDate,
             [.. invoice.Lines.Where(l => l.ProductId is not null)
                 .Select(l => (ProductId: l.ProductId!.Value, Quantity: l.Quantity))],
-            $"SalesInvoice:{invoiceNumber}", ct: ct);
+            $"SalesInvoice:{invoiceNumber}", warehouseId: warehouse.Id, ct: ct);
 
         // (CEEF-230 · ط6-٧) ‏**والمستندُ الإلكترونيُّ يُولَّد من هنا لا من فوق** — فكلُّ
         // ‏فاتورةِ ضريبةٍ في النظام تلتقي في هذا المسار: الفاتورةُ المباشرة وأمرُ البيع
@@ -204,6 +207,24 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
     }
 
 
+
+    /// <summary>
+    /// (ح-١١٠) <b>مستودعُ الفاتورة إن اختير — في المنشأة وغيرُ موقوف — وإلا الافتراضيّ.</b> والرفضُ يُسمّي المستودع:
+    /// فالمالكُ يعرف أيَّ مستودعٍ أوقفه، ولا يقرأ «رصيدٌ غير كافٍ» عن مستودعٍ لم يقصده.
+    /// </summary>
+    private async Task<Warehouse> ResolveWarehouseAsync(InventoryService inv, SalesInvoice invoice, CancellationToken ct)
+    {
+        if (invoice.WarehouseId is not long id)
+            return await inv.GetDefaultWarehouseAsync(invoice.CompanyId);
+
+        var warehouse = await db.Warehouses.SingleOrDefaultAsync(w => w.CompanyId == invoice.CompanyId && w.Id == id, ct)
+            ?? throw new AccountingException("المستودع المختار لهذه الفاتورة غير موجود في المنشأة.");
+        if (!warehouse.IsActive)
+            throw new AccountingException(
+                $"المستودع «{warehouse.NameAr}» موقوف — فعِّله من شاشة المستودعات، أو اختر مستودعاً آخر للفاتورة.");
+
+        return warehouse;
+    }
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٩٥ · <c>order-to-cash-procure-to-pay-inventory#13</c>) <b>البيعُ الآجلُ لا يتجاوز حدَّ ائتمان العميل</b> — المفتوحُ

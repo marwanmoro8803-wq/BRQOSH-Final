@@ -70,7 +70,11 @@ public class CreditNotePostingService(BrqoshDbContext db)
         var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
         var originalCosts = await ResolveOriginalSaleUnitCostsAsync(invoice, ct);
         decimal cogsReversal = 0;
-        var returnLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
+        var returnLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate, long WarehouseId)>();
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المرتجعُ يعود إلى المستودع الذي خرج منه البيع** —
+        // ‏من حركة الصرف نفسِها لا من الافتراضيّ يومَ الإرجاع (وقد يتغيّر)؛ والمتتبَّعُ يعود إلى دفعته في مستودعها، وغيرُه إلى مستودع صنفه.
+        var saleWarehouses = await SaleWarehousesAsync(invoice, ct);
+        long? defaultWarehouseId = null;   // ‏لا يُسأل إلا لصنفٍ لا أثرَ لصرفه (بيعٌ سابقٌ على الحركات).
         // ‏(جاهزيّةُ الإطلاق · ح-١٠٢ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يعود إلى دفعاته.**
         // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ بإشعارٍ دائنٍ أبداً.
         var soldOut = await SoldBatchesStillOutAsync(invoice, previousCredits, products, ct);
@@ -85,7 +89,9 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 if (!product.IsTracked)
                 {
                     cogsReversal += Math.Round(line.Quantity * unitCost, 2, MidpointRounding.AwayFromZero);
-                    returnLines.Add((pid, line.Quantity, unitCost, null, null));
+                    if (!saleWarehouses.TryGetValue(pid, out var returnWarehouseId))
+                        returnWarehouseId = defaultWarehouseId ??= (await inv.GetDefaultWarehouseAsync(note.CompanyId)).Id;
+                    returnLines.Add((pid, line.Quantity, unitCost, null, null, returnWarehouseId));
                     continue;
                 }
 
@@ -94,7 +100,7 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 foreach (var draw in DrawReturnedBatches(product, line.Quantity, line.BatchNumber, soldOut))
                 {
                     cogsReversal += Math.Round(draw.Quantity * draw.UnitCost, 2, MidpointRounding.AwayFromZero);
-                    returnLines.Add((pid, draw.Quantity, draw.UnitCost, draw.Batch, draw.Expiry));
+                    returnLines.Add((pid, draw.Quantity, draw.UnitCost, draw.Batch, draw.Expiry, draw.WarehouseId));
                 }
             }
         }
@@ -140,11 +146,15 @@ public class CreditNotePostingService(BrqoshDbContext db)
 
         if (returnLines.Count > 0)
         {
-            var warehouse = await inv.GetDefaultWarehouseAsync(note.CompanyId);
-            await inv.PostDocumentMovementAsync(note.CompanyId, warehouse.Id,
-                StockMovementType.SalesReturn, note.NoteDate,
-                $"إرجاع من إشعار دائن {noteNumber}",
-                $"CreditNote:{noteNumber}", returnLines);
+            // ‏حركةٌ لكلّ مستودعٍ خرج منه البيع — والغالبُ واحد.
+            foreach (var group in returnLines.GroupBy(l => l.WarehouseId))
+            {
+                await inv.PostDocumentMovementAsync(note.CompanyId, group.Key,
+                    StockMovementType.SalesReturn, note.NoteDate,
+                    $"إرجاع من إشعار دائن {noteNumber}",
+                    $"CreditNote:{noteNumber}",
+                    group.Select(l => (l.ProductId, l.Qty, l.UnitCost, l.BatchNumber, l.ExpiryDate)).ToList());
+            }
             await db.SaveChangesAsync(ct);
         }
 
@@ -203,8 +213,10 @@ public class CreditNotePostingService(BrqoshDbContext db)
     }
 
     /// <summary>‏دفعةٌ بيع منها صنفٌ متتبَّع، وما بقي منها عند العميل بعد ما أُرجع سلفاً.</summary>
-    private sealed class SoldBatch(long productId, string? batchNumber, DateOnly? expiryDate)
+    private sealed class SoldBatch(long productId, string? batchNumber, DateOnly? expiryDate, long warehouseId)
     {
+        /// <summary>‏(ح-١١٠) ‏مستودعُ الصرف — إليه تعود الدفعة.</summary>
+        public long WarehouseId { get; } = warehouseId;
         public long ProductId { get; } = productId;
         public string? BatchNumber { get; } = batchNumber;
         public DateOnly? ExpiryDate { get; } = expiryDate;
@@ -242,14 +254,16 @@ public class CreditNotePostingService(BrqoshDbContext db)
         var sales = await db.StockMovements.AsNoTracking()
             .Where(m => m.CompanyId == invoice.CompanyId && m.SourceDocument == saleSource
                         && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Issue)
-            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, LineId = EF.Property<long>(l, "id"), Line = l })
+            .SelectMany(m => m.Lines, (m, l) => new { MovementId = m.Id, m.WarehouseId, LineId = EF.Property<long>(l, "id"), Line = l })
             .OrderBy(x => x.MovementId).ThenBy(x => x.LineId)
             .ToListAsync(ct);
-        foreach (var line in sales.Select(x => x.Line).Where(l => tracked.Contains(l.ProductId)))
+        foreach (var x in sales.Where(x => tracked.Contains(x.Line.ProductId)))
         {
-            var row = sold.FirstOrDefault(s => s.ProductId == line.ProductId && s.BatchNumber == line.BatchNumber);
+            var line = x.Line;
+            var row = sold.FirstOrDefault(s => s.ProductId == line.ProductId && s.BatchNumber == line.BatchNumber
+                                               && s.WarehouseId == x.WarehouseId);
             if (row is null)
-                sold.Add(row = new SoldBatch(line.ProductId, line.BatchNumber, line.ExpiryDate));
+                sold.Add(row = new SoldBatch(line.ProductId, line.BatchNumber, line.ExpiryDate, x.WarehouseId));
             row.Issued(line.Quantity, line.UnitCost);
         }
 
@@ -259,9 +273,11 @@ public class CreditNotePostingService(BrqoshDbContext db)
             .Where(m => m.CompanyId == invoice.CompanyId && returnSources.Contains(m.SourceDocument!)
                         && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.SalesReturn)
             .ToListAsync(ct);
-        foreach (var line in returns.SelectMany(m => m.Lines).Where(l => tracked.Contains(l.ProductId)))
+        foreach (var movement in returns)
+        foreach (var line in movement.Lines.Where(l => tracked.Contains(l.ProductId)))
         {
-            var row = sold.FirstOrDefault(s => s.ProductId == line.ProductId && s.BatchNumber == line.BatchNumber);
+            var row = sold.FirstOrDefault(s => s.ProductId == line.ProductId && s.BatchNumber == line.BatchNumber
+                                               && s.WarehouseId == movement.WarehouseId);
             if (row is not null)
                 row.Out -= line.Quantity;
         }
@@ -275,10 +291,10 @@ public class CreditNotePostingService(BrqoshDbContext db)
     /// تنسخها من سطر الفاتورة، ومرتجعُ الدفعة القريبة الانتهاء لا يُقيَّد على البعيدة؛ <b>وبترتيب البيع حين لا يُسمّي</b>.
     /// <b>وما بيع قبل أن يُتتبَّع الصنفُ لا يُعرف إلى أيّ دفعةٍ يعود — فيُرفض باسمه</b> ولا يُخمَّن.
     /// </summary>
-    private static List<(string? Batch, DateOnly? Expiry, decimal Quantity, decimal UnitCost)> DrawReturnedBatches(
+    private static List<(string? Batch, DateOnly? Expiry, decimal Quantity, decimal UnitCost, long WarehouseId)> DrawReturnedBatches(
         Product product, decimal quantity, string? namedBatch, List<SoldBatch> soldOut)
     {
-        var draws = new List<(string? Batch, DateOnly? Expiry, decimal Quantity, decimal UnitCost)>();
+        var draws = new List<(string? Batch, DateOnly? Expiry, decimal Quantity, decimal UnitCost, long WarehouseId)>();
         var remaining = quantity;
         var candidates = soldOut.Where(s => s.ProductId == product.Id && s.Out > 0m);
         if (!string.IsNullOrWhiteSpace(namedBatch))
@@ -297,7 +313,7 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"بيع '{product.NameAr}' في هذه الفاتورة قبل أن يُتتبَّع بالدفعة — فلا يُعرف إلى أيّ دفعةٍ يعود المرتجع.");
             var take = Math.Min(remaining, row.Out);
-            draws.Add((row.BatchNumber, row.ExpiryDate, take, row.UnitCost));
+            draws.Add((row.BatchNumber, row.ExpiryDate, take, row.UnitCost, row.WarehouseId));
             row.Out -= take;
             remaining -= take;
         }
@@ -306,6 +322,29 @@ public class CreditNotePostingService(BrqoshDbContext db)
             throw new AccountingException(
                 $"لا يبقى من دفعات '{product.NameAr}' المبيعة في هذه الفاتورة ما يستوعب مرتجعاً بـ{quantity:N2}.");
         return draws;
+    }
+
+    /// <summary>
+    /// (ح-١١٠) <b>مستودعُ كلّ صنفٍ خرج في البيع</b> — من حركات الصرف المرحَّلة؛ وإن خرج صنفٌ من مستودعَين فأوّلُهما (الحركةُ الأقدم).
+    /// <b>والمتتبَّعُ لا يُقرأ منه</b>: دفعاتُه تحمل مستودعَها (<see cref="SoldBatch"/>).
+    /// </summary>
+    private async Task<Dictionary<long, long>> SaleWarehousesAsync(SalesInvoice invoice, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            return [];
+
+        var saleSource = $"SalesInvoice:{invoice.InvoiceNumber}";
+        var movements = await db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == invoice.CompanyId && m.SourceDocument == saleSource
+                        && m.Status == StockMovementStatus.Posted && m.Type == StockMovementType.Issue)
+            .OrderBy(m => m.Id)
+            .ToListAsync(ct);
+
+        var byProduct = new Dictionary<long, long>();
+        foreach (var movement in movements)
+        foreach (var line in movement.Lines)
+            byProduct.TryAdd(line.ProductId, movement.WarehouseId);
+        return byProduct;
     }
 
     private async Task<Dictionary<long, decimal>> ResolveOriginalSaleUnitCostsAsync(

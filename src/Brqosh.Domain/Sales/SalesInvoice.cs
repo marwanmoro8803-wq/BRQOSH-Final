@@ -40,6 +40,13 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
 
     public PosPaymentMethod? PosPaymentMethod { get; private set; }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١١٠ · <c>order-to-cash-procure-to-pay-inventory#12</c>) <b>المستودعُ الذي يُصرف منه البيع.</b> وفارغُه هو
+    /// المستودعُ الافتراضيّ كما كانت كلُّ فاتورةٍ قبله؛ <b>والاستلامُ والجردُ والتحويلُ تختار أيَّ مستودع</b>، فالبيعُ وحدَه كان
+    /// حبيسَ الافتراضيّ — ومنشأةٌ متعدّدةُ الفروع لا تبيع من مخزن فرعها الثاني.
+    /// </summary>
+    public long? WarehouseId { get; private set; }
+
     public IReadOnlyList<SalesInvoiceLine> Lines => _lines.AsReadOnly();
 
     /// <summary>الإجمالي قبل الضريبة — مُخزَّن ويُحدَّث مع السطور.</summary>
@@ -294,6 +301,18 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     }
 
     public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
+
+    /// <summary>
+    /// (ح-١١٠) يضبط مستودعَ الصرف — <b>والفارغُ هو الافتراضيّ</b>. <b>ولا يُغيَّر بعد الترحيل</b>: حركةُ الصرف مرحَّلةٌ في مستودعها،
+    /// والإلغاءُ والمرتجعُ يرجعان إليه. <b>والمستودعُ نفسُه يُسأل عند الترحيل</b> (في المنشأة وغيرُ موقوف).
+    /// </summary>
+    public void SetWarehouse(long? warehouseId)
+    {
+        if (warehouseId is <= 0)
+            throw new AccountingException("المستودع غير صالح.");
+        EnsureDraft();
+        WarehouseId = warehouseId;
+    }
 
     public void MarkPosSale(long shiftId, PosPaymentMethod method)
     {

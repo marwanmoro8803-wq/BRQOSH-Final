@@ -208,6 +208,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏يبني SELECT بكلّ أعمدة النموذج.
         await EnsureWorkOrderWarehouseColumnsAsync(isPg, ct);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٠) ‏مستودعُ فاتورة المبيعات — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن الفاتورة
+        // ‏يبني SELECT بكلّ أعمدة النموذج.
+        await EnsureSalesInvoiceWarehouseColumnAsync(isPg, ct);
+
         if (isPg)
             await ApplyPostgreSqlPatchesAsync(ct);
         else
@@ -313,6 +317,17 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else
                 await EnsureSqliteColumnAsync("work_orders", column, "INTEGER NULL", ct);
         }
+    }
+
+    private async Task EnsureSalesInvoiceWarehouseColumnAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("sales_invoices", isPg, ct))
+            return;
+
+        if (isPg)
+            await EnsurePgColumnAsync("sales_invoices", "WarehouseId", "BIGINT NULL", ct);
+        else
+            await EnsureSqliteColumnAsync("sales_invoices", "WarehouseId", "INTEGER NULL", ct);
     }
 
     private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)

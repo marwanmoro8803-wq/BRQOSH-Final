@@ -14,6 +14,11 @@ public partial class SalesInvoiceDialog : Window
 {
     public record CustomerOption(long Id, string Display);
 
+    /// <summary>‏(ح-١١٠) ‏خيارُ مستودع — <c>Id</c> الفارغُ هو الافتراضيّ.</summary>
+    public record WarehouseOption(long? Id, string Display);
+
+    private const string DefaultWarehouseChoice = "(المستودع الافتراضي)";
+
     /// <summary>
     /// (CEEF-229 · م0-١٧) صفٌّ مُشعِر — يُستعمل في فواتير البيع والشراء وإشعارَي الدائن والمدين.
     /// بدون الإشعار كان عمود «الإجمالي» يبقى 0.00 بينما ملخّص الفاتورة صحيح، فيظنّ المستخدم
@@ -101,6 +106,7 @@ public partial class SalesInvoiceDialog : Window
                 "مسار ذهبي: بيع → ZATCA → تحصيل — Financial Truth First.",
                 "Golden path: Sell → ZATCA → Collect — Financial Truth First.");
             await LoadCustomersAsync();
+            await LoadWarehousesAsync();
             await LoadProductsAsync();
             await LoadZatcaPanelAsync();
         };
@@ -136,6 +142,20 @@ public partial class SalesInvoiceDialog : Window
             .Select(p => new ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
             .ToListAsync();
         ProductColumn.ItemsSource = _products;   // (م2-٢٠) بلا هذا يبقى العمود فارغاً
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏المستودعاتُ القائمة — والأوّلُ «الافتراضيّ».
+        await using var db = AppServices.CreateDb();
+        var choices = new List<WarehouseOption> { new(null, DefaultWarehouseChoice) };
+        choices.AddRange(await db.Warehouses
+            .Where(w => w.CompanyId == AppServices.CompanyId && w.IsActive)
+            .OrderBy(w => w.Code)
+            .Select(w => new WarehouseOption(w.Id, w.Code + " — " + w.NameAr))
+            .ToListAsync());
+        WarehouseCombo.ItemsSource = choices;
+        WarehouseCombo.SelectedIndex = 0;
     }
 
     private async Task LoadCustomersAsync()
@@ -276,6 +296,9 @@ public partial class SalesInvoiceDialog : Window
         // ‏وكانت هذه الميزةُ مبنيّةً في `ط1-٤` **ولا حقلَ في أيّ شاشةٍ يصل إليها**، فيُدخل
         // ‏المصدِّرُ فاتورتَه محوَّلةً بيده وتضيع القيمةُ الأصلية.
         ApplyCurrency(invoice);
+
+        // ‏(ح-١١٠) ‏مستودعُ الصرف — الفارغُ هو الافتراضيّ؛ والمستودعُ يُسأل عند الترحيل.
+        invoice.SetWarehouse(WarehouseCombo.SelectedValue as long?);
 
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))

@@ -47,7 +47,7 @@ public class SalesOrderService(BrqoshDbContext db)
     /// <b>وذلك يُقال ولا يُدّعى خلافُه</b>.</para>
     /// </summary>
     public async Task<SalesInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId,
-        DateOnly invoiceDate, CancellationToken ct = default) =>
+        DateOnly invoiceDate, long? warehouseId = null, CancellationToken ct = default) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             SecurityContext.EnsureCanPost();
@@ -58,6 +58,9 @@ public class SalesOrderService(BrqoshDbContext db)
                 throw new Domain.Accounting.AccountingException("يُنشأ الفاتورة من أمر بيع مؤكد فقط.");
 
             var invoice = SalesInvoice.CreateDraft(companyId, order.CustomerId, invoiceDate);
+            // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الفاتورةُ تُصرف من المستودع المختار** (والفارغُ
+            // ‏الافتراضيّ)، **وتخصيصُ الدفعات أدناه من المستودع نفسِه** — وإلا خُصِّصت دفعةٌ من مستودعٍ غير الذي يُنقَص.
+            invoice.SetWarehouse(warehouseId);
 
             // ‏(جاهزيّةُ الإطلاق · ح-١٠٤ · `order-to-cash-procure-to-pay-inventory#7`) ‏**الصنفُ المتتبَّعُ يُخصَّص له الأقدمُ
             // ‏انتهاءً عند التحويل** — وكان السطرُ يُبنى بلا دفعةٍ فيرفضه المَخنَقُ، فلا يُفوتَر دواءٌ ولا غذاءٌ من أمرِ بيع.
@@ -73,7 +76,10 @@ public class SalesOrderService(BrqoshDbContext db)
             if (trackedIds.Count > 0)
             {
                 // ‏المستودعُ هو الذي يصرف منه `SalesInvoicePostingService` — وإلا خُصِّصت دفعةٌ من مستودعٍ غير الذي يُنقَص.
-                var warehouse = await inv.GetDefaultWarehouseAsync(companyId);
+                var warehouse = warehouseId is long chosen
+                    ? await db.Warehouses.SingleOrDefaultAsync(w => w.CompanyId == companyId && w.Id == chosen, token)
+                        ?? throw new Domain.Accounting.AccountingException("المستودع المختار لهذه الفاتورة غير موجود في المنشأة.")
+                    : await inv.GetDefaultWarehouseAsync(companyId);
                 var allocator = new BatchAllocationService(db);
                 foreach (var trackedId in trackedIds)
                 {
