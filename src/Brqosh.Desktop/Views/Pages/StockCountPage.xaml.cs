@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Inventory;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
@@ -22,6 +23,9 @@ public partial class StockCountPage : UserControl
         public string ProductName { get; init; } = "";
         public string WarehouseName { get; init; } = "";
         public string Unit { get; init; } = "";
+
+        /// <summary>(ح-١٠٩) رقمُ الدفعة لصنفٍ متتبَّع — فارغٌ لغيره.</summary>
+        public string? BatchNumber { get; init; }
         public decimal SystemQty { get; init; }
 
         /// <summary>
@@ -77,8 +81,39 @@ public partial class StockCountPage : UserControl
         await using var db = AppServices.CreateDb();
         var balances = await new StockBalanceQuery(db).ExecuteAsync(AppServices.CompanyId, whId, includeZeroBalances: true);
         _rows.Clear();
+
+        // ‏(جاهزيّةُ الإطلاق · ح-١٠٩ · `order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّع يُجرد بدفعاته:** صفٌّ لكلّ دفعةٍ رصيدُها موجب
+        // ‏في مستودع الصفّ، ولا صفَّ لدفعةٍ رصيدُها صفر. وإلا رُفضت فروقُ دواءٍ في المَخنَق «بلا هويّة».
+        var trackedIds = balances.Select(b => b.ProductId).Distinct().ToList();
+        var batches = trackedIds.Count == 0 ? [] : await db.StockBatches.AsNoTracking()
+            .Where(x => x.CompanyId == AppServices.CompanyId && trackedIds.Contains(x.ProductId) && x.Quantity > 0)
+            .OrderBy(x => x.BatchNumber).ToListAsync();
+        var trackedProducts = (await db.Products.AsNoTracking()
+            .Where(p => trackedIds.Contains(p.Id) && p.Tracking != InventoryTracking.None)
+            .Select(p => p.Id).ToListAsync()).ToHashSet();
+
         foreach (var b in balances)
         {
+            if (trackedProducts.Contains(b.ProductId))
+            {
+                foreach (var batch in batches.Where(x => x.ProductId == b.ProductId && x.WarehouseId == b.WarehouseId))
+                    _rows.Add(new CountRow
+                    {
+                        ProductId = b.ProductId,
+                        WarehouseId = b.WarehouseId,
+                        ProductCode = b.ProductCode,
+                        ProductName = b.ProductName,
+                        WarehouseName = b.WarehouseName,
+                        Unit = b.Unit,
+                        BatchNumber = batch.BatchNumber,
+                        SystemQty = batch.Quantity,
+                        CountedQty = batch.Quantity,
+                        UnitCost = b.UnitCost,
+                        IsStopped = b.IsStopped,
+                    });
+                continue;
+            }
+
             _rows.Add(new CountRow
             {
                 ProductId = b.ProductId,
@@ -125,7 +160,7 @@ public partial class StockCountPage : UserControl
             var username = SecurityContext.ResolveUsername();
             // (م2-٢٤) التكلفة المُدخَلة تُمرَّر، والخدمةُ تقبلها فقط لصنفٍ لا تكلفة له.
             var lines = _rows
-                .Select(r => (r.ProductId, r.SystemQty, r.CountedQty, (decimal?)r.UnitCost))
+                .Select(r => (r.ProductId, r.BatchNumber, r.SystemQty, r.CountedQty, (decimal?)r.UnitCost))
                 .ToList();
             var posted = await facade.GetService<StockCountAdjustmentService>().PostVariancesAsync(
                 AppServices.CompanyId, whId, DateOnly.FromDateTime(DateTime.Today), lines, username);

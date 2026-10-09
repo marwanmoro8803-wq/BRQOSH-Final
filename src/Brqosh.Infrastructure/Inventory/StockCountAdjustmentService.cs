@@ -20,9 +20,21 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
     /// فالجردُ لا يجوز أن يكون باباً خلفياً لإعادة كتابة تقييم المخزون: من له تكلفةٌ محسوبة
     /// من مشترياته لا تُمسّ بإدخالٍ يدويّ.</para>
     /// </summary>
-    public async Task<int> PostVariancesAsync(
+    public Task<int> PostVariancesAsync(
         long companyId, long warehouseId, DateOnly countDate,
         IReadOnlyList<(long ProductId, decimal SystemQty, decimal CountedQty, decimal? OpeningUnitCost)> lines,
+        string username, CancellationToken ct = default) =>
+        PostVariancesAsync(companyId, warehouseId, countDate,
+            lines.Select(l => (l.ProductId, (string?)null, l.SystemQty, l.CountedQty, l.OpeningUnitCost)).ToList(),
+            username, ct);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٠٩ · <c>order-to-cash-procure-to-pay-inventory#7</c>) ‏**الجردُ بالدفعة.** الصنفُ المتتبَّع يُجرد بدفعاته:
+    /// السطرُ يحمل <c>BatchNumber</c> ولقطتُه رصيدُ تلك الدفعة، وبلا دفعةٍ يُرفض باسم الصنف. وغيرُ المتتبَّع كما كان.
+    /// </summary>
+    public async Task<int> PostVariancesAsync(
+        long companyId, long warehouseId, DateOnly countDate,
+        IReadOnlyList<(long ProductId, string? BatchNumber, decimal SystemQty, decimal CountedQty, decimal? OpeningUnitCost)> lines,
         string username, CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPost();
@@ -50,20 +62,35 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
             //
             // ‏**والرفضُ لا الإصلاحُ الصامت:** ضبطُ الرصيد على المعدود مباشرةً كان يمحو حركةً
             // ‏حقيقية وقعت بين العدّ والترحيل. من عدّ لا يعلم بها، فالقرارُ له لا للنظام.
+            //
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٩ · `order-to-cash-procure-to-pay-inventory#7`) ‏**والمتتبَّع يُقارَن بدفعته لا بمجموعه** — وبلا دفعةٍ يُرفض:
+            // ‏فالحركةُ التي لا تحمل هويّةً يرفضها المَخنَقُ، والأجدى أن يُرفض هنا باسم الصنف وقبل أيّ ترحيل.
             var inventory = new InventoryService(db);
             foreach (var line in lines)
             {
-                var actual = await inventory.GetOnHandAsync(companyId, line.ProductId, warehouseId);
+                var tracked = await db.Products
+                    .Where(p => p.Id == line.ProductId)
+                    .Select(p => new { p.NameAr, p.IsTracked })
+                    .SingleOrDefaultAsync(token);
+                var name = tracked?.NameAr ?? line.ProductId.ToString();
+                var batchNo = string.IsNullOrWhiteSpace(line.BatchNumber) ? null : line.BatchNumber.Trim();
+
+                if (tracked?.IsTracked == true && batchNo is null)
+                    throw new AccountingException(
+                        $"الصنف '{name}' يُتتبَّع بالدفعة — يُجرد بدفعاته: اذكر رقمَ الدفعة في كلّ سطر.");
+
+                var actual = tracked?.IsTracked == true
+                    ? await db.StockBatches
+                        .Where(b => b.CompanyId == companyId && b.WarehouseId == warehouseId
+                            && b.ProductId == line.ProductId && b.BatchNumber == batchNo)
+                        .Select(b => b.Quantity).SingleOrDefaultAsync(token)
+                    : await inventory.GetOnHandAsync(companyId, line.ProductId, warehouseId);
                 if (actual == line.SystemQty)
                     continue;
 
-                var name = await db.Products
-                    .Where(p => p.Id == line.ProductId)
-                    .Select(p => p.NameAr)
-                    .SingleOrDefaultAsync(token) ?? line.ProductId.ToString();
-
+                var label = batchNo is null ? name : $"{name}» دفعة «{batchNo}";
                 throw new AccountingException(
-                    $"تغيّر رصيدُ «{name}» بعد فتح ورقة الجرد: كان {line.SystemQty:0.####} "
+                    $"تغيّر رصيدُ «{label}» بعد فتح ورقة الجرد: كان {line.SystemQty:0.####} "
                     + $"وصار {actual:0.####}. أعِد فتحَ الورقة وأعِد العدّ — "
                     + "فترحيلُها الآن يكتب فرقاً محسوباً على رصيدٍ قديم.");
             }
@@ -94,7 +121,7 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
                     if (unitCost == 0m && v.OpeningUnitCost is decimal supplied && supplied > 0m)
                         unitCost = supplied;
 
-                    movement.AddLine(v.ProductId, qty, unitCost);
+                    movement.AddLine(v.ProductId, qty, unitCost, Batch(v.BatchNumber), await ExpiryAsync(v, warehouseId));
                 }
                 await posting.PostAsync(movement);
                 movementsPosted++;
@@ -110,7 +137,7 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
                 {
                     var product = await db.Products.SingleAsync(p => p.Id == v.ProductId, token);
                     var qty = v.SystemQty - v.CountedQty;
-                    movement.AddLine(v.ProductId, qty, product.WeightedAverageCost);
+                    movement.AddLine(v.ProductId, qty, product.WeightedAverageCost, Batch(v.BatchNumber), await ExpiryAsync(v, warehouseId));
                 }
                 await posting.PostAsync(movement);
                 movementsPosted++;
@@ -123,4 +150,15 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
             return variances.Count;
         }, ct);
     }
+
+    // ‏(ح-١٠٩) ‏رقمُ الدفعة المُمرَّر، وانتهاؤها القائمُ إن وُجدت — `AdjustmentOut` لا يمنع إخراجَ المنتهية، فيُزال بالعدّ.
+    private static string? Batch(string? number) => string.IsNullOrWhiteSpace(number) ? null : number.Trim();
+
+    private async Task<DateOnly?> ExpiryAsync(
+        (long ProductId, string? BatchNumber, decimal SystemQty, decimal CountedQty, decimal? OpeningUnitCost) v, long warehouseId) =>
+        Batch(v.BatchNumber) is { } no
+            ? await db.StockBatches.Where(b => b.WarehouseId == warehouseId
+                && b.ProductId == v.ProductId && b.BatchNumber == no)
+                .Select(b => b.ExpiryDate).FirstOrDefaultAsync()
+            : null;
 }
