@@ -10,6 +10,12 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <!-- (جاهزيّةُ الإطلاق · ح-١١٣) مستودعُ الصرف لفاتورة الأمر — والأوّلُ «الافتراضيّ». -->
+                    <StackPanel x:Name="WarehousePanel" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <TextBlock Text="المستودع" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="WarehouseCombo" Width="200" FontSize="14" Padding="10,8"
+                                  DisplayMemberPath="Display" SelectedValuePath="Id"/>
+                    </StackPanel>
                     <Button x:Name="InvoiceBtn" Content="إنشاء فاتورة" Style="{StaticResource SecondaryButton}"
                             Padding="16,9" Margin="0,0,8,0" Click="OnCreateInvoice"/>
                     <Button x:Name="NewBtn" Content="＋ أمر بيع" Style="{StaticResource PrimaryButton}"

@@ -37,9 +37,27 @@ public partial class PurchaseOrdersPage : UserControl
                 (ApproveBtn, PermissionService.CanPostAccounting),
                 (RejectBtn, PermissionService.CanPostAccounting),
                 (CreateInvoiceBtn, PermissionService.CanPostAccounting),
+                (WarehousePanel, PermissionService.CanPostAccounting),
                 (CancelOrderBtn, PermissionService.CanCancelOrReverse));
+            await UiFeedback.RunSafeAsync(LoadWarehousesAsync);
             await UiFeedback.RunSafeAsync(ReloadAsync);
         };
+    }
+
+    private const string DefaultWarehouseChoice = "(المستودع الافتراضي)";
+
+    private async Task LoadWarehousesAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٣ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المستودعاتُ الفعّالة — والأوّلُ «الافتراضيّ» (null) فلا يتغيّر شيءٌ لمن لا يختار.**
+        await using var db = AppServices.CreateDb();
+        var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, DefaultWarehouseChoice) };
+        choices.AddRange(await db.Warehouses
+            .Where(w => w.CompanyId == AppServices.CompanyId && w.IsActive)
+            .OrderBy(w => w.Code)
+            .Select(w => new SalesInvoiceDialog.WarehouseOption(w.Id, w.Code + " — " + w.NameAr))
+            .ToListAsync());
+        WarehouseCombo.ItemsSource = choices;
+        WarehouseCombo.SelectedIndex = 0;
     }
 
     private async Task ReloadAsync()
@@ -208,9 +226,11 @@ public partial class PurchaseOrdersPage : UserControl
                 .Join(db.Suppliers, o => o.SupplierId, s => s.Id, (o, s) => s)
                 .SingleAsync();
 
+            // ‏(جاهزيّةُ الإطلاق · ح-١١٣ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المستودعُ المختار يصل الخدمة (null = الافتراضيّ).**
+            var warehouseId = WarehouseCombo.SelectedValue as long?;
             await facade.GetService<PurchaseOrderService>().CreateInvoiceFromOrderAsync(
                 AppServices.CompanyId, row.Id, reference,
-                DateOnly.FromDateTime(DateTime.Today), supplier.IsVatRegistered);
+                DateOnly.FromDateTime(DateTime.Today), supplier.IsVatRegistered, warehouseId: warehouseId);
 
             UiDialog.Show("تم إنشاء فاتورة المشتريات وترحيلها.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await UiFeedback.RunSafeAsync(ReloadAsync);

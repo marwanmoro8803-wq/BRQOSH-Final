@@ -27,6 +27,12 @@
                     <Button x:Name="ApproveBtn" Content="اعتماد" Padding="16,9" Margin="0,0,8,0" Click="OnApprove"/>
                     <Button x:Name="RejectBtn" Content="رفض" Style="{StaticResource SoftDangerButton}"
                             Padding="16,9" Margin="0,0,8,0" Click="OnReject"/>
+                    <!-- (جاهزيّةُ الإطلاق · ح-١١٣) مستودعُ الاستلام لفاتورة الأمر — والأوّلُ «الافتراضيّ». -->
+                    <StackPanel x:Name="WarehousePanel" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <TextBlock Text="المستودع" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="WarehouseCombo" Width="200" FontSize="14" Padding="10,8"
+                                  DisplayMemberPath="Display" SelectedValuePath="Id"/>
+                    </StackPanel>
                     <Button x:Name="CreateInvoiceBtn" Content="إنشاء فاتورة من المحدد" Padding="16,9" Click="OnCreateInvoice"/>
                     <Button x:Name="PrevBtn" Content="→" Padding="12,9" Margin="8,0,6,0"
                             ToolTip="الصفحة السابقة" Click="OnPrev"/>

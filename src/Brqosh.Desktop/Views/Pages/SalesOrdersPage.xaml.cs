@@ -20,9 +20,27 @@ public partial class SalesOrdersPage : UserControl
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (NewBtn, PermissionService.CanPost),
-                (InvoiceBtn, PermissionService.CanPostAccounting));
+                (InvoiceBtn, PermissionService.CanPostAccounting),
+                (WarehousePanel, PermissionService.CanPostAccounting));
+            await LoadWarehousesAsync();
             await ReloadAsync();
         };
+    }
+
+    private const string DefaultWarehouseChoice = "(المستودع الافتراضي)";
+
+    private async Task LoadWarehousesAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١١٣ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المستودعاتُ الفعّالة — والأوّلُ «الافتراضيّ» (null) فلا يتغيّر شيءٌ لمن لا يختار.**
+        await using var db = AppServices.CreateDb();
+        var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, DefaultWarehouseChoice) };
+        choices.AddRange(await db.Warehouses
+            .Where(w => w.CompanyId == AppServices.CompanyId && w.IsActive)
+            .OrderBy(w => w.Code)
+            .Select(w => new SalesInvoiceDialog.WarehouseOption(w.Id, w.Code + " — " + w.NameAr))
+            .ToListAsync());
+        WarehouseCombo.ItemsSource = choices;
+        WarehouseCombo.SelectedIndex = 0;
     }
 
     private async Task ReloadAsync()
@@ -76,8 +94,10 @@ public partial class SalesOrdersPage : UserControl
         try
         {
             using var facade = new DesktopAccountingFacade();
+            // ‏(جاهزيّةُ الإطلاق · ح-١١٣ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المستودعُ المختار يصل الخدمة (null = الافتراضيّ).**
+            var warehouseId = WarehouseCombo.SelectedValue as long?;
             var invoice = await facade.GetService<SalesOrderService>().CreateInvoiceFromOrderAsync(
-                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today));
+                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today), warehouseId: warehouseId);
             UiDialog.Show($"تم إنشاء الفاتورة {invoice.InvoiceNumber}.", "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
