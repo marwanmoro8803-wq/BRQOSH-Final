@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ وثمانيةُ إغلاقاتٍ ح-١…ح-١٠٩**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ وتسعةُ إغلاقاتٍ ح-١…ح-١٠٩**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -3124,10 +3124,11 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١٠٦ | `8911b8a` | `Purchasing/PurchaseOrderService.cs` · `AnOrderOfATrackedProductIsReceivedByItsBatchFirstTests.cs` | **الاستلامُ الآليُّ من أمر الشراء يرفض المتتبَّعَ «بلا هويّة» دون ما يُعمل** (`order-to-cash-procure-to-pay-inventory#7` ◐) — صار يُرفض باسم الصنف ويُدَلّ على إذن الاستلام، والطريقُ المدلولُ عليه يعمل؛ برهانٌ واحدٌ وضابطان |
 | ح-١٠٧ | `7afc931` | `Domain/Purchasing/DebitNote.cs` · `Purchasing/DebitNotePostingService.cs` · `Inventory/InventoryCostingService.cs` · `DebitNoteDialog.xaml(.cs)` · `ui-overrides.json` · `AReturnBelowCostIsBalancedTests.cs` | **مرتجعٌ دون التكلفة يُرفض قيداً غيرَ متوازن** (`found#7` ◐) — صار يُرحَّل بتأكيدٍ صريحٍ والخسارةُ في 5108، وبلاه يُرفض بالمبالغ؛ وطبقاتُ الفاتورة أوّلاً تحت FIFO، وعملةُ الإشعار تُطابَق؛ أربعةُ براهين؛ **صاغه Sonnet ونقضه Fable** (الخسارةُ الصامتةُ والطبقةُ الخطأ) **فأُعيد بناؤه هنا** |
 | ح-١٠٩ | `71d0085` | `Inventory/StockCountAdjustmentService.cs` · `StockCountPage.xaml(.cs)` · `ATrackedProductIsCountedByItsBatchesTests.cs` · `TheCountSheetListsTrackedProductsByBatchTests.cs` | **الجردُ لا يُصحّح صنفاً متتبَّعاً** (`order-to-cash-procure-to-pay-inventory#7` ◐) — صار صفّاً لكلّ دفعةٍ والفرقُ على دفعته والقِدَمُ لكلّ دفعة؛ ثلاثةُ براهين؛ **نفّذه Sonnet، وشُدِّد اختبارُ الحارس فصار يعضّ** |
+| ح-١٠٨ | `8f71b31` | `Purchasing/PurchaseInvoicePostingService.cs` · `Domain/Purchasing/PurchaseInvoice.cs` · `SalesInvoiceLine.ExpiryDate` · `BrqoshDbContext` · `BrqoshSchemaUpdater` · هجرة `AddPurchaseInvoiceLineExpiry` · `PurchaseInvoiceDialog.xaml(.cs)` · `ADirectPurchaseOfATrackedProductEntersByItsBatchTests.cs` · `ThePurchaseInvoiceScreenTakesTheBatchTests.cs` | **فاتورةُ الشراء المباشرة لا تُدخل صنفاً متتبَّعاً** (`order-to-cash-procure-to-pay-inventory#7` ✅) — صارت تُدخله بدفعته وانتهائه؛ برهانان؛ **نفّذه Sonnet**؛ **وبه أُغلقت المساراتُ الخمسة** |
 
-**والقياسُ عند آخر إيداع (`71d0085`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2131/2131** · `Brqosh.Desktop.Tests` **419/419** · `Brqosh.Api.Tests` **95/95** ·
-بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.22%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
+**والقياسُ عند آخر إيداع (`8f71b31`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
+`Brqosh.Application.Tests` **2137/2137** · `Brqosh.Desktop.Tests` **421/421** · `Brqosh.Api.Tests` **95/95** ·
+بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.23%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
 
