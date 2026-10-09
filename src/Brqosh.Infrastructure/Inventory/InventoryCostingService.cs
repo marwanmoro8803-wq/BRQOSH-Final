@@ -242,6 +242,10 @@ public class InventoryCostingService(BrqoshDbContext db)
         foreach (var layer in layers)
         {
             if (remaining <= 0) break;
+            // ‏(جاهزيّةُ الإطلاق · ح-١٠٣) ‏**طبقةٌ استنفدها سطرٌ سابقٌ في المستند نفسِه تُتخطّى.** الشرطُ «المتبقّي موجب» يُقيَّم في
+            // ‏القاعدة، والاستهلاكُ السابقُ في الذاكرة لم يُحفظ — فتعود الطبقةُ المتتبَّعةُ برصيدها الصفر، وكان يُطلب منها صفرٌ
+            // ‏فيرمي `Consume`: فلا تُرحَّل فاتورةٌ بالصنف على سطرين متى استنفد الأوّلُ طبقة.
+            if (layer.RemainingQuantity <= 0) continue;
             var take = Math.Min(remaining, layer.RemainingQuantity);
             totalCost += layer.Consume(take);
 
