@@ -5,19 +5,30 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <DockPanel LastChildFill="False">
-                <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="＋ عرض سعر"
-                        Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <!-- (جاهزيّةُ الإطلاق · ح-١١٥ · order-to-cash-procure-to-pay-inventory#8) قبولٌ ورفضٌ وتحويلٌ إلى أمر بيع. -->
+                    <Button x:Name="AcceptBtn" Content="قبول العرض" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="0,0,8,0" Click="OnAccept"/>
+                    <Button x:Name="RejectBtn" Content="رفض العرض" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="0,0,8,0" Click="OnReject"/>
+                    <Button x:Name="ConvertBtn" Content="تحويل إلى أمر بيع" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="0,0,8,0" Click="OnConvert"/>
+                    <Button x:Name="AddBtn" Content="＋ عرض سعر"
+                            Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
+                </StackPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="عروض الأسعار" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="LIFECYCLE-31 · مبيعات مبكرة"/>
                 </StackPanel>
             </DockPanel>
         </Border>
-        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Margin="0,12,0,0">
+        <TextBlock x:Name="StatusText" Grid.Row="1" Margin="4,10,4,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,12,0,0">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="رقم العرض" Binding="{Binding QuotationNumber}" Width="120"/>

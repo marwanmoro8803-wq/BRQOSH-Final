@@ -78,7 +78,23 @@ public class SalesQuotation : ILineDocumentTotals
         Status = SalesQuotationStatus.Sent;
     }
 
-    public void Accept() => Status = SalesQuotationStatus.Accepted;
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١١٥ · ‏`order-to-cash-procure-to-pay-inventory#8`) ‏**القبولُ والرفضُ من «مُرسَل» وحده** —
+    /// ‏فالمرفوضُ لا يُقبَل، والمقبولُ لا يُرفَض، والمسودّةُ لم تصل العميلَ بعد.
+    /// </summary>
+    public void Accept()
+    {
+        if (Status != SalesQuotationStatus.Sent)
+            throw new AccountingException("يُقبل عرض سعر مُرسَل فقط.");
+        Status = SalesQuotationStatus.Accepted;
+    }
+
+    public void Reject()
+    {
+        if (Status != SalesQuotationStatus.Sent)
+            throw new AccountingException("يُرفض عرض سعر مُرسَل فقط.");
+        Status = SalesQuotationStatus.Rejected;
+    }
 
     /// <summary>
     /// (م-٥ · ن-٥٢) <b>الأوعيةُ بالفئة — وكانت نسبةً مسمّرةً على الإجمالي.</b>

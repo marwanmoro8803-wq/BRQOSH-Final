@@ -132,6 +132,11 @@ public class SalesOrderService(BrqoshDbContext db)
 
         if (quote.Status is not (SalesQuotationStatus.Sent or SalesQuotationStatus.Accepted))
             throw new Domain.Accounting.AccountingException("يُحوَّل عرض سعر مُرسَل أو مقبول فقط.");
+        // ‏(ح-١١٥) ‏**العرضُ يُحوَّل مرّةً**: نقرتان على «تحويل» كانتا أمرَين مؤكَّدَين يُفوتَران مرّتين.
+        // ‏والأمرُ الملغى لا يُحتسب — فيُعاد التحويلُ بعده.
+        if (await db.SalesOrders.AnyAsync(o => o.CompanyId == companyId && o.SalesQuotationId == quotationId
+                && o.Status != SalesOrderStatus.Cancelled, ct))
+            throw new Domain.Accounting.AccountingException("حُوِّل عرض السعر هذا إلى أمر بيع سلفاً.");
 
         var order = SalesOrder.CreateDraft(companyId, quote.CustomerId, DateOnly.FromDateTime(DateTime.Today), quotationId);
         // ‏(م-٥ · ن-٥٢) **وهذا الموضعُ صار حيّاً بهذا التغيير نفسِه**: عرضُ السعر لم يكن
