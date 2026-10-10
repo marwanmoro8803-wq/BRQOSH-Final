@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ وأربعةَ عشرَ إغلاقاً ح-١…ح-١١٤**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ وخمسةَ عشرَ إغلاقاً ح-١…ح-١١٥**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٤ (2026-09-20…10-10)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٥ (2026-09-20…10-10)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3130,10 +3130,11 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١١١ | `4ae3b3e` | `Domain/Purchasing/PurchaseInvoice.cs` · `Purchasing/PurchaseInvoicePostingService.cs` · `PurchaseOrderService.cs` · `DebitNotePostingService.cs` · `DebitNoteDraftBuilder.cs` · هجرة `AddPurchaseInvoiceWarehouse` · `PurchaseInvoiceDialog.xaml(.cs)` · `APurchaseEntersItsOwnWarehouseTests.cs` · `ThePurchaseDialogChoosesTheReceivingWarehouseTests.cs` | **الشراءُ والمرتجعُ إليه على المستودع الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ◐) — صار الشراءُ إلى مستودعه والمرتجعُ من مستودعات استلامه؛ أربعةُ براهين؛ **نفّذه Sonnet، ونقضه Fable** (الإلغاءُ من مستودعين يُرمّم مرّتين ⟵ ح-١١٢، والدفعةُ في مستودعين) |
 | ح-١١٣ | `1cbc4b1` | `SalesOrdersPage.xaml(.cs)` · `PurchaseOrdersPage.xaml(.cs)` · `TheOrderScreensChooseTheWarehouseTests.cs` | **فوترةُ الأوامر من الشاشة على الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ◐) — الخدمتان تقبلان المستودعَ منذ ح-١١٠ وح-١١١ والشاشتان لا تُمرّرانه؛ صارتا تختارانه؛ قياسٌ بنيويٌّ (غائبٌ على `HEAD`)؛ **نفّذه Sonnet** |
 | ح-١١٤ | `351af2b` | `Domain/Retail/PosShift.cs` · `Domain/Sales/RecurringInvoicePlan.cs` · `Retail/PosSaleService.cs` · `Sales/RecurringInvoiceService.cs` · هجرة `AddPosShiftAndRecurringPlanWarehouse` · `BrqoshSchemaUpdater` · `PosShiftsPage.xaml(.cs)` · `PosAndRecurringSalesLeaveFromTheirWarehouseTests.cs` · `ThePosShiftScreenChoosesTheSellingWarehouseTests.cs` | **نقاطُ البيع والفواتيرُ الدوريّة على الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ✅) — صارت الورديةُ والخطّةُ تحملان مستودعاً تصرف منه فواتيرُهما؛ برهانان؛ **نفّذه Sonnet**؛ **وبه أُغلق البند** |
+| ح-١١٥ | `5d8ea76` | `Domain/Sales/SalesQuotation.cs` · `Sales/SalesQuotationService.cs` · `Sales/SalesOrderService.cs` · `SalesOrderDialog.xaml(.cs)` · `SalesQuotationDialog.xaml(.cs)` · `SalesQuotationsPage.xaml(.cs)` · `ui-overrides.json` · `AQuotationIsAcceptedRejectedAndConvertedTests.cs` · `SalesOrderAndQuotationEntryTests.cs` | **أمرُ البيع وعرضُ السعر سطرٌ نصّيٌّ واحد، ولا قبولَ ولا رفضَ ولا تحويلَ في الواجهة** (`order-to-cash-procure-to-pay-inventory#8` ✅) — شبكتا سطور بالصنف والفئة الضريبيّة، والقبولُ والرفضُ من «مُرسَل» وحده، والعرضُ يُحوَّل مرّةً؛ ثلاثةُ براهين؛ **راجعه Sonnet واختار التاليَ Fable** |
 
-**والقياسُ عند آخر إيداع (`351af2b`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2162/2162** · `Brqosh.Desktop.Tests` **426/426** · `Brqosh.Api.Tests` **95/95** ·
-بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.27%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
+**والقياسُ عند آخر إيداع (`5d8ea76`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
+`Brqosh.Application.Tests` **2167/2167** · `Brqosh.Desktop.Tests` **431/431** · `Brqosh.Api.Tests` **95/95** ·
+بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.22%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
 
