@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-09-27 (جاهزيّةُ الإطلاق · **مئةٌ وخمسةَ عشرَ إغلاقاً ح-١…ح-١١٥**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-10-11 (جاهزيّةُ الإطلاق · **مئةٌ وستّةَ عشرَ إغلاقاً ح-١…ح-١١٦**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٥ (2026-09-20…10-10)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٦ (2026-09-20…10-11)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3131,10 +3131,11 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١١٣ | `1cbc4b1` | `SalesOrdersPage.xaml(.cs)` · `PurchaseOrdersPage.xaml(.cs)` · `TheOrderScreensChooseTheWarehouseTests.cs` | **فوترةُ الأوامر من الشاشة على الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ◐) — الخدمتان تقبلان المستودعَ منذ ح-١١٠ وح-١١١ والشاشتان لا تُمرّرانه؛ صارتا تختارانه؛ قياسٌ بنيويٌّ (غائبٌ على `HEAD`)؛ **نفّذه Sonnet** |
 | ح-١١٤ | `351af2b` | `Domain/Retail/PosShift.cs` · `Domain/Sales/RecurringInvoicePlan.cs` · `Retail/PosSaleService.cs` · `Sales/RecurringInvoiceService.cs` · هجرة `AddPosShiftAndRecurringPlanWarehouse` · `BrqoshSchemaUpdater` · `PosShiftsPage.xaml(.cs)` · `PosAndRecurringSalesLeaveFromTheirWarehouseTests.cs` · `ThePosShiftScreenChoosesTheSellingWarehouseTests.cs` | **نقاطُ البيع والفواتيرُ الدوريّة على الافتراضيّ أبداً** (`order-to-cash-procure-to-pay-inventory#12` ✅) — صارت الورديةُ والخطّةُ تحملان مستودعاً تصرف منه فواتيرُهما؛ برهانان؛ **نفّذه Sonnet**؛ **وبه أُغلق البند** |
 | ح-١١٥ | `5d8ea76` | `Domain/Sales/SalesQuotation.cs` · `Sales/SalesQuotationService.cs` · `Sales/SalesOrderService.cs` · `SalesOrderDialog.xaml(.cs)` · `SalesQuotationDialog.xaml(.cs)` · `SalesQuotationsPage.xaml(.cs)` · `ui-overrides.json` · `AQuotationIsAcceptedRejectedAndConvertedTests.cs` · `SalesOrderAndQuotationEntryTests.cs` | **أمرُ البيع وعرضُ السعر سطرٌ نصّيٌّ واحد، ولا قبولَ ولا رفضَ ولا تحويلَ في الواجهة** (`order-to-cash-procure-to-pay-inventory#8` ✅) — شبكتا سطور بالصنف والفئة الضريبيّة، والقبولُ والرفضُ من «مُرسَل» وحده، والعرضُ يُحوَّل مرّةً؛ ثلاثةُ براهين؛ **راجعه Sonnet واختار التاليَ Fable** |
+| ح-١١٦ | `af3de62` | `Domain/Payroll/LeaveEntitlementCalculator.cs` · `Domain/Payroll/PayrollRun.cs` · `Payroll/PayrollRunBuilder.cs` · `SickLeaveIsPaidOnArticle117TiersTests.cs` | **المرضيّةُ تُصرف كاملةً أبداً ولو بعد التسعين** (`treasury-payroll-assets#9` ◐) — `SickDeductionDays` يزن كلَّ يومٍ بتدرّج المادة 117 في «السنة الواحدة» من أوّل إجازةٍ مرضيّة، والدورةُ تخصمه؛ **وحصّةُ الموظّف من التأمينات لا تتجاوز الأجرَ المستحقّ** (قرارُ المالك 2026-10-11 — وكان شهرٌ خُصم كلُّه يُسقط الدورةَ كلَّها بصافٍ سالب)؛ برهانان (`sick-tiers` · `gosi-cap`)؛ **وحدُّه**: الحدودُ النظاميّةُ للإجازات لم تُعالَج |
 
-**والقياسُ عند آخر إيداع (`5d8ea76`) — بأمر CI نفسِه لا بالمشاريع الأربعة وحدَها (ح-٦٥):** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2167/2167** · `Brqosh.Desktop.Tests` **431/431** · `Brqosh.Api.Tests` **95/95** ·
-بتغطيةٍ و`trx` و`BRQOSH_REQUIRE_PG=1` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.22%**) · الماسحُ الأمنيّ · UI UX · مسبارُ تغطية المخطّط — **كلُّها `EXIT=0`**.
+**والقياسُ عند آخر إيداع (`af3de62`) — بـ`dotnet test Brqosh.sln -c Debug` لا بأمر CI:** `Brqosh.Domain.Tests` **245/245** ·
+`Brqosh.Application.Tests` **2174/2174** · `Brqosh.Desktop.Tests` **431/431** · `Brqosh.Api.Tests` **105/105** · **وصفرٌ متخطًّى** — `EXIT=0`.
+**ولم يُشغَّل هنا** ما يزيده أمرُ CI: التغطيةُ و`trx` و`BRQOSH_REQUIRE_PG=1` وبوّابةُ التغطية والماسحُ الأمنيّ وUI UX ومسبارُ تغطية المخطّط — فآخرُ قياسٍ لها بأمر CI عند `5d8ea76` (المدموج **65.22%**).
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
 
