@@ -49,7 +49,8 @@ public static class InfrastructureServiceCollectionExtensions
             else
                 options.UseSqlite(connectionString);
             // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏وحارسُ الفترة المقفلة عند الحفظ — كما في المصنع.
-            options.AddInterceptors(new AuditLogImmutabilityInterceptor(), new ClosedPeriodPostingInterceptor());
+            options.AddInterceptors(new AuditLogImmutabilityInterceptor(), new ClosedPeriodPostingInterceptor(),
+                new ReadOnlyBooksInterceptor());
         });
 
         services.AddScoped<IPostingPolicy, SaudiPostingPolicy>();

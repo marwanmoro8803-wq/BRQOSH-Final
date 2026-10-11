@@ -133,6 +133,29 @@ public static class LicenseStore
         return false;
     }
 
+    /// <summary>
+    /// ‏(ح-١٢٠) <b>هل الترخيصُ المحفوظُ أصيلٌ انقضت صلاحيتُه</b> — وهو وحدَه ما يفتح الدفاترَ للقراءة
+    /// ‏(<see cref="RsaLicenseValidator.IsGenuineButExpired"/>): المزوَّرُ والمنقولُ من جهازٍ أو منشأةٍ أخرى لا يفتحها.
+    /// </summary>
+    public static bool IsGenuineButExpiredFor(string companyName)
+    {
+        var stored = Load();
+        return stored?.SignedLicenseJson is not null
+               && RsaLicenseValidator.IsGenuineButExpired(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
+                   alsoAcceptMachineId: LicenseService.LegacyMachineId());
+    }
+
+    /// <summary>(ح-١٢٠) تاريخُ انتهاء الترخيص الصالح المحفوظ — للإنذار قبله؛ و<c>null</c> إن لم يكن صالحاً.</summary>
+    public static DateTime? ValidLicenseExpiresUtc(string companyName)
+    {
+        var stored = Load();
+        return stored?.SignedLicenseJson is not null
+               && RsaLicenseValidator.TryValidate(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
+                   out var payload, alsoAcceptMachineId: LicenseService.LegacyMachineId())
+            ? payload!.ExpiresUtc
+            : null;
+    }
+
     public static void SaveSignedLicense(string companyName, string signedLicenseJson)
     {
         Save(new LicenseState(companyName, LicenseService.MachineId(), signedLicenseJson));

@@ -42,6 +42,11 @@ public partial class MainWindow : Window
     {
         _setup = setup;
         InitializeComponent();
+
+        // ‏(ح-١٢٠) ‏**وضعُ القراءة يُرى في العنوان** — فلا يُحسب رفضُ الحفظ عطلاً.
+        if (Brqosh.Infrastructure.Licensing.ReadOnlyBooks.IsActive)
+            Title += " — " + LocaleManager.T("للقراءة فقط (الترخيص منتهٍ)", "Read-only (licence expired)");
+
         ThemeManager.Apply(true);
         RefreshThemeToggleText();
         KeyboardNavigationHelper.ApplyShellHeader(BranchCombo, ThemeToggleBtn);

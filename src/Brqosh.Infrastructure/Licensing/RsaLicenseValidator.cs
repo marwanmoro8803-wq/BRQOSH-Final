@@ -95,6 +95,22 @@ public static class RsaLicenseValidator
     /// </param>
     public static LicenseVerdict Validate(string companyName, string machineId, string licenseJson,
         out LicensePayload? payload, string? alsoAcceptMachineId = null)
+        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId, ignoreExpiry: false);
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٢٠) <b>ترخيصٌ أصيلٌ انقضت صلاحيتُه</b> — منشأتُه وجهازُه وتوقيعُه صحيحة، وتاريخُه فات.
+    ///
+    /// <para>‏وهو وحدَه ما يفتح الدفاترَ للقراءة. <b>ولا يكفي حكمُ <see cref="LicenseVerdict.Expired"/></b>: <c>Validate</c> يُصدره
+    /// ‏قبل فحص التوقيع (ليُسمّي أوّلَ سببٍ للرفض)، فترخيصٌ مزوَّرٌ بتاريخٍ فائتٍ يُحكم «منتهياً» — ولو فُتح له لصار التزويرُ مفتاحاً.</para>
+    /// </summary>
+    public static bool IsGenuineButExpired(string companyName, string machineId, string licenseJson,
+        string? alsoAcceptMachineId = null)
+        => Validate(companyName, machineId, licenseJson, out var payload, alsoAcceptMachineId, ignoreExpiry: true)
+               == LicenseVerdict.Valid
+           && payload!.ExpiresUtc < DateTime.UtcNow;
+
+    private static LicenseVerdict Validate(string companyName, string machineId, string licenseJson,
+        out LicensePayload? payload, string? alsoAcceptMachineId, bool ignoreExpiry)
     {
         payload = null;
 
@@ -149,7 +165,7 @@ public static class RsaLicenseValidator
         if (!candidates.Any(id => string.Equals(inner.MachineId.Trim(), id, StringComparison.OrdinalIgnoreCase)))
             return LicenseVerdict.MachineMismatch;
 
-        if (inner.ExpiresUtc < DateTime.UtcNow)
+        if (!ignoreExpiry && inner.ExpiresUtc < DateTime.UtcNow)
             return LicenseVerdict.Expired;
 
         var publicPem = ResolvePublicKeyPem();
