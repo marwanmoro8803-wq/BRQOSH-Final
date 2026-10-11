@@ -66,7 +66,7 @@ internal static class NavKeyModuleMap
         ["supplier_statement"] = ModuleKey.Purchasing,
         ["purchase_requests"] = ModuleKey.Purchasing,
         ["purchase_orders"] = ModuleKey.Purchasing,
-        ["goods_receipts"] = ModuleKey.Purchasing,
+        ["goods_receipts"] = ModuleKey.Inventory,
         ["purchase_invoices"] = ModuleKey.Purchasing,
         ["debit_notes"] = ModuleKey.Purchasing,
         ["products"] = ModuleKey.Inventory,

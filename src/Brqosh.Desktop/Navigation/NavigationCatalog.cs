@@ -2,7 +2,11 @@
 
 namespace Brqosh.Desktop.Navigation;
 
-public record NavPage(string Key, string TitleAr);
+/// <param name="Requires">
+/// (ح-١١٩) وحدةٌ تلزم الصفحةَ فوق وحدة مجموعتها — فإذنُ استلام البضاعة في «المشتريات» يُدخل إلى مستودع،
+/// فلا يظهر لمن يشتري خدماتٍ بلا مخزون.
+/// </param>
+public record NavPage(string Key, string TitleAr, ModuleKey? Requires = null);
 public record NavGroup(string TitleAr, ModuleKey Module, IReadOnlyList<NavPage> Pages);
 
 /// <summary>
@@ -80,7 +84,7 @@ public static class NavigationCatalog
             new("payable_aging", "أعمار ديون الموردين"),
             new("purchase_requests", "طلبات الشراء"),
             new("purchase_orders", "أوامر الشراء"),
-            new("goods_receipts", "أذونات استلام البضاعة"),
+            new("goods_receipts", "أذونات استلام البضاعة", ModuleKey.Inventory),
             new("purchase_invoices", "فواتير المشتريات"),
             new("debit_notes", "إشعارات المدين (مشتريات)"),
         ]),
@@ -199,7 +203,12 @@ public static class NavigationCatalog
     public static IReadOnlyList<NavGroup> ForProfile(BusinessProfile profile)
     {
         var active = ModuleCatalog.ResolveModules(profile);
-        return Groups.Where(g => active.Contains(g.Module)).ToList();
+        return Groups
+            .Where(g => active.Contains(g.Module))
+            .Select(g => g.Pages.All(p => p.Requires is null || active.Contains(p.Requires.Value))
+                ? g
+                : g with { Pages = g.Pages.Where(p => p.Requires is null || active.Contains(p.Requires.Value)).ToList() })
+            .ToList();
     }
 
     /// <summary>عناوين إنجليزية للتنقل — G-27 i18n foundation.</summary>

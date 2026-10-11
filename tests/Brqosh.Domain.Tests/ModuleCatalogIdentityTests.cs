@@ -73,6 +73,36 @@ public class ModuleCatalogIdentityTests
         Assert.DoesNotContain(ModuleKey.Manufacturing, realEstate);
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١١٩ · ‏`ui-ux-i18n-printing#7` · ‏`sector-modules#11`) <b>منشأةٌ لا تبيع بضاعةً تشتري خدماتٍ
+    /// ‏ومصروفاتٍ — بمورّدٍ وفاتورةِ شراءٍ وضريبةِ مدخلات.</b>
+    ///
+    /// <para>‏كان «محاسبة عامّة» و«عقارات» بلا مشتريات: لا مورّدَ ولا فاتورةَ شراء، فسندُ الصرف الظاهرُ لهما لا يُستعمل،
+    /// ‏والصيانةُ والمرافقُ ومقاولو الباطن تُدفع بلا ضريبة مدخلاتٍ قابلةٍ للخصم — فيُسدَّد للهيئة أكثرُ ممّا عليها.
+    /// ‏<b>ولم يكن يكفي إضافتُها</b>: المشترياتُ كانت تجرّ المخزون، فتُمنح العقاراتُ مستودعاتٍ لا تحتاجها.</para>
+    /// </summary>
+    [Theory]
+    [InlineData(BusinessProfile.General)]
+    [InlineData(BusinessProfile.RealEstate)]
+    public void A_service_business_buys_from_suppliers_without_holding_stock(BusinessProfile profile)
+    {
+        var modules = ModuleCatalog.ResolveModules(profile);
+
+        Assert.Contains(ModuleKey.Purchasing, modules);
+        Assert.DoesNotContain(ModuleKey.Inventory, modules);
+    }
+
+    /// <summary>‏(ح-١١٩) والمشترياتُ لا تجرّ المخزون — ومن يحتاجه يُعلنه، فالمقاولاتُ والتصنيعُ يبقيان بمخزونهما.</summary>
+    [Fact]
+    public void Purchasing_does_not_pull_inventory_and_the_profiles_that_hold_stock_keep_it()
+    {
+        Assert.DoesNotContain(ModuleKey.Inventory, ModuleCatalog.DependenciesOf(ModuleKey.Purchasing));
+
+        foreach (var profile in new[] { BusinessProfile.Construction, BusinessProfile.Manufacturing, BusinessProfile.Retail,
+                     BusinessProfile.Healthcare, BusinessProfile.Logistics, BusinessProfile.Hospitality })
+            Assert.Contains(ModuleKey.Inventory, ModuleCatalog.ResolveModules(profile));
+    }
+
     /// <summary>ودفتر الأستاذ مضمونٌ للجميع — لا نظام عملٍ بلا محاسبة.</summary>
     [Theory]
     [MemberData(nameof(AllProfiles))]

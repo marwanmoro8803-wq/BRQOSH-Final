@@ -11,7 +11,10 @@ public static class ModuleCatalog
         {
             [ModuleKey.GeneralLedger] = [],
             [ModuleKey.Sales] = [ModuleKey.GeneralLedger],
-            [ModuleKey.Purchasing] = [ModuleKey.GeneralLedger, ModuleKey.Inventory],
+            // ‏(جاهزيّةُ الإطلاق · ح-١١٩) ‏**والمشترياتُ لا تجرّ المخزون** — الخدماتُ والمصروفاتُ تُشترى بمورّدٍ وفاتورةٍ
+            // ‏وضريبةِ مدخلاتٍ بلا مستودع (سطرُ الفاتورة بلا صنفٍ يُرحَّل إلى المشتريات غير المخزنيّة). ومن يملك بضاعةً
+            // ‏يُعلن المخزونَ في ملفّه، والهويّةُ «من يملك مخزوناً يملك مشتريات» تبقى محروسة.
+            [ModuleKey.Purchasing] = [ModuleKey.GeneralLedger],
             [ModuleKey.Inventory] = [ModuleKey.GeneralLedger],
             [ModuleKey.Treasury] = [ModuleKey.GeneralLedger],
             [ModuleKey.Reports] = [ModuleKey.GeneralLedger],
@@ -46,10 +49,14 @@ public static class ModuleCatalog
             //
             // ‏ولم يُكشف إلا بمسبار القطاعات: الخريطةُ الخام تقول «بلا مبيعات» والمحلولةُ
             // ‏تقول غيرَه — **وهو الفرقُ بين ما كُتب وما يعمل**.
+            //
+            // ‏(ح-١١٩) ‏**وأُضيفت المشتريات** — منشأةٌ خدميّةٌ تشتري خدماتٍ ومصروفات، وبغيرها لا مورّدَ ولا فاتورةَ شراء،
+            // ‏فلا تُخصم ضريبةُ مدخلاتها ولا يُستعمل سندُ الصرف الظاهرُ لها. **ولا مخزون** — لا بضاعةَ تُباع.
             [BusinessProfile.General] =
-                [ModuleKey.GeneralLedger, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.Zatca],
+                [ModuleKey.GeneralLedger, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.Zatca],
+            // ‏(ح-١١٩) ‏**والمخزونُ معلَنٌ هنا** — وكان يصل إلى المقاولات عبر المشتريات وحدَها، فلمّا كفّت عن جرّه بقي كما كان.
             [BusinessProfile.Construction] =
-                [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
+                [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Manufacturing] =
                 [ModuleKey.GeneralLedger, ModuleKey.Manufacturing, ModuleKey.Inventory, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             // (CEEF-229 · م2-١٩) أُضيفت Purchasing — كانت غائبة عن التجزئة والضيافة وحدهما
@@ -64,8 +71,9 @@ public static class ModuleCatalog
                 [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.Healthcare],
             [BusinessProfile.Logistics] =
                 [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.Logistics],
+            // ‏(ح-١١٩) ‏والمشترياتُ للصيانة والمرافق ومقاولي الباطن — بلا مخزون.
             [BusinessProfile.RealEstate] =
-                [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.RealEstate],
+                [ModuleKey.GeneralLedger, ModuleKey.Sales, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.RealEstate],
             [BusinessProfile.Hospitality] =
                 [ModuleKey.GeneralLedger, ModuleKey.PointOfSale, ModuleKey.Sales, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll, ModuleKey.Hospitality],
         };
