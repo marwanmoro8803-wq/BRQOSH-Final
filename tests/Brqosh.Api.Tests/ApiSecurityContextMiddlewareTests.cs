@@ -24,7 +24,7 @@ public class ApiSecurityContextMiddlewareTests
 
         await new ApiSecurityContextMiddleware(next).InvokeAsync(ctx);
 
-        Assert.Equal("integration-bot", username);
+        Assert.Equal("api:integration-bot", username);
         Assert.Null(SecurityContext.CurrentUsername);
         Assert.Null(SecurityContext.CurrentRole);
     }

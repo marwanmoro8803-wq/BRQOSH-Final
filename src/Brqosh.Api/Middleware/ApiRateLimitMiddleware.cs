@@ -1,4 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
+using Brqosh.Infrastructure.Security;
 
 namespace Brqosh.Api.Middleware;
 
@@ -12,8 +15,13 @@ namespace Brqosh.Api.Middleware;
 ///
 /// <para>والتقليمُ رخيصٌ لأنّ المداخلَ تموت بانقضاء دقيقتها: يُمسح ما تجاوزت دقيقتُه
 /// دقيقتين، ولا يقع إلا حين يتجاوز الحجمُ سقفاً — فلا يُدفع ثمنُه في المسار الساخن.</para>
+///
+/// <para><b>والدلوُ بالمفتاح لا يُمنح إلا لمفتاحٍ صحيح.</b> كان أيُّ <c>X-Api-Key</c> يُقدَّم
+/// يفتح دلواً جديداً بمئةٍ وعشرين طلباً — فمن يُخمّن المفاتيح يُرسل كلَّ تخمينٍ بمفتاحٍ مختلف
+/// <b>فلا يبلغ الحدَّ أبداً</b>، وهو بعينه ما نُقل الحدُّ قبل فحص المفتاح لصدّه (CEEF-210).
+/// فالآن: مفتاحٌ يطابق المُعرَّف يُحسب على بصمته (لا نصِّه)، وكلُّ ما سواه يُحسب على عنوان المُتّصل.</para>
 /// </summary>
-public sealed class ApiRateLimitMiddleware(RequestDelegate next)
+public sealed class ApiRateLimitMiddleware(RequestDelegate next, IConfiguration? configuration = null)
 {
     private const int MaxRequestsPerMinute = 120;
 
@@ -30,9 +38,7 @@ public sealed class ApiRateLimitMiddleware(RequestDelegate next)
             return;
         }
 
-        var key = ctx.Request.Headers.TryGetValue("X-Api-Key", out var apiKey) && !string.IsNullOrWhiteSpace(apiKey)
-            ? $"key:{apiKey}"
-            : $"ip:{ctx.Connection.RemoteIpAddress}";
+        var key = ResolveBucketKey(ctx, ResolveConfiguredKey());
 
         var bucket = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
         PruneIfCrowded(bucket);
@@ -50,6 +56,26 @@ public sealed class ApiRateLimitMiddleware(RequestDelegate next)
         }
 
         await next(ctx);
+    }
+
+    private string? ResolveConfiguredKey() =>
+        configuration?[ApiSecuritySettings.ApiKeyEnv]
+        ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ApiKeyEnv);
+
+    /// <summary>
+    /// مفتاحُ الدلو: بصمةُ المفتاح إن طابق المُعرَّفَ، وإلّا عنوانُ المُتّصل.
+    /// والبصمةُ لا النصّ — فلا يبقى المفتاحُ السرّيُّ نصّاً في ذاكرةٍ طويلة العمر.
+    /// </summary>
+    internal static string ResolveBucketKey(HttpContext ctx, string? configuredKey)
+    {
+        if (ctx.Request.Headers.TryGetValue("X-Api-Key", out var presented)
+            && SecretComparer.Equals(configuredKey, presented.ToString()))
+        {
+            var digest = SHA256.HashData(Encoding.UTF8.GetBytes(presented.ToString()));
+            return $"key:{Convert.ToHexString(digest, 0, 8)}";
+        }
+
+        return $"ip:{ctx.Connection.RemoteIpAddress}";
     }
 
     /// <summary>يُسقط المداخلَ المنتهية حين يتضخّم القاموس. عديمُ الأثر على مدخلٍ حيّ.</summary>
