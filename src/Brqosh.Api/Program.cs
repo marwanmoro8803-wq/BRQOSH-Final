@@ -293,12 +293,9 @@ app.MapGet("/health/ready", async (BrqoshDbContext db, ILogger<Program> logger, 
         // ‏الردَّ نفسَه**: كلمةُ مرورٍ خاطئة، أو شهادةٌ منتهية، أو مضيفٌ لا يُحلّ — ثلاثتُها
         // ‏تُقرأ سواءً، وأوّلُ دقيقةٍ في العطل هي أثمنُها.
         //
-        // ‏**لكنّ المسارَ مفتوحٌ بلا مفتاح** — ونصُّ خطأ المُشغِّل يحمل اسمَ المضيف واسمَ مستخدم
-        // ‏القاعدة («password authentication failed for user …»). فالنصُّ الكامل إلى السجلّ،
-        // ‏وفي الإنتاج يُردّ نوعُ الخطأ وحدَه: يُفرّق بين الشبكة والمصادقة دون أن يُعرِّف المهاجمَ بالبنية.
-        var root = ex.GetBaseException();
-        logger.LogWarning(ex, "Readiness probe: database unavailable: {Reason}", root.Message);
-        dbError = isProduction ? root.GetType().Name : root.Message;
+        // ‏**لكنّ المسارَ مفتوحٌ بلا مفتاح** — فالنصُّ الكامل إلى السجلّ، وفي الإنتاج نوعُ الخطأ وحدَه (`ReadinessProbe`).
+        logger.LogWarning(ex, "Readiness probe: database unavailable: {Reason}", ex.GetBaseException().Message);
+        dbError = ReadinessProbe.DatabaseErrorText(ex, isProduction);
     }
 
     var payload = new

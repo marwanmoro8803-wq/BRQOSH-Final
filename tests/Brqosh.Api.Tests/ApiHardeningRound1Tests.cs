@@ -63,6 +63,29 @@ public class ApiHardeningRound1Tests
         Assert.Equal(expected, ApiSecurityContextMiddleware.ResolveApiUsername(header));
     }
 
+    /// <summary>مسبارُ الجاهزيّة في الإنتاج يُسمّي نوعَ الخطأ ولا يُفشي المضيفَ ولا مستخدمَ القاعدة.</summary>
+    [Fact]
+    public void Production_readiness_names_the_error_type_without_leaking_the_infrastructure()
+    {
+        var error = new InvalidOperationException("wrapper",
+            new TimeoutException("password authentication failed for user \"brqosh_admin\" at db-prod-01.internal"));
+
+        var text = ReadinessProbe.DatabaseErrorText(error, isProduction: true);
+
+        Assert.Equal(nameof(TimeoutException), text);
+        Assert.DoesNotContain("brqosh_admin", text);
+        Assert.DoesNotContain("db-prod-01", text);
+    }
+
+    /// <summary>وخارجَ الإنتاج يُردّ نصُّ السبب الجذريّ كاملاً — فأوّلُ دقيقةٍ في العطل أثمنُها.</summary>
+    [Fact]
+    public void Non_production_readiness_returns_the_root_message()
+    {
+        var error = new InvalidOperationException("wrapper", new TimeoutException("host db-dev not reachable"));
+
+        Assert.Equal("host db-dev not reachable", ReadinessProbe.DatabaseErrorText(error, isProduction: false));
+    }
+
     [Fact]
     public void Header_username_is_length_capped()
     {
