@@ -237,9 +237,20 @@ public class PayrollRun : IBranchScoped
         var gosi = policy.ContributionFor(employee);
 
         AddLine(employee.NameAr, employee.BasicSalary, employee.HousingAllowance,
-            employee.TransportAllowance, gosi.Employee, gosi.Employer,
+            employee.TransportAllowance, GosiEmployeeShareWithin(gosi.Employee, employee.GrossPay - absenceDeduction),
+            gosi.Employer,
             employee.Id, employee.OtherAllowance, advanceDeduction, absenceDeduction);
     }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١١٦) <b>حصّةُ الموظّف من التأمينات لا تتجاوز أجرَه المستحقّ.</b>
+    ///
+    /// <para>‏شهرٌ خُصم كلُّه (مرضيّةٌ بعد التسعين، أو بلا أجر) يُصفّر الأجر، <b>وكانت الحصّةُ تُستقطع منه كاملةً</b>
+    /// ‏فيصير الصافي سالباً ويرفض حارسُه الدورةَ كلَّها لموظّفٍ واحد. <b>والحدُّ قرارُ المالك (2026-10-11)</b>:
+    /// ‏يُستقطع من الحصّة ما يسعه المستحقّ ولا يُطالَب الموظّفُ بالباقي؛ <b>وحصّةُ المنشأة لا تُمسّ</b>.</para>
+    /// </summary>
+    public static decimal GosiEmployeeShareWithin(decimal gosiEmployee, decimal wageDue) =>
+        Math.Min(gosiEmployee, Math.Max(0m, Math.Round(wageDue, 2, MidpointRounding.AwayFromZero)));
 
     /// <summary>(جاهزيّةُ الإطلاق · ح-٨٦) أوّلُ شهر الدورة وآخرُه — من رمزها <c>yyyy-MM</c>.</summary>
     public (DateOnly Start, DateOnly End) PeriodBounds()

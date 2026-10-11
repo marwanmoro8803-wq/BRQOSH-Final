@@ -151,6 +151,45 @@ public static class LeaveEntitlementCalculator
     }
 
     /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١١٦ · ‏`treasury-payroll-assets#9`) <b>أيّامُ الخصم المرضيّ في شهرٍ — موزونةً بتدرّج المادة 117.</b>
+    ///
+    /// <para>كلُّ يومٍ مرضيٍّ معتمدٍ يقع في الشهر يُخصم منه <c>1 − نسبةِ أجره</c>: صفرٌ في الثلاثين الأولى، وربعٌ في الستّين التالية،
+    /// <b>ويومٌ كاملٌ بعد التسعين</b>. <b>وترتيبُ اليوم في «السنة الواحدة»</b> — وهي بنصّ المادة «السنةُ التي تبدأ من تاريخ أوّل إجازةٍ
+    /// مرضيّة»، متّصلةً أو متقطّعة — <b>لا في السنة التقويميّة</b>؛ ومتى انقضت سنتُها بدأت سنةٌ جديدةٌ من أوّل يومٍ مرضيٍّ بعدها.</para>
+    ///
+    /// <para><b>والأيّامُ مجموعةٌ لا مجموعُ مُدَد</b> — فيومٌ تحمله فترتان لا يُعدّ مرّتين.</para>
+    /// </summary>
+    /// <param name="approvedSickPeriods">فتراتُ الموظّف المرضيّةُ المعتمدة كلُّها حتى نهاية الشهر — فالترتيبُ يحتاج ما قبله.</param>
+    public static decimal SickDeductionDays(
+        IEnumerable<(DateOnly From, DateOnly To)> approvedSickPeriods, DateOnly monthStart, DateOnly monthEnd)
+    {
+        ArgumentNullException.ThrowIfNull(approvedSickPeriods);
+
+        var days = new SortedSet<DateOnly>();
+        foreach (var (from, to) in approvedSickPeriods)
+            for (var d = from; d <= to && d <= monthEnd; d = d.AddDays(1))
+                days.Add(d);
+
+        DateOnly? yearStart = null;
+        var index = 0;
+        var weighted = 0m;
+        foreach (var day in days)
+        {
+            if (yearStart is null || day >= yearStart.Value.AddYears(1))
+            {
+                yearStart = day;
+                index = 0;
+            }
+
+            index++;
+            if (day >= monthStart)
+                weighted += 1m - SickPayFactor(index);
+        }
+
+        return weighted;
+    }
+
+    /// <summary>
     /// <b>بدلُ الإجازة عن رصيدٍ غيرِ مستعمل (المادة 111).</b>
     ///
     /// <para><b>وهو حقٌّ نقديٌّ لا يسقط</b>: تُدفع أجرةُ الأيّام المتبقّية عند انتهاء الخدمة

@@ -80,12 +80,14 @@ public class PayrollRunBuilder(BrqoshDbContext db)
 
             // ‏**والمعاينةُ بالقاعدة نفسِها** — فلا تقترح الشاشةُ ما لن يُستقطع. (ولا غيابَ
             // ‏في المعاينة: يُقرأ عند البناء، فالمعاينةُ على الأجر الكامل.)
-            var deduction = AdvanceDeduction(due, employee.GrossPay - proration, gosi.Employee);
+            // ‏(ح-١١٦) ‏**والحصّةُ المعروضةُ هي ما يُستقطع** — لا تتجاوز المستحقَّ كما في <see cref="PayrollRun.AddEmployee"/>.
+            var gosiEmployee = PayrollRun.GosiEmployeeShareWithin(gosi.Employee, employee.GrossPay - proration);
+            var deduction = AdvanceDeduction(due, employee.GrossPay - proration, gosiEmployee);
 
             result.Add(new PayrollCandidate(
                 employee.Id, employee.Code, employee.NameAr, employee.Nationality,
                 employee.BasicSalary, employee.HousingAllowance, employee.TransportAllowance,
-                employee.OtherAllowance, gosi.Employee, gosi.Employer,
+                employee.OtherAllowance, gosiEmployee, gosi.Employer,
                 Math.Round(deduction, 2, MidpointRounding.AwayFromZero),
                 Math.Round(proration, 2, MidpointRounding.AwayFromZero)));
         }
@@ -144,6 +146,17 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         // ‏ذاكرةِ محاسب، **وهي اللحظةُ نفسُها التي تُقرأ فيها أقساطُ السُّلَف**.
         var unpaidDays = await UnpaidLeaveDaysAsync(companyId, monthStart, monthEnd, ct);
 
+        // ‏(ح-١١٦ · ‏`treasury-payroll-assets#9`) ‏**والمرضيّةُ بتدرّج المادة 117** — وكانت تُصرف كاملةً أبداً ولو بعد التسعين.
+        // ‏تُقرأ فتراتُها كلُّها حتى نهاية الشهر: ترتيبُ اليوم في «السنة الواحدة» يحتاج ما سبقه.
+        var sickPeriods = (await db.LeaveRequests
+                .Where(r => r.CompanyId == companyId
+                            && r.Status == LeaveStatus.Approved
+                            && r.Type == LeaveType.Sick
+                            && r.FromDate <= monthEnd)
+                .Select(r => new { r.EmployeeId, r.FromDate, r.ToDate })
+                .ToListAsync(ct))
+            .ToLookup(r => r.EmployeeId, r => (r.FromDate, r.ToDate));
+
         foreach (var employee in eligible)
         {
             var gosi = policy.ContributionFor(employee);
@@ -152,7 +165,8 @@ public class PayrollRunBuilder(BrqoshDbContext db)
             // ‏(ح-٨٦) ‏**وما لم يُعمل من الشهر يُخصم كالغياب بلا أجر** — ملتحقٌ في العشرين يُصرف له أحدَ عشرَ يوماً لا شهرٌ كامل،
             // ‏ومغادرٌ في الخامس عشر خمسةَ عشرَ يوماً لا صفر. **وبالأساس نفسِه** (الأجرُ ÷ ٣٠) فلا يختلف يومُ الغياب عن يوم الالتحاق.
             var notWorked = employee.DaysNotEmployedIn(monthStart, monthEnd)
-                            + (unpaidDays.TryGetValue(employee.Id, out var days) ? days : 0m);
+                            + (unpaidDays.TryGetValue(employee.Id, out var days) ? days : 0m)
+                            + LeaveEntitlementCalculator.SickDeductionDays(sickPeriods[employee.Id], monthStart, monthEnd);
             var absence = notWorked > 0m
                 ? LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, notWorked)
                 : 0m;
@@ -162,7 +176,8 @@ public class PayrollRunBuilder(BrqoshDbContext db)
 
             // ‏(ح-٤٩) ‏**والقسطُ من الأجر المستحقّ بعد الغياب** — وكان يُحسب قبله، فشهرُ غيابٍ
             // ‏وعليه سُلفةٌ يُخرج صافياً سالباً **ويُسقط الدورةَ كلَّها**.
-            var deduction = AdvanceDeduction(due, employee.GrossPay - absence, gosi.Employee);
+            var deduction = AdvanceDeduction(due, employee.GrossPay - absence,
+                PayrollRun.GosiEmployeeShareWithin(gosi.Employee, employee.GrossPay - absence));
 
             run.AddEmployee(employee, policy,
                 Math.Round(deduction, 2, MidpointRounding.AwayFromZero),
