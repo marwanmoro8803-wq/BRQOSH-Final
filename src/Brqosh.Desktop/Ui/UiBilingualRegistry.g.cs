@@ -1664,6 +1664,7 @@ public static partial class UiBilingualRegistry
         ["وضع"] = "Maternity",
         ["وعاء إكراميات جديد"] = "New tip pool",
         ["وفاة"] = "Bereavement",
+        ["ولادة مولود"] = "Birth of a child",
         ["ولّد المفتاح و CSR أولاً."] = "Generate the key and CSR first.",
         ["وما لا تشمله الوثيقة على المريض كله مهما بلغت النسبة"] = "Whatever the policy does not cover is entirely the patient's, whatever the percentage",
         ["ويوم المغادرة غير محسوب: الوصول الأول والمغادرة الثالث ليلتان لا ثلاث"] = "The check-out day is not counted: arriving on the 1st and leaving on the 3rd is two nights, not three",

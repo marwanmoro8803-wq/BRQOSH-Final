@@ -179,6 +179,7 @@ public partial class LeaveRequestsPage : UserControl
         LeaveType.Marriage => "زواج",
         LeaveType.Bereavement => "وفاة",
         LeaveType.Hajj => "حج",
+        LeaveType.Birth => LocaleManager.T("ولادة مولود", "Birth of a child"),
         _ => "امتحان",
     };
 

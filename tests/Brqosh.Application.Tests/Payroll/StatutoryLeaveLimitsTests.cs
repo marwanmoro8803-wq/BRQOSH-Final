@@ -42,6 +42,7 @@ public class StatutoryLeaveLimitsTests : IDisposable
     [InlineData(LeaveType.Bereavement, 5)]
     [InlineData(LeaveType.Hajj, 15)]
     [InlineData(LeaveType.Maternity, 84)]
+    [InlineData(LeaveType.Birth, 3)]
     public async Task A_paid_statutory_leave_is_accepted_up_to_its_limit_and_refused_beyond_it(LeaveType type, int limit)
     {
         var employee = await EmployeeAsync();
