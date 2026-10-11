@@ -128,6 +128,42 @@ public class SickLeaveIsPaidOnArticle117TiersTests : IDisposable
         Assert.Equal(0m, april.NetPay);
     }
 
+    /// <summary>
+    /// ‏(ح-١١٧) ‏<b>ويومُ ما بعد انتهاء الخدمة لا يُخصم مرّتين</b>: مرضيّةٌ معتمدةٌ لأبريل كلِّه (الأيّامُ ٣١…٦٠ بثلاثة أرباع)
+    /// ‏ثمّ انتهت الخدمةُ في الخامس عشر — والاعتمادُ لا يُعيد فحصَ حدود الخدمة. ‏الصحيح: خمسةَ عشرَ يوماً لم يُعمل (٤٬٥٠٠)
+    /// ‏وخمسةَ عشرَ مرضيّةً بربعٍ (١٬١٢٥) ⟵ ٥٬٦٢٥؛ وكانت أيّامُ ما بعد الخامس عشر تُخصم ربعاً فوق خصمها كاملاً ⟵ ٦٬٧٥٠.
+    /// </summary>
+    [Fact]
+    public async Task Sick_days_after_termination_are_not_deducted_twice()
+    {
+        var employee = await SetupAsync();
+        await ApprovedLeaveAsync(employee.Id, LeaveType.Sick, new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 30));
+        await ApprovedLeaveAsync(employee.Id, LeaveType.Sick, new DateOnly(2026, 4, 1), new DateOnly(2026, 4, 30));
+        employee.Terminate(new DateOnly(2026, 4, 15));
+        await _db.SaveChangesAsync();
+
+        var april = (await BuildAsync(2026, 4)).Lines.Single();
+
+        Assert.Equal(5_625m, april.AbsenceDeduction);
+    }
+
+    /// <summary>
+    /// ‏(ح-١١٧) ‏<b>والإجازةُ بلا أجرٍ مثلُها</b>: من العاشر إلى العشرين وانتهت الخدمةُ في الخامس عشر ⟵ خمسةَ عشرَ لم يُعمل
+    /// ‏وستّةٌ بلا أجر (١٠…١٥) ⟵ ٢١ يوماً = ٦٬٣٠٠؛ وكانت الخمسةُ بعد الخامس عشر تُخصم مرّتين ⟵ ٧٬٨٠٠.
+    /// </summary>
+    [Fact]
+    public async Task Unpaid_days_after_termination_are_not_deducted_twice()
+    {
+        var employee = await SetupAsync();
+        await ApprovedLeaveAsync(employee.Id, LeaveType.Unpaid, new DateOnly(2026, 4, 10), new DateOnly(2026, 4, 20));
+        employee.Terminate(new DateOnly(2026, 4, 15));
+        await _db.SaveChangesAsync();
+
+        var april = (await BuildAsync(2026, 4)).Lines.Single();
+
+        Assert.Equal(6_300m, april.AbsenceDeduction);
+    }
+
     /// <summary>شاهدُ ضبط: المرضيّةُ غيرُ المعتمدة لا تُخصم.</summary>
     [Fact]
     public async Task A_pending_sick_leave_does_not_deduct()

@@ -16,16 +16,16 @@ public enum LeaveType
     /// <summary>بلا أجر — <b>وتُخصم من الراتب</b>، وهي الغيابُ المأذون.</summary>
     Unpaid = 2,
 
-    /// <summary>وضعٌ (المادة 151) — عشرةُ أسابيعَ بأجر.</summary>
+    /// <summary>وضعٌ (المادة 151 بعد تعديل م/٤٤ النافذ 2025-02-19) — <b>اثنا عشرَ أسبوعاً بأجر</b>، وكانت عشرة.</summary>
     Maternity = 3,
 
-    /// <summary>زواجٌ (المادة 113) — ثلاثةُ أيّامٍ بأجر.</summary>
+    /// <summary>زواجٌ (المادة 113) — <b>خمسةُ أيّامٍ بأجر</b>.</summary>
     Marriage = 4,
 
-    /// <summary>وفاةُ قريب (المادة 113) — <b>خمسةُ أيّامٍ بأجر</b>.</summary>
+    /// <summary>وفاةُ قريب (المادة 113) — <b>خمسةُ أيّامٍ بأجر</b> للزوج والأصل والفرع، وثلاثةٌ للأخ (لا يُفرَّق هنا فالحدُّ خمسة).</summary>
     Bereavement = 5,
 
-    /// <summary>حجٌّ (المادة 114) — مرّةً طوال الخدمة، بأجر.</summary>
+    /// <summary>حجٌّ (المادة 114) — <b>خمسةَ عشرَ يوماً حدّاً، مرّةً طوال الخدمة، بعد سنتين متّصلتين</b>، بأجر.</summary>
     Hajj = 6,
 
     /// <summary>امتحانٌ (المادة 115) — بأجر.</summary>
@@ -111,6 +111,25 @@ public static class LeaveEntitlementCalculator
         var until = employee.TerminationDate is DateOnly t && t < asOf ? t : asOf;
         return AccruedDays(employee.HireDate, until);
     }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١١٧ · ‏`treasury-payroll-assets#9`) <b>أقصى مدّةٍ نظاميّةٍ لإجازةٍ مدفوعةٍ بنصّ — و<c>null</c> لما لا مدّةَ له.</b>
+    ///
+    /// <para>‏هذه الأنواعُ تُصرف كاملةً فلا تخصم الدورةُ منها شيئاً، <b>فطلبٌ يتجاوز مدّتَه أجرٌ لم يُستحقّ</b>؛ والزائدُ يُقدَّم طلباً
+    /// ‏بلا أجرٍ أو سنويّاً. والمرضيّةُ لا حدَّ لها هنا: ما بعد مئةٍ وعشرين يوماً بلا أجرٍ بتدرّجها (<see cref="SickPayFactor"/>).
+    /// ‏<b>والأرقامُ نصُّ النظام بعد تعديلات م/٤٤</b> (2025-02-19) — تُراجَع إن عُدّل.</para>
+    /// </summary>
+    public static int? StatutoryMaxDays(LeaveType type) => type switch
+    {
+        LeaveType.Marriage => 5,
+        LeaveType.Bereavement => 5,
+        LeaveType.Hajj => 15,
+        LeaveType.Maternity => 84,
+        _ => null,
+    };
+
+    /// <summary>(المادة 114) <b>سنتا خدمةٍ متّصلتان قبل إجازة الحجّ.</b></summary>
+    public const int HajjMinimumServiceYears = 2;
 
     /// <summary>
     /// <b>نسبةُ أجرِ اليوم المرضيّ (المادة 117) — بحسب ما مضى من أيّامٍ مرضيّةٍ في السنة.</b>

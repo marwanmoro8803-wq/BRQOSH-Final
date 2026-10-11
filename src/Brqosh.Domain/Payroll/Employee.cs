@@ -189,6 +189,14 @@ public class Employee : IBranchScoped
     public bool IsEmployedDuring(DateOnly from, DateOnly to) =>
         HireDate <= to && (TerminationDate is null || TerminationDate >= from);
 
+    /// <summary>
+    /// (ح-١١٧) <b>ما خدمه من الفترة</b> — من أبعدِ بدايتها وتعيينه إلى أقربِ نهايتها وانتهاءِ خدمته.
+    /// وهو متمّمُ <see cref="DaysNotEmployedIn"/>: ما يقع خارجه يخصمه ذاك، فلا يُخصم مرّةً ثانيةً إجازةً.
+    /// </summary>
+    public (DateOnly From, DateOnly To) ServedWithin(DateOnly from, DateOnly to) =>
+        (HireDate > from ? HireDate : from,
+         TerminationDate is DateOnly end && end < to ? end : to);
+
     /// <summary>(ح-٨٦) أيّامُ الفترة التي لم يكن فيها على رأس العمل — قبل التعيين وبعد انتهاء الخدمة.</summary>
     public int DaysNotEmployedIn(DateOnly from, DateOnly to)
     {

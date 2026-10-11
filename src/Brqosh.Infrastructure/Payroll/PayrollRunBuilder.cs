@@ -144,7 +144,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         // ‏**وخصمٌ يُترك للمستخدم يُنسى**: الموظّفُ غاب شهراً بلا أجر ويقبض راتبَه كاملاً
         // ‏لأنّ أحداً لم يكتب الخصم. **والسجلُّ موجودٌ ومعتمَد** — فالقراءةُ منه أوثقُ من
         // ‏ذاكرةِ محاسب، **وهي اللحظةُ نفسُها التي تُقرأ فيها أقساطُ السُّلَف**.
-        var unpaidDays = await UnpaidLeaveDaysAsync(companyId, monthStart, monthEnd, ct);
+        var unpaidPeriods = await UnpaidLeavePeriodsAsync(companyId, monthStart, monthEnd, ct);
 
         // ‏(ح-١١٦ · ‏`treasury-payroll-assets#9`) ‏**والمرضيّةُ بتدرّج المادة 117** — وكانت تُصرف كاملةً أبداً ولو بعد التسعين.
         // ‏تُقرأ فتراتُها كلُّها حتى نهاية الشهر: ترتيبُ اليوم في «السنة الواحدة» يحتاج ما سبقه.
@@ -164,9 +164,13 @@ public class PayrollRunBuilder(BrqoshDbContext db)
 
             // ‏(ح-٨٦) ‏**وما لم يُعمل من الشهر يُخصم كالغياب بلا أجر** — ملتحقٌ في العشرين يُصرف له أحدَ عشرَ يوماً لا شهرٌ كامل،
             // ‏ومغادرٌ في الخامس عشر خمسةَ عشرَ يوماً لا صفر. **وبالأساس نفسِه** (الأجرُ ÷ ٣٠) فلا يختلف يومُ الغياب عن يوم الالتحاق.
+            //
+            // ‏(ح-١١٧) ‏**والإجازةُ تُقرأ داخل مدّة الخدمة وحدَها** — فالاعتمادُ لا يُعيد فحصَ حدودها، وإجازةٌ اعتُمدت ثمّ انتهت
+            // ‏الخدمةُ قبل آخرها كانت أيّامُها بعد الانتهاء تُخصم مرّتين: مرّةً «لم يُعمل» ومرّةً إجازةً.
+            var (servedFrom, servedTo) = employee.ServedWithin(monthStart, monthEnd);
             var notWorked = employee.DaysNotEmployedIn(monthStart, monthEnd)
-                            + (unpaidDays.TryGetValue(employee.Id, out var days) ? days : 0m)
-                            + LeaveEntitlementCalculator.SickDeductionDays(sickPeriods[employee.Id], monthStart, monthEnd);
+                            + UnpaidDaysWithin(unpaidPeriods[employee.Id], servedFrom, servedTo)
+                            + LeaveEntitlementCalculator.SickDeductionDays(sickPeriods[employee.Id], servedFrom, servedTo);
             var absence = notWorked > 0m
                 ? LeaveEntitlementCalculator.LeaveCompensation(employee.GrossPay, notWorked)
                 : 0m;
@@ -233,14 +237,9 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-233 · ز-٦) أيّامُ الغياب بلا أجرٍ <b>الواقعةُ داخل الشهر</b> لكلّ موظّف.
+    /// (CEEF-233 · ز-٦) فتراتُ الغياب بلا أجرٍ المعتمدةُ <b>التي تمسّ الشهر</b> لكلّ موظّف.
     /// </summary>
-    /// <remarks>
-    /// <b>والتقاطعُ يُحسب لا مدّةُ الطلب كلُّها</b>: إجازةٌ بلا أجرٍ تمتدّ من ٢٥ مارس إلى
-    /// ٥ أبريل <b>تُخصم سبعةَ أيّامٍ من مارس وخمسةً من أبريل</b> — وخصمُ الاثني عشر من
-    /// مارس يُصفّر أجراً لم يُغَب كلُّه، <b>وخصمُها مرّتين يُخصم أربعةً وعشرين عن اثني عشر</b>.
-    /// </remarks>
-    private async Task<Dictionary<long, decimal>> UnpaidLeaveDaysAsync(
+    private async Task<ILookup<long, (DateOnly From, DateOnly To)>> UnpaidLeavePeriodsAsync(
         long companyId, DateOnly from, DateOnly to, CancellationToken ct)
     {
         var requests = await db.LeaveRequests
@@ -248,17 +247,30 @@ public class PayrollRunBuilder(BrqoshDbContext db)
                         && r.Status == LeaveStatus.Approved
                         && r.Type == LeaveType.Unpaid
                         && r.FromDate <= to && from <= r.ToDate)
+            .Select(r => new { r.EmployeeId, r.FromDate, r.ToDate })
             .ToListAsync(ct);
 
-        var days = new Dictionary<long, decimal>();
-        foreach (var r in requests)
-        {
-            var start = r.FromDate > from ? r.FromDate : from;
-            var end = r.ToDate < to ? r.ToDate : to;
-            var overlap = end.DayNumber - start.DayNumber + 1;
-            if (overlap <= 0) continue;
+        return requests.ToLookup(r => r.EmployeeId, r => (r.FromDate, r.ToDate));
+    }
 
-            days[r.EmployeeId] = days.GetValueOrDefault(r.EmployeeId) + overlap;
+    /// <summary>
+    /// (CEEF-233 · ز-٦) أيّامُ الغياب بلا أجرٍ <b>الواقعةُ داخل المدّة</b> — والمدّةُ ما خدمه الموظّفُ من الشهر (ح-١١٧).
+    /// </summary>
+    /// <remarks>
+    /// <b>والتقاطعُ يُحسب لا مدّةُ الطلب كلُّها</b>: إجازةٌ بلا أجرٍ تمتدّ من ٢٥ مارس إلى
+    /// ٥ أبريل <b>تُخصم سبعةَ أيّامٍ من مارس وخمسةً من أبريل</b> — وخصمُ الاثني عشر من
+    /// مارس يُصفّر أجراً لم يُغَب كلُّه، <b>وخصمُها مرّتين يُخصم أربعةً وعشرين عن اثني عشر</b>.
+    /// </remarks>
+    internal static decimal UnpaidDaysWithin(
+        IEnumerable<(DateOnly From, DateOnly To)> periods, DateOnly from, DateOnly to)
+    {
+        var days = 0m;
+        foreach (var (periodFrom, periodTo) in periods)
+        {
+            var start = periodFrom > from ? periodFrom : from;
+            var end = periodTo < to ? periodTo : to;
+            var overlap = end.DayNumber - start.DayNumber + 1;
+            if (overlap > 0) days += overlap;
         }
 
         return days;

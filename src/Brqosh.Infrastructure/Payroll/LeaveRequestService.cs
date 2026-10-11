@@ -52,6 +52,7 @@ public class LeaveRequestService(BrqoshDbContext db)
             var request = LeaveRequest.Create(companyId, employeeId, number, type, fromDate, toDate, reason);
 
             await EnsureNoOverlapAsync(companyId, employeeId, request, token);
+            await EnsureWithinStatutoryLimitAsync(companyId, employee, request, token);
 
             db.LeaveRequests.Add(request);
             await db.SaveChangesAsync(token);
@@ -79,6 +80,11 @@ public class LeaveRequestService(BrqoshDbContext db)
                 ?? throw new AccountingException("طلب الإجازة غير موجود.");
 
             await EnsureNoOverlapAsync(companyId, request.EmployeeId, request, token);
+
+            // ‏(ح-١١٧) ‏**والحدُّ النظاميُّ يُفحص عند الاعتماد أيضاً** — فطلبٌ قُدّم قبل الحارس لا يُعتمد بمدّته.
+            var employee = await db.Employees
+                .SingleAsync(e => e.CompanyId == companyId && e.Id == request.EmployeeId, token);
+            await EnsureWithinStatutoryLimitAsync(companyId, employee, request, token);
 
             // ‏**والرصيدُ يُفحص للسنويّة وحدَها** — فالمرضيّةُ والوضعُ حقوقٌ لا تُقاس برصيد.
             if (LeaveEntitlementCalculator.ConsumesAnnualBalance(request.Type))
@@ -140,6 +146,41 @@ public class LeaveRequestService(BrqoshDbContext db)
             await db.SaveChangesAsync(token);
             return request;
         }, ct);
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١١٧ · ‏`treasury-payroll-assets#9`) <b>الإجازةُ المدفوعةُ بنصٍّ لا تتجاوز مدّتَها النظاميّة،
+    /// والحجُّ مرّةً بعد سنتين.</b>
+    /// </summary>
+    /// <remarks>
+    /// ‏هذه الأنواعُ تُصرف كاملةً — والدورةُ لا تخصم منها شيئاً — <b>فكانت «زواجٌ» بستّين يوماً أجرَ شهرين بلا عمل</b>.
+    /// ‏والحجُّ المُحتسَبُ معلَّقٌ أو معتمَد، كالتداخل: المرفوضُ والملغى لم يُمنحا.
+    /// </remarks>
+    private async Task EnsureWithinStatutoryLimitAsync(
+        long companyId, Employee employee, LeaveRequest request, CancellationToken ct)
+    {
+        if (LeaveEntitlementCalculator.StatutoryMaxDays(request.Type) is int max && request.Days > max)
+            throw new AccountingException(
+                $"المدّة النظاميّة لهذه الإجازة {max} يوماً والمطلوب {request.Days} — "
+                + "ويُقدَّم الزائدُ طلباً بلا أجرٍ أو من الرصيد السنويّ.");
+
+        if (request.Type != LeaveType.Hajj)
+            return;
+
+        if (request.FromDate < employee.HireDate.AddYears(LeaveEntitlementCalculator.HajjMinimumServiceYears))
+            throw new AccountingException(
+                $"إجازة الحجّ بعد سنتين متّصلتين من الخدمة — والتعيين في {employee.HireDate:yyyy-MM-dd}.");
+
+        var earlier = await db.LeaveRequests
+            .Where(r => r.CompanyId == companyId
+                        && r.EmployeeId == employee.Id
+                        && r.Id != request.Id
+                        && r.Type == LeaveType.Hajj
+                        && (r.Status == LeaveStatus.Pending || r.Status == LeaveStatus.Approved))
+            .Select(r => r.RequestNumber)
+            .FirstOrDefaultAsync(ct);
+        if (earlier is not null)
+            throw new AccountingException($"إجازة الحجّ مرّةً في الخدمة — وقد مُنحت بالطلب «{earlier}».");
     }
 
     /// <summary>
