@@ -136,11 +136,11 @@ public class TheInstallerSignsItsPayloadTests
     {
         var text = ScriptText();
 
-        Assert.Contains("BRQOSH_SIGNING_PFX مضبوطٌ ولا signtool", text, StringComparison.Ordinal);
+        Assert.Contains("ولا signtool — أُسقط البناء", text, StringComparison.Ordinal);
 
         // ‏**ويسقط، لا يمضي**: الرسالةُ وحدَها لا تكفي — لولا `exit 1` لطُبعت ومضى البناءُ
         // ‏فأخرج حزمةً غيرَ موقَّعةٍ بعد أن قال إنّ الشهادةَ مضبوطة.
-        var message = text.IndexOf("BRQOSH_SIGNING_PFX مضبوطٌ ولا signtool", StringComparison.Ordinal);
+        var message = text.IndexOf("ولا signtool — أُسقط البناء", StringComparison.Ordinal);
         var tail = text.Substring(message, Math.Min(200, text.Length - message));
         Assert.Contains("exit 1", tail, StringComparison.Ordinal);
     }
