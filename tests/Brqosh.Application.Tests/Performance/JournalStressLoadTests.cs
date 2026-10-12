@@ -49,19 +49,24 @@ public class JournalStressLoadTests(Xunit.Abstractions.ITestOutputHelper output)
         {
             // ‏(ح-٥٩) ‏خادمُ الاختبار وحدَه (`brqosh_t_…`) — **ويرمي إن غاب** فلا يمرّ «وضعُ PostgreSQL» على SQLite.
             await using var scope = await PostgresTestDatabase.CreateAsync("journal-stress");
-            await PostBatchAsync(scope.Db, count, "PostgreSQL");
+            await PostBatchAsync(scope.Db, scope.OpenIndependentContext, count, "PostgreSQL");
             return;
         }
 
         await using var connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
-        await using var db = new BrqoshDbContext(new DbContextOptionsBuilder<BrqoshDbContext>()
-            .UseSqlite(connection).Options);
+        var options = new DbContextOptionsBuilder<BrqoshDbContext>().UseSqlite(connection).Options;
+        await using var db = new BrqoshDbContext(options);
         db.Database.EnsureCreated();
-        await PostBatchAsync(db, count, "SQLite بالذاكرة");
+        await PostBatchAsync(db, () => new BrqoshDbContext(options), count, "SQLite بالذاكرة");
     }
 
-    private async Task PostBatchAsync(BrqoshDbContext db, int count, string provider)
+    /// <summary>
+    /// ‏(ح-١٣١ · data-upgrade-performance#4) **سياقٌ جديدٌ لكلّ قيد — كما يفعل البرنامج** (<c>using var db = AppServices.CreateDb()</c>
+    /// في كلّ عمليّة). كان القياسُ يرحّل الألفين في سياقٍ واحد، فيكبر متتبّعُ التغييرات وتمسح <c>JournalEntries.Local</c> ما
+    /// تراكم مع كلّ قيد — <b>فكان يقيس نموَّ السياق لا الدفتر</b>، وهو ما قُرئ «ثمنُ القيد ينمو مع الدفتر».
+    /// </summary>
+    private async Task PostBatchAsync(BrqoshDbContext db, Func<BrqoshDbContext> fresh, int count, string provider)
     {
         var company = await new DatabaseInitializer(db)
             .InitializeAsync("شركة ضغط", "310123456700003", BusinessProfile.Retail);
@@ -74,10 +79,11 @@ public class JournalStressLoadTests(Xunit.Abstractions.ITestOutputHelper output)
 
         for (var i = 0; i < count; i++)
         {
+            await using var post = fresh();
             var draft = JournalEntry.CreateDraft(company.Id, date, $"ضغط {i}", sourceDocument: $"Stress:{i}");
-            draft.AddLine(cash, 1m, 0m);
-            draft.AddLine(capital, 0m, 1m);
-            await new JournalPostingService(db).PostAsync(draft);
+            draft.AddLine(await post.Accounts.SingleAsync(a => a.Id == cash.Id), 1m, 0m);
+            draft.AddLine(await post.Accounts.SingleAsync(a => a.Id == capital.Id), 0m, 1m);
+            await new JournalPostingService(post).PostAsync(draft);
         }
 
         sw.Stop();
