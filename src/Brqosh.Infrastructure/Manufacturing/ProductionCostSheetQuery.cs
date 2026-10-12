@@ -2,6 +2,7 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Manufacturing;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Reporting;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Manufacturing;
@@ -44,10 +45,11 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
             return [];
 
         var keys = orders.Select(o => $"WorkOrderComplete:{o.Id}").ToList();
+        // ‏`WhereReportable` كبقيّة الاستعلامات (`ReversedEntriesStayInBalancesTests`) — والأمرُ الملغى خارجٌ بحالته أعلاه،
+        // ‏فقيدُ إكماله المعكوسُ لا يبلغ الكشف.
         var entries = await db.JournalEntries
-            .Where(e => e.CompanyId == companyId && e.Status == JournalEntryStatus.Posted
-                        && e.SourceDocument != null && keys.Contains(e.SourceDocument)
-                        && e.EntryDate >= from && e.EntryDate <= to)
+            .WhereReportable(companyId, from, to)
+            .Where(e => e.SourceDocument != null && keys.Contains(e.SourceDocument))
             .Select(e => new
             {
                 e.SourceDocument,
