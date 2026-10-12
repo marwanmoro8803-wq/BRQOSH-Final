@@ -22,8 +22,8 @@ public class IdempotencyIsolationTests
     [Fact]
     public void SameHeaderKey_DifferentTenants_DoNotShareCache()
     {
-        var keyA = IdempotencyStore.ComposeKey(TenantA, "/api/v1/exchange-rates", "same-key");
-        var keyB = IdempotencyStore.ComposeKey(TenantB, "/api/v1/exchange-rates", "same-key");
+        var keyA = IdempotencyStore.ComposeKey(TenantA, null, null, "/api/v1/exchange-rates", "same-key");
+        var keyB = IdempotencyStore.ComposeKey(TenantB, null, null, "/api/v1/exchange-rates", "same-key");
 
         IdempotencyStore.Save(keyA, Body("سرّ المستأجر أ"));
 
@@ -36,8 +36,8 @@ public class IdempotencyIsolationTests
     [Fact]
     public void SameHeaderKey_DifferentPaths_DoNotShareCache()
     {
-        var rates = IdempotencyStore.ComposeKey(TenantA, "/api/v1/exchange-rates", "k");
-        var maps = IdempotencyStore.ComposeKey(TenantA, "/api/v1/intercompany-account-maps", "k");
+        var rates = IdempotencyStore.ComposeKey(TenantA, null, null, "/api/v1/exchange-rates", "k");
+        var maps = IdempotencyStore.ComposeKey(TenantA, null, null, "/api/v1/intercompany-account-maps", "k");
 
         IdempotencyStore.Save(rates, Body("أسعار"));
 
@@ -48,7 +48,7 @@ public class IdempotencyIsolationTests
     [Fact]
     public void SameTenantSamePath_ReusesCachedResponse()
     {
-        var key = IdempotencyStore.ComposeKey(TenantA, "/api/v1/exchange-rates", "retry-1");
+        var key = IdempotencyStore.ComposeKey(TenantA, null, null, "/api/v1/exchange-rates", "retry-1");
         IdempotencyStore.Save(key, Body("مخزَّن"));
 
         Assert.True(IdempotencyStore.TryGet(key, out var cached));
@@ -59,8 +59,8 @@ public class IdempotencyIsolationTests
     [Fact]
     public void NullTenant_DoesNotCollideWithKnownTenant()
     {
-        var anonymous = IdempotencyStore.ComposeKey(null, "/api/v1/exchange-rates", "k");
-        var known = IdempotencyStore.ComposeKey(TenantA, "/api/v1/exchange-rates", "k");
+        var anonymous = IdempotencyStore.ComposeKey(null, null, null, "/api/v1/exchange-rates", "k");
+        var known = IdempotencyStore.ComposeKey(TenantA, null, null, "/api/v1/exchange-rates", "k");
 
         IdempotencyStore.Save(anonymous, Body("مجهول"));
 

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Brqosh.Domain.Security;
 
 namespace Brqosh.Api.Idempotency;
 
@@ -25,9 +26,16 @@ public static class IdempotencyStore
 
     private static readonly ConcurrentDictionary<string, Entry> Cache = new();
 
-    /// <summary>مفتاح مركّب: لا يتقاطع مستأجران ولا مساران على نفس القيمة.</summary>
-    public static string ComposeKey(Guid? tenantId, string path, string headerKey) =>
-        $"{tenantId?.ToString() ?? "-"}|{path}|{headerKey}";
+    /// <summary>
+    /// مفتاح مركّب: لا يتقاطع مستأجران ولا مساران على نفس القيمة.
+    ///
+    /// <para>‏(تقويةُ الـAPI · S-6) <b>ولا مستدعيان</b>: الدورُ والاسمُ جزءٌ منه. كان مستدعٍ آخرُ في المستأجر نفسِه — اسمٌ آخر
+    /// أو دورٌ ضُيّق بـ<c>X-Api-Role</c> — يُرسل القيمةَ نفسَها فيستلم جسدَ ردّ الأوّل <b>قبل أن يبلغ فحصَ صلاحيّته</b>.
+    /// <b>وكلُّ جزءٍ مسبوقٌ بطوله</b>: فاصلٌ داخل اسمٍ لا يصوغ مفتاحَ مستدعٍ آخر.</para>
+    /// </summary>
+    public static string ComposeKey(Guid? tenantId, UserRole? role, string? username, string path, string headerKey) =>
+        string.Join("|", new[] { tenantId?.ToString() ?? "-", role?.ToString() ?? "-", username ?? "-", path, headerKey }
+            .Select(part => $"{part.Length}:{part}"));
 
     public static bool TryGet(string key, out IdempotentResponse response)
     {

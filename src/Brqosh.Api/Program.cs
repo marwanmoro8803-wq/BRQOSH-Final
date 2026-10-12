@@ -236,8 +236,11 @@ app.Use(async (ctx, next) =>
     }
 
     // (CEEF-210) مفتاح مركّب: المستأجر + المسار + الترويسة — لا تسريب عابر للمستأجرين.
+    // ‏(S-6) **والمستدعي**: الدورُ والاسمُ كما حسمهما `ApiSecurityContextMiddleware` قبل هذه الطبقة — فلا يُعاد على
+    // ‏مستدعٍ آخرَ ردُّ غيره قبل أن يبلغ فحصَ صلاحيّته.
     var cacheKey = IdempotencyStore.ComposeKey(
-        TenantContext.CurrentTenantId, ctx.Request.Path.Value ?? "", key);
+        TenantContext.CurrentTenantId, SecurityContext.CurrentRole, SecurityContext.CurrentUsername,
+        ctx.Request.Path.Value ?? "", key);
 
     if (IdempotencyStore.TryGet(cacheKey, out var cached))
     {
