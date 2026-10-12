@@ -30,7 +30,7 @@ public sealed class BackupVerifierUnavailableException(string message)
 /// أنّه يُستعاد</b>. ولذلك يُقاس هذا الملفّ بهوية <b>ح-٦</b>: تُؤخذ نسخة، ثمّ <b>تُتلَف
 /// القاعدة</b>، ثمّ تُستعاد، ثمّ تُطابَق بصمةُ الدفاتر. ونسخةٌ لا تجتاز ذلك أمنيةٌ لا نسخة.</para>
 /// </summary>
-public sealed class BackupService(BrqoshDbContext db)
+public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder = null)
 {
     /// <param name="Pruned">
     /// (م-٤ · ن-٣٦) عددُ النسخ القديمة التي حُذفت في هذه العمليّة.
@@ -185,6 +185,9 @@ public sealed class BackupService(BrqoshDbContext db)
     ///
     /// <para>لا يُستدعى إلا بعد تأكيدٍ صريحٍ من المالك. ومسؤوليةُ التأكيد على المستدعي:
     /// هذه الطبقةُ تُنفّذ ولا تسأل.</para>
+    ///
+    /// <para>‏(ح-١٣٠) <b>وعلى PostgreSQL: نسخةٌ لما سيُتلَف أوّلاً</b> (<see cref="DefaultPreRestoreFolder"/>)، <b>ثمّ مخطَّطٌ فارغ،
+    /// ثمّ الاستعادة</b> — فقاعدةٌ أحدثُ من النسخة لا تتركها نصفَ مستعادة.</para>
     /// </summary>
     public async Task RestoreAsync(string backupPath, CancellationToken ct = default)
     {
@@ -464,12 +467,46 @@ public sealed class BackupService(BrqoshDbContext db)
             builder.Password, "pg_dump", ct);
     }
 
+    /// <summary>‏(ح-١٣٠) نسخُ ما قبل الاستعادة — بجوار النسخ لا فيها، فلا تدخل حدَّها ولا تُطفئ إنذارَ التأخّر.</summary>
+    public static string DefaultPreRestoreFolder() =>
+        Path.Combine(BrqoshDataRoot.Path(), "backups", "pre-restore");
+
+    /// <summary>
+    /// ‏(ح-١٣٠) يُفرغ <c>public</c> ممّا يملكه دورُ التطبيق — الجداولُ والعروضُ والتسلسلاتُ <b>بـ<c>CASCADE</c></b> — ولا يحذف
+    /// المخطَّطَ نفسَه: ملكيّتُه لمالك القاعدة في PostgreSQL 15+ وحدَه، وقبله لـ<c>postgres</c>.
+    /// </summary>
+    internal const string ClearPublicSchemaSql = """
+        DO $$
+        DECLARE r record;
+        BEGIN
+            FOR r IN SELECT c.relname, c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                     WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
+                     -- ‏تسلسلُ عمود الهويّة لا يُحذف قبل جدوله: العروضُ ثمّ الجداولُ (تأخذ تسلسلاتِها) ثمّ ما بقي.
+                     ORDER BY CASE c.relkind WHEN 'v' THEN 0 WHEN 'm' THEN 1 WHEN 'S' THEN 3 ELSE 2 END
+            LOOP
+                EXECUTE format('DROP %s IF EXISTS public.%I CASCADE',
+                    CASE r.relkind WHEN 'v' THEN 'VIEW' WHEN 'm' THEN 'MATERIALIZED VIEW'
+                                   WHEN 'S' THEN 'SEQUENCE' WHEN 'f' THEN 'FOREIGN TABLE' ELSE 'TABLE' END,
+                    r.relname);
+            END LOOP;
+        END $$;
+        """;
+
     private async Task RestorePostgresAsync(string backupPath, CancellationToken ct)
     {
         var tool = PgToolLocator.Find("pg_restore", out var searched)
             ?? throw new AccountingException(BuildToolMissingMessage("pg_restore", searched));
 
         var builder = new NpgsqlConnectionStringBuilder(db.Database.GetConnectionString());
+
+        // ‏(ح-١٣٠ · data-upgrade-performance#1) **أوّلاً: نسخةٌ مُتحقَّقٌ منها لما سيُتلَف.** فاستعادةُ الملفّ الخطأ، أو سقوطُها
+        // ‏في منتصفها، لا تُضيّع دفاترَ اليوم. **وفشلُها يُسقط الاستعادةَ قبل أن يُمسّ شيء.**
+        await CreateAsync(Path.Combine(preRestoreFolder ?? DefaultPreRestoreFolder(),
+            $"brqosh_{DateTime.UtcNow:yyyyMMdd_HHmmss}_before_restore.dump"), ct);
+
+        // ‏**ثمّ مخطَّطٌ فارغ — فالاستعادةُ هي المُثبَتة.** `--clean` يحذف ما في الأرشيف وحدَه وبلا `CASCADE`: فجدولٌ أحدثُ
+        // ‏من النسخة (رُقّيت القاعدةُ بعدها) يعتمد على جدولٍ فيها **يمنع حذفَه، فتخرج الاستعادةُ بخطأٍ والقاعدةُ نصفُ مستعادة.**
+        await db.Database.ExecuteSqlRawAsync(ClearPublicSchemaSql, ct);
 
         // ‏الاتصالاتُ المفتوحة تمنع الحذف — ويُغلق التجمّعُ قبل الاستعادة.
         NpgsqlConnection.ClearAllPools();

@@ -152,7 +152,7 @@ public sealed class AnUpgradeBacksUpTheBooksFirstTests : IDisposable
         Assert.EndsWith($"_before_{all[^1]}.dump", copy, StringComparison.Ordinal);
 
         await using var rollback = await PostgresTestDatabase.CreateAsync("pre_upgrade_rollback");
-        await new BackupService(rollback.Db).RestoreAsync(copy);
+        await new BackupService(rollback.Db, Path.Combine(_folder, "pre-restore")).RestoreAsync(copy);
 
         var restored = (await rollback.Db.Database.GetAppliedMigrationsAsync()).ToList();
         Assert.Equal(previous, restored[^1]);
