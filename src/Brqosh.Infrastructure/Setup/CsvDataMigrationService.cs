@@ -5,6 +5,7 @@ using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
+using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Setup;
@@ -201,7 +202,8 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         for (var i = 0; i < lines.Count; i++)
         {
             var lineNo = first + i;
-            if (ReadTrialBalanceLine(lines[i], accounts) is { } error)
+            var (error, debitAmount, creditAmount) = ReadTrialBalanceLine(lines[i], lineNo, accounts);
+            if (error is not null)
             {
                 errors.Add(new DataMigrationRowResult(lineNo, false, error));
                 continue;
@@ -211,7 +213,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
             if (rows.Any(r => r.Account.Code == parts[0]))
                 errors.Add(new DataMigrationRowResult(lineNo, false, $"الحساب {parts[0]} مكرَّر في الميزان."));
             else
-                rows.Add((lineNo, accounts[parts[0]], Amount(parts[1]), Amount(parts[2])));
+                rows.Add((lineNo, accounts[parts[0]], debitAmount, creditAmount));
         }
 
         if (errors.Count > 0)
@@ -244,30 +246,44 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
             new("OpeningTrialBalance", total, 0, total, [new DataMigrationRowResult(0, false, why)]);
     }
 
-    private static string? ReadTrialBalanceLine(string line, IReadOnlyDictionary<string, Account> accounts)
+    /// <summary>
+    /// ‏سطرُ الميزان: الخطأُ أو المبلغان. <b>والمبلغُ يُقرأ بـ<see cref="CsvAmountText"/> وحدَه</b> — فلا تُقرأ «1,500» خمسةَ
+    /// عشرَ مئة ولا «1e3» ألفاً (<c>CsvAmountTextIsTheOnlyFileParserTests</c>).
+    /// </summary>
+    private static (string? Error, decimal Debit, decimal Credit) ReadTrialBalanceLine(
+        string line, int lineNo, IReadOnlyDictionary<string, Account> accounts)
     {
         var parts = SplitCsvLine(line);
         if (parts.Length != 3)
-            return "أعمدة مطلوبة: AccountCode,Debit,Credit";
+            return ("أعمدة مطلوبة: AccountCode,Debit,Credit", 0m, 0m);
 
         var code = parts[0];
         if (!accounts.TryGetValue(code, out var account))
-            return $"الحساب {code} غير موجود في الدليل.";
+            return ($"الحساب {code} غير موجود في الدليل.", 0m, 0m);
         if (account.IsGroup)
-            return $"الحساب {code} تجميعيّ — الأرصدةُ على الحسابات التفصيليّة.";
+            return ($"الحساب {code} تجميعيّ — الأرصدةُ على الحسابات التفصيليّة.", 0m, 0m);
         if (code == SaudiChartOfAccounts.SystemCodes.Inventory)
-            return "المخزونُ يدخل بحركة مخزونٍ افتتاحيّة لكلّ صنف (بكمّيته وتكلفته) — لا برصيدٍ في الميزان.";
+            return ("المخزونُ يدخل بحركة مخزونٍ افتتاحيّة لكلّ صنف (بكمّيته وتكلفته) — لا برصيدٍ في الميزان.", 0m, 0m);
         if (code == SaudiChartOfAccounts.SystemCodes.GoodsReceivedNotInvoiced)
-            return "حسابُ البضاعة المستلَمة غير المفوترة يبدأ صفراً — لا رصيدَ افتتاحيَّ له.";
+            return ("حسابُ البضاعة المستلَمة غير المفوترة يبدأ صفراً — لا رصيدَ افتتاحيَّ له.", 0m, 0m);
 
-        if (!TryAmount(parts[1], out var debit) || !TryAmount(parts[2], out var credit))
-            return "مبلغ غير مقروء — رقمٌ بنقطةٍ عشريّة بلا فواصل آلاف.";
+        decimal debit, credit;
+        try
+        {
+            debit = CsvAmountText.ParseCell(parts[1], lineNo, "Debit");
+            credit = CsvAmountText.ParseCell(parts[2], lineNo, "Credit");
+        }
+        catch (AccountingException ex)
+        {
+            return (ex.Message, 0m, 0m);
+        }
+
         if (debit < 0 || credit < 0)
-            return "مبلغٌ سالب — الدائنُ في عمود الدائن.";
+            return ("مبلغٌ سالب — الدائنُ في عمود الدائن.", 0m, 0m);
         if ((debit > 0) == (credit > 0))
-            return "السطرُ مدينٌ أو دائن — لا كلاهما ولا لا شيء.";
+            return ("السطرُ مدينٌ أو دائن — لا كلاهما ولا لا شيء.", 0m, 0m);
 
-        return null;
+        return (null, debit, credit);
     }
 
     /// <summary>‏حسابا الرقابة اللذان يُبنى رصيدُهما من مستندات العملاء والموردين.</summary>
@@ -364,9 +380,14 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
                 continue;
             }
 
-            if (!TryAmount(parts[4], out var amount))
+            decimal amount;
+            try
             {
-                errors.Add(new DataMigrationRowResult(lineNo, false, "مبلغ غير مقروء — رقمٌ بنقطةٍ عشريّة بلا فواصل آلاف."));
+                amount = CsvAmountText.Parse(parts[4], lineNo, "Amount");
+            }
+            catch (AccountingException ex)
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, ex.Message));
                 continue;
             }
 
@@ -434,12 +455,6 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
 
     private static bool TryDate(string text, out DateOnly date) =>
         DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
-
-    private static bool TryAmount(string text, out decimal amount) =>
-        decimal.TryParse(text, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
-            CultureInfo.InvariantCulture, out amount);
-
-    private static decimal Amount(string text) => decimal.Parse(text, CultureInfo.InvariantCulture);
 
     private static string Format(decimal amount) => amount.ToString("N2", CultureInfo.InvariantCulture);
 
