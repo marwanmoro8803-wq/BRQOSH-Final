@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -106,6 +107,73 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
+    /// <summary>للاختبارات وحدَها — معالجٌ يردّ بدل الهيئة. <c>internal</c>: لا يبلغه مستخدم.</summary>
+    internal static HttpMessageHandler? HandlerOverride { get; set; }
+
+    private static HttpClient Client =>
+        HandlerOverride is null ? Http : new HttpClient(HandlerOverride, disposeHandler: false) { Timeout = Http.Timeout };
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) <b>ما يقوله ردٌّ غيرُ ناجحٍ عن المستند.</b>
+    ///
+    /// <para>‏<see cref="HttpFailureKind.Rejected"/> وحدَه حكمٌ على المستند (٤٠٠ وبقيّةُ ٤xx). أمّا الخادمُ المتعطّل أو المزدحم
+    /// ‏(٤٠٨ · ٤٢٩ · ٥xx) <b>فعارضٌ يزول</b>، والاعتمادُ المرفوض (٤٠١ · ٤٠٣) <b>خللُ إعدادٍ لا خللُ فاتورة</b> — فيبقى المستندُ
+    /// ‏قابلاً للإرسال في الحالين، ويُسجَّل السببُ عليه.</para>
+    /// </summary>
+    public enum HttpFailureKind
+    {
+        Rejected,
+        Transient,
+        Configuration,
+    }
+
+    public static HttpFailureKind ClassifyFailure(HttpStatusCode code) => (int)code switch
+    {
+        401 or 403 => HttpFailureKind.Configuration,
+        408 or 429 => HttpFailureKind.Transient,
+        >= 500 => HttpFailureKind.Transient,
+        _ => HttpFailureKind.Rejected,
+    };
+
+    /// <summary>‏(ح-١٢١) حصيلةُ إعادة إرسال المعلَّق.</summary>
+    public sealed record ResubmitResult(int Submitted, int StillPending, string? LastError);
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) <b>إعادةُ إرسال كلِّ معلَّقٍ دفعةً واحدة — بترتيب السلسلة.</b>
+    ///
+    /// <para>‏المعلَّقُ ما بقي «جاهزاً للإبلاغ/للاعتماد»: انقطعت الشبكةُ عند ترحيله، أو تعطّل خادمُ الهيئة، أو رُفض الاعتماد.
+    /// ‏وكان لا يُعاد إلّا مستنداً مستنداً من الشاشة. <b>ويُرسَل بترتيب العدّاد (ICV)</b>، <b>ويقف عند أوّل فشل</b>: فلا يصل
+    /// ‏لاحقٌ قبل سابقه، والباقي يبقى معلَّقاً بسببه لدفعةٍ تالية.</para>
+    /// </summary>
+    public async Task<ResubmitResult> ResubmitPendingAsync(long companyId, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanPostAccounting();
+
+        var pending = await db.ZatcaEInvoiceDocuments
+            .Where(d => d.CompanyId == companyId
+                        && (d.ComplianceStatus == ZatcaComplianceStatus.ReadyToReport
+                            || d.ComplianceStatus == ZatcaComplianceStatus.ReadyToClear))
+            .OrderBy(d => d.Icv)
+            .Select(d => d.Id)
+            .ToListAsync(ct);
+
+        var submitted = 0;
+        foreach (var id in pending)
+        {
+            try
+            {
+                await SubmitCoreAsync(id);
+                submitted++;
+            }
+            catch (Exception ex) when (ex is AccountingException or HttpRequestException or TaskCanceledException or IOException)
+            {
+                return new ResubmitResult(submitted, pending.Count - submitted, ex.Message);
+            }
+        }
+
+        return new ResubmitResult(submitted, 0, null);
+    }
+
     /// <summary>
     /// إرسالٌ <b>بطلب المستخدم</b> — من شاشة ZATCA أو إعادة محاولةٍ يدوية. يتطلّب صلاحية
     /// العمليات المحاسبية، فهو قرارُ مستخدمٍ مستقلٌّ عن أيّ ترحيل.
@@ -184,14 +252,41 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
             doc.TransmissionMode, settings.ApiBaseUrl, payload,
             ZatcaSettingsSecrets.GetApiToken(settings));
 
-        var response = await Http.SendAsync(request);
+        HttpResponseMessage response;
+        try
+        {
+            response = await Client.SendAsync(request);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            // ‏(ح-١٢١) ‏الشبكةُ لا تحكم على المستند — يبقى معلَّقاً ويُسجَّل السببُ عليه، يدويّاً كان الإرسالُ أو تلقائيّاً.
+            doc.RecordSubmissionFailure(ex is TaskCanceledException
+                ? "انتهت مهلة الاتصال بخادم الهيئة."
+                : "تعذّر الاتصال بخادم الهيئة: " + ex.Message);
+            await db.SaveChangesAsync();
+            throw;
+        }
+
         var body = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
         {
-            doc.MarkRejected(body);
+            // ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) ‏**وكان كلُّ ردٍّ غيرِ ناجحٍ «رفضاً»** — ٥٠٣ و٤٢٩ و٥٠٠ معاً،
+            // ‏و«المرفوضُ» لا يلتقطه إرسالٌ لاحق: فاتورةٌ سليمةٌ تسقط لأنّ خادمَ الهيئة تعطّل دقيقة.
+            var kind = ClassifyFailure(response.StatusCode);
+            if (kind == HttpFailureKind.Rejected)
+            {
+                doc.MarkRejected(body);
+                await db.SaveChangesAsync();
+                throw new AccountingException($"رفضت الهيئة المستند: {response.StatusCode}");
+            }
+
+            var reason = kind == HttpFailureKind.Transient
+                ? $"خادمُ الهيئة لم يُتمّ الطلب ({(int)response.StatusCode}) — عارضٌ يزول؛ المستندُ باقٍ معلَّقاً ويُعاد إرسالُه."
+                : $"الهيئةُ رفضت الاعتماد ({(int)response.StatusCode}) — راجع رمزَ الواجهة وشهادة CSID في إعدادات الهيئة؛ المستندُ باقٍ معلَّقاً.";
+            doc.RecordSubmissionFailure(reason);
             await db.SaveChangesAsync();
-            throw new AccountingException($"رفضت الهيئة المستند: {response.StatusCode}");
+            throw new AccountingException(reason);
         }
 
         // (CEEF-237 · ز-٢) ‏**حالةُ الهيئة تُقرأ، لا تُفترض من رمز HTTP.**

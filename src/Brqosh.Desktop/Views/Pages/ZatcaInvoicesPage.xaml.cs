@@ -164,6 +164,28 @@ public partial class ZatcaInvoicesPage : UserControl
         }
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) <b>إعادةُ إرسال كلِّ معلَّقٍ دفعةً واحدة</b> — بترتيب السلسلة، وتقف عند أوّل فشل.
+    /// ‏والرسائلُ حرفيّةٌ تُترجَم من السجلّ؛ وسببُ كلِّ فشلٍ مسجَّلٌ على مستنده في الجدول.
+    /// </summary>
+    private async void OnResubmitPending(object sender, RoutedEventArgs e) =>
+        await UiFeedback.RunSafeAsync(ResubmitPendingAsync);
+
+    private async Task ResubmitPendingAsync()
+    {
+        using var facade = new DesktopAccountingFacade();
+        var result = await facade.GetService<ZatcaSubmissionService>().ResubmitPendingAsync(AppServices.CompanyId);
+        await ReloadAsync();
+
+        if (result.Submitted == 0 && result.StillPending == 0)
+            UiDialog.Show("لا مستندات معلَّقة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+        else if (result.StillPending == 0)
+            UiDialog.Show("أُرسلت المستندات المعلَّقة كلُّها.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+        else
+            UiDialog.Show("بقيت مستندات معلَّقة — وسببُ التوقّف مسجَّلٌ على المستند في الجدول. أعد المحاولة لاحقاً.", "BRQOSH",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
     private async void OnPrintPdf(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not Row row)

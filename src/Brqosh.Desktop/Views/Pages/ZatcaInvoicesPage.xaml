@@ -21,6 +21,7 @@
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="SubmitBtn" Content="إرسال المحدد للهيئة" Style="{StaticResource PrimaryButton}" Padding="18,8" Click="OnSubmit"/>
+                <Button Content="إعادة إرسال المعلَّق" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnResubmitPending"/>
                 <Button Content="طباعة PDF" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnPrintPdf"/>
                 <Button Content="عرض XML" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnViewXml"/>
                 <Button Content="فتح المستند المصدر" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnOpenSource"/>
