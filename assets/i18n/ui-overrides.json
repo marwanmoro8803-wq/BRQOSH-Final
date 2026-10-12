@@ -1199,5 +1199,13 @@
   "(المستودع الافتراضي)": "(Default warehouse)",
   "أصلٌ قائمٌ قبل بدء التشغيل (رصيد افتتاحي)": "Owned before go-live (opening balance)",
   "تاريخ الرصيد الافتتاحي *": "Opening balance date *",
-  "مجمع الإهلاك حتى تاريخه": "Accumulated depreciation to date"
+  "مجمع الإهلاك حتى تاريخه": "Accumulated depreciation to date",
+  "نقل الدليل والعملاء والموردين والأرصدة الافتتاحية من نظام سابق": "Move the chart, customers, suppliers and opening balances from a previous system",
+  "تاريخ بدء التشغيل": "Go-live date",
+  "استيراد الميزان الافتتاحي": "Import opening trial balance",
+  "استيراد الموردين": "Import suppliers",
+  "دليل الحسابات: Code · NameAr · NameEn · Type (Asset/Liability/Equity/Revenue/Expense) · IsGroup اختياري": "Chart of accounts: Code · NameAr · NameEn · Type (Asset/Liability/Equity/Revenue/Expense) · optional IsGroup",
+  "العملاء والموردون: NameAr · VatNumber (خمسة عشر رقماً أو فارغ)": "Customers and suppliers: NameAr · VatNumber (fifteen digits or empty)",
+  "الميزان الافتتاحي: AccountCode · Debit · Credit — يتوازن ويُرحَّل قيداً واحداً بتاريخ بدء التشغيل أو لا يُرحَّل منه شيء. والذمم المدينة والدائنة تقف في 3107 حتى تُفصَّل على أصحابها، والمخزون بحركته الافتتاحية لكل صنف.": "Opening trial balance: AccountCode · Debit · Credit — it must balance and is posted as one entry on the go-live date, or nothing is posted. Receivables and payables wait in 3107 until detailed per customer and supplier; inventory enters by its opening movement per item.",
+  "اختر تاريخ بدء التشغيل قبل استيراد الميزان الافتتاحي.": "Choose the go-live date before importing the opening trial balance."
 }

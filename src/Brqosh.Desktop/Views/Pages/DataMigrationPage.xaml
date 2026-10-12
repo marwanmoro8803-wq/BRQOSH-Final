@@ -14,13 +14,21 @@
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="ترحيل البيانات" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
-                               Text="نقل دليل الحسابات والعملاء من نظام سابق"/>
+                               Text="نقل الدليل والعملاء والموردين والأرصدة الافتتاحية من نظام سابق"/>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             Style="{StaticResource ToolbarPrimaryGroup}">
-                    <Button x:Name="ImportCustomersBtn" Content="استيراد العملاء"
-                            Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnImportCustomers"/>
+                    <TextBlock Text="تاريخ بدء التشغيل" VerticalAlignment="Center" Margin="0,0,8,0"
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <DatePicker x:Name="OpeningDatePicker" Width="140" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button x:Name="ImportOpeningBtn" Content="استيراد الميزان الافتتاحي"
+                            Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnImportOpening"/>
                 </StackPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ImportSuppliersBtn" DockPanel.Dock="Right" Content="استيراد الموردين"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnImportSuppliers"/>
+                <Button x:Name="ImportCustomersBtn" DockPanel.Dock="Right" Content="استيراد العملاء"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Margin="0,0,8,0" Click="OnImportCustomers"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="ImportAccountsBtn" DockPanel.Dock="Right" Content="استيراد دليل الحسابات"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnImportAccounts"/>
@@ -37,9 +45,11 @@
             <StackPanel>
                 <TextBlock Text="الأعمدة المتوقعة" FontWeight="Bold"
                            Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,6"/>
-                <TextBlock Text="دليل الحسابات: الكود · الاسم · النوع · كود الحساب الأب"
+                <TextBlock Text="دليل الحسابات: Code · NameAr · NameEn · Type (Asset/Liability/Equity/Revenue/Expense) · IsGroup اختياري"
                            Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
-                <TextBlock Text="العملاء: الاسم · الرقم الضريبي · الجوال · العنوان"
+                <TextBlock Text="العملاء والموردون: NameAr · VatNumber (خمسة عشر رقماً أو فارغ)"
+                           Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+                <TextBlock Text="الميزان الافتتاحي: AccountCode · Debit · Credit — يتوازن ويُرحَّل قيداً واحداً بتاريخ بدء التشغيل أو لا يُرحَّل منه شيء. والذمم المدينة والدائنة تقف في 3107 حتى تُفصَّل على أصحابها، والمخزون بحركته الافتتاحية لكل صنف."
                            Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>

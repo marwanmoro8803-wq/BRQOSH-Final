@@ -30,16 +30,32 @@ public partial class DataMigrationPage : UserControl
         InitializeComponent();
         Loaded += (_, _) => PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
             (ImportAccountsBtn, PermissionService.CanPostAccounting),
-            (ImportCustomersBtn, PermissionService.CanPostAccounting));
+            (ImportCustomersBtn, PermissionService.CanPostAccounting),
+            (ImportSuppliersBtn, PermissionService.CanPostAccounting),
+            (ImportOpeningBtn, PermissionService.CanPostAccounting));
     }
 
-    private async void OnImportAccounts(object sender, RoutedEventArgs e) =>
-        await ImportAsync(accounts: true);
+    private enum Kind { Accounts, Customers, Suppliers, OpeningTrialBalance }
 
-    private async void OnImportCustomers(object sender, RoutedEventArgs e) =>
-        await ImportAsync(accounts: false);
+    private async void OnImportAccounts(object sender, RoutedEventArgs e) => await ImportAsync(Kind.Accounts);
 
-    private async Task ImportAsync(bool accounts)
+    private async void OnImportCustomers(object sender, RoutedEventArgs e) => await ImportAsync(Kind.Customers);
+
+    private async void OnImportSuppliers(object sender, RoutedEventArgs e) => await ImportAsync(Kind.Suppliers);
+
+    /// <summary>‏(ح-١٣٣) الميزانُ الافتتاحيُّ يلزمه تاريخُ بدء التشغيل — بلا تاريخٍ لا يُفتح الملفّ أصلاً.</summary>
+    private async void OnImportOpening(object sender, RoutedEventArgs e)
+    {
+        if (OpeningDatePicker.SelectedDate is null)
+        {
+            UiFeedback.ShowWarning("اختر تاريخ بدء التشغيل قبل استيراد الميزان الافتتاحي.");
+            return;
+        }
+
+        await ImportAsync(Kind.OpeningTrialBalance);
+    }
+
+    private async Task ImportAsync(Kind kind)
     {
         var dialog = new OpenFileDialog
         {
@@ -55,9 +71,14 @@ public partial class DataMigrationPage : UserControl
             using var facade = new DesktopAccountingFacade();
             var service = facade.GetService<CsvDataMigrationService>();
 
-            var result = accounts
-                ? await service.ImportChartOfAccountsCsvAsync(AppServices.CompanyId, csv)
-                : await service.ImportCustomersCsvAsync(AppServices.CompanyId, csv);
+            var result = kind switch
+            {
+                Kind.Accounts => await service.ImportChartOfAccountsCsvAsync(AppServices.CompanyId, csv),
+                Kind.Customers => await service.ImportCustomersCsvAsync(AppServices.CompanyId, csv),
+                Kind.Suppliers => await service.ImportSuppliersCsvAsync(AppServices.CompanyId, csv),
+                _ => await service.ImportOpeningTrialBalanceCsvAsync(AppServices.CompanyId,
+                    DateOnly.FromDateTime(OpeningDatePicker.SelectedDate!.Value), csv),
+            };
 
             Show(result);
         }
