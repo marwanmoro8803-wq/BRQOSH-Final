@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 70 بنداً ✅ و24 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 71 بنداً ✅ و24 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ وسبعةٌ وعشرون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٢٧) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وثمانيةٌ وعشرون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٢٨) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -216,7 +216,7 @@
 ## installer-deployment-ops (12 major)
 
 - ☐ **`installer-deployment-ops#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No release pipeline: CI never builds the MSI, and the only MSI on disk is an unsigned local 1.0.0 that the shipped-versions gate deliberately exempts
-- ☐ **`installer-deployment-ops#3`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Code-signing hook only accepts a PFX file, which CAs no longer issue; 'hook ready, waiting for certificate' is false
+- ✅ **`installer-deployment-ops#3`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Code-signing hook only accepts a PFX file, which CAs no longer issue; 'hook ready, waiting for certificate' is false — ح-١٢٨ `c0c6dad` — **الخطّافُ يقبل الشهادةَ كما تُصدَر اليوم**: `installer/signing.ps1` — بصمةٌ في مخزن ويندوز (`/sha1`، والمفتاحُ على رمزٍ أو HSM) أو PFX كما كان، والتعارضُ والبصمةُ غيرُ الصالحة وPFX الغائب أخطاءٌ تُسقط البناء، وكلمةُ المرور لا تُطبع؛ ويقيسه اختبارٌ يُشغّل السكربتَ نفسَه؛ **فأُغلق البند**؛ **وحدُّه**: التوقيعُ بشهادةٍ حقيقيّةٍ لم يُقَس (`installer-deployment-ops#4` خارجيّ)
 - ☐ **`installer-deployment-ops#4`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>Package and payload are unsigned today (certificate is a third-party dependency)
 - ✅ **`installer-deployment-ops#5`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>.NET launch condition passes on any Desktop runtime version; the '9 or newer' message is also wrong for .NET 10 — ح-٦٢ `21708ef` — **ملفٌّ بإصدار 9 تحت مجلّدات الإصدارات** لا المجلّدُ الأب؛ **و`FileSearch` بلا `Id`** — بـ`Id` يبنيه WiX صامتاً ولا يُوجد أبداً فيُرفض كلُّ جهاز؛ **مقيسٌ بتشغيل `AppSearch` بلا تثبيت**: المشحونةُ ⟵ المجلّدُ الأب، والمُصلَحةُ ⟵ 9.0.17 (ومسبارٌ: ٦ ⟵ 6.0.36 ضابطٌ موجب · ٨ و١٠ ⟵ لا شيء)؛ **والتنصيبُ الحيُّ على جهازٍ بلا 9 يبقى NOT TESTED (VM)**
 - ◐ **`installer-deployment-ops#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>.NET 9 runtime support ends about 8 weeks after launch, and no document plans for it — ح-١٢٤ `dd4eb1d` — **الخطّةُ مكتوبة** (`docs/release-readiness/DOTNET10-MIGRATION.md`): **نهايةُ دعم .NET 9 في 10 نوفمبر 2026** من المصدر الرسميّ، والنطاقُ مقيسٌ (٢٩ مشروعاً · تسعُ عائلاتِ حزم · حدُّ المُنصِّب · CI)، والتغييراتُ الكاسرةُ التي تمسّنا (ترجمةُ `.Contains()` في EF 10، والهجراتُ بلا معاملةٍ واحدة)، وخطواتٌ مرتّبةٌ مقيسةٌ وتراجع؛ **ويبقى — ولذا ◐**: الترحيلُ نفسُه يشترط تثبيتَ SDK لـ.NET 10 — قرارُ المالك، **والموعدُ يضغط**
