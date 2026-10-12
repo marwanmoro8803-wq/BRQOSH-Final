@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-10-11 (جاهزيّةُ الإطلاق · **مئةٌ وثمانيةَ عشرَ إغلاقاً ح-١…ح-١١٨**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-10-12 (جاهزيّةُ الإطلاق · **مئةٌ وعشرون إغلاقاً ح-١…ح-١٢٠**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١١٨ (2026-09-20…10-11)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٢٠ (2026-09-20…10-12)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3134,10 +3134,12 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١١٦ | `af3de62` | `Domain/Payroll/LeaveEntitlementCalculator.cs` · `Domain/Payroll/PayrollRun.cs` · `Payroll/PayrollRunBuilder.cs` · `SickLeaveIsPaidOnArticle117TiersTests.cs` | **المرضيّةُ تُصرف كاملةً أبداً ولو بعد التسعين** (`treasury-payroll-assets#9` ◐) — `SickDeductionDays` يزن كلَّ يومٍ بتدرّج المادة 117 في «السنة الواحدة» من أوّل إجازةٍ مرضيّة، والدورةُ تخصمه؛ **وحصّةُ الموظّف من التأمينات لا تتجاوز الأجرَ المستحقّ** (قرارُ المالك 2026-10-11 — وكان شهرٌ خُصم كلُّه يُسقط الدورةَ كلَّها بصافٍ سالب)؛ برهانان (`sick-tiers` · `gosi-cap`)؛ **وحدُّه**: الحدودُ النظاميّةُ للإجازات لم تُعالَج |
 | ح-١١٧ | `3c26585` | `Domain/Payroll/LeaveEntitlementCalculator.cs` · `Domain/Payroll/Employee.cs` · `Payroll/LeaveRequestService.cs` · `Payroll/PayrollRunBuilder.cs` · `StatutoryLeaveLimitsTests.cs` · `SickLeaveIsPaidOnArticle117TiersTests.cs` | **الإجازاتُ المدفوعةُ بنصٍّ بلا حدّ — «زواجٌ» بستّين يوماً تُعتمد وتُصرف كاملة** (`treasury-payroll-assets#9` ✅) — `StatutoryMaxDays`: الزواجُ ٥ والوفاةُ ٥ والحجُّ ١٥ والوضعُ ٨٤ (بعد تعديل م/٤٤ النافذ 2025-02-19)، والحجُّ مرّةً بعد سنتين، عند التقديم والاعتماد؛ **وكشفه العملُ**: إجازةٌ اعتُمدت ثمّ انتهت الخدمةُ قبل آخرها تُخصم أيّامُها بعد الانتهاء مرّتين — فصارت تُقرأ على `ServedWithin`؛ أربعةُ براهين؛ **وحدودُه**: الأخُ في الوفاة ثلاثةٌ لا يُفرَّق، وإجازةُ المولود لا نوعَ لها، وبنيةُ الوضع لا تُنمذَج |
 | ح-١١٨ | `4d3df7b` | `Domain/Payroll/LeaveEntitlementCalculator.cs` · `LeaveRequestDialog.xaml` · `LeaveRequestsPage.xaml.cs` · `ui-overrides.json` · `UiBilingualRegistry.g.cs` · `StatutoryLeaveLimitsTests.cs` · `TheLeaveTypeListMatchesTheEnumTests.cs` | **حدودُ ح-١١٧ تُطابَق بالنصّ الرسميّ** (laws.boe.gov.sa وhrsd.gov.sa: المواد 113 و114 و151 بعد م/٤٤) — **فطابقت، إلّا «ثلاثةُ أيّامٍ للأخ»**: نُقلت عن مصدرٍ ثانويّ وليست في النصّ، فصُحّح تعليقُها؛ **وإجازةُ ولادة المولود نوعٌ** (`LeaveType.Birth`، ثلاثةُ أيّام) في النطاق والحوار والجدول (`LocaleManager.T`)، **وقائمةُ الأنواع محروسةٌ بترتيب التعداد** — فالحوارُ يحوّل رقمَ العنصر إلى النوع مباشرةً؛ برهانان؛ **وحدُّه**: «خلال سبعة أيّامٍ من الولادة» لا يُفحص (تاريخُ الولادة لا يُدخَل)، وبنيةُ الوضع لا تُنمذَج |
+| ح-١١٩ | `fc3e96e` | `Domain/Modules/ModuleCatalog.cs` · `Navigation/NavigationCatalog.cs` · `tools/UiAudit/NavKeyModuleMap.cs` · `ModuleCatalogIdentityTests.cs` · `AServiceBusinessSeesItsSuppliersTests.cs` | **«محاسبة عامّة» و«عقارات» بلا مورّدٍ ولا فاتورةِ شراء — فسندُ الصرف لا يُستعمل والمدخلاتُ لا تُخصم** (`ui-ux-i18n-printing#7` ◐ · `sector-modules#11` ◐) — المشترياتُ لا تجرّ المخزون وأُضيفت إلى الملفّين، والمقاولاتُ تُعلن مخزونَها، وإذنُ الاستلام تلزمه `Inventory`؛ برهانان؛ **وقرارُ المالك**: «المناسبُ والقانونيّ» — مشترياتٌ بلا مخزون؛ **وحدُّه**: أمرُ الصيانة نقداً بلا مورّد (قرارٌ محاسبيّ)، والملفُّ لا يُغيَّر بعد الإعداد |
+| ح-١٢٠ | `652dcf9` | `Licensing/RsaLicenseValidator.cs` · `Licensing/ReadOnlyBooks.cs` · `Licensing/LicenseStore.cs` · `Persistence/ReadOnlyBooksInterceptor.cs` · `DbContextFactory.cs` · `InfrastructureServiceCollectionExtensions.cs` · `App.xaml.cs` · `MainWindow.xaml.cs` · `ui-overrides.json` · `AnExpiredLicenseOpensTheBooksReadOnlyTests.cs` | **انتهاءُ الترخيص يُقفل المالكَ خارج دفاتره النظاميّة بلا إنذار** (`commercial-readiness#6` ✅ · `installer-deployment-ops#8` ✅) — المنتهي الأصيلُ يفتحها للقراءة، والقراءةُ تُفرض عند الحفظ، والإنذارُ قبل ثلاثين يوماً؛ **وكشفه العملُ**: `Validate` يحكم «منتهياً» قبل فحص التوقيع، فلو مُنحت القراءةُ بالحكم لفتحها ترخيصٌ مزوَّر — فصار `IsGenuineButExpired`؛ برهانان |
 
-**والقياسُ عند آخر إيداع (`4d3df7b`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **245/245** ·
-`Brqosh.Application.Tests` **2187/2187** · `Brqosh.Desktop.Tests` **432/432** · `Brqosh.Api.Tests` **107/107** ·
-بناءُ Release · الماسحُ الأمنيّ · UI UX · بتغطيةٍ و`trx` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.22%**) — **كلُّها `EXIT=0`**؛ وأدواتُ التشغيل بُنيت عند `3c26585` ولم يمسّها ما بعده.
+**والقياسُ عند آخر إيداع (`652dcf9`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **248/248** ·
+`Brqosh.Application.Tests` **2196/2196** · `Brqosh.Desktop.Tests` **437/437** · `Brqosh.Api.Tests` **107/107** ·
+بناءُ Release وأدواتُ التشغيل · الماسحُ الأمنيّ · UI UX · بتغطيةٍ و`trx` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.28%**) — **كلُّها `EXIT=0`**.
 **ولم يُشغَّل** `BRQOSH_REQUIRE_PG=1` ولا مسبارُ تغطية المخطّط: يحتاجان اعتمادَ PostgreSQL، وهو للمالك يضبطه. **وتشغيلٌ أوّلُ أبطله تشغيلٌ متزامنٌ من جلسةٍ أخرى في الشجرة نفسِها** (سبعةُ `trx` لأربعة مشاريع، ثمّ `Brqosh.Infrastructure.dll` يختفي في منتصف الحزمة) — فأُعيد في مجلّدٍ معزولٍ بعد إيقافه.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
