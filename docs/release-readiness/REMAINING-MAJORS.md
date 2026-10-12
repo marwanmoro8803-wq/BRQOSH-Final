@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 73 بنداً ✅ و24 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 74 بنداً ✅ و24 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٣٠) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وواحدٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٣١) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -208,7 +208,7 @@
 - ✅ **`data-upgrade-performance#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Restore is proven only onto an empty schema; the shipped restore runs pg_restore --clean over the live, possibly newer schema — ح-١٣٠ `3045d7c` — **الاستعادةُ في مخطَّطٍ فارغ وبعد نسخةٍ لما تُتلفه**: كانت `pg_restore --clean` فوق الحيّة فتُترك قاعدةٌ أحدثُ من النسخة نصفَ مستعادة (مقيسٌ على خادمٍ حقيقيّ: `cannot drop constraint PK_companies`)؛ الآن نسخةٌ مُتحقَّقٌ منها في `backups/pre-restore` ثمّ تفريغُ `public` بـ`CASCADE` ثمّ الاستعادة
 - ✅ **`data-upgrade-performance#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No automatic backup before a version upgrade migrates production books, and rollback was never exercised — ح-١٢٩ `2ea68b9` — **الترقيةُ تنسخ الدفاترَ قبل أن تُهاجرها** (`PreUpgradeBackup`: نسخةٌ مُتحقَّقٌ منها في `backups/pre-upgrade` قبل `MigrateAsync`، وفي الإنتاج يمنع فشلُها الترقيةَ؛ ومخرجٌ صريحٌ يُسجَّل)، **والرجوعُ مُجرَّبٌ على PostgreSQL حقيقيّ**: النسخةُ تُستعاد في قاعدةٍ فارغة فتعود بسجلّ هجراتها السابق
 - ✅ **`data-upgrade-performance#3`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The O-04 '1M-entry' harness runs 2,000 entries on in-memory SQLite, and -FullMillion changes nothing — ح-٥٩ `f0e7f91` — **`-FullMillion` يضبط المليون، والاختبارُ لا يقصّ عند مئة ألف**، **و`-Postgres` يُشغّل على خادم PostgreSQL للاختبار ويشترطه**، والسطرُ المطبوعُ يُسمّي المزوّدَ والعدد؛ **وقِيس المسارُ على PostgreSQL بخمسمئة قيد** (٤٨٫٩٨ ms للقيد)؛ **والمليونُ نفسُه يبقى O-04 خارجيّاً** — الأداةُ صارت تقيسه
-- ☐ **`data-upgrade-performance#4`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>No valid performance evidence on PostgreSQL at realistic ledger size; SQLite numbers already show per-post cost growing with the ledger
+- ✅ **`data-upgrade-performance#4`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>No valid performance evidence on PostgreSQL at realistic ledger size; SQLite numbers already show per-post cost growing with the ledger — ح-١٣١ `08e9a9b` — **ثمنُ القيد على دفترٍ بحجمٍ واقعيٍّ مقيسٌ على PostgreSQL حقيقيّ ولا ينمو**: `PostingCostOnALargeLedgerTests` (٥٠ ألفاً افتراضاً، كتلٌ متناوبةٌ مع دفترٍ فارغ) 0.71× و0.99×، و٢٠٠ ألف 0.56×؛ **و«نموُّ» SQLite كان سياقَ الاختبار الواحد** — بسياقٍ لكلّ قيدٍ كالبرنامج 78ms ⟵ 7.94ms؛ والمليونُ (O-04) خارجيٌّ تقيسه الأداة
 - ◐ **`data-upgrade-performance#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Scheduled backup needs PostgreSQL client tools on every workstation, and the installer does not ship them — ح-١٢٥ `8929a0a` — **الأدواتُ تُفحص في «حالة النظام» من أوّل يوم** (`BackupToolReadiness`: موجودتان وبإصدار الخادم أو أحدث، والأقدمُ كالغائب) بدل أن يُعرف غيابُها بأوّل نسخةٍ فاشلة، **والدليلُ يقول كيف تُثبَّت**؛ **ويبقى — ولذا ◐**: المُنصِّبُ لا يشحنها (تضمينُ ثنائيّات PostgreSQL قرارُ توزيعٍ وترخيصٍ للمالك)
 - ✅ **`data-upgrade-performance#7`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>No guard stops an older workstation from running against a schema already upgraded by a newer one — ح-٥١ `a916c42` — **مقيسٌ على PostgreSQL حيّ؛ والحارسُ خارج الـ`try` لأنّ الموضعَ الطبيعيَّ يبتلعه (مقيس)؛ والحدُّ المعلَن: قاعدةٌ بلا سجلّ هجراتٍ لا تُقارَن**
 - ☐ **`data-upgrade-performance#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>G-39 data migration from other systems is only chart of accounts plus customer name/VAT, through a naive CSV parser
