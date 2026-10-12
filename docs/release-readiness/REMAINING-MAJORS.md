@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 71 بنداً ✅ و24 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 72 بنداً ✅ و24 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ وثمانيةٌ وعشرون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٢٨) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وتسعةٌ وعشرون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٢٩) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -206,7 +206,7 @@
 ## data-upgrade-performance (7 major)
 
 - ☐ **`data-upgrade-performance#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Restore is proven only onto an empty schema; the shipped restore runs pg_restore --clean over the live, possibly newer schema
-- ☐ **`data-upgrade-performance#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No automatic backup before a version upgrade migrates production books, and rollback was never exercised
+- ✅ **`data-upgrade-performance#2`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No automatic backup before a version upgrade migrates production books, and rollback was never exercised — ح-١٢٩ `2ea68b9` — **الترقيةُ تنسخ الدفاترَ قبل أن تُهاجرها** (`PreUpgradeBackup`: نسخةٌ مُتحقَّقٌ منها في `backups/pre-upgrade` قبل `MigrateAsync`، وفي الإنتاج يمنع فشلُها الترقيةَ؛ ومخرجٌ صريحٌ يُسجَّل)، **والرجوعُ مُجرَّبٌ على PostgreSQL حقيقيّ**: النسخةُ تُستعاد في قاعدةٍ فارغة فتعود بسجلّ هجراتها السابق
 - ✅ **`data-upgrade-performance#3`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>The O-04 '1M-entry' harness runs 2,000 entries on in-memory SQLite, and -FullMillion changes nothing — ح-٥٩ `f0e7f91` — **`-FullMillion` يضبط المليون، والاختبارُ لا يقصّ عند مئة ألف**، **و`-Postgres` يُشغّل على خادم PostgreSQL للاختبار ويشترطه**، والسطرُ المطبوعُ يُسمّي المزوّدَ والعدد؛ **وقِيس المسارُ على PostgreSQL بخمسمئة قيد** (٤٨٫٩٨ ms للقيد)؛ **والمليونُ نفسُه يبقى O-04 خارجيّاً** — الأداةُ صارت تقيسه
 - ☐ **`data-upgrade-performance#4`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>No valid performance evidence on PostgreSQL at realistic ledger size; SQLite numbers already show per-post cost growing with the ledger
 - ◐ **`data-upgrade-performance#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Scheduled backup needs PostgreSQL client tools on every workstation, and the installer does not ship them — ح-١٢٥ `8929a0a` — **الأدواتُ تُفحص في «حالة النظام» من أوّل يوم** (`BackupToolReadiness`: موجودتان وبإصدار الخادم أو أحدث، والأقدمُ كالغائب) بدل أن يُعرف غيابُها بأوّل نسخةٍ فاشلة، **والدليلُ يقول كيف تُثبَّت**؛ **ويبقى — ولذا ◐**: المُنصِّبُ لا يشحنها (تضمينُ ثنائيّات PostgreSQL قرارُ توزيعٍ وترخيصٍ للمالك)
