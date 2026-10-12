@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-10-12 (جاهزيّةُ الإطلاق · **مئةٌ وواحدٌ وعشرون إغلاقاً ح-١…ح-١٢١**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-10-12 (جاهزيّةُ الإطلاق · **مئةٌ وخمسةٌ وعشرون إغلاقاً ح-١…ح-١٢٥**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٢١ (2026-09-20…10-12)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٢٥ (2026-09-20…10-12)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3137,10 +3137,17 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١١٩ | `fc3e96e` | `Domain/Modules/ModuleCatalog.cs` · `Navigation/NavigationCatalog.cs` · `tools/UiAudit/NavKeyModuleMap.cs` · `ModuleCatalogIdentityTests.cs` · `AServiceBusinessSeesItsSuppliersTests.cs` | **«محاسبة عامّة» و«عقارات» بلا مورّدٍ ولا فاتورةِ شراء — فسندُ الصرف لا يُستعمل والمدخلاتُ لا تُخصم** (`ui-ux-i18n-printing#7` ◐ · `sector-modules#11` ◐) — المشترياتُ لا تجرّ المخزون وأُضيفت إلى الملفّين، والمقاولاتُ تُعلن مخزونَها، وإذنُ الاستلام تلزمه `Inventory`؛ برهانان؛ **وقرارُ المالك**: «المناسبُ والقانونيّ» — مشترياتٌ بلا مخزون؛ **وحدُّه**: أمرُ الصيانة نقداً بلا مورّد (قرارٌ محاسبيّ)، والملفُّ لا يُغيَّر بعد الإعداد |
 | ح-١٢٠ | `652dcf9` | `Licensing/RsaLicenseValidator.cs` · `Licensing/ReadOnlyBooks.cs` · `Licensing/LicenseStore.cs` · `Persistence/ReadOnlyBooksInterceptor.cs` · `DbContextFactory.cs` · `InfrastructureServiceCollectionExtensions.cs` · `App.xaml.cs` · `MainWindow.xaml.cs` · `ui-overrides.json` · `AnExpiredLicenseOpensTheBooksReadOnlyTests.cs` | **انتهاءُ الترخيص يُقفل المالكَ خارج دفاتره النظاميّة بلا إنذار** (`commercial-readiness#6` ✅ · `installer-deployment-ops#8` ✅) — المنتهي الأصيلُ يفتحها للقراءة، والقراءةُ تُفرض عند الحفظ، والإنذارُ قبل ثلاثين يوماً؛ **وكشفه العملُ**: `Validate` يحكم «منتهياً» قبل فحص التوقيع، فلو مُنحت القراءةُ بالحكم لفتحها ترخيصٌ مزوَّر — فصار `IsGenuineButExpired`؛ برهانان |
 | ح-١٢١ | `29b0950` | `Zatca/ZatcaSubmissionService.cs` · `ZatcaInvoicesPage.xaml(.cs)` · `ui-overrides.json` · `ATransientFailureIsNotARejectionTests.cs` | **كلُّ ردٍّ غيرِ ناجحٍ من الهيئة «رفض» — و٥٠٣ يُسقط فاتورةً سليمةً نهائيّاً** (`tax-zatca#8` ◐) — `ClassifyFailure` يُفرّق الرفضَ عن العارض وعن خلل الاعتماد، والمعلَّقُ يُعاد إرسالُه دفعةً بترتيب ICV ويقف عند أوّل فشل؛ برهانان؛ **وحدُّه**: بزرٍّ لا في الخلفيّة، وتصحيحُ المرفوض لم يُبنَ |
+| ح-١٢٢ | `983f5fe` | `Manufacturing/ProductionCostSheetQuery.cs` · `ProductionCostSheetPage.xaml(.cs)` · `PageFactory.cs` · `NavigationCatalog.cs` · `NavIconFactory.cs` · `PermissionService.cs` · `NavKeyModuleMap.cs` · `ui-overrides.json` · `TheProductionCostSheetReadsTheLedgerTests.cs` | **لا تقريرَ واحداً للتصنيع** (`manufacturing#9` ✅) — «كشف تكلفة الإنتاج»: تكلفةُ كلِّ أمرٍ مكتملٍ بأجزائها وتكلفةِ وحدته وإنتاجيّته **من قيد الإكمال المرحَّل**، واستهلاكُ موادّه من حركة الصرف مقابل وصفته؛ ثلاثةُ براهين، كلٌّ يُسقط اختبارَه وحدَه؛ **وأمسك القياسُ الكاملُ** أنّه رشّح `Posted` وحدَه — فصار `WhereReportable` (`7c510bb`) |
+| ح-١٢٣ | `b4205f5` | `Retail/PosReceiptBuilder.cs` · `PosReceiptWindow.xaml(.cs)` · `PosSessionPage.xaml(.cs)` · `ui-overrides.json` · `APosReceiptCarriesTheSimplifiedInvoiceFieldsTests.cs` | **إيصالُ نقطة البيع يُغلق ولا يُطبع، وبلا رقم تسجيل البائع ولا وقتٍ ولا أصناف** (`ui-ux-i18n-printing#8` ✅) — نموذجٌ مقيسٌ بحقول الفاتورة المبسّطة يُطبع بعرض شريطٍ حراريّ، و«آخرُ إيصال» من وردية الكاشير لا من المنشأة كلِّها؛ برهانان؛ **وأمسك القياسُ الكاملُ** قراءةَ `receipt.QrTlvBase64` خارج القارئ الواحد — فصار الاسمُ `PrintedQr` (`b8cd36d`) والحارسُ لم يُوسَّع |
+| ح-١٢٤ | `dd4eb1d` | `docs/release-readiness/DOTNET10-MIGRATION.md` | **دعمُ .NET 9 ينتهي في 10 نوفمبر 2026 ولا خطّة** (`installer-deployment-ops#6` ◐) — الموعدُ من المصدر الرسميّ، والنطاقُ مقيسٌ في المستودع، والتغييراتُ الكاسرةُ التي تمسّنا، وخطواتٌ مقيسةٌ وتراجع؛ **وحدُّه**: الترحيلُ يشترط تثبيتَ SDK 10 — قرارُ المالك |
+| ح-١٢٥ | `8929a0a` | `Operations/BackupToolReadiness.cs` · `DiagnosticsPage.xaml.cs` · `docs/postgres-production.md` · `BackupToolsAreCheckedBeforeTheFirstBackupTests.cs` | **غيابُ `pg_dump` يُعرف بأوّل نسخةٍ فاشلة، والدليلُ يُحيل إلى سكربتين لا يُشحنان** (`installer-deployment-ops#10` ◐ · `data-upgrade-performance#6` ◐) — الأدواتُ تُفحص في «حالة النظام» (والأقدمُ من الخادم كالغائب)، والدليلُ يقول ما يُشحن؛ برهانان؛ **وحدُّه**: المُنصِّبُ لا يشحنها ولا يفحصها |
 
-**والقياسُ عند آخر إيداع (`29b0950`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **248/248** ·
-`Brqosh.Application.Tests` **2212/2212** · `Brqosh.Desktop.Tests` **437/437** · `Brqosh.Api.Tests` **107/107** ·
-بناءُ Release · الماسحُ الأمنيّ · UI UX · بتغطيةٍ و`trx` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.36%**) — **كلُّها `EXIT=0`**؛ وأدواتُ التشغيل بُنيت عند `652dcf9` ولم يمسّها ما بعده.
+**والقياسُ عند آخر إيداع (`8929a0a`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **248/248** ·
+`Brqosh.Application.Tests` **2228/2228** · `Brqosh.Desktop.Tests` **437/437** · `Brqosh.Api.Tests` **107/107** ·
+بناءُ Release · الماسحُ الأمنيّ · UI UX · بتغطيةٍ و`trx` · **٤ `trx` = ٤ مشاريع وصفرٌ متخطًّى** · بوّابةُ التغطية (المدموج **65.41%**) — **كلُّها `EXIT=0`**؛ وأدواتُ التشغيل بُنيت عند `983f5fe` ولم يمسّها ما بعده.
+**وبوّابةُ التغطية أُعيدت بـ`-StaleToleranceMinutes 90` عمداً**: سقطت أوّلاً بحارس التقادم (٤ من ٨ تقاريرَ أقدمُ من أحدثها بأكثرَ من ٤٥ دقيقة) —
+**والتقاريرُ الثمانيةُ كلُّها من هذا التشغيل** (المجلّدُ يُحذف في أوّله)، والفارقُ أنّ `Brqosh.Application.Tests` استغرق **٥٥ دقيقة** هذه المرّة
+(وكان نحو عشرين)، بلا تشغيلٍ مزاحمٍ للاختبارات على الجهاز. **وقياسان قبله أمسكا عطلين في كودي** — `983f5fe` ⟵ `7c510bb`، و`b4205f5` ⟵ `b8cd36d`.
 **ولم يُشغَّل** `BRQOSH_REQUIRE_PG=1` ولا مسبارُ تغطية المخطّط: يحتاجان اعتمادَ PostgreSQL، وهو للمالك يضبطه. **وتشغيلٌ أوّلُ أبطله تشغيلٌ متزامنٌ من جلسةٍ أخرى في الشجرة نفسِها** (سبعةُ `trx` لأربعة مشاريع، ثمّ `Brqosh.Infrastructure.dll` يختفي في منتصف الحزمة) — فأُعيد في مجلّدٍ معزولٍ بعد إيقافه.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
