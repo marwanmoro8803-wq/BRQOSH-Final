@@ -15,12 +15,19 @@ public static class TotpMfaService
         return Base32Encode(bytes);
     }
 
-    public static bool ValidateCode(string secretBase32, string code, DateTime? utcNow = null)
+    public static bool ValidateCode(string secretBase32, string code, DateTime? utcNow = null) =>
+        MatchStep(secretBase32, code, utcNow) is not null;
+
+    /// <summary>
+    /// ‏(S-5) <b>الخطوةُ التي طابقها الرمز</b> — أو <c>null</c>. فالقبولُ وحدَه لا يكفي: من قبِل رمزاً عليه أن يتذكّر
+    /// خطوتَه فلا يقبله ثانيةً (RFC 6238 §5.2)، و<see cref="ValidateCode"/> لا يُعيدها.
+    /// </summary>
+    public static long? MatchStep(string secretBase32, string code, DateTime? utcNow = null)
     {
         if (string.IsNullOrWhiteSpace(secretBase32) || string.IsNullOrWhiteSpace(code))
-            return false;
+            return null;
         if (code.Trim().Length != Digits || !code.Trim().All(char.IsDigit))
-            return false;
+            return null;
 
         var key = Base32Decode(secretBase32.Trim().ToUpperInvariant());
         var counter = GetCounter(utcNow ?? DateTime.UtcNow);
@@ -30,11 +37,15 @@ public static class TotpMfaService
             if (CryptographicOperations.FixedTimeEquals(
                     Encoding.ASCII.GetBytes(expected),
                     Encoding.ASCII.GetBytes(code.Trim())))
-                return true;
+                return counter + drift;
         }
 
-        return false;
+        return null;
     }
+
+    /// <summary>‏رمزُ لحظةٍ بعينها — للاختبار، فالمولِّدُ الحقيقيُّ تطبيقُ المصادقة عند المستخدم.</summary>
+    internal static string CodeAt(string secretBase32, DateTime utc) =>
+        ComputeCode(Base32Decode(secretBase32.Trim().ToUpperInvariant()), GetCounter(utc));
 
     private static long GetCounter(DateTime utc) =>
         (long)(utc - DateTime.UnixEpoch).TotalSeconds / StepSeconds;

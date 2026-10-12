@@ -215,6 +215,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏(جاهزيّةُ الإطلاق · ح-١١٤) ‏مستودعُ الوردية والخطة الدورية — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePosShiftAndRecurringPlanWarehouseColumnsAsync(isPg, ct);
 
+        // ‏(تقويةُ الـAPI · S-5) آخرُ خطوة TOTP قُبلت — **قبل ترقيعات المزوّد للسبب نفسه**.
+        await EnsureMfaLastAcceptedStepColumnAsync(isPg, ct);
+
         // ‏(جاهزيّةُ الإطلاق · ح-١١١) ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePurchaseInvoiceWarehouseColumnAsync(isPg, ct);
 
@@ -323,6 +326,17 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else
                 await EnsureSqliteColumnAsync("work_orders", column, "INTEGER NULL", ct);
         }
+    }
+
+    private async Task EnsureMfaLastAcceptedStepColumnAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("app_users", isPg, ct))
+            return;
+
+        if (isPg)
+            await EnsurePgColumnAsync("app_users", "MfaLastAcceptedStep", "BIGINT NULL", ct);
+        else
+            await EnsureSqliteColumnAsync("app_users", "MfaLastAcceptedStep", "INTEGER NULL", ct);
     }
 
     private async Task EnsurePosShiftAndRecurringPlanWarehouseColumnsAsync(bool isPg, CancellationToken ct)

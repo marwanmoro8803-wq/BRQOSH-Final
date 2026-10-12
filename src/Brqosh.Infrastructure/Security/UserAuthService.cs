@@ -59,7 +59,10 @@ public class UserAuthService(BrqoshDbContext db)
 
         if (user.RequiresMfa)
         {
-            if (string.IsNullOrWhiteSpace(totpCode) || !TotpMfaService.ValidateCode(user.MfaSecret!, totpCode))
+            // ‏(S-5) **والرمزُ يُقبل مرّةً**: تُطابَق خطوتُه ثمّ تُحجز بتحديثٍ مشروطٍ في القاعدة — فرمزٌ أُعيد، أو خطوةٌ
+            // ‏أقدمُ ممّا قُبل، يُرفض كرمزٍ خاطئ ويُحسب في القفل.
+            var step = string.IsNullOrWhiteSpace(totpCode) ? null : TotpMfaService.MatchStep(user.MfaSecret!, totpCode);
+            if (step is null || !await AcceptTotpStepAsync(user.Id, step.Value))
             {
                 // ‏(ت-٦) وإخفاقُ رمز MFA يُحسب كإخفاقِ كلمة مرور — وكان لا يُحسب أصلاً،
                 // ‏فمن ملك كلمةَ المرور استطاع تخمينَ الرمز بلا حدّ.
@@ -77,6 +80,15 @@ public class UserAuthService(BrqoshDbContext db)
         await new LoginAuditService(db).LogAsync(companyId, normalized, true);
         return user;
     }
+
+    /// <summary>
+    /// ‏(S-5) يحجز الخطوةَ إن كانت أحدثَ من آخر مقبولة — <b>شرطاً في جملة التحديث نفسِها</b>، فدخولان متزامنان بالرمز
+    /// نفسِه لا ينجحان معاً: الثاني يجد الشرطَ باطلاً ولا يُحدّث صفّاً.
+    /// </summary>
+    private async Task<bool> AcceptTotpStepAsync(long userId, long step) =>
+        await db.AppUsers
+            .Where(u => u.Id == userId && (u.MfaLastAcceptedStep == null || u.MfaLastAcceptedStep < step))
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.MfaLastAcceptedStep, step)) == 1;
 
     public async Task CreateInitialAdminAsync(long companyId, string username, string password,
         CancellationToken ct = default)

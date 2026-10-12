@@ -3890,6 +3890,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<long?>("MfaLastAcceptedStep")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("MfaSecret")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");

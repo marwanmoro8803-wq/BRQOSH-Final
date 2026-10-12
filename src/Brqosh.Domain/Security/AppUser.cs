@@ -21,6 +21,12 @@ public class AppUser : ISoftDeletable
     public bool MustChangePasswordOnNextLogin { get; private set; }
     public string? MobilePhoneE164 { get; private set; }
     public string? MfaSecret { get; private set; }
+
+    /// <summary>
+    /// ‏(S-5) <b>آخرُ خطوة TOTP قُبلت</b> — فلا يُقبل رمزُها ولا ما قبلها ثانيةً (RFC 6238 §5.2). تُكتب بتحديثٍ مشروطٍ
+    /// في <c>UserAuthService</c> لا عبر هذا الكائن، فلا يقبل دخولان متزامنان الرمزَ نفسَه.
+    /// </summary>
+    public long? MfaLastAcceptedStep { get; private set; }
     public int SessionVersion { get; private set; }
     public DateTime? DeletedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
@@ -90,8 +96,12 @@ public class AppUser : ISoftDeletable
     public void SetMobilePhone(string? phoneE164) =>
         MobilePhoneE164 = string.IsNullOrWhiteSpace(phoneE164) ? null : phoneE164.Trim();
 
-    public void SetMfaSecret(string? secretBase32) =>
+    public void SetMfaSecret(string? secretBase32)
+    {
         MfaSecret = string.IsNullOrWhiteSpace(secretBase32) ? null : secretBase32.Trim();
+        // ‏سرٌّ جديدٌ يبدأ عدَّه من جديد — خطواتُ السرّ القديم لا تخصّه.
+        MfaLastAcceptedStep = null;
+    }
 
     public bool RequiresMfa => !string.IsNullOrWhiteSpace(MfaSecret);
 
