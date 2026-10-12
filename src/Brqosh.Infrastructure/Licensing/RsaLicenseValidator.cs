@@ -83,9 +83,14 @@ public static class RsaLicenseValidator
         return Convert.ToBase64String(rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
     }
 
+    /// <param name="nowUtc">
+    /// ‏(ح-١٢٧) الوقتُ الذي تُقاس عليه الصلاحية — <b>والفعّالُ لا ساعةُ الجهاز وحدَها</b> (<see cref="LicenseClock.EffectiveNowUtc"/>):
+    /// ‏وكان <c>DateTime.UtcNow</c> ثابتاً هنا، فمن أرجع ساعتَه مدّد ترخيصَه.
+    /// </param>
     public static bool TryValidate(string companyName, string machineId, string licenseJson,
-        out LicensePayload? payload, string? alsoAcceptMachineId = null)
-        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId) == LicenseVerdict.Valid;
+        out LicensePayload? payload, string? alsoAcceptMachineId = null, DateTime? nowUtc = null)
+        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId, ignoreExpiry: false, nowUtc)
+           == LicenseVerdict.Valid;
 
     /// <summary>يُعيد <see cref="LicenseVerdict.Valid"/> مع الحمولة، أو أوّلَ سببٍ للرفض بالترتيب: الشكل، المنشأة، الجهاز، الصلاحية، مفتاح الثقة، التوقيع.</summary>
     /// <param name="alsoAcceptMachineId">
@@ -94,8 +99,8 @@ public static class RsaLicenseValidator
     /// فالسلوكُ لا يتّسع إلا حيث يُطلَب ذلك صراحةً.
     /// </param>
     public static LicenseVerdict Validate(string companyName, string machineId, string licenseJson,
-        out LicensePayload? payload, string? alsoAcceptMachineId = null)
-        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId, ignoreExpiry: false);
+        out LicensePayload? payload, string? alsoAcceptMachineId = null, DateTime? nowUtc = null)
+        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId, ignoreExpiry: false, nowUtc);
 
     /// <summary>
     /// ‏(جاهزيّةُ الإطلاق · ح-١٢٠) <b>ترخيصٌ أصيلٌ انقضت صلاحيتُه</b> — منشأتُه وجهازُه وتوقيعُه صحيحة، وتاريخُه فات.
@@ -104,13 +109,13 @@ public static class RsaLicenseValidator
     /// ‏قبل فحص التوقيع (ليُسمّي أوّلَ سببٍ للرفض)، فترخيصٌ مزوَّرٌ بتاريخٍ فائتٍ يُحكم «منتهياً» — ولو فُتح له لصار التزويرُ مفتاحاً.</para>
     /// </summary>
     public static bool IsGenuineButExpired(string companyName, string machineId, string licenseJson,
-        string? alsoAcceptMachineId = null)
-        => Validate(companyName, machineId, licenseJson, out var payload, alsoAcceptMachineId, ignoreExpiry: true)
+        string? alsoAcceptMachineId = null, DateTime? nowUtc = null)
+        => Validate(companyName, machineId, licenseJson, out var payload, alsoAcceptMachineId, ignoreExpiry: true, nowUtc)
                == LicenseVerdict.Valid
-           && payload!.ExpiresUtc < DateTime.UtcNow;
+           && payload!.ExpiresUtc < (nowUtc ?? DateTime.UtcNow);
 
     private static LicenseVerdict Validate(string companyName, string machineId, string licenseJson,
-        out LicensePayload? payload, string? alsoAcceptMachineId, bool ignoreExpiry)
+        out LicensePayload? payload, string? alsoAcceptMachineId, bool ignoreExpiry, DateTime? nowUtc)
     {
         payload = null;
 
@@ -165,7 +170,7 @@ public static class RsaLicenseValidator
         if (!candidates.Any(id => string.Equals(inner.MachineId.Trim(), id, StringComparison.OrdinalIgnoreCase)))
             return LicenseVerdict.MachineMismatch;
 
-        if (!ignoreExpiry && inner.ExpiresUtc < DateTime.UtcNow)
+        if (!ignoreExpiry && inner.ExpiresUtc < (nowUtc ?? DateTime.UtcNow))
             return LicenseVerdict.Expired;
 
         var publicPem = ResolvePublicKeyPem();

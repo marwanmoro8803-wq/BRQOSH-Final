@@ -106,7 +106,8 @@ public static class LicenseStore
         File.WriteAllText(FilePath, JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }));
     }
 
-    public static bool ValidateForCompany(string companyName, DateTime? setupCompletedUtc = null)
+    /// <param name="nowUtc">(ح-١٢٧) الوقتُ الفعّال — <see cref="LicenseClock.EffectiveNowUtc()"/> عند الإقلاع؛ والفارغُ ساعةُ الجهاز.</param>
+    public static bool ValidateForCompany(string companyName, DateTime? setupCompletedUtc = null, DateTime? nowUtc = null)
     {
         // (CEEF-228) تجاوز الترخيص للتدقيق الآلي - معطّل قسرياً في الإنتاج.
         if (!AppEnvironmentConfig.IsProduction &&
@@ -120,7 +121,7 @@ public static class LicenseStore
         // ‏هذا الجهاز بعينه. فترخيصٌ صدر قبل الترقية لا يتوقّف صباحَ التحديث.
         if (stored?.SignedLicenseJson is not null &&
             RsaLicenseValidator.TryValidate(companyName, machineId, stored.SignedLicenseJson, out _,
-                alsoAcceptMachineId: LicenseService.LegacyMachineId()))
+                alsoAcceptMachineId: LicenseService.LegacyMachineId(), nowUtc: nowUtc))
             return true;
 
         if (AppEnvironmentConfig.IsProduction)
@@ -137,21 +138,21 @@ public static class LicenseStore
     /// ‏(ح-١٢٠) <b>هل الترخيصُ المحفوظُ أصيلٌ انقضت صلاحيتُه</b> — وهو وحدَه ما يفتح الدفاترَ للقراءة
     /// ‏(<see cref="RsaLicenseValidator.IsGenuineButExpired"/>): المزوَّرُ والمنقولُ من جهازٍ أو منشأةٍ أخرى لا يفتحها.
     /// </summary>
-    public static bool IsGenuineButExpiredFor(string companyName)
+    public static bool IsGenuineButExpiredFor(string companyName, DateTime? nowUtc = null)
     {
         var stored = Load();
         return stored?.SignedLicenseJson is not null
                && RsaLicenseValidator.IsGenuineButExpired(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
-                   alsoAcceptMachineId: LicenseService.LegacyMachineId());
+                   alsoAcceptMachineId: LicenseService.LegacyMachineId(), nowUtc: nowUtc);
     }
 
     /// <summary>(ح-١٢٠) تاريخُ انتهاء الترخيص الصالح المحفوظ — للإنذار قبله؛ و<c>null</c> إن لم يكن صالحاً.</summary>
-    public static DateTime? ValidLicenseExpiresUtc(string companyName)
+    public static DateTime? ValidLicenseExpiresUtc(string companyName, DateTime? nowUtc = null)
     {
         var stored = Load();
         return stored?.SignedLicenseJson is not null
                && RsaLicenseValidator.TryValidate(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
-                   out var payload, alsoAcceptMachineId: LicenseService.LegacyMachineId())
+                   out var payload, alsoAcceptMachineId: LicenseService.LegacyMachineId(), nowUtc: nowUtc)
             ? payload!.ExpiresUtc
             : null;
     }

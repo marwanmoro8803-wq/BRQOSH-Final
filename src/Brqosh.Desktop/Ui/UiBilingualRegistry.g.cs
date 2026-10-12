@@ -714,6 +714,7 @@ public static partial class UiBilingualRegistry
         ["الوضع"] = "Mode",
         ["امتحان"] = "Exam",
         ["انتهت الجلسة ولم يُعاد تسجيل الدخول — سيتم إغلاق البرنامج."] = "The session expired and no sign-in followed — the application will close.",
+        ["انتهت صلاحية الترخيص أثناء الجلسة — الدفاتر الآن للقراءة فقط: تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص."] = "The licence expired during this session — the books are now read-only: they can be viewed, printed and exported, but nothing can be added until the licence is renewed.",
         ["انتهت صلاحية الترخيص. هل تريد فتح الدفاتر للقراءة فقط؟ تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص."] = "The licence has expired. Open the books read-only? They can be viewed, printed and exported, but nothing can be added until the licence is renewed.",
         ["بالدفعة والصلاحية"] = "By batch and expiry",
         ["بالرقم التسلسلي"] = "By serial number",

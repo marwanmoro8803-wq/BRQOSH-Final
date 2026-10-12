@@ -278,14 +278,18 @@ public partial class App : System.Windows.Application
             // ‏ولم يُفكَّ الرباط: `CompanyMismatch` ما زال يقع، والمتغيّرُ أنّ المقيسَ عليه ثابت.
             var licensedName = setup!.LicensedCompanyName ?? setup.CompanyName;
 
-            if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc))
+            // ‏(جاهزيّةُ الإطلاق · ح-١٢٧ · ‏`security-licensing-tenancy#1`) ‏**الصلاحيةُ على الوقت الفعّال** — أبعدُ الساعة وأحدثِ وقتٍ رآه
+            // ‏التطبيق — **وكان الرجوعُ يُسجَّل ثمّ يُقاس على الساعة الراجعة نفسِها**، فيُمدَّد الترخيصُ. ولا إقفال: المنتهي يُفتح للقراءة.
+            var effectiveNow = LicenseClock.EffectiveNowUtc(DateTime.UtcNow, clock.HighWaterUtc);
+
+            if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow))
             {
                 var license = new LicenseActivationWindow(licensedName);
                 if (license.ShowDialog() != true)
                 {
                     // ‏(جاهزيّةُ الإطلاق · ح-١٢٠ · ‏`commercial-readiness#6`) ‏**الترخيصُ الأصيلُ المنتهي يفتح الدفاترَ للقراءة**
                     // ‏ولا يُغلقها: المالكُ ملزَمٌ بحفظها وإتاحتها. والمزوَّرُ أو المنقولُ لا يُمنح القراءة (`IsGenuineButExpiredFor`).
-                    if (!LicenseStore.IsGenuineButExpiredFor(licensedName)
+                    if (!LicenseStore.IsGenuineButExpiredFor(licensedName, effectiveNow)
                         || UiDialog.Show(
                                "انتهت صلاحية الترخيص. هل تريد فتح الدفاتر للقراءة فقط؟ تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص.",
                                "BRQOSH — الترخيص منتهٍ", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
@@ -297,8 +301,8 @@ public partial class App : System.Windows.Application
                     ReadOnlyBooks.Enter();
                 }
             }
-            else if (LicenseStore.ValidLicenseExpiresUtc(licensedName) is DateTime expires
-                     && LicenseExpiryNotice.DaysLeftToWarn(expires, DateTime.UtcNow) is not null)
+            else if (LicenseStore.ValidLicenseExpiresUtc(licensedName, effectiveNow) is DateTime expires
+                     && LicenseExpiryNotice.DaysLeftToWarn(expires, effectiveNow) is not null)
             {
                 // ‏(ح-١٢٠) ‏**والإنذارُ قبل ثلاثين يوماً** — فلا يُفاجأ المالكُ بيومٍ لا يُرحِّل فيه. والنصُّ حرفيٌّ ليُترجَم
                 // ‏من السجلّ (`DialogLocalizationTests` يمنع نموَّ المركَّب)، وتاريخُ الانتهاء في نافذة التفعيل.

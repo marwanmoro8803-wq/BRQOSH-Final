@@ -79,6 +79,17 @@ public partial class MainWindow : Window
         _ = RunScheduledBackupAsync();
         StatusBackupBadge.MouseLeftButtonUp += (_, _) => Navigate("backup", NavTitleFor("backup"));
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٢٧ · ‏`security-licensing-tenancy#1`) ‏**الجلسةُ الطويلةُ لا تتجاوز الانتهاء.**
+        // ‏كان الحكمُ عند الإقلاع وحدَه، فتطبيقٌ لا يُغلق يعمل بترخيصٍ انتهى أمس. ‏يُحفظ انتهاءُ الترخيص الصالح عند بدء الجلسة،
+        // ‏ويُقارَن كلَّ ربع ساعةٍ بالوقت الفعّال (`LicenseClock`) — فإن بلغه دخلت الجلسةُ وضعَ القراءة، ولا تُغلق.
+        var licensedName = setup.LicensedCompanyName ?? setup.CompanyName;
+        var licenseExpiresUtc = Brqosh.Infrastructure.Licensing.LicenseStore.ValidLicenseExpiresUtc(
+            licensedName, Brqosh.Infrastructure.Licensing.LicenseClock.EffectiveNowUtc());
+        var licenseTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
+        licenseTimer.Tick += (_, _) => EnterReadOnlyIfLicenseExpired(licenseExpiresUtc);
+        licenseTimer.Start();
+        Closed += (_, _) => licenseTimer.Stop();
+
         BindUserHeader();
         BindStatusBar();
         _ = RefreshDbHealthAsync();
@@ -697,6 +708,21 @@ public partial class MainWindow : Window
     }
 
     /// <summary>مجلّدُ النسخ — هو نفسُه الذي تقرأه شاشةُ النسخ وتكتب فيه.</summary>
+    /// <summary>(ح-١٢٧) يُدخل الجلسةَ وضعَ القراءة إن بلغ الوقتُ الفعّالُ انتهاءَ الترخيص — مرّةً، ويقول ذلك في العنوان وحوار.</summary>
+    private void EnterReadOnlyIfLicenseExpired(DateTime? licenseExpiresUtc)
+    {
+        if (!Brqosh.Infrastructure.Licensing.LicenseSessionGuard.ShouldEnterReadOnly(
+                licenseExpiresUtc, Brqosh.Infrastructure.Licensing.LicenseClock.EffectiveNowUtc(),
+                Brqosh.Infrastructure.Licensing.ReadOnlyBooks.IsActive))
+            return;
+
+        Brqosh.Infrastructure.Licensing.ReadOnlyBooks.Enter();
+        Title += " — " + LocaleManager.T("للقراءة فقط (الترخيص منتهٍ)", "Read-only (licence expired)");
+        UiDialog.Show(
+            "انتهت صلاحية الترخيص أثناء الجلسة — الدفاتر الآن للقراءة فقط: تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص.",
+            "BRQOSH — الترخيص منتهٍ", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
     private static string BackupFolder => Path.Combine(BrqoshDataRoot.Path(), "backups");
 
     /// <summary>

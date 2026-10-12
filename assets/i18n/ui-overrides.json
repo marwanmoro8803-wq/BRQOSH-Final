@@ -476,6 +476,7 @@
   "بقيت مستندات معلَّقة — وسببُ التوقّف مسجَّلٌ على المستند في الجدول. أعد المحاولة لاحقاً.": "Some documents are still pending — the reason is recorded on the document in the grid. Try again later.",
   "انتهت صلاحية الترخيص. هل تريد فتح الدفاتر للقراءة فقط؟ تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص.": "The licence has expired. Open the books read-only? They can be viewed, printed and exported, but nothing can be added until the licence is renewed.",
   "BRQOSH — الترخيص منتهٍ": "BRQOSH — Licence expired",
+  "انتهت صلاحية الترخيص أثناء الجلسة — الدفاتر الآن للقراءة فقط: تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص.": "The licence expired during this session — the books are now read-only: they can be viewed, printed and exported, but nothing can be added until the licence is renewed.",
   "تقترب صلاحية الترخيص من الانتهاء (ثلاثون يوماً أو أقلّ). جدِّده قبل ذلك؛ وبعد انتهائه تُفتح الدفاتر للقراءة فقط.": "The licence expires within thirty days or less. Renew it before then; after it expires the books open read-only.",
   "ولادة مولود": "Birth of a child",
   "انتهت الجلسة ولم يُعاد تسجيل الدخول — سيتم إغلاق البرنامج.": "The session expired and no sign-in followed — the application will close.",
