@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence;
 /// وEnsureCreated + SchemaUpdater للقواعد القديمة (تطوير/اختبار فقط).
 /// في الإنتاج: Migrate + SchemaUpdater — بدون EnsureCreated من الصفر.
 /// </summary>
-public class DatabaseSchemaService(BrqoshDbContext db)
+public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgradeBackup = null)
 {
     public async Task EnsureSchemaAsync(CancellationToken ct = default)
     {
@@ -96,6 +96,11 @@ public class DatabaseSchemaService(BrqoshDbContext db)
             // ‏(ح-٥١) **خارج الـ`try` عمداً** — فالتقاطُ `InvalidOperationException` أدناه كان
             // ‏سيبتلع الرفضَ ويُكمل بالمُرقِّع، وهو عينُ الإقلاع الصامت الذي يُمنع هنا.
             await EnsureNotNewerThanThisBuildAsync(ct);
+
+            // ‏(ح-١٢٩ · data-upgrade-performance#2) **نسخةٌ مُتحقَّقٌ منها قبل أن تُمَسّ الدفاتر** — وفي الإنتاج
+            // ‏يمنع فشلُها الترقيةَ. وخارجَ الـ`try` كالحارس فوقه: الالتقاطُ أدناه كان سيبتلع الرفضَ ويُرقّي بلا نسخة.
+            var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
+            await (preUpgradeBackup ?? new PreUpgradeBackup(db)).TakeAsync(pending, isProduction, ct);
 
             try
             {
