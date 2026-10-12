@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 69 بنداً ✅ و24 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 70 بنداً ✅ و24 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ وستّةٌ وعشرون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٢٦) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وسبعةٌ وعشرون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٢٧) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -193,7 +193,7 @@
 ## security-licensing-tenancy (10 major)
 
 - ✅ **`security-licensing-tenancy#0`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>A local Windows admin can switch off both the license check and the login by downgrading the environment — ح-٧٥ `45db5b2` — **الثنائيّةُ المشحونة لا تعرف غيرَ الإنتاج**: `publish.ps1` وحدَه يبني بـ`-p:BrqoshShipped=true` فـ`DecideForBuild` يُرجع إنتاجاً بلا قراءة — **قِيس على الثنائيّة المبنيّة**: `BRQOSH_ENV=development` ⟵ قبلُ `Development`، وبعدُ `Production`؛ فيسقط معاً `BRQOSH_UITEST` والفترةُ التجريبيّة؛ **ويسري على الحزم المبنيّة بعده** (حزمةُ `dist` 1.0.0 قبله)
-- ☐ **`security-licensing-tenancy#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>License expiry is still not enforced against clock rollback or a long-running session, though ت-١٢ is marked closed
+- ✅ **`security-licensing-tenancy#1`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>License expiry is still not enforced against clock rollback or a long-running session, though ت-١٢ is marked closed — ح-١٢٧ `e126aac` — **الصلاحيةُ على الوقت الفعّال** (`LicenseClock`: أبعدُ الساعة وأحدثِ وقتٍ رآه التطبيق) عند الإقلاع والإنذار والقراءة، **والجلسةُ تُفحص كلَّ ربع ساعة** (`LicenseSessionGuard`) فتدخل القراءةَ إن بلغت الانتهاء؛ **ولا إقفالَ في الحالين** — قرارُ ت-١٢ قائم، والمنتهي الأصيلُ قراءةٌ فقط (ح-١٢٠) فصار الفرضُ بلا ضرره؛ **فأُغلق البند**؛ **وحدُّه**: التوصيلُ في الإقلاع والنافذة لا يُقاس آليّاً
 - ☐ **`security-licensing-tenancy#2`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>License Tier and Features are never enforced, so any license unlocks every edition, module and company count
 - ◐ **`security-licensing-tenancy#3`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>The ZATCA e-invoicing private key is written to disk in plaintext — ح-٢٠ `3dfe3c6` — **مُثبَّتٌ باختبار**؛ **والمفاضلةُ قرارُ المالك**
 - ✅ **`security-licensing-tenancy#4`** · <sub>بلا تحقّق · في اليد · صغير · عطل</sub><br>Deactivating or demoting a user does not end their open session — ح-٥٠ `c72acca` — **والآليّةُ كانت قائمةً (`SessionVersion` يقرؤه سطحُ المكتب) ومستدعيها الوحيدُ استردادُ الواتساب**
