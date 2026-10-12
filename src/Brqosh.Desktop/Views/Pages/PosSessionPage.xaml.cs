@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Retail;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Security;
 using Brqosh.Infrastructure.Retail;
 using Brqosh.Infrastructure.Reporting;
@@ -206,8 +207,10 @@ public partial class PosSessionPage : UserControl
                 AppServices.CompanyId, shiftId, null, lines,
                 company.VatRegistrationNumber.Length == 15, payment, username);
 
+            // ‏(ح-١٢٣) ‏الإيصالُ من النموذج المقيس — بأصنافه ورقمِ تسجيل البائع ووقته — ويُطبع من نافذته.
             var receipt = new PosReceiptWindow(
-                result.Invoice, result.ZatcaDocument, result.ZatcaMessage, company.NameAr)
+                PosReceiptBuilder.Build(result.Invoice, company, result.ZatcaDocument),
+                StatusOf(result.ZatcaDocument, result.ZatcaMessage))
             { Owner = Window.GetWindow(this) };
             receipt.ShowDialog();
 
@@ -220,30 +223,39 @@ public partial class PosSessionPage : UserControl
         }
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٢٣) <b>آخرُ إيصالٍ في ورديتي — إيصالاً يُطبع لا PDF بمقاس A4.</b>
+    /// ‏وكان يأخذ آخرَ فاتورة نقطة بيعٍ في المنشأة كلِّها، فيطبع كاشيرٌ إيصالَ زميله.
+    /// </summary>
     private async void OnPrintLast(object sender, RoutedEventArgs e)
     {
         try
         {
-            await using var db = AppServices.CreateDb();
-            var invoice = await db.SalesInvoices
-                .Where(i => i.CompanyId == AppServices.CompanyId && i.PosShiftId != null)
-                .OrderByDescending(i => i.Id)
-                .FirstOrDefaultAsync();
-            if (invoice is null)
+            if (AppServices.CurrentShiftId is not long shiftId)
             {
-                UiDialog.Show("لا توجد فواتير POS.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+                UiDialog.Show("لا توجد وردية مفتوحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            var username = SecurityContext.ResolveUsername();
-            await DocumentPrintHelper.ExportAndDeliverAsync(
-                s => s.ExportSalesInvoiceAsync(AppServices.CompanyId, invoice.Id, username),
-                Window.GetWindow(this),
-                new DocumentDeliverOptions(Preview: true, OfferSaveAs: true));
+            await using var db = AppServices.CreateDb();
+            var receipt = await PosReceiptBuilder.LastOfShiftAsync(db, AppServices.CompanyId, shiftId);
+            if (receipt is null)
+            {
+                UiDialog.Show("لا توجد مبيعات في هذه الوردية.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            new PosReceiptWindow(receipt, null) { Owner = Window.GetWindow(this) }.ShowDialog();
         }
         catch (Exception ex)
         {
             UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
+
+    /// <summary>سطرُ حالة الهيئة تحت الإيصال — كما كان يُعرض (ح-٥٤): رسالةُ الإرسال، أو الحالةُ بالعربيّة، أو أنّ التكامل غير مفعّل.</summary>
+    private static string StatusOf(ZatcaEInvoiceDocument? zatca, string? message) =>
+        zatca is null
+            ? LocaleManager.T("ZATCA غير مفعّلة — فاتورة محلية فقط", "ZATCA is not enabled — local invoice only")
+            : message ?? zatca.ComplianceStatus.NameAr();
 }

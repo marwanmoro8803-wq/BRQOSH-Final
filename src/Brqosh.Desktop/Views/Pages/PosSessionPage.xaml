@@ -62,7 +62,7 @@
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <Button x:Name="PayBtn" Content="دفع" Style="{StaticResource PrimaryButton}" Padding="28,10" Click="OnPay"/>
-                    <Button Content="طباعة آخر فاتورة" Style="{StaticResource SecondaryButton}" Padding="18,10" Margin="12,0,0,0" Click="OnPrintLast"/>
+                    <Button Content="طباعة آخر إيصال" Style="{StaticResource SecondaryButton}" Padding="18,10" Margin="12,0,0,0" Click="OnPrintLast"/>
                     <Button x:Name="ClearCartBtn" Content="إفراغ السلة" Style="{StaticResource SoftDangerButton}" Padding="18,10" Margin="8,0,0,0" Click="OnClearCart"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
