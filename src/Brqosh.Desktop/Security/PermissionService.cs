@@ -28,6 +28,7 @@ public static class PermissionService
         ["bom"] = [UserRole.Administrator, UserRole.Accountant],
         ["work_orders"] = [UserRole.Administrator, UserRole.Accountant],
         ["wip"] = [UserRole.Administrator, UserRole.Accountant],
+        ["production_cost_sheet"] = [UserRole.Administrator, UserRole.Accountant],
         ["pos_session"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],
         ["pos_shifts"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],
         ["pos_reports"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],

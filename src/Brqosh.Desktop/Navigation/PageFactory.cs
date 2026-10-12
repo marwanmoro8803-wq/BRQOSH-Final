@@ -99,6 +99,7 @@ public static class PageFactory
         ["bom"] = () => new Views.Pages.BomPage(),
         ["work_orders"] = () => new Views.Pages.WorkOrdersPage(),
         ["wip"] = () => new Views.Pages.WipPage(),
+        ["production_cost_sheet"] = () => new Views.Pages.ProductionCostSheetPage(),
         ["pos_session"] = () => new Views.Pages.PosSessionPage(),
         ["pos_shifts"] = () => new Views.Pages.PosShiftsPage(),
         ["pos_reports"] = () => new Views.Pages.PosReportsPage(),

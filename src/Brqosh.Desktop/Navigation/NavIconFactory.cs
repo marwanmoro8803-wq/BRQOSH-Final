@@ -25,6 +25,7 @@ public static class NavIconGlyphs
         ["bom"] = "BM",
         ["work_orders"] = "WO",
         ["wip"] = "WIP",
+        ["production_cost_sheet"] = "PCS",
         ["pos_session"] = "POS",
         ["pos_shifts"] = "SH",
         ["pos_reports"] = "RP",

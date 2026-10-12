@@ -49,6 +49,7 @@ public static class NavigationCatalog
             new("bom", "قوائم المواد (BOM)"),
             new("work_orders", "أوامر الإنتاج"),
             new("wip", "أعمال تحت التشغيل"),
+            new("production_cost_sheet", "كشف تكلفة الإنتاج"),
         ]),
 
         new("نقاط البيع", ModuleKey.PointOfSale,
@@ -236,6 +237,7 @@ public static class NavigationCatalog
         ["bom"] = "Bill of Materials",
         ["work_orders"] = "Work Orders",
         ["wip"] = "Work in Progress",
+        ["production_cost_sheet"] = "Production Cost Sheet",
         ["pos_session"] = "POS Session",
         ["pos_shifts"] = "POS Shifts",
         ["pos_reports"] = "POS Reports",

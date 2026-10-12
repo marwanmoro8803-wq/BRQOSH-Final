@@ -43,6 +43,7 @@ internal static class NavKeyModuleMap
         ["bom"] = ModuleKey.Manufacturing,
         ["work_orders"] = ModuleKey.Manufacturing,
         ["wip"] = ModuleKey.Manufacturing,
+        ["production_cost_sheet"] = ModuleKey.Manufacturing,
         ["pos_session"] = ModuleKey.PointOfSale,
         ["pos_shifts"] = ModuleKey.PointOfSale,
         ["pos_reports"] = ModuleKey.PointOfSale,
