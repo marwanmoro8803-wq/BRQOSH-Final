@@ -1207,5 +1207,8 @@
   "دليل الحسابات: Code · NameAr · NameEn · Type (Asset/Liability/Equity/Revenue/Expense) · IsGroup اختياري": "Chart of accounts: Code · NameAr · NameEn · Type (Asset/Liability/Equity/Revenue/Expense) · optional IsGroup",
   "العملاء والموردون: NameAr · VatNumber (خمسة عشر رقماً أو فارغ)": "Customers and suppliers: NameAr · VatNumber (fifteen digits or empty)",
   "الميزان الافتتاحي: AccountCode · Debit · Credit — يتوازن ويُرحَّل قيداً واحداً بتاريخ بدء التشغيل أو لا يُرحَّل منه شيء. والذمم المدينة والدائنة تقف في 3107 حتى تُفصَّل على أصحابها، والمخزون بحركته الافتتاحية لكل صنف.": "Opening trial balance: AccountCode · Debit · Credit — it must balance and is posted as one entry on the go-live date, or nothing is posted. Receivables and payables wait in 3107 until detailed per customer and supplier; inventory enters by its opening movement per item.",
-  "اختر تاريخ بدء التشغيل قبل استيراد الميزان الافتتاحي.": "Choose the go-live date before importing the opening trial balance."
+  "اختر تاريخ بدء التشغيل قبل استيراد الميزان الافتتاحي.": "Choose the go-live date before importing the opening trial balance.",
+  "ذمم الموردين المفتوحة": "Open supplier balances",
+  "ذمم العملاء المفتوحة": "Open customer balances",
+  "الذمم المفتوحة: CustomerName أو SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — بعد الميزان، فتنتقل من 3107 إلى أصحابها ويعود 3107 صفراً.": "Open balances: CustomerName or SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — after the trial balance; they move from 3107 to each customer and supplier, and 3107 returns to zero."
 }

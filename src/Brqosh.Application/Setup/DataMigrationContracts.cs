@@ -23,4 +23,13 @@ public interface IDataMigrationService
     /// </summary>
     Task<DataMigrationResult> ImportOpeningTrialBalanceCsvAsync(
         long companyId, DateOnly openingDate, string csvContent, CancellationToken ct = default);
+
+    /// <summary>
+    /// ‏(ح-١٣٤) ذممُ العملاء المفتوحة — «CustomerName,DocumentNumber,DocumentDate,DueDate,Amount»: من 3107 إلى 1104 مستنداتٍ
+    /// لأصحابها، كلُّها أو لا شيء.
+    /// </summary>
+    Task<DataMigrationResult> ImportOpeningReceivablesCsvAsync(long companyId, string csvContent, CancellationToken ct = default);
+
+    /// <summary>‏(ح-١٣٤) ذممُ الموردين المفتوحة — «SupplierName,…»: من 3107 إلى 2101.</summary>
+    Task<DataMigrationResult> ImportOpeningPayablesCsvAsync(long companyId, string csvContent, CancellationToken ct = default);
 }

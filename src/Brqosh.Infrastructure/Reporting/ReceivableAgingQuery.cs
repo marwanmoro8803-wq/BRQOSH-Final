@@ -1,4 +1,6 @@
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Construction;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Persistence;
@@ -87,6 +89,10 @@ public class ReceivableAgingQuery(BrqoshDbContext db)
         var releases = await CustomerBalanceQuery
             .ReleasedRetentionDocumentsAsync(db, companyId, asOf);
 
+        // ‏(ح-١٣٤) **والذمّةُ الافتتاحيّةُ تشيخ من تاريخ فاتورتها الأصليّ** لا من يوم بدء التشغيل — وإلّا ظهر دَينُ سنةٍ جارياً.
+        var openingItems = await StandingOpeningBalanceItems.Standing(db, companyId, OpeningBalanceParty.Customer, asOf: asOf)
+            .ToListAsync(ct);
+
         var rows = new List<ReceivableAgingRow>();
 
         foreach (var (customerId, balance) in balances)
@@ -115,6 +121,9 @@ public class ReceivableAgingQuery(BrqoshDbContext db)
             // ‏قبله ضماناً لا يُطالَب به. **وإدخالُه بتاريخ المستخلص يجعله متأخّراً يومَ وُلد.**
             open.AddRange(releases.Where(r => r.CustomerId == customerId)
                 .Select(r => new OpenDocument(r.Date, r.EntryId, null, r.Amount)));
+
+            open.AddRange(openingItems.Where(i => i.PartyId == customerId)
+                .Select(i => new OpenDocument(i.DocumentDate, i.Id, null, i.Amount)));
 
             open = [.. open.OrderBy(d => d.Date).ThenBy(d => d.DocumentId)];
 

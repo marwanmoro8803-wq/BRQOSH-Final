@@ -1,4 +1,6 @@
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Treasury;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Purchasing;
@@ -44,7 +46,11 @@ public record PayableAgingRow(
 /// </summary>
 public class PayableAgingQuery(BrqoshDbContext db)
 {
-    private sealed record OpenDocument(DateOnly Date, long DocumentId, decimal Amount)
+    /// <param name="Opening">
+    /// ‏(ح-١٣٤) ذمّةٌ افتتاحيّة — <b>لا تُخصَّص لها دفعاتٌ صراحةً</b>: التخصيصُ يُطابَق بالمُعرِّف وحدَه على فواتير المشتريات،
+    /// ومُعرِّفُ الذمّة من جدولٍ آخر فقد يُساوي مُعرِّفَ فاتورةٍ فيأخذ تخصيصَها.
+    /// </param>
+    private sealed record OpenDocument(DateOnly Date, long DocumentId, decimal Amount, bool Opening = false)
     {
         public decimal Remaining { get; set; } = Amount;
     }
@@ -73,6 +79,10 @@ public class PayableAgingQuery(BrqoshDbContext db)
                         && a.AllocationDate <= asOf)
             .ToListAsync(ct);
 
+        // ‏(ح-١٣٤) **والذمّةُ الافتتاحيّةُ تشيخ من تاريخ فاتورتها الأصليّ.**
+        var openingItems = await StandingOpeningBalanceItems.Standing(db, companyId, OpeningBalanceParty.Supplier, asOf: asOf)
+            .ToListAsync(ct);
+
         var rows = new List<PayableAgingRow>();
 
         foreach (var (supplierId, balance) in balances)
@@ -82,6 +92,8 @@ public class PayableAgingQuery(BrqoshDbContext db)
             var open = invoices
                 .Where(i => i.SupplierId == supplierId)
                 .Select(i => new OpenDocument(i.InvoiceDate, i.Id, i.Subtotal + i.VatAmount))
+                .Concat(openingItems.Where(i => i.PartyId == supplierId)
+                    .Select(i => new OpenDocument(i.DocumentDate, i.Id, i.Amount, Opening: true)))
                 .OrderBy(d => d.Date).ThenBy(d => d.DocumentId)
                 .ToList();
 
@@ -115,7 +127,7 @@ public class PayableAgingQuery(BrqoshDbContext db)
     /// </remarks>
     private static void ApplyExplicit(List<OpenDocument> open, List<PaymentAllocationLine> allocations)
     {
-        foreach (var document in open)
+        foreach (var document in open.Where(d => !d.Opening))
         {
             var applied = allocations.Where(a => a.DocumentId == document.DocumentId).Sum(a => a.Amount);
             if (applied <= 0m) continue;

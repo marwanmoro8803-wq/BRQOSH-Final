@@ -262,6 +262,10 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
 
         var retentionReleased = await ReleasedRetentionAsync(db, companyId, customerId);
 
+        // ‏(ح-١٣٤) **والذممُ المفتوحةُ عند بدء التشغيل** — مستندٌ مدينٌ كالفاتورة.
+        var opening = await StandingOpeningBalanceItems.Standing(db, companyId, OpeningBalanceParty.Customer, customerId)
+            .SumAsync(i => (decimal?)i.Amount) ?? 0m;
+
         var credited = await ArCreditNotes(db, companyId, customerId).SumGrandTotalAsync();
 
         // (CEEF-230 · ط4-٠) ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق** — كما في
@@ -285,7 +289,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         received += (await AppliedDepositsByCustomerAsync(db, companyId, null, customerId))
             .GetValueOrDefault(customerId);
 
-        return new CustomerBalance(customerId, invoiced + billings + retentionReleased, credited, received);
+        return new CustomerBalance(customerId, invoiced + billings + retentionReleased + opening, credited, received);
     }
 
     /// <summary>
@@ -317,6 +321,12 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
             .ToDictionary(g => g.Key, g => g.Sum(ReceivablePortionOf));
 
         var retentionReleased = await ReleasedRetentionByCustomerAsync(db, companyId, asOf);
+
+        // ‏(ح-١٣٤) الذممُ الافتتاحيّةُ بتاريخ دخولها الدفاتر — فالمرجعُ المؤرَّخُ يُقابل الأستاذَ في التاريخ نفسِه.
+        var opening = await StandingOpeningBalanceItems.Standing(db, companyId, OpeningBalanceParty.Customer, asOf: asOf)
+            .GroupBy(i => i.PartyId)
+            .Select(g => new { CustomerId = g.Key, Total = g.Sum(i => i.Amount) })
+            .ToDictionaryAsync(x => x.CustomerId, x => x.Total);
 
         var credited = await ArCreditNotes(db, companyId)
             .Where(n => asOf == null || n.NoteDate <= asOf)
@@ -357,6 +367,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         var all = invoiced.Keys
             .Union(billings.Keys)
             .Union(retentionReleased.Keys)
+            .Union(opening.Keys)
             .Union(credited.Keys)
             .Union(received.Keys)
             .Union(appliedDeposits.Keys)
@@ -365,7 +376,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         return all.ToDictionary(id =>
             id,
             id => invoiced.GetValueOrDefault(id) + billings.GetValueOrDefault(id)
-                  + retentionReleased.GetValueOrDefault(id)
+                  + retentionReleased.GetValueOrDefault(id) + opening.GetValueOrDefault(id)
                   - credited.GetValueOrDefault(id) - received.GetValueOrDefault(id)
                   - appliedDeposits.GetValueOrDefault(id)
                   - chequeReceived.GetValueOrDefault(id));
@@ -411,6 +422,15 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         // ‏**وجانبُ المورّدين يفعلها أصلاً** (`SupplierBalanceQuery`) — فالنقصُ كان هنا وحدَه.
         foreach (var release in await ReleasedRetentionDocumentsAsync(db, companyId, asOf: null, customerId))
             rows.Add((release.Date, release.EntryNumber, "إفراج محتجز", release.Amount, 0m));
+
+        // ‏(ح-١٣٤) **والذمّةُ الافتتاحيّةُ سطرٌ برقمها الأصليّ** — فالرصيدُ يضمّها، والكشفُ يُطابق رأسَه.
+        foreach (var (item, reversedOn) in await StandingOpeningBalanceItems
+                     .ForStatementAsync(db, companyId, OpeningBalanceParty.Customer, customerId))
+        {
+            rows.Add((item.PostingDate, item.DocumentNumber, StandingOpeningBalanceItems.StatementType, item.Amount, 0m));
+            if (reversedOn is DateOnly on)
+                rows.Add((on, item.DocumentNumber, StandingOpeningBalanceItems.ReversalStatementType, 0m, item.Amount));
+        }
 
         // (CEEF-229 · م0-٩) كشف الحساب يتبع الرصيد: إشعار نقطة البيع لا يمسّ الذمم فلا يظهر فيه.
         // وإلا اختلف الرصيد الجاري في الكشف عن الرصيد في رأسه — وهو أوّل ما يفحصه العميل.

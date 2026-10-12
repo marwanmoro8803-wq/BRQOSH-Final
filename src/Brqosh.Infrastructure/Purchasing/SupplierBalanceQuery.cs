@@ -42,6 +42,10 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
         // والنمط كان قائماً على الجهة المقابلة: CustomerBalanceQuery يطرح الإشعارات الدائنة.
         var debited = await DebitNotesForSupplierAsync(companyId, supplierId);
 
+        // ‏(ح-١٣٤) **والذممُ المفتوحةُ عند بدء التشغيل** — دائنٌ للمورِّد كالفاتورة.
+        invoiced += await StandingOpeningBalanceItems.Standing(db, companyId, OpeningBalanceParty.Supplier, supplierId)
+            .SumAsync(i => (decimal?)i.Amount) ?? 0m;
+
         var paid = await PaymentsForSupplierAsync(companyId, supplierId);
         return new SupplierBalance(supplierId, invoiced - debited, paid);
     }
@@ -99,6 +103,12 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
 
         var retentionPaid = await new SubcontractSupplierRetentionQuery(db).AllWithheldBySupplierAsync(companyId);
 
+        // ‏(ح-١٣٤) الذممُ الافتتاحيّةُ بتاريخ دخولها الدفاتر.
+        var opening = await StandingOpeningBalanceItems.Standing(db, companyId, OpeningBalanceParty.Supplier, asOf: asOf)
+            .GroupBy(i => i.PartyId)
+            .Select(g => new { SupplierId = g.Key, Total = g.Sum(i => i.Amount) })
+            .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
+
         // (CEEF-229 · م0-٨) إشعارات المدين — انظر التعليق في ForSupplierAsync.
         var debited = (await db.DebitNotes
                 .Where(n => n.CompanyId == companyId && n.Status == DebitNoteStatus.Posted
@@ -109,6 +119,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
             .ToDictionary(g => g.Key, g => g.Sum(n => n.Subtotal + n.VatAmount));
 
         var all = invoiced.Keys
+            .Union(opening.Keys)
             .Union(paidVouchers.Keys)
             .Union(chequePaid.Keys)
             .Union(retentionPaid.Keys)
@@ -116,7 +127,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
 
         return all.ToDictionary(id =>
             id,
-            id => invoiced.GetValueOrDefault(id)
+            id => invoiced.GetValueOrDefault(id) + opening.GetValueOrDefault(id)
                   - debited.GetValueOrDefault(id)
                   - paidVouchers.GetValueOrDefault(id)
                   - chequePaid.GetValueOrDefault(id)
@@ -168,6 +179,15 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
                 rows.Add((c.ChequeDate, c.ChequeNumber, "شيك صادر", c.Amount, 0m));
                 rows.Add((c.ChequeDate, c.ChequeNumber, "إلغاء شيك", 0m, c.Amount));
             }
+        }
+
+        // ‏(ح-١٣٤) **والذمّةُ الافتتاحيّةُ سطرٌ برقمها الأصليّ.**
+        foreach (var (item, reversedOn) in await StandingOpeningBalanceItems
+                     .ForStatementAsync(db, companyId, OpeningBalanceParty.Supplier, supplierId))
+        {
+            rows.Add((item.PostingDate, item.DocumentNumber, StandingOpeningBalanceItems.StatementType, 0m, item.Amount));
+            if (reversedOn is DateOnly on)
+                rows.Add((on, item.DocumentNumber, StandingOpeningBalanceItems.ReversalStatementType, item.Amount, 0m));
         }
 
         foreach (var w in await new SubcontractSupplierRetentionQuery(db).StatementLinesForSupplierAsync(companyId, supplierId))

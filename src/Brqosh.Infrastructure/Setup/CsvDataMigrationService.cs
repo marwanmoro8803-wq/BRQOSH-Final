@@ -288,6 +288,153 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         return clearing;
     }
 
+    public Task<DataMigrationResult> ImportOpeningReceivablesCsvAsync(
+        long companyId, string csvContent, CancellationToken ct = default) =>
+        ImportOpenItemsAsync(companyId, OpeningBalanceParty.Customer, csvContent, ct);
+
+    public Task<DataMigrationResult> ImportOpeningPayablesCsvAsync(
+        long companyId, string csvContent, CancellationToken ct = default) =>
+        ImportOpenItemsAsync(companyId, OpeningBalanceParty.Supplier, csvContent, ct);
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٤ · accounting-core#7) <b>الذممُ المفتوحةُ لكلّ عميلٍ ومورِّد — ويُفرَغ بها الحسابُ الوسيط.</b>
+    ///
+    /// <para>‏الميزانُ الافتتاحيُّ (ح-١٣٣) أوقف رصيدَي الذمم في 3107 لأنّ الدفترَ المساعدَ يُبنى من المستندات. وهنا تصير الذمّةُ
+    /// مستندَها: <see cref="OpeningBalanceItem"/> برقم الفاتورة الأصليّ وتاريخها واستحقاقها، <b>يقرؤه الرصيدُ والكشفُ والأعمار</b>،
+    /// ويُرحَّل قيدٌ واحدٌ من 3107 إلى حساب الرقابة بتاريخ بدء التشغيل. <b>وكلُّها أو لا شيء</b> كالميزان؛ وفي معاملةٍ واحدة،
+    /// فلا قيدَ بلا مستنداته ولا مستندَ بلا قيده — وكلاهما يفصل الأستاذَ عن المساعد.</para>
+    /// </summary>
+    private async Task<DataMigrationResult> ImportOpenItemsAsync(
+        long companyId, OpeningBalanceParty party, string csvContent, CancellationToken ct)
+    {
+        var customer = party == OpeningBalanceParty.Customer;
+        var kind = customer ? "OpeningReceivables" : "OpeningPayables";
+        var (lines, first) = Body(csvContent, customer ? "CustomerName" : "SupplierName");
+
+        var opening = await db.JournalEntries
+            .Where(e => e.CompanyId == companyId && e.SourceDocument == OpeningTrialBalanceSource)
+            .WhereStanding(db.JournalEntries)
+            .Select(e => (DateOnly?)e.EntryDate)
+            .FirstOrDefaultAsync(ct);
+        if (opening is not DateOnly postingDate)
+            return new DataMigrationResult(kind, lines.Count, 0, lines.Count, [new DataMigrationRowResult(0, false,
+                "رحِّل الميزانَ الافتتاحيَّ أوّلاً — به يُعرف تاريخُ بدء التشغيل، وفيه يقف رصيدُ الذمم في 3107.")]);
+
+        var parties = customer
+            ? await db.Customers.Where(c => c.CompanyId == companyId).Select(c => new { c.Id, c.NameAr }).ToListAsync(ct)
+            : await db.Suppliers.Where(s => s.CompanyId == companyId).Select(s => new { s.Id, s.NameAr }).ToListAsync(ct);
+        var byName = parties.GroupBy(p => p.NameAr).ToDictionary(g => g.Key, g => g.Select(p => p.Id).ToList());
+        var existing = (await db.OpeningBalanceItems
+                .Where(i => i.CompanyId == companyId && i.Party == party)
+                .Select(i => new { i.PartyId, i.DocumentNumber })
+                .ToListAsync(ct))
+            .Select(i => (i.PartyId, i.DocumentNumber))
+            .ToHashSet();
+
+        var errors = new List<DataMigrationRowResult>();
+        var items = new List<(int LineNo, OpeningBalanceItem Item, string Name)>();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var lineNo = first + i;
+            var parts = SplitCsvLine(lines[i]);
+            if (parts.Length != 5)
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false,
+                    $"أعمدة مطلوبة: {(customer ? "CustomerName" : "SupplierName")},DocumentNumber,DocumentDate,DueDate,Amount"));
+                continue;
+            }
+
+            if (!byName.TryGetValue(parts[0], out var ids))
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, customer
+                    ? $"العميل «{parts[0]}» غير موجود — استورد العملاءَ أوّلاً."
+                    : $"المورد «{parts[0]}» غير موجود — استورد الموردين أوّلاً."));
+                continue;
+            }
+
+            if (ids.Count > 1)
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, $"الاسم «{parts[0]}» لأكثر من طرف — لا يُعرف لمن الذمّة."));
+                continue;
+            }
+
+            if (!TryDate(parts[2], out var documentDate) || !TryDate(parts[3], out var dueDate))
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, "التاريخ بصيغة yyyy-MM-dd."));
+                continue;
+            }
+
+            if (!TryAmount(parts[4], out var amount))
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, "مبلغ غير مقروء — رقمٌ بنقطةٍ عشريّة بلا فواصل آلاف."));
+                continue;
+            }
+
+            if (!existing.Add((ids[0], parts[1])))
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, $"الفاتورة {parts[1]} لهذا الطرف مستوردةٌ سلفاً."));
+                continue;
+            }
+
+            try
+            {
+                items.Add((lineNo, OpeningBalanceItem.Create(
+                    companyId, party, ids[0], parts[1], documentDate, dueDate, postingDate, amount), parts[0]));
+            }
+            catch (AccountingException ex)
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, ex.Message));
+            }
+        }
+
+        if (errors.Count > 0 || items.Count == 0)
+            return new DataMigrationResult(kind, lines.Count, 0, lines.Count,
+                errors.Count > 0 ? errors : [new DataMigrationRowResult(0, false, "لا ذممَ في الملفّ.")]);
+
+        var accounts = await db.Accounts.Where(a => a.CompanyId == companyId).ToDictionaryAsync(a => a.Code, ct);
+        var clearing = await EnsureOpeningClearingAccountAsync(companyId, accounts, ct);
+        var control = accounts[customer
+            ? SaudiChartOfAccounts.SystemCodes.AccountsReceivable
+            : SaudiChartOfAccounts.SystemCodes.AccountsPayable];
+
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var entry = JournalEntry.CreateDraft(companyId, postingDate,
+                customer ? "ذممُ العملاء المفتوحةُ عند بدء التشغيل" : "ذممُ الموردين المفتوحةُ عند بدء التشغيل",
+                sourceDocument: kind);
+            var total = items.Sum(i => i.Item.Amount);
+            foreach (var (_, item, name) in items)
+            {
+                var description = $"رصيد افتتاحي — {name} — {item.DocumentNumber}";
+                if (customer)
+                    entry.AddLine(control, item.Amount, 0m, description);
+                else
+                    entry.AddLine(control, 0m, item.Amount, description);
+            }
+
+            if (customer)
+                entry.AddLine(clearing, 0m, total, "تفصيلُ ذمم العملاء الافتتاحيّة");
+            else
+                entry.AddLine(clearing, total, 0m, "تفصيلُ ذمم الموردين الافتتاحيّة");
+
+            await new JournalPostingService(db).PostAsync(entry);
+            foreach (var (_, item, _) in items)
+            {
+                item.AttachJournalEntry(entry.Id);
+                db.OpeningBalanceItems.Add(item);
+            }
+
+            await db.SaveChangesAsync(token);
+            return entry.Id;
+        }, ct);
+
+        return new DataMigrationResult(kind, lines.Count, items.Count, 0,
+            items.Select(i => new DataMigrationRowResult(i.LineNo, true, null)).ToList());
+    }
+
+    private static bool TryDate(string text, out DateOnly date) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
+
     private static bool TryAmount(string text, out decimal amount) =>
         decimal.TryParse(text, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
             CultureInfo.InvariantCulture, out amount);

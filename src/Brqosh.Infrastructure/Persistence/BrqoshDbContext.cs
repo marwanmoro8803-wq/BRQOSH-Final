@@ -40,6 +40,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
+    public DbSet<OpeningBalanceItem> OpeningBalanceItems => Set<OpeningBalanceItem>();
     public DbSet<FiscalPeriod> FiscalPeriods => Set<FiscalPeriod>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesInvoice> SalesInvoices => Set<SalesInvoice>();
@@ -197,6 +198,17 @@ public class BrqoshDbContext : DbContext
             entity.ToTable("tenant_subscriptions");
             entity.Property(s => s.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(s => s.TenantId).IsUnique();
+        });
+
+        // ‏(ح-١٣٤) الذممُ المفتوحةُ عند بدء التشغيل — مستندٌ يقرؤه الدفترُ المساعد، لا فاتورة.
+        modelBuilder.Entity<OpeningBalanceItem>(entity =>
+        {
+            entity.ToTable("opening_balance_items");
+            entity.Property(i => i.Party).HasConversion<string>().HasMaxLength(16);
+            entity.Property(i => i.DocumentNumber).HasMaxLength(50).IsRequired();
+            entity.Property(i => i.Amount).HasPrecision(18, 2);
+            entity.HasIndex(i => new { i.CompanyId, i.Party, i.PartyId, i.DocumentNumber }).IsUnique();
+            entity.HasIndex(i => i.JournalEntryId);
         });
 
         modelBuilder.Entity<ExchangeRate>(entity =>

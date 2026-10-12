@@ -259,6 +259,59 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("journal_entries", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Accounting.OpeningBalanceItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("DocumentDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<long>("JournalEntryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Party")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("PartyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateOnly>("PostingDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JournalEntryId");
+
+                    b.HasIndex("CompanyId", "Party", "PartyId", "DocumentNumber")
+                        .IsUnique();
+
+                    b.ToTable("opening_balance_items", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Assets.FixedAsset", b =>
                 {
                     b.Property<long>("Id")
