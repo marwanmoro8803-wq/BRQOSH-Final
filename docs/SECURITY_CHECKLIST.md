@@ -16,6 +16,9 @@
 | EnsureCreated في الإنتاج | مرفوض (`ProductionSchemaGuard`) | ✅ |
 | API `/health` | عام (بدون مفتاح) | ✅ مقصود |
 | API `/api/v1/*` | `X-Api-Key` عند تعيين `BRQOSH_API_KEY` | ✅ |
+| مستأجرُ الطلب (S-4) | مفتاحٌ مربوطٌ بمستأجر `BRQOSH_TENANT_API_KEYS` (`tenantGuid:key;…`، ٢٤ محرفاً فأكثر) يُعيّنه، و`X-Tenant-Id` يخالفه ⟵ 403؛ وبالمفتاح المشترك وحدَه يُؤخذ من الترويسة ويُحذَّر عند الإقلاع | ✅ |
+| مفتاحُ التكرار `Idempotency-Key` (S-6) | الردُّ المخزَّن لصاحبه: المستأجر + الدور + الاسم + المسار | ✅ |
+| رمزُ TOTP (S-5) | يُقبل مرّةً: آخرُ خطوةٍ مقبولةٍ تُحفظ وتُحجز بتحديثٍ مشروط (RFC 6238 §5.2) | ✅ |
 | SQL خام في SchemaUpdater | `SchemaSqlGuard` whitelist | ✅ |
 | أسرار ZATCA | مخزّنة محلياً — لا تُرفع للمستودع | ⚠ تشغيلي |
 
@@ -23,7 +26,7 @@
 
 | # | بند | تقييم داخلي |
 |---|-----|-------------|
-| A01 Broken Access Control | Desktop RBAC؛ API بمفتاح مشترك (ليس OAuth بعد) | 🟡 |
+| A01 Broken Access Control | Desktop RBAC؛ API بمفتاح مشترك أو مربوطٍ بمستأجر (ليس OAuth بعد) | 🟡 |
 | A02 Cryptographic Failures | PBKDF2 كلمات المرور؛ ترخيص RSA | 🟢 |
 | A03 Injection | EF parameterized؛ SchemaSqlGuard للـ DDL | 🟢 |
 | A04 Insecure Design | fail-closed على الترحيل | 🟢 |
