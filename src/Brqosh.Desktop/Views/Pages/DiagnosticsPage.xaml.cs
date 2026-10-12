@@ -70,6 +70,17 @@ public partial class DiagnosticsPage : UserControl
             // ‏ما يُشخَّص به**.
             rows.Add(new InfoRow("هجرات معلَّقة",
                 pending.Count == 0 ? "لا شيء" : string.Join("، ", pending)));
+
+            // ‏(جاهزيّةُ الإطلاق · ح-١٢٥) ‏**وأدواتُ النسخ تُفحص هنا من أوّل يوم** — وكان غيابُها لا يُعرف إلّا بأوّل نسخةٍ فاشلة،
+            // ‏والأقدمُ من الخادم كالغائب. والإصدارُ من الخادم نفسِه لا من الإعداد.
+            if (db.Database.IsNpgsql())
+            {
+                var serverVersion = await db.Database
+                    .SqlQuery<string>($"SELECT current_setting('server_version_num') AS \"Value\"")
+                    .SingleAsync();
+                var verdict = BackupToolReadiness.Check(BackupToolReadiness.ServerMajor(serverVersion));
+                rows.Add(new InfoRow("أدوات النسخ الاحتياطي", (verdict.Ready ? "✔ " : "✖ ") + verdict.Message));
+            }
         }
         catch (Exception ex)
         {
