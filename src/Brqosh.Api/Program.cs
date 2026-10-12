@@ -75,6 +75,10 @@ app.Services.WireDomainEventPublishing();
 var isProduction = app.Environment.IsProduction() || AppEnvironmentConfig.IsProduction;
 var apiKey = builder.Configuration[ApiSecuritySettings.ApiKeyEnv]
              ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ApiKeyEnv);
+// ‏(تقويةُ الـAPI · S-4) مفاتيحُ مربوطةٌ بمستأجر — **وإعدادٌ معيبٌ يُسقط الإقلاعَ هنا** لا عند أوّل طلب.
+var tenantKeys = TenantApiKeys.Parse(builder.Configuration[TenantApiKeys.Env]
+                                     ?? Environment.GetEnvironmentVariable(TenantApiKeys.Env))
+    .EnsureDistinctFrom(apiKey);
 var provisioningKey = builder.Configuration[ApiSecuritySettings.ProvisioningKeyEnv]
                       ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ProvisioningKeyEnv);
 // (م-٤ · ن-٤٥) ‏**عزلُ المستأجرين كان يفشل مفتوحاً — والآن يفشل مغلقاً حيث يضرّ.**
@@ -116,6 +120,8 @@ if (string.IsNullOrWhiteSpace(configuredConnection) && isProduction)
 }
 ApiSecuritySettings.EnsureProductionProvisioningKey(provisioningKey, isProduction);
 TenantContext.EnforceTenantIsolation = saasMode;
+if (TenantApiKeys.HeaderOnlyWarning(saasMode, !tenantKeys.IsEmpty) is { } headerOnlyTenant)
+    app.Logger.LogWarning("{Warning}", headerOnlyTenant);
 
 if (app.Environment.IsDevelopment())
 {
@@ -180,20 +186,25 @@ app.UseMiddleware<ApiRateLimitMiddleware>();
 app.Use(async (ctx, next) =>
 {
     var pathOpen = ctx.Request.Path.StartsWithSegments("/health");
-    var mustAuthenticate = isProduction || !string.IsNullOrWhiteSpace(apiKey);
+    var mustAuthenticate = isProduction || !string.IsNullOrWhiteSpace(apiKey) || !tenantKeys.IsEmpty;
     if (!mustAuthenticate || pathOpen)
     {
         await next();
         return;
     }
 
-    if (!ctx.Request.Headers.TryGetValue("X-Api-Key", out var presented)
-        || !SecretComparer.Equals(apiKey, presented.ToString()))
+    var hasKey = ctx.Request.Headers.TryGetValue("X-Api-Key", out var presented);
+    // ‏(S-4) مفتاحٌ مربوطٌ بمستأجرٍ يُعرِّف المستأجرَ نفسَه — تحمله الطبقةُ التالية بدل الترويسة.
+    var boundTenant = hasKey ? tenantKeys.TenantFor(presented.ToString()) : null;
+    if (!hasKey || (boundTenant is null && !SecretComparer.Equals(apiKey, presented.ToString())))
     {
         ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
         await ctx.Response.WriteAsJsonAsync(new { error = "unauthorized" });
         return;
     }
+
+    if (boundTenant is { } tenantOfKey)
+        ctx.Items[TenantApiKeys.Env] = tenantOfKey;
 
     await next();
 });
@@ -202,8 +213,20 @@ app.UseMiddleware<ApiSecurityContextMiddleware>();
 
 app.Use(async (ctx, next) =>
 {
-    if (ctx.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantHeader)
-        && Guid.TryParse(tenantHeader.ToString(), out var tenantId))
+    var hasTenantHeader = ctx.Request.Headers.TryGetValue("X-Tenant-Id", out var tenantHeader);
+    if (ctx.Items.TryGetValue(TenantApiKeys.Env, out var bound) && bound is Guid boundTenant)
+    {
+        // ‏(S-4) **المفتاحُ يحكم لا الترويسة**: ترويسةٌ تخالف مستأجرَ المفتاح محاولةُ دخولِ مستأجرٍ آخر — تُرفض.
+        if (hasTenantHeader && !(Guid.TryParse(tenantHeader.ToString(), out var claimed) && claimed == boundTenant))
+        {
+            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await ctx.Response.WriteAsJsonAsync(new { error = "tenant_mismatch" });
+            return;
+        }
+
+        TenantContext.CurrentTenantId = boundTenant;
+    }
+    else if (hasTenantHeader && Guid.TryParse(tenantHeader.ToString(), out var tenantId))
     {
         TenantContext.CurrentTenantId = tenantId;
     }

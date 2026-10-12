@@ -38,7 +38,7 @@ public sealed class ApiRateLimitMiddleware(RequestDelegate next, IConfiguration?
             return;
         }
 
-        var key = ResolveBucketKey(ctx, ResolveConfiguredKey());
+        var key = ResolveBucketKey(ctx, ResolveConfiguredKey(), ResolveTenantKeys());
 
         var bucket = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
         PruneIfCrowded(bucket);
@@ -58,6 +58,13 @@ public sealed class ApiRateLimitMiddleware(RequestDelegate next, IConfiguration?
         await next(ctx);
     }
 
+    private TenantApiKeys? _tenantKeys;
+
+    /// <summary>‏(S-4) تُقرأ مرّةً — وصحّتُها حكمَ عليه الإقلاع (<c>Program</c>)، فلا يُعاد تحليلُها لكلّ طلب.</summary>
+    private TenantApiKeys ResolveTenantKeys() =>
+        _tenantKeys ??= TenantApiKeys.Parse(configuration?[TenantApiKeys.Env]
+                                            ?? Environment.GetEnvironmentVariable(TenantApiKeys.Env));
+
     private string? ResolveConfiguredKey() =>
         configuration?[ApiSecuritySettings.ApiKeyEnv]
         ?? Environment.GetEnvironmentVariable(ApiSecuritySettings.ApiKeyEnv);
@@ -66,10 +73,12 @@ public sealed class ApiRateLimitMiddleware(RequestDelegate next, IConfiguration?
     /// مفتاحُ الدلو: بصمةُ المفتاح إن طابق المُعرَّفَ، وإلّا عنوانُ المُتّصل.
     /// والبصمةُ لا النصّ — فلا يبقى المفتاحُ السرّيُّ نصّاً في ذاكرةٍ طويلة العمر.
     /// </summary>
-    internal static string ResolveBucketKey(HttpContext ctx, string? configuredKey)
+    internal static string ResolveBucketKey(HttpContext ctx, string? configuredKey, TenantApiKeys? tenantKeys = null)
     {
+        // ‏(S-4) ومفتاحٌ مربوطٌ بمستأجرٍ مفتاحٌ صحيحٌ كالمشترك — له دلوُه، لا دلوُ عنوانه.
         if (ctx.Request.Headers.TryGetValue("X-Api-Key", out var presented)
-            && SecretComparer.Equals(configuredKey, presented.ToString()))
+            && (SecretComparer.Equals(configuredKey, presented.ToString())
+                || tenantKeys?.TenantFor(presented.ToString()) is not null))
         {
             var digest = SHA256.HashData(Encoding.UTF8.GetBytes(presented.ToString()));
             return $"key:{Convert.ToHexString(digest, 0, 8)}";
