@@ -14,11 +14,13 @@ public sealed record PosReceiptLine(string Description, decimal Quantity, decima
 /// <summary>
 /// إيصالُ نقطة البيع — <b>فاتورةٌ ضريبيّةٌ مبسّطة</b>: البائعُ ورقمُ تسجيله، والرقمُ والتاريخُ والوقت، والأصناف، والوعاءُ والضريبةُ
 /// والإجماليّ، ورمزُ QR أو تنبيهٌ يقول لمَ لا رمز.
+/// <para>‏<c>PrintedQr</c> <b>الرمزُ المختارُ للطباعة</b> من <see cref="ZatcaHandOverCopy.MarkFor"/> — لا رمزُ المستند — وباسمٍ غيرِ
+/// ‏<c>QrTlvBase64</c> عمداً: الحارسُ (<c>NoCallerReadsTheLocalQrAroundTheHandOverCopy</c>) يعدّ قراءاتِ رمز المستند خارج القارئ الواحد.</para>
 /// </summary>
 public sealed record PosReceipt(
     string SellerName, string SellerVatNumber, string InvoiceNumber, DateTime IssuedAt,
     IReadOnlyList<PosReceiptLine> Lines, decimal Subtotal, decimal VatAmount, decimal Total,
-    string? QrTlvBase64, string? Notice);
+    string? PrintedQr, string? Notice);
 
 /// <summary>
 /// ‏(جاهزيّةُ الإطلاق · ح-١٢٣ · ‏`ui-ux-i18n-printing#8`) <b>الإيصالُ يُبنى هنا ويُطبع في الشاشة.</b>

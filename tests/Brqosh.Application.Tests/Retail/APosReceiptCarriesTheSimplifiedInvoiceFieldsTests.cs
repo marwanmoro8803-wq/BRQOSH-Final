@@ -42,7 +42,7 @@ public class APosReceiptCarriesTheSimplifiedInvoiceFieldsTests
             Assert.Equal(200m, receipt.Subtotal);
             Assert.Equal(30m, receipt.VatAmount);
             Assert.Equal(230m, receipt.Total);
-            Assert.Equal(sale.ZatcaDocument!.QrTlvBase64, receipt.QrTlvBase64);
+            Assert.Equal(sale.ZatcaDocument!.QrTlvBase64, receipt.PrintedQr);
         });
     }
 

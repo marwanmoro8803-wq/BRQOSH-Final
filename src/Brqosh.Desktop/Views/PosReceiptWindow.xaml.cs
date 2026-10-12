@@ -36,7 +36,7 @@ public partial class PosReceiptWindow : Window
         TotalText.Text = LocaleManager.T("الإجمالي: ", "Total: ") + $"{receipt.Total:N2} " + LocaleManager.T("ر.س", "SAR");
 
         // ‏(ح-٥٣) ‏الرمزُ من القارئ الواحد؛ وما لم يُعتمد يُطبع بتنبيهٍ لا برمز.
-        if (receipt.QrTlvBase64 is { } qr && BuildQrImage(qr) is { } image)
+        if (receipt.PrintedQr is { } qr && BuildQrImage(qr) is { } image)
         {
             QrImage.Source = image;
             QrImage.Visibility = Visibility.Visible;
