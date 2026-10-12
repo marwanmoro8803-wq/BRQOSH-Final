@@ -24,7 +24,14 @@ Write-Host "=== BRQOSH MSI Build ===" -ForegroundColor Cyan
 # ‏**والترتيبُ مُلزِم**: التوقيعُ يُلحق كتلةً بملفّ PE فيتغيّر محتواه وبصمتُه. فتوقيعُ
 # ‏الحمولة **قبل أن يحصدها WiX** — وإلّا حملت الحزمةُ نسخاً غيرَ موقَّعةٍ بينما القرصُ
 # ‏يحمل الموقَّعة، **وهو أسوأُ الحالَين**: يُقاس التوقيعُ على القرص فيُقرأ نجاحاً.
-$SigningPfx = if ($env:BRQOSH_SIGNING_PFX -and (Test-Path $env:BRQOSH_SIGNING_PFX)) { $env:BRQOSH_SIGNING_PFX } else { $null }
+# ‏(ح-١٢٨) ‏**الطريقةُ من `signing.ps1`** — بصمةُ شهادةٍ في مخزن ويندوز (رمزٌ أو HSM، وهي ما تُصدره الجهاتُ اليوم) أو ملفُّ PFX.
+# ‏وكان PFX وحدَه، فالشهادةُ التي ستصل لا يقبلها الخطّاف. **وإعدادٌ متناقضٌ أو بصمةٌ غيرُ صالحةٍ تُسقط البناء** لا تُتخطّى.
+. (Join-Path $PSScriptRoot 'signing.ps1')
+$script:Signing = Resolve-BrqoshSigning
+if ($script:Signing.Mode -eq 'Error') {
+    Write-Host "إعدادُ التوقيع: $($script:Signing.Error) — أُسقط البناء." -ForegroundColor Red
+    exit 1
+}
 $script:SignTool = $null
 
 function Invoke-BrqoshSign {
@@ -33,7 +40,7 @@ function Invoke-BrqoshSign {
         [Parameter(Mandatory)][string]$What
     )
 
-    if (-not $SigningPfx) { return }
+    if ($script:Signing.Mode -eq 'None') { return }
 
     $targets = @($Paths | Where-Object { Test-Path $_ })
     if ($targets.Count -eq 0) {
@@ -46,13 +53,13 @@ function Invoke-BrqoshSign {
         $script:SignTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
                            Sort-Object FullName -Descending | Select-Object -First 1 | ForEach-Object FullName
         if (-not $script:SignTool) {
-            Write-Host "BRQOSH_SIGNING_PFX مضبوطٌ ولا signtool — أُسقط البناء." -ForegroundColor Red
+            Write-Host "التوقيعُ مضبوطٌ ($($script:Signing.Mode)) ولا signtool — أُسقط البناء." -ForegroundColor Red
             exit 1
         }
     }
 
-    & $script:SignTool sign /f $SigningPfx /p $env:BRQOSH_SIGNING_PASSWORD `
-        /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 @targets
+    $signArgs = @($script:Signing.Args)
+    & $script:SignTool sign @signArgs @targets
     if ($LASTEXITCODE -ne 0) {
         Write-Host "توقيعُ «$What» أخفق (exit=$LASTEXITCODE)." -ForegroundColor Red
         exit 1
@@ -213,11 +220,11 @@ Write-Host "تحقّقُ ICE: صفرُ أخطاء · $($iceWarn.Count) تحذي�
 # ‏إلى التمييز بين حزمتنا وحزمةٍ مُحرَّفة. والتوقيعُ يلزمه شهادةُ توقيعِ كودٍ لا يملكها
 # ‏سكربتُ بناء — فالخُطّافُ هنا والقرارُ هناك.
 #
-# ‏وضبطُ `BRQOSH_SIGNING_PFX` يُشغّله. وغيابُه **يُعلَن** ولا يُبتلع: حزمةٌ غيرُ موقّعةٍ
-# ‏تخرج ومعها سطرٌ يقول إنّها كذلك، فلا تُشحن على أنّها موقّعة.
+# ‏وضبطُ `BRQOSH_SIGNING_THUMBPRINT` (رمزٌ أو HSM) أو `BRQOSH_SIGNING_PFX` يُشغّله (ح-١٢٨). وغيابُهما **يُعلَن** ولا يُبتلع:
+# ‏حزمةٌ غيرُ موقّعةٍ تخرج ومعها سطرٌ يقول إنّها كذلك، فلا تُشحن على أنّها موقّعة.
 Invoke-BrqoshSign -Paths @($MsiOut) -What "الحزمة"
-if (-not $SigningPfx) {
-    Write-Host "غيرُ موقَّعة — لا BRQOSH_SIGNING_PFX. (ن-١٢ · تبعيّةٌ خارجيّة: شهادةُ توقيع كود)" -ForegroundColor Yellow
+if ($script:Signing.Mode -eq 'None') {
+    Write-Host "غيرُ موقَّعة — لا BRQOSH_SIGNING_THUMBPRINT ولا BRQOSH_SIGNING_PFX. (ن-١٢ · تبعيّةٌ خارجيّة: شهادةُ توقيع كود)" -ForegroundColor Yellow
 }
 
 Write-Host "MSI: $MsiOut" -ForegroundColor Green
