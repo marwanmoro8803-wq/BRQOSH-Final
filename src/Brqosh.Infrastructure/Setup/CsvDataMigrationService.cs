@@ -267,7 +267,9 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         if (code == SaudiChartOfAccounts.SystemCodes.GoodsReceivedNotInvoiced)
             return ("حسابُ البضاعة المستلَمة غير المفوترة يبدأ صفراً — لا رصيدَ افتتاحيَّ له.", 0m, 0m);
 
-        decimal debit, credit;
+        // ‏والرفضُ يُنقل بنصّه إلى سطره — لا يُبتلَع (`NoSilentAccountingFailureTests`).
+        decimal debit = 0m, credit = 0m;
+        string? refused = null;
         try
         {
             debit = CsvAmountText.ParseCell(parts[1], lineNo, "Debit");
@@ -275,9 +277,11 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         }
         catch (AccountingException ex)
         {
-            return (ex.Message, 0m, 0m);
+            refused = ex.Message;
         }
 
+        if (refused is not null)
+            return (refused, 0m, 0m);
         if (debit < 0 || credit < 0)
             return ("مبلغٌ سالب — الدائنُ في عمود الدائن.", 0m, 0m);
         if ((debit > 0) == (credit > 0))
