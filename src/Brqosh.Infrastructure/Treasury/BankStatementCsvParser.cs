@@ -89,31 +89,8 @@ public static class BankStatementCsvParser
     private static string Get(IReadOnlyList<string> cols, int index) =>
         index >= 0 && index < cols.Count ? cols[index].Trim() : "";
 
-    private static string[] SplitCsvRow(string row)
-    {
-        var result = new List<string>();
-        var current = new StringBuilder();
-        var inQuotes = false;
-
-        foreach (var ch in row)
-        {
-            if (ch == '"')
-            {
-                inQuotes = !inQuotes;
-                continue;
-            }
-            if (ch == ',' && !inQuotes)
-            {
-                result.Add(current.ToString());
-                current.Clear();
-                continue;
-            }
-            current.Append(ch);
-        }
-
-        result.Add(current.ToString());
-        return result.ToArray();
-    }
+    /// <summary>‏(ح-١٣٥) القاسمُ المشترك — وكان هنا قاسمٌ ثانٍ يأكل <c>""</c> داخل الحقل.</summary>
+    private static string[] SplitCsvRow(string row) => Setup.CsvRow.Split(row);
 
     /// <summary>
     /// ‏(ن-٤٨) <b>القاسمةُ نفسُها — وهو نصفُ العطل الذي لا تراه أيُّ قاعدةٍ على الحقل.</b>

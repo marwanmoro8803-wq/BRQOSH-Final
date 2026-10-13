@@ -25,6 +25,10 @@
                             Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnImportOpening"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="ImportStockBtn" DockPanel.Dock="Right" Content="المخزون الافتتاحي"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Margin="0,0,8,0" Click="OnImportStock"/>
+                <Button x:Name="ImportProductsBtn" DockPanel.Dock="Right" Content="استيراد الأصناف"
+                        Style="{StaticResource SecondaryButton}" Padding="16,9" Margin="0,0,8,0" Click="OnImportProducts"/>
                 <Button x:Name="ImportPayablesBtn" DockPanel.Dock="Right" Content="ذمم الموردين المفتوحة"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Margin="0,0,8,0" Click="OnImportPayables"/>
                 <Button x:Name="ImportReceivablesBtn" DockPanel.Dock="Right" Content="ذمم العملاء المفتوحة"
@@ -56,6 +60,8 @@
                 <TextBlock Text="الميزان الافتتاحي: AccountCode · Debit · Credit — يتوازن ويُرحَّل قيداً واحداً بتاريخ بدء التشغيل أو لا يُرحَّل منه شيء. والذمم المدينة والدائنة تقف في 3107 حتى تُفصَّل على أصحابها، والمخزون بحركته الافتتاحية لكل صنف."
                            Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
                 <TextBlock Text="الذمم المفتوحة: CustomerName أو SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — بعد الميزان، فتنتقل من 3107 إلى أصحابها ويعود 3107 صفراً."
+                           Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
+                <TextBlock Text="الأصناف: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — والمخزون الافتتاحي: ProductCode · Quantity · UnitCost في المستودع الافتراضي بعد الميزان. والحقل الذي فيه فاصلة يُكتب بين علامتي تنصيص."
                            Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>

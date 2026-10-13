@@ -1,9 +1,11 @@
 using System.Globalization;
 using Brqosh.Application.Setup;
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
+using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
@@ -262,8 +264,6 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
             return ($"الحساب {code} غير موجود في الدليل.", 0m, 0m);
         if (account.IsGroup)
             return ($"الحساب {code} تجميعيّ — الأرصدةُ على الحسابات التفصيليّة.", 0m, 0m);
-        if (code == SaudiChartOfAccounts.SystemCodes.Inventory)
-            return ("المخزونُ يدخل بحركة مخزونٍ افتتاحيّة لكلّ صنف (بكمّيته وتكلفته) — لا برصيدٍ في الميزان.", 0m, 0m);
         if (code == SaudiChartOfAccounts.SystemCodes.GoodsReceivedNotInvoiced)
             return ("حسابُ البضاعة المستلَمة غير المفوترة يبدأ صفراً — لا رصيدَ افتتاحيَّ له.", 0m, 0m);
 
@@ -290,9 +290,14 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         return (null, debit, credit);
     }
 
-    /// <summary>‏حسابا الرقابة اللذان يُبنى رصيدُهما من مستندات العملاء والموردين.</summary>
+    /// <summary>
+    /// ‏حساباتُ الرقابة التي يُبنى رصيدُها من دفترٍ مساعد: العملاءُ والموردون من مستنداتهم، <b>والمخزونُ من حركاته</b> (ح-١٣٥ —
+    /// وكان يُرفض في الميزان فلا يتوازن ميزانٌ حقيقيٌّ فيه مخزون).
+    /// </summary>
     private static bool IsSubsidiaryControl(string code) =>
-        code is SaudiChartOfAccounts.SystemCodes.AccountsReceivable or SaudiChartOfAccounts.SystemCodes.AccountsPayable;
+        code is SaudiChartOfAccounts.SystemCodes.AccountsReceivable
+            or SaudiChartOfAccounts.SystemCodes.AccountsPayable
+            or SaudiChartOfAccounts.SystemCodes.Inventory;
 
     private async Task<Account> EnsureOpeningClearingAccountAsync(
         long companyId, IReadOnlyDictionary<string, Account> accounts, CancellationToken ct)
@@ -306,6 +311,151 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         db.Accounts.Add(clearing);
         await db.SaveChangesAsync(ct);
         return clearing;
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٥ · commercial-readiness#15) <b>الأصناف</b> — «Code,NameAr,Unit,Type,SalePrice»؛ والنوعُ
+    /// <c>Stockable</c> أو <c>Service</c>، والمكرَّرُ بالكود يُتخطّى بسببه.
+    /// </summary>
+    public async Task<DataMigrationResult> ImportProductsCsvAsync(
+        long companyId, string csvContent, CancellationToken ct = default)
+    {
+        var (lines, first) = Body(csvContent, "Code");
+        var details = new List<DataMigrationRowResult>();
+        var imported = 0;
+        var existing = (await db.Products.Where(p => p.CompanyId == companyId).Select(p => p.Code).ToListAsync(ct))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var lineNo = first + i;
+            var parts = SplitCsvLine(lines[i]);
+            if (parts.Length != 5)
+            {
+                details.Add(new DataMigrationRowResult(lineNo, false, "أعمدة مطلوبة: Code,NameAr,Unit,Type,SalePrice"));
+                continue;
+            }
+
+            if (!existing.Add(parts[0]))
+            {
+                details.Add(new DataMigrationRowResult(lineNo, false, $"الصنف {parts[0]} موجود مسبقاً."));
+                continue;
+            }
+
+            if (!Enum.TryParse<ProductType>(parts[3], ignoreCase: true, out var type) || !Enum.IsDefined(type))
+            {
+                details.Add(new DataMigrationRowResult(lineNo, false, "النوع Stockable أو Service."));
+                continue;
+            }
+
+            try
+            {
+                var price = CsvAmountText.ParseCell(parts[4], lineNo, "SalePrice");
+                db.Products.Add(Product.Create(companyId, parts[0], parts[1], parts[2], type, price));
+            }
+            catch (AccountingException ex)
+            {
+                details.Add(new DataMigrationRowResult(lineNo, false, ex.Message));
+                continue;
+            }
+
+            imported++;
+            details.Add(new DataMigrationRowResult(lineNo, true, null));
+        }
+
+        if (imported > 0)
+            await db.SaveChangesAsync(ct);
+
+        return new DataMigrationResult("Products", lines.Count, imported, lines.Count - imported, details);
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٥) <b>المخزونُ الافتتاحيّ</b> — «ProductCode,Quantity,UnitCost» في المستودع الافتراضيّ بتاريخ بدء
+    /// التشغيل: حركةٌ افتتاحيّةٌ واحدة تُرحَّل بخدمة الحركات نفسِها (طبقاتُ التكلفة والقيد)، <b>وقيدُها يُدائن 3107</b> فيُفصّل رصيدَ
+    /// المخزون الذي وقف فيه الميزان. كلُّها أو لا شيء، وبعد الميزان وحدَه.
+    /// </summary>
+    public async Task<DataMigrationResult> ImportOpeningStockCsvAsync(
+        long companyId, string csvContent, CancellationToken ct = default)
+    {
+        var (lines, first) = Body(csvContent, "ProductCode");
+        var opening = await db.JournalEntries
+            .Where(e => e.CompanyId == companyId && e.SourceDocument == OpeningTrialBalanceSource)
+            .WhereStanding(db.JournalEntries)
+            .Select(e => (DateOnly?)e.EntryDate)
+            .FirstOrDefaultAsync(ct);
+        if (opening is not DateOnly openingDate)
+            return new DataMigrationResult("OpeningStock", lines.Count, 0, lines.Count, [new DataMigrationRowResult(0, false,
+                "رحِّل الميزانَ الافتتاحيَّ أوّلاً — به يُعرف تاريخُ بدء التشغيل، وفيه يقف رصيدُ المخزون في 3107.")]);
+
+        var warehouseId = await db.Warehouses
+            .Where(w => w.CompanyId == companyId)
+            .OrderByDescending(w => w.IsDefault).ThenBy(w => w.Id)
+            .Select(w => (long?)w.Id)
+            .FirstOrDefaultAsync(ct);
+        if (warehouseId is not long warehouse)
+            return new DataMigrationResult("OpeningStock", lines.Count, 0, lines.Count,
+                [new DataMigrationRowResult(0, false, "لا مستودعَ للمنشأة — أنشئ مستودعاً أوّلاً.")]);
+
+        var products = await db.Products.Where(p => p.CompanyId == companyId)
+            .ToDictionaryAsync(p => p.Code, StringComparer.OrdinalIgnoreCase, ct);
+        var errors = new List<DataMigrationRowResult>();
+        var rows = new List<(int LineNo, Product Product, decimal Quantity, decimal UnitCost)>();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var lineNo = first + i;
+            var parts = SplitCsvLine(lines[i]);
+            if (parts.Length != 3)
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, "أعمدة مطلوبة: ProductCode,Quantity,UnitCost"));
+                continue;
+            }
+
+            if (!products.TryGetValue(parts[0], out var product))
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, $"الصنف {parts[0]} غير موجود — استورد الأصنافَ أوّلاً."));
+                continue;
+            }
+
+            if (product.Type != ProductType.Stockable)
+            {
+                errors.Add(new DataMigrationRowResult(lineNo, false, $"الصنف {parts[0]} خدمة — لا مخزونَ له."));
+                continue;
+            }
+
+            decimal quantity = 0m, unitCost = 0m;
+            string? refused = null;
+            try
+            {
+                quantity = CsvAmountText.Parse(parts[1], lineNo, "Quantity");
+                unitCost = CsvAmountText.Parse(parts[2], lineNo, "UnitCost");
+            }
+            catch (AccountingException ex)
+            {
+                refused = ex.Message;
+            }
+
+            if (refused is not null)
+                errors.Add(new DataMigrationRowResult(lineNo, false, refused));
+            else if (quantity <= 0m || unitCost < 0m)
+                errors.Add(new DataMigrationRowResult(lineNo, false, "الكمّيّةُ موجبة والتكلفةُ لا تقلّ عن صفر."));
+            else if (rows.Any(r => r.Product.Id == product.Id))
+                errors.Add(new DataMigrationRowResult(lineNo, false, $"الصنف {parts[0]} مكرَّر في الملفّ."));
+            else
+                rows.Add((lineNo, product, quantity, unitCost));
+        }
+
+        if (errors.Count > 0 || rows.Count == 0)
+            return new DataMigrationResult("OpeningStock", lines.Count, 0, lines.Count,
+                errors.Count > 0 ? errors : [new DataMigrationRowResult(0, false, "لا أصنافَ في الملفّ.")]);
+
+        var movement = StockMovement.CreateDraft(companyId, openingDate, StockMovementType.Opening, warehouse,
+            "المخزونُ الافتتاحيُّ عند بدء التشغيل", sourceDocument: "OpeningStock");
+        foreach (var row in rows)
+            movement.AddLine(row.Product.Id, row.Quantity, row.UnitCost);
+        await new StockMovementPostingService(db).PostAsync(movement);
+
+        return new DataMigrationResult("OpeningStock", lines.Count, rows.Count, 0,
+            rows.Select(r => new DataMigrationRowResult(r.LineNo, true, null)).ToList());
     }
 
     public Task<DataMigrationResult> ImportOpeningReceivablesCsvAsync(
@@ -481,6 +631,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
             .Where(l => l.Length > 0 && !l.StartsWith('#'))
             .ToList();
 
+    /// <summary>‏(ح-١٣٥) بالقاسم المشترك — فالحقلُ المُقتبَسُ حقلٌ واحد (<see cref="CsvRow"/>).</summary>
     private static string[] SplitCsvLine(string line) =>
-        line.Split(',', StringSplitOptions.TrimEntries);
+        CsvRow.Split(line).Select(f => f.Trim()).ToArray();
 }

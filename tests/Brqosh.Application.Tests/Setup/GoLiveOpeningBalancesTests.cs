@@ -104,7 +104,6 @@ public class GoLiveOpeningBalancesTests : IDisposable
     [InlineData("1101,0,0", "مدينٌ أو دائن")]
     [InlineData("1101,-100,0", "سالب")]
     [InlineData("1101,abc,0", "مبلغ")]
-    [InlineData("1107,100,0", "حركة مخزونٍ افتتاحيّة")]
     [InlineData("2112,0,100", "يبدأ صفراً")]
     [InlineData("1101,100", "AccountCode,Debit,Credit")]
     public async Task ABadLine_SinksTheWholeTrialBalance_AndSaysWhy(string badLine, string reason)

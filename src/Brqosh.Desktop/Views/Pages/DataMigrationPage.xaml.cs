@@ -34,10 +34,12 @@ public partial class DataMigrationPage : UserControl
             (ImportSuppliersBtn, PermissionService.CanPostAccounting),
             (ImportReceivablesBtn, PermissionService.CanPostAccounting),
             (ImportPayablesBtn, PermissionService.CanPostAccounting),
+            (ImportProductsBtn, PermissionService.CanPostAccounting),
+            (ImportStockBtn, PermissionService.CanPostAccounting),
             (ImportOpeningBtn, PermissionService.CanPostAccounting));
     }
 
-    private enum Kind { Accounts, Customers, Suppliers, OpeningTrialBalance, OpeningReceivables, OpeningPayables }
+    private enum Kind { Accounts, Customers, Suppliers, OpeningTrialBalance, OpeningReceivables, OpeningPayables, Products, OpeningStock }
 
     private async void OnImportAccounts(object sender, RoutedEventArgs e) => await ImportAsync(Kind.Accounts);
 
@@ -48,6 +50,10 @@ public partial class DataMigrationPage : UserControl
     private async void OnImportReceivables(object sender, RoutedEventArgs e) => await ImportAsync(Kind.OpeningReceivables);
 
     private async void OnImportPayables(object sender, RoutedEventArgs e) => await ImportAsync(Kind.OpeningPayables);
+
+    private async void OnImportProducts(object sender, RoutedEventArgs e) => await ImportAsync(Kind.Products);
+
+    private async void OnImportStock(object sender, RoutedEventArgs e) => await ImportAsync(Kind.OpeningStock);
 
     /// <summary>‏(ح-١٣٣) الميزانُ الافتتاحيُّ يلزمه تاريخُ بدء التشغيل — بلا تاريخٍ لا يُفتح الملفّ أصلاً.</summary>
     private async void OnImportOpening(object sender, RoutedEventArgs e)
@@ -84,6 +90,8 @@ public partial class DataMigrationPage : UserControl
                 Kind.Suppliers => await service.ImportSuppliersCsvAsync(AppServices.CompanyId, csv),
                 Kind.OpeningReceivables => await service.ImportOpeningReceivablesCsvAsync(AppServices.CompanyId, csv),
                 Kind.OpeningPayables => await service.ImportOpeningPayablesCsvAsync(AppServices.CompanyId, csv),
+                Kind.Products => await service.ImportProductsCsvAsync(AppServices.CompanyId, csv),
+                Kind.OpeningStock => await service.ImportOpeningStockCsvAsync(AppServices.CompanyId, csv),
                 _ => await service.ImportOpeningTrialBalanceCsvAsync(AppServices.CompanyId,
                     DateOnly.FromDateTime(OpeningDatePicker.SelectedDate!.Value), csv),
             };

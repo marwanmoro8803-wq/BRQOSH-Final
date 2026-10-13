@@ -30,6 +30,12 @@ public interface IDataMigrationService
     /// </summary>
     Task<DataMigrationResult> ImportOpeningReceivablesCsvAsync(long companyId, string csvContent, CancellationToken ct = default);
 
+    /// <summary>‏(ح-١٣٥) الأصناف — «Code,NameAr,Unit,Type,SalePrice».</summary>
+    Task<DataMigrationResult> ImportProductsCsvAsync(long companyId, string csvContent, CancellationToken ct = default);
+
+    /// <summary>‏(ح-١٣٥) المخزونُ الافتتاحيّ — «ProductCode,Quantity,UnitCost»: من 3107 إلى 1107 بحركةٍ افتتاحيّة.</summary>
+    Task<DataMigrationResult> ImportOpeningStockCsvAsync(long companyId, string csvContent, CancellationToken ct = default);
+
     /// <summary>‏(ح-١٣٤) ذممُ الموردين المفتوحة — «SupplierName,…»: من 3107 إلى 2101.</summary>
     Task<DataMigrationResult> ImportOpeningPayablesCsvAsync(long companyId, string csvContent, CancellationToken ct = default);
 }

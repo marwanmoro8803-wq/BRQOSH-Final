@@ -1210,5 +1210,8 @@
   "اختر تاريخ بدء التشغيل قبل استيراد الميزان الافتتاحي.": "Choose the go-live date before importing the opening trial balance.",
   "ذمم الموردين المفتوحة": "Open supplier balances",
   "ذمم العملاء المفتوحة": "Open customer balances",
-  "الذمم المفتوحة: CustomerName أو SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — بعد الميزان، فتنتقل من 3107 إلى أصحابها ويعود 3107 صفراً.": "Open balances: CustomerName or SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — after the trial balance; they move from 3107 to each customer and supplier, and 3107 returns to zero."
+  "الذمم المفتوحة: CustomerName أو SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — بعد الميزان، فتنتقل من 3107 إلى أصحابها ويعود 3107 صفراً.": "Open balances: CustomerName or SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — after the trial balance; they move from 3107 to each customer and supplier, and 3107 returns to zero.",
+  "المخزون الافتتاحي": "Opening stock",
+  "استيراد الأصناف": "Import products",
+  "الأصناف: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — والمخزون الافتتاحي: ProductCode · Quantity · UnitCost في المستودع الافتراضي بعد الميزان. والحقل الذي فيه فاصلة يُكتب بين علامتي تنصيص.": "Products: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — and opening stock: ProductCode · Quantity · UnitCost into the default warehouse, after the trial balance. A field containing a comma is written between double quotes."
 }

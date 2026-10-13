@@ -192,12 +192,24 @@ public class StockMovementPostingService(BrqoshDbContext db)
     {
         if (movement.TotalValue == 0m) return null;
 
-        var retained = await AccountAsync(movement.CompanyId, SaudiChartOfAccounts.SystemCodes.RetainedEarnings);
+        // ‏(جاهزيّةُ الإطلاق · ح-١٣٥) **بعد الميزان الافتتاحيّ تُدائَن 3107 لا الأرباحُ المبقاة**: الميزانُ أقام حقوقَ الملكية
+        // ‏كاملةً، ورصيدُ المخزون فيه وقف في 3107 حتى تُفصّله الحركاتُ صنفاً صنفاً — فحركةٌ افتتاحيّةٌ بعده تفصيلٌ لرقمه لا ملكيّةٌ
+        // ‏جديدة، ومُدائنةُ 3103 تُضاعف الملكيّةَ بقيمة المخزون وتُبقي 3107 مديناً أبداً. وقبل الميزان (أو بلا ميزان) كما كانت.
+        var afterTheOpeningTrialBalance = await db.JournalEntries
+            .Where(e => e.CompanyId == movement.CompanyId
+                        && e.SourceDocument == Setup.CsvDataMigrationService.OpeningTrialBalanceSource)
+            .WhereStanding(db.JournalEntries)
+            .AnyAsync();
+        var counter = await AccountAsync(movement.CompanyId, afterTheOpeningTrialBalance
+            ? Setup.CsvDataMigrationService.OpeningClearingCode
+            : SaudiChartOfAccounts.SystemCodes.RetainedEarnings);
 
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockOpening");
         entry.AddLine(inventory, movement.TotalValue, 0m, "رصيد افتتاحي للمخزون");
-        entry.AddLine(retained, 0m, movement.TotalValue, "رصيد افتتاحي — حقوق ملكية");
+        entry.AddLine(counter, 0m, movement.TotalValue, afterTheOpeningTrialBalance
+            ? "رصيد افتتاحي — تفصيلُ مخزون الميزان"
+            : "رصيد افتتاحي — حقوق ملكية");
         return entry;
     }
 
