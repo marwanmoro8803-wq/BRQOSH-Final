@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 74 بنداً ✅ و24 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 75 بنداً ✅ و26 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ واثنان وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٣٢) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وأربعةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٣٤) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -115,7 +115,7 @@
 - ✅ **`accounting-core#4`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>FX closing translation posts a reporting-currency translation adjustment (CTA) into the subsidiary's own P&L (4107/5217 against 3106) — ح-٤٦ `7a5f53b` — **وكان مبلغاً بالريال في دفترٍ بالدولار وبالإشارة المقلوبة، والموحَّدُ يطبّقه مرّتين؛ فصار حساباً يُعاد لا قيداً**
 - ✅ **`accounting-core#5`** · <sub>مؤكّد · في اليد · متوسّط · عطل</sub><br>Consolidated balance sheet shows prior-year unclosed profit as 'Currency translation reserve', even in an all-SAR group — ح-٤٥ `493dad2` — **وكلُّ سنةٍ غيرِ مقفلةٍ بمتوسّط سنتِها، وفرقٌ لا ترجمةَ وراءه يُعلَن «غيرَ متوازن» لا «احتياطيَ ترجمة»**؛ **والسنةُ المقفلةُ في آخر يومها كانت تُحسب مرّتين**
 - ◐ **`accounting-core#6`** · <sub>مؤكّد · في اليد · متوسّط · ناقص</sub><br>Manual journal entries have no enforced approval and can post directly to control accounts (AR, AP, inventory, VAT), silently breaking subledgers — ح-٢٨ `1614381` — **كشفٌ بمقداره لا حظر**؛ المنعُ يُغلق التأسيس
-- ☐ **`accounting-core#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No go-live migration path for opening balances: no opening trial balance, no open AR/AP invoices, no supplier import
+- ✅ **`accounting-core#7`** · <sub>مؤكّد · في اليد · كبير · ناقص</sub><br>No go-live migration path for opening balances: no opening trial balance, no open AR/AP invoices, no supplier import — ح-١٣٣ `1f85b02` + ح-١٣٤ `30c4ebe` — **مسارُ بدء التشغيل كاملاً**: الميزانُ الافتتاحيُّ قيدٌ واحدٌ مرحَّلٌ أو لا شيء (والذممُ تقف في 3107)، والموردون يُستوردون، **والذممُ المفتوحةُ مستنداتٌ لأصحابها** (`OpeningBalanceItem`) يقرؤها الرصيدُ والكشفُ والأعمارُ من تاريخ الفاتورة الأصليّ، **ويعود 3107 صفراً** والهويّاتُ كلُّها صادقة — ومرّةً على PostgreSQL عبر الهجرات
 - ✅ **`accounting-core#8`** · <sub>مؤكّد · في اليد · صغير · عطل</sub><br>A monetary (AR/AP) revaluation run with a wrong rate cannot be undone: the error message says 'reverse it', but reversal and re-run are both refused — ح-٣٨ `81080d0`
 - ✅ **`accounting-core#9`** · <sub>مؤكّد · في اليد · صغير · ناقص</sub><br>No product feature can verify the audit-log hash chain: AuditChainVerifier has zero callers outside tests — ح-٢٩ `d59f2e1`
 - ✅ **`accounting-core#10`** · <sub>مؤكّد · في اليد · متوسّط · دعوى</sub><br>SOCPA reviewer package (O-02) is a stale 41-line stub; it points the reviewer at a tool that writes into whatever live database is configured, and claims 'In-repo prep: PASS' — ح-٧٦ `ee527a9` — **الحزمةُ أُعيدت كتابتُها**: المرجعُ الحاضر، وإعادةُ الإنتاج باختبارات المحاسبة والضريبة (SQLite في الذاكرة — لا قاعدةَ تُلمس)، ولا تشغيلَ للأداة؛ **والصنفُ كلُّه**: سبعُ تعليماتٍ في الأدلّة الحيّة كانت تُرسل إلى تشغيلها بلا عزل — منها الخطوةُ السادسةُ في دليل التنصيب وقائمةُ تحقّق الإنتاج بعد الترقية — صُحّحت، وحارسٌ يُسقط أيَّ تعليمةٍ بلا عزل
@@ -211,7 +211,7 @@
 - ✅ **`data-upgrade-performance#4`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>No valid performance evidence on PostgreSQL at realistic ledger size; SQLite numbers already show per-post cost growing with the ledger — ح-١٣١ `08e9a9b` — **ثمنُ القيد على دفترٍ بحجمٍ واقعيٍّ مقيسٌ على PostgreSQL حقيقيّ ولا ينمو**: `PostingCostOnALargeLedgerTests` (٥٠ ألفاً افتراضاً، كتلٌ متناوبةٌ مع دفترٍ فارغ) 0.71× و0.99×، و٢٠٠ ألف 0.56×؛ **و«نموُّ» SQLite كان سياقَ الاختبار الواحد** — بسياقٍ لكلّ قيدٍ كالبرنامج 78ms ⟵ 7.94ms؛ والمليونُ (O-04) خارجيٌّ تقيسه الأداة
 - ◐ **`data-upgrade-performance#6`** · <sub>بلا تحقّق · في اليد · متوسّط · خطر</sub><br>Scheduled backup needs PostgreSQL client tools on every workstation, and the installer does not ship them — ح-١٢٥ `8929a0a` — **الأدواتُ تُفحص في «حالة النظام» من أوّل يوم** (`BackupToolReadiness`: موجودتان وبإصدار الخادم أو أحدث، والأقدمُ كالغائب) بدل أن يُعرف غيابُها بأوّل نسخةٍ فاشلة، **والدليلُ يقول كيف تُثبَّت**؛ **ويبقى — ولذا ◐**: المُنصِّبُ لا يشحنها (تضمينُ ثنائيّات PostgreSQL قرارُ توزيعٍ وترخيصٍ للمالك)
 - ✅ **`data-upgrade-performance#7`** · <sub>بلا تحقّق · في اليد · صغير · خطر</sub><br>No guard stops an older workstation from running against a schema already upgraded by a newer one — ح-٥١ `a916c42` — **مقيسٌ على PostgreSQL حيّ؛ والحارسُ خارج الـ`try` لأنّ الموضعَ الطبيعيَّ يبتلعه (مقيس)؛ والحدُّ المعلَن: قاعدةٌ بلا سجلّ هجراتٍ لا تُقارَن**
-- ☐ **`data-upgrade-performance#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>G-39 data migration from other systems is only chart of accounts plus customer name/VAT, through a naive CSV parser
+- ◐ **`data-upgrade-performance#8`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>G-39 data migration from other systems is only chart of accounts plus customer name/VAT, through a naive CSV parser — ح-١٣٣/ح-١٣٤ — صار الترحيلُ الدليلَ والعملاءَ والموردين والميزانَ الافتتاحيَّ والذممَ المفتوحة، والصفُّ الأوّلُ عناوين كما تَعِد الشاشة، وأعمدةُ الشاشة كما يقرؤها الكود؛ **ويبقى — ولذا ◐**: المُحلِّلُ يقسم بالفاصلة وحدَها (لا حقولَ بين علامتي تنصيص)، ولا أصناف
 
 ## installer-deployment-ops (12 major)
 
@@ -254,7 +254,7 @@
 - ✅ **`commercial-readiness#12`** · <sub>بلا تحقّق · في اليد · صغير · ناقص</sub><br>No third-party licence notices ship with the product — ح-٦٩ `92ec3ee` — **تسعٌ وثلاثون حزمةً مشحونةً لها إشعارٌ في `THIRD-PARTY-NOTICES.txt`** يُولَّد من `Brqosh.Desktop.deps.json` ومن الحزم نفسِها بلا شبكة، ويُنسخ إلى النشر فيحصده المُنصِّب (قِيس بنشرٍ إلى مجلّدٍ مؤقّت)؛ وحارسٌ في الاتّجاهين؛ **وبندٌ للمالك: ترخيصُ QuestPDF المجتمعيُّ مشروطٌ بدخلٍ دون مليون دولار**
 - ◐ **`commercial-readiness#13`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-02 not done: no independent SOCPA or accounting review, and the reviewer package predates the audit that found a year-end-close S0 — ح-٧٦ `ee527a9` — **الحزمةُ لم تعد سابقةً للتدقيق**: تُحيل إلى MASTER وREMAINING وOPEN_ITEMS §1ل الحاضرة، والتاريخيُّ موسوم، وتُعيد الإنتاجَ باختباراتٍ لا تلمس قاعدة؛ **والمراجعةُ المستقلّةُ نفسُها لم تُجرَ — خارجيّة**
 - ☐ **`commercial-readiness#14`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>O-05 not done: no penetration test or ZAP run, and the recorded 'static scan PASS' points at an empty log
-- ☐ **`commercial-readiness#15`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Data migration covers only chart of accounts and customers; no opening balances, suppliers, items or open invoices
+- ◐ **`commercial-readiness#15`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>Data migration covers only chart of accounts and customers; no opening balances, suppliers, items or open invoices — ح-١٣٣/ح-١٣٤ — **الأرصدةُ الافتتاحيّةُ والموردون والذممُ المفتوحةُ تُستورد الآن** (انظر `accounting-core#7`)؛ **ويبقى — ولذا ◐**: الأصنافُ (بطاقاتُها وكمّيّاتُها الافتتاحيّة) لا استيرادَ لها
 
 ## evidence-integrity (8 major)
 
