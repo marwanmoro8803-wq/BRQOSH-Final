@@ -221,6 +221,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏(جاهزيّةُ الإطلاق · ح-١٣٤) الذممُ المفتوحةُ عند بدء التشغيل.
         await EnsureOpeningBalanceItemsTableAsync(isPg, ct);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٣٨) فئتا مشتركي التأمينات وجدولُ النظام الجديد — بافتراضات النطاق لا أصفار.
+        await EnsureGosiContributorGroupColumnsAsync(isPg, ct);
+
         // ‏(جاهزيّةُ الإطلاق · ح-١١١) ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePurchaseInvoiceWarehouseColumnAsync(isPg, ct);
 
@@ -328,6 +331,35 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsurePgColumnAsync("work_orders", column, "BIGINT NULL", ct);
             else
                 await EnsureSqliteColumnAsync("work_orders", column, "INTEGER NULL", ct);
+        }
+    }
+
+    private async Task EnsureGosiContributorGroupColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        if (await TableExistsAsync("employees", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("employees", "GosiRegime", "character varying(16) NOT NULL DEFAULT 'Legacy'", ct);
+            else
+                await EnsureSqliteColumnAsync("employees", "GosiRegime", "TEXT NOT NULL DEFAULT 'Legacy'", ct);
+        }
+
+        if (!await TableExistsAsync("gosi_policies", isPg, ct))
+            return;
+
+        foreach (var (column, pg, sqlite) in new[]
+                 {
+                     ("NewLawEmployeePercent", "NUMERIC(9,4) NOT NULL DEFAULT 9.75", "TEXT NOT NULL DEFAULT '9.75'"),
+                     ("NewLawEmployerPercent", "NUMERIC(9,4) NOT NULL DEFAULT 11.75", "TEXT NOT NULL DEFAULT '11.75'"),
+                     ("NewLawAnnualStepPercent", "NUMERIC(9,4) NOT NULL DEFAULT 0.5", "TEXT NOT NULL DEFAULT '0.5'"),
+                     ("NewLawFirstStep", "DATE NOT NULL DEFAULT DATE '2025-07-01'", "TEXT NOT NULL DEFAULT '2025-07-01'"),
+                     ("NewLawSteps", "INTEGER NOT NULL DEFAULT 4", "INTEGER NOT NULL DEFAULT 4"),
+                 })
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("gosi_policies", column, pg, ct);
+            else
+                await EnsureSqliteColumnAsync("gosi_policies", column, sqlite, ct);
         }
     }
 

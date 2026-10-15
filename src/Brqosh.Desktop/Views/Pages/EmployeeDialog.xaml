@@ -49,6 +49,14 @@
                     </StackPanel>
                 </Grid>
 
+                <StackPanel Margin="0,0,0,12">
+                    <TextBlock Text="فئة التأمينات الاجتماعية (للسعودي)" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="GosiRegimeBox" FontSize="14">
+                        <ComboBoxItem Content="مسجَّل قبل 3 يوليو 2024 أو له مدد اشتراك سابقة — النظام القديم" IsSelected="True"/>
+                        <ComboBoxItem Content="أول تسجيل بعد 3 يوليو 2024 بلا مدد سابقة — النظام الجديد"/>
+                    </ComboBox>
+                </StackPanel>
+
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

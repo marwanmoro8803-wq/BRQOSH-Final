@@ -234,7 +234,7 @@ public class PayrollRun : IBranchScoped
             throw new AccountingException(
                 $"«{employee.NameAr}» ليس على رأس العمل في شهر الدورة {PeriodCode}.");
 
-        var gosi = policy.ContributionFor(employee);
+        var gosi = policy.ContributionFor(employee, monthStart);
 
         AddLine(employee.NameAr, employee.BasicSalary, employee.HousingAllowance,
             employee.TransportAllowance, GosiEmployeeShareWithin(gosi.Employee, employee.GrossPay - absenceDeduction),

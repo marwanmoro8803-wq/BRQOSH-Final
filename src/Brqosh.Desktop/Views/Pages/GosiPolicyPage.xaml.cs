@@ -45,11 +45,18 @@ public partial class GosiPolicyPage : UserControl
             NonSaudiEmployerBox.Text = policy.NonSaudiEmployerPercent.ToString("0.##");
             FloorBox.Text = policy.ContributoryWageFloor.ToString("0.##");
             CapBox.Text = policy.ContributoryWageCap.ToString("0.##");
+            NewLawEmployeeBox.Text = policy.NewLawEmployeePercent.ToString("0.##");
+            NewLawEmployerBox.Text = policy.NewLawEmployerPercent.ToString("0.##");
+            NewLawStepBox.Text = policy.NewLawAnnualStepPercent.ToString("0.##");
+            NewLawFirstStepPicker.SelectedDate = policy.NewLawFirstStep.ToDateTime(TimeOnly.MinValue);
+            NewLawStepsBox.Text = policy.NewLawSteps.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var (newLawEmployee, newLawEmployer) = policy.NewLawPercentOn(DateOnly.FromDateTime(DateTime.Today));
 
             SummaryText.Text =
                 $"السعودي: {policy.SaudiEmployeePercent:0.##}٪ موظف + {policy.SaudiEmployerPercent:0.##}٪ صاحب عمل"
                 + $" · الوافد: {policy.NonSaudiEmployeePercent:0.##}٪ + {policy.NonSaudiEmployerPercent:0.##}٪"
-                + $" · السقف: {policy.ContributoryWageCap:N0}";
+                + $" · السقف: {policy.ContributoryWageCap:N0}"
+                + $" · النظام الجديد هذا الشهر: {newLawEmployee:0.##}٪ + {newLawEmployer:0.##}٪";
         }
         catch (Exception ex)
         {
@@ -78,6 +85,19 @@ public partial class GosiPolicyPage : UserControl
                 Number(SaudiEmployerBox.Text, "حصة صاحب العمل عن السعودي"),
                 Number(NonSaudiEmployeeBox.Text, "حصة الموظف الوافد"),
                 Number(NonSaudiEmployerBox.Text, "حصة صاحب العمل عن الوافد"));
+
+            // ‏(ح-١٣٨) جدولُ النظام الجديد — وعددُ الزيادات عددٌ صحيح.
+            var steps = Number(NewLawStepsBox.Text, "عدد الزيادات");
+            if (steps != decimal.Truncate(steps))
+                throw new AccountingException("عددُ الزيادات عددٌ صحيح.");
+            if (NewLawFirstStepPicker.SelectedDate is null)
+                throw new AccountingException("تاريخ أول زيادة مطلوب.");
+            policy.SetNewLawSchedule(
+                Number(NewLawEmployeeBox.Text, "حصة الموظف عند البدء"),
+                Number(NewLawEmployerBox.Text, "حصة صاحب العمل عند البدء"),
+                Number(NewLawStepBox.Text, "الزيادة السنوية"),
+                DateOnly.FromDateTime(NewLawFirstStepPicker.SelectedDate.Value),
+                (int)steps);
 
             await db.SaveChangesAsync();
             await LoadAsync();

@@ -73,7 +73,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
 
         foreach (var employee in employees.Where(e => e.IsEmployedDuring(monthStart, monthEnd)))
         {
-            var gosi = policy.ContributionFor(employee);
+            var gosi = policy.ContributionFor(employee, monthStart);
             var due = await advances.DueInstallmentAsync(companyId, employee.Id, ct);
             var proration = Math.Min(employee.GrossPay, LeaveEntitlementCalculator.LeaveCompensation(
                 employee.GrossPay, employee.DaysNotEmployedIn(monthStart, monthEnd)));
@@ -159,7 +159,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
 
         foreach (var employee in eligible)
         {
-            var gosi = policy.ContributionFor(employee);
+            var gosi = policy.ContributionFor(employee, monthStart);
             var due = await advances.DueInstallmentAsync(companyId, employee.Id, ct);
 
             // ‏(ح-٨٦) ‏**وما لم يُعمل من الشهر يُخصم كالغياب بلا أجر** — ملتحقٌ في العشرين يُصرف له أحدَ عشرَ يوماً لا شهرٌ كامل،

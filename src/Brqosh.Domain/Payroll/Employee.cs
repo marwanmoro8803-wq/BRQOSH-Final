@@ -14,6 +14,19 @@ public enum EmployeeNationality
 }
 
 /// <summary>
+/// ‏(جاهزيّةُ الإطلاق · ح-١٣٨) <b>فئةُ المشترك في التأمينات الاجتماعيّة.</b>
+///
+/// <para>‏<see cref="NewLaw2024"/>: السعوديُّ المسجَّلُ أوّلَ مرّةٍ بعد ٣ يوليو ٢٠٢٤ بلا مددِ اشتراكٍ سابقة — نسبةُ معاشه ترتفع
+/// بجدول <see cref="GosiPolicy"/>. و<see cref="Legacy"/>: كلُّ من سبق تسجيلُه، على النسب القديمة. <b>وتُختار صراحةً</b>: تاريخُ
+/// الالتحاق لا يكفي، فأكثرُ من يلتحق بعد يوليو ٢٠٢٤ له مددٌ سابقة.</para>
+/// </summary>
+public enum GosiRegime
+{
+    Legacy = 0,
+    NewLaw2024 = 1,
+}
+
+/// <summary>
 /// (CEEF-230 · ط2-١) <b>سجلُّ الموظّف.</b>
 ///
 /// <para><b>ما كان:</b> لا كيانَ موظّفٍ في النظام كلِّه — لا جدولَ ولا شاشة. والاسمُ
@@ -42,6 +55,9 @@ public class Employee : IBranchScoped
     public string NationalId { get; private set; }
 
     public EmployeeNationality Nationality { get; private set; }
+
+    /// <summary>‏(ح-١٣٨) فئةُ الاشتراك — «قديم» افتراضاً، فلا يتغيّر راتبٌ قائمٌ صامتاً.</summary>
+    public GosiRegime GosiRegime { get; private set; } = GosiRegime.Legacy;
     public string JobTitle { get; private set; }
     public DateOnly HireDate { get; private set; }
     public DateOnly? TerminationDate { get; private set; }
@@ -106,6 +122,14 @@ public class Employee : IBranchScoped
     /// الأساسيُّ + السكن دون بقيّة البدلات — <b>فطيُّهما في رقمٍ واحدٍ يُخرج اشتراكاً
     /// خاطئاً</b> لا يمكن تصحيحُه بعد الترحيل.</para>
     /// </summary>
+    /// <summary>‏(ح-١٣٨) فئةُ الاشتراك للسعوديّ وحدَه — وافدٌ «على النظام الجديد» لا معنى له.</summary>
+    public void SetGosiRegime(GosiRegime regime)
+    {
+        if (regime != GosiRegime.Legacy && Nationality != EmployeeNationality.Saudi)
+            throw new AccountingException("فئةُ نظام التأمينات الجديد للسعوديّ وحدَه.");
+        GosiRegime = regime;
+    }
+
     public void SetPay(decimal basic, decimal housing, decimal transport, decimal other = 0m)
     {
         if (basic < 0 || housing < 0 || transport < 0 || other < 0)

@@ -78,6 +78,7 @@ public partial class EmployeeDialog : Window
         NationalIdBox.Text = employee.NationalId;
         NationalIdBox.IsEnabled = false;
         NationalityBox.SelectedIndex = employee.Nationality == EmployeeNationality.Saudi ? 0 : 1;
+        GosiRegimeBox.SelectedIndex = employee.GosiRegime == GosiRegime.NewLaw2024 ? 1 : 0;
         JobTitleBox.Text = employee.JobTitle;
         HireDateBox.SelectedDate = employee.HireDate.ToDateTime(TimeOnly.MinValue);
         HireDateBox.IsEnabled = false;
@@ -111,6 +112,7 @@ public partial class EmployeeDialog : Window
                 existing.SetPay(basic, housing, transport, other);
                 existing.SetIban(iban);
                 existing.AssignCostCenter(costCenterId);
+                existing.SetGosiRegime(SelectedGosiRegime());
             }
             else
             {
@@ -125,6 +127,7 @@ public partial class EmployeeDialog : Window
                 employee.SetPay(basic, housing, transport, other);
                 employee.SetIban(iban);
                 employee.AssignCostCenter(costCenterId);
+                employee.SetGosiRegime(SelectedGosiRegime());
                 db.Employees.Add(employee);
             }
 
@@ -142,6 +145,10 @@ public partial class EmployeeDialog : Window
         NumericInput.TryParse(text, out var value)
             ? value
             : throw new AccountingException($"قيمة «{field}» غير صالحة — ووردت «{text}».");
+
+    /// <summary>‏(ح-١٣٨) فئةُ الاشتراك كما اختيرت — والنطاقُ يرفض «الجديد» لغير السعوديّ.</summary>
+    private GosiRegime SelectedGosiRegime() =>
+        GosiRegimeBox.SelectedIndex == 1 ? GosiRegime.NewLaw2024 : GosiRegime.Legacy;
 
     private void OnCancel(object sender, RoutedEventArgs e) => DialogResult = false;
 }

@@ -17,7 +17,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.19")
+                .HasAnnotation("ProductVersion", "9.0.21")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -2265,6 +2265,13 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GosiRegime")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("Legacy");
+
                     b.Property<DateOnly>("HireDate")
                         .HasColumnType("date");
 
@@ -2404,6 +2411,24 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("ContributoryWageFloor")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("NewLawAnnualStepPercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)");
+
+                    b.Property<decimal>("NewLawEmployeePercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)");
+
+                    b.Property<decimal>("NewLawEmployerPercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)");
+
+                    b.Property<DateOnly>("NewLawFirstStep")
+                        .HasColumnType("date");
+
+                    b.Property<int>("NewLawSteps")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("NonSaudiEmployeePercent")
                         .HasPrecision(9, 4)

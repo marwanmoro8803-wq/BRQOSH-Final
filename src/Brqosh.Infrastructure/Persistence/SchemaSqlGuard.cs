@@ -59,6 +59,14 @@ internal static class SchemaSqlGuard
         "character varying(3) NULL",
         "NUMERIC(18,6) NULL",
         "NUMERIC(18,2) NULL",
+        // (جاهزيّةُ الإطلاق · ح-١٣٨) ‏فئةُ مشترك التأمينات وجدولُ النظام الجديد — **بافتراضات النطاق لا أصفار**: صفرٌ في النسبة
+        // ‏أو في عدد الزيادات يجعل موظّفَ النظام الجديد في كلّ منشأةٍ قائمةٍ يُشترك بلا شيء.
+        "character varying(16) NOT NULL DEFAULT 'Legacy'",
+        "NUMERIC(9,4) NOT NULL DEFAULT 9.75",
+        "NUMERIC(9,4) NOT NULL DEFAULT 11.75",
+        "NUMERIC(9,4) NOT NULL DEFAULT 0.5",
+        "DATE NOT NULL DEFAULT DATE '2025-07-01'",
+        "INTEGER NOT NULL DEFAULT 4",
     };
 
     private static readonly HashSet<string> AllowedSqliteTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -82,6 +90,13 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT ''",
         "REAL NULL",
         "REAL NOT NULL DEFAULT 0",
+        // (جاهزيّةُ الإطلاق · ح-١٣٨) ‏فئةُ مشترك التأمينات وجدولُ النظام الجديد.
+        "TEXT NOT NULL DEFAULT 'Legacy'",
+        "TEXT NOT NULL DEFAULT '9.75'",
+        "TEXT NOT NULL DEFAULT '11.75'",
+        "TEXT NOT NULL DEFAULT '0.5'",
+        "TEXT NOT NULL DEFAULT '2025-07-01'",
+        "INTEGER NOT NULL DEFAULT 4",
     };
 
     public static void ValidateTable(string table)

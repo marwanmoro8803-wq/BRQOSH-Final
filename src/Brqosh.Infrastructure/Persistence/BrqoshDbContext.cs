@@ -1062,6 +1062,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(e => e.NationalId).HasMaxLength(10).IsRequired();
             entity.Property(e => e.JobTitle).HasMaxLength(128).IsRequired();
             entity.Property(e => e.Nationality).HasConversion<string>().HasMaxLength(16);
+            // ‏(ح-١٣٨) فئةُ الاشتراك — نصّيّةُ التخزين كأخواتها، و«قديم» افتراضاً للصفوف القائمة.
+            entity.Property(e => e.GosiRegime).HasConversion<string>().HasMaxLength(16)
+                .HasDefaultValue(GosiRegime.Legacy).HasSentinel(GosiRegime.Legacy);
             entity.Property(e => e.Iban).HasMaxLength(24);
             entity.Property(e => e.BasicSalary).HasPrecision(18, 2);
             entity.Property(e => e.HousingAllowance).HasPrecision(18, 2);
@@ -1088,6 +1091,10 @@ public class BrqoshDbContext : DbContext
             entity.Property(g => g.NonSaudiEmployerPercent).HasPrecision(9, 4);
             entity.Property(g => g.ContributoryWageCap).HasPrecision(18, 2);
             entity.Property(g => g.ContributoryWageFloor).HasPrecision(18, 2);
+            // ‏(ح-١٣٨) جدولُ النظام الجديد.
+            entity.Property(g => g.NewLawEmployeePercent).HasPrecision(9, 4);
+            entity.Property(g => g.NewLawEmployerPercent).HasPrecision(9, 4);
+            entity.Property(g => g.NewLawAnnualStepPercent).HasPrecision(9, 4);
             entity.HasIndex(g => g.CompanyId).IsUnique();
         });
 

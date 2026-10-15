@@ -1213,5 +1213,14 @@
   "الذمم المفتوحة: CustomerName أو SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — بعد الميزان، فتنتقل من 3107 إلى أصحابها ويعود 3107 صفراً.": "Open balances: CustomerName or SupplierName · DocumentNumber · DocumentDate · DueDate (yyyy-MM-dd) · Amount — after the trial balance; they move from 3107 to each customer and supplier, and 3107 returns to zero.",
   "المخزون الافتتاحي": "Opening stock",
   "استيراد الأصناف": "Import products",
-  "الأصناف: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — والمخزون الافتتاحي: ProductCode · Quantity · UnitCost في المستودع الافتراضي بعد الميزان. والحقل الذي فيه فاصلة يُكتب بين علامتي تنصيص.": "Products: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — and opening stock: ProductCode · Quantity · UnitCost into the default warehouse, after the trial balance. A field containing a comma is written between double quotes."
+  "الأصناف: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — والمخزون الافتتاحي: ProductCode · Quantity · UnitCost في المستودع الافتراضي بعد الميزان. والحقل الذي فيه فاصلة يُكتب بين علامتي تنصيص.": "Products: Code · NameAr · Unit · Type (Stockable/Service) · SalePrice — and opening stock: ProductCode · Quantity · UnitCost into the default warehouse, after the trial balance. A field containing a comma is written between double quotes.",
+  "فئة التأمينات الاجتماعية (للسعودي)": "Social insurance group (Saudis)",
+  "مسجَّل قبل 3 يوليو 2024 أو له مدد اشتراك سابقة — النظام القديم": "Registered before 3 July 2024 or has prior contributions — legacy system",
+  "أول تسجيل بعد 3 يوليو 2024 بلا مدد سابقة — النظام الجديد": "First registered after 3 July 2024 with no prior contributions — new system",
+  "النظام الجديد — السعودي المسجَّل أول مرة بعد 3 يوليو 2024: نسبة المعاش ترتفع كل سنة حتى تبلغ عدد الزيادات": "New system — Saudis first registered after 3 July 2024: the pension rate rises every year until the number of increases is reached",
+  "حصة الموظف عند البدء %": "Employee share at start %",
+  "حصة صاحب العمل عند البدء %": "Employer share at start %",
+  "الزيادة السنوية لكل طرف %": "Annual increase per side %",
+  "تاريخ أول زيادة": "First increase date",
+  "عدد الزيادات": "Number of increases"
 }

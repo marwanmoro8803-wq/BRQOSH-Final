@@ -69,6 +69,35 @@
                         <TextBox x:Name="CapBox" Style="{StaticResource AppTextBox}"/>
                     </StackPanel>
                 </Grid>
+
+                <TextBlock Text="النظام الجديد — السعودي المسجَّل أول مرة بعد 3 يوليو 2024: نسبة المعاش ترتفع كل سنة حتى تبلغ عدد الزيادات"
+                           Style="{StaticResource FieldLabel}" TextWrapping="Wrap" Margin="0,18,0,10"/>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="حصة الموظف عند البدء %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NewLawEmployeeBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="حصة صاحب العمل عند البدء %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NewLawEmployerBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="الزيادة السنوية لكل طرف %" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NewLawStepBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="تاريخ أول زيادة" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker x:Name="NewLawFirstStepPicker"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="عدد الزيادات" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NewLawStepsBox" Style="{StaticResource AppTextBox}"/>
+                    </StackPanel>
+                </Grid>
             </StackPanel>
         </Border>
     </Grid>

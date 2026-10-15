@@ -114,7 +114,7 @@ public class EmployeeAndGosiTests : IDisposable
 
         Assert.Equal(12_500m, policy.ContributoryWage(employee));
 
-        var gosi = policy.ContributionFor(employee);
+        var gosi = policy.ContributionFor(employee, new DateOnly(2026, 1, 1));
         Assert.Equal(1_218.75m, gosi.Employee);      // 12,500 × 9.75%
         Assert.Equal(1_468.75m, gosi.Employer);      // 12,500 × 11.75%
     }
@@ -134,7 +134,7 @@ public class EmployeeAndGosiTests : IDisposable
             EmployeeNationality.NonSaudi, "فنّي", new DateOnly(2026, 1, 1));
         employee.SetPay(basic: 6_000m, housing: 1_500m, transport: 500m);
 
-        var gosi = policy.ContributionFor(employee);
+        var gosi = policy.ContributionFor(employee, new DateOnly(2026, 1, 1));
         Assert.Equal(0m, gosi.Employee);
         Assert.Equal(150m, gosi.Employer);           // 7,500 × 2%
     }
@@ -153,7 +153,7 @@ public class EmployeeAndGosiTests : IDisposable
         employee.SetPay(basic: 50_000m, housing: 10_000m, transport: 0m);
 
         Assert.Equal(45_000m, policy.ContributoryWage(employee));
-        Assert.Equal(4_387.50m, policy.ContributionFor(employee).Employee);
+        Assert.Equal(4_387.50m, policy.ContributionFor(employee, new DateOnly(2026, 1, 1)).Employee);
     }
 
     /// <summary><b>والنِّسَبُ مملوكةٌ للمنشأة</b> — فالمُنظِّم يُعدّلها، وثابتٌ يُلغي التعديل.</summary>
@@ -167,7 +167,7 @@ public class EmployeeAndGosiTests : IDisposable
         var employee = EmployeeFor("E-8", "1066666666");
         employee.SetPay(basic: 10_000m, housing: 0m, transport: 0m);
 
-        Assert.Equal(1_000m, policy.ContributionFor(employee).Employee);
+        Assert.Equal(1_000m, policy.ContributionFor(employee, new DateOnly(2026, 1, 1)).Employee);
         Assert.Throws<AccountingException>(() => policy.SetRates(-1m, 12m, 0m, 2m));
     }
 
