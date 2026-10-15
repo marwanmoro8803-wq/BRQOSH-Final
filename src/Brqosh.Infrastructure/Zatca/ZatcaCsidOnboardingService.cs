@@ -69,7 +69,8 @@ public class ZatcaCsidOnboardingService
     public ZatcaKeyMaterial GenerateKeyPairAndCsr(
         long companyId, string organizationName, string vatNumber, string solutionName = "BRQOSH-ERP",
         ZatcaEnvironment environment = ZatcaEnvironment.Simulation,
-        string invoiceType = "1100", string registeredAddress = "Riyadh", string businessCategory = "Software")
+        string invoiceType = "1100", string registeredAddress = "Riyadh", string businessCategory = "Software",
+        bool forRenewal = false)
     {
         if (string.IsNullOrWhiteSpace(vatNumber) || vatNumber.Length != 15)
             throw new AccountingException("الرقم الضريبي (15 رقماً) مطلوب لتوليد CSR.");
@@ -81,7 +82,8 @@ public class ZatcaCsidOnboardingService
 
         // ZATCA + ZatcaXmlSigner يتطلبان EC P-256 (secp256r1) — ZATCA-001
         var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        var privateKeyPath = Path.Combine(dir, "private.key");
+        // ‏(ح-١٣٧) مفتاحُ التجديد يُكتب جانباً: المفتاحُ الحاليُّ يوقّع الفواتيرَ حتى تقبل الهيئةُ الجديد.
+        var privateKeyPath = Path.Combine(dir, forRenewal ? RenewingKeyFile : "private.key");
         File.WriteAllText(privateKeyPath, ecdsa.ExportECPrivateKeyPem());
 
         // ‏معرّفُ وحدة الإصدار (EGS) كما تتوقّعه الهيئة: 1-اسم الحلّ|2-إصدارُه|3-معرّفٌ فريد.
@@ -102,7 +104,7 @@ public class ZatcaCsidOnboardingService
 
         var csrDer = request.CreateSigningRequest();
         var csrPem = PemEncode("CERTIFICATE REQUEST", csrDer);
-        var csrPath = Path.Combine(dir, "request.csr");
+        var csrPath = Path.Combine(dir, forRenewal ? "request.renewing.csr" : "request.csr");
         File.WriteAllText(csrPath, csrPem);
 
         return new ZatcaKeyMaterial(
@@ -190,8 +192,38 @@ public class ZatcaCsidOnboardingService
         return await ParseCsidResponseAsync(await Client.SendAsync(request, ct), companyId, ct);
     }
 
+    private const string RenewingKeyFile = "private.renewing.key";
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٣٧ · <c>tax-zatca#10</c>) <b>تجديدُ شهادة الإنتاج قبل انتهائها — دون إعادة التسجيل من أوّله.</b>
+    ///
+    /// <para>‏<c>PATCH /production/csids</c> بـCSR جديد ورمزِ OTP، ويُصادَق بالشهادة الحاليّة. <b>والمفتاحُ الجديدُ لا يحلّ
+    /// محلَّ القديم إلّا بعد قبول الهيئة</b>: يُولَّد بـ<c>forRenewal</c> في ملفٍّ جانبيّ، فإن رُفض التجديدُ أو انقطع بقيت
+    /// الشهادةُ القائمةُ ومفتاحُها يوقّعان كما كانا.</para>
+    /// </summary>
+    public async Task<ZatcaCsidResult> RenewProductionCsidAsync(
+        string apiBaseUrl, string otp, string csrBase64, string currentApiToken,
+        long companyId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(otp))
+            throw new AccountingException("رمز OTP من بوابة فاتورة مطلوب.");
+        if (string.IsNullOrWhiteSpace(csrBase64))
+            throw new AccountingException("CSR التجديد غير موجود — ولّده أولاً.");
+        if (string.IsNullOrWhiteSpace(currentApiToken))
+            throw new AccountingException("لا شهادةَ إنتاجٍ قائمةٌ تُجدَّد — سجّل الجهازَ أوّلاً.");
+        if (!File.Exists(Path.Combine(GetCertDirectory(companyId), RenewingKeyFile)))
+            throw new AccountingException("مفتاح التجديد غير موجود — ولّد CSR التجديد أولاً.");
+
+        using var request = JsonPost(apiBaseUrl.TrimEnd('/') + "/production/csids", new { csr = csrBase64 });
+        request.Method = HttpMethod.Patch;
+        request.Headers.Add("OTP", otp.Trim());
+        request.Headers.TryAddWithoutValidation("Authorization", currentApiToken.Trim());
+
+        return await ParseCsidResponseAsync(await Client.SendAsync(request, ct), companyId, ct, renewing: true);
+    }
+
     private async Task<ZatcaCsidResult> ParseCsidResponseAsync(
-        HttpResponseMessage response, long companyId, CancellationToken ct)
+        HttpResponseMessage response, long companyId, CancellationToken ct, bool renewing = false)
     {
         var body = await response.Content.ReadAsStringAsync(ct);
         if (!response.IsSuccessStatusCode)
@@ -219,9 +251,13 @@ public class ZatcaCsidOnboardingService
         var certDer = Convert.FromBase64String(token);
         var certPem = PemEncode("CERTIFICATE", certDer);
         var certPath = Path.Combine(dir, "csid.crt.pem");
+        var privateKeyPath = Path.Combine(dir, "private.key");
+
+        // ‏التجديدُ المقبول وحدَه يُبدّل الزوج: المفتاحُ الجانبيُّ يحلّ محلَّ القديم مع شهادته.
+        if (renewing)
+            File.Move(Path.Combine(dir, RenewingKeyFile), privateKeyPath, overwrite: true);
         File.WriteAllText(certPath, certPem);
 
-        var privateKeyPath = Path.Combine(dir, "private.key");
         if (!File.Exists(privateKeyPath))
             throw new AccountingException("ملف المفتاح الخاص غير موجود — أعد توليد CSR.");
 
