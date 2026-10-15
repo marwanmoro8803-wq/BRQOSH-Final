@@ -11,8 +11,8 @@ app:
   window_title_login: "تسجيل الدخول"
   window_title_main: "BRQOSH ERP"
   exe_candidates:
-    - "src/Brqosh.Desktop/bin/Release/net9.0-windows/Brqosh.Desktop.exe"
-    - "src/Brqosh.Desktop/bin/Debug/net9.0-windows/Brqosh.Desktop.exe"
+    - "src/Brqosh.Desktop/bin/Release/net10.0-windows/Brqosh.Desktop.exe"
+    - "src/Brqosh.Desktop/bin/Debug/net10.0-windows/Brqosh.Desktop.exe"
   env:
     BRQOSH_UITEST: "1"
     BRQOSH_TEST: "1"

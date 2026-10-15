@@ -54,14 +54,18 @@
       قِيس بتشغيل AppSearch في جلسةٍ لا تُثبِّت: 9 ⟵ 9.0.17 · 6 ⟵ 6.0.36 · 8 و10 ⟵ لا شيء.
       ويحرسه TheInstallerRequiresTheRuntimeItRunsOnTests.
     -->
-    <Property Id="DOTNETDESKTOP9" Secure="yes">
+    <!--
+      (ح-١٣٨ · `installer-deployment-ops#6`) ‏**ومنذ الترحيل إلى .NET 10 (LTS)** صار الحدُّ 10.x — والقاعدةُ نفسُها:
+      الإصدارُ الذي تُبنى عليه التجميعةُ بعينه، ويحرسه الاختبارُ نفسُه بقراءة TargetFramework.
+    -->
+    <Property Id="DOTNETDESKTOP10" Secure="yes">
       <DirectorySearch Id="DotNetDesktopAppDir" Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" Depth="1">
-        <FileSearch Name="PresentationFramework.dll" MinVersion="9.0.0.0" MaxVersion="9.65535.65535.65535" />
+        <FileSearch Name="PresentationFramework.dll" MinVersion="10.0.0.0" MaxVersion="10.65535.65535.65535" />
       </DirectorySearch>
     </Property>
 
-    <Launch Condition="DOTNETDESKTOP9"
-        Message="يتطلّب BRQOSH .NET Desktop Runtime 9 (الإصدارُ 9 بعينه — 6 أو 8 أو 10 لا تكفي). نزّله من https://dotnet.microsoft.com/download/dotnet/9.0 ثم أعد المحاولة." />
+    <Launch Condition="DOTNETDESKTOP10"
+        Message="يتطلّب BRQOSH .NET Desktop Runtime 10 (الإصدارُ 10 بعينه — 8 أو 9 لا تكفي). نزّله من https://dotnet.microsoft.com/download/dotnet/10.0 ثم أعد المحاولة." />
 
     <Feature Id="MainFeature" Title="BRQOSH ERP" Level="1">
       <ComponentGroupRef Id="PublishComponents" />

@@ -83,7 +83,7 @@ public class TheInstallerRequiresTheRuntimeItRunsOnTests
         Assert.Null(file!.Attribute("Id"));
     }
 
-    /// <summary>والرسالةُ لا تَعِد بما لا يعمل: 10 وحدَه لا يُشغّل تطبيقاً مبنيّاً على 9.</summary>
+    /// <summary>والرسالةُ لا تَعِد بما لا يعمل: إصدارٌ رئيسٌ آخرُ وحدَه لا يُشغّل تطبيقاً مبنيّاً على هذا (ح-١٣٨: صار 10).</summary>
     [Fact]
     public void TheMessageDoesNotPromiseNewerMajorVersions()
     {
@@ -97,7 +97,7 @@ public class TheInstallerRequiresTheRuntimeItRunsOnTests
     public void TheReaderSeesTheInstallerAndTheTarget()
     {
         Assert.NotNull(RuntimeSearch());
-        Assert.Equal(9, TargetMajor());
+        Assert.Equal(10, TargetMajor());
     }
 
     private static string RepositoryRoot()
