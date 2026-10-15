@@ -23,6 +23,29 @@ public class ZatcaCsidOnboardingService
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(90) };
 
+    /// <summary>للاختبارات وحدَها — معالجٌ يردّ بدل الهيئة. <c>internal</c>: لا يبلغه مستخدم.</summary>
+    internal static HttpMessageHandler? HandlerOverride { get; set; }
+
+    private static HttpClient Client =>
+        HandlerOverride is null ? Http : new HttpClient(HandlerOverride, disposeHandler: false) { Timeout = Http.Timeout };
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٣٦) <b>واجهاتُ الهيئة كلُّها تشترط <c>Accept-Version</c> — والتسجيلُ كان بلاها.</b>
+    ///
+    /// <para>أُضيفت الترويسةُ إلى الإرسال في CEEF-206 بعد أن رُفض الطلبُ رغم صحّة المسار والحمولة، <b>وبقي طلبا الشهادة
+    /// (الامتثال والإنتاج) بلاها</b> — فالتسجيلُ الحيُّ يُرفض قبل أن يبلغ الإرسال. الترويسةُ تُبنى هنا مرّةً للطلبين.</para>
+    /// </summary>
+    private static HttpRequestMessage JsonPost(string url, object body)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Add("Accept-Version", "V2");
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        return request;
+    }
+
     /// <summary>OID قالبِ الشهادة لدى مايكروسوفت — تشترطه الهيئة في الـCSR.</summary>
     private const string CertificateTemplateOid = "1.3.6.1.4.1.311.20.2";
 
@@ -147,17 +170,10 @@ public class ZatcaCsidOnboardingService
         if (string.IsNullOrWhiteSpace(csrBase64))
             throw new AccountingException("CSR غير موجود — ولّد المفتاح أولاً.");
 
-        var url = apiBaseUrl.TrimEnd('/') + "/compliance";
-        var payload = JsonSerializer.Serialize(new { csr = csrBase64 });
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json"),
-        };
+        using var request = JsonPost(apiBaseUrl.TrimEnd('/') + "/compliance", new { csr = csrBase64 });
         request.Headers.Add("OTP", otp.Trim());
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        return await ParseCsidResponseAsync(await Http.SendAsync(request, ct), companyId, ct);
+        return await ParseCsidResponseAsync(await Client.SendAsync(request, ct), companyId, ct);
     }
 
     public async Task<ZatcaCsidResult> RequestProductionCsidAsync(
@@ -167,17 +183,11 @@ public class ZatcaCsidOnboardingService
         if (string.IsNullOrWhiteSpace(complianceRequestId))
             throw new AccountingException("معرّف طلب الامتثال مطلوب.");
 
-        var url = apiBaseUrl.TrimEnd('/') + "/production/csids";
-        var payload = JsonSerializer.Serialize(new { compliance_request_id = complianceRequestId });
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, url)
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json"),
-        };
+        using var request = JsonPost(apiBaseUrl.TrimEnd('/') + "/production/csids",
+            new { compliance_request_id = complianceRequestId });
         request.Headers.Authorization = BasicAuth(binarySecurityToken, secret);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        return await ParseCsidResponseAsync(await Http.SendAsync(request, ct), companyId, ct);
+        return await ParseCsidResponseAsync(await Client.SendAsync(request, ct), companyId, ct);
     }
 
     private async Task<ZatcaCsidResult> ParseCsidResponseAsync(
