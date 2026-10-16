@@ -34,6 +34,10 @@ public partial class DiagnosticsPage : UserControl
     public DiagnosticsPage()
     {
         InitializeComponent();
+        ChannelLabel.Text = LocaleManager.T("قناة التحديث", "Update channel");
+        BrowseChannelBtn.Content = LocaleManager.T("استعراض…", "Browse…");
+        StageBtn.Content = LocaleManager.T("تنزيل التحديث", "Download update");
+        ChannelBox.Text = UpdateChannelSettings.Load() ?? "";
         Loaded += async (_, _) => await LoadAsync();
     }
 
@@ -122,28 +126,28 @@ public partial class DiagnosticsPage : UserControl
     /// (CEEF-231 · ط5-٥) يفحص قناةَ التحديث — <b>والتوقيعُ شرطٌ لا تحذير</b>.
     /// </summary>
     /// <remarks>
-    /// <b>والمصدرُ مسارُ ملفٍّ يُختار</b>: منشآتٌ كثيرةٌ في هذا السوق على شبكةٍ مغلقة،
-    /// <b>ومشاركةُ شبكةٍ تصلها تحديثُ الوكيل</b>. والتوقيعُ هو ما يحمي لا القناة.
+    /// (ح-١٤١) <b>والقناةُ المحفوظةُ أوّلاً</b>: كان مربعُ «اختر ملفّاً» يُفتح في كلّ فحص.
+    /// والمصدرُ الآن من الحقل — مسارُ ملفٍّ أو مشاركةٌ أو <c>https://</c> — ويُحفظ بعد فحصٍ
+    /// قرأ بياناً (لا بعد مصدرٍ لم يُوجد)، والاستعراضُ يملأ الحقلَ وحدَه.
     /// </remarks>
     private async void OnCheckUpdate(object sender, RoutedEventArgs e)
     {
         using var busy = UiBusyGuard.Enter(sender);
         if (!busy.Acquired) return;
 
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "اختر بيان الإصدار (update.json)",
-            Filter = "بيان الإصدار|*.json",
-        };
-
-        if (dialog.ShowDialog() != true) return;
+        StageBtn.Visibility = Visibility.Collapsed;
+        var source = ChannelBox.Text.Trim();
+        if (source.Length == 0 && !BrowseChannel()) return;
+        source = ChannelBox.Text.Trim();
 
         try
         {
             // ‏**والخدمةُ من الحقن** — واصطلاحُ المستودع مقيسٌ بحارسٍ.
             using var facade = new DesktopAccountingFacade();
-            var result = await facade.GetService<UpdateCheckService>()
-                .CheckAsync(dialog.FileName);
+            var result = await facade.GetService<UpdateCheckService>().CheckAsync(source);
+
+            if (result.Status != UpdateStatus.NoChannel)
+                UpdateChannelSettings.Save(source);
 
             UpdateText.Text = result.Status switch
             {
@@ -156,6 +160,54 @@ public partial class DiagnosticsPage : UserControl
                     $"رُفض البيان: {result.Failure}",
                 _ => result.Failure ?? "لا قناةَ تحديث.",
             };
+
+            if (result.Status == UpdateStatus.UpdateAvailable)
+                StageBtn.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            UpdateText.Text = ex.Message;
+        }
+    }
+
+    private void OnBrowseChannel(object sender, RoutedEventArgs e) => BrowseChannel();
+
+    private bool BrowseChannel()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = LocaleManager.T("اختر بيان الإصدار (manifest.json)", "Choose the release manifest (manifest.json)"),
+            Filter = LocaleManager.T("بيان الإصدار", "Release manifest") + "|*.json",
+        };
+
+        if (dialog.ShowDialog() != true) return false;
+        ChannelBox.Text = dialog.FileName;
+        return true;
+    }
+
+    /// <summary>
+    /// (ح-١٤١) <b>يُنزّل الحزمةَ ويتحقّق من بصمتها ويُريها — ولا يُنصّبها.</b>
+    /// </summary>
+    /// <remarks>
+    /// كانت <c>StageAsync</c> مبنيّةً مختبَرةً <b>ولا يستدعيها شيء</b>. والتنصيبُ يبقى للمالك:
+    /// إغلاقُ تطبيقٍ يُمسك دفاترَ منشأةٍ واستبدالُه قرارٌ ليس للبرنامج.
+    /// </remarks>
+    private async void OnStageUpdate(object sender, RoutedEventArgs e)
+    {
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var staged = await facade.GetService<UpdateCheckService>()
+                .StageFromChannelAsync(ChannelBox.Text.Trim(), UpdateChannelSettings.StagingDirectory());
+
+            UpdateText.Text = LocaleManager.T(
+                "نُزّلت الحزمةُ وطابقت بصمتُها البيانَ الموقَّع — أغلق البرنامجَ ثمّ شغّل المُنصِّب: ",
+                "The package was downloaded and matches the signed manifest — close the program, then run the installer: ")
+                + staged;
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{staged}\"") { UseShellExecute = true });
         }
         catch (Exception ex)
         {

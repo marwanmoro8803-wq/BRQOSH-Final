@@ -79,6 +79,11 @@ public partial class MainWindow : Window
         _ = RunScheduledBackupAsync();
         StatusBackupBadge.MouseLeftButtonUp += (_, _) => Navigate("backup", NavTitleFor("backup"));
 
+        // ‏(ح-١٤١ · ‏`installer-deployment-ops#12`) ‏**التحديثُ يُفحص من نفسه.** كان الفحصُ زرّاً في
+        // ‏«حالة النظام» لا يضغطه أحد، فقناةٌ موقَّعةٌ لا يبلغها عميل. ‏يُفحص مرّةً بعد الإقلاع إن حُفظت قناة،
+        // ‏ويُخبَر المالكُ ولا يُنزَّل شيءٌ ولا يُنصَّب.
+        _ = CheckForUpdateAtStartupAsync();
+
         // ‏(جاهزيّةُ الإطلاق · ح-١٢٧ · ‏`security-licensing-tenancy#1`) ‏**الجلسةُ الطويلةُ لا تتجاوز الانتهاء.**
         // ‏كان الحكمُ عند الإقلاع وحدَه، فتطبيقٌ لا يُغلق يعمل بترخيصٍ انتهى أمس. ‏يُحفظ انتهاءُ الترخيص الصالح عند بدء الجلسة،
         // ‏ويُقارَن كلَّ ربع ساعةٍ بالوقت الفعّال (`LicenseClock`) — فإن بلغه دخلت الجلسةُ وضعَ القراءة، ولا تُغلق.
@@ -729,6 +734,45 @@ public partial class MainWindow : Window
     /// (CEEF-237 · ت-٤) ينسخ إن حان الوقت، ويُحدّث الشارة. <b>ولا يرمي أبداً</b>:
     /// مؤقّتٌ يرمي في WPF يُسقط التطبيق، <b>ونسخةٌ فاشلة أهونُ من دفترٍ يُغلق</b>.
     /// </summary>
+    /// <summary>
+    /// (ح-١٤١) فحصُ القناة المحفوظة بعد الإقلاع — <b>إخبارٌ لا تنزيل</b>.
+    /// </summary>
+    /// <remarks>
+    /// «لا قناة» (انقطاعُ شبكةٍ أو مشاركةٍ غائبة) يمرّ صامتاً — منشأةٌ خلف جدارٍ ناريٍّ تراه كلَّ يوم؛
+    /// <b>أمّا البيانُ غيرُ الموثوق فيُقال ويُسجَّل</b>: هو ما يجب أن يراه المالك.
+    /// </remarks>
+    private async Task CheckForUpdateAtStartupAsync()
+    {
+        var source = UpdateChannelSettings.Load();
+        if (source is null) return;
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(20));
+            using var facade = new DesktopAccountingFacade();
+            var result = await facade.GetService<UpdateCheckService>().CheckAsync(source);
+
+            if (result.Status == UpdateStatus.UpdateAvailable)
+            {
+                UiFeedback.ShowInfo(
+                    LocaleManager.T("يوجد إصدارٌ أحدث من برقوش: ", "A newer BRQOSH version is available: ")
+                    + result.AvailableVersion
+                    + LocaleManager.T(" — نزّله من «حالة النظام».", " — download it from System status."));
+            }
+            else if (result.Status == UpdateStatus.Untrusted)
+            {
+                CrashLog.Write(new InvalidOperationException(result.Failure), "update-channel-untrusted");
+                UiFeedback.ShowWarning(LocaleManager.T(
+                    "رُفض بيانُ التحديث في القناة المحفوظة — التفصيلُ في «حالة النظام».",
+                    "The update manifest in the saved channel was refused — details in System status."));
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write(ex, "update-check");
+        }
+    }
+
     private async Task RunScheduledBackupAsync()
     {
         if (_backupRunning) return;   // ‏تشغيلةٌ طويلةٌ لا تُستدعى فوق نفسها.

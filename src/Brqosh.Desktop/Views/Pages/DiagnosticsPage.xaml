@@ -28,13 +28,27 @@
                             Margin="8,0,0,0" Padding="20,9" Click="OnOpenLogs"/>
                     <Button x:Name="UpdateBtn" Content="فحص التحديث" Style="{StaticResource SecondaryButton}"
                             Margin="8,0,0,0" Padding="20,9" Click="OnCheckUpdate"/>
+                    <!-- ‏(ح-١٤١) ‏**تنزيلُ الحزمة وتهيئتُها — لا تنصيبُها.** يظهر حين يوجد إصدارٌ أحدث،
+                         ‏ونصُّه من الشيفرة الخلفيّة بـ`LocaleManager.T`. -->
+                    <Button x:Name="StageBtn" Style="{StaticResource PrimaryButton}" Visibility="Collapsed"
+                            Margin="8,0,0,0" Padding="20,9" Click="OnStageUpdate"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
-            <TextBlock x:Name="UpdateText" FontWeight="SemiBold" TextWrapping="Wrap"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+            <StackPanel>
+                <!-- ‏(ح-١٤١) ‏**القناةُ تُحفظ مرّة** — مسارُ ملفٍّ أو مشاركةٌ أو https. -->
+                <DockPanel Margin="0,0,0,8">
+                    <TextBlock x:Name="ChannelLabel" DockPanel.Dock="Left" VerticalAlignment="Center"
+                               Margin="0,0,8,0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <Button x:Name="BrowseChannelBtn" DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                            Margin="8,0,0,0" Padding="14,6" Click="OnBrowseChannel"/>
+                    <TextBox x:Name="ChannelBox" FlowDirection="LeftToRight"/>
+                </DockPanel>
+                <TextBlock x:Name="UpdateText" FontWeight="SemiBold" TextWrapping="Wrap"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+            </StackPanel>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">

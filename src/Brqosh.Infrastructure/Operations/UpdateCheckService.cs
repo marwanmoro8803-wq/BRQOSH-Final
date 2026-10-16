@@ -162,32 +162,142 @@ public sealed class UpdateCheckService
     public async Task<string> StageAsync(string manifestPath, string packageSourceDirectory,
         string stagingDirectory, CancellationToken ct = default)
     {
-        var signed = JsonSerializer.Deserialize<SignedUpdateManifest>(
-            await ReadChannelAsync(manifestPath, ct))
-            ?? throw new AccountingException("بيانُ الإصدار فارغ.");
+        var manifest = await ReadVerifiedForStagingAsync(manifestPath, ct);
 
-        if (!Verify(signed))
-            throw new AccountingException(
-                "توقيعُ بيان الإصدار غيرُ صالح — ولا تُنزَّل حزمةٌ لا يُعرف ناشرُها.");
-
-        var source = Path.Combine(packageSourceDirectory, signed.Manifest.PackageFileName);
+        var source = Path.Combine(packageSourceDirectory, manifest.PackageFileName);
         if (!File.Exists(source))
-            throw new AccountingException($"حزمةُ التحديث غير موجودة: {signed.Manifest.PackageFileName}");
+            throw new AccountingException($"حزمةُ التحديث غير موجودة: {manifest.PackageFileName}");
 
-        Directory.CreateDirectory(stagingDirectory);
-        var target = Path.Combine(stagingDirectory, signed.Manifest.PackageFileName);
-
-        // ‏**ويُكتب إلى اسمٍ مؤقّتٍ ثمّ يُنقل** — فنقلٌ يُقطع لا يترك حزمةً ناقصةً
-        // ‏بالاسم الصحيح، **يُشغّلها المالكُ فتُتلف تثبيتَه**.
-        var staging = target + ".partial";
-        if (File.Exists(staging)) File.Delete(staging);
+        var (staging, target) = StagingPaths(stagingDirectory, manifest);
 
         await using (var input = File.OpenRead(source))
         await using (var output = File.Create(staging))
             await input.CopyToAsync(output, ct);
 
+        return await FinishStagingAsync(staging, target, manifest, ct);
+    }
+
+    /// <summary>
+    /// (ح-١٤١) <b>يُهيّئ الحزمةَ من القناة نفسِها</b>: بجوار البيان في المجلّد، أو من عنوانٍ
+    /// بجواره في <c>https://</c> — <b>ولا مجلّدَ مصدرٍ يُمرَّر بيد</b>.
+    /// </summary>
+    /// <remarks>
+    /// <c>StageAsync</c> كانت تنسخ من مجلّدٍ يُعطى لها، فقناةُ https تُخبر بالتحديث <b>ولا سبيلَ
+    /// إلى حزمته</b>. والتنزيلُ محدودٌ بالحجم الموقَّع: خادمٌ يبثّ أكثرَ منه يُقطع قبل أن يملأ
+    /// القرصَ، والبصمةُ تُقاس بعده كما في المجلّد.
+    /// </remarks>
+    public async Task<string> StageFromChannelAsync(string manifestSource, string stagingDirectory,
+        CancellationToken ct = default)
+    {
+        if (!manifestSource.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            var folder = Path.GetDirectoryName(Path.GetFullPath(manifestSource))
+                ?? throw new AccountingException($"مصدرُ القناة بلا مجلّد: {manifestSource}");
+            return await StageAsync(manifestSource, folder, stagingDirectory, ct);
+        }
+
+        var manifest = await ReadVerifiedForStagingAsync(manifestSource, ct);
+        var packageUri = new Uri(new Uri(manifestSource), Uri.EscapeDataString(manifest.PackageFileName));
+        var (staging, target) = StagingPaths(stagingDirectory, manifest);
+
+        using var client = Transport is null ? new HttpClient() : new HttpClient(Transport, disposeHandler: false);
+        client.Timeout = TimeSpan.FromMinutes(30);
+
+        try
+        {
+            using var response = await client.GetAsync(packageUri, HttpCompletionOption.ResponseHeadersRead, ct);
+            if (!response.IsSuccessStatusCode)
+                throw new AccountingException(
+                    $"تعذّر تنزيلُ الحزمة — القناةُ ردّت {(int)response.StatusCode}.");
+
+            await using var input = await response.Content.ReadAsStreamAsync(ct);
+            await using (var output = File.Create(staging))
+            {
+                var chunk = new byte[81920];
+                long written = 0;
+                int read;
+                while ((read = await input.ReadAsync(chunk, ct)) > 0)
+                {
+                    written += read;
+                    if (written > manifest.PackageSizeBytes)
+                        throw new AccountingException(
+                            "الحزمةُ تجاوزت الحجمَ الموقَّع أثناء التنزيل — قُطعت ولم تُهيَّأ.");
+                    await output.WriteAsync(chunk.AsMemory(0, read), ct);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is AccountingException or HttpRequestException or TaskCanceledException or IOException)
+        {
+            if (File.Exists(staging)) File.Delete(staging);
+            throw ex as AccountingException ?? new AccountingException($"تعذّر تنزيلُ الحزمة — {ex.Message}");
+        }
+
+        return await FinishStagingAsync(staging, target, manifest, ct);
+    }
+
+    /// <summary>
+    /// يقرأ البيانَ ويتحقّق منه للتهيئة: التوقيع، <b>واسمُ الحزمة اسمُ ملفٍّ لا مسار</b>،
+    /// <b>والإصدارُ أحدثُ من المُثبَّت</b>.
+    /// </summary>
+    /// <remarks>
+    /// (ح-١٤١) <b>ورفضُ الإعادة كان في الفحص وحدَه</b>: التهيئةُ تقبل بياناً أقدمَ توقيعُه صحيح،
+    /// فتُنزَّل حزمةٌ فيها ثغرةٌ أُصلحت ويُدعى المالكُ إلى تشغيلها.
+    /// </remarks>
+    private async Task<UpdateManifest> ReadVerifiedForStagingAsync(string manifestSource, CancellationToken ct)
+    {
+        SignedUpdateManifest? signed;
+        try
+        {
+            signed = JsonSerializer.Deserialize<SignedUpdateManifest>(await ReadChannelAsync(manifestSource, ct));
+        }
+        catch (ChannelUnavailableException ex)
+        {
+            throw new AccountingException(ex.Message);
+        }
+        catch (JsonException ex)
+        {
+            throw new AccountingException($"بيانُ الإصدار غيرُ مقروء — {ex.Message}");
+        }
+
+        if (signed?.Manifest is null)
+            throw new AccountingException("بيانُ الإصدار فارغ.");
+
+        if (!Verify(signed))
+            throw new AccountingException(
+                "توقيعُ بيان الإصدار غيرُ صالح — ولا تُنزَّل حزمةٌ لا يُعرف ناشرُها.");
+
+        var name = signed.Manifest.PackageFileName;
+        if (string.IsNullOrWhiteSpace(name) || name != Path.GetFileName(name)
+            || name.Contains('/') || name.Contains('\\') || name is "." or "..")
+            throw new AccountingException($"اسمُ الحزمة في البيان ليس اسمَ ملفّ: «{name}».");
+
+        if (!System.Version.TryParse(signed.Manifest.Version, out var available)
+            || !System.Version.TryParse(InstalledVersion, out var current)
+            || available <= current)
+            throw new AccountingException(
+                $"الإصدارُ في البيان ({signed.Manifest.Version}) ليس أحدثَ من المُثبَّت ({InstalledVersion}) — لا يُهيَّأ.");
+
+        return signed.Manifest;
+    }
+
+    /// <summary>
+    /// ‏**ويُكتب إلى اسمٍ مؤقّتٍ ثمّ يُنقل** — فنقلٌ يُقطع لا يترك حزمةً ناقصةً بالاسم الصحيح،
+    /// **يُشغّلها المالكُ فتُتلف تثبيتَه**.
+    /// </summary>
+    private static (string Staging, string Target) StagingPaths(string stagingDirectory, UpdateManifest manifest)
+    {
+        Directory.CreateDirectory(stagingDirectory);
+        var target = Path.Combine(stagingDirectory, manifest.PackageFileName);
+        var staging = target + ".partial";
+        if (File.Exists(staging)) File.Delete(staging);
+        return (staging, target);
+    }
+
+    private static async Task<string> FinishStagingAsync(string staging, string target, UpdateManifest manifest,
+        CancellationToken ct)
+    {
         var actual = await HashAsync(staging, ct);
-        if (!string.Equals(actual, signed.Manifest.PackageSha256, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(actual, manifest.PackageSha256, StringComparison.OrdinalIgnoreCase))
         {
             File.Delete(staging);
             throw new AccountingException(
