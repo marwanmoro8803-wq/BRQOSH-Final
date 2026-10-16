@@ -37,7 +37,7 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 
 $repoRoot = Resolve-Path -LiteralPath (Split-Path -Parent $PSCommandPath) | Split-Path -Parent | Split-Path -Parent
-$exe = Join-Path $repoRoot "src\Brqosh.Desktop\bin\Debug\net9.0-windows\Brqosh.Desktop.exe"
+$exe = Join-Path $repoRoot "src\Brqosh.Desktop\bin\Debug\net10.0-windows\Brqosh.Desktop.exe"
 if (-not (Test-Path $exe)) { throw "لم يُبنَ التطبيق: $exe — شغّل dotnet build src/Brqosh.Desktop -c Debug أولاً." }
 
 $pwPath = Join-Path $env:APPDATA "BRQOSH\pg_password.txt"

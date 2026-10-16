@@ -151,8 +151,8 @@ internal static class Program
     {
         var results = new UiAuditResult();
         var desktopBin = Path.Combine(repoRoot, "src", "Brqosh.Desktop", "bin");
-        var exeDebug = Path.Combine(desktopBin, "Debug", "net9.0-windows", "Brqosh.Desktop.exe");
-        var exeRelease = Path.Combine(desktopBin, "Release", "net9.0-windows", "Brqosh.Desktop.exe");
+        var exeDebug = Path.Combine(desktopBin, "Debug", "net10.0-windows", "Brqosh.Desktop.exe");
+        var exeRelease = Path.Combine(desktopBin, "Release", "net10.0-windows", "Brqosh.Desktop.exe");
         var exePath = File.Exists(exeRelease) ? exeRelease : exeDebug;
 
         ProcessStartInfo psi;

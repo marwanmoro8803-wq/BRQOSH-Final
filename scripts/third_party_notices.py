@@ -25,7 +25,7 @@ import re
 import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DEFAULT_DEPS = os.path.join(REPO, "src", "Brqosh.Desktop", "bin", "Release", "net9.0-windows", "Brqosh.Desktop.deps.json")
+DEFAULT_DEPS = os.path.join(REPO, "src", "Brqosh.Desktop", "bin", "Release", "net10.0-windows", "Brqosh.Desktop.deps.json")
 SPDX_DIR = os.path.join(REPO, "licenses")
 RULE = "=" * 80
 THIN = "-" * 80

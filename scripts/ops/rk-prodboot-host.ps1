@@ -18,7 +18,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Resolve-Path -LiteralPath (Split-Path -Parent $PSCommandPath) | Split-Path -Parent | Split-Path -Parent
 $vendorKey = Join-Path $env:APPDATA "BRQOSH\vendor-signing\license-private.pem"
 if (-not (Test-Path $vendorKey)) { throw "لا مفتاحَ مورِّدٍ خاصّاً: $vendorKey" }
-$issuer = Join-Path $repoRoot "tools\LicenseIssuer\bin\Debug\net9.0\LicenseIssuer.exe"
+$issuer = Join-Path $repoRoot "tools\LicenseIssuer\bin\Debug\net10.0\LicenseIssuer.exe"
 if (-not (Test-Path $issuer)) {
     & dotnet build (Join-Path $repoRoot "tools\LicenseIssuer") -c Debug --nologo | Out-Null
     if (-not (Test-Path $issuer)) { throw "تعذّر بناءُ LicenseIssuer: $issuer" }

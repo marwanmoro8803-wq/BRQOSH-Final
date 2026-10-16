@@ -5,11 +5,11 @@
 .DESCRIPTION
     الترتيبُ مقصود: تُقاس بوّابةُ المُنصِّب **قبل** تنصيب .NET، لأنّ غيابَ الإطار هو
     بالضبط ما تحرسه — وهي T-07، مُعلَّقةٌ NOT TESTED منذ CEEF-234 بعبارة «لم يُثبَت
-    حيّاً على جهازٍ فعليٍّ بلا .NET 9».
+    حيّاً على جهازٍ فعليٍّ بلا .NET 10».
 
     المراحل:
-      1 NoDotnet   — msiexec على جهازٍ بلا .NET 9 ⟵ **يُتوقَّع رفضٌ برسالتنا لا برسالة ويندوز**
-      2 Dotnet     — تنصيبُ .NET 9 Desktop Runtime
+      1 NoDotnet   — msiexec على جهازٍ بلا .NET 10 ⟵ **يُتوقَّع رفضٌ برسالتنا لا برسالة ويندوز**
+      2 Dotnet     — تنصيبُ .NET 10 Desktop Runtime
       3 Install    — تنصيبُ MSI ⟵ التحقّقُ من BRQOSH_ENV ومن علامة البيئة
       4 Postgres   — تنصيبُ PostgreSQL **بـssl=on** ⟵ فيُقاس اتصالٌ مشفَّرٌ فعليّ
       5 All        — الأربعُ بالترتيب
@@ -104,14 +104,14 @@ function Invoke-Stage {
 function Test-DotnetDesktop {
     $dir = "$env:ProgramFiles\dotnet\shared\Microsoft.WindowsDesktop.App"
     return (Test-Path $dir) -and @(Get-ChildItem $dir -Directory -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -like "9.*" }).Count -gt 0
+        Where-Object { $_.Name -like "10.*" }).Count -gt 0
 }
 
-# ── ١) بوّابةُ المُنصِّب على جهازٍ بلا .NET 9 (T-07) ──────────────────────────
+# ── ١) بوّابةُ المُنصِّب على جهازٍ بلا .NET 10 (T-07) ──────────────────────────
 function Invoke-NoDotnetGate {
-    Write-Host "=== ١) المُنصِّب على جهازٍ بلا .NET 9 ==="
+    Write-Host "=== ١) المُنصِّب على جهازٍ بلا .NET 10 ==="
     $present = Test-DotnetDesktop
-    Add-Finding -Check "الجهازُ بلا .NET 9 Desktop Runtime قبل القياس" -Expected "غائب" `
+    Add-Finding -Check "الجهازُ بلا .NET 10 Desktop Runtime قبل القياس" -Expected "غائب" `
         -Actual $(if ($present) { "موجود — القياسُ لا يصلح" } else { "غائب" }) -Ok (-not $present)
     if ($present) { return }
 
@@ -122,9 +122,9 @@ function Invoke-NoDotnetGate {
 
     # ‏الرفضُ **برسالتنا** لا برسالة ويندوز — وهذا ما وعد به T-07.
     $ourMessage = $logText -match "\.NET Desktop Runtime 9" -or $logText -match "dotnet\.microsoft\.com"
-    Add-Finding -Check "(T-07) المُنصِّب يرفض التثبيت بلا .NET 9" -Expected "خروجٌ غيرُ صفريّ" `
+    Add-Finding -Check "(T-07) المُنصِّب يرفض التثبيت بلا .NET 10" -Expected "خروجٌ غيرُ صفريّ" `
         -Actual "exit=$($p.ExitCode)" -Ok ($p.ExitCode -ne 0)
-    Add-Finding -Check "(T-07) الرسالةُ رسالتُنا لا رسالةُ ويندوز" -Expected "تسمّي .NET 9 ورابطَ التنزيل" `
+    Add-Finding -Check "(T-07) الرسالةُ رسالتُنا لا رسالةُ ويندوز" -Expected "تسمّي .NET 10 ورابطَ التنزيل" `
         -Actual $(if ($ourMessage) { "حاضرة في السجلّ" } else { "غائبة" }) -Ok $ourMessage
     Copy-Item $log (Join-Path $share "msi-nodotnet.log") -Force -ErrorAction SilentlyContinue
 
@@ -133,22 +133,22 @@ function Invoke-NoDotnetGate {
         -Actual $(if ($installed) { "نُصِّب رغم الرفض" } else { "لم يُنصَّب" }) -Ok (-not $installed)
 }
 
-# ── ٢) .NET 9 Desktop Runtime ────────────────────────────────────────────────
+# ── ٢) .NET 10 Desktop Runtime ────────────────────────────────────────────────
 function Install-DotnetDesktop {
-    Write-Host "=== ٢) .NET 9 Desktop Runtime ==="
-    if (Test-DotnetDesktop) { Add-Finding "‏.NET 9 حاضر" "موجود" "كان موجوداً" $true; return }
+    Write-Host "=== ٢) .NET 10 Desktop Runtime ==="
+    if (Test-DotnetDesktop) { Add-Finding "‏.NET 10 حاضر" "موجود" "كان موجوداً" $true; return }
     # ‏النسخةُ المُهيّأةُ في المشترك أوّلاً — تنزيلٌ من داخل الضيف سببُ إخفاقٍ كاملٍ إن
     # ‏تعثّرت الشبكة في منتصف المراحل، والملفُّ نفسُه من المصدر الرسميّ نفسِه.
-    $exe = Join-Path $work "windowsdesktop-runtime-9-x64.exe"
-    $staged = Join-Path $share "windowsdesktop-runtime-9-x64.exe"
+    $exe = Join-Path $work "windowsdesktop-runtime-10-x64.exe"
+    $staged = Join-Path $share "windowsdesktop-runtime-10-x64.exe"
     if ((Test-Path $staged) -and -not (Test-Path $exe)) { Copy-Item $staged $exe -Force }
     if (-not (Test-Path $exe)) {
-        Invoke-WebRequest -Uri "https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe" -OutFile $exe -UseBasicParsing
+        Invoke-WebRequest -Uri "https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe" -OutFile $exe -UseBasicParsing
     }
     $p = Start-Process $exe -Wait -PassThru -ArgumentList "/install", "/quiet", "/norestart"
-    Add-Finding -Check "تنصيبُ .NET 9 Desktop Runtime" -Expected "exit=0" -Actual "exit=$($p.ExitCode)" `
+    Add-Finding -Check "تنصيبُ .NET 10 Desktop Runtime" -Expected "exit=0" -Actual "exit=$($p.ExitCode)" `
         -Ok ($p.ExitCode -eq 0 -or $p.ExitCode -eq 3010)
-    Add-Finding -Check "‏.NET 9 صار حاضراً" -Expected "موجود" `
+    Add-Finding -Check "‏.NET 10 صار حاضراً" -Expected "موجود" `
         -Actual $(if (Test-DotnetDesktop) { "موجود" } else { "غائب" }) -Ok (Test-DotnetDesktop)
 }
 
@@ -159,7 +159,7 @@ function Install-Brqosh {
     $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList @(
         "/i", "`"$(Join-Path $share 'BRQOSH-Setup.msi')`"", "/qn", "/l*v", "`"$log`"")
     Copy-Item $log (Join-Path $share "msi-install.log") -Force -ErrorAction SilentlyContinue
-    Add-Finding -Check "تنصيبُ MSI بعد توفّر .NET 9" -Expected "exit=0" -Actual "exit=$($p.ExitCode)" `
+    Add-Finding -Check "تنصيبُ MSI بعد توفّر .NET 10" -Expected "exit=0" -Actual "exit=$($p.ExitCode)" `
         -Ok ($p.ExitCode -eq 0)
 
     $exe = "$env:ProgramFiles\BRQOSH\Brqosh.Desktop.exe"

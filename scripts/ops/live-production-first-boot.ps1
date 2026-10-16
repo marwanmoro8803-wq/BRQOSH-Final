@@ -20,7 +20,7 @@
 
 .NOTES
     **وحدُّه مُعلَنٌ صراحةً:** هذا **ليس ر-ك**. ر-ك تشترط جهازاً نظيفاً يُنصَّب عليه
-    dist\BRQOSH-Setup.msi ولا يحمل .NET 9 — فتُقاس معه بوّابةُ المُنصِّب. وهذا يقيس
+    dist\BRQOSH-Setup.msi ولا يحمل .NET 10 — فتُقاس معه بوّابةُ المُنصِّب. وهذا يقيس
     **ما بعد التنصيب**: مسارَ المستخدم من أوّل نافذةٍ إلى الصدفة في وضع الإنتاج.
     ما لا يقيسه: المُنصِّب · LaunchCondition لـ.NET · جهازٌ بلا إطار · اتصالٌ مشفَّرٌ فعليّ.
 #>
@@ -37,7 +37,7 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 
 $repoRoot = Resolve-Path -LiteralPath (Split-Path -Parent $PSCommandPath) | Split-Path -Parent | Split-Path -Parent
-$exe = Join-Path $repoRoot "src\Brqosh.Desktop\bin\Debug\net9.0-windows\Brqosh.Desktop.exe"
+$exe = Join-Path $repoRoot "src\Brqosh.Desktop\bin\Debug\net10.0-windows\Brqosh.Desktop.exe"
 if (-not (Test-Path $exe)) { throw "لم يُبنَ التطبيق: $exe — شغّل dotnet build src/Brqosh.Desktop -c Debug أولاً." }
 
 $pwPath = Join-Path $env:APPDATA "BRQOSH\pg_password.txt"
@@ -251,7 +251,7 @@ if ([string]::IsNullOrWhiteSpace($adminPass)) {
 # ‏**وبسياسة كلمة المرور نفسِها** — مرآةٌ لـ`src/Brqosh.Infrastructure/Security/PasswordPolicy.cs`.
 # ‏فكلمةٌ يرفضها المعالجُ كانت تمرّ هنا ثمّ تُرفض **بعد** إنشاء القاعدة وتشغيل التطبيق، فتضيع
 # ‏التشغيلةُ (كشفته المراجعةُ الخصميّةُ قبل الإيداع). **ولماذا مرآةٌ لا الأصل**: شقيقُ هذا السكربت
-# ‏يُشغَّل بـWindows PowerShell 5.1 داخل الضيف، والأصلُ تجميعةُ net9.0 لا تُحمَّل هناك — والفحصُ
+# ‏يُشغَّل بـWindows PowerShell 5.1 داخل الضيف، والأصلُ تجميعةُ net10.0 لا تُحمَّل هناك — والفحصُ
 # ‏واحدٌ في الاثنين. والمرآةُ قد تتأخّر عن الأصل إن تغيّر؛ **وأسوأُ ذلك تشغيلةٌ ضائعةٌ برسالةٍ
 # ‏صريحة**، وهو ما كان يقع قبل هذا الفحص أصلاً.
 $policyBreaks = @(
@@ -372,7 +372,7 @@ try {
     # ‏ترخيصٌ يُوقّع الآن بالمفتاح الخاصّ الحقيقيّ — ويُتحقَّق منه بالمفتاح **المُضمَّن**.
     # ‏عبر الـexe مباشرةً: `dotnet run … -- sign …` **يبتلع الوسائطَ** فتُطبع الاستعمالةُ بدل الترخيص،
     # ‏وقد أجهض ذلك أوّلَ تشغيلةٍ لهذا المسبار.
-    $issuer = Join-Path $repoRoot "tools/LicenseIssuer/bin/Debug/net9.0/LicenseIssuer.exe"
+    $issuer = Join-Path $repoRoot "tools/LicenseIssuer/bin/Debug/net10.0/LicenseIssuer.exe"
     if (-not (Test-Path $issuer)) {
         & dotnet build (Join-Path $repoRoot "tools/LicenseIssuer") -c Debug --nologo | Out-Null
     }
@@ -496,7 +496,7 @@ try {
         $global:LASTEXITCODE = 1
         exit 1
     } else {
-        Write-Host "=== PASS — وهذا ليس ر-ك: لم يُقَس المُنصِّبُ ولا جهازٌ بلا .NET 9 ==="
+        Write-Host "=== PASS — وهذا ليس ر-ك: لم يُقَس المُنصِّبُ ولا جهازٌ بلا .NET 10 ==="
         exit 0
     }
 }

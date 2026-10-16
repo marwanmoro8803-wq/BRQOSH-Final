@@ -40,7 +40,7 @@ try {
         exit $LASTEXITCODE
     }
 
-    $desktopExe = Get-ChildItem -Path "src\CognitiveQa.Desktop\bin\Release\net9.0-windows\CognitiveQa.Desktop.exe" -ErrorAction SilentlyContinue |
+    $desktopExe = Get-ChildItem -Path "src\CognitiveQa.Desktop\bin\Release\net10.0-windows\CognitiveQa.Desktop.exe" -ErrorAction SilentlyContinue |
         Select-Object -First 1 -ExpandProperty FullName
 
     if (-not $desktopExe) {

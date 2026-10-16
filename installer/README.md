@@ -9,7 +9,7 @@
 | المكوّن | الحد الأدنى |
 |---------|-------------|
 | نظام التشغيل | Windows 10/11 x64 |
-| بيئة التشغيل | [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0) |
+| بيئة التشغيل | [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) |
 | قاعدة البيانات (إنتاج) | **PostgreSQL 15+** (يُفضّل 16+) |
 | قاعدة البيانات (تطوير) | SQLite تلقائي أو PostgreSQL |
 | قرص | ≥ 2 GB حر للنشرات والنسخ |
@@ -44,7 +44,7 @@ dotnet tool install --global wix --version 5.0.2
 
 **على جهاز نظيف (Pilot):**
 
-1. ثبّت .NET 9 Desktop Runtime إن لزم (المُنصِّب يرفض التثبيت بدونه)  
+1. ثبّت .NET 10 Desktop Runtime إن لزم (المُنصِّب يرفض التثبيت بدونه)  
 2. جهّز خادم PostgreSQL وقاعدةً ودورَ تطبيقٍ **وفعّل `ssl=on`** كما في [`docs/postgres-production.md §3`](../docs/postgres-production.md) — خطوةُ ④ تشترط TLS افتراضاً  
 3. ثبّت `BRQOSH-Setup.msi` — يضبط `BRQOSH_ENV=production` بنطاق الجهاز ويضع علامة `brqosh.environment` بجوار الملف التنفيذي  
 4. شغّل BRQOSH → في معالج التهيئة أدخل بيانات الاتصال بالقاعدة (القسم ④) واضغط **اختبار الاتصال** ثم **ابدأ العمل الآن** — يُكتب `%APPDATA%\BRQOSH\database.json` محميّاً بـDPAPI تلقائياً  
