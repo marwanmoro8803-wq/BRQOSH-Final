@@ -30,7 +30,7 @@
 | ◐ | **ضاق ولم يُغلق** — والفرقُ مذكورٌ في السطر، لا مسكوتٌ عنه |
 | ☐ | مفتوح |
 
-**والمجموعُ المُغلَق من هذا الحصر:** 78 بنداً ✅ و24 ◐.
+**والمجموعُ المُغلَق من هذا الحصر:** 79 بنداً ✅ و23 ◐.
 
 > **وبندٌ واحدٌ وُسِم متأخّراً ويُسجّل**: `tax-zatca#7` أُغلِق فعلاً بـح-٣٥
 > وح-٣٦ **ولم يُوسَم حينها** — إذ سمّاه التدقيقُ في قسمٍ ثالثٍ بلفظٍ آخر.
@@ -43,7 +43,7 @@
 > **ووسمٌ متأخّرٌ ثانٍ**: الجزءُ الثالثُ من `ui-ux-i18n-printing#4` — المستخلصُ «إشعار دائن» في شاشة
 > الهيئة — **أغلقه ح-١٥ (`0aa2510`) ولم يُوسَم**، كما وقع لـ`tax-zatca#7`؛ وأغلق ح-٥٧ الجزأين الآخرَين.
 
-**ومئةٌ وثمانيةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٣٨) — **بعضُها خارج هذا الحصر**،
+**ومئةٌ وتسعةٌ وثلاثون إغلاقاً في الحملة كلِّها** (ح-١…ح-١٣٩) — **بعضُها خارج هذا الحصر**،
 إذ جاء من تدقيق S0 السابق، **أو كشفه العملُ نفسُه** — ومنه ح-٦٧: اختبارُ ختمٍ يسقط على توقيعٍ صحيحٍ مرّةً في ٢٥٦ تشغيلاً، وح-٧٤: دليلُ حساسيّة البوّابات بلا صفٍّ لحالةٍ قائمةٍ منذ ح-٦٣ — فلا بندَ لهما هنا.
 
 ---
@@ -219,7 +219,7 @@
 - ✅ **`installer-deployment-ops#3`** · <sub>بلا تحقّق · في اليد · متوسّط · دعوى</sub><br>Code-signing hook only accepts a PFX file, which CAs no longer issue; 'hook ready, waiting for certificate' is false — ح-١٢٨ `c0c6dad` — **الخطّافُ يقبل الشهادةَ كما تُصدَر اليوم**: `installer/signing.ps1` — بصمةٌ في مخزن ويندوز (`/sha1`، والمفتاحُ على رمزٍ أو HSM) أو PFX كما كان، والتعارضُ والبصمةُ غيرُ الصالحة وPFX الغائب أخطاءٌ تُسقط البناء، وكلمةُ المرور لا تُطبع؛ ويقيسه اختبارٌ يُشغّل السكربتَ نفسَه؛ **فأُغلق البند**؛ **وحدُّه**: التوقيعُ بشهادةٍ حقيقيّةٍ لم يُقَس (`installer-deployment-ops#4` خارجيّ)
 - ☐ **`installer-deployment-ops#4`** · <sub>بلا تحقّق · خارج المستودع · متوسّط · خارجيّ</sub><br>Package and payload are unsigned today (certificate is a third-party dependency)
 - ✅ **`installer-deployment-ops#5`** · <sub>بلا تحقّق · في اليد · صغير · دعوى</sub><br>.NET launch condition passes on any Desktop runtime version; the '9 or newer' message is also wrong for .NET 10 — ح-٦٢ `21708ef` — **ملفٌّ بإصدار 9 تحت مجلّدات الإصدارات** لا المجلّدُ الأب؛ **و`FileSearch` بلا `Id`** — بـ`Id` يبنيه WiX صامتاً ولا يُوجد أبداً فيُرفض كلُّ جهاز؛ **مقيسٌ بتشغيل `AppSearch` بلا تثبيت**: المشحونةُ ⟵ المجلّدُ الأب، والمُصلَحةُ ⟵ 9.0.17 (ومسبارٌ: ٦ ⟵ 6.0.36 ضابطٌ موجب · ٨ و١٠ ⟵ لا شيء)؛ **والتنصيبُ الحيُّ على جهازٍ بلا 9 يبقى NOT TESTED (VM)**
-- ◐ **`installer-deployment-ops#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>.NET 9 runtime support ends about 8 weeks after launch, and no document plans for it — ح-١٢٤ `dd4eb1d` — **الخطّةُ مكتوبة** (`docs/release-readiness/DOTNET10-MIGRATION.md`): **نهايةُ دعم .NET 9 في 10 نوفمبر 2026** من المصدر الرسميّ، والنطاقُ مقيسٌ (٢٩ مشروعاً · تسعُ عائلاتِ حزم · حدُّ المُنصِّب · CI)، والتغييراتُ الكاسرةُ التي تمسّنا (ترجمةُ `.Contains()` في EF 10، والهجراتُ بلا معاملةٍ واحدة)، وخطواتٌ مرتّبةٌ مقيسةٌ وتراجع؛ **ويبقى — ولذا ◐**: الترحيلُ نفسُه يشترط تثبيتَ SDK لـ.NET 10 — قرارُ المالك، **والموعدُ يضغط**
+- ✅ **`installer-deployment-ops#6`** · <sub>بلا تحقّق · في اليد · كبير · خطر</sub><br>.NET 9 runtime support ends about 8 weeks after launch, and no document plans for it — ح-١٢٤ `dd4eb1d` — **الخطّةُ مكتوبة** (`docs/release-readiness/DOTNET10-MIGRATION.md`): **نهايةُ دعم .NET 9 في 10 نوفمبر 2026** من المصدر الرسميّ، والنطاقُ مقيسٌ (٢٩ مشروعاً · تسعُ عائلاتِ حزم · حدُّ المُنصِّب · CI)، والتغييراتُ الكاسرةُ التي تمسّنا (ترجمةُ `.Contains()` في EF 10، والهجراتُ بلا معاملةٍ واحدة)، وخطواتٌ مرتّبةٌ مقيسةٌ وتراجع؛ **والترحيلُ نفسُه** ح-١٣٩ `a910a01` (بإذن المالك 2026-10-15، ودُمج فوق ح-١٣٨ في `f62d2c1`): المشاريعُ التسعةُ والعشرون على net10.0، والحزمُ 10.0.x مثبّتةً، وحدُّ المُنصِّب `DOTNETDESKTOP10`، وCI بـ10.0.x؛ **قِيس الدمجُ كاملاً على SDK 10.0.402** — Domain ٢٤٨ وApi ١٢٦ وDesktop ٤٣٧ وApplication ٢٣١٥ (منها PostgreSQL حقيقيّ)، صفرُ متخطًّى، والتغطيةُ 65.88%، ولا حزمةَ مُصابة؛ **والتنصيبُ الحيُّ على آلةٍ نظيفة (ر-ك) يبقى NOT TESTED (VM)** كما في `#5`
 - ✅ **`installer-deployment-ops#7`** · <sub>بلا تحقّق · في اليد · متوسّط · عطل</sub><br>Licence and password bypass: the environment can be downgraded to development, which enables BRQOSH_UITEST auto-admin login and the 30-day trial — ح-٧٥ `45db5b2` — **الثنائيّةُ المشحونة لا تعرف غيرَ الإنتاج**: `publish.ps1` وحدَه يبني بـ`-p:BrqoshShipped=true` فـ`DecideForBuild` يُرجع إنتاجاً بلا قراءة — **قِيس على الثنائيّة المبنيّة**: `BRQOSH_ENV=development` ⟵ قبلُ `Development`، وبعدُ `Production`؛ فيسقط معاً `BRQOSH_UITEST` والفترةُ التجريبيّة؛ **ويسري على الحزم المبنيّة بعده** (حزمةُ `dist` 1.0.0 قبله)
 - ✅ **`installer-deployment-ops#8`** · <sub>بلا تحقّق · في اليد · متوسّط · ناقص</sub><br>No licence-expiry warning, and expiry locks the owner out of all books with no read-only mode — ح-١٢٠ `652dcf9` — انظر `commercial-readiness#6`: إنذارٌ عند الإقلاع قبل ثلاثين يوماً، والمنتهي الأصيلُ يفتح الدفاترَ للقراءة
 - ☐ **`installer-deployment-ops#9`** · <sub>بلا تحقّق · في اليد · كبير · ناقص</sub><br>No supported multi-workstation or multi-user deployment: each Windows account re-runs the setup wizard, which silently adopts whatever company is in the database
