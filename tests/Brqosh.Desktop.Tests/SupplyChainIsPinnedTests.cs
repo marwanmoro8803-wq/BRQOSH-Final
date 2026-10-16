@@ -48,7 +48,8 @@ public class SupplyChainIsPinnedTests
         var files = WorkflowFiles();
 
         // ‏شاهدُ ضبطٍ موجب: لو عمي المسحُ عن الملفّات لَمرّ التوكيدُ على شجرةٍ معطوبة.
-        Assert.Equal(2, files.Count);
+        // ‏(ح-١٤٢) ‏ثلاثةٌ منذ `release.yml` — سيرُ الإصدار مثبَّتُ الإجراءات كغيره.
+        Assert.Equal(3, files.Count);
 
         var offenders = files
             .SelectMany(f => File.ReadAllLines(f)
@@ -63,7 +64,8 @@ public class SupplyChainIsPinnedTests
 
         // ‏وشاهدٌ ثانٍ: العددُ المقيس. فمسحٌ يجد صفرَ أسطرٍ يمرّ خضراءَ بلا أن يفحص شيئاً.
         var total = files.Sum(f => File.ReadAllLines(f).Count(l => AnyUse.IsMatch(l)));
-        Assert.Equal(7, total);
+        // ‏(ح-١٤٢) ‏عشرةٌ: سبعةٌ قبلُ، وثلاثةٌ في `release.yml` (checkout · setup-dotnet · upload-artifact).
+        Assert.Equal(10, total);
     }
 
     /// <summary>

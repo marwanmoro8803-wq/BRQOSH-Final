@@ -46,6 +46,26 @@ try
             return 0;
         }
 
+        // ‏(ح-١٤٢) **القناةُ المنشورةُ تُقرأ كما يقرؤها العميل** — بالمرساة المُضمَّنة لا ببديلٍ من البيئة.
+        case "verify" when args.Length >= 3:
+        {
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BRQOSH_UPDATE_PUBLIC_KEY_PEM")))
+            {
+                Console.Error.WriteLine("BRQOSH_UPDATE_PUBLIC_KEY_PEM مضبوط — والتحقّقُ يجب أن يكون بالمرساة المُضمَّنة.");
+                return 3;
+            }
+
+            var result = await new UpdateCheckService().CheckAsync(args[1]);
+            Console.WriteLine($"{result.Status} · {result.AvailableVersion} · المرساة {UpdateCheckService.TrustAnchorFingerprint()[..16]}");
+            if (result.Status != UpdateStatus.UpdateAvailable || result.AvailableVersion != args[2])
+            {
+                Console.Error.WriteLine(result.Failure ?? $"المتوقَّع {args[2]} «يوجد تحديث».");
+                return 3;
+            }
+
+            return 0;
+        }
+
         case "anchor":
             Console.WriteLine(UpdateCheckService.TrustAnchorFingerprint());
             return 0;
@@ -71,6 +91,8 @@ static int PrintUsage()
         publish <package.msi> <version> <update-private.pem> <channelDir> [--notes "…"] [--date yyyy-MM-dd]
                                      يحسب البصمةَ والحجم، يوقّع، يكتب manifest.json ويتحقّق منه؛
                                      ويرفض مفتاحاً لا يطابق مرساةَ التحديث في هذا البناء.
+        verify <manifest.json> <version>
+                                     يقرأ القناةَ كما يقرؤها العميل بالمرساة المُضمَّنة.
         anchor                     — بصمةُ مرساة التحديث التي يثق بها هذا البناء.
         """);
     return 1;
