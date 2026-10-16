@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Brqosh.Domain.Accounting;
-using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Operations;
 
 namespace Brqosh.Application.Tests.Operations;
@@ -32,12 +31,12 @@ public class UpdateChannelTests : IDisposable
         Directory.CreateDirectory(_root);
 
         // ‏مفتاحُ الناشر — يُستبدَل في الاختبارات كما يفعل الترخيص.
-        RsaLicenseValidator.PublicKeyPemOverride = _publisher.ExportSubjectPublicKeyInfoPem();
+        UpdateCheckService.PublicKeyPemOverride = _publisher.ExportSubjectPublicKeyInfoPem();
     }
 
     public void Dispose()
     {
-        RsaLicenseValidator.PublicKeyPemOverride = null;
+        UpdateCheckService.PublicKeyPemOverride = null;
         _publisher.Dispose();
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { }
         GC.SuppressFinalize(this);
@@ -127,7 +126,7 @@ public class UpdateChannelTests : IDisposable
     public async Task WithoutAPublisherKey_NothingIsTrusted()
     {
         var path = WriteManifest(Version("999.0.0"), signed: true);
-        RsaLicenseValidator.PublicKeyPemOverride = null;
+        UpdateCheckService.PublicKeyPemOverride = null;
 
         var result = await new UpdateCheckService().CheckAsync(path);
 

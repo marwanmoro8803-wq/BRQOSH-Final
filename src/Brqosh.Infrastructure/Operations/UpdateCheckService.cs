@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Brqosh.Domain.Accounting;
-using Brqosh.Infrastructure.Licensing;
 
 namespace Brqosh.Infrastructure.Operations;
 
@@ -311,9 +310,23 @@ public sealed class UpdateCheckService
         JsonSerializer.Serialize(
             new SignedUpdateManifest(manifest, Sign(manifest, privateKeyPem)), Json);
 
-    private static bool Verify(SignedUpdateManifest signed)
+    /// <summary>
+    /// للاختبارات فقط — يستبدل مرساةَ التحديث المُضمَّنة. <c>internal</c>: لا يبلغه مستخدم.
+    /// </summary>
+    /// <remarks>
+    /// (ح-١٤٠) <b>وهو غيرُ تجاوز الترخيص</b>: كانت القناةُ تتحقّق بمفتاح الترخيص، فكان
+    /// اختبارُها يضبط تجاوزَ الترخيص — <b>وذلك عينُ الخلط الذي أُزيل</b>.
+    /// </remarks>
+    internal static string? PublicKeyPemOverride { get; set; }
+
+    /// <summary>بصمةُ مرساة التحديث الفعّالة — للناشر والدعم.</summary>
+    public static string TrustAnchorFingerprint() =>
+        EmbeddedUpdateKeys.Fingerprint(EmbeddedUpdateKeys.ResolvePublicKeyPem());
+
+    internal static bool Verify(SignedUpdateManifest signed)
     {
-        var publicKeyPem = EmbeddedLicenseKeys.ResolvePublicKeyPem();
+        // ‏(ح-١٤٠) **مرساةُ التحديث لا مرساةُ الترخيص** — بيانٌ وقّعه مفتاحُ الترخيص يُرفض.
+        var publicKeyPem = EmbeddedUpdateKeys.ResolvePublicKeyPem();
 
         // ‏**ولا مفتاحَ يعني لا ثقة** — لا «تخطّي التحقّق». وقناةٌ تُصدّق بلا مفتاحٍ
         // ‏تُصدّق كلَّ شيء.
@@ -341,11 +354,16 @@ public sealed class UpdateCheckService
     /// <remarks>
     /// <b>ولا تُوقَّع صورةُ JSON</b>: تنسيقُها يتغيّر بمسافةٍ أو ترتيبِ حقل، <b>فيُبطل
     /// توقيعاً صحيحاً</b>. والصورةُ هنا حقولٌ بترتيبٍ ثابتٍ وفاصلٍ لا يرد في قيمها.
+    /// <para>(ح-١٤٠) <b>والملاحظاتُ داخلَ التوقيع</b>: كانت خارجَه، وهي النصُّ الوحيدُ الذي
+    /// يُعرض للمالك من البيان — فمن يملك القناةَ يكتب فيه ما شاء («اتّصل بهذا الرقم»، «عطّل
+    /// مضادَّ الفيروسات») تحت اسم تحديثٍ توقيعُه صحيح. ولا بيانَ منشوراً قبل الناشر، فلا
+    /// شيءَ صحيحٌ يبطل بإدخالها.</para>
     /// </remarks>
     private static byte[] Canonical(UpdateManifest m) =>
         Encoding.UTF8.GetBytes(string.Join('\u001F',
             m.Version, m.ReleaseDate, m.PackageFileName,
-            m.PackageSha256, m.PackageSizeBytes.ToString()));
+            m.PackageSha256, m.PackageSizeBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            m.Notes ?? ""));
 
     private static async Task<string> HashAsync(string path, CancellationToken ct)
     {

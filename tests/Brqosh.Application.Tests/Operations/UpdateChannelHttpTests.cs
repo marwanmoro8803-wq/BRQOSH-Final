@@ -1,7 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Operations;
 
 namespace Brqosh.Application.Tests.Operations;
@@ -34,11 +33,11 @@ public class UpdateChannelHttpTests : IDisposable
     private const string Endpoint = "https://updates.example.test/brqosh/update.json";
 
     public UpdateChannelHttpTests() =>
-        RsaLicenseValidator.PublicKeyPemOverride = _publisher.ExportSubjectPublicKeyInfoPem();
+        UpdateCheckService.PublicKeyPemOverride = _publisher.ExportSubjectPublicKeyInfoPem();
 
     public void Dispose()
     {
-        RsaLicenseValidator.PublicKeyPemOverride = null;
+        UpdateCheckService.PublicKeyPemOverride = null;
         _publisher.Dispose();
         GC.SuppressFinalize(this);
     }
