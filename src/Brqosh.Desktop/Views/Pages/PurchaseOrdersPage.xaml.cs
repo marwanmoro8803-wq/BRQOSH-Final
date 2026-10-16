@@ -109,12 +109,12 @@ public partial class PurchaseOrdersPage : UserControl
 
     private static string StatusLabel(PurchaseOrderStatus status) => status switch
     {
-        PurchaseOrderStatus.Draft => "مسودة",
-        PurchaseOrderStatus.Submitted => "مُرسَل",
-        PurchaseOrderStatus.Approved => "معتمد",
-        PurchaseOrderStatus.Rejected => "مرفوض",
-        PurchaseOrderStatus.Cancelled => "ملغاة",
-        PurchaseOrderStatus.Fulfilled => "مُستكمل",
+        PurchaseOrderStatus.Draft => LocaleManager.T("مسودة", "Draft"),
+        PurchaseOrderStatus.Submitted => LocaleManager.T("مُرسَل", "Submitted"),
+        PurchaseOrderStatus.Approved => LocaleManager.T("معتمد", "Approved"),
+        PurchaseOrderStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
+        PurchaseOrderStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
+        PurchaseOrderStatus.Fulfilled => LocaleManager.T("مُستكمل", "Fulfilled"),
         _ => status.ToString(),
     };
 
@@ -123,12 +123,12 @@ public partial class PurchaseOrdersPage : UserControl
         PurchaseOrderStatus.Draft => "—",
         PurchaseOrderStatus.Submitted => wf?.CurrentRequiredSlot(PurchaseOrderChain) switch
         {
-            WorkflowApproverSlot.Manager => "بانتظار المدير",
-            WorkflowApproverSlot.Finance => "بانتظار المالية",
+            WorkflowApproverSlot.Manager => LocaleManager.T("بانتظار المدير", "Awaiting manager"),
+            WorkflowApproverSlot.Finance => LocaleManager.T("بانتظار المالية", "Awaiting finance"),
             _ => wf?.Status == WorkflowInstanceStatus.Approved ? "معتمد" : "مُرسَل",
         },
-        PurchaseOrderStatus.Approved => "جاهز للتنفيذ",
-        PurchaseOrderStatus.Rejected => "مرفوض",
+        PurchaseOrderStatus.Approved => LocaleManager.T("جاهز للتنفيذ", "Ready to fulfil"),
+        PurchaseOrderStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
         _ => "—",
     };
 

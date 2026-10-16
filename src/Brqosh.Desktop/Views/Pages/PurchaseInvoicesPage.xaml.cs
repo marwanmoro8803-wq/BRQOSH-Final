@@ -60,9 +60,9 @@ public partial class PurchaseInvoicesPage : UserControl
             i.VatDeductible ? "قابل للخصم" : "غير قابل",
             i.Status switch
             {
-                PurchaseInvoiceStatus.Posted => "مرحّلة",
-                PurchaseInvoiceStatus.Cancelled => "ملغاة",
-                _ => "مسودة",
+                PurchaseInvoiceStatus.Posted => LocaleManager.T("مرحّلة", "Posted"),
+                PurchaseInvoiceStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
+                _ => LocaleManager.T("مسودة", "Draft"),
             }, i.Status, i.JournalEntryId)).ToList();
         InvoicesGrid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(InvoicesGrid, rows.Count);

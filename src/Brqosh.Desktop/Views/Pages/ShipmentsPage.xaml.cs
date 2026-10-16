@@ -179,11 +179,11 @@ public partial class ShipmentsPage : UserControl
 
     private static string StatusText(ShipmentStatus status) => status switch
     {
-        ShipmentStatus.Created => "منشأة",
-        ShipmentStatus.InTransit => "في الطريق",
-        ShipmentStatus.Delivered => "سُلّمت",
-        ShipmentStatus.Returned => "مرتجعة",
-        ShipmentStatus.Cancelled => "ملغاة",
+        ShipmentStatus.Created => LocaleManager.T("منشأة", "Created"),
+        ShipmentStatus.InTransit => LocaleManager.T("في الطريق", "In transit"),
+        ShipmentStatus.Delivered => LocaleManager.T("سُلّمت", "Delivered"),
+        ShipmentStatus.Returned => LocaleManager.T("مرتجعة", "Returned"),
+        ShipmentStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
         _ => status.ToString(),
     };
 

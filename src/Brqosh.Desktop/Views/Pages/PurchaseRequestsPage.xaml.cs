@@ -86,10 +86,10 @@ public partial class PurchaseRequestsPage : UserControl
 
     private static string StatusLabel(PurchaseRequestStatus status) => status switch
     {
-        PurchaseRequestStatus.Draft => "مسودة",
-        PurchaseRequestStatus.Submitted => "مُرسَل",
-        PurchaseRequestStatus.Approved => "معتمد",
-        PurchaseRequestStatus.Rejected => "مرفوض",
+        PurchaseRequestStatus.Draft => LocaleManager.T("مسودة", "Draft"),
+        PurchaseRequestStatus.Submitted => LocaleManager.T("مُرسَل", "Submitted"),
+        PurchaseRequestStatus.Approved => LocaleManager.T("معتمد", "Approved"),
+        PurchaseRequestStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
         PurchaseRequestStatus.ConvertedToPo => "→ PO",
         _ => status.ToString(),
     };
@@ -99,13 +99,13 @@ public partial class PurchaseRequestsPage : UserControl
         PurchaseRequestStatus.Draft => "—",
         PurchaseRequestStatus.Submitted => wf?.CurrentRequiredSlot(PurchaseChain) switch
         {
-            WorkflowApproverSlot.Manager => "بانتظار المدير",
-            WorkflowApproverSlot.Finance => "بانتظار المالية",
+            WorkflowApproverSlot.Manager => LocaleManager.T("بانتظار المدير", "Awaiting manager"),
+            WorkflowApproverSlot.Finance => LocaleManager.T("بانتظار المالية", "Awaiting finance"),
             _ => wf?.Status == WorkflowInstanceStatus.Approved ? "مكتمل" : "مُرسَل",
         },
-        PurchaseRequestStatus.Approved => "جاهز للتحويل",
-        PurchaseRequestStatus.ConvertedToPo => "أُنشئ PO",
-        PurchaseRequestStatus.Rejected => "مرفوض",
+        PurchaseRequestStatus.Approved => LocaleManager.T("جاهز للتحويل", "Ready to convert"),
+        PurchaseRequestStatus.ConvertedToPo => LocaleManager.T("أُنشئ PO", "PO created"),
+        PurchaseRequestStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
         _ => "—",
     };
 

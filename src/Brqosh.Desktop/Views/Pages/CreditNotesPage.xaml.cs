@@ -65,9 +65,9 @@ public partial class CreditNotesPage : UserControl
             n.Reason, n.GrandTotal(),
             n.Status switch
             {
-                CreditNoteStatus.Posted => "مرحّل",
-                CreditNoteStatus.Cancelled => "ملغاة",
-                _ => "مسودة",
+                CreditNoteStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+                CreditNoteStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
+                _ => LocaleManager.T("مسودة", "Draft"),
             },
             n.Status, n.JournalEntryId)).ToList();
         UiTestAutomation.PublishGridCount(NotesGrid, notes.Count);

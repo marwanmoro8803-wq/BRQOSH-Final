@@ -52,7 +52,7 @@ public partial class ProgressBillingsPage : UserControl
             b.CurrentWorkAmount,
             b.RetentionAmount,
             b.NetBillableAmount,
-            ProgressBilling.StatusLabel(b.Status),
+            DomainLabels.Show(ProgressBilling.StatusLabel(b.Status)),
             b.Status,
             b.JournalEntryId)).ToList();
         UiTestAutomation.PublishGridCount(Grid, billings.Count);

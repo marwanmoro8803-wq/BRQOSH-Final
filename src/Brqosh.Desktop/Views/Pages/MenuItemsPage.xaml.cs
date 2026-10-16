@@ -120,11 +120,11 @@ public partial class MenuItemsPage : UserControl
 
     private static string SectionText(MenuSection section) => section switch
     {
-        MenuSection.Appetizer => "مقبلات",
-        MenuSection.Main => "أطباق رئيسية",
-        MenuSection.Dessert => "حلويات",
-        MenuSection.Beverage => "مشروبات",
-        _ => "أخرى",
+        MenuSection.Appetizer => LocaleManager.T("مقبلات", "Appetizers"),
+        MenuSection.Main => LocaleManager.T("أطباق رئيسية", "Main courses"),
+        MenuSection.Dessert => LocaleManager.T("حلويات", "Desserts"),
+        MenuSection.Beverage => LocaleManager.T("مشروبات", "Beverages"),
+        _ => LocaleManager.T("أخرى", "Other"),
     };
     /// <summary>
     /// (CEEF-230 · ط6-٥) <b>صرفُ مكوّنات ما بيع — والخدمةُ كانت مبنيّةً بلا زرّ.</b>

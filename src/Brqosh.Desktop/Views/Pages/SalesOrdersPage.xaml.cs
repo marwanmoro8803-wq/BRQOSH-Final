@@ -65,10 +65,10 @@ public partial class SalesOrdersPage : UserControl
 
     private static string StatusLabel(SalesOrderStatus status) => status switch
     {
-        SalesOrderStatus.Confirmed => "مؤكد",
-        SalesOrderStatus.Invoiced => "مفوتر",
-        SalesOrderStatus.Cancelled => "ملغى",
-        _ => "مسودة",
+        SalesOrderStatus.Confirmed => LocaleManager.T("مؤكد", "Confirmed"),
+        SalesOrderStatus.Invoiced => LocaleManager.T("مفوتر", "Invoiced"),
+        SalesOrderStatus.Cancelled => LocaleManager.T("ملغى", "Cancelled"),
+        _ => LocaleManager.T("مسودة", "Draft"),
     };
 
     private async void OnAdd(object sender, RoutedEventArgs e)

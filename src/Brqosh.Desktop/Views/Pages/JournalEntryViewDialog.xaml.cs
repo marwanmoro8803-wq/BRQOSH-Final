@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Ui;
 using System.Windows;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Infrastructure.Security;
@@ -28,9 +29,9 @@ public partial class JournalEntryViewDialog : Window
         TitleText.Text = $"قيد {entry.EntryNumber ?? entry.Id.ToString()}";
         var status = entry.Status switch
         {
-            JournalEntryStatus.Posted => "مرحّل",
-            JournalEntryStatus.Reversed => "معكوس",
-            _ => "مسودة",
+            JournalEntryStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+            JournalEntryStatus.Reversed => LocaleManager.T("معكوس", "Reversed"),
+            _ => LocaleManager.T("مسودة", "Draft"),
         };
         HeaderText.Text = $"التاريخ: {entry.EntryDate:yyyy-MM-dd}  |  الحالة: {status}  |  {entry.Description}";
         if (!string.IsNullOrWhiteSpace(entry.SourceDocument))

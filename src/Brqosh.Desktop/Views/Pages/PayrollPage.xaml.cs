@@ -53,9 +53,9 @@ public partial class PayrollPage : UserControl
             p.Lines.Count, p.TotalGross, p.TotalNet,
             p.Status switch
             {
-                PayrollRunStatus.Posted => "مرحّل",
-                PayrollRunStatus.Reversed => "معكوس",
-                _ => "مسودة",
+                PayrollRunStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+                PayrollRunStatus.Reversed => LocaleManager.T("معكوس", "Reversed"),
+                _ => LocaleManager.T("مسودة", "Draft"),
             }, p.Status, p.JournalEntryId)).ToList();
         UiTestAutomation.PublishGridCount(Grid, runs.Count);
         RenderKpis(runs);

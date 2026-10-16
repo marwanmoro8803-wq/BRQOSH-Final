@@ -175,14 +175,14 @@ public partial class CompanySettingsPage : UserControl
 
     private static string ProfileLabel(BusinessProfile profile) => profile switch
     {
-        BusinessProfile.Construction => "مقاولات عامة",
-        BusinessProfile.Manufacturing => "مصنع / إنتاج",
-        BusinessProfile.Retail => "محل / تسويق",
-        BusinessProfile.Healthcare => "قطاع صحي",
-        BusinessProfile.Logistics => "لوجستيات ونقل",
-        BusinessProfile.RealEstate => "عقارات وإيجارات",
-        BusinessProfile.Hospitality => "ضيافة ومطاعم",
-        _ => "محاسبة عامة",
+        BusinessProfile.Construction => LocaleManager.T("مقاولات عامة", "General contracting"),
+        BusinessProfile.Manufacturing => LocaleManager.T("مصنع / إنتاج", "Factory / production"),
+        BusinessProfile.Retail => LocaleManager.T("محل / تسويق", "Shop / retail"),
+        BusinessProfile.Healthcare => LocaleManager.T("قطاع صحي", "Healthcare"),
+        BusinessProfile.Logistics => LocaleManager.T("لوجستيات ونقل", "Logistics and transport"),
+        BusinessProfile.RealEstate => LocaleManager.T("عقارات وإيجارات", "Real estate and leasing"),
+        BusinessProfile.Hospitality => LocaleManager.T("ضيافة ومطاعم", "Hospitality and restaurants"),
+        _ => LocaleManager.T("محاسبة عامة", "General accounting"),
     };
 
     private static string ActiveModulesLabel(BusinessProfile profile)
@@ -198,19 +198,19 @@ public partial class CompanySettingsPage : UserControl
 
     private static string ModuleLabelAr(ModuleKey key) => key switch
     {
-        ModuleKey.Sales => "المبيعات",
-        ModuleKey.Purchasing => "المشتريات",
-        ModuleKey.Inventory => "المخزون",
-        ModuleKey.Treasury => "الخزينة والبنوك",
-        ModuleKey.Reports => "التقارير المالية",
-        ModuleKey.Zatca => "الفوترة الإلكترونية",
-        ModuleKey.FixedAssets => "الأصول الثابتة",
-        ModuleKey.Payroll => "الرواتب",
-        ModuleKey.PointOfSale => "نقاط البيع",
-        ModuleKey.Manufacturing => "التصنيع",
-        ModuleKey.ProjectsConstruction => "المشاريع والمقاولات",
-        ModuleKey.Crm => "إدارة علاقات العملاء",
-        _ => "المحاسبة العامة",
+        ModuleKey.Sales => LocaleManager.T("المبيعات", "Sales"),
+        ModuleKey.Purchasing => LocaleManager.T("المشتريات", "Purchasing"),
+        ModuleKey.Inventory => LocaleManager.T("المخزون", "Inventory"),
+        ModuleKey.Treasury => LocaleManager.T("الخزينة والبنوك", "Treasury and banks"),
+        ModuleKey.Reports => LocaleManager.T("التقارير المالية", "Financial reports"),
+        ModuleKey.Zatca => LocaleManager.T("الفوترة الإلكترونية", "E-invoicing"),
+        ModuleKey.FixedAssets => LocaleManager.T("الأصول الثابتة", "Fixed assets"),
+        ModuleKey.Payroll => LocaleManager.T("الرواتب", "Payroll"),
+        ModuleKey.PointOfSale => LocaleManager.T("نقاط البيع", "Point of sale"),
+        ModuleKey.Manufacturing => LocaleManager.T("التصنيع", "Manufacturing"),
+        ModuleKey.ProjectsConstruction => LocaleManager.T("المشاريع والمقاولات", "Projects and contracting"),
+        ModuleKey.Crm => LocaleManager.T("إدارة علاقات العملاء", "Customer relationship management"),
+        _ => LocaleManager.T("المحاسبة العامة", "General accounting"),
     };
 
     private void OnProvisionOrganization(object sender, RoutedEventArgs e)

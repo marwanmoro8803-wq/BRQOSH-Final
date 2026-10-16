@@ -126,19 +126,19 @@ public partial class RecurringPlansPage : UserControl
 
     private static string FrequencyText(RecurrenceFrequency frequency) => frequency switch
     {
-        RecurrenceFrequency.Weekly => "أسبوعية",
-        RecurrenceFrequency.Monthly => "شهرية",
-        RecurrenceFrequency.Quarterly => "ربع سنوية",
-        RecurrenceFrequency.SemiAnnual => "نصف سنوية",
-        RecurrenceFrequency.Annual => "سنوية",
+        RecurrenceFrequency.Weekly => LocaleManager.T("أسبوعية", "Weekly"),
+        RecurrenceFrequency.Monthly => LocaleManager.T("شهرية", "Monthly"),
+        RecurrenceFrequency.Quarterly => LocaleManager.T("ربع سنوية", "Quarterly"),
+        RecurrenceFrequency.SemiAnnual => LocaleManager.T("نصف سنوية", "Semi-annual"),
+        RecurrenceFrequency.Annual => LocaleManager.T("سنوية", "Annual"),
         _ => frequency.ToString(),
     };
 
     private static string StatusText(RecurringPlanStatus status) => status switch
     {
-        RecurringPlanStatus.Active => "نشطة",
-        RecurringPlanStatus.Paused => "موقوفة",
-        RecurringPlanStatus.Ended => "منتهية",
+        RecurringPlanStatus.Active => LocaleManager.T("نشطة", "Active"),
+        RecurringPlanStatus.Paused => LocaleManager.T("موقوفة", "Paused"),
+        RecurringPlanStatus.Ended => LocaleManager.T("منتهية", "Ended"),
         _ => status.ToString(),
     };
 }

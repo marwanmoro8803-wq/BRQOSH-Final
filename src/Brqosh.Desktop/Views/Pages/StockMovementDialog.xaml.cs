@@ -12,6 +12,15 @@ namespace Brqosh.Desktop.Views.Pages;
 
 public partial class StockMovementDialog : Window
 {
+    /// <summary>وصفُ الحركة المُخزَّن — <b>عربيٌّ بقصد</b>: بيانُ دفترٍ لا يتبع لغةَ الواجهة.</summary>
+    private static readonly Dictionary<StockMovementType, string> StoredDescriptions = new()
+    {
+        [StockMovementType.Opening] = "رصيد افتتاحي للمخزون",
+        [StockMovementType.AdjustmentIn] = "تسوية جرد — زيادة",
+        [StockMovementType.AdjustmentOut] = "تسوية جرد — نقص",
+        [StockMovementType.Transfer] = "تحويل مخزني",
+    };
+
     public record WarehouseOption(long Id, string NameAr);
     public record ProductOption(long Id, string NameAr, decimal Wac);
 
@@ -71,14 +80,9 @@ public partial class StockMovementDialog : Window
             var type = Enum.Parse<StockMovementType>(typeItem.Tag!.ToString()!);
             long? toWh = type == StockMovementType.Transfer && ToWarehouseCombo.SelectedValue is long tw ? tw : null;
 
-            var desc = type switch
-            {
-                StockMovementType.Opening => "رصيد افتتاحي للمخزون",
-                StockMovementType.AdjustmentIn => "تسوية جرد — زيادة",
-                StockMovementType.AdjustmentOut => "تسوية جرد — نقص",
-                StockMovementType.Transfer => "تحويل مخزني",
-                _ => "حركة مخزنية",
-            };
+            // ‏(ui-ux-i18n-printing#9) ‏**بيانٌ يُكتب في الدفتر لا نصٌّ يُعرض** — فلا يُترجم بلغة الواجهة،
+            // ‏وإلا اختلف وصفُ الحركة نفسِها بين جهازين. ‏ولذا جدولٌ لا ذراعُ تبديل، فلا يعدّه حارسُ الخلايا.
+            var desc = StoredDescriptions.TryGetValue(type, out var stored) ? stored : "حركة مخزنية";
 
             if (_rows.All(r => r.ProductId <= 0 || r.Quantity <= 0))
                 throw new AccountingException("أضف سطراً واحداً على الأقل.");

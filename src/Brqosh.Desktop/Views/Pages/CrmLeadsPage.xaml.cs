@@ -40,10 +40,10 @@ public partial class CrmLeadsPage : UserControl
 
     private static string StatusLabel(CrmLeadStatus status) => status switch
     {
-        CrmLeadStatus.New => "جديد",
-        CrmLeadStatus.Qualified => "مؤهّل",
-        CrmLeadStatus.Converted => "مُحوَّل",
-        CrmLeadStatus.Disqualified => "مرفوض",
+        CrmLeadStatus.New => LocaleManager.T("جديد", "New"),
+        CrmLeadStatus.Qualified => LocaleManager.T("مؤهّل", "Qualified"),
+        CrmLeadStatus.Converted => LocaleManager.T("مُحوَّل", "Converted"),
+        CrmLeadStatus.Disqualified => LocaleManager.T("مرفوض", "Rejected"),
         _ => status.ToString()
     };
 

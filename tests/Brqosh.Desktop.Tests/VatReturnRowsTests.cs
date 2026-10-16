@@ -159,4 +159,29 @@ public class VatReturnRowsTests
         Assert.DoesNotContain(rows, r => r.Indented);
         Assert.Contains(rows, r => r.Label == "صافي الضريبة المستحقة/المستردة");
     }
+
+    /// <summary>
+    /// (ui-ux-i18n-printing#9) <b>والإقرارُ بالإنجليزية إنجليزيٌّ كلُّه</b> — كانت سطورُه تُبنى في
+    /// الشيفرة فلا يبلغها مُترجِمُ XAML، وتبقى عربيّةً بعد التبديل رغم أنّ السجلَّ يحمل ترجمتَها.
+    /// </summary>
+    [Fact]
+    public void InEnglish_NoReturnLineIsArabic()
+    {
+        if (!LocaleManager.IsEnglish) LocaleManager.Toggle();
+        try
+        {
+            var rows = VatReturnRows.Build(MixedQuarter() with
+            {
+                PurchasesByCategory = [new VatReturnCategoryDto("E", 10m, 0m)],
+            });
+
+            var arabic = rows.Where(r => r.Label.Any(c => c is >= '؀' and <= 'ۿ')).Select(r => r.Label).ToList();
+            Assert.True(arabic.Count == 0, "سطورٌ عربيّةٌ في الوضع الإنجليزيّ:\n  " + string.Join("\n  ", arabic));
+            Assert.Contains(rows, r => r.Label == "Net VAT payable / refundable");
+        }
+        finally
+        {
+            if (LocaleManager.IsEnglish) LocaleManager.Toggle();
+        }
+    }
 }

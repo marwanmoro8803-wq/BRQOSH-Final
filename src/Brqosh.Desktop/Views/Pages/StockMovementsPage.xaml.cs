@@ -39,20 +39,20 @@ public partial class StockMovementsPage : UserControl
 
     private static string StatusLabel(StockMovementStatus s) => s switch
     {
-        StockMovementStatus.Posted => "مرحّلة",
-        StockMovementStatus.Cancelled => "ملغاة",
-        _ => "مسودة",
+        StockMovementStatus.Posted => LocaleManager.T("مرحّلة", "Posted"),
+        StockMovementStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
+        _ => LocaleManager.T("مسودة", "Draft"),
     };
 
     private static string TypeLabel(StockMovementType t) => t switch
     {
-        StockMovementType.Opening => "رصيد افتتاحي",
-        StockMovementType.Receipt => "إدخال",
-        StockMovementType.Issue => "إخراج",
-        StockMovementType.Transfer => "تحويل",
-        StockMovementType.AdjustmentIn => "تسوية (+)",
-        StockMovementType.AdjustmentOut => "تسوية (−)",
-        StockMovementType.SalesReturn => "إرجاع مبيعات",
+        StockMovementType.Opening => LocaleManager.T("رصيد افتتاحي", "Opening balance"),
+        StockMovementType.Receipt => LocaleManager.T("إدخال", "Receipt"),
+        StockMovementType.Issue => LocaleManager.T("إخراج", "Issue"),
+        StockMovementType.Transfer => LocaleManager.T("تحويل", "Transfer"),
+        StockMovementType.AdjustmentIn => LocaleManager.T("تسوية (+)", "Adjustment (+)"),
+        StockMovementType.AdjustmentOut => LocaleManager.T("تسوية (−)", "Adjustment (−)"),
+        StockMovementType.SalesReturn => LocaleManager.T("إرجاع مبيعات", "Sales return"),
         _ => t.ToString(),
     };
 

@@ -172,22 +172,22 @@ public partial class LeaveRequestsPage : UserControl
 
     private static string TypeText(LeaveType type) => type switch
     {
-        LeaveType.Annual => "سنوية",
-        LeaveType.Sick => "مرضية",
-        LeaveType.Unpaid => "بلا أجر",
-        LeaveType.Maternity => "وضع",
-        LeaveType.Marriage => "زواج",
-        LeaveType.Bereavement => "وفاة",
-        LeaveType.Hajj => "حج",
+        LeaveType.Annual => LocaleManager.T("سنوية", "Annual"),
+        LeaveType.Sick => LocaleManager.T("مرضية", "Sick"),
+        LeaveType.Unpaid => LocaleManager.T("بلا أجر", "Unpaid"),
+        LeaveType.Maternity => LocaleManager.T("وضع", "Maternity"),
+        LeaveType.Marriage => LocaleManager.T("زواج", "Marriage"),
+        LeaveType.Bereavement => LocaleManager.T("وفاة", "Bereavement"),
+        LeaveType.Hajj => LocaleManager.T("حج", "Hajj"),
         LeaveType.Birth => LocaleManager.T("ولادة مولود", "Birth of a child"),
-        _ => "امتحان",
+        _ => LocaleManager.T("امتحان", "Exam"),
     };
 
     private static string StatusText(LeaveStatus status) => status switch
     {
-        LeaveStatus.Pending => "معلقة",
-        LeaveStatus.Approved => "معتمدة",
-        LeaveStatus.Rejected => "مرفوضة",
-        _ => "ملغاة",
+        LeaveStatus.Pending => LocaleManager.T("معلقة", "Pending"),
+        LeaveStatus.Approved => LocaleManager.T("معتمدة", "Approved"),
+        LeaveStatus.Rejected => LocaleManager.T("مرفوضة", "Rejected"),
+        _ => LocaleManager.T("ملغاة", "Cancelled"),
     };
 }

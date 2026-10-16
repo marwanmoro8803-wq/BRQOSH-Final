@@ -86,19 +86,19 @@ public partial class RoomsPage : UserControl
 
     private static string KindText(RoomKind kind) => kind switch
     {
-        RoomKind.Single => "مفردة",
-        RoomKind.Double => "مزدوجة",
-        RoomKind.Twin => "بسريرين",
-        RoomKind.Suite => "جناح",
-        RoomKind.Hall => "قاعة",
+        RoomKind.Single => LocaleManager.T("مفردة", "Single"),
+        RoomKind.Double => LocaleManager.T("مزدوجة", "Double"),
+        RoomKind.Twin => LocaleManager.T("بسريرين", "Twin"),
+        RoomKind.Suite => LocaleManager.T("جناح", "Suite"),
+        RoomKind.Hall => LocaleManager.T("قاعة", "Hall"),
         _ => kind.ToString(),
     };
 
     private static string StatusText(RoomStatus status) => status switch
     {
-        RoomStatus.Vacant => "شاغرة",
-        RoomStatus.Occupied => "مشغولة",
-        RoomStatus.Maintenance => "صيانة",
+        RoomStatus.Vacant => LocaleManager.T("شاغرة", "Vacant"),
+        RoomStatus.Occupied => LocaleManager.T("مشغولة", "Occupied"),
+        RoomStatus.Maintenance => LocaleManager.T("صيانة", "Maintenance"),
         _ => status.ToString(),
     };
 }

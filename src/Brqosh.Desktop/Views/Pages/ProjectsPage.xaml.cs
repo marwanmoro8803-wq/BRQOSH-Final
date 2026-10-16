@@ -56,7 +56,7 @@ public partial class ProjectsPage : UserControl
             p.Id, p.Code, p.NameAr,
             p.CustomerId is long cid ? _customers.GetValueOrDefault(cid, "—") : "—",
             p.ContractValue, p.RetentionPercent, p.BoqTotal,
-            ConstructionProject.StatusLabel(p.Status))).ToList();
+            DomainLabels.Show(ConstructionProject.StatusLabel(p.Status)))).ToList();
         UiTestAutomation.PublishGridCount(Grid, visible.Count);
         RenderKpis(visible);
     }

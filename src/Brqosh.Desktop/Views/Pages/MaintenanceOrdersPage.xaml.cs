@@ -138,19 +138,19 @@ public partial class MaintenanceOrdersPage : UserControl
 
     private static string KindText(MaintenanceKind kind) => kind switch
     {
-        MaintenanceKind.Preventive => "دورية",
-        MaintenanceKind.Corrective => "إصلاحية",
+        MaintenanceKind.Preventive => LocaleManager.T("دورية", "Preventive"),
+        MaintenanceKind.Corrective => LocaleManager.T("إصلاحية", "Corrective"),
         // ‏(CEEF-232 · ع-٢) **والتجديدُ الرأسماليُّ يُسمّى صراحةً** — فصنفٌ يُرحَّل خلافاً
         // ‏لبقيّة الأصناف يجب أن يُرى في الجدول، **وإلّا رُسمِل ما ظُنّ أنّه صيانة**.
-        MaintenanceKind.CapitalImprovement => "تجديد رأسمالي",
-        _ => "تلف مستأجر",
+        MaintenanceKind.CapitalImprovement => LocaleManager.T("تجديد رأسمالي", "Capital improvement"),
+        _ => LocaleManager.T("تلف مستأجر", "Tenant damage"),
     };
 
     private static string StatusText(MaintenanceStatus status) => status switch
     {
-        MaintenanceStatus.Open => "مفتوح",
-        MaintenanceStatus.InProgress => "قيد التنفيذ",
-        MaintenanceStatus.Completed => "منتهٍ",
-        _ => "ملغى",
+        MaintenanceStatus.Open => LocaleManager.T("مفتوح", "Open"),
+        MaintenanceStatus.InProgress => LocaleManager.T("قيد التنفيذ", "In progress"),
+        MaintenanceStatus.Completed => LocaleManager.T("منتهٍ", "Completed"),
+        _ => LocaleManager.T("ملغى", "Cancelled"),
     };
 }

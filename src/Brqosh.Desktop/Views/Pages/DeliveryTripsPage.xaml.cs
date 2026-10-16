@@ -164,10 +164,10 @@ public partial class DeliveryTripsPage : UserControl
 
     private static string StatusText(TripStatus status) => status switch
     {
-        TripStatus.Planned => "مخطَّطة",
-        TripStatus.Dispatched => "منطلقة",
-        TripStatus.Completed => "منتهية",
-        TripStatus.Settled => "مُسوّاة",
-        _ => "ملغاة",
+        TripStatus.Planned => LocaleManager.T("مخطَّطة", "Planned"),
+        TripStatus.Dispatched => LocaleManager.T("منطلقة", "Dispatched"),
+        TripStatus.Completed => LocaleManager.T("منتهية", "Completed"),
+        TripStatus.Settled => LocaleManager.T("مُسوّاة", "Settled"),
+        _ => LocaleManager.T("ملغاة", "Cancelled"),
     };
 }

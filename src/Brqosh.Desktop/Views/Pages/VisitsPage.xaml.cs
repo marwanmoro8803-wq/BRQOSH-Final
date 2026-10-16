@@ -102,17 +102,17 @@ public partial class VisitsPage : UserControl
 
     private static string StatusText(VisitStatus status) => status switch
     {
-        VisitStatus.Open => "مفتوحة",
-        VisitStatus.Billed => "مفوترة",
-        VisitStatus.Cancelled => "ملغاة",
+        VisitStatus.Open => LocaleManager.T("مفتوحة", "Open"),
+        VisitStatus.Billed => LocaleManager.T("مفوترة", "Billed"),
+        VisitStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
         _ => status.ToString(),
     };
 
     private static string BasisText(CoverageBasis basis) => basis switch
     {
-        CoverageBasis.SelfPay => "لا وثيقة سارية — على الحساب الخاص",
-        CoverageBasis.CoveragePercent => "نسبة التغطية",
-        CoverageBasis.AnnualLimit => "سقف سنة الوثيقة — وما جاوزه على المريض",
+        CoverageBasis.SelfPay => LocaleManager.T("لا وثيقة سارية — على الحساب الخاص", "No active policy — self-pay"),
+        CoverageBasis.CoveragePercent => LocaleManager.T("نسبة التغطية", "Coverage percentage"),
+        CoverageBasis.AnnualLimit => LocaleManager.T("سقف سنة الوثيقة — وما جاوزه على المريض", "Policy-year limit — excess billed to patient"),
         _ => basis.ToString(),
     };
 }

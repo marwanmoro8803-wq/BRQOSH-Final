@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
@@ -45,7 +46,7 @@ public partial class ContractsPage : UserControl
             projects.GetValueOrDefault(c.ProjectId, "—"),
             c.ContractDate.ToString("yyyy-MM-dd"),
             c.ContractValue,
-            ConstructionContract.StatusLabel(c.Status),
+            DomainLabels.Show(ConstructionContract.StatusLabel(c.Status)),
             c.Status)).ToList();
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);

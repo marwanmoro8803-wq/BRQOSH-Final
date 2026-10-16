@@ -115,8 +115,8 @@ public partial class ReceiptVoucherDialog : Window
                 DocumentNumber = d.DocumentNumber,
                 TypeLabel = d.DocumentType switch
                 {
-                    PaymentAllocationDocumentType.SalesInvoice => "فاتورة",
-                    PaymentAllocationDocumentType.ProgressBilling => "مستخلص",
+                    PaymentAllocationDocumentType.SalesInvoice => LocaleManager.T("فاتورة", "Invoice"),
+                    PaymentAllocationDocumentType.ProgressBilling => LocaleManager.T("مستخلص", "Progress billing"),
                     _ => d.DocumentType.ToString(),
                 },
                 RemainingAmount = d.RemainingAmount,

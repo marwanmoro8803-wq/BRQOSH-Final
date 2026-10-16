@@ -198,10 +198,10 @@ public partial class InsuranceClaimsPage : UserControl
 
     private static string StatusText(ClaimStatus status) => status switch
     {
-        ClaimStatus.Draft => "مسودة",
-        ClaimStatus.Submitted => "مُقدَّمة",
-        ClaimStatus.Adjudicated => "مفصولٌ فيها",
-        _ => "مُقفلة",
+        ClaimStatus.Draft => LocaleManager.T("مسودة", "Draft"),
+        ClaimStatus.Submitted => LocaleManager.T("مُقدَّمة", "Submitted"),
+        ClaimStatus.Adjudicated => LocaleManager.T("مفصولٌ فيها", "Adjudicated"),
+        _ => LocaleManager.T("مُقفلة", "Closed"),
     };
 
     private static string DispositionText(InsuranceClaimLine line)
@@ -210,9 +210,9 @@ public partial class InsuranceClaimsPage : UserControl
 
         return line.Disposition switch
         {
-            RejectionDisposition.RebillPatient => "على المريض",
-            RejectionDisposition.WriteOff => "شطب",
-            _ => "⚠️ بلا قرار",
+            RejectionDisposition.RebillPatient => LocaleManager.T("على المريض", "Rebilled to patient"),
+            RejectionDisposition.WriteOff => LocaleManager.T("شطب", "Written off"),
+            _ => LocaleManager.T("⚠️ بلا قرار", "⚠️ No decision"),
         };
     }
 }

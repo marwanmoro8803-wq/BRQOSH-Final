@@ -45,21 +45,21 @@ public partial class OrganizationsPage : UserControl
 
     private static string ProfileLabel(BusinessProfile profile) => profile switch
     {
-        BusinessProfile.Construction => "مقاولات",
-        BusinessProfile.Manufacturing => "تصنيع",
-        BusinessProfile.Retail => "تجزئة",
-        BusinessProfile.Healthcare => "صحي",
-        BusinessProfile.Logistics => "لوجستيات",
-        BusinessProfile.RealEstate => "عقارات",
-        BusinessProfile.Hospitality => "ضيافة",
-        _ => "عام",
+        BusinessProfile.Construction => LocaleManager.T("مقاولات", "Contracting"),
+        BusinessProfile.Manufacturing => LocaleManager.T("تصنيع", "Manufacturing"),
+        BusinessProfile.Retail => LocaleManager.T("تجزئة", "Retail"),
+        BusinessProfile.Healthcare => LocaleManager.T("صحي", "Healthcare"),
+        BusinessProfile.Logistics => LocaleManager.T("لوجستيات", "Logistics"),
+        BusinessProfile.RealEstate => LocaleManager.T("عقارات", "Real estate"),
+        BusinessProfile.Hospitality => LocaleManager.T("ضيافة", "Hospitality"),
+        _ => LocaleManager.T("عام", "General"),
     };
 
     private static string ModeLabel(CompanyOperationalMode mode) => mode switch
     {
-        CompanyOperationalMode.ReadOnly => "قراءة فقط",
-        CompanyOperationalMode.Archived => "مؤرشف",
-        _ => "نشط",
+        CompanyOperationalMode.ReadOnly => LocaleManager.T("قراءة فقط", "Read-only"),
+        CompanyOperationalMode.Archived => LocaleManager.T("مؤرشف", "Archived"),
+        _ => LocaleManager.T("نشط", "Active"),
     };
 
     private void OnProvision(object sender, RoutedEventArgs e)

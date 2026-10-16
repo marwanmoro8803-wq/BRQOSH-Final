@@ -75,9 +75,9 @@ public partial class ReceiptVouchersPage : UserControl
 
     private static string StatusLabel(ReceiptVoucherStatus status) => status switch
     {
-        ReceiptVoucherStatus.Posted => "مرحّل",
-        ReceiptVoucherStatus.Reversed => "معكوس",
-        _ => "مسودة",
+        ReceiptVoucherStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+        ReceiptVoucherStatus.Reversed => LocaleManager.T("معكوس", "Reversed"),
+        _ => LocaleManager.T("مسودة", "Draft"),
     };
 
     private async void OnPrev(object sender, RoutedEventArgs e)

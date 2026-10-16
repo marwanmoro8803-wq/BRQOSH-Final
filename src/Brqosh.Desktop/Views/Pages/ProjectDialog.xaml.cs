@@ -44,7 +44,7 @@ public partial class ProjectDialog : Window
     {
         StatusBox.Items.Clear();
         foreach (ConstructionProjectStatus s in Enum.GetValues(typeof(ConstructionProjectStatus)))
-            StatusBox.Items.Add(new StatusOption(s, ConstructionProject.StatusLabel(s)));
+            StatusBox.Items.Add(new StatusOption(s, DomainLabels.Show(ConstructionProject.StatusLabel(s))));
 
         await using var db = AppServices.CreateDb();
         var customers = await db.Customers

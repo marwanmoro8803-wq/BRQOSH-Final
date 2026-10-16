@@ -54,7 +54,7 @@ public partial class SubcontractorsPage : UserControl
             suppliers.GetValueOrDefault(a.SupplierId, "—"),
             a.ContractValue,
             a.RetentionPercent,
-            SubcontractAgreement.StatusLabel(a.Status),
+            DomainLabels.Show(SubcontractAgreement.StatusLabel(a.Status)),
             a.Status)).ToList();
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);

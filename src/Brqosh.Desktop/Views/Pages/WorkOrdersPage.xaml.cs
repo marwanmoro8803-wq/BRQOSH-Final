@@ -48,7 +48,7 @@ public partial class WorkOrdersPage : UserControl
             o.Id, o.OrderNumber, o.OrderDate.ToString("yyyy-MM-dd"),
             boms.GetValueOrDefault(o.BomId, "—"),
             o.PlannedQuantity, o.ProducedQuantity,
-            WorkOrder.StatusLabel(o.Status), o.Status, o.CompletionJournalEntryId)).ToList();
+            DomainLabels.Show(WorkOrder.StatusLabel(o.Status)), o.Status, o.CompletionJournalEntryId)).ToList();
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);
         var released = orders.Count(o => o.Status == WorkOrderStatus.Released);

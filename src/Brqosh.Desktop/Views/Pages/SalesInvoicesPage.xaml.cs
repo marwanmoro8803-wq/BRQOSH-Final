@@ -59,9 +59,9 @@ public partial class SalesInvoicesPage : UserControl
             i.Subtotal, i.VatAmount, i.GrandTotal(),
             i.Status switch
             {
-                SalesInvoiceStatus.Posted => "مرحّلة",
-                SalesInvoiceStatus.Cancelled => "ملغاة",
-                _ => "مسودة",
+                SalesInvoiceStatus.Posted => LocaleManager.T("مرحّلة", "Posted"),
+                SalesInvoiceStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
+                _ => LocaleManager.T("مسودة", "Draft"),
             }, i.Status, i.JournalEntryId)).ToList();
         InvoicesGrid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(InvoicesGrid, rows.Count);

@@ -167,9 +167,9 @@ public partial class EmployeeAdvancesPage : UserControl
 
     private static string StatusText(AdvanceStatus status) => status switch
     {
-        AdvanceStatus.Approved => "بانتظار الصرف",
-        AdvanceStatus.Outstanding => "قائمة",
-        AdvanceStatus.Settled => "مسددة",
-        _ => "ملغاة",
+        AdvanceStatus.Approved => LocaleManager.T("بانتظار الصرف", "Awaiting payout"),
+        AdvanceStatus.Outstanding => LocaleManager.T("قائمة", "Outstanding"),
+        AdvanceStatus.Settled => LocaleManager.T("مسددة", "Settled"),
+        _ => LocaleManager.T("ملغاة", "Cancelled"),
     };
 }

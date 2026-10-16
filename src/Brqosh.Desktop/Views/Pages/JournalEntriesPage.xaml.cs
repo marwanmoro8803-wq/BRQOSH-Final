@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using Brqosh.Desktop.Ui;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Automation;
@@ -57,9 +58,9 @@ public partial class JournalEntriesPage : UserControl
 
     private static string StatusAr(JournalEntryStatus status) => status switch
     {
-        JournalEntryStatus.Posted => "مرحّل",
-        JournalEntryStatus.Reversed => "معكوس",
-        _ => "مسودة",
+        JournalEntryStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+        JournalEntryStatus.Reversed => LocaleManager.T("معكوس", "Reversed"),
+        _ => LocaleManager.T("مسودة", "Draft"),
     };
 
     private async void OnPrev(object sender, RoutedEventArgs e)

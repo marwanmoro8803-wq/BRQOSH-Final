@@ -54,7 +54,7 @@ public partial class ChequesPage : UserControl
             c.Id, c.ChequeNumber, Cheque.TypeLabel(c.Type), c.ChequeDate.ToString("yyyy-MM-dd"),
             c.CustomerId is long cid ? customers.GetValueOrDefault(cid, "—")
                 : c.SupplierId is long sid ? suppliers.GetValueOrDefault(sid, "—") : "—",
-            c.Amount, Cheque.StatusLabel(c.Status), c.Type, c.Status,
+            c.Amount, DomainLabels.Show(Cheque.StatusLabel(c.Status)), c.Type, c.Status,
             c.PortfolioJournalEntryId, c.SettlementJournalEntryId, c.SecondarySettlementJournalEntryId)).ToList();
         Grid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(Grid, rows.Count);

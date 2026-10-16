@@ -211,10 +211,10 @@ public partial class LeasesPage : UserControl
 
     private static string StatusText(LeaseStatus status) => status switch
     {
-        LeaseStatus.Draft => "مسودّة",
-        LeaseStatus.Active => "مفعَّل",
-        LeaseStatus.Terminated => "منتهٍ",
-        LeaseStatus.Expired => "منقضٍ",
+        LeaseStatus.Draft => LocaleManager.T("مسودّة", "Draft"),
+        LeaseStatus.Active => LocaleManager.T("مفعَّل", "Active"),
+        LeaseStatus.Terminated => LocaleManager.T("منتهٍ", "Terminated"),
+        LeaseStatus.Expired => LocaleManager.T("منقضٍ", "Expired"),
         _ => status.ToString(),
     };
 }

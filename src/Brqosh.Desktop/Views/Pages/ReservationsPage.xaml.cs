@@ -231,11 +231,11 @@ public partial class ReservationsPage : UserControl
 
     private static string StatusText(ReservationStatus status) => status switch
     {
-        ReservationStatus.Booked => "محجوز",
-        ReservationStatus.CheckedIn => "نازل",
-        ReservationStatus.CheckedOut => "غادر",
-        ReservationStatus.Cancelled => "ملغى",
-        ReservationStatus.NoShow => "لم يحضر",
+        ReservationStatus.Booked => LocaleManager.T("محجوز", "Booked"),
+        ReservationStatus.CheckedIn => LocaleManager.T("نازل", "Checked in"),
+        ReservationStatus.CheckedOut => LocaleManager.T("غادر", "Checked out"),
+        ReservationStatus.Cancelled => LocaleManager.T("ملغى", "Cancelled"),
+        ReservationStatus.NoShow => LocaleManager.T("لم يحضر", "No-show"),
         _ => status.ToString(),
     };
 

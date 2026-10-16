@@ -60,8 +60,8 @@ public partial class VatReturnPage : UserControl
         foreach (var row in Ui.VatReturnRows.Build(r))
             AddRow(row.Indented ? $"    {row.Label}" : row.Label, row.Value, row.Bold);
 
-        var label = r.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
-        TotalsText.Text = $"صافي الضريبة: {r.NetVatPayable:N2} — {label}";
+        var label = r.NetVatPayable >= 0 ? LocaleManager.T("مستحقة للهيئة", "Payable to ZATCA") : LocaleManager.T("مستردة/مرحّلة", "Refundable / carried forward");
+        TotalsText.Text = LocaleManager.T("صافي الضريبة: ", "Net VAT: ") + $"{r.NetVatPayable:N2} — {label}";
     }
 
     private void AddRow(string label, decimal value, bool bold = false)

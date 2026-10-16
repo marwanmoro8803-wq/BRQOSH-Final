@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
@@ -47,9 +48,9 @@ public partial class DebitNotesPage : UserControl
             n.Reason, n.GrandTotal(),
             n.Status switch
             {
-                DebitNoteStatus.Posted => "مرحّل",
-                DebitNoteStatus.Cancelled => "ملغى",
-                _ => "مسودة",
+                DebitNoteStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+                DebitNoteStatus.Cancelled => LocaleManager.T("ملغى", "Cancelled"),
+                _ => LocaleManager.T("مسودة", "Draft"),
             },
             n.Status)).ToList();
         Grid.ItemsSource = rows;

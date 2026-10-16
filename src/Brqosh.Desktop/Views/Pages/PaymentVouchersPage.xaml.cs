@@ -98,11 +98,11 @@ public partial class PaymentVouchersPage : UserControl
 
     private static string StatusLabel(PaymentVoucherStatus status) => status switch
     {
-        PaymentVoucherStatus.Posted => "مرحّل",
-        PaymentVoucherStatus.Reversed => "معكوس",
-        PaymentVoucherStatus.Submitted => "مُرسَل",
-        PaymentVoucherStatus.Rejected => "مرفوض",
-        _ => "مسودة",
+        PaymentVoucherStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+        PaymentVoucherStatus.Reversed => LocaleManager.T("معكوس", "Reversed"),
+        PaymentVoucherStatus.Submitted => LocaleManager.T("مُرسَل", "Submitted"),
+        PaymentVoucherStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
+        _ => LocaleManager.T("مسودة", "Draft"),
     };
 
     private static string PipelineStepLabel(PaymentVoucherStatus status, WorkflowInstance? wf) => status switch
@@ -110,11 +110,11 @@ public partial class PaymentVouchersPage : UserControl
         PaymentVoucherStatus.Draft => "—",
         PaymentVoucherStatus.Submitted => wf?.CurrentRequiredSlot(PaymentVoucherChain) switch
         {
-            WorkflowApproverSlot.Finance => "بانتظار المالية",
-            WorkflowApproverSlot.Administrator => "بانتظار المدير",
+            WorkflowApproverSlot.Finance => LocaleManager.T("بانتظار المالية", "Awaiting finance"),
+            WorkflowApproverSlot.Administrator => LocaleManager.T("بانتظار المدير", "Awaiting manager"),
             _ => wf?.Status == WorkflowInstanceStatus.Approved ? "جاهز للترحيل" : "مُرسَل",
         },
-        PaymentVoucherStatus.Rejected => "مرفوض",
+        PaymentVoucherStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
         _ => "—",
     };
 

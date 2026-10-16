@@ -50,11 +50,11 @@ public partial class SalesQuotationsPage : UserControl
 
     private static string StatusLabel(SalesQuotationStatus status) => status switch
     {
-        SalesQuotationStatus.Sent => "مُرسَل",
-        SalesQuotationStatus.Accepted => "مقبول",
-        SalesQuotationStatus.Rejected => "مرفوض",
-        SalesQuotationStatus.Expired => "منتهي",
-        _ => "مسودة",
+        SalesQuotationStatus.Sent => LocaleManager.T("مُرسَل", "Submitted"),
+        SalesQuotationStatus.Accepted => LocaleManager.T("مقبول", "Accepted"),
+        SalesQuotationStatus.Rejected => LocaleManager.T("مرفوض", "Rejected"),
+        SalesQuotationStatus.Expired => LocaleManager.T("منتهي", "Expired"),
+        _ => LocaleManager.T("مسودة", "Draft"),
     };
 
     private async void OnAdd(object sender, RoutedEventArgs e)

@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
@@ -48,9 +49,9 @@ public partial class GoodsReceiptsPage : UserControl
             suppliers.GetValueOrDefault(r.SupplierId, "—"),
             r.Status switch
             {
-                GoodsReceiptStatus.Posted => "مرحّل",
-                GoodsReceiptStatus.Cancelled => "ملغى",
-                _ => "مسودة",
+                GoodsReceiptStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
+                GoodsReceiptStatus.Cancelled => LocaleManager.T("ملغى", "Cancelled"),
+                _ => LocaleManager.T("مسودة", "Draft"),
             },
             r.Status)).ToList();
         Grid.ItemsSource = rows;

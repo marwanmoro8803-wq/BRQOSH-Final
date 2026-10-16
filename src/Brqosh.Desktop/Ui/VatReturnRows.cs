@@ -20,23 +20,23 @@ public static class VatReturnRows
     {
         var rows = new List<Row>
         {
-            new("مبيعات خاضعة (وعاء)", r.SalesSubtotal),
-            new("ضريبة المخرجات — مبيعات", r.OutputVat),
+            new(LocaleManager.T("مبيعات خاضعة (وعاء)", "Taxable sales (base)"), r.SalesSubtotal),
+            new(LocaleManager.T("ضريبة المخرجات — مبيعات", "Output VAT — sales"), r.OutputVat),
         };
 
-        rows.Add(new Row("مستخلصات أعمال (وعاء)", r.ProgressBillingsSubtotal));
-        rows.Add(new Row("ضريبة المخرجات — مستخلصات", r.ProgressBillingsVat));
-        rows.Add(new Row("إشعارات دائن (وعاء)", r.CreditNotesSubtotal));
-        rows.Add(new Row("ضريبة مرتجعة (إشعارات دائن)", r.CreditNotesVat));
+        rows.Add(new Row(LocaleManager.T("مستخلصات أعمال (وعاء)", "Progress billings (base)"), r.ProgressBillingsSubtotal));
+        rows.Add(new Row(LocaleManager.T("ضريبة المخرجات — مستخلصات", "Output VAT — progress billings"), r.ProgressBillingsVat));
+        rows.Add(new Row(LocaleManager.T("إشعارات دائن (وعاء)", "Credit notes (base)"), r.CreditNotesSubtotal));
+        rows.Add(new Row(LocaleManager.T("ضريبة مرتجعة (إشعارات دائن)", "VAT returned (credit notes)"), r.CreditNotesVat));
 
         // (جاهزيّةُ الإطلاق · ح-٤٠) **لكلّ حدٍّ في الصافي صفٌّ يراه المالك.**
         //
         // كان الصافي أدناه بلا هذين الحدّين أصلاً — `VatReturnDto` يشتقّه بمعادلةٍ أقدمَ من
         // الإقرار. **فلمّا صار يحملهما لزم أن يُعرَضا**: صافٍ لا تجمع إليه السطورُ فوقه
         // **رقمٌ لا يُراجَع**، ولا يعرف المالكُ من أين جاءه فرقُ بيع الأصل.
-        rows.Add(new Row("تسوية إلغاء مستندات فترات سابقة (تُطرح)", r.CancelledOutputVat));
-        rows.Add(new Row("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", r.JournalOutputVat));
-        rows.Add(new Row("صافي ضريبة المخرجات", r.NetOutputVat, Bold: true));
+        rows.Add(new Row(LocaleManager.T("تسوية إلغاء مستندات فترات سابقة (تُطرح)", "Prior-period cancellations (deducted)"), r.CancelledOutputVat));
+        rows.Add(new Row(LocaleManager.T("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", "Output VAT posted without a document (added)"), r.JournalOutputVat));
+        rows.Add(new Row(LocaleManager.T("صافي ضريبة المخرجات", "Net output VAT"), r.NetOutputVat, Bold: true));
 
         // (CEEF-229 · م1-١٠) **التفكيكُ تحت الإجمالي مباشرةً — لا في تقريرٍ آخر.**
         // نموذجُ الإقرار السعوديّ يفصل الأساسيَّ عن الصفريّ عن المعفى، ومجموعٌ كلّيٌّ وحده
@@ -47,21 +47,21 @@ public static class VatReturnRows
         // فلا تجمع إليه متى وُجد إشعارٌ واحد. **والأبُ الآن الصافي**، والضريبةُ المقيّدة بلا
         // مستندٍ «منها» بلا فئة: فهي في الصافي ولا وعاءَ لها يُخترع.
         AddBreakdown(rows, null, r.NetOutputVat, r.SalesByCategory, r.JournalOutputVat, taxable: false);
-        AddBreakdown(rows, "صافي وعاء المبيعات (من المستندات)", r.SalesBaseNet,
+        AddBreakdown(rows, LocaleManager.T("صافي وعاء المبيعات (من المستندات)", "Net sales base (from documents)"), r.SalesBaseNet,
             r.SalesByCategory, r.JournalOutputVat, taxable: true);
 
-        rows.Add(new Row("مشتريات (وعاء)", r.PurchasesSubtotal));
-        rows.Add(new Row("ضريبة مدخلات قابلة للخصم", r.DeductibleInputVat));
-        rows.Add(new Row("إشعارات مدينة (وعاء)", r.DebitNotesSubtotal));
-        rows.Add(new Row("ضريبة مدخلات مُخفّضة (إشعارات مدينة)", r.DebitNotesDeductibleVat));
-        rows.Add(new Row("تسوية إلغاء مشتريات فترات سابقة (تُطرح)", r.CancelledInputVat));
-        rows.Add(new Row("ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", r.JournalInputVat));
-        rows.Add(new Row("صافي ضريبة المدخلات", r.NetDeductibleInputVat, Bold: true));
+        rows.Add(new Row(LocaleManager.T("مشتريات (وعاء)", "Purchases (base)"), r.PurchasesSubtotal));
+        rows.Add(new Row(LocaleManager.T("ضريبة مدخلات قابلة للخصم", "Deductible input VAT"), r.DeductibleInputVat));
+        rows.Add(new Row(LocaleManager.T("إشعارات مدينة (وعاء)", "Debit notes (base)"), r.DebitNotesSubtotal));
+        rows.Add(new Row(LocaleManager.T("ضريبة مدخلات مُخفّضة (إشعارات مدينة)", "Reduced input VAT (debit notes)"), r.DebitNotesDeductibleVat));
+        rows.Add(new Row(LocaleManager.T("تسوية إلغاء مشتريات فترات سابقة (تُطرح)", "Prior-period purchase cancellations (deducted)"), r.CancelledInputVat));
+        rows.Add(new Row(LocaleManager.T("ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", "Input VAT posted without a document (added)"), r.JournalInputVat));
+        rows.Add(new Row(LocaleManager.T("صافي ضريبة المدخلات", "Net input VAT"), r.NetDeductibleInputVat, Bold: true));
         AddBreakdown(rows, null, r.NetDeductibleInputVat, r.PurchasesByCategory, r.JournalInputVat, taxable: false);
-        AddBreakdown(rows, "صافي وعاء المشتريات القابلة للخصم (من المستندات)", r.PurchasesBaseNet,
+        AddBreakdown(rows, LocaleManager.T("صافي وعاء المشتريات القابلة للخصم (من المستندات)", "Net deductible purchases base (from documents)"), r.PurchasesBaseNet,
             r.PurchasesByCategory, r.JournalInputVat, taxable: true);
 
-        rows.Add(new Row("صافي الضريبة المستحقة/المستردة", r.NetVatPayable, Bold: true));
+        rows.Add(new Row(LocaleManager.T("صافي الضريبة المستحقة/المستردة", "Net VAT payable / refundable"), r.NetVatPayable, Bold: true));
 
         return rows;
     }
@@ -85,11 +85,11 @@ public static class VatReturnRows
             var value = taxable ? b.TaxableAmount : b.VatAmount;
             if (!taxable && value == 0m)
                 continue;
-            rows.Add(new Row($"منها {LabelFor(b.Code)} ({b.Code})", value, Indented: true));
+            rows.Add(new Row(LocaleManager.T("منها ", "of which ") + $"{LabelFor(b.Code)} ({b.Code})", value, Indented: true));
         }
 
         if (!taxable && uncategorised != 0m)
-            rows.Add(new Row("منها بلا فئة — مقيّدة بلا مستند", uncategorised, Indented: true));
+            rows.Add(new Row(LocaleManager.T("منها بلا فئة — مقيّدة بلا مستند", "of which uncategorised — posted without a document"), uncategorised, Indented: true));
     }
 
     /// <summary>
@@ -100,10 +100,10 @@ public static class VatReturnRows
     /// </summary>
     private static string LabelFor(string code) => code switch
     {
-        "S" => "خاضعة بالنسبة الأساسية",
-        "Z" => "خاضعة بنسبة صفر",
-        "E" => "معفاة",
-        "O" => "خارج نطاق الضريبة",
+        "S" => LocaleManager.T("خاضعة بالنسبة الأساسية", "Standard-rated"),
+        "Z" => LocaleManager.T("خاضعة بنسبة صفر", "Zero-rated"),
+        "E" => LocaleManager.T("معفاة", "Exempt"),
+        "O" => LocaleManager.T("خارج نطاق الضريبة", "Out of scope"),
         _ => code,
     };
 }

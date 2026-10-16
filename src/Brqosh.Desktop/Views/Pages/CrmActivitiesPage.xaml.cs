@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Crm;
@@ -38,10 +39,10 @@ public partial class CrmActivitiesPage : UserControl
 
     private static string TypeLabel(CrmActivityType type) => type switch
     {
-        CrmActivityType.Call => "مكالمة",
-        CrmActivityType.Meeting => "اجتماع",
-        CrmActivityType.Note => "ملاحظة",
-        CrmActivityType.Email => "بريد",
+        CrmActivityType.Call => LocaleManager.T("مكالمة", "Call"),
+        CrmActivityType.Meeting => LocaleManager.T("اجتماع", "Meeting"),
+        CrmActivityType.Note => LocaleManager.T("ملاحظة", "Note"),
+        CrmActivityType.Email => LocaleManager.T("بريد", "Email"),
         _ => type.ToString()
     };
 

@@ -36,9 +36,9 @@ public partial class PosShiftsPage : UserControl
         public string CashDifferenceText => CashDifference switch
         {
             null => "—",
-            0m => "مطابقة",
-            < 0m => $"عجز {Math.Abs(CashDifference.Value):N2}",
-            _ => $"زيادة {CashDifference.Value:N2}",
+            0m => LocaleManager.T("مطابقة", "Balanced"),
+            < 0m => LocaleManager.T("عجز ", "Short ") + Math.Abs(CashDifference.Value).ToString("N2"),
+            _ => LocaleManager.T("زيادة ", "Over ") + CashDifference.Value.ToString("N2"),
         };
     }
 

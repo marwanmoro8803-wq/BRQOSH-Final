@@ -45,46 +45,12 @@ public class BilingualGridCellsTests
         + "مصطلحٍ لكلّ وحدةِ عمل، فلا تُساق سوقاً واحداً.";
 
     /// <summary>ما كان يومَ سنّ البوّابة — <b>بعدده لا بوجوده</b>.</summary>
-    private static readonly Dictionary<string, int> Declared = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Ui/VatReturnRows.cs"] = 4,
-        ["Views/Pages/CompanySettingsPage.xaml.cs"] = 21,
-        ["Views/Pages/CreditNotesPage.xaml.cs"] = 3,
-        ["Views/Pages/CrmActivitiesPage.xaml.cs"] = 4,
-        ["Views/Pages/CrmLeadsPage.xaml.cs"] = 4,
-        ["Views/Pages/CrmOpportunitiesPage.xaml.cs"] = 5,
-        ["Views/Pages/DebitNotesPage.xaml.cs"] = 3,
-        ["Views/Pages/DeliveryTripsPage.xaml.cs"] = 5,
-        ["Views/Pages/EmployeeAdvancesPage.xaml.cs"] = 4,
-        ["Views/Pages/GoodsReceiptsPage.xaml.cs"] = 3,
-        ["Views/Pages/InsuranceClaimsPage.xaml.cs"] = 7,
-        ["Views/Pages/JournalEntriesPage.xaml.cs"] = 3,
-        ["Views/Pages/JournalEntryViewDialog.xaml.cs"] = 3,
-        ["Views/Pages/LeasesPage.xaml.cs"] = 4,
-        ["Views/Pages/LeaveRequestsPage.xaml.cs"] = 12,
-        ["Views/Pages/MaintenanceOrdersPage.xaml.cs"] = 8,
-        ["Views/Pages/MenuItemsPage.xaml.cs"] = 5,
-        ["Views/Pages/OrganizationsPage.xaml.cs"] = 11,
-        ["Views/Pages/PaymentVouchersPage.xaml.cs"] = 8,
-        ["Views/Pages/PayrollPage.xaml.cs"] = 3,
-        ["Views/Pages/PosShiftsPage.xaml.cs"] = 1,
-        ["Views/Pages/PropertiesPage.xaml.cs"] = 3,
-        ["Views/Pages/PurchaseInvoicesPage.xaml.cs"] = 3,
-        ["Views/Pages/PurchaseOrdersPage.xaml.cs"] = 10,
-        ["Views/Pages/PurchaseRequestsPage.xaml.cs"] = 9,
-        ["Views/Pages/ReceiptVoucherDialog.xaml.cs"] = 2,
-        ["Views/Pages/ReceiptVouchersPage.xaml.cs"] = 3,
-        ["Views/Pages/RecurringPlansPage.xaml.cs"] = 8,
-        ["Views/Pages/ReservationsPage.xaml.cs"] = 5,
-        ["Views/Pages/RoomsPage.xaml.cs"] = 8,
-        ["Views/Pages/SalesInvoicesPage.xaml.cs"] = 3,
-        ["Views/Pages/SalesOrdersPage.xaml.cs"] = 4,
-        ["Views/Pages/SalesQuotationsPage.xaml.cs"] = 5,
-        ["Views/Pages/ShipmentsPage.xaml.cs"] = 5,
-        ["Views/Pages/StockMovementDialog.xaml.cs"] = 5,
-        ["Views/Pages/StockMovementsPage.xaml.cs"] = 10,
-        ["Views/Pages/VisitsPage.xaml.cs"] = 6,
-    };
+    /// <summary>
+    /// (ui-ux-i18n-printing#9) <b>الدَّينُ صار صفراً</b>: كان هنا ٣٧ ملفّاً بـ٢١٠ مواضع، وتُرجمت كلُّها
+    /// بـ<c>LocaleManager.T</c>؛ والاستثناءُ الوحيدُ (وصفُ حركة المخزون المُخزَّن) بيانُ دفترٍ صار جدولاً.
+    /// فلا إقرارَ يُضاف هنا — <b>الموضعُ الجديدُ يُترجَم عند كتابته</b>.
+    /// </summary>
+    private static readonly Dictionary<string, int> Declared = new(StringComparer.OrdinalIgnoreCase);
 
     // ── البوّابة ────────────────────────────────────────────────────────────
 
@@ -130,18 +96,18 @@ public class BilingualGridCellsTests
     /// <summary>
     /// <b>ولو عمي المسحُ لمرّت البوّابةُ خضراءَ وهي لا ترى شيئاً.</b>
     ///
-    /// <para>فيُثبَّت شاهدٌ حيّ: الدَّينُ المُقَرُّ به <b>موجودٌ فعلاً</b> ويُعثر عليه.
-    /// <b>وصفرُ نتائجَ يعني انكسارَ الاستخراج لا نظافةَ المستودع.</b></para>
+    /// <para>كان الشاهدُ الحيُّ هو الدَّينَ نفسَه (≥٢٠٠ موضع)؛ <b>وبعد أن صار صفراً</b> يُقاس النمطُ
+    /// على شاهدين مصطنعين: ذراعٌ عربيّةٌ عارية تُعدّ، والمعالَجةُ لا تُعدّ.</para>
     /// </summary>
     [Fact]
-    public void TheScan_StillSeesTheDeclaredDebt()
+    public void TheScan_StillSeesABareArabicCell()
     {
-        var found = Scan();
+        const string bare = "Status.Posted => \"مرحّل\",";
+        const string fixedCell = "Status.Posted => LocaleManager.T(\"مرحّل\", \"Posted\"),";
 
-        Assert.NotEmpty(found);
-        Assert.True(found.Values.Sum() >= 200,
-            $"المسحُ وجد {found.Values.Sum()} موضعاً فقط — والمُقَرُّ به {Declared.Values.Sum()}. "
-            + "انكسر الاستخراج، ولو مرّ لكان حارساً أعمى.");
+        Assert.Single(ArabicArrowLiteral.Matches(StripComments(bare)));
+        Assert.Empty(ArabicArrowLiteral.Matches(StripComments(fixedCell)));
+        Assert.Empty(ArabicArrowLiteral.Matches(StripComments("// Status.Posted => \"مرحّل\"")));
     }
 
     /// <summary>

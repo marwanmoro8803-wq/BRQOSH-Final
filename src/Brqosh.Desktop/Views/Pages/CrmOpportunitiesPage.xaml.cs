@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Domain.Crm;
@@ -42,11 +43,11 @@ public partial class CrmOpportunitiesPage : UserControl
 
     private static string StageLabel(CrmOpportunityStage stage) => stage switch
     {
-        CrmOpportunityStage.Qualification => "تأهيل",
-        CrmOpportunityStage.Proposal => "عرض",
-        CrmOpportunityStage.Negotiation => "تفاوض",
-        CrmOpportunityStage.Won => "فوز",
-        CrmOpportunityStage.Lost => "خسارة",
+        CrmOpportunityStage.Qualification => LocaleManager.T("تأهيل", "Qualification"),
+        CrmOpportunityStage.Proposal => LocaleManager.T("عرض", "Proposal"),
+        CrmOpportunityStage.Negotiation => LocaleManager.T("تفاوض", "Negotiation"),
+        CrmOpportunityStage.Won => LocaleManager.T("فوز", "Won"),
+        CrmOpportunityStage.Lost => LocaleManager.T("خسارة", "Lost"),
         _ => stage.ToString()
     };
 

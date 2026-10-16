@@ -182,9 +182,9 @@ public partial class PropertiesPage : UserControl
 
     private static string StatusText(string status) => status switch
     {
-        nameof(UnitStatus.Vacant) => "شاغرة",
-        nameof(UnitStatus.Leased) => "مؤجَّرة",
-        nameof(UnitStatus.Maintenance) => "صيانة",
+        nameof(UnitStatus.Vacant) => LocaleManager.T("شاغرة", "Vacant"),
+        nameof(UnitStatus.Leased) => LocaleManager.T("مؤجَّرة", "Leased"),
+        nameof(UnitStatus.Maintenance) => LocaleManager.T("صيانة", "Maintenance"),
         _ => status,
     };
 }
