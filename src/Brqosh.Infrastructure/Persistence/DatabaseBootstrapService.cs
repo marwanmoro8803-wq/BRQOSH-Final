@@ -23,7 +23,9 @@ public class DatabaseBootstrapService(BrqoshDbContext db)
         var company = await new DatabaseInitializer(db)
             .InitializeAsync(companyName, vatNumber, profile, countryTemplateId);
 
-        await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
+        // ‏(ح-١٥١) ‏المُرقِّعُ يُعرّف المخطّط (ويُعدّل سجلَّ التدقيق) — فلا يُشغَّل بدور التطبيق؛ والمخطّطُ مقيسٌ قبلها في EnsureSchemaAsync.
+        if (await Security.LeastPrivilegeDatabaseRole.CanChangeSchemaAsync(db, ct))
+            await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
 
         if (!string.IsNullOrWhiteSpace(adminUsername) && !string.IsNullOrWhiteSpace(adminPassword))
             await new UserAuthService(db).CreateInitialAdminAsync(company.Id, adminUsername, adminPassword, ct);

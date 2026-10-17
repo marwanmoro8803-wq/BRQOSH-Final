@@ -40,6 +40,14 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
             return;
         }
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٥١ · ‏`security-licensing-tenancy#5`) ‏**دورُ التطبيق لا يُعرّف المخطّط** — فلا يُرقَّع ولا يُهاجَر بها؛
+        // ‏المخطّطُ الحاليُّ يُقبَل، والناقصُ أو المتأخّرُ يُرفض باسمه: الترقيةُ عملُ المالك.
+        if (!await Security.LeastPrivilegeDatabaseRole.CanChangeSchemaAsync(db, ct))
+        {
+            await EnsureCurrentWithoutChangingItAsync(ct);
+            return;
+        }
+
         var historyExists = await MigrationHistoryTableExistsAsync(ct);
         var appliedCount = historyExists ? await AppliedMigrationCountAsync(ct) : 0;
         var coreTableExists = await CoreTableExistsAsync(ct);
@@ -200,6 +208,25 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
             return false;
         }
     }
+
+    /// <summary>
+    /// (ح-١٥١) <b>دورُ التطبيق يقبل المخطّطَ كما هو</b> — موجوداً وغيرَ متأخّرٍ ولا أحدثَ من البناء؛ وما سوى ذلك يُرفض برسالةٍ تقول
+    /// من يُصلحه: <b>الترقيةُ باتّصال المالك</b> (الأداةُ <c>tools/DbRoles</c> أو إقلاعٌ واحدٌ بملفّ اتّصال المالك).
+    /// </summary>
+    private async Task EnsureCurrentWithoutChangingItAsync(CancellationToken ct)
+    {
+        if (!await CoreTableExistsAsync(ct))
+            throw new InvalidOperationException(
+                "هذه القاعدة بلا دفاتر، واتّصالُ هذه المحطّة بدورٍ لا يُنشئ المخطّط — أنشئ الدفاترَ بإقلاعٍ أوّلَ باتّصال مالك القاعدة.");
+
+        await EnsureNotNewerThanThisBuildAsync(ct);
+        var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
+        if (pending.Count > 0)
+            throw new InvalidOperationException(
+                $"للقاعدة {pending.Count} ترقيةً معلّقةً لهذا الإصدار، واتّصالُ هذه المحطّة بدورٍ لا يُعدّل المخطّط — "
+                + "شغّل الترقيةَ باتّصال مالك القاعدة (tools/DbRoles upgrade) ثمّ أعد تشغيل البرنامج.");
+    }
+
 
     private async Task<bool> CoreTableExistsAsync(CancellationToken ct)
     {

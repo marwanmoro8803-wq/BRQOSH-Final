@@ -55,18 +55,42 @@
 
 ---
 
-## 3. دور قاعدة البيانات (Least Privilege)
+## 3. دور قاعدة البيانات (Least Privilege) — المالكُ للمسؤول، والمحطّاتُ بدورٍ محدود (ح-١٥١)
 
-أنشئ مستخدم تطبيق بلا صلاحيات خارقة:
+**دوران لا دورٌ واحد.** كان هذا القسمُ يجعل دورَ التطبيق مالكَ القاعدة — فكلُّ محطّةٍ تحمل اعتمادَ المالك، ومن أخذ سلسلةَ
+الاتصال من أيّ محطّةٍ عدّل الدفاترَ وحذف سطورَ التدقيق وأعاد حسابَ سلسلتها. فصار:
 
-```sql
-CREATE ROLE brqosh_app LOGIN PASSWORD '...';
-CREATE DATABASE brqosh OWNER brqosh_app;
-GRANT CONNECT ON DATABASE brqosh TO brqosh_app;
--- بعد إنشاء المخطط:
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO brqosh_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO brqosh_app;
-```
+1. **المالك** (يُنشئ القاعدة ويُرقّي المخطّط) — اعتمادُه عند المسؤول وحدَه، **لا يُكتب في ملفّ اتّصالِ أيّ محطّة**:
+
+   ```sql
+   CREATE ROLE brqosh_owner LOGIN PASSWORD '...';
+   CREATE DATABASE brqosh OWNER brqosh_owner;
+   ```
+
+   ويُقلع البرنامجُ أوّلَ مرّةٍ **بملفّ اتّصال المالك** على جهاز المسؤول فيُنشئ المخطّطَ والمنشأة.
+
+2. **دورُ التطبيق** — يُنشئه المالكُ بالأداة (الاعتماداتُ من البيئة، لا تُطبع ولا تبقى في سجلّ الطرفيّة):
+
+   ```powershell
+   $env:BRQOSH_OWNER_CONNECTION = "Host=...;Database=brqosh;Username=brqosh_owner;Password=..."
+   $env:BRQOSH_APP_ROLE_PASSWORD = "<16 محرفاً على الأقلّ>"
+   dotnet run --project tools/DbRoles -- create-app-role brqosh_app
+   ```
+
+   يمنح الدورَ قراءةً وكتابةً على الجداول وتسلسلاتها (وما تُنشئه الترقياتُ لاحقاً)، **ولا تعريفَ للمخطّط** (لا إنشاءَ ولا
+   تعديلَ ولا إسقاط)، **وسجلُّ التدقيق `audit_log` إضافةٌ فقط** — لا تعديلَ ولا حذفَ ولا تفريغ. وكلُّ محطّةٍ تتّصل بهذا الدور.
+
+3. **الترقيةُ عملُ المالك**: المحطّةُ بالدور تقبل المخطّطَ الحاليّ، وترقيةٌ معلّقةٌ تُوقف الإقلاعَ برسالةٍ تقول ذلك. فبعد تنصيب
+   إصدارٍ جديد:
+
+   ```powershell
+   dotnet run --project tools/DbRoles -- upgrade      # بـ BRQOSH_OWNER_CONNECTION
+   ```
+
+   ثمّ تُقلع المحطّات. ونسخةُ ما قبل الترقية (§5أ) تُؤخذ في هذه الخطوة.
+
+**قِيس على PostgreSQL حقيقيّ** (`TheAppRoleIsALeastPrivilegeBoundaryTests`): الدورُ يُقلع ويكتب الدفاترَ والتدقيق، ويرفض الخادمُ
+(`42501`) تعديلَ سطر تدقيقٍ وحذفَه وتفريغَ الجدول وإنشاءَ جدولٍ وتعديلَ جدولٍ وإسقاطَه.
 
 لا تستخدم مستخدم `postgres` من التطبيق.
 
