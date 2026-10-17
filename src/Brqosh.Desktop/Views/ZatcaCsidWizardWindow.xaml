@@ -46,6 +46,12 @@
                     <Button Content="طلب شهادة الإنتاج" Style="{StaticResource SecondaryButton}"
                             Padding="18,8" HorizontalAlignment="Right" Click="OnProduction"/>
 
+                    <TextBlock Text="4 — تجديد شهادة الإنتاج" Style="{StaticResource FormSectionTitle}" Margin="0,16,0,8"/>
+                    <TextBlock Text="قبل انتهاء الشهادة: أدخل رمز OTP جديداً من بوابة فاتورة ثم جدّد — تبقى الشهادة الحالية تعمل حتى تقبل الهيئة الجديدة."
+                               Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <Button Content="تجديد شهادة الإنتاج" Style="{StaticResource SecondaryButton}"
+                            Padding="18,8" HorizontalAlignment="Right" Click="OnRenew"/>
+
                     <TextBlock x:Name="ResultText" TextWrapping="Wrap" FontSize="13" Margin="0,16,0,0"/>
                     <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
                                FontSize="13" Margin="0,10,0,0" Visibility="Collapsed"/>

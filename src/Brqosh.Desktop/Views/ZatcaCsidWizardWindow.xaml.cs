@@ -95,9 +95,7 @@ public partial class ZatcaCsidWizardWindow : Window
             using var facade = new DesktopAccountingFacade();
             var db = facade.Db;
             var settings = await db.ZatcaSettings.SingleAsync(s => s.CompanyId == AppServices.CompanyId);
-            var apiUrl = settings.ApiBaseUrl.Replace("developer-portal", "core", StringComparison.OrdinalIgnoreCase);
-            if (!apiUrl.Contains("core", StringComparison.OrdinalIgnoreCase))
-                apiUrl = "https://gw-fatoora.zatca.gov.sa/e-invoicing/core";
+            var apiUrl = ProductionApiUrl(settings);
 
             var onboarding = facade.GetService<ZatcaCsidOnboardingService>();
             var result = await onboarding.RequestProductionCsidAsync(
@@ -114,6 +112,59 @@ public partial class ZatcaCsidWizardWindow : Window
 
             ResultText.Text = $"شهادة الإنتاج جاهزة.\nالشهادة: {result.CertificatePemPath}\nيمكنك الآن إرسال الفواتير للهيئة.";
             UiDialog.Show("تم تسجيل CSID للإنتاج بنجاح.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex is AccountingException ae ? ae.Message : ex.Message);
+        }
+    }
+
+    private static string ProductionApiUrl(ZatcaSettings settings)
+    {
+        var apiUrl = (settings.ApiBaseUrl ?? "").Replace("developer-portal", "core", StringComparison.OrdinalIgnoreCase);
+        return apiUrl.Contains("core", StringComparison.OrdinalIgnoreCase)
+            ? apiUrl
+            : "https://gw-fatoora.zatca.gov.sa/e-invoicing/core";
+    }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٦٢ · ‏`tax-zatca#10`) تجديدُ شهادة الإنتاج من المعالج — وخدمتُه ح-١٣٧: CSR بمفتاحٍ جانبيّ،
+    /// ‏ويُصادَق بالشهادة القائمة، ولا يُبدَّل المفتاحُ والإعدادُ إلّا بعد قبول الهيئة.
+    /// ‏<b>ولا تجديدَ إلّا لشهادة إنتاجٍ قائمة</b>: رمزُ الامتثال أو المحاكاة لا يُرسَل إلى بوّابة الإنتاج، ولا يُولَّد مفتاحٌ جانبيٌّ عبثاً.
+    /// ‏والتجديدُ لا يُفعّل الإرسالَ إن كان المالكُ أوقفه.
+    /// </summary>
+    private async void OnRenew(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ErrorText.Visibility = Visibility.Collapsed;
+            using var facade = new DesktopAccountingFacade();
+            var db = facade.Db;
+            var company = await db.Companies.SingleAsync(c => c.Id == AppServices.CompanyId);
+            var settings = await db.ZatcaSettings.SingleAsync(s => s.CompanyId == AppServices.CompanyId);
+            if (settings.Environment != ZatcaEnvironment.Production)
+            {
+                ShowError("لا شهادةَ إنتاجٍ قائمةٌ تُجدَّد — أكمل الخطوتين 2 و3 أوّلاً.");
+                return;
+            }
+
+            var apiUrl = ProductionApiUrl(settings);
+
+            var onboarding = facade.GetService<ZatcaCsidOnboardingService>();
+            var renewal = onboarding.GenerateKeyPairAndCsr(
+                AppServices.CompanyId, company.NameAr, company.VatRegistrationNumber,
+                environment: ZatcaEnvironment.Production, forRenewal: true);
+            var result = await onboarding.RenewProductionCsidAsync(
+                apiUrl, OtpBox.Text, renewal.CsrBase64, ZatcaSettingsSecrets.GetApiToken(settings), AppServices.CompanyId);
+
+            var token = ZatcaCsidOnboardingService.BuildApiToken(result.BinarySecurityToken, result.Secret);
+            ZatcaSettingsSecrets.ApplyProtectedCsid(
+                settings, result.CertificatePemPath, result.PrivateKeyPemPath, token, result.RequestId, result.Secret);
+            ZatcaSettingsSecrets.ApplyProtectedUpdate(settings, settings.IsEnabled, ZatcaEnvironment.Production, apiUrl,
+                result.CertificatePemPath, result.PrivateKeyPemPath, token);
+            await db.SaveChangesAsync();
+
+            ResultText.Text = $"جُدّدت شهادة الإنتاج.\nالشهادة: {result.CertificatePemPath}";
         }
         catch (Exception ex)
         {
