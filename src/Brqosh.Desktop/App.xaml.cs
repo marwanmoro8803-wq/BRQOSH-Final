@@ -165,9 +165,23 @@ public partial class App : System.Windows.Application
                     // ‏يدلّ عليه، والقارئُ يقبل الصريحَ غيرَ المحميّ) أو جذرُ بياناتٍ منسوخٌ من محطّةٍ
                     // ‏أخرى يمرّ من أوّل مرّةٍ بلا سؤال — **فيبقى ضررُ م-٢٠ قائماً من البابِ الآخر**.
                     var isFreshInstall = adminUsername is not null;
-                    problem = isFreshInstall
-                        ? null
-                        : await DescribeIdentityProblemAsync(setup!, refuseVirgin: connectionWasRepaired);
+                    if (isFreshInstall)
+                    {
+                        // ‏(جاهزيّةُ الإطلاق · ح-١٥٠ · ‏`installer-deployment-ops#9`) ‏**تركيبٌ جديدٌ على قاعدةٍ فيها منشأةٌ ينضمّ إليها بقرار** —
+                        // ‏وكان يتجاوز هذا الفحصَ فيتبنّاها صامتاً ويُسقط المديرَ الذي أُدخل للتوّ.
+                        var join = await JoinExistingCompanyAsync(setup!);
+                        problem = join.Problem;
+                        if (join.Joined is { } joined)
+                        {
+                            setup = joined;
+                            adminUsername = null;
+                            adminPassword = null;
+                        }
+                    }
+                    else
+                    {
+                        problem = await DescribeIdentityProblemAsync(setup!, refuseVirgin: connectionWasRepaired);
+                    }
                     if (problem is null)
                         break;
                 }
@@ -451,6 +465,63 @@ public partial class App : System.Windows.Application
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// (ح-١٥٠) <b>تركيبٌ جديدٌ على قاعدةٍ فيها منشأة</b> — يُسأل المُعِدُّ: الانضمامُ (بهويّة القاعدة وبلا مديرٍ جديد) أو اختيارُ قاعدةٍ أخرى.
+    /// </summary>
+    private async Task<(SetupState? Joined, string? Problem)> JoinExistingCompanyAsync(SetupState setup)
+    {
+        DatabaseIdentity identity;
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            identity = await facade.GetService<DatabaseBootstrapService>().InspectAsync();
+        }
+        catch (Exception ex)
+        {
+            return (null, $"تعذّر فحصُ محتوى القاعدة:\n{ex.Message}");
+        }
+
+        if (!JoiningAnExistingCompany.MustAsk(identity))
+        {
+            // ‏قاعدةٌ فارغةٌ لمنشأةٍ جديدة — **والإعدادُ مكتملٌ ثانيةً** إن رُفض انضمامٌ قبلها في الجلسة نفسِها.
+            try { _setupStore.Save(setup); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "SetupStateFreshInstall");
+            }
+            return (null, null);
+        }
+
+        var join = UiFeedback.Confirm(
+            LocaleManager.T(
+                "قاعدة البيانات المختارة فيها منشأة قائمة: ",
+                "The selected database already holds a company: ")
+            + identity.CompanyName
+            + LocaleManager.T(
+                "\n\nهل تريد ربط هذا الجهاز بها؟ لن يُنشأ حسابُ المدير الذي أدخلته — ادخل بحسابٍ موجودٍ فيها.\n«لا» يُعيدك لاختيار قاعدةٍ أخرى.",
+                "\n\nConnect this computer to it? The administrator you entered will not be created — sign in with an account that already exists there.\n\"No\" lets you choose another database."));
+
+        if (!join)
+        {
+            try { _setupStore.Save(JoiningAnExistingCompany.Declined(setup)); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "SetupStateDeclineJoin");
+            }
+            return (null, LocaleManager.T(
+                "لم يُربط الجهاز بالمنشأة القائمة — اختر قاعدةً فارغةً لمنشأةٍ جديدة، أو قاعدةَ منشأتك.",
+                "This computer was not connected to the existing company — choose an empty database for a new company, or your company's database."));
+        }
+
+        var joined = JoiningAnExistingCompany.Joined(setup, identity);
+        try { _setupStore.Save(joined); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "SetupStateJoin");
+        }
+        return (joined, null);
     }
 
     /// <summary>دخول آلي للتدقيق FlaUI فقط — BRQOSH_UITEST=1 (لا يُفعَّل في التشغيل العادي).</summary>
