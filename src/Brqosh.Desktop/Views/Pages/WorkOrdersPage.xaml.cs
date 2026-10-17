@@ -20,11 +20,13 @@ public partial class WorkOrdersPage : UserControl
     public WorkOrdersPage()
     {
         InitializeComponent();
+        IssueBtn.Content = LocaleManager.T("صرف مواد للمحدد", "Issue materials");
         Loaded += async (_, _) =>
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (NewBtn, PermissionService.CanPostAccounting),
                 (ReleaseBtn, PermissionService.CanPostAccounting),
+                (IssueBtn, PermissionService.CanPostAccounting),
                 (CompleteBtn, PermissionService.CanPostAccounting),
                 (CancelBtn, PermissionService.CanCancelOrReverse));
             await ReloadAsync();
@@ -83,6 +85,59 @@ public partial class WorkOrdersPage : UserControl
         }
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٧ · <c>manufacturing#4</c>) <b>صرفُ ما خرج فعلاً</b> — كميّةٌ لكلّ خامةٍ في وصفة الأمر،
+    /// والمقترحُ كميّةُ الوصفة للمخطَّط؛ والصفرُ يُتخطّى. والأمرُ الذي صُرف له يُكمَل بما صُرف.
+    /// </summary>
+    private async void OnIssue(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not OrderRow row || row.Status != WorkOrderStatus.Released)
+        {
+            UiDialog.Show("اختر أمر إنتاج صادراً.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var order = await db.WorkOrders.SingleAsync(w => w.Id == row.Id);
+            var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == order.BomId);
+            var ids = order.Materials.Select(m => m.ComponentProductId).ToList();
+            var names = await db.Products.IgnoreQueryFilters().Where(p => ids.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.NameAr);
+
+            var issues = new List<(long ProductId, decimal Quantity)>();
+            foreach (var material in order.Materials)
+            {
+                var suggested = Math.Round(material.Quantity * order.PlannedQuantity / bom.OutputQuantity, 4);
+                var prompt = new TextInputDialog(LocaleManager.T("صرف مواد", "Issue materials"),
+                    names.GetValueOrDefault(material.ComponentProductId, "—") + LocaleManager.T(" — الكمية المصروفة:", " — quantity issued:"),
+                    suggested.ToString("0.####", CultureInfo.InvariantCulture)) { Owner = Window.GetWindow(this) };
+                if (prompt.ShowDialog() != true)
+                    return;
+                if (!NumericInput.TryParse(prompt.Value, out var qty) || qty < 0)
+                    throw new Brqosh.Domain.Accounting.AccountingException(LocaleManager.T("الكمية غير صالحة.", "Invalid quantity."));
+                if (qty > 0)
+                    issues.Add((material.ComponentProductId, qty));
+            }
+
+            if (issues.Count == 0)
+                return;
+
+            using var facade = new DesktopAccountingFacade();
+            var cost = await facade.GetService<WorkOrderService>().IssueMaterialsAsync(
+                AppServices.CompanyId, row.Id, issues, SecurityContext.ResolveUsername());
+            UiFeedback.ShowInfo(LocaleManager.T("صُرفت الموادّ للأمر بتكلفة ", "Materials issued to the order at a cost of ")
+                                + cost.ToString("N2"));
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            // ‏تحذيرٌ لا حوار — فرسالةُ الخدمة نصٌّ مركَّبٌ لا يُبحث في سجلّ الترجمة (حارسُ الحوارات).
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
     private async void OnComplete(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not OrderRow row || row.Status != WorkOrderStatus.Released)
@@ -97,6 +152,17 @@ public partial class WorkOrdersPage : UserControl
             return;
 
         if (!NumericInput.TryParse(dialog.Value, out var qty) || qty <= 0)
+        {
+            UiDialog.Show("الكمية غير صالحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // ‏(ح-١٤٧) ‏التالفُ يُسجَّل فيُقرأ العائد — والصفرُ افتراضاً.
+        var scrapDialog = new TextInputDialog(LocaleManager.T("إكمال أمر الإنتاج", "Complete work order"),
+            LocaleManager.T("الكمية التالفة (اختياري):", "Scrapped quantity (optional):"), "0") { Owner = Window.GetWindow(this) };
+        if (scrapDialog.ShowDialog() != true)
+            return;
+        if (!NumericInput.TryParse(scrapDialog.Value, out var scrap) || scrap < 0)
         {
             UiDialog.Show("الكمية غير صالحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -132,7 +198,7 @@ public partial class WorkOrdersPage : UserControl
             }
 
             await service.CompleteAsync(AppServices.CompanyId, row.Id, qty, username,
-                outputBatchNumber: batch, outputExpiry: expiry);
+                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap);
             UiDialog.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }

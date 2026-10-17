@@ -54,7 +54,7 @@ public class WorkOrderService(BrqoshDbContext db)
     /// <param name="outputExpiry">صلاحيةُ دفعة الإنتاج إن كانت لها صلاحية.</param>
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
         string username, DateOnly? completionDate = null, string? outputBatchNumber = null,
-        DateOnly? outputExpiry = null, CancellationToken ct = default)
+        DateOnly? outputExpiry = null, CancellationToken ct = default, decimal scrapQuantity = 0m)
     {
         SecurityContext.EnsureCanPost();
         username = SecurityContext.ResolveUsername(username);
@@ -96,49 +96,23 @@ public class WorkOrderService(BrqoshDbContext db)
                     $"المنتج التامّ «{finished.NameAr}» يُتتبَّع بالدفعة — أدخِل رقمَ دفعة الإنتاج لإكمال الأمر {order.OrderNumber}.");
             // ‏ودفعةٌ لتامٍّ لا يُتتبَّع يرفضها المَخنَقُ نفسُه باسمه (`ApplyBatchDeltaAsync`) — فلا حارسَ ثانٍ هنا.
 
-            var scale = producedQuantity / bom.OutputQuantity;
-            var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
-            decimal materialCost = 0;
-            var costing = new InventoryCostingService(db);
-            var allocator = new BatchAllocationService(db);
-            var materialIds = order.Materials.Select(m => m.ComponentProductId).Distinct().ToList();
-            var trackedMaterials = (await db.Products.IgnoreQueryFilters()
-                    .Where(p => materialIds.Contains(p.Id) && p.Tracking != InventoryTracking.None)
-                    .Select(p => p.Id)
-                    .ToListAsync(token))
-                .ToHashSet();
-
-            foreach (var line in order.Materials)
+            // ‏(جاهزيّةُ الإطلاق · ح-١٤٧ · ‏`manufacturing#4`) ‏**أمرٌ صُرف له فعلاً يُكمَل بما صُرف — لا بالوصفة.**
+            // ‏فالموادُّ في الإنتاج تحت التشغيل منذ صرفها، ولا يُخصم من المخزون شيءٌ ثانٍ عند الإكمال؛ **والفرقُ عن الوصفة
+            // ‏(هدرٌ أو وفر) يظهر في تكلفة الوحدة**. ‏وأمرٌ بلا صرفٍ يُخصم بالوصفة كما كان حرفاً.
+            decimal materialCost;
+            List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> issueLines;
+            if (order.UsesActualIssues)
             {
-                var qty = Math.Round(line.Quantity * scale, 4, MidpointRounding.AwayFromZero);
-                // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**مفتاحُ الاستهلاك هو مفتاحُ الحركة بعينه.**
-                //
-                // ‏كان هذا يُسجّل الاستهلاكَ تحت `WorkOrder:{OrderNumber}` **والحركةُ
-                // ‏المخزنيّة تُرحَّل تحت `WorkOrder:{Id}`** (انظر أسفله) — **مفتاحان
-                // ‏لأمرٍ واحد**. فدفترُ الاستهلاك والحركةُ لا يلتقيان أبداً،
-                // ‏و`RestoreConsumedLayersAsync` — وهي تبحث بمفتاح الحركة — **لا تجد
-                // ‏شيئاً فلا تُرمّم شيئاً**.
-                //
-                // ‏**وقيس: طبقةُ المادّة تبقى ستّاً بعد إلغاءٍ يجب أن يُعيدها عشراً.**
-                //
-                // ‏**والمعرّفُ أثبتُ من الرقم**: رقمُ الأمر نصٌّ قد يكون فارغاً وقتَ
-                // ‏الاستهلاك، فيصير المفتاحُ `WorkOrder:` — وهو عينُ صنفِ العطل المسجَّل
-                // ‏في التدقيق للإشعار المدين (`DebitNote:` فارغاً).
-                var (totalCost, componentUnitCost) = await costing.ConsumeForIssueAsync(
-                    companyId, line.ComponentProductId, materialsWarehouseId, qty,
-                    $"WorkOrder:{order.Id}", token);
-                materialCost += totalCost;
-                if (!trackedMaterials.Contains(line.ComponentProductId))
-                {
-                    issueLines.Add((line.ComponentProductId, qty, componentUnitCost, null, null));
-                    continue;
-                }
-
-                // ‏(ح-١٠١) ‏**والخامةُ المتتبَّعةُ تُصرف بالأقدم انتهاءً — سطرٌ لكلّ دفعة** (`BatchAllocationService`، كما يفعل المطبخ):
-                // ‏فالمَخنَقُ يُنقص كلَّ دفعةٍ بعينها، والمنتهيةُ لا تُخصَّص، ونقصُ الساري يُرفض باسم الخامة قبل أيّ ترحيل.
-                foreach (var draw in await allocator.AllocateAsync(
-                             companyId, line.ComponentProductId, materialsWarehouseId, qty, completedOn, token))
-                    issueLines.Add((line.ComponentProductId, draw.Quantity, componentUnitCost, draw.BatchNumber, draw.ExpiryDate));
+                materialCost = order.IssuedMaterialCost;
+                issueLines = [];
+            }
+            else
+            {
+                var scale = producedQuantity / bom.OutputQuantity;
+                (materialCost, issueLines) = await ConsumeMaterialsAsync(companyId, order,
+                    order.Materials.Select(m => (m.ComponentProductId,
+                        Math.Round(m.Quantity * scale, 4, MidpointRounding.AwayFromZero))),
+                    materialsWarehouseId, completedOn, token);
             }
 
             // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل تدخل التكلفة — وكانت الموادُّ وحدَها.**
@@ -163,8 +137,9 @@ public class WorkOrderService(BrqoshDbContext db)
                 ? Math.Round(totalProductionCost / producedQuantity, 4, MidpointRounding.AwayFromZero)
                 : 0m;
 
-            await inv.PostDocumentMovementAsync(companyId, materialsWarehouseId, StockMovementType.Issue,
-                completedOn, $"صرف مواد — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}", issueLines);
+            if (issueLines.Count > 0)
+                await inv.PostDocumentMovementAsync(companyId, materialsWarehouseId, StockMovementType.Issue,
+                    completedOn, $"صرف مواد — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}", issueLines);
 
             await inv.PostDocumentMovementAsync(companyId, outputWarehouseId, StockMovementType.Receipt,
                 completedOn, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
@@ -188,8 +163,12 @@ public class WorkOrderService(BrqoshDbContext db)
             // ‏الصناعيّةُ من حسابَيهما — **فتُنقَل تكلفةٌ وقعت، لا تُخترع**. وحسابا 5106
             // ‏و5107 موجودان في الدليل منذ نشأته **ولا يكتبهما أحد**؛ وبعد هذا يحملان
             // ‏المُحمَّلَ دائناً، **ورصيدُهما الباقي هو فرقُ التحميل** يُقرأ في قائمة الدخل.
-            entry.AddLine(wip, totalProductionCost, 0m, "تحميل WIP");
-            entry.AddLine(inventory, 0m, materialCost, "صرف مواد للإنتاج");
+            // ‏(ح-١٤٧) ‏والموادُّ المصروفةُ فعلاً في WIP سلفاً — فلا يُحمَّل هنا إلا التحويل.
+            var chargedNow = order.UsesActualIssues ? conversionCost : totalProductionCost;
+            if (chargedNow > 0m)
+                entry.AddLine(wip, chargedNow, 0m, "تحميل WIP");
+            if (!order.UsesActualIssues)
+                entry.AddLine(inventory, 0m, materialCost, "صرف مواد للإنتاج");
 
             if (labourCost > 0m)
             {
@@ -208,24 +187,140 @@ public class WorkOrderService(BrqoshDbContext db)
             entry2.AddLine(inventory, totalProductionCost, 0m, "منتج تام");
             entry2.AddLine(wip, 0m, totalProductionCost, "إغلاق WIP");
 
-            var num1 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, completedOn);
-            entry.Post(num1);
-            db.JournalEntries.Add(entry);
+            if (entry.Lines.Count > 0)
+            {
+                var num1 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, completedOn);
+                entry.Post(num1);
+                db.JournalEntries.Add(entry);
+            }
 
             var num2 = await new JournalEntryNumberGenerator(db).NextAsync(companyId, completedOn);
             entry2.Post(num2);
             db.JournalEntries.Add(entry2);
             await db.SaveChangesAsync(token);
 
-            order.Complete(producedQuantity);
+            order.Complete(producedQuantity, scrapQuantity);
             order.LinkCompletionJournal(entry2.Id);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إكمال أمر إنتاج",
-                "WorkOrder", order.OrderNumber ?? order.Id.ToString(), $"كمية: {producedQuantity:N2}");
+                "WorkOrder", order.OrderNumber ?? order.Id.ToString(),
+                $"كمية: {producedQuantity:N2}" + (scrapQuantity > 0m ? $" — تالف: {scrapQuantity:N2}" : ""));
 
             return order;
         }, ct);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٧ · <c>manufacturing#4</c>) <b>صرفُ موادّ فعليٌّ للأمر قبل إكماله</b> — بالكميّة التي خرجت.
+    /// </summary>
+    /// <remarks>
+    /// يُخصم من مستودع موادّ الأمر بتكلفة المخزون، ويُدان الإنتاجُ تحت التشغيل (1119) ويُدان المخزون —
+    /// <b>فيحمل WIP رصيداً بين الصرف والإكمال</b> (<c>manufacturing#8</c>). والصنفُ يجب أن يكون من وصفة الأمر
+    /// المجمَّدة: البديلُ قرارُ وصفةٍ لا صرف. وصرفٌ ثانٍ وثالثٌ يُقبلان — لكلٍّ قيدُه.
+    /// </remarks>
+    public async Task<decimal> IssueMaterialsAsync(long companyId, long workOrderId,
+        IReadOnlyList<(long ProductId, decimal Quantity)> issues, string username,
+        DateOnly? issueDate = null, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanPost();
+        username = SecurityContext.ResolveUsername(username);
+        return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
+            if (order.Status != WorkOrderStatus.Released || !order.RecipeFrozen)
+                throw new AccountingException($"لا يُصرف إلا لأمرٍ صادرٍ بوصفةٍ مجمَّدة — الأمر {order.OrderNumber ?? order.Id.ToString()}.");
+            if (issues.Count == 0 || issues.Any(i => i.Quantity <= 0m))
+                throw new AccountingException("أدخِل صنفاً واحداً على الأقلّ بكميّةٍ موجبة.");
+
+            var recipe = order.Materials.Select(m => m.ComponentProductId).ToHashSet();
+            var foreign = issues.Select(i => i.ProductId).Where(id => !recipe.Contains(id)).Distinct().ToList();
+            if (foreign.Count > 0)
+            {
+                var names = await db.Products.IgnoreQueryFilters().Where(p => foreign.Contains(p.Id))
+                    .Select(p => p.NameAr).ToListAsync(token);
+                throw new AccountingException(
+                    $"ليس في وصفة الأمر {order.OrderNumber}: {string.Join("، ", names)} — والبديلُ يُقرَّر في الوصفة لا عند الصرف.");
+            }
+
+            var on = issueDate ?? DateOnly.FromDateTime(DateTime.Today);
+            await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, on);
+            var inv = new InventoryService(db);
+            var warehouseId = await WarehouseForAsync(inv, companyId, order.MaterialsWarehouseId, "مستودع الموادّ", token);
+
+            var (cost, lines) = await ConsumeMaterialsAsync(companyId, order,
+                issues.Select(i => (i.ProductId, Math.Round(i.Quantity, 4, MidpointRounding.AwayFromZero))),
+                warehouseId, on, token);
+            if (cost <= 0m)
+                throw new AccountingException("الموادّ المصروفة بلا تكلفة — راجع أرصدة المستودع وتكلفتها.");
+
+            await inv.PostDocumentMovementAsync(companyId, warehouseId, StockMovementType.Issue,
+                on, $"صرف مواد فعليّ — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}", lines);
+
+            var wip = await SystemAccountProvisioning.EnsureAsync(
+                db, companyId, SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess, token);
+            if (wip.IsGroup || wip.Type != AccountType.Asset)
+                throw new AccountingException(
+                    $"الحساب {wip.Code} «{wip.NameAr}» ليس حسابَ أصلٍ قابلاً للترحيل — وهو رمزُ الإنتاج تحت التشغيل؛ صحّحه من دليل الحسابات.");
+            var inventory = await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory, token);
+
+            var entry = JournalEntry.CreateDraft(companyId, on,
+                $"صرف مواد لأمر إنتاج {order.OrderNumber}", IssueSource(order.Id, order.IssueCount + 1));
+            entry.AddLine(wip, cost, 0m, "موادّ مصروفة للإنتاج تحت التشغيل");
+            entry.AddLine(inventory, 0m, cost, "صرف مواد للإنتاج");
+            entry.Post(await new JournalEntryNumberGenerator(db).NextAsync(companyId, on));
+            db.JournalEntries.Add(entry);
+
+            order.RecordIssue(cost);
+            await db.SaveChangesAsync(token);
+
+            await new AuditService(db).LogAsync(companyId, username, "صرف مواد لأمر إنتاج",
+                "WorkOrder", order.OrderNumber ?? order.Id.ToString(), $"{cost:N2}");
+            return cost;
+        }, ct);
+    }
+
+    /// <summary>مفتاحُ قيد الصرف رقم <paramref name="n"/> للأمر — ويقرؤه الإلغاءُ ليعكسه.</summary>
+    internal static string IssueSource(long workOrderId, int n) => $"WorkOrderIssue:{workOrderId}:{n}";
+
+    /// <summary>
+    /// استهلاكُ موادّ الأمر من مستودعها بتكلفة المخزون — <b>للخصم العكسيّ عند الإكمال وللصرف الفعليّ معاً</b>،
+    /// فلا يختلف المساران في مفتاح الاستهلاك ولا في تخصيص الدفعات.
+    /// </summary>
+    private async Task<(decimal Cost, List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> Lines)>
+        ConsumeMaterialsAsync(long companyId, WorkOrder order, IEnumerable<(long ProductId, decimal Qty)> quantities,
+            long materialsWarehouseId, DateOnly on, CancellationToken token)
+    {
+        var wanted = quantities.ToList();
+        var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
+        decimal materialCost = 0;
+        var costing = new InventoryCostingService(db);
+        var allocator = new BatchAllocationService(db);
+        var materialIds = wanted.Select(m => m.ProductId).Distinct().ToList();
+        var trackedMaterials = (await db.Products.IgnoreQueryFilters()
+                .Where(p => materialIds.Contains(p.Id) && p.Tracking != InventoryTracking.None)
+                .Select(p => p.Id)
+                .ToListAsync(token))
+            .ToHashSet();
+
+        foreach (var (productId, qty) in wanted)
+        {
+            // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**مفتاحُ الاستهلاك هو مفتاحُ الحركة بعينه** (`WorkOrder:{Id}`) — فيُرمّم الإلغاءُ ما استُهلك.
+            var (totalCost, componentUnitCost) = await costing.ConsumeForIssueAsync(
+                companyId, productId, materialsWarehouseId, qty, $"WorkOrder:{order.Id}", token);
+            materialCost += totalCost;
+            if (!trackedMaterials.Contains(productId))
+            {
+                issueLines.Add((productId, qty, componentUnitCost, null, null));
+                continue;
+            }
+
+            // ‏(ح-١٠١) ‏**والخامةُ المتتبَّعةُ تُصرف بالأقدم انتهاءً — سطرٌ لكلّ دفعة**.
+            foreach (var draw in await allocator.AllocateAsync(companyId, productId, materialsWarehouseId, qty, on, token))
+                issueLines.Add((productId, draw.Quantity, componentUnitCost, draw.BatchNumber, draw.ExpiryDate));
+        }
+
+        return (materialCost, issueLines);
     }
 
     /// <summary>
@@ -258,6 +353,9 @@ public class WorkOrderService(BrqoshDbContext db)
             }
             else
             {
+                // ‏(ح-١٤٧) ‏**وأمرٌ صادرٌ صُرف له يُعكس صرفُه** — تعود الموادُّ ويُفرَّغ WIP؛ وبغيره يبقى رصيدٌ بلا أمر.
+                if (order.UsesActualIssues)
+                    await ReverseIssuesAsync(companyId, order, cancelDate, username, token);
                 order.Cancel();
             }
 
@@ -280,6 +378,8 @@ public class WorkOrderService(BrqoshDbContext db)
             $"WorkOrderReceipt:{order.Id}",
         };
 
+        // ‏(ح-١٤٧) ‏وقيودُ الصرف الفعليّ مع قيدي الإكمال.
+        entryKeys = [.. entryKeys, .. Enumerable.Range(1, order.IssueCount).Select(n => IssueSource(order.Id, n))];
         foreach (var key in entryKeys)
         {
             var entry = await db.JournalEntries.FirstOrDefaultAsync(e =>
@@ -330,6 +430,33 @@ public class WorkOrderService(BrqoshDbContext db)
     /// (ح-٩٧) <b>مستودعُ الأمر إن اختير — في المنشأة وغيرُ موقوف — وإلا الافتراضيّ.</b> والرفضُ يُسمّي الدورَ والمستودع:
     /// فالمالكُ يعرف أيَّ مستودعٍ أوقفه، ولا يقرأ «طبقات FIFO غير كافية» عن مستودعٍ لم يقصده.
     /// </summary>
+    /// <summary>(ح-١٤٧) يعكس قيودَ الصرف الفعليّ وحركاتِه لأمرٍ صادرٍ يُلغى قبل إكماله.</summary>
+    private async Task ReverseIssuesAsync(long companyId, WorkOrder order, DateOnly cancelDate, string username,
+        CancellationToken token)
+    {
+        await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, cancelDate);
+        for (var n = 1; n <= order.IssueCount; n++)
+        {
+            var key = IssueSource(order.Id, n);
+            var entry = await db.JournalEntries.FirstOrDefaultAsync(e =>
+                e.CompanyId == companyId && e.SourceDocument == key && e.Status == JournalEntryStatus.Posted, token);
+            if (entry is not null)
+                await new JournalReversalService(db).ReverseAsync(
+                    companyId, entry.Id, cancelDate, username, fromSourceDocument: true, token);
+        }
+
+        var source = $"WorkOrder:{order.Id}";
+        var movements = await db.StockMovements
+            .Where(m => m.CompanyId == companyId && m.SourceDocument == source && m.Status == StockMovementStatus.Posted)
+            .ToListAsync(token);
+        var inv = new InventoryService(db);
+        foreach (var movement in movements.OrderByDescending(m => m.Id))
+        {
+            await inv.ReverseDocumentMovementAsync(movement);
+            movement.MarkCancelled();
+        }
+    }
+
     private async Task<long> WarehouseForAsync(InventoryService inv, long companyId, long? chosenId, string role,
         CancellationToken ct)
     {

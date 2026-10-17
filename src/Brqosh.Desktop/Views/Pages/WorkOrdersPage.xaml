@@ -23,6 +23,8 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="ReleaseBtn" Content="إصدار المحدد" Padding="16,9" Margin="0,0,8,0" Click="OnRelease"/>
+                    <!-- (جاهزيّةُ الإطلاق · ح-١٤٧) صرفُ موادّ فعليٌّ للأمر الصادر — ونصُّه من الشيفرة الخلفيّة. -->
+                    <Button x:Name="IssueBtn" Padding="16,9" Margin="0,0,8,0" Click="OnIssue"/>
                     <Button x:Name="CompleteBtn" Content="إكمال المحدد" Padding="16,9" Margin="0,0,8,0" Click="OnComplete"/>
                     <Button Content="عرض قيد الإكمال" Padding="16,9" Click="OnViewJournal"/>
                 </StackPanel>

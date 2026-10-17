@@ -2183,6 +2183,13 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("CompletionJournalEntryId")
                         .HasColumnType("bigint");
 
+                    b.Property<int>("IssueCount")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("IssuedMaterialCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<long?>("MaterialsWarehouseId")
                         .HasColumnType("bigint");
 
@@ -2219,6 +2226,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("RecipeOverheadRatePercent")
                         .HasPrecision(9, 4)
                         .HasColumnType("numeric(9,4)");
+
+                    b.Property<decimal>("ScrapQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
 
                     b.Property<string>("Status")
                         .IsRequired()

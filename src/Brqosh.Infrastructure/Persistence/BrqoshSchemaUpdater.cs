@@ -332,6 +332,20 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else
                 await EnsureSqliteColumnAsync("work_orders", column, "INTEGER NULL", ct);
         }
+
+        // ‏(ح-١٤٧) ‏الصرفُ الفعليّ والتالف — بافتراضاتٍ صفريّة هي سلوكُ الأمر القائم.
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("work_orders", "IssuedMaterialCost", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            await EnsurePgColumnAsync("work_orders", "IssueCount", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsurePgColumnAsync("work_orders", "ScrapQuantity", "NUMERIC(18,4) NOT NULL DEFAULT 0", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("work_orders", "IssuedMaterialCost", "TEXT NOT NULL DEFAULT '0'", ct);
+            await EnsureSqliteColumnAsync("work_orders", "IssueCount", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsureSqliteColumnAsync("work_orders", "ScrapQuantity", "TEXT NOT NULL DEFAULT '0'", ct);
+        }
     }
 
     private async Task EnsureGosiContributorGroupColumnsAsync(bool isPg, CancellationToken ct)

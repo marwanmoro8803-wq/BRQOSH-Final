@@ -1564,6 +1564,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(w => w.Notes).HasMaxLength(1024);
             entity.Property(w => w.PlannedQuantity).HasPrecision(18, 4);
             entity.Property(w => w.ProducedQuantity).HasPrecision(18, 4);
+            // ‏(ح-١٤٧) ‏الصرفُ الفعليّ والتالف — صفرٌ افتراضاً: الأمرُ القائمُ يُكمَل بالوصفة كما كان.
+            entity.Property(w => w.IssuedMaterialCost).HasPrecision(18, 2);
+            entity.Property(w => w.ScrapQuantity).HasPrecision(18, 4);
             entity.Property(w => w.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(w => new { w.CompanyId, w.OrderNumber });
             entity.HasIndex(w => w.BomId);

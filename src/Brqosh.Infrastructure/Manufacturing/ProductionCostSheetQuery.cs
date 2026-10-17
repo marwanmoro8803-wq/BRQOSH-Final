@@ -44,12 +44,14 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
         if (orders.Count == 0)
             return [];
 
-        var keys = orders.Select(o => $"WorkOrderComplete:{o.Id}").ToList();
-        // ‏`WhereReportable` كبقيّة الاستعلامات (`ReversedEntriesStayInBalancesTests`) — والأمرُ الملغى خارجٌ بحالته أعلاه،
-        // ‏فقيدُ إكماله المعكوسُ لا يبلغ الكشف.
-        var entries = await db.JournalEntries
+        // ‏(ح-١٤٧ · ‏`manufacturing#4`) ‏**الصفُّ من قيد الاستلام، ومكوّناتُه من قيد الإكمال وقيود الصرف الفعليّ.**
+        // ‏كان الكشفُ يقرأ الموادَّ من قيد الإكمال وحدَه — وأمرٌ صُرف له فعلاً تخرج موادُّه في قيود الصرف لا في الإكمال،
+        // ‏فكان سيظهر بلا موادّ، **وقيدُ الإكمال نفسُه لا يوجد حين لا تحويل**. ‏فالتاريخُ والمجموعُ من الاستلام (إغلاقُ WIP)،
+        // ‏والصرفُ يُقرأ بلا قيد تاريخ — يسبق الإكمالَ وهو من تكلفته.
+        var receiptKeys = orders.Select(o => $"WorkOrderReceipt:{o.Id}").ToList();
+        var receipts = await db.JournalEntries
             .WhereReportable(companyId, from, to)
-            .Where(e => e.SourceDocument != null && keys.Contains(e.SourceDocument))
+            .Where(e => e.SourceDocument != null && receiptKeys.Contains(e.SourceDocument))
             .Select(e => new
             {
                 e.SourceDocument,
@@ -57,6 +59,21 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
                 Lines = e.Lines.Select(l => new { l.AccountCode, l.Debit, l.Credit }).ToList(),
             })
             .ToListAsync(ct);
+
+        var completeKeys = orders.Select(o => $"WorkOrderComplete:{o.Id}").ToList();
+        var issuePrefixes = orders.Select(o => $"WorkOrderIssue:{o.Id}:").ToList();
+        var components = (await db.JournalEntries
+                .WhereReportable(companyId)
+                .Where(e => e.SourceDocument != null
+                            && (completeKeys.Contains(e.SourceDocument) || e.SourceDocument.StartsWith("WorkOrderIssue:")))
+                .Select(e => new
+                {
+                    e.SourceDocument,
+                    Lines = e.Lines.Select(l => new { l.AccountCode, l.Debit, l.Credit }).ToList(),
+                })
+                .ToListAsync(ct))
+            .Where(e => completeKeys.Contains(e.SourceDocument!) || issuePrefixes.Any(prefix => e.SourceDocument!.StartsWith(prefix, StringComparison.Ordinal)))
+            .ToList();
 
         var inventoryCode = SaudiChartOfAccounts.SystemCodes.Inventory;
         var wipCode = SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess;
@@ -68,13 +85,18 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
             .ToDictionaryAsync(x => x.Id, x => x.NameAr, ct);
 
         var rows = new List<ProductionCostRow>();
-        foreach (var entry in entries)
+        foreach (var entry in receipts)
         {
-            var order = orders.Single(o => $"WorkOrderComplete:{o.Id}" == entry.SourceDocument);
-            var material = entry.Lines.Where(l => l.AccountCode == inventoryCode).Sum(l => l.Credit - l.Debit);
-            var labour = entry.Lines.Where(l => l.AccountCode == LabourAccount).Sum(l => l.Credit - l.Debit);
-            var overhead = entry.Lines.Where(l => l.AccountCode == OverheadAccount).Sum(l => l.Credit - l.Debit);
-            var total = entry.Lines.Where(l => l.AccountCode == wipCode).Sum(l => l.Debit - l.Credit);
+            var order = orders.Single(o => $"WorkOrderReceipt:{o.Id}" == entry.SourceDocument);
+            var mine = components
+                .Where(c => c.SourceDocument == $"WorkOrderComplete:{order.Id}"
+                            || c.SourceDocument!.StartsWith($"WorkOrderIssue:{order.Id}:", StringComparison.Ordinal))
+                .SelectMany(c => c.Lines)
+                .ToList();
+            var material = mine.Where(l => l.AccountCode == inventoryCode).Sum(l => l.Credit - l.Debit);
+            var labour = mine.Where(l => l.AccountCode == LabourAccount).Sum(l => l.Credit - l.Debit);
+            var overhead = mine.Where(l => l.AccountCode == OverheadAccount).Sum(l => l.Credit - l.Debit);
+            var total = entry.Lines.Where(l => l.AccountCode == wipCode).Sum(l => l.Credit - l.Debit);
 
             rows.Add(new ProductionCostRow(
                 order.Id, order.OrderNumber ?? order.Id.ToString(), products.GetValueOrDefault(order.BomId, ""),

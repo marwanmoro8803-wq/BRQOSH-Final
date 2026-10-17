@@ -128,12 +128,48 @@ public class WorkOrder : IBranchScoped
         Status = WorkOrderStatus.Released;
     }
 
-    public void Complete(decimal producedQuantity)
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٧ · <c>manufacturing#4</c>) <b>تكلفةُ ما صُرف فعلاً للأمر</b> — بصرفٍ واحدٍ أو أكثر قبل الإكمال.
+    ///
+    /// <para>كان الأمرُ لا يعرف إلا «الخصمَ العكسيّ» عند الإكمال: الموادُّ تُخصم بكميّات الوصفة مضروبةً في المنتَج،
+    /// فلا يُسجَّل ما صُرف فعلاً ولا ما ضاع، <b>والإنتاجُ تحت التشغيل لا يحمل رصيداً أبداً</b> (<c>manufacturing#8</c>).
+    /// والأمرُ الذي صُرف له يُكمَل بما صُرف — لا بالوصفة — <b>والفرقُ عن الوصفة هو الهدرُ ظاهراً في تكلفة الوحدة</b>.</para>
+    /// </summary>
+    public decimal IssuedMaterialCost { get; private set; }
+
+    /// <summary>عددُ عمليّات الصرف — ومنه مفتاحُ قيد كلِّ صرف.</summary>
+    public int IssueCount { get; private set; }
+
+    /// <summary>(ح-١٤٧) الكميّةُ التالفة عند الإكمال — تُسجَّل فيُقرأ العائد، وتكلفتُها على الوحدات السليمة.</summary>
+    public decimal ScrapQuantity { get; private set; }
+
+    /// <summary>هل صُرف للأمر فعلاً — فيُكمَل بما صُرف لا بالوصفة.</summary>
+    public bool UsesActualIssues => IssueCount > 0;
+
+    /// <summary>العائد: المنتَجُ السليمُ إلى المخطَّط (٪).</summary>
+    public decimal YieldPercent => PlannedQuantity > 0m
+        ? Math.Round(ProducedQuantity / PlannedQuantity * 100m, 2, MidpointRounding.AwayFromZero)
+        : 0m;
+
+    /// <summary>يسجّل صرفاً فعليّاً للأمر — <b>والأمرُ صادرٌ بوصفةٍ مجمَّدة</b>.</summary>
+    public void RecordIssue(decimal materialCost)
+    {
+        EnsureStatus(WorkOrderStatus.Released, "صرف موادّ للأمر");
+        if (materialCost <= 0m)
+            throw new AccountingException("تكلفة الصرف يجب أن تكون موجبة.");
+        IssuedMaterialCost = Math.Round(IssuedMaterialCost + materialCost, 2, MidpointRounding.AwayFromZero);
+        IssueCount++;
+    }
+
+    public void Complete(decimal producedQuantity, decimal scrapQuantity = 0m)
     {
         EnsureStatus(WorkOrderStatus.Released, "إكمال الأمر");
         if (producedQuantity <= 0)
             throw new AccountingException("الكمية المنتجة يجب أن تكون موجبة.");
+        if (scrapQuantity < 0)
+            throw new AccountingException("الكميّة التالفة لا تكون سالبة.");
         ProducedQuantity = Math.Round(producedQuantity, 4, MidpointRounding.AwayFromZero);
+        ScrapQuantity = Math.Round(scrapQuantity, 4, MidpointRounding.AwayFromZero);
         Status = WorkOrderStatus.Completed;
     }
 

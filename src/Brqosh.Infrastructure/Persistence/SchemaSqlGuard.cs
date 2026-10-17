@@ -67,6 +67,8 @@ internal static class SchemaSqlGuard
         "NUMERIC(9,4) NOT NULL DEFAULT 0.5",
         "DATE NOT NULL DEFAULT DATE '2025-07-01'",
         "INTEGER NOT NULL DEFAULT 4",
+        // (جاهزيّةُ الإطلاق · ح-١٤٧) ‏الكميّةُ التالفةُ لأمر الإنتاج — بدقّة الكميّة المنتَجة، وصفرٌ هو سلوكُ الأمر القائم.
+        "NUMERIC(18,4) NOT NULL DEFAULT 0",
     };
 
     private static readonly HashSet<string> AllowedSqliteTypes = new(StringComparer.OrdinalIgnoreCase)
