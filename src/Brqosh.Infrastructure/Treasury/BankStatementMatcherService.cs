@@ -39,13 +39,14 @@ public sealed class BankStatementMatcherService(BrqoshDbContext db)
             .Where(x => !x.line.IsMatched)
             .ToList();
 
-        var usedEntries = new HashSet<long>();
+        // ‏(ح-١٥٥) ‏**كلُّ سطرٍ في الدفتر يُطابَق مرّةً** — لا كلُّ قيد: قيدٌ بشيكين يُطابَق كلُّ شيكٍ بسطره في الكشف.
+        var usedLines = new HashSet<long>();
         var pairs = new List<BankMatchPair>();
 
         foreach (var (line, index) in unmatchedStatement)
         {
             var candidate = bookLines.FirstOrDefault(b =>
-                !usedEntries.Contains(b.JournalEntryId)
+                !usedLines.Contains(b.JournalLineId)
                 && b.EntryDate == line.TransactionDate
                 && b.Debit == line.ExpectedBookDebit
                 && b.Credit == line.ExpectedBookCredit);
@@ -54,10 +55,11 @@ public sealed class BankStatementMatcherService(BrqoshDbContext db)
                 continue;
 
             line.Match(candidate.JournalEntryId);
-            usedEntries.Add(candidate.JournalEntryId);
+            usedLines.Add(candidate.JournalLineId);
             pairs.Add(new BankMatchPair(index, candidate.JournalEntryId, line.SignedAmount));
 
-            await recon.ReconcileAsync(companyId, statement.BankAccountId, candidate.JournalEntryId, line.TransactionDate);
+            await recon.ReconcileAsync(companyId, statement.BankAccountId, candidate.JournalEntryId, line.TransactionDate,
+                candidate.JournalLineId);
         }
 
         if (pairs.Count > 0)

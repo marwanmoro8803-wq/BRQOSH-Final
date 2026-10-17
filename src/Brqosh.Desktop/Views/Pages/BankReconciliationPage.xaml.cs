@@ -21,6 +21,7 @@ public partial class BankReconciliationPage : UserControl
     public class ReconRow : INotifyPropertyChanged
     {
         public long JournalEntryId { get; init; }
+        public long JournalLineId { get; init; }
         public string EntryDate { get; init; } = "";
         public string? EntryNumber { get; init; }
         public string? Description { get; init; }
@@ -116,6 +117,7 @@ public partial class BankReconciliationPage : UserControl
             _rows.Add(new ReconRow
             {
                 JournalEntryId = line.JournalEntryId,
+                JournalLineId = line.JournalLineId,
                 EntryDate = line.EntryDate.ToString("yyyy-MM-dd"),
                 EntryNumber = line.EntryNumber,
                 Description = line.Description,
@@ -199,9 +201,10 @@ public partial class BankReconciliationPage : UserControl
             await using var db = AppServices.CreateDb();
             var query = new BankReconciliationQuery(db);
             if (row.IsReconciled)
-                await query.ReconcileAsync(AppServices.CompanyId, bankId, row.JournalEntryId, DateOnly.FromDateTime(DateTime.Today));
+                await query.ReconcileAsync(AppServices.CompanyId, bankId, row.JournalEntryId, DateOnly.FromDateTime(DateTime.Today),
+                    row.JournalLineId);
             else
-                await query.UnreconcileAsync(AppServices.CompanyId, bankId, row.JournalEntryId);
+                await query.UnreconcileAsync(AppServices.CompanyId, bankId, row.JournalEntryId, row.JournalLineId);
 
             var summary = await query.GetSummaryAsync(AppServices.CompanyId, bankId,
                 DateOnly.FromDateTime(FromDate.SelectedDate!.Value),

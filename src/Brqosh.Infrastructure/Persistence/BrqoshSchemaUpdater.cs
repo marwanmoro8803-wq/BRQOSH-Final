@@ -224,6 +224,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏(جاهزيّةُ الإطلاق · ح-١٣٨) فئتا مشتركي التأمينات وجدولُ النظام الجديد — بافتراضات النطاق لا أصفار.
         await EnsureGosiContributorGroupColumnsAsync(isPg, ct);
         await EnsureBankStatementBalanceColumnsAsync(isPg, ct);   // ‏(ح-١٥٤)
+        await EnsureReconciledBankLineAsync(isPg, ct);   // ‏(ح-١٥٥)
 
         // ‏(جاهزيّةُ الإطلاق · ح-١١١) ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePurchaseInvoiceWarehouseColumnAsync(isPg, ct);
@@ -366,6 +367,34 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else
                 await EnsureSqliteColumnAsync("bank_statements", column, "TEXT NULL", ct);
         }
+    }
+
+    /// <summary>
+    /// (ح-١٥٥) التسويةُ البنكيّةُ لكلّ سطر: عمودُ السطر (صفرٌ للسجلّات القائمة = القيدُ كلُّه)، <b>والفهرسُ الفريدُ القديمُ يُسقط</b> —
+    /// وإلا رفض سطراً ثانياً من القيد نفسِه — ويحلّ محلَّه فريدٌ يشمل السطر.
+    /// </summary>
+    private async Task EnsureReconciledBankLineAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("reconciled_bank_entries", isPg, ct))
+            return;
+
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("reconciled_bank_entries", "JournalLineId", "BIGINT NOT NULL DEFAULT 0", ct);
+            await db.Database.ExecuteSqlRawAsync(
+                """DROP INDEX IF EXISTS "IX_reconciled_bank_entries_CompanyId_BankAccountId_JournalEntr~";""", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("reconciled_bank_entries", "JournalLineId", "INTEGER NOT NULL DEFAULT 0", ct);
+            await db.Database.ExecuteSqlRawAsync(
+                """DROP INDEX IF EXISTS "IX_reconciled_bank_entries_CompanyId_BankAccountId_JournalEntryId";""", ct);
+        }
+
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_reconciled_bank_entries_line"
+                ON reconciled_bank_entries ("CompanyId", "BankAccountId", "JournalEntryId", "JournalLineId");
+            """, ct);
     }
 
     private async Task EnsureGosiContributorGroupColumnsAsync(bool isPg, CancellationToken ct)

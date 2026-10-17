@@ -1271,7 +1271,12 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<ReconciledBankEntry>(entity =>
         {
             entity.ToTable("reconciled_bank_entries");
-            entity.HasIndex(r => new { r.CompanyId, r.BankAccountId, r.JournalEntryId }).IsUnique();
+            // ‏(ح-١٥٥) ‏**التسويةُ لكلّ سطر** — فالفريدُ يشمل السطرَ (والصفرُ للقيد كلِّه)؛ والاسمُ صريحٌ لأنّ اسمَ EF المشتقَّ
+            // ‏يتجاوز ٦٣ حرفاً فيُقصّ في PostgreSQL إلى اسم الفهرس القديم نفسِه.
+            entity.Property(r => r.JournalLineId).HasDefaultValue(0L);
+            entity.HasIndex(r => new { r.CompanyId, r.BankAccountId, r.JournalEntryId, r.JournalLineId })
+                .IsUnique()
+                .HasDatabaseName("IX_reconciled_bank_entries_line");
         });
 
         modelBuilder.Entity<BankStatement>(entity =>

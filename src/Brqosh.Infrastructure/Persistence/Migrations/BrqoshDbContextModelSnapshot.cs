@@ -4664,6 +4664,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("JournalEntryId")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("JournalLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(0L);
+
                     b.Property<DateOnly>("ReconciledDate")
                         .HasColumnType("date");
 
@@ -4671,8 +4676,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CompanyId", "BranchId");
 
-                    b.HasIndex("CompanyId", "BankAccountId", "JournalEntryId")
-                        .IsUnique();
+                    b.HasIndex("CompanyId", "BankAccountId", "JournalEntryId", "JournalLineId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_reconciled_bank_entries_line");
 
                     b.ToTable("reconciled_bank_entries", (string)null);
                 });
