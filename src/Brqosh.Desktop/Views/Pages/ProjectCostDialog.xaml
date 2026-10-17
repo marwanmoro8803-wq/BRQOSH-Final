@@ -20,8 +20,12 @@
         <TextBlock Text="المبلغ *" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="AmountBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <CheckBox x:Name="PostJournalBox" Content="ترحيل قيد محاسبي (مدين 5105 / دائن صندوق)" IsChecked="True"
-                  FontSize="13" Margin="0,0,0,8"/>
+        <!-- (جاهزيّةُ الإطلاق · ح-١٤٥) الحسابُ الدائن يُختار — كان الصندوقَ دائماً؛ والنصّان من الشيفرة الخلفيّة. -->
+        <TextBlock x:Name="CreditLabel" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="CreditAccountCombo" FontSize="14" Padding="10,8" Margin="0,0,0,14"
+                  DisplayMemberPath="Display" SelectedValuePath="Code"/>
+
+        <CheckBox x:Name="PostJournalBox" IsChecked="True" FontSize="13" Margin="0,0,0,8"/>
 
         <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                    TextWrapping="Wrap" Visibility="Collapsed" Margin="0,8,0,0"/>
