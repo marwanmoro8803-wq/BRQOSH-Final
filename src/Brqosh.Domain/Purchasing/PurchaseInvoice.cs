@@ -271,6 +271,26 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         ProjectId = projectId;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٥٨ · <c>treasury-payroll-assets#12</c>) <b>الأصلُ الثابتُ الذي تشتريه الفاتورة.</b>
+    ///
+    /// <para>كان الأصلُ يُقتنى نقداً أو من بنكٍ وحدَهما — فشراءُ سيّارةٍ من وكيلٍ بفاتورةٍ آجلةٍ وضريبةٍ قابلةٍ للخصم لا سبيلَ له:
+    /// يُدان الصندوقُ بما لم يُدفع، وتضيع ضريبةُ المدخلات، ولا يعرف المورّدُ دَينَه. والفاتورةُ المربوطةُ بأصلٍ <b>تُدين حسابَ الأصل
+    /// بدل المشتريات</b>، وضريبتَها، ودائنُها المورّد — وتقتني الأصلَ بقيدها.</para>
+    /// </summary>
+    public long? FixedAssetId { get; private set; }
+
+    /// <summary>يربط الفاتورةَ بأصلٍ ينتظرها — لا مع مشروع، ولا بعد الترحيل.</summary>
+    public void AssignFixedAsset(long? fixedAssetId)
+    {
+        EnsureDraft();
+        if (fixedAssetId is <= 0)
+            throw new AccountingException("الأصل غير صالح.");
+        if (fixedAssetId is not null && ProjectId is not null)
+            throw new AccountingException("الفاتورةُ تشتري أصلاً أو تُحمَّل على مشروع — لا الاثنين.");
+        FixedAssetId = fixedAssetId;
+    }
+
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

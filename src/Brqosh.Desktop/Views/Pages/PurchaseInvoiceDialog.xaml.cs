@@ -25,7 +25,7 @@ public partial class PurchaseInvoiceDialog : Window
         LinesGrid.ItemsSource = _rows;
         Loaded += async (_, _) =>
         {
-            await LoadSuppliersAsync(); await LoadWarehousesAsync(); await LoadProjectsAsync(); await LoadProductsAsync();
+            await LoadSuppliersAsync(); await LoadWarehousesAsync(); await LoadProjectsAsync(); await LoadAssetsAsync(); await LoadProductsAsync();
         };
     }
 
@@ -43,6 +43,21 @@ public partial class PurchaseInvoiceDialog : Window
             .ToListAsync());
         ProjectCombo.ItemsSource = choices;
         ProjectCombo.SelectedIndex = 0;
+    }
+
+    private async Task LoadAssetsAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١٥٨ · ‏`treasury-payroll-assets#12`) ‏الأصولُ التي تنتظر فاتورةَ مورّد — والأوّلُ «بلا أصل».
+        AssetLabel.Text = LocaleManager.T("الأصل الثابت المشترى", "Fixed asset purchased");
+        await using var db = AppServices.CreateDb();
+        var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, LocaleManager.T("(بلا أصل)", "(No asset)")) };
+        choices.AddRange(await db.FixedAssets
+            .Where(a => a.CompanyId == AppServices.CompanyId && a.AwaitingInvoice && a.CancelledOn == null)
+            .OrderBy(a => a.Code)
+            .Select(a => new SalesInvoiceDialog.WarehouseOption(a.Id, a.Code + " — " + a.NameAr))
+            .ToListAsync());
+        AssetCombo.ItemsSource = choices;
+        AssetCombo.SelectedIndex = 0;
     }
 
     private async Task LoadProductsAsync()
@@ -161,6 +176,8 @@ public partial class PurchaseInvoiceDialog : Window
 
         // ‏(ح-١٤٤) ‏المشروعُ — الفارغُ «بلا مشروع»؛ وحالتُه تُسأل عند الترحيل.
         invoice.AssignProject(ProjectCombo.SelectedValue as long?);
+        // ‏(ح-١٥٨) ‏والأصلُ — يُرفض مع مشروع، وتكلفتُه وتاريخُه يُطابَقان عند الترحيل.
+        invoice.AssignFixedAsset(AssetCombo.SelectedValue as long?);
 
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))

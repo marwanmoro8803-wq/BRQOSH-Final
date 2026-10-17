@@ -43,6 +43,40 @@ public class FixedAsset : IBranchScoped
     /// </summary>
     public DateOnly? CancelledOn { get; private set; }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٥٨ · <c>treasury-payroll-assets#12</c>) <b>أصلٌ يُشترى من مورّدٍ بفاتورته</b> — مسجَّلٌ ولم يُقتنَ بعد:
+    /// <b>غيرُ قائمٍ</b> فلا يُهلَك ولا يُستبعَد، حتى تُرحَّل فاتورةُ الشراء المربوطةُ به فتُدين حسابَه وضريبةَ المدخلات والمورّد،
+    /// ويصير قائماً بقيدها.
+    /// </summary>
+    public bool AwaitingInvoice { get; private set; }
+
+    /// <summary>(ح-١٥٨) أصلٌ يُسجَّل لتقتنيه فاتورةُ مورّد — لا قيدَ له حتى تُرحَّل.</summary>
+    public static FixedAsset CreateAwaitingInvoice(long companyId, string code, string nameAr, DateOnly acquisitionDate,
+        decimal acquisitionCost, decimal salvageValue, int usefulLifeMonths,
+        long glAssetAccountId, long glDepreciationAccountId)
+    {
+        var asset = Create(companyId, code, nameAr, acquisitionDate, acquisitionCost, salvageValue,
+            usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
+        asset.AwaitingInvoice = true;
+        asset.IsActive = false;
+        return asset;
+    }
+
+    /// <summary>
+    /// (ح-١٥٨) <b>فاتورةُ المورّد اقتنته</b> — بتاريخها، فالإهلاكُ من شهر الاقتناء الحقيقيّ؛ وتاريخٌ غيرُه يُرفض لا يُعدَّل صامتاً.
+    /// </summary>
+    public void AcquireByInvoice(long journalEntryId, DateOnly invoiceDate)
+    {
+        if (!AwaitingInvoice || CancelledOn is not null)
+            throw new AccountingException($"الأصل {Code} لا ينتظر فاتورةَ مورّد — اقتُني أو أُلغي.");
+        if (invoiceDate != AcquisitionDate)
+            throw new AccountingException(
+                $"تاريخُ فاتورة الأصل {invoiceDate:yyyy-MM-dd} غيرُ تاريخ اقتنائه {AcquisitionDate:yyyy-MM-dd} — وحِّدهما.");
+        AwaitingInvoice = false;
+        IsActive = true;
+        AcquisitionJournalEntryId = journalEntryId;
+    }
+
     // ── بيعُ الأصل (جاهزيّةُ الإطلاق · ح-١٦) ────────────────────────────────
 
     /// <summary>

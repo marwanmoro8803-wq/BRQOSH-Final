@@ -29,29 +29,13 @@ public class FixedAssetCancellationService(BrqoshDbContext db)
         return UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             var asset = await db.FixedAssets.SingleAsync(a => a.CompanyId == companyId && a.Id == assetId, token);
-            if (asset.CancelledOn is not null)
-                throw new AccountingException($"اقتناءُ الأصل {asset.Code} مُلغًى مسبقاً.");
-            if (!asset.IsActive || asset.DisposalJournalEntryId is not null)
-                throw new AccountingException($"الأصل {asset.Code} مُستبعَد — يُصحَّح استبعادُه لا اقتناؤه.");
-            if (asset.AcquisitionJournalEntryId is not long entryId)
-                throw new AccountingException($"الأصل {asset.Code} بلا قيد اقتناء — لا شيءَ يُعكس.");
+            var entryId = await EnsureCancellableAsync(db, asset, token);
 
-            var depreciationSource = DepreciationPrefix + asset.Code;
-            if (await db.JournalEntries
-                    .Where(e => e.CompanyId == companyId && e.SourceDocument == depreciationSource)
-                    .WhereStanding(db.JournalEntries)
-                    .AnyAsync(token))
+            // ‏(ح-١٥٨) ‏**المُقتنى بفاتورة مورّدٍ يُلغى بإلغائها** — وعكسُ قيدها من هنا يترك الفاتورةَ مرحَّلةً والمورّدَ دائناً.
+            var source = await db.JournalEntries.Where(e => e.Id == entryId).Select(e => e.SourceDocument).SingleAsync(token);
+            if (source is not null && source.StartsWith("PurchaseInvoice:", StringComparison.Ordinal))
                 throw new AccountingException(
-                    $"الأصل {asset.Code} أُهلك — اعكس تشغيلَ الإهلاك أوّلاً ثمّ ألغِ الاقتناء.");
-
-            // ‏المُرسمَلُ عليه: تكلفتُه في السجلّ غيرُ ما قيّده الاقتناءُ على حسابه.
-            var acquisition = await db.JournalEntries.Include(e => e.Lines)
-                .SingleAsync(e => e.CompanyId == companyId && e.Id == entryId, token);
-            var booked = acquisition.Lines.Where(l => l.AccountId == asset.GlAssetAccountId).Sum(l => l.Debit - l.Credit);
-            if (booked != asset.AcquisitionCost)
-                throw new AccountingException(
-                    $"الأصل {asset.Code} رُسمِل عليه بعد اقتنائه — تكلفتُه {asset.AcquisitionCost:N2} والاقتناءُ {booked:N2}؛ "
-                    + "يُلغى التحسينُ أوّلاً.");
+                    $"الأصل {asset.Code} اقتُني بفاتورة المورّد {source["PurchaseInvoice:".Length..]} — ألغِ الفاتورةَ فيُلغى معها.");
 
             var reversal = await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, cancellationDate, username, fromSourceDocument: true, token);
@@ -63,5 +47,37 @@ public class FixedAssetCancellationService(BrqoshDbContext db)
                 db, companyId, "FixedAsset", asset.Code, reason: "إلغاء اقتناء أصل ثابت", ct: token);
             return reversal;
         }, ct);
+    }
+
+    /// <summary>
+    /// ‏(ح-١٥٧/ح-١٥٨) <b>شروطُ الإلغاء</b> — يتشاركها إلغاءُ الأصل وإلغاءُ فاتورة المورّد التي اقتنته؛ ويُعيد قيدَ الاقتناء.
+    /// </summary>
+    internal static async Task<long> EnsureCancellableAsync(BrqoshDbContext db, FixedAsset asset, CancellationToken token)
+    {
+        var companyId = asset.CompanyId;
+        if (asset.CancelledOn is not null)
+            throw new AccountingException($"اقتناءُ الأصل {asset.Code} مُلغًى مسبقاً.");
+        if (!asset.IsActive || asset.DisposalJournalEntryId is not null)
+            throw new AccountingException($"الأصل {asset.Code} مُستبعَد — يُصحَّح استبعادُه لا اقتناؤه.");
+        if (asset.AcquisitionJournalEntryId is not long entryId)
+            throw new AccountingException($"الأصل {asset.Code} بلا قيد اقتناء — لا شيءَ يُعكس.");
+
+        var depreciationSource = DepreciationPrefix + asset.Code;
+        if (await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == depreciationSource)
+                .WhereStanding(db.JournalEntries)
+                .AnyAsync(token))
+            throw new AccountingException(
+                $"الأصل {asset.Code} أُهلك — اعكس تشغيلَ الإهلاك أوّلاً ثمّ ألغِ الاقتناء.");
+
+        // ‏المُرسمَلُ عليه: تكلفتُه في السجلّ غيرُ ما قيّده الاقتناءُ على حسابه.
+        var acquisition = await db.JournalEntries.Include(e => e.Lines)
+            .SingleAsync(e => e.CompanyId == companyId && e.Id == entryId, token);
+        var booked = acquisition.Lines.Where(l => l.AccountId == asset.GlAssetAccountId).Sum(l => l.Debit - l.Credit);
+        if (booked != asset.AcquisitionCost)
+            throw new AccountingException(
+                $"الأصل {asset.Code} رُسمِل عليه بعد اقتنائه — تكلفتُه {asset.AcquisitionCost:N2} والاقتناءُ {booked:N2}؛ "
+                + "يُلغى التحسينُ أوّلاً.");
+        return entryId;
     }
 }

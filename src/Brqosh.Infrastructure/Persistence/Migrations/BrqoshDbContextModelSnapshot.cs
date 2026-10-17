@@ -334,6 +334,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("AcquisitionJournalEntryId")
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("AwaitingInvoice")
+                        .HasColumnType("boolean");
+
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
 
@@ -2907,6 +2910,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("ExchangeRate")
                         .HasPrecision(18, 6)
                         .HasColumnType("numeric(18,6)");
+
+                    b.Property<long?>("FixedAssetId")
+                        .HasColumnType("bigint");
 
                     b.Property<decimal>("ForeignSubtotal")
                         .HasPrecision(18, 2)

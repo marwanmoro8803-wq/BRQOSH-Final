@@ -141,7 +141,14 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             var project = invoice.ProjectId is long projectId
                 ? await ProjectForCostAsync(invoice.CompanyId, projectId, ct)
                 : null;
-            var purchases = await SystemAccountAsync(invoice.CompanyId, project is null ? "5102" : ProjectCostAccountCode);
+            // ‏(جاهزيّةُ الإطلاق · ح-١٥٨ · ‏`treasury-payroll-assets#12`) ‏**فاتورةُ أصلٍ تُدين حسابَ الأصل لا المشتريات** — وكلُّها له:
+            // ‏لا صنفَ مخزنيّاً فيها، وصافيها (أو إجماليُّها لغير القابل للخصم) تكلفتُه المسجَّلة.
+            var asset = invoice.FixedAssetId is long assetId
+                ? await AssetForInvoiceAsync(invoice, assetId, project, inventorySubtotal, grniRelief, receiptLines.Count, ct)
+                : null;
+            var purchases = asset is not null
+                ? await db.Accounts.SingleAsync(a => a.Id == asset.GlAssetAccountId && a.CompanyId == invoice.CompanyId, ct)
+                : await SystemAccountAsync(invoice.CompanyId, project is null ? "5102" : ProjectCostAccountCode);
             var inventoryAccount = inventorySubtotal > 0
                 ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
                 : null;
@@ -161,6 +168,13 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable,
                 inventorySubtotal, inventoryAccount, grniRelief, grniAccount, priceVariance, varianceAccount);
+            if (asset is not null)
+            {
+                var booked = entry.Lines.Where(l => l.AccountId == asset.GlAssetAccountId).Sum(l => l.Debit - l.Credit);
+                if (booked != asset.AcquisitionCost)
+                    throw new AccountingException(
+                        $"تكلفةُ الأصل {asset.Code} المسجَّلة {asset.AcquisitionCost:N2} وفاتورتُه تُدينه {booked:N2} — وحِّدهما قبل الترحيل.");
+            }
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
 
             // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
@@ -180,6 +194,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             await db.SaveChangesAsync(ct);
 
             invoice.LinkJournalEntry(entry.Id);
+            asset?.AcquireByInvoice(entry.Id, invoice.InvoiceDate);
             await db.SaveChangesAsync(ct);
 
             if (project is not null)
@@ -443,6 +458,23 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
     /// <summary>
     /// (ح-١٤٤) المشروعُ الذي تُحمَّل عليه الفاتورة — <b>من المنشأة نفسِها، ولم يُكمَل ولم يُلغَ</b>.
     /// </summary>
+    /// <summary>(ح-١٥٨) الأصلُ الذي تقتنيه الفاتورة: في المنشأة، ينتظر فاتورتَه، والفاتورةُ كلُّها له.</summary>
+    private async Task<Domain.Assets.FixedAsset> AssetForInvoiceAsync(
+        PurchaseInvoice invoice, long assetId, Domain.Construction.ConstructionProject? project,
+        decimal inventorySubtotal, decimal grniRelief, int receiptLines, CancellationToken ct)
+    {
+        if (project is not null)
+            throw new AccountingException("الفاتورةُ تشتري أصلاً أو تُحمَّل على مشروع — لا الاثنين.");
+        var asset = await db.FixedAssets
+            .SingleOrDefaultAsync(a => a.Id == assetId && a.CompanyId == invoice.CompanyId, ct)
+            ?? throw new AccountingException("الأصل المحدَّد على الفاتورة غير موجود في هذه المنشأة.");
+        if (!asset.AwaitingInvoice || asset.CancelledOn is not null)
+            throw new AccountingException($"الأصل {asset.Code} لا ينتظر فاتورةَ مورّد — اقتُني أو أُلغي.");
+        if (inventorySubtotal > 0m || grniRelief > 0m || receiptLines > 0)
+            throw new AccountingException("فاتورةُ الأصل لا تحمل أصنافاً مخزنيّة — افصلها في فاتورةٍ أخرى.");
+        return asset;
+    }
+
     private async Task<Domain.Construction.ConstructionProject> ProjectForCostAsync(
         long companyId, long projectId, CancellationToken ct)
     {

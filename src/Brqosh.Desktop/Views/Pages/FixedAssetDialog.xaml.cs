@@ -14,7 +14,7 @@ public partial class FixedAssetDialog : Window
     public record AccountOption(long Id, string Display);
 
     /// <summary>(جاهزيّةُ الإطلاق · ح-٩٩) من أين دُفع الأصل: الصندوقُ نقداً، أو بنكٌ قائم.</summary>
-    public record FundingOption(ReceiptMethod Method, long? BankAccountId, string Display);
+    public record FundingOption(ReceiptMethod Method, long? BankAccountId, string Display, bool ByInvoice = false);
 
     private readonly long? _assetId;
 
@@ -74,6 +74,9 @@ public partial class FixedAssetDialog : Window
             .ToListAsync();
         FundingCombo.ItemsSource = new[] { new FundingOption(ReceiptMethod.Cash, null, "نقداً (الصندوق)") }
             .Concat(banks.Select(b => new FundingOption(ReceiptMethod.Bank, b.Id, $"{b.Code} — {b.NameAr}")))
+            // ‏(ح-١٥٨) ‏شراءٌ من مورّدٍ بفاتورته — يُسجَّل الأصلُ ويقتنيه ترحيلُ فاتورة الشراء المربوطة به.
+            .Append(new FundingOption(ReceiptMethod.Cash, null,
+                LocaleManager.T("بفاتورة مورّد (يُقتنى عند ترحيلها)", "By supplier invoice (acquired when it is posted)"), ByInvoice: true))
             .ToList();
         FundingCombo.SelectedIndex = 0;
 
@@ -141,6 +144,16 @@ public partial class FixedAssetDialog : Window
 
             if (FundingCombo.SelectedItem is not FundingOption funding)
                 throw new AccountingException("اختر طريقة الدفع.");
+
+            if (funding.ByInvoice)
+            {
+                var awaiting = FixedAsset.CreateAwaitingInvoice(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
+                    DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId);
+                await facade.GetService<FixedAssetAcquisitionPostingService>().RegisterAwaitingInvoiceAsync(awaiting);
+                DialogResult = true;
+                Close();
+                return;
+            }
 
             var assetNew = FixedAsset.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
                 DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId);

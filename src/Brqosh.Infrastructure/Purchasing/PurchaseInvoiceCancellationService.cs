@@ -33,6 +33,14 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
 
             await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, cancellationDate);
 
+            // ‏(ح-١٥٨) ‏**والأصلُ الذي اقتنته يُلغى اقتناؤه معها** — بشروط إلغائه نفسِها (لا إهلاكَ ولا استبعادَ ولا رسملة)،
+            // ‏وقبل العكس: فإن رُفض بقيت الفاتورةُ والأصلُ كما هما.
+            var asset = invoice.FixedAssetId is long assetId
+                ? await db.FixedAssets.SingleAsync(a => a.CompanyId == companyId && a.Id == assetId, token)
+                : null;
+            if (asset is not null)
+                await Assets.FixedAssetCancellationService.EnsureCancellableAsync(db, asset, token);
+
             await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, cancellationDate, username, fromSourceDocument: true, token);
 
@@ -68,6 +76,7 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
             foreach (var cost in projectCosts)
                 cost.MarkReversed();
 
+            asset?.CancelAcquisition(cancellationDate);
             invoice.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
 

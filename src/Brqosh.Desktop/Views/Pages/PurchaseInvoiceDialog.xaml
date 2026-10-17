@@ -68,6 +68,10 @@
                 <TextBlock Text="المشروع" Style="{StaticResource FieldLabel}"/>
                 <ComboBox x:Name="ProjectCombo" FontSize="14" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
+                <!-- (جاهزيّةُ الإطلاق · ح-١٥٨) الأصلُ الذي تشتريه الفاتورة — نصُّه من السجلّ ثنائيّ اللغة في الكود. -->
+                <TextBlock x:Name="AssetLabel" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+                <ComboBox x:Name="AssetCombo" FontSize="14" Padding="10,8"
+                          DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>
 

@@ -90,6 +90,25 @@ public class FixedAssetAcquisitionPostingService(BrqoshDbContext db)
     /// <para><b>بتاريخ أوّل يومٍ بعد <see cref="FixedAsset.DepreciatedThrough"/></b>، <b>وبوسم الاقتناء نفسِه</b> — فلا يُرحَّل مرّتين،
     /// ولا يُرحَّل اقتناءٌ فوقه؛ والأصلُ الجديدُ يُضاف داخل المعاملة كالاقتناء.</para>
     /// </summary>
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٥٨ · ‏`treasury-payroll-assets#12`) <b>يُسجّل أصلاً تقتنيه فاتورةُ مورّد</b> — بلا قيد: فالقيدُ
+    /// ‏قيدُ الفاتورة حين تُرحَّل، بحسابه وضريبة مدخلاته ودائنِه المورّد.
+    /// </summary>
+    public async Task RegisterAwaitingInvoiceAsync(FixedAsset asset, CancellationToken ct = default)
+    {
+        SecurityContext.EnsureCanPostAccounting();
+        if (!asset.AwaitingInvoice)
+            throw new AccountingException($"الأصل {asset.Code} لا ينتظر فاتورة — يُرحَّل اقتناءً.");
+        if (await db.FixedAssets.AnyAsync(a => a.CompanyId == asset.CompanyId && a.Code == asset.Code, ct))
+            throw new AccountingException($"رمزُ الأصل {asset.Code} مستعمَل.");
+
+        db.FixedAssets.Add(asset);
+        await BranchAssignmentHelper.EnsureAssignedAsync(asset, db, ct: ct);
+        await db.SaveChangesAsync(ct);
+        await FinancialPostingSupport.AuditPostAsync(
+            db, asset.CompanyId, "FixedAsset", asset.Code, reason: "تسجيل أصل ينتظر فاتورة مورّد", ct: ct);
+    }
+
     public async Task<JournalEntry> PostOpeningAsync(FixedAsset asset, CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();

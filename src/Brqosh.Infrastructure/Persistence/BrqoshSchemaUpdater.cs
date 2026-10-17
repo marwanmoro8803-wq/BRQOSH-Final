@@ -520,11 +520,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         {
             await EnsurePgColumnAsync("purchase_invoices", "WarehouseId", "BIGINT NULL", ct);
             await EnsurePgColumnAsync("purchase_invoices", "ProjectId", "BIGINT NULL", ct);   // ‏(ح-١٤٤)
+            await EnsurePgColumnAsync("purchase_invoices", "FixedAssetId", "BIGINT NULL", ct);   // ‏(ح-١٥٨)
         }
         else
         {
             await EnsureSqliteColumnAsync("purchase_invoices", "WarehouseId", "INTEGER NULL", ct);
             await EnsureSqliteColumnAsync("purchase_invoices", "ProjectId", "INTEGER NULL", ct);   // ‏(ح-١٤٤)
+            await EnsureSqliteColumnAsync("purchase_invoices", "FixedAssetId", "INTEGER NULL", ct);   // ‏(ح-١٥٨)
         }
     }
 
@@ -851,6 +853,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (جاهزيّةُ الإطلاق · ح-١٠٠) آخرُ يومٍ أُهلك قبل الدفاتر — لأصلٍ قائمٍ يُدخَل برصيده الافتتاحيّ.
         await EnsurePgColumnAsync("fixed_assets", "DepreciatedThrough", "DATE NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "CancelledOn", "DATE NULL", ct);   // ‏(ح-١٥٧)
+        await EnsurePgColumnAsync("fixed_assets", "AwaitingInvoice", "BOOLEAN NOT NULL DEFAULT false", ct);   // ‏(ح-١٥٨)
         await EnsurePgColumnAsync("app_users", "MustChangePasswordOnNextLogin", "BOOLEAN NOT NULL DEFAULT false", ct);
         await EnsurePgColumnAsync("app_users", "MobilePhoneE164", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
@@ -954,6 +957,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // (جاهزيّةُ الإطلاق · ح-١٠٠) آخرُ يومٍ أُهلك قبل الدفاتر — انظر النظيرَ في مسار PostgreSQL أعلاه.
         await EnsureSqliteColumnAsync("fixed_assets", "DepreciatedThrough", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "CancelledOn", "TEXT NULL", ct);   // ‏(ح-١٥٧)
+        await EnsureSqliteColumnAsync("fixed_assets", "AwaitingInvoice", "INTEGER NOT NULL DEFAULT 0", ct);   // ‏(ح-١٥٨)
         await EnsureSqliteColumnAsync("app_users", "MustChangePasswordOnNextLogin", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MobilePhoneE164", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);
