@@ -54,6 +54,12 @@ public enum ZatcaDocumentType
     /// والاسمُ قصيرٌ عمداً — العمودُ <c>varchar(16)</c>.</para>
     /// </summary>
     AssetDisposal = 7,
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦١) إشعارٌ دائنٌ عن <b>عكس استبعاد أصلٍ بيع بفاتورة</b> — مصدرُه الأصلُ كفاتورته
+    /// (<see cref="AssetDisposal"/>)، ومرجعُه تلك الفاتورة. والاسمُ قصيرٌ عمداً — العمودُ <c>varchar(16)</c>.
+    /// </summary>
+    DisposalCancel = 8,
 }
 
 /// <summary>حالة مستند الفاتورة الإلكترونية في دورة ZATCA.</summary>

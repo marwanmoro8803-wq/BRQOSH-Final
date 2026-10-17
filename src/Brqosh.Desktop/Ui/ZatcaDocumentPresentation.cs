@@ -53,6 +53,7 @@ public static class ZatcaDocumentPresentation
         ZatcaDocumentType.InvoiceCancel => LocaleManager.T("إشعار دائن (إلغاء فاتورة)", "Credit Note (Invoice Cancellation)"),
         ZatcaDocumentType.BillingCancel => LocaleManager.T("إشعار دائن (إلغاء مستخلص)", "Credit Note (Billing Cancellation)"),
         ZatcaDocumentType.AssetDisposal => LocaleManager.T("فاتورة بيع أصل ثابت", "Fixed Asset Sale Invoice"),
+        ZatcaDocumentType.DisposalCancel => LocaleManager.T("إشعار دائن (إلغاء بيع أصل)", "Credit Note (Asset Sale Cancellation)"),
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };
@@ -74,6 +75,8 @@ public static class ZatcaDocumentPresentation
         ZatcaDocumentType.InvoiceCancel => SourceKind.SalesInvoice,
         ZatcaDocumentType.BillingCancel => SourceKind.ProgressBilling,
         ZatcaDocumentType.AssetDisposal => SourceKind.FixedAssetDisposal,
+        // ‏(ح-١٦١) ‏وإلغاءُ بيع الأصل مصدرُه الأصلُ المبيع نفسُه.
+        ZatcaDocumentType.DisposalCancel => SourceKind.FixedAssetDisposal,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };

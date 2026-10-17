@@ -93,6 +93,7 @@ public class TheUserManualNamesRealScreensTests
     [InlineData("FixedAssetsPage", "تشغيل إهلاك شهري")]
     [InlineData("FixedAssetsPage", "عكس تشغيل الإهلاك")]
     [InlineData("FixedAssetsPage", "إلغاء الاقتناء")]
+    [InlineData("FixedAssetsPage", "عكس الاستبعاد")]
     [InlineData("FixedAssetDialog", "بفاتورة مورّد (يُقتنى عند ترحيلها)")]
     [InlineData("PurchaseInvoiceDialog", "الأصل الثابت المشترى")]
     [InlineData("WorkOrdersPage", "إصدار المحدد")]

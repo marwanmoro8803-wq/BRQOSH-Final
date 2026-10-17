@@ -230,6 +230,18 @@ public class FixedAsset : IBranchScoped
         CancelledOn = on;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦١) <b>يُعيد المُستبعَدَ إلى السجلّ</b> — بعد عكس قيد استبعاده. <b>وتبقى بياناتُ البيع</b> (المشتري والفاتورةُ
+    /// والمقابل) أثراً لما عُكس، ويقرؤها الإشعارُ الدائن الذي يُلغي فاتورتَه؛ فبيعُه ثانيةً بفاتورةٍ يُرفض باسم الأولى.
+    /// </summary>
+    public void UndoDisposal()
+    {
+        if (IsActive || DisposalJournalEntryId is null || CancelledOn is not null)
+            throw new AccountingException($"الأصل {Code} غيرُ مُستبعَد — لا استبعادَ يُعكس.");
+        IsActive = true;
+        DisposalJournalEntryId = null;
+    }
+
     public void MarkDisposed()
     {
         if (!IsActive)

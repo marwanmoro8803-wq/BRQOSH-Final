@@ -26,6 +26,7 @@ public partial class FixedAssetsPage : UserControl
         InitializeComponent();
         // ‏(ح-١٥٧) نصُّ الزرّ من السجلّ ثنائيّ اللغة — لا حرفٌ عربيٌّ في XAML بلا ترجمة.
         CancelAcquisitionBtn.Content = LocaleManager.T("إلغاء الاقتناء", "Cancel acquisition");
+        ReverseDisposalBtn.Content = LocaleManager.T("عكس الاستبعاد", "Reverse disposal");
         Loaded += async (_, _) =>
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
@@ -34,7 +35,8 @@ public partial class FixedAssetsPage : UserControl
                 // ‏(ح-٩٢) وعكسُ التشغيل بحارس العكس.
                 (ReverseDepreciationBtn, PermissionService.CanCancelOrReverse),
                 (DisposeBtn, PermissionService.CanCancelOrReverse),
-                (CancelAcquisitionBtn, PermissionService.CanCancelOrReverse));
+                (CancelAcquisitionBtn, PermissionService.CanCancelOrReverse),
+                (ReverseDisposalBtn, PermissionService.CanCancelOrReverse));
             await ReloadAsync();
         };
     }
@@ -175,6 +177,46 @@ public partial class FixedAssetsPage : UserControl
             using var facade = new DesktopAccountingFacade();
             await facade.GetService<FixedAssetCancellationService>().CancelAcquisitionAsync(
                 AppServices.CompanyId, row.Id, on.Value, SecurityContext.ResolveUsername());
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦١ · <c>treasury-payroll-assets#10</c>) <b>عكسُ استبعاد أصل</b> — والمُستبعَدُ لا يظهر في الجدول، فيُسأل رمزُه؛
+    /// وبيعُه المُفوتَرُ يُلغى بإشعارٍ دائنٍ يصدر للهيئة.
+    /// </summary>
+    private async void OnReverseDisposal(object sender, RoutedEventArgs e)
+    {
+        var owner = Window.GetWindow(this)!;
+        var codeDialog = new TextInputDialog(LocaleManager.T("عكس الاستبعاد", "Reverse disposal"),
+            LocaleManager.T("رمز الأصل المستبعَد:", "Code of the disposed asset:")) { Owner = owner };
+        if (codeDialog.ShowDialog() != true || string.IsNullOrWhiteSpace(codeDialog.Value))
+            return;
+        var on = UiDialogs.PromptAccountingDate(owner,
+            LocaleManager.T("عكس الاستبعاد", "Reverse disposal"),
+            LocaleManager.T("تاريخ قيد العكس:", "Reversal entry date:"));
+        if (on is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var code = codeDialog.Value.Trim();
+            var assetId = await facade.Db.FixedAssets
+                .Where(a => a.CompanyId == AppServices.CompanyId && a.Code == code && !a.IsActive && a.DisposalJournalEntryId != null)
+                .Select(a => (long?)a.Id).SingleOrDefaultAsync();
+            if (assetId is not long id)
+            {
+                UiFeedback.ShowWarning(LocaleManager.T("لا أصلَ مستبعَداً بهذا الرمز.", "No disposed asset has this code."));
+                return;
+            }
+
+            await facade.GetService<FixedAssetDisposalReversalService>().ReverseDisposalAsync(
+                AppServices.CompanyId, id, on.Value, SecurityContext.ResolveUsername());
             await ReloadAsync();
         }
         catch (Exception ex)

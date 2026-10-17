@@ -226,6 +226,35 @@ public class GeneratedDocumentsConformTests : IDisposable
     }
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦١) <b>وإلغاءُ بيع الأصل</b> — إشعارٌ دائنٌ يصل الهيئة؛ أسقط هذا الحارسُ مسارَه يومَ أُضيف حتّى قِيس.
+    /// </summary>
+    [Fact]
+    public async Task AGeneratedAssetDisposalCancellation_Conforms()
+    {
+        await SetupAsync();
+
+        var assetAccount = await _db.Accounts.SingleAsync(a => a.CompanyId == _companyId && a.Code == "1203");
+        var accumAccount = await _db.Accounts.SingleAsync(a => a.CompanyId == _companyId && a.Code == "1207");
+        var asset = FixedAsset.Create(
+            _companyId, "FA-Z2", "سيارة نقل", new DateOnly(2024, 1, 1),
+            acquisitionCost: 120_000m, salvageValue: 0m, usefulLifeMonths: 120,
+            glAssetAccountId: assetAccount.Id, glDepreciationAccountId: accumAccount.Id);
+        for (var i = 0; i < 24; i++) asset.ApplyDepreciation();
+        _db.FixedAssets.Add(asset);
+        await _db.SaveChangesAsync();
+        await new FixedAssetDisposalPostingService(_db).PostDisposalAsync(
+            asset, saleProceeds: 80_000m, new DateOnly(2026, 7, 11), "admin",
+            buyerCustomerId: _customerId);
+
+        await new FixedAssetDisposalReversalService(_db).ReverseDisposalAsync(
+            _companyId, asset.Id, new DateOnly(2026, 7, 14), "admin");
+
+        var document = await _db.ZatcaEInvoiceDocuments.SingleAsync(d =>
+            d.CompanyId == _companyId && d.DocumentType == ZatcaDocumentType.DisposalCancel && d.SourceDocumentId == asset.Id);
+        AssertConforms(nameof(ZatcaEInvoiceGenerator.TryGenerateCancellationForAssetDisposalAsync), ReadGenerated(document));
+    }
+
+    /// <summary>
     /// وإلغاءُ فاتورةٍ صدرت — مسارٌ يبلغه المتجر (فاتورةٌ أُصدرت خطأً)، ولم يكن مقيساً.
     /// </summary>
     [Fact]
@@ -739,6 +768,8 @@ public class GeneratedDocumentsConformTests : IDisposable
             // ‏الحارسُ نصّاً** — فأسقط الاختبارَ يومَ أُضيف حتّى قِيس. انظر
             // ‏<see cref="AGeneratedAssetDisposalInvoice_Conforms"/>.
             nameof(ZatcaEInvoiceGenerator.TryGenerateForAssetDisposalAsync),
+            // ‏(ح-١٦١) ‏وإلغاءُ بيع الأصل — <see cref="AGeneratedAssetDisposalCancellation_Conforms"/>.
+            nameof(ZatcaEInvoiceGenerator.TryGenerateCancellationForAssetDisposalAsync),
         ];
 
         // ‏واسمٌ في القائمتين لا يقابله مسارٌ حقيقيّ يجعل الحارسَ يُصدّق ادّعاءَ نفسه —

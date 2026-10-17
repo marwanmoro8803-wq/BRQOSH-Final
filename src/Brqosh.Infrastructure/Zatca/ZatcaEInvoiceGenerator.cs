@@ -255,6 +255,53 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             issueReason: $"إلغاء مستخلص {billing.BillingNumber}");
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٦١) <b>إشعارٌ دائنٌ عند عكس استبعاد أصلٍ بيع بفاتورة</b> — بمبالغ الفاتورة نفسِها ومشتريها، ومرجعُه هي.
+    /// ‏و<c>null</c> إن لم تكن للبيع فاتورةٌ إلكترونيّة أو كانت الفوترةُ معطَّلة — والمستدعي يقرّر.
+    /// </summary>
+    public async Task<ZatcaEInvoiceDocument?> TryGenerateCancellationForAssetDisposalAsync(
+        long fixedAssetId, DateOnly reversalDate, string reason)
+    {
+        var asset = await db.FixedAssets.IgnoreQueryFilters().SingleOrDefaultAsync(a => a.Id == fixedAssetId);
+        if (asset?.DisposalInvoiceNumber is null || asset.DisposalProceeds is not decimal proceeds)
+            return null;
+
+        var settings = await GetSettingsAsync(asset.CompanyId);
+        if (settings is null || !settings.IsEnabled) return null;
+
+        if (!await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == asset.CompanyId && d.DocumentType == ZatcaDocumentType.AssetDisposal
+                && d.SourceDocumentId == fixedAssetId))
+            return null;
+        if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == asset.CompanyId && d.DocumentType == ZatcaDocumentType.DisposalCancel
+                && d.SourceDocumentId == fixedAssetId))
+            throw new AccountingException($"إشعارُ إلغاء بيع الأصل {asset.Code} صادرٌ مسبقاً.");
+
+        var company = await db.Companies.SingleAsync(c => c.Id == asset.CompanyId);
+        var customer = asset.DisposalBuyerCustomerId is long buyerId
+            ? await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == buyerId)
+            : await WalkInCustomerAsync(asset.CompanyId);
+        var mode = customer.SupportsStandardTaxInvoice
+            ? ZatcaTransmissionMode.Clearance
+            : ZatcaTransmissionMode.Reporting;
+
+        var category = asset.DisposalVatCategory ?? VatCategory.Standard;
+        var exemption = VatExemptionReason.Find(asset.DisposalVatExemptionCode);
+        var lines = new List<SalesInvoiceLine>
+        {
+            new($"إلغاء بيع أصل ثابت {asset.Code} — {asset.NameAr}", 1m, proceeds, null,
+                category, asset.DisposalVatExemptionCode, exemption?.ArabicText),
+        };
+        var vat = Math.Round(
+            proceeds * category.RateFor(VatCalculator.SaudiVatRate), 2, MidpointRounding.AwayFromZero);
+
+        return await GenerateAsync(
+            asset.CompanyId, ZatcaDocumentType.DisposalCancel, fixedAssetId,
+            $"CN-CANCEL-{asset.DisposalInvoiceNumber}", reversalDate, company, customer,
+            proceeds, vat, proceeds + vat, lines, mode, isCreditNote: true, issueReason: reason);
+    }
+
     /// <summary>إشعار دائن ZATCA عند إلغاء إشعار دائن مرحّل — دون قيد محاسبي منفصل.</summary>
     public async Task<ZatcaEInvoiceDocument?> TryGenerateCancellationForCreditNoteAsync(long creditNoteId)
     {
@@ -634,6 +681,18 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             // ‏فيخرج مستندُ إلغاءٍ **بلا `BillingReference`** — **إشعارٌ دائنٌ لا
             // ‏يقول ماذا يُلغي**. والنمطُ نمطُ `DebitNote` أعلاه حرفاً:
             // ‏يُبحث عن مستند المصدر المُرسَل سلفاً ويُشار إليه.
+            // ‏(ح-١٦١) ‏وعكسُ بيع الأصل مرجعُه فاتورةُ بيعه — بالنمط نفسِه.
+            case ZatcaDocumentType.DisposalCancel:
+            {
+                var originalSale = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+                    d.CompanyId == companyId &&
+                    d.DocumentType == ZatcaDocumentType.AssetDisposal &&
+                    d.SourceDocumentId == sourceId);
+                if (originalSale is not null)
+                    return (originalSale.InvoiceNumber, originalSale.InvoiceUuid);
+                break;
+            }
+
             case ZatcaDocumentType.BillingCancel:
             {
                 var originalPb = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>

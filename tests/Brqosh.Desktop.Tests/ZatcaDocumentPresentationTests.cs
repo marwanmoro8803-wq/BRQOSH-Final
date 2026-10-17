@@ -36,6 +36,8 @@ public class ZatcaDocumentPresentationTests
         { ZatcaDocumentType.BillingCancel, ZatcaDocumentPresentation.SourceKind.ProgressBilling },
         // ‏(ح-١٦) وفاتورةُ بيع أصلٍ ثابت — **فضاءُ معرّفاتٍ رابع**، مصدرُه `fixed_assets`.
         { ZatcaDocumentType.AssetDisposal, ZatcaDocumentPresentation.SourceKind.FixedAssetDisposal },
+        // ‏(ح-١٦١) وإلغاءُ بيع الأصل — مصدرُه الأصلُ المبيع.
+        { ZatcaDocumentType.DisposalCancel, ZatcaDocumentPresentation.SourceKind.FixedAssetDisposal },
     };
 
     // ── العطلُ نفسُه ────────────────────────────────────────────────────────
@@ -70,7 +72,8 @@ public class ZatcaDocumentPresentationTests
             [ZatcaDocumentType.ProgressBilling,
              ZatcaDocumentType.InvoiceCancel,
              ZatcaDocumentType.BillingCancel,
-             ZatcaDocumentType.AssetDisposal],
+             ZatcaDocumentType.AssetDisposal,
+             ZatcaDocumentType.DisposalCancel],
             misread);
     }
 

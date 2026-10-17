@@ -353,6 +353,35 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                 break;
             }
 
+            // ‏(ح-١٦١) ‏**وإلغاءُ بيع الأصل** — سطرُه سطرُ الفاتورة الملغاة، ومشتريها طرفُه (أو «عميل نقدي»).
+            case ZatcaDocumentType.DisposalCancel:
+            {
+                var asset = await db.FixedAssets.IgnoreQueryFilters().SingleAsync(
+                    a => a.CompanyId == companyId && a.Id == doc.SourceDocumentId, ct);
+                var proceeds = asset.DisposalProceeds ?? 0m;
+                var category = asset.DisposalVatCategory ?? Domain.Tax.VatCategory.Standard;
+                var vat = Math.Round(
+                    proceeds * category.RateFor(Domain.Accounting.VatCalculator.SaudiVatRate), 2, MidpointRounding.AwayFromZero);
+                lines.Add(new SalesInvoicePdfGenerator.Line(
+                    $"إلغاء بيع أصل ثابت {asset.Code} — {asset.NameAr}", 1m, proceeds, proceeds));
+                amounts = new PrintedAmounts(proceeds, vat, null);
+                documentDiscount = 0m;
+                // ‏تاريخُ الإشعار تاريخُ قيد العكس — به صدر.
+                var disposalSource = $"FixedAssetDisposal:{asset.Code}";
+                var reversalId = await db.JournalEntries
+                    .Where(e => e.CompanyId == companyId && e.SourceDocument == disposalSource && e.ReversalEntryId != null)
+                    .OrderByDescending(e => e.Id).Select(e => e.ReversalEntryId).FirstAsync(ct);
+                date = await db.JournalEntries.Where(e => e.Id == reversalId).Select(e => e.EntryDate).SingleAsync(ct);
+                party = asset.DisposalBuyerCustomerId is long buyerId
+                    ? await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == buyerId, ct)
+                    : await db.Customers.IgnoreQueryFilters()
+                        .Where(c => c.CompanyId == companyId && c.NameAr == "عميل نقدي").FirstAsync(ct);
+                partyName = party.NameAr;
+                reference = asset.DisposalInvoiceNumber ?? asset.Code;
+                notes = $"إلغاء بيع أصل ثابت {reference}";
+                break;
+            }
+
             case ZatcaDocumentType.DebitNote:
             {
                 var note = await db.CreditNotes.SingleAsync(
