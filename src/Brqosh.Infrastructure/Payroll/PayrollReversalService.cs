@@ -37,8 +37,20 @@ public class PayrollReversalService(BrqoshDbContext db)
             await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, reversalDate, username, fromSourceDocument: true, token);
 
+            // ‏(ح-١٤٦) ‏**وتكلفةُ المشاريع التي حملها قيدُ الدورة تسقط معه** — وإنجازُ عقودها يُسوّى.
+            var source = PayrollPostingService.PayrollProjectSource(run.PeriodCode);
+            var projectCosts = await db.ProjectCostEntries
+                .Where(c => c.CompanyId == companyId && c.SourceDocument == source
+                            && c.JournalEntryId == entryId && !c.IsReversed)
+                .ToListAsync(token);
+            foreach (var cost in projectCosts)
+                cost.MarkReversed();
+
             run.MarkReversed();
             await db.SaveChangesAsync(token);
+
+            foreach (var projectId in projectCosts.Select(c => c.ProjectId).Distinct())
+                await new Construction.ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, reversalDate, token);
 
             // (CEEF-231 · ط2-٧) ‏**والعكسُ يُعيد الدَّين.**
             //

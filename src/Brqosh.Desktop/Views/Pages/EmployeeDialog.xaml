@@ -109,6 +109,12 @@
                     <TextBlock Text="مركز التكلفة — وبه يظهر الأجر في قائمة المركز" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="CostCenterBox" FontSize="14" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
                 </StackPanel>
+
+                <!-- (جاهزيّةُ الإطلاق · ح-١٤٦) المشروعُ الذي يعمل عليه — فتُحمَّل عليه تكلفتُه في الرواتب. -->
+                <StackPanel Margin="0,0,0,12">
+                    <TextBlock Text="المشروع" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox x:Name="ProjectBox" FontSize="14" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 

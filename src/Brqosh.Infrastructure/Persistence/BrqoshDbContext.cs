@@ -1066,6 +1066,7 @@ public class BrqoshDbContext : DbContext
             // ‏(ح-١٣٨) فئةُ الاشتراك — نصّيّةُ التخزين كأخواتها، و«قديم» افتراضاً للصفوف القائمة.
             entity.Property(e => e.GosiRegime).HasConversion<string>().HasMaxLength(16)
                 .HasDefaultValue(GosiRegime.Legacy).HasSentinel(GosiRegime.Legacy);
+            entity.Property(e => e.ProjectId);   // ‏(ح-١٤٦) المشروعُ الذي يعمل عليه — فارغُه الافتراضيّ
             entity.Property(e => e.Iban).HasMaxLength(24);
             entity.Property(e => e.BasicSalary).HasPrecision(18, 2);
             entity.Property(e => e.HousingAllowance).HasPrecision(18, 2);

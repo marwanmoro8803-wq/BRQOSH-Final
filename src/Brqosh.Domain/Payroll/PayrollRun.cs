@@ -281,7 +281,8 @@ public class PayrollRun : IBranchScoped
     /// </param>
     public JournalEntry Post(Account salariesExpense, Account gosiExpense, Account salariesPayable,
         Account gosiPayable, Account? allowancesExpense = null, Account? advancesReceivable = null,
-        IReadOnlyDictionary<long, long?>? employeeCostCenters = null)
+        IReadOnlyDictionary<long, long?>? employeeCostCenters = null,
+        IReadOnlyDictionary<long, long>? employeeProjects = null, Account? projectCostAccount = null)
     {
         if (Status != PayrollRunStatus.Draft)
             throw new AccountingException("الدورة مرحّلة مسبقاً.");
@@ -310,20 +311,32 @@ public class PayrollRun : IBranchScoped
         // ‏(مدينٌ = الأجرُ الكامل + حصّةُ صاحب العمل · دائنٌ = الصافي + السُّلَف + التأمينات
         // ‏= الأجرُ بعد الغياب + حصّةُ صاحب العمل)، فيرتدّ على حارس التوازن. **أيُّ شهرٍ فيه
         // ‏إجازةٌ بلا أجرٍ معتمدةٌ لموظّفٍ واحدٍ يُعطّل رواتبَ المنشأة كلِّها.**
+        // (جاهزيّةُ الإطلاق · ح-١٤٦ · ‏`sector-modules#9`) ‏**موظّفُ المشروع تُحمَّل تكلفتُه على المشروع** — فتخرج سطورُه
+        // ‏من مصروف الرواتب والبدلات والتأمينات، وتُدان تكاليفُ المشاريع بمجموعها لكلّ مشروع. ‏والدائنُ لا يتغيّر.
+        var projects = employeeProjects ?? new Dictionary<long, long>();
+        bool OnProject(PayrollLine l) => l.EmployeeId is long id && projects.ContainsKey(id);
+        Func<PayrollLine, decimal> Off(Func<PayrollLine, decimal> amountOf) => l => OnProject(l) ? 0m : amountOf(l);
+
         if (allowancesExpense is not null && TotalAllowances > 0m)
         {
-            AddExpense(entry, salariesExpense, l => l.BasicAfterAbsence, "مصروف رواتب", employeeCostCenters);
-            AddExpense(entry, allowancesExpense, l => l.AllowancesAfterAbsence,
+            AddExpense(entry, salariesExpense, Off(l => l.BasicAfterAbsence), "مصروف رواتب", employeeCostCenters);
+            AddExpense(entry, allowancesExpense, Off(l => l.AllowancesAfterAbsence),
                 "بدلات السكن والانتقال", employeeCostCenters);
         }
         else
         {
             // ‏و`GrossPay` هو الأجرُ الكاملُ ناقصَ الغياب — فلا قسمةَ هنا ولا تقريبَ يُخشى.
-            AddExpense(entry, salariesExpense, l => l.GrossPay, "مصروف رواتب", employeeCostCenters);
+            AddExpense(entry, salariesExpense, Off(l => l.GrossPay), "مصروف رواتب", employeeCostCenters);
         }
         if (TotalGosiEmployer > 0)
-            AddExpense(entry, gosiExpense, l => l.GosiEmployer,
+            AddExpense(entry, gosiExpense, Off(l => l.GosiEmployer),
                 "تأمينات اجتماعية — صاحب عمل", employeeCostCenters);
+
+        var projectCosts = ProjectCosts(projects);
+        if (projectCosts.Count > 0 && projectCostAccount is null)
+            throw new AccountingException("موظّفون على مشاريع ولا حسابَ لتكاليف المشاريع.");
+        foreach (var (projectId, amount) in projectCosts.OrderBy(p => p.Key))
+            entry.AddLine(projectCostAccount!, amount, 0m, $"رواتب على المشروع #{projectId}");
         entry.AddLine(salariesPayable, 0m, TotalNet, "رواتب مستحقة");
 
         // (CEEF-230 · ط2-٥) ‏**والاستقطاعُ يُعفي السُّلفةَ لا يُنقص المصروف.**
@@ -398,6 +411,18 @@ public class PayrollRun : IBranchScoped
         foreach (var (costCenterId, amount) in buckets)
             entry.AddLine(account, amount, 0m, description, costCenterId);
     }
+
+    /// <summary>
+    /// (ح-١٤٦) تكلفةُ كلّ مشروعٍ في الدورة: <b>الإجماليُّ بعد الغياب وحصّةُ صاحب العمل</b> لموظّفيه —
+    /// وهو عينُ ما كان يُدان على الرواتب والبدلات والتأمينات لهم.
+    /// </summary>
+    public IReadOnlyDictionary<long, decimal> ProjectCosts(IReadOnlyDictionary<long, long> employeeProjects) =>
+        _lines
+            .Where(l => l.EmployeeId is long id && employeeProjects.ContainsKey(id))
+            .GroupBy(l => employeeProjects[l.EmployeeId!.Value])
+            .Select(g => (g.Key, Amount: Math.Round(g.Sum(l => l.GrossPay + l.GosiEmployer), 2, MidpointRounding.AwayFromZero)))
+            .Where(p => p.Amount > 0m)
+            .ToDictionary(p => p.Key, p => p.Amount);
 
     public void LinkJournal(long journalEntryId) => JournalEntryId = journalEntryId;
 

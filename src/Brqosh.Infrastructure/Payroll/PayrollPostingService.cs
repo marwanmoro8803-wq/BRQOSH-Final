@@ -61,8 +61,14 @@ public class PayrollPostingService(BrqoshDbContext db)
                     .Select(e => new { e.Id, e.CostCenterId })
                     .ToDictionaryAsync(e => e.Id, e => e.CostCenterId, token);
 
+            // ‏(جاهزيّةُ الإطلاق · ح-١٤٦ · ‏`sector-modules#9`) ‏**موظّفو المشاريع** — وحالةُ كلّ مشروعٍ تُسأل قبل القيد.
+            var employeeProjects = await EmployeeProjectsAsync(run.CompanyId, employeeIds, token);
+            var projectCostAccount = employeeProjects.Count > 0
+                ? await AccountAsync(run.CompanyId, Purchasing.PurchaseInvoicePostingService.ProjectCostAccountCode, token)
+                : null;
+
             var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances, advances,
-                costCenters);
+                costCenters, employeeProjects, projectCostAccount);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(run.CompanyId, run.PayDate);
             entry.Post(entryNumber);
 
@@ -87,6 +93,23 @@ public class PayrollPostingService(BrqoshDbContext db)
             run.LinkJournal(entry.Id);
             await db.SaveChangesAsync(token);
 
+            // ‏(ح-١٤٦) ‏تكلفةُ كلّ مشروعٍ من قيد الدورة نفسِه — ثمّ تُسوّى نسبةُ إنجاز عقده.
+            foreach (var (projectId, amount) in run.ProjectCosts(employeeProjects))
+            {
+                var cost = Domain.Construction.ProjectCostEntry.Create(run.CompanyId, projectId, run.PayDate,
+                    $"رواتب {run.PeriodCode}", amount, PayrollProjectSource(run.PeriodCode));
+                cost.LinkJournalEntry(entry.Id);
+                if (run.BranchId is long branchId)
+                    cost.AssignBranch(branchId);
+                db.ProjectCostEntries.Add(cost);
+            }
+            if (employeeProjects.Count > 0)
+            {
+                await db.SaveChangesAsync(token);
+                foreach (var projectId in employeeProjects.Values.Distinct())
+                    await new Construction.ContractRevenueTrueUp(db).ApplyAsync(run.CompanyId, projectId, run.PayDate, token);
+            }
+
             await FinancialPostingSupport.AuditPostAsync(
                 db, run.CompanyId, "PayrollRun", run.PeriodCode,
                 reason: "ترحيل رواتب", details: $"صافي: {run.TotalNet:N2}", ct: token);
@@ -106,6 +129,44 @@ public class PayrollPostingService(BrqoshDbContext db)
 
             return run;
         }, ct);
+    }
+
+    /// <summary>مصدرُ تكلفة المشروع من دورة رواتب — يقرؤه العكسُ ليُسقطها.</summary>
+    internal static string PayrollProjectSource(string periodCode) => $"Payroll:{periodCode}";
+
+    /// <summary>
+    /// (ح-١٤٦) موظّفو الدورة على مشاريع — <b>والمشروعُ المكتملُ أو الملغى يُوقف الترحيلَ باسمه</b>:
+    /// تحميلُه بصمتٍ على مصروف الرواتب يُخفي أنّ موظّفاً ما زال مُسنَداً إلى مشروعٍ انتهى.
+    /// </summary>
+    private async Task<Dictionary<long, long>> EmployeeProjectsAsync(long companyId, List<long> employeeIds, CancellationToken ct)
+    {
+        if (employeeIds.Count == 0)
+            return [];
+
+        var assigned = await db.Employees
+            .Where(e => e.CompanyId == companyId && employeeIds.Contains(e.Id) && e.ProjectId != null)
+            .Select(e => new { e.Id, e.NameAr, ProjectId = e.ProjectId!.Value })
+            .ToListAsync(ct);
+        if (assigned.Count == 0)
+            return [];
+
+        var projectIds = assigned.Select(a => a.ProjectId).Distinct().ToList();
+        var projects = await db.ConstructionProjects
+            .Where(p => p.CompanyId == companyId && projectIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, ct);
+
+        foreach (var a in assigned)
+        {
+            if (!projects.TryGetValue(a.ProjectId, out var project))
+                throw new AccountingException($"الموظّف {a.NameAr} مُسنَدٌ إلى مشروعٍ غيرِ موجود في هذه المنشأة.");
+            if (project.Status is Domain.Construction.ConstructionProjectStatus.Completed
+                or Domain.Construction.ConstructionProjectStatus.Cancelled)
+                throw new AccountingException(
+                    $"الموظّف {a.NameAr} مُسنَدٌ إلى المشروع {project.Code} وهو "
+                    + $"{Domain.Construction.ConstructionProject.StatusLabel(project.Status)} — أعِد إسنادَه قبل ترحيل الرواتب.");
+        }
+
+        return assigned.ToDictionary(a => a.Id, a => a.ProjectId);
     }
 
     private async Task<Account> AccountAsync(long companyId, string code, CancellationToken ct) =>

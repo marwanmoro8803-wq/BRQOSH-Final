@@ -22,8 +22,41 @@ public partial class EmployeeDialog : Window
     {
         InitializeComponent();
         HireDateBox.SelectedDate = DateTime.Today;
-        Loaded += async (_, _) => await LoadCostCentersAsync();
+        Loaded += async (_, _) => { await LoadCostCentersAsync(); await LoadProjectsAsync(); };
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٦ · <c>sector-modules#9</c>) المشاريعُ التي تقبل تكلفة — والأوّلُ «بلا مشروع»؛
+    /// ومشروعُ الموظّف الحاليُّ يبقى معروضاً ولو انتهى، كي يُرى ويُعاد إسنادُه.
+    /// </summary>
+    private async Task LoadProjectsAsync()
+    {
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var projects = await db.ConstructionProjects
+                .Where(p => p.CompanyId == AppServices.CompanyId
+                            && ((p.Status != Domain.Construction.ConstructionProjectStatus.Completed
+                                 && p.Status != Domain.Construction.ConstructionProjectStatus.Cancelled)
+                                || p.Id == _selectedProjectId))
+                .OrderBy(p => p.Code)
+                .Select(p => new CostCenterOption(p.Id, p.Code + " — " + p.NameAr))
+                .ToListAsync();
+
+            ProjectBox.ItemsSource = new List<CostCenterOption>
+            {
+                new(0L, LocaleManager.T("بلا مشروع", "No project")),
+            }.Concat(projects).ToList();
+
+            ProjectBox.SelectedValue = _selectedProjectId ?? 0L;
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    private long? _selectedProjectId;
 
     /// <summary>
     /// (CEEF-232 · م-١) مراكزُ التكلفة النشطة — <b>و«بلا مركز» خيارٌ أوّل مقصود</b>.
@@ -88,6 +121,7 @@ public partial class EmployeeDialog : Window
         OtherBox.Text = employee.OtherAllowance.ToString(CultureInfo.InvariantCulture);
         IbanBox.Text = employee.Iban ?? string.Empty;
         _selectedCostCenterId = employee.CostCenterId;
+        _selectedProjectId = employee.ProjectId;
     }
 
     private async void OnSave(object sender, RoutedEventArgs e)
@@ -104,6 +138,7 @@ public partial class EmployeeDialog : Window
 
             // ‏(CEEF-232 · م-١) و«بلا مركز» يُخزَّن `null` لا صفراً — **فصفرٌ مفتاحٌ لا وجودَ له**.
             var costCenterId = CostCenterBox.SelectedValue is long cc && cc > 0 ? cc : (long?)null;
+            var projectId = ProjectBox.SelectedValue is long pj && pj > 0 ? pj : (long?)null;
 
             if (_employeeId is long id)
             {
@@ -112,6 +147,7 @@ public partial class EmployeeDialog : Window
                 existing.SetPay(basic, housing, transport, other);
                 existing.SetIban(iban);
                 existing.AssignCostCenter(costCenterId);
+                existing.AssignProject(projectId);
                 existing.SetGosiRegime(SelectedGosiRegime());
             }
             else
@@ -127,6 +163,7 @@ public partial class EmployeeDialog : Window
                 employee.SetPay(basic, housing, transport, other);
                 employee.SetIban(iban);
                 employee.AssignCostCenter(costCenterId);
+                employee.AssignProject(projectId);
                 employee.SetGosiRegime(SelectedGosiRegime());
                 db.Employees.Add(employee);
             }

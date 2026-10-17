@@ -182,6 +182,19 @@ public class Employee : IBranchScoped
     public void AssignCostCenter(long? costCenterId) => CostCenterId = costCenterId;
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٦ · <c>sector-modules#9</c>) <b>المشروعُ الذي يعمل عليه الموظّف</b> — فتُحمَّل عليه
+    /// تكلفتُه في دورة الرواتب (الإجماليُّ بعد الغياب وحصّةُ صاحب العمل في التأمينات) بدل مصروف الرواتب.
+    /// </summary>
+    public long? ProjectId { get; private set; }
+
+    public void AssignProject(long? projectId)
+    {
+        if (projectId is <= 0)
+            throw new AccountingException("المشروع غير صالح.");
+        ProjectId = projectId;
+    }
+
+    /// <summary>
     /// ينهي خدمةَ الموظّف.
     ///
     /// <para><b>ولا يُحذف</b>: راتبُه المرحَّل جزءٌ من دفاترِ سنواتٍ مضت، ومكافأةُ نهاية

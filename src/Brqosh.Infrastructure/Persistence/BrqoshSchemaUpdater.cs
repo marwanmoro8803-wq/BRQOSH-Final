@@ -339,9 +339,15 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         if (await TableExistsAsync("employees", isPg, ct))
         {
             if (isPg)
+            {
                 await EnsurePgColumnAsync("employees", "GosiRegime", "character varying(16) NOT NULL DEFAULT 'Legacy'", ct);
+                await EnsurePgColumnAsync("employees", "ProjectId", "BIGINT NULL", ct);   // ‏(ح-١٤٦)
+            }
             else
+            {
                 await EnsureSqliteColumnAsync("employees", "GosiRegime", "TEXT NOT NULL DEFAULT 'Legacy'", ct);
+                await EnsureSqliteColumnAsync("employees", "ProjectId", "INTEGER NULL", ct);   // ‏(ح-١٤٦)
+            }
         }
 
         if (!await TableExistsAsync("gosi_policies", isPg, ct))
