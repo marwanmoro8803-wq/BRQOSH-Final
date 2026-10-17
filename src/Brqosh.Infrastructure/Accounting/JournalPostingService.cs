@@ -27,6 +27,8 @@ public class JournalPostingService(BrqoshDbContext db)
             if (entry.IsManual && entry.WorkflowInstanceId is not null)
                 await new ManualJournalEntryWorkflowService(db, new WorkflowEngine(db))
                     .EnsureWorkflowApprovedAsync(entry);
+            if (entry.IsManual)
+                EnsureNoSubledgerControlAccount(entry);
 
             await _orchestrator.ValidateJournalEntryAsync(entry);
             await EnsureCostCentersExistAsync(entry);
@@ -47,6 +49,34 @@ public class JournalPostingService(BrqoshDbContext db)
 
             return entry;
         });
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٥٣ · <c>accounting-core#6</c>) <b>القيدُ اليدويُّ لا يمسّ حسابَ مراقبةٍ يُبنى من دفترٍ مساعد.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para>العملاءُ (1104) والموردون (2101) والمخزونُ (1107) أرصدتُها مجموعُ مستنداتها — فاتورةٌ وسندٌ وحركةٌ لكلّ طرفٍ وصنف.
+    /// وقيدٌ يدويٌّ عليها يُحرّك الحسابَ <b>بلا عميلٍ ولا مورّدٍ ولا صنف</b>: يختلف الرصيدُ عن مجموع الدفتر المساعد، وكشفُ العميل
+    /// وأعمارُ الديون وتقييمُ المخزون لا ترى ما وقع. وكان ح-٢٨ يكشف الفرقَ بعد وقوعه ولا يمنعه — <b>لأنّ المنعَ كان يُغلق التأسيس</b>؛
+    /// وقد صارت الأرصدةُ الافتتاحيّةُ استيراداً بمستندٍ (ح-١٣٣/١٣٤/١٣٥) لا قيداً يدويّاً، فيُمنع الآن.</para>
+    /// <para><b>والضريبةُ ليست منها</b>: قيدٌ يدويٌّ على ضريبة المخرجات أو المدخلات طريقٌ معلَنٌ يقرؤه الإقرار («مقيّدةٌ بلا مستند»).</para>
+    /// </remarks>
+    private static void EnsureNoSubledgerControlAccount(JournalEntry entry)
+    {
+        var controls = entry.Lines
+            .Select(l => l.AccountCode)
+            .Where(code => code is SaudiChartOfAccounts.SystemCodes.AccountsReceivable
+                or SaudiChartOfAccounts.SystemCodes.AccountsPayable
+                or SaudiChartOfAccounts.SystemCodes.Inventory)
+            .Distinct()
+            .ToList();
+        if (controls.Count == 0)
+            return;
+
+        throw new AccountingException(
+            $"القيد اليدوي لا يُرحَّل على حساب مراقبة ({string.Join("، ", controls)}): رصيدُه من مستنداته. "
+            + "استعمل المستندَ نفسَه — فاتورة أو إشعاراً أو سنداً أو حركة مخزون — أو استيرادَ الأرصدة الافتتاحيّة.");
+    }
+
 
     /// <summary>
     /// (CEEF-230 · ط1-٧) <b>مركزُ التكلفة يجب أن يكون موجوداً ونشطاً وللمنشأة نفسِها.</b>

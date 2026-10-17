@@ -202,7 +202,9 @@ public class SubledgerDriftIsVisibleInTheProductTests : IDisposable
         var cash = await _db.Accounts.SingleAsync(
             a => a.CompanyId == _companyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashOnHand);
 
-        var entry = JournalEntry.CreateDraft(_companyId, new DateOnly(2026, 8, 1), "تسوية يدويّة");
+        // ‏(ح-١٥٣) ‏**القيدُ اليدويُّ على حساب المراقبة صار ممنوعاً** — فالانجرافُ يُحدَث بقيدٍ قديمٍ مُستورَد (ذي مصدر)، وهو ما يبقى ممكناً في دفاترَ قائمةٍ قبل المنع أو منقولةٍ من نظامٍ آخر؛ والكشفُ يُقاس عليه كما كان.
+        var entry = JournalEntry.CreateDraft(_companyId, new DateOnly(2026, 8, 1), "تسوية يدويّة",
+            sourceDocument: $"LegacyImport:{controlCode}");
         if (debit > 0)
         {
             entry.AddLine(control, debit, 0m, "تسوية");

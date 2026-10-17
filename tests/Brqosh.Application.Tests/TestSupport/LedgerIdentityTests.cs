@@ -106,7 +106,9 @@ public class LedgerIdentityTests : IDisposable
     {
         var (companyId, _) = await SeedAsync();
 
-        var entry = JournalEntry.CreateDraft(companyId, new DateOnly(2026, 3, 1), "قيد يدويّ على الذمم");
+        // ‏(ح-١٥٣) ‏**القيدُ اليدويُّ على حساب المراقبة صار ممنوعاً** — فالانجرافُ يُحدَث بقيدٍ قديمٍ مُستورَد (ذي مصدر)، وهو ما يبقى ممكناً في دفاترَ قائمةٍ قبل المنع أو منقولةٍ من نظامٍ آخر؛ والكشفُ يُقاس عليه كما كان.
+        var entry = JournalEntry.CreateDraft(companyId, new DateOnly(2026, 3, 1), "قيد يدويّ على الذمم",
+            sourceDocument: "LegacyImport:AR");
         entry.AddLine(await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.AccountsReceivable),
             7500m, 0m, "مدين ذمم بلا مستند");
         entry.AddLine(await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.SalesRevenue),
@@ -131,7 +133,8 @@ public class LedgerIdentityTests : IDisposable
     {
         var (companyId, _) = await SeedAsync();
 
-        var entry = JournalEntry.CreateDraft(companyId, new DateOnly(2026, 3, 1), "قيد يدويّ على الدائنين");
+        var entry = JournalEntry.CreateDraft(companyId, new DateOnly(2026, 3, 1), "قيد يدويّ على الدائنين",
+            sourceDocument: "LegacyImport:AP");
         entry.AddLine(await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory),
             4000m, 0m, "مخزون");
         entry.AddLine(await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.AccountsPayable),
@@ -154,7 +157,8 @@ public class LedgerIdentityTests : IDisposable
     {
         var (companyId, _) = await SeedAsync();
 
-        var entry = JournalEntry.CreateDraft(companyId, new DateOnly(2026, 3, 1), "قيد يدويّ على المخزون");
+        var entry = JournalEntry.CreateDraft(companyId, new DateOnly(2026, 3, 1), "قيد يدويّ على المخزون",
+            sourceDocument: "LegacyImport:INV");
         entry.AddLine(await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory),
             12000m, 0m, "مخزون بلا حركة");
         entry.AddLine(await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.AccountsPayable),

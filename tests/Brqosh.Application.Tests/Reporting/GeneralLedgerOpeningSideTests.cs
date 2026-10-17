@@ -45,7 +45,8 @@ public class GeneralLedgerOpeningSideTests : IDisposable
     private async Task PostAsync(DateOnly date, string description,
         params (string Code, decimal Debit, decimal Credit)[] lines)
     {
-        var entry = JournalEntry.CreateDraft(_companyId, date, description);
+        // ‏(ح-١٥٣) ‏تُمثّل قيودَ مستنداتٍ (دفعةٌ مقدّمةٌ وفاتورة) — فلها مصدر؛ والقيدُ اليدويُّ على الذمم صار ممنوعاً.
+        var entry = JournalEntry.CreateDraft(_companyId, date, description, sourceDocument: $"Doc:{description}");
         foreach (var (code, debit, credit) in lines)
         {
             var account = await _db.Accounts.SingleAsync(a => a.CompanyId == _companyId && a.Code == code);
