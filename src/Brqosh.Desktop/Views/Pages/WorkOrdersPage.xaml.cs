@@ -170,6 +170,33 @@ public partial class WorkOrdersPage : UserControl
 
         // ‏(ح-١٤٨) ‏**دفعةٌ أم إغلاق** — الدفعةُ تُدخل التامَّ المخزونَ ويبقى الأمرُ صادراً يقبل صرفاً ودفعاتٍ أخرى؛
         // ‏والإغلاقُ يُكمل الأمرَ وينقل باقيَ ما صُرف له.
+        // ‏(ح-١٤٩) ‏**منتجٌ ثانويٌّ اختياريّ** — رمزُه ثمّ كميّتُه وقيمةُ وحدته؛ وقيمتُه تُطرح من تكلفة الرئيسيّ.
+        var byProducts = new List<(long ProductId, decimal Quantity, decimal UnitValue)>();
+        var byCodeDialog = new TextInputDialog(LocaleManager.T("إكمال أمر الإنتاج", "Complete work order"),
+            LocaleManager.T("رمز المنتج الثانوي (اختياري):", "By-product code (optional):")) { Owner = Window.GetWindow(this) };
+        if (byCodeDialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(byCodeDialog.Value))
+        {
+            await using var lookup = AppServices.CreateDb();
+            var code = byCodeDialog.Value.Trim();
+            var byProduct = await lookup.Products.SingleOrDefaultAsync(p => p.CompanyId == AppServices.CompanyId && p.Code == code);
+            if (byProduct is null)
+            {
+                UiFeedback.ShowWarning(LocaleManager.T("لا صنفَ بهذا الرمز.", "No product with this code."));
+                return;
+            }
+
+            var byQtyDialog = new TextInputDialog(byProduct.NameAr, LocaleManager.T("الكمية:", "Quantity:")) { Owner = Window.GetWindow(this) };
+            var byValueDialog = new TextInputDialog(byProduct.NameAr, LocaleManager.T("قيمة الوحدة:", "Unit value:")) { Owner = Window.GetWindow(this) };
+            if (byQtyDialog.ShowDialog() != true || byValueDialog.ShowDialog() != true
+                || !NumericInput.TryParse(byQtyDialog.Value, out var byQty) || byQty <= 0
+                || !NumericInput.TryParse(byValueDialog.Value, out var byValue) || byValue < 0)
+            {
+                UiDialog.Show("الكمية غير صالحة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            byProducts.Add((byProduct.Id, byQty, byValue));
+        }
+
         var close = UiFeedback.Confirm(LocaleManager.T(
             "هل هذه آخرُ دفعة؟ «نعم» يُغلق الأمر، و«لا» يُكمل دفعةً ويُبقيه صادراً.",
             "Is this the last batch? \"Yes\" closes the order; \"No\" completes a batch and keeps it released."));
@@ -204,7 +231,7 @@ public partial class WorkOrdersPage : UserControl
             }
 
             await service.CompleteAsync(AppServices.CompanyId, row.Id, qty, username,
-                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap, closeOrder: close);
+                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap, closeOrder: close, byProducts: byProducts);
             UiDialog.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }

@@ -55,7 +55,7 @@ public class WorkOrderService(BrqoshDbContext db)
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
         string username, DateOnly? completionDate = null, string? outputBatchNumber = null,
         DateOnly? outputExpiry = null, CancellationToken ct = default, decimal scrapQuantity = 0m,
-        bool closeOrder = true)
+        bool closeOrder = true, IReadOnlyList<(long ProductId, decimal Quantity, decimal UnitValue)>? byProducts = null)
     {
         SecurityContext.EnsureCanPost();
         username = SecurityContext.ResolveUsername(username);
@@ -135,8 +135,17 @@ public class WorkOrderService(BrqoshDbContext db)
             var conversionCost = labourCost + overheadCost;
             var totalProductionCost = materialCost + conversionCost;
 
+            // ‏(جاهزيّةُ الإطلاق · ح-١٤٩ · ‏`manufacturing#4`) ‏**المنتجُ الثانويّ يدخل المخزونَ بقيمته المعلنة، وتُطرح من تكلفة الرئيسيّ**
+            // ‏(طريقةُ صافي القيمة القابلة للتحقّق للمنتج الثانويّ) — فلا تُحمَّل نخالةُ الطحين أو قصاصةُ الحديد على وحدة الرئيسيّ،
+            // ‏ولا يدخل المخزونَ صنفٌ بلا قيمة. ‏والمجموعُ لا يتغيّر: ما يخرج من WIP يدخل المخزونَ كلُّه.
+            var byProductLines = await ByProductLinesAsync(companyId, bom.FinishedProductId, byProducts, token);
+            var byProductValue = byProductLines.Sum(l => Math.Round(l.Qty * l.UnitCost, 2, MidpointRounding.AwayFromZero));
+            if (byProductValue > totalProductionCost)
+                throw new AccountingException(
+                    $"قيمةُ المنتجات الثانويّة ({byProductValue:N2}) تتجاوز تكلفةَ الدفعة ({totalProductionCost:N2}) — والرئيسيُّ لا يدخل بتكلفةٍ سالبة.");
+
             var unitCost = producedQuantity > 0
-                ? Math.Round(totalProductionCost / producedQuantity, 4, MidpointRounding.AwayFromZero)
+                ? Math.Round((totalProductionCost - byProductValue) / producedQuantity, 4, MidpointRounding.AwayFromZero)
                 : 0m;
 
             if (issueLines.Count > 0)
@@ -145,7 +154,8 @@ public class WorkOrderService(BrqoshDbContext db)
 
             await inv.PostDocumentMovementAsync(companyId, outputWarehouseId, StockMovementType.Receipt,
                 completedOn, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
-                [(bom.FinishedProductId, producedQuantity, unitCost, outputBatch, outputBatch is null ? null : outputExpiry)]);
+                [(bom.FinishedProductId, producedQuantity, unitCost, outputBatch, outputBatch is null ? null : outputExpiry),
+                 .. byProductLines]);
 
             var posting = new JournalPostingService(db);
             await posting.EnsurePeriodOpenAsync(companyId, completedOn);
@@ -286,6 +296,39 @@ public class WorkOrderService(BrqoshDbContext db)
                 "WorkOrder", order.OrderNumber ?? order.Id.ToString(), $"{cost:N2}");
             return cost;
         }, ct);
+    }
+
+    /// <summary>
+    /// (ح-١٤٩) سطورُ المنتجات الثانويّة — <b>صنفٌ مخزنيٌّ من المنشأة غيرُ الرئيسيّ، بكميّةٍ موجبةٍ وقيمةٍ غير سالبة</b>؛
+    /// والمتتبَّعُ بالدفعة يُرفض باسمه: دفعتُه تُسأل في شاشةٍ لم تُبنَ لها.
+    /// </summary>
+    private async Task<List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>>
+        ByProductLinesAsync(long companyId, long finishedProductId,
+            IReadOnlyList<(long ProductId, decimal Quantity, decimal UnitValue)>? byProducts, CancellationToken token)
+    {
+        var lines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
+        if (byProducts is null || byProducts.Count == 0)
+            return lines;
+
+        var ids = byProducts.Select(b => b.ProductId).Distinct().ToList();
+        var products = await db.Products.Where(p => p.CompanyId == companyId && ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, token);
+        foreach (var (productId, quantity, unitValue) in byProducts)
+        {
+            if (!products.TryGetValue(productId, out var product))
+                throw new AccountingException("المنتج الثانويّ غير موجود في هذه المنشأة.");
+            if (productId == finishedProductId)
+                throw new AccountingException($"«{product.NameAr}» هو المنتجُ الرئيسيّ نفسُه — لا يكون ثانويّاً لأمره.");
+            if (!product.IsStockable())
+                throw new AccountingException($"المنتج الثانويّ «{product.NameAr}» ليس صنفاً مخزنيّاً.");
+            if (product.IsTracked)
+                throw new AccountingException($"المنتج الثانويّ «{product.NameAr}» يُتتبَّع بالدفعة — ولا تُسأل دفعتُه هنا بعد.");
+            if (quantity <= 0m || unitValue < 0m)
+                throw new AccountingException($"كميّةُ «{product.NameAr}» موجبةٌ وقيمتُه غيرُ سالبة.");
+            lines.Add((productId, Math.Round(quantity, 4, MidpointRounding.AwayFromZero),
+                Math.Round(unitValue, 4, MidpointRounding.AwayFromZero), null, null));
+        }
+
+        return lines;
     }
 
     /// <summary>(ح-١٤٨) مفتاحُ قيد إكمال الدفعة <paramref name="n"/> — الأولى بالمفتاح القديم.</summary>
