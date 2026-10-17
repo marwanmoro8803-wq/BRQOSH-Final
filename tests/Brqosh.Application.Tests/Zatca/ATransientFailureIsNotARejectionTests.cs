@@ -122,6 +122,26 @@ public class ATransientFailureIsNotARejectionTests : IDisposable
         Assert.Equal(2, await _db.ZatcaEInvoiceDocuments.CountAsync(d => d.ComplianceStatus == ZatcaComplianceStatus.ReadyToReport));
     }
 
+    /// <summary>
+    /// ‏(ح-١٥٦) <b>المؤقّتُ الخلفيُّ يُرسل والجالسُ أمينُ صندوق</b> — ومسارُ الزرّ يرفضه كما كان. الإذنُ مُنح عند ترحيل المستند،
+    /// ‏فالمحطّةُ التي يعمل عليها أمينُ الصندوق وحدَه لا تُبقي مبيعاتِها معلّقةً حتى يمرّ محاسب.
+    /// </summary>
+    [Fact]
+    public async Task The_background_resubmission_runs_for_a_cashier_while_the_button_refuses()
+    {
+        await ConfigureAsync();
+        var doc = await PendingAsync(1);
+        Respond(HttpStatusCode.OK, "{\"reportingStatus\":\"REPORTED\"}");
+        TestActor.Cashier();
+
+        await Assert.ThrowsAsync<AccountingException>(() => new ZatcaSubmissionService(_db).ResubmitPendingAsync(_companyId));
+        var result = await new ZatcaSubmissionService(_db).ResubmitPendingInBackgroundAsync(_companyId);
+
+        Assert.Equal(1, result.Submitted);
+        Assert.False(result.Skipped);
+        Assert.Equal(ZatcaComplianceStatus.Reported, (await Reload(doc.Id)).ComplianceStatus);
+    }
+
     // ── تهيئة ───────────────────────────────────────────────────────────────
 
     private static void Respond(HttpStatusCode code, string body) =>

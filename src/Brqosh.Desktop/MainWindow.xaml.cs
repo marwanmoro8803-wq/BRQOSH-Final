@@ -79,6 +79,13 @@ public partial class MainWindow : Window
         _ = RunScheduledBackupAsync();
         StatusBackupBadge.MouseLeftButtonUp += (_, _) => Navigate("backup", NavTitleFor("backup"));
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٥٦ · ‏`tax-zatca#8`) ‏**المعلَّقُ لدى الهيئة يُعاد إرسالُه من نفسه.** كان زرّاً في سجلّ الفواتير
+        // ‏الإلكترونيّة، ومهلةُ الإبلاغ ٢٤ ساعة. ‏المؤقّتُ ينبض كلَّ دقيقة، و`ZatcaRetryBackoff` يقرّر متى تُحاوَل الدفعة.
+        var zatcaTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        zatcaTimer.Tick += async (_, _) => await RunZatcaResubmitAsync();
+        zatcaTimer.Start();
+        Closed += (_, _) => zatcaTimer.Stop();
+
         // ‏(ح-١٤١ · ‏`installer-deployment-ops#12`) ‏**التحديثُ يُفحص من نفسه.** كان الفحصُ زرّاً في
         // ‏«حالة النظام» لا يضغطه أحد، فقناةٌ موقَّعةٌ لا يبلغها عميل. ‏يُفحص مرّةً بعد الإقلاع إن حُفظت قناة،
         // ‏ويُخبَر المالكُ ولا يُنزَّل شيءٌ ولا يُنصَّب.
@@ -771,6 +778,39 @@ public partial class MainWindow : Window
         {
             CrashLog.Write(ex, "update-check");
         }
+    }
+
+    private readonly Brqosh.Infrastructure.Zatca.ZatcaRetryBackoff _zatcaBackoff = new();
+    private bool _zatcaRunning;
+
+    private async Task RunZatcaResubmitAsync()
+    {
+        if (_zatcaRunning || !_zatcaBackoff.IsDue(DateTime.UtcNow)) return;
+        _zatcaRunning = true;
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var result = await facade.GetService<Brqosh.Infrastructure.Zatca.ZatcaSubmissionService>()
+                .ResubmitPendingInBackgroundAsync(AppServices.CompanyId);
+            if (result.StillPending > 0)
+            {
+                // ‏السببُ مسجَّلٌ على المستند في الجدول، ويُكتب هنا أيضاً ليبلغ الدعمَ — والمحاولةُ التالية بعد مهلةٍ أطول.
+                _zatcaBackoff.RecordFailure(DateTime.UtcNow);
+                CrashLog.Write(new InvalidOperationException(
+                    $"إعادةُ إرسال المعلَّق إلى الهيئة وقفت: أُرسل {result.Submitted} وبقي {result.StillPending} — {result.LastError}"),
+                    "zatca-resubmit-pending");
+            }
+            else
+            {
+                _zatcaBackoff.RecordSuccess(DateTime.UtcNow);
+            }
+        }
+        catch (Exception ex)
+        {
+            _zatcaBackoff.RecordFailure(DateTime.UtcNow);
+            CrashLog.Write(ex, "zatca-resubmit");
+        }
+        finally { _zatcaRunning = false; }
     }
 
     private async Task RunScheduledBackupAsync()

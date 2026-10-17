@@ -135,8 +135,13 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
         _ => HttpFailureKind.Rejected,
     };
 
-    /// <summary>‏(ح-١٢١) حصيلةُ إعادة إرسال المعلَّق.</summary>
-    public sealed record ResubmitResult(int Submitted, int StillPending, string? LastError);
+    /// <summary>
+    /// ‏(ح-١٢١) حصيلةُ إعادة إرسال المعلَّق. ‏(ح-١٥٦) <paramref name="Skipped"/>: محطّةٌ أخرى ترسل الآن فلم يُرسَل شيء.
+    /// </summary>
+    public sealed record ResubmitResult(int Submitted, int StillPending, string? LastError, bool Skipped = false);
+
+    /// <summary>‏(ح-١٥٦) مفتاحُ قفل الإرسال بالدفعة — ثابتٌ عبر الأجهزة (FNV-1a لا <c>GetHashCode</c>).</summary>
+    internal static readonly int ResubmitLockKey = DocumentSequenceLock.KeyFor("ZATCA-RESUBMIT", 0);
 
     /// <summary>
     /// ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) <b>إعادةُ إرسال كلِّ معلَّقٍ دفعةً واحدة — بترتيب السلسلة.</b>
@@ -148,7 +153,53 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
     public async Task<ResubmitResult> ResubmitPendingAsync(long companyId, CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
+        return await ResubmitPendingCoreAsync(companyId, ct);
+    }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٥٦ · ‏`tax-zatca#8`) <b>إعادةُ الإرسال من المؤقّت في الخلفيّة</b> — بلا فحص دور، عمداً،
+    /// ‏على مذهب <see cref="SubmitAsFollowUpToPostingAsync"/>: الإذنُ مُنح عند ترحيل المستند، والإبلاغُ واجبٌ نظاميٌّ يتبعه؛
+    /// ‏فأمينُ الصندوق الجالسُ أمام المحطّة لا يمنع وصولَ مبيعاته إلى الهيئة. ‏ولا يُرسَل إلّا ما رُحِّل فعلاً (جاهزٌ للإبلاغ/للاعتماد).
+    /// </summary>
+    public Task<ResubmitResult> ResubmitPendingInBackgroundAsync(long companyId, CancellationToken ct = default) =>
+        ResubmitPendingCoreAsync(companyId, ct);
+
+    /// <summary>
+    /// ‏(ح-١٥٦) <b>محطّةٌ واحدةٌ ترسل الدفعةَ في آنٍ</b>: على PostgreSQL قفلٌ استشاريٌّ للجلسة لا ينتظر — مؤقّتا محطّتين يحاولان معاً
+    /// ‏فيرسل أحدُهما ويتخطّى الآخر، وإلا أُرسل المستندُ نفسُه إلى الهيئة مرّتين. ‏وSQLite محطّةٌ واحدةٌ بطبيعته.
+    /// </summary>
+    private async Task<ResubmitResult> ResubmitPendingCoreAsync(long companyId, CancellationToken ct)
+    {
+        if (!db.Database.IsNpgsql())
+            return await ResubmitPendingUnlockedAsync(companyId, ct);
+
+        await db.Database.OpenConnectionAsync(ct);
+        try
+        {
+            var acquired = await db.Database
+                .SqlQueryRaw<bool>("SELECT pg_try_advisory_lock({0}::int, {1}::int) AS \"Value\"", companyId, ResubmitLockKey)
+                .SingleAsync(ct);
+            if (!acquired)
+                return new ResubmitResult(0, 0, null, Skipped: true);
+            try
+            {
+                return await ResubmitPendingUnlockedAsync(companyId, ct);
+            }
+            finally
+            {
+                await db.Database
+                    .SqlQueryRaw<bool>("SELECT pg_advisory_unlock({0}::int, {1}::int) AS \"Value\"", companyId, ResubmitLockKey)
+                    .SingleAsync(CancellationToken.None);
+            }
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+
+    private async Task<ResubmitResult> ResubmitPendingUnlockedAsync(long companyId, CancellationToken ct)
+    {
         var pending = await db.ZatcaEInvoiceDocuments
             .Where(d => d.CompanyId == companyId
                         && (d.ComplianceStatus == ZatcaComplianceStatus.ReadyToReport
