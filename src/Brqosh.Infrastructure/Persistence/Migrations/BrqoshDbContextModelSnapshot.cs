@@ -337,6 +337,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("BranchId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateOnly?>("CancelledOn")
+                        .HasColumnType("date");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(32)

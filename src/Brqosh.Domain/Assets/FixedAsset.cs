@@ -37,6 +37,12 @@ public class FixedAsset : IBranchScoped
     public long? DisposalJournalEntryId { get; private set; }
     public bool IsActive { get; private set; } = true;
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٥٧ · <c>treasury-payroll-assets#10</c>) <b>تاريخُ إلغاء الاقتناء</b> — أصلٌ أُدخل خطأً فعُكس قيدُه.
+    /// <b>وفارغُه لأصلٍ قائمٍ أو مُستبعَد</b>: فالإلغاءُ غيرُ الاستبعاد — لا بيعَ ولا ربحَ ولا خسارة، والأصلُ كأن لم يكن.
+    /// </summary>
+    public DateOnly? CancelledOn { get; private set; }
+
     // ── بيعُ الأصل (جاهزيّةُ الإطلاق · ح-١٦) ────────────────────────────────
 
     /// <summary>
@@ -176,6 +182,19 @@ public class FixedAsset : IBranchScoped
     public void LinkAcquisitionJournal(long journalEntryId) => AcquisitionJournalEntryId = journalEntryId;
 
     public void LinkDisposalJournal(long journalEntryId) => DisposalJournalEntryId = journalEntryId;
+
+    /// <summary>(ح-١٥٧) يُلغي الاقتناءَ — بعد عكس قيده؛ فيخرج الأصلُ من السجلّ القائم ولا يُهلَك ولا يُستبعَد.</summary>
+    public void CancelAcquisition(DateOnly on)
+    {
+        if (CancelledOn is not null)
+            throw new AccountingException("اقتناءُ الأصل مُلغًى مسبقاً.");
+        if (!IsActive)
+            throw new AccountingException("الأصل مستبعد — لا يُلغى اقتناؤه.");
+        if (AccumulatedDepreciation != 0m && DepreciatedThrough is null)
+            throw new AccountingException("الأصل أُهلك — يُعكس إهلاكُه أوّلاً.");
+        IsActive = false;
+        CancelledOn = on;
+    }
 
     public void MarkDisposed()
     {

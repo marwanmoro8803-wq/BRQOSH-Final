@@ -26,6 +26,8 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="DisposeBtn" DockPanel.Dock="Right" Content="استبعاد"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnDispose"/>
+                <Button x:Name="CancelAcquisitionBtn" DockPanel.Dock="Right" Margin="0,0,8,0"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCancelAcquisition"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="الأصول الثابتة" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"

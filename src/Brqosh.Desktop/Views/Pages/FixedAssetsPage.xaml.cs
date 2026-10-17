@@ -24,6 +24,8 @@ public partial class FixedAssetsPage : UserControl
     public FixedAssetsPage()
     {
         InitializeComponent();
+        // ‏(ح-١٥٧) نصُّ الزرّ من السجلّ ثنائيّ اللغة — لا حرفٌ عربيٌّ في XAML بلا ترجمة.
+        CancelAcquisitionBtn.Content = LocaleManager.T("إلغاء الاقتناء", "Cancel acquisition");
         Loaded += async (_, _) =>
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
@@ -31,7 +33,8 @@ public partial class FixedAssetsPage : UserControl
                 (RunDepreciationBtn, PermissionService.CanPostAccounting),
                 // ‏(ح-٩٢) وعكسُ التشغيل بحارس العكس.
                 (ReverseDepreciationBtn, PermissionService.CanCancelOrReverse),
-                (DisposeBtn, PermissionService.CanCancelOrReverse));
+                (DisposeBtn, PermissionService.CanCancelOrReverse),
+                (CancelAcquisitionBtn, PermissionService.CanCancelOrReverse));
             await ReloadAsync();
         };
     }
@@ -146,6 +149,37 @@ public partial class FixedAssetsPage : UserControl
         catch (Exception ex)
         {
             UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٥٧ · <c>treasury-payroll-assets#10</c>) <b>إلغاءُ اقتناء أصلٍ أُدخل خطأً</b> — بعكس قيده بتاريخٍ يُسأل؛
+    /// والخدمةُ ترفض المُهلَكَ والمُستبعَدَ والمُرسمَلَ عليه بسببه.
+    /// </summary>
+    private async void OnCancelAcquisition(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not AssetRow row) return;
+        var owner = Window.GetWindow(this)!;
+        if (!UiFeedback.Confirm(LocaleManager.T(
+                "إلغاءُ اقتناء الأصل يعكس قيدَه ويُخرجه من السجلّ — ولا يُعاد. متابعة؟",
+                "Cancelling the acquisition reverses its entry and removes the asset — it cannot be undone. Continue?")))
+            return;
+        var on = UiDialogs.PromptAccountingDate(owner,
+            LocaleManager.T("إلغاء الاقتناء", "Cancel acquisition"),
+            LocaleManager.T("تاريخ قيد العكس:", "Reversal entry date:"));
+        if (on is null)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<FixedAssetCancellationService>().CancelAcquisitionAsync(
+                AppServices.CompanyId, row.Id, on.Value, SecurityContext.ResolveUsername());
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
         }
     }
 

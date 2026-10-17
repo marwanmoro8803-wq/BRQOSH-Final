@@ -111,6 +111,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<PayrollPostingService>();
         services.AddScoped<FixedAssetAcquisitionPostingService>();
         services.AddScoped<FixedAssetDisposalPostingService>();
+        services.AddScoped<FixedAssetCancellationService>();   // ‏(ح-١٥٧)
         services.AddScoped<ProgressBillingPostingService>();
 
         // CEEF-123: إلغاء/عكس/فترات — Tier P0 هجرة Desktop
