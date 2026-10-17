@@ -1279,6 +1279,9 @@ public class BrqoshDbContext : DbContext
             entity.ToTable("bank_statements");
             entity.Property(s => s.SourceFileName).HasMaxLength(256).IsRequired();
             entity.HasIndex(s => new { s.CompanyId, s.BankAccountId, s.ImportedAtUtc });
+            // ‏(ح-١٥٤) ‏رصيدا الكشف كما يقولهما البنك — فارغان للكشوف القائمة.
+            entity.Property(s => s.OpeningBalance).HasPrecision(18, 2);
+            entity.Property(s => s.ClosingBalance).HasPrecision(18, 2);
 
             entity.OwnsMany(s => s.Lines, lines =>
             {

@@ -127,6 +127,17 @@ public partial class BankReconciliationPage : UserControl
 
         await LoadStatementLinesAsync(db, bankId);
         UpdateSummaryTexts(summary);
+
+        // ‏(ح-١٥٤) ‏**مذكّرةُ التسوية** للكشف الأخير إن حمل رصيدَيه — البنكُ المعدَّلُ مقابلَ الدفتر المعدَّل.
+        if (_lastImportedStatementId is long statementId
+            && await db.BankStatements.AnyAsync(s => s.Id == statementId && s.ClosingBalance != null))
+        {
+            var rec = await query.GetStatementReconciliationAsync(AppServices.CompanyId, statementId);
+            SummaryText.Text += Environment.NewLine
+                + LocaleManager.T("البنك المعدَّل: ", "Adjusted bank: ") + rec.AdjustedBank.ToString("N2")
+                + LocaleManager.T("  |  الدفتر المعدَّل: ", "  |  Adjusted book: ") + rec.AdjustedBook.ToString("N2")
+                + LocaleManager.T("  |  الفرق: ", "  |  Difference: ") + rec.Difference.ToString("N2");
+        }
         _loading = false;
     }
 
@@ -224,10 +235,27 @@ public partial class BankReconciliationPage : UserControl
             return;
 
         var csv = await File.ReadAllTextAsync(dialog.FileName);
+
+        // ‏(ح-١٥٤) ‏رصيدا الكشف كما يقولهما البنك — اختياريّان معاً؛ وبهما يُرفض الكشفُ الناقصُ وتُبنى مذكّرةُ التسوية.
+        decimal? opening = null, closing = null;
+        var openingDialog = new TextInputDialog(LocaleManager.T("استيراد كشف بنكي", "Import bank statement"),
+            LocaleManager.T("الرصيد الافتتاحي في الكشف (اختياري):", "Statement opening balance (optional):")) { Owner = Window.GetWindow(this) };
+        if (openingDialog.ShowDialog() == true && NumericInput.TryParse(openingDialog.Value, out var o))
+        {
+            var closingDialog = new TextInputDialog(LocaleManager.T("استيراد كشف بنكي", "Import bank statement"),
+                LocaleManager.T("الرصيد الختامي في الكشف:", "Statement closing balance:")) { Owner = Window.GetWindow(this) };
+            if (closingDialog.ShowDialog() == true && NumericInput.TryParse(closingDialog.Value, out var c))
+            {
+                opening = o;
+                closing = c;
+            }
+        }
+
         using var scope = AppServices.CreateInfrastructureScope();
         var import = scope.ServiceProvider.GetRequiredService<IBankStatementImportUseCase>();
         var result = await import.ImportCsvAsync(
-            AppServices.CompanyId, bankId, Path.GetFileName(dialog.FileName), csv);
+            AppServices.CompanyId, bankId, Path.GetFileName(dialog.FileName), csv,
+            openingBalance: opening, closingBalance: closing);
         _lastImportedStatementId = result.StatementId;
         UiFeedback.ShowInfo(LocaleManager.T(
             $"تم استيراد {result.LineCount} سطر.",

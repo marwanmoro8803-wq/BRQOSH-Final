@@ -25,8 +25,53 @@ public record BankReconciliationSummary(
     int TotalLines,
     int ReconciledCount);
 
+/// <summary>
+/// (جاهزيّةُ الإطلاق · ح-١٥٤ · <c>treasury-payroll-assets#13</c>) <b>مذكّرةُ التسوية</b>: رصيدُ البنك المعدَّل مقابلَ رصيد الدفتر المعدَّل.
+/// </summary>
+/// <param name="StatementClosing">الختاميُّ كما يقوله البنك.</param>
+/// <param name="BookBalance">رصيدُ حساب البنك في الدفتر حتى آخر يومٍ في الكشف.</param>
+/// <param name="DepositsInTransit">إيداعاتٌ في الدفتر لم تُسوَّ — لم تظهر في البنك بعد.</param>
+/// <param name="OutstandingPayments">مدفوعاتٌ في الدفتر لم تُسوَّ — لم تُصرف من البنك بعد.</param>
+/// <param name="UnbookedBankItems">سطورُ كشفٍ لم تُطابَق — رسومٌ وفوائدُ لم تُقيَّد في الدفتر بعد.</param>
+public record BankReconciliationStatement(
+    DateOnly AsOf,
+    decimal StatementClosing,
+    decimal BookBalance,
+    decimal DepositsInTransit,
+    decimal OutstandingPayments,
+    decimal UnbookedBankItems,
+    decimal AdjustedBank,
+    decimal AdjustedBook,
+    decimal Difference);
+
 public class BankReconciliationQuery(BrqoshDbContext db)
 {
+    /// <summary>
+    /// (ح-١٥٤) <b>مذكّرةُ تسوية الكشف</b>: الختاميُّ + الإيداعاتُ في الطريق − المدفوعاتُ المعلّقة، مقابلَ الدفتر + ما في البنك ولم يُقيَّد.
+    /// والفرقُ صفرٌ حين تكتمل التسوية — <b>وكان لا يُحسب أصلاً لأنّ الكشفَ بلا رصيد</b>.
+    /// </summary>
+    public async Task<BankReconciliationStatement> GetStatementReconciliationAsync(
+        long companyId, long statementId, CancellationToken ct = default)
+    {
+        var statement = await db.BankStatements.AsNoTracking()
+            .SingleAsync(s => s.CompanyId == companyId && s.Id == statementId, ct);
+        if (statement.ClosingBalance is not decimal closing || statement.PeriodEnd is not DateOnly asOf)
+            throw new AccountingException("الكشفُ بلا رصيدٍ ختاميّ — أعد استيرادَه برصيدَيه لتُبنى مذكّرةُ التسوية.");
+
+        var book = await GetOpeningBalanceAsync(companyId, statement.BankAccountId, asOf.AddDays(1));
+        var unreconciled = (await GetBookLinesAsync(companyId, statement.BankAccountId, DateOnly.MinValue, asOf))
+            .Where(l => !l.IsReconciled)
+            .ToList();
+        var inTransit = unreconciled.Sum(l => l.Debit);
+        var outstanding = unreconciled.Sum(l => l.Credit);
+        var unbooked = statement.Lines.Where(l => !l.IsMatched).Sum(l => l.SignedAmount);
+
+        var adjustedBank = closing + inTransit - outstanding;
+        var adjustedBook = book + unbooked;
+        return new BankReconciliationStatement(asOf, closing, book, inTransit, outstanding, unbooked,
+            adjustedBank, adjustedBook, adjustedBank - adjustedBook);
+    }
+
     public async Task<IReadOnlyList<BankBookLine>> GetBookLinesAsync(
         long companyId, long bankAccountId, DateOnly from, DateOnly to)
     {

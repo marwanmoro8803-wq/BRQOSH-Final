@@ -4260,11 +4260,19 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("BankAccountId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal?>("ClosingBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<long>("CompanyId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("ImportedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("OpeningBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("SourceFileName")
                         .IsRequired()

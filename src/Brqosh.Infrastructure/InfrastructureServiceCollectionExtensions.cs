@@ -491,10 +491,11 @@ file sealed class MonthEndCloseUseCaseAdapter(BrqoshDbContext db, ITrialBalanceQ
 file sealed class BankStatementImportUseCaseAdapter(BrqoshDbContext db) : IBankStatementImportUseCase
 {
     public async Task<BankStatementImportResult> ImportCsvAsync(
-        long companyId, long bankAccountId, string sourceFileName, string csv, CancellationToken ct = default)
+        long companyId, long bankAccountId, string sourceFileName, string csv, CancellationToken ct = default,
+        decimal? openingBalance = null, decimal? closingBalance = null)
     {
         var statement = await new BankStatementImportService(db)
-            .ImportCsvAsync(companyId, bankAccountId, sourceFileName, csv, ct);
+            .ImportCsvAsync(companyId, bankAccountId, sourceFileName, csv, ct, openingBalance, closingBalance);
         return new BankStatementImportResult(statement.Id, statement.Lines.Count);
     }
 }

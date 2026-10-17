@@ -85,7 +85,9 @@ public interface IBankStatementImportUseCase
         long bankAccountId,
         string sourceFileName,
         string csv,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        decimal? openingBalance = null,
+        decimal? closingBalance = null);
 }
 
 public interface IBankStatementMatchUseCase

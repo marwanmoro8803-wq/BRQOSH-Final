@@ -45,6 +45,35 @@ public class BankStatement
         _lines.Add(new BankStatementLine(transactionDate, description, reference, signedAmount));
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٥٤ · <c>treasury-payroll-assets#13</c>) <b>رصيدا الكشف كما يقولهما البنك</b> — الافتتاحيُّ والختاميّ.
+    /// </summary>
+    /// <remarks>
+    /// كان الكشفُ سطوراً بلا رصيد: فلا يُعرف أكان الملفُّ كاملاً (سطرٌ ضائعٌ في التصدير لا يظهر)، ولا تُبنى مذكّرةُ تسويةٍ
+    /// حقيقيّةٌ — رصيدُ البنك مقابلَ رصيد الدفتر. <b>والرصيدان معاً أو لا شيء، ويجب أن يُطابقا السطور</b>.
+    /// </remarks>
+    public decimal? OpeningBalance { get; private set; }
+
+    /// <summary>(ح-١٥٤) الرصيدُ الختاميُّ للكشف كما يقوله البنك.</summary>
+    public decimal? ClosingBalance { get; private set; }
+
+    /// <summary>
+    /// يضبط رصيدَي الكشف — <b>ويرفض ما لا يطابق السطور</b>: الافتتاحيُّ + مجموعُ الحركة = الختاميّ، وإلا فالملفُّ ناقصٌ أو زائد.
+    /// </summary>
+    public void SetBalances(decimal openingBalance, decimal closingBalance)
+    {
+        var opening = Math.Round(openingBalance, 2, MidpointRounding.AwayFromZero);
+        var closing = Math.Round(closingBalance, 2, MidpointRounding.AwayFromZero);
+        var movement = _lines.Sum(l => l.SignedAmount);
+        var gap = closing - (opening + movement);
+        if (gap != 0m)
+            throw new AccountingException(
+                $"الكشفُ لا يطابق رصيدَيه: الافتتاحيّ {opening:N2} والحركة {movement:N2} يعطيان {opening + movement:N2} "
+                + $"والختاميّ {closing:N2} — فرقٌ {gap:N2}؛ الملفُّ ناقصٌ أو فيه سطرٌ زائد.");
+        OpeningBalance = opening;
+        ClosingBalance = closing;
+    }
+
     public DateOnly? PeriodStart => _lines.Count == 0 ? null : _lines.Min(l => l.TransactionDate);
     public DateOnly? PeriodEnd => _lines.Count == 0 ? null : _lines.Max(l => l.TransactionDate);
 }

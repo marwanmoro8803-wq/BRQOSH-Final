@@ -223,6 +223,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
 
         // ‏(جاهزيّةُ الإطلاق · ح-١٣٨) فئتا مشتركي التأمينات وجدولُ النظام الجديد — بافتراضات النطاق لا أصفار.
         await EnsureGosiContributorGroupColumnsAsync(isPg, ct);
+        await EnsureBankStatementBalanceColumnsAsync(isPg, ct);   // ‏(ح-١٥٤)
 
         // ‏(جاهزيّةُ الإطلاق · ح-١١١) ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePurchaseInvoiceWarehouseColumnAsync(isPg, ct);
@@ -349,6 +350,21 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("work_orders", "ScrapQuantity", "TEXT NOT NULL DEFAULT '0'", ct);
             await EnsureSqliteColumnAsync("work_orders", "CompletionCount", "INTEGER NOT NULL DEFAULT 0", ct);   // ‏(ح-١٤٨)
             await EnsureSqliteColumnAsync("work_orders", "MaterialCostRelieved", "TEXT NOT NULL DEFAULT '0'", ct);
+        }
+    }
+
+    /// <summary>(ح-١٥٤) رصيدا الكشف البنكيّ — فارغان للكشوف القائمة.</summary>
+    private async Task EnsureBankStatementBalanceColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        if (!await TableExistsAsync("bank_statements", isPg, ct))
+            return;
+
+        foreach (var column in new[] { "OpeningBalance", "ClosingBalance" })
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("bank_statements", column, "NUMERIC(18,2) NULL", ct);
+            else
+                await EnsureSqliteColumnAsync("bank_statements", column, "TEXT NULL", ct);
         }
     }
 
