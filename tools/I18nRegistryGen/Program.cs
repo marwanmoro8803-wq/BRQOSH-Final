@@ -149,7 +149,10 @@ static bool IsValidUiString(string s) =>
     && !s.Contains('\\')
     && ContainsArabic(s);
 
-static string Escape(string s) => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+// ‏(ح-١٦٣) ‏**والسطرُ الجديدُ يُهرَّب أيضاً** — رسالةٌ بسطرين («…لا يمكن ترحيل حركةٍ مخزنية.\n\nفعِّل مستودعاً…») كانت تُكتب
+// ‏خاماً داخل نصٍّ بين علامتين فلا يُبنى السجلّ؛ ولم يقع قبلُ لأنّ نصوصَ XAML لا تحمل سطوراً.
+static string Escape(string s) => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"")
+    .Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t") + "\"";
 
 static bool ContainsArabic(string text) =>
     text.Any(ch => ch is >= '\u0600' and <= '\u06FF');

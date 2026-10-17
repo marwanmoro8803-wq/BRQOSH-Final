@@ -64,6 +64,6 @@ public static class UiDialog
     /// </summary>
     public static string Localize(string text) =>
         LocaleManager.IsEnglish && !string.IsNullOrEmpty(text)
-            ? UiBilingualRegistry.Lookup(text)
+            ? UiMessages.Translate(text)   // ‏(ح-١٦٣) ‏حرفيّاً ثمّ بالنمط — فالرسالةُ المركَّبةُ تُترجم أيضاً.
             : text;
 }

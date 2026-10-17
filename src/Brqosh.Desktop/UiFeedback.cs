@@ -51,7 +51,7 @@ internal static class UiFeedback
 
     private static string Localize(string message) =>
         LocaleManager.IsEnglish && !string.IsNullOrEmpty(message)
-            ? UiBilingualRegistry.Lookup(message)
+            ? Ui.UiMessages.Translate(message)   // ‏(ح-١٦٣) ‏حرفيّاً ثمّ بالنمط.
             : message;
 
     /// <summary>تنبيه يحتاج قراراً — يبقى MessageBox.</summary>

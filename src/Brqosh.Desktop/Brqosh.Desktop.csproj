@@ -17,6 +17,8 @@
     <Content Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- (جاهزيّةُ الإطلاق · ح-١٦٠ · commercial-readiness#8) دليلُ المستخدم العربيّ يُشحن بجانب البرنامج. -->
     <Content Include="..\..\docs\user-manual\README.md" Link="UserManual-ar.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- (جاهزيّةُ الإطلاق · ح-١٦٣ · ui-ux#9) قوالبُ رسائل الأخطاء المركَّبة — مُضمَّنةٌ في البرنامج فلا ملفَّ يضيع. -->
+    <EmbeddedResource Include="..\..\assets\i18n\message-patterns.json" LogicalName="Brqosh.Desktop.MessagePatterns.json" />
     <!-- (commercial-readiness#7) قنواتُ الدعم ومستوياتُ الخدمة كما يعتمدها المورّد — والقالبُ config/templates/support.example.json. -->
     <Content Include="..\..\config\support.json" Condition="Exists('..\..\config\support.json')" Link="config\support.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
