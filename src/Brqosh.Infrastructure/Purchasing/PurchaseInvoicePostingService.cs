@@ -136,7 +136,12 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 priceVariance += lineTotalSar - relief;
             }
 
-            var purchases = await SystemAccountAsync(invoice.CompanyId, "5102");
+            // ‏(ح-١٤٤ · ‏`sector-modules#9`) ‏**فاتورةُ مشروعٍ تُدين تكاليفَ المشاريع لا المشتريات** — بجزئها غير
+            // ‏المخزنيّ وحدَه؛ فالمخزنيُّ يدخل المخزونَ ويُحمَّل على المشروع حين يُصرف إليه، لا مرّتين.
+            var project = invoice.ProjectId is long projectId
+                ? await ProjectForCostAsync(invoice.CompanyId, projectId, ct)
+                : null;
+            var purchases = await SystemAccountAsync(invoice.CompanyId, project is null ? "5102" : ProjectCostAccountCode);
             var inventoryAccount = inventorySubtotal > 0
                 ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
                 : null;
@@ -176,6 +181,9 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             invoice.LinkJournalEntry(entry.Id);
             await db.SaveChangesAsync(ct);
+
+            if (project is not null)
+                await RecordProjectCostAsync(invoice, project, entry, ct);
 
             await DomainEventHub.PublishAsync(new DocumentPostedEvent(
                 invoice.CompanyId, "PurchaseInvoice", invoice.Id, invoice.InvoiceNumber!), ct);
@@ -428,4 +436,54 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
     private async Task<Account> SystemAccountAsync(long companyId, string code) =>
         await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code);
+
+    /// <summary>تكاليفُ المشاريع — الحسابُ نفسُه الذي يُدينه حوارُ تكلفة المشروع (<c>ProjectCostService</c>).</summary>
+    internal const string ProjectCostAccountCode = "5105";
+
+    /// <summary>
+    /// (ح-١٤٤) المشروعُ الذي تُحمَّل عليه الفاتورة — <b>من المنشأة نفسِها، ولم يُكمَل ولم يُلغَ</b>.
+    /// </summary>
+    private async Task<Domain.Construction.ConstructionProject> ProjectForCostAsync(
+        long companyId, long projectId, CancellationToken ct)
+    {
+        var project = await db.ConstructionProjects
+            .SingleOrDefaultAsync(p => p.Id == projectId && p.CompanyId == companyId, ct)
+            ?? throw new AccountingException("المشروع المحدَّد على الفاتورة غير موجود في هذه المنشأة.");
+
+        if (project.Status is Domain.Construction.ConstructionProjectStatus.Completed
+            or Domain.Construction.ConstructionProjectStatus.Cancelled)
+            throw new AccountingException(
+                $"المشروع {project.Code} {Domain.Construction.ConstructionProject.StatusLabel(project.Status)} — لا تُحمَّل عليه تكاليفُ جديدة.");
+
+        return project;
+    }
+
+    /// <summary>
+    /// (ح-١٤٤) <b>تكلفةُ المشروع من قيد الفاتورة نفسِه</b> — لا قيدَ ثانٍ يُكرّرها.
+    /// </summary>
+    /// <remarks>
+    /// المبلغُ هو ما أُدين على 5105 في القيد: الوعاءُ غيرُ المخزنيّ بعد الضريبة القابلة للخصم،
+    /// <b>وشاملاً الضريبةَ حين لا تُخصم</b> (مورّدٌ غيرُ مسجَّل) — فالمشروعُ يحمل تكلفتَه الحقيقيّة.
+    /// ثمّ تُسوّى نسبةُ إنجاز العقد كما يفعل حوارُ التكلفة.
+    /// </remarks>
+    private async Task RecordProjectCostAsync(PurchaseInvoice invoice,
+        Domain.Construction.ConstructionProject project, JournalEntry entry, CancellationToken ct)
+    {
+        var amount = entry.Lines
+            .Where(l => l.AccountCode == ProjectCostAccountCode)
+            .Sum(l => l.Debit - l.Credit);
+        if (amount <= 0m)
+            return;
+
+        var cost = Domain.Construction.ProjectCostEntry.Create(invoice.CompanyId, project.Id, invoice.InvoiceDate,
+            $"فاتورة مشتريات {invoice.InvoiceNumber} — مرجع المورد {invoice.SupplierInvoiceReference}",
+            amount, $"PurchaseInvoice:{invoice.InvoiceNumber}");
+        cost.LinkJournalEntry(entry.Id);
+        if (invoice.BranchId is long branchId)
+            cost.AssignBranch(branchId);
+        db.ProjectCostEntries.Add(cost);
+        await db.SaveChangesAsync(ct);
+
+        await new Construction.ContractRevenueTrueUp(db).ApplyAsync(invoice.CompanyId, project.Id, invoice.InvoiceDate, ct);
+    }
 }

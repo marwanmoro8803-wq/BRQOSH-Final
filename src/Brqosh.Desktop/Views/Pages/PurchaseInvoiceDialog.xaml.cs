@@ -23,7 +23,26 @@ public partial class PurchaseInvoiceDialog : Window
         InitializeComponent();
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
-        Loaded += async (_, _) => { await LoadSuppliersAsync(); await LoadWarehousesAsync(); await LoadProductsAsync(); };
+        Loaded += async (_, _) =>
+        {
+            await LoadSuppliersAsync(); await LoadWarehousesAsync(); await LoadProjectsAsync(); await LoadProductsAsync();
+        };
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        // ‏(جاهزيّةُ الإطلاق · ح-١٤٤ · ‏`sector-modules#9`) ‏المشاريعُ التي تقبل تكلفة — والأوّلُ «بلا مشروع».
+        await using var db = AppServices.CreateDb();
+        var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, LocaleManager.T("(بلا مشروع)", "(No project)")) };
+        choices.AddRange(await db.ConstructionProjects
+            .Where(p => p.CompanyId == AppServices.CompanyId
+                        && p.Status != Domain.Construction.ConstructionProjectStatus.Completed
+                        && p.Status != Domain.Construction.ConstructionProjectStatus.Cancelled)
+            .OrderBy(p => p.Code)
+            .Select(p => new SalesInvoiceDialog.WarehouseOption(p.Id, p.Code + " — " + p.NameAr))
+            .ToListAsync());
+        ProjectCombo.ItemsSource = choices;
+        ProjectCombo.SelectedIndex = 0;
     }
 
     private async Task LoadProductsAsync()
@@ -139,6 +158,9 @@ public partial class PurchaseInvoiceDialog : Window
 
         // ‏(ح-١١١) ‏مستودعُ الاستلام — الفارغُ هو الافتراضيّ؛ والمستودعُ يُسأل عند الترحيل.
         invoice.SetWarehouse(WarehouseCombo.SelectedValue as long?);
+
+        // ‏(ح-١٤٤) ‏المشروعُ — الفارغُ «بلا مشروع»؛ وحالتُه تُسأل عند الترحيل.
+        invoice.AssignProject(ProjectCombo.SelectedValue as long?);
 
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))

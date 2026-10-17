@@ -25,6 +25,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="180"/>
@@ -60,6 +61,12 @@
             <StackPanel Grid.Row="1" Grid.ColumnSpan="5" Margin="0,10,0,0">
                 <TextBlock Text="المستودع" Style="{StaticResource FieldLabel}"/>
                 <ComboBox x:Name="WarehouseCombo" FontSize="14" Padding="10,8"
+                          DisplayMemberPath="Display" SelectedValuePath="Id"/>
+            </StackPanel>
+            <!-- (جاهزيّةُ الإطلاق · ح-١٤٤) المشروعُ المُحمَّلُ عليه — والأوّلُ «بلا مشروع» فلا يتغيّر شيءٌ لمن لا يختار. -->
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="5" Margin="0,10,0,0">
+                <TextBlock Text="المشروع" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="ProjectCombo" FontSize="14" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>

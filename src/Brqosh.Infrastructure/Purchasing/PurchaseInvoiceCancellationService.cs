@@ -60,8 +60,19 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
                 }
             }
 
+            // ‏(ح-١٤٤) ‏**وتكلفةُ المشروع التي حملها قيدُ الفاتورة تسقط معه** — وإلا بقيت نسبةُ إنجاز العقد
+            // ‏وإيرادُه على تكلفةٍ عُكس قيدُها.
+            var projectCosts = await db.ProjectCostEntries
+                .Where(c => c.CompanyId == companyId && c.SourceDocument == sourceDoc && !c.IsReversed)
+                .ToListAsync(token);
+            foreach (var cost in projectCosts)
+                cost.MarkReversed();
+
             invoice.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
+
+            foreach (var projectId in projectCosts.Select(c => c.ProjectId).Distinct())
+                await new Construction.ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, cancellationDate, token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء فاتورة مشتريات",
                 "PurchaseInvoice", invoice.InvoiceNumber ?? invoice.Id.ToString(), "تم عكس القيد والمخزون");

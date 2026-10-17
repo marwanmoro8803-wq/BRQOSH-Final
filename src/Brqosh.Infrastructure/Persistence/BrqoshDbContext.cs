@@ -477,6 +477,7 @@ public class BrqoshDbContext : DbContext
 
             entity.ToTable("purchase_invoices");
             entity.Property(i => i.WarehouseId);   // ‏(ح-١١١) مستودعُ الاستلام — فارغُه الافتراضيّ
+            entity.Property(i => i.ProjectId);     // ‏(ح-١٤٤) المشروعُ المُحمَّلُ عليه — فارغُه الافتراضيّ
             entity.Property(i => i.InvoiceNumber).HasMaxLength(32);
             entity.Property(i => i.SupplierInvoiceReference).HasMaxLength(64).IsRequired();
             entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);

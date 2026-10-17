@@ -65,7 +65,10 @@ public class ContractRevenueTrueUp(BrqoshDbContext db)
         var incurred = await db.ProjectCostEntries
             .Where(c => c.CompanyId == companyId && c.ProjectId == projectId && !c.IsReversed)
             .SumAsync(c => (decimal?)c.Amount, ct) ?? 0m;
-        if (incurred <= 0m)
+        // ‏(ح-١٤٤) ‏**ولا خروجَ مبكّرٌ عند الصفر**: كان يُترك الإيرادُ المعترَفُ به قائماً حين تُعكس تكلفةُ المشروع
+        // ‏كلُّها (إلغاءُ فاتورةِ مشتريات المشروع) — فإنجازٌ صفرٌ وإيرادٌ باقٍ. ‏والصفرُ يُسوّي إلى صفر؛ وبلا
+        // ‏اعترافٍ سابقٍ فالفرقُ صفرٌ ويخرج أدناه.
+        if (incurred < 0m)
             return;
 
         // ‏النسبةُ والمكتسبُ بتقريب `ProgressBillingIfrs15` نفسِه — فلا يفترق المستخلصُ والتسويةُ بهللة.

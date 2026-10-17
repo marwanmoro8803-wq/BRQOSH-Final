@@ -252,6 +252,25 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
         CostCenterId = costCenterId;
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٤ · ‏<c>sector-modules#9</c>) <b>المشروعُ الذي تُحمَّل عليه الفاتورة.</b>
+    ///
+    /// <para>كانت تكلفةُ المشروع لا تأتي إلا من حوارٍ يدويٍّ يُدين الصندوقَ دائماً — فمشترياتُ موقعٍ
+    /// بفاتورة مورّدٍ آجلةٍ وضريبةٍ قابلةٍ للخصم لا سبيلَ لها إلى المشروع إلا بقيدٍ ثانٍ يُكرّرها.
+    /// والفاتورةُ المربوطةُ بمشروعٍ <b>تُدين تكاليفَ المشاريع (5105) بجزئها غير المخزنيّ</b> بدل
+    /// المشتريات، وتُسجَّل تكلفةُ المشروع من قيدها نفسِه.</para>
+    /// </summary>
+    public long? ProjectId { get; private set; }
+
+    /// <summary>يربط الفاتورةَ بمشروع — ولا يُقبل بعد الترحيل.</summary>
+    public void AssignProject(long? projectId)
+    {
+        EnsureDraft();
+        if (projectId is <= 0)
+            throw new AccountingException("المشروع غير صالح.");
+        ProjectId = projectId;
+    }
+
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

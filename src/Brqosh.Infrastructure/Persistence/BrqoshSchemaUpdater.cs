@@ -448,9 +448,15 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             return;
 
         if (isPg)
+        {
             await EnsurePgColumnAsync("purchase_invoices", "WarehouseId", "BIGINT NULL", ct);
+            await EnsurePgColumnAsync("purchase_invoices", "ProjectId", "BIGINT NULL", ct);   // ‏(ح-١٤٤)
+        }
         else
+        {
             await EnsureSqliteColumnAsync("purchase_invoices", "WarehouseId", "INTEGER NULL", ct);
+            await EnsureSqliteColumnAsync("purchase_invoices", "ProjectId", "INTEGER NULL", ct);   // ‏(ح-١٤٤)
+        }
     }
 
     private async Task EnsurePosCashSalesColumnAsync(bool isPg, CancellationToken ct)

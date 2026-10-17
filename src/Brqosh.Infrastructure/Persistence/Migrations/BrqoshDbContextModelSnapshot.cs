@@ -17,7 +17,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.21")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -2900,6 +2900,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)");
 
                     b.Property<long?>("JournalEntryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("ProjectId")
                         .HasColumnType("bigint");
 
                     b.Property<long?>("PurchaseOrderId")
