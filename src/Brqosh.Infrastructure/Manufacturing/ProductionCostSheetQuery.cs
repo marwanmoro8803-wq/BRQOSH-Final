@@ -48,31 +48,24 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
         // ‏كان الكشفُ يقرأ الموادَّ من قيد الإكمال وحدَه — وأمرٌ صُرف له فعلاً تخرج موادُّه في قيود الصرف لا في الإكمال،
         // ‏فكان سيظهر بلا موادّ، **وقيدُ الإكمال نفسُه لا يوجد حين لا تحويل**. ‏فالتاريخُ والمجموعُ من الاستلام (إغلاقُ WIP)،
         // ‏والصرفُ يُقرأ بلا قيد تاريخ — يسبق الإكمالَ وهو من تكلفته.
-        var receiptKeys = orders.Select(o => $"WorkOrderReceipt:{o.Id}").ToList();
-        var receipts = await db.JournalEntries
-            .WhereReportable(companyId, from, to)
-            .Where(e => e.SourceDocument != null && receiptKeys.Contains(e.SourceDocument))
-            .Select(e => new
-            {
-                e.SourceDocument,
-                e.EntryDate,
-                Lines = e.Lines.Select(l => new { l.AccountCode, l.Debit, l.Credit }).ToList(),
-            })
-            .ToListAsync(ct);
-
-        var completeKeys = orders.Select(o => $"WorkOrderComplete:{o.Id}").ToList();
-        var issuePrefixes = orders.Select(o => $"WorkOrderIssue:{o.Id}:").ToList();
-        var components = (await db.JournalEntries
-                .WhereReportable(companyId)
+        // ‏(ح-١٤٨) ‏**والأمرُ قد يُكمَل بدفعات**: لكلّ دفعةٍ قيدا إكمالٍ واستلام (`…:{id}` للأولى و`…:{id}:{n}` لما بعدها).
+        // ‏فالصفُّ للأمر لا للقيد — مجموعُ استلاماته، وتاريخُه آخرُها، ويدخل الكشفَ إن وقع آخرُها في المدّة.
+        var orderIds = orders.Select(o => o.Id).ToHashSet();
+        var all = (await db.JournalEntries
+                .WhereReportable(companyId, to: to)
                 .Where(e => e.SourceDocument != null
-                            && (completeKeys.Contains(e.SourceDocument) || e.SourceDocument.StartsWith("WorkOrderIssue:")))
+                            && (e.SourceDocument.StartsWith("WorkOrderReceipt:")
+                                || e.SourceDocument.StartsWith("WorkOrderComplete:")
+                                || e.SourceDocument.StartsWith("WorkOrderIssue:")))
                 .Select(e => new
                 {
                     e.SourceDocument,
+                    e.EntryDate,
                     Lines = e.Lines.Select(l => new { l.AccountCode, l.Debit, l.Credit }).ToList(),
                 })
                 .ToListAsync(ct))
-            .Where(e => completeKeys.Contains(e.SourceDocument!) || issuePrefixes.Any(prefix => e.SourceDocument!.StartsWith(prefix, StringComparison.Ordinal)))
+            .Select(e => new { Entry = e, Kind = e.SourceDocument!.Split(':')[0], OrderId = OrderOf(e.SourceDocument!) })
+            .Where(e => e.OrderId is long id && orderIds.Contains(id))
             .ToList();
 
         var inventoryCode = SaudiChartOfAccounts.SystemCodes.Inventory;
@@ -85,18 +78,22 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
             .ToDictionaryAsync(x => x.Id, x => x.NameAr, ct);
 
         var rows = new List<ProductionCostRow>();
-        foreach (var entry in receipts)
+        foreach (var group in all.GroupBy(e => e.OrderId!.Value))
         {
-            var order = orders.Single(o => $"WorkOrderReceipt:{o.Id}" == entry.SourceDocument);
-            var mine = components
-                .Where(c => c.SourceDocument == $"WorkOrderComplete:{order.Id}"
-                            || c.SourceDocument!.StartsWith($"WorkOrderIssue:{order.Id}:", StringComparison.Ordinal))
-                .SelectMany(c => c.Lines)
-                .ToList();
+            var receipts = group.Where(e => e.Kind == "WorkOrderReceipt").Select(e => e.Entry).ToList();
+            if (receipts.Count == 0)
+                continue;
+            var completedOn = receipts.Max(r => r.EntryDate);
+            if (completedOn < from)
+                continue;
+
+            var order = orders.Single(o => o.Id == group.Key);
+            var mine = group.Where(e => e.Kind is "WorkOrderComplete" or "WorkOrderIssue").SelectMany(e => e.Entry.Lines).ToList();
             var material = mine.Where(l => l.AccountCode == inventoryCode).Sum(l => l.Credit - l.Debit);
             var labour = mine.Where(l => l.AccountCode == LabourAccount).Sum(l => l.Credit - l.Debit);
             var overhead = mine.Where(l => l.AccountCode == OverheadAccount).Sum(l => l.Credit - l.Debit);
-            var total = entry.Lines.Where(l => l.AccountCode == wipCode).Sum(l => l.Credit - l.Debit);
+            var total = receipts.SelectMany(r => r.Lines).Where(l => l.AccountCode == wipCode).Sum(l => l.Credit - l.Debit);
+            var entry = new { EntryDate = completedOn };
 
             rows.Add(new ProductionCostRow(
                 order.Id, order.OrderNumber ?? order.Id.ToString(), products.GetValueOrDefault(order.BomId, ""),
@@ -107,6 +104,13 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
         }
 
         return rows.OrderBy(r => r.CompletedOn).ThenBy(r => r.OrderNumber, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>معرّفُ الأمر من مفتاح قيده (<c>Kind:{id}</c> أو <c>Kind:{id}:{n}</c>).</summary>
+    private static long? OrderOf(string source)
+    {
+        var parts = source.Split(':');
+        return parts.Length >= 2 && long.TryParse(parts[1], out var id) ? id : null;
     }
 
     public async Task<IReadOnlyList<MaterialUsageRow>> MaterialUsageAsync(

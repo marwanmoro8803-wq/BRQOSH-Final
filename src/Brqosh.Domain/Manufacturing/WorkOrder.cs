@@ -161,16 +161,58 @@ public class WorkOrder : IBranchScoped
         IssueCount++;
     }
 
-    public void Complete(decimal producedQuantity, decimal scrapQuantity = 0m)
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٤٨ · <c>manufacturing#4</c>) <b>عددُ دفعات الإكمال</b> — جزئيّةً قبل الإغلاق ثمّ الإغلاق؛
+    /// ومنه مفتاحُ قيدي كلِّ دفعة.
+    /// </summary>
+    public int CompletionCount { get; private set; }
+
+    /// <summary>(ح-١٤٨) ما نُقل من تكلفة الموادّ المصروفة فعلاً إلى التامّ في الدفعات السابقة.</summary>
+    public decimal MaterialCostRelieved { get; private set; }
+
+    /// <summary>
+    /// (ح-١٤٨) <b>نصيبُ دفعة الإكمال من الموادّ المصروفة فعلاً</b>: الباقي في WIP بنسبة الدفعة إلى ما بقي من المخطَّط؛
+    /// <b>والإغلاقُ يأخذ الباقيَ كلَّه</b> — فلا يبقى في WIP قرشٌ لأمرٍ أُغلق، ودفعةٌ تبلغ المخطَّطَ أو تتجاوزه تأخذه كلَّه أيضاً.
+    /// </summary>
+    public decimal IssuedCostToRelieve(decimal quantity, bool closing)
+    {
+        var remaining = IssuedMaterialCost - MaterialCostRelieved;
+        var remainingPlanned = PlannedQuantity - ProducedQuantity;
+        if (closing || remainingPlanned <= quantity)
+            return remaining;
+        return Math.Round(remaining * quantity / remainingPlanned, 2, MidpointRounding.AwayFromZero);
+    }
+
+    /// <summary>(ح-١٤٨) دفعةُ إكمالٍ جزئيّة — <b>والأمرُ يبقى صادراً</b> يقبل صرفاً ودفعاتٍ أخرى.</summary>
+    public void CompletePartially(decimal quantity, decimal relievedMaterialCost, decimal scrapQuantity = 0m)
+    {
+        EnsureStatus(WorkOrderStatus.Released, "إكمال دفعة من الأمر");
+        AddCompletion(quantity, relievedMaterialCost, scrapQuantity);
+    }
+
+    public void Complete(decimal producedQuantity, decimal scrapQuantity = 0m, decimal relievedMaterialCost = 0m)
     {
         EnsureStatus(WorkOrderStatus.Released, "إكمال الأمر");
-        if (producedQuantity <= 0)
+        AddCompletion(producedQuantity, relievedMaterialCost, scrapQuantity);
+        Status = WorkOrderStatus.Completed;
+    }
+
+    /// <summary>
+    /// (ح-١٤٨) <b>الكميّةُ المنتَجةُ تتراكم</b> عبر الدفعات — وكانت تُضبط مرّةً عند الإكمال؛ وأمرٌ بلا دفعاتٍ سابقةٍ يبدأ
+    /// من الصفر فلا يتغيّر له شيء.
+    /// </summary>
+    private void AddCompletion(decimal quantity, decimal relievedMaterialCost, decimal scrapQuantity)
+    {
+        if (quantity <= 0)
             throw new AccountingException("الكمية المنتجة يجب أن تكون موجبة.");
         if (scrapQuantity < 0)
             throw new AccountingException("الكميّة التالفة لا تكون سالبة.");
-        ProducedQuantity = Math.Round(producedQuantity, 4, MidpointRounding.AwayFromZero);
-        ScrapQuantity = Math.Round(scrapQuantity, 4, MidpointRounding.AwayFromZero);
-        Status = WorkOrderStatus.Completed;
+        if (relievedMaterialCost < 0m || relievedMaterialCost > IssuedMaterialCost - MaterialCostRelieved)
+            throw new AccountingException("تكلفةُ الموادّ المنقولة تتجاوز ما صُرف للأمر.");
+        ProducedQuantity = Math.Round(ProducedQuantity + quantity, 4, MidpointRounding.AwayFromZero);
+        ScrapQuantity = Math.Round(ScrapQuantity + scrapQuantity, 4, MidpointRounding.AwayFromZero);
+        MaterialCostRelieved = Math.Round(MaterialCostRelieved + relievedMaterialCost, 2, MidpointRounding.AwayFromZero);
+        CompletionCount++;
     }
 
     public void Cancel()

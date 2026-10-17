@@ -168,6 +168,12 @@ public partial class WorkOrdersPage : UserControl
             return;
         }
 
+        // ‏(ح-١٤٨) ‏**دفعةٌ أم إغلاق** — الدفعةُ تُدخل التامَّ المخزونَ ويبقى الأمرُ صادراً يقبل صرفاً ودفعاتٍ أخرى؛
+        // ‏والإغلاقُ يُكمل الأمرَ وينقل باقيَ ما صُرف له.
+        var close = UiFeedback.Confirm(LocaleManager.T(
+            "هل هذه آخرُ دفعة؟ «نعم» يُغلق الأمر، و«لا» يُكمل دفعةً ويُبقيه صادراً.",
+            "Is this the last batch? \"Yes\" closes the order; \"No\" completes a batch and keeps it released."));
+
         try
         {
             using var facade = new DesktopAccountingFacade();
@@ -198,7 +204,7 @@ public partial class WorkOrdersPage : UserControl
             }
 
             await service.CompleteAsync(AppServices.CompanyId, row.Id, qty, username,
-                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap);
+                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap, closeOrder: close);
             UiDialog.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }

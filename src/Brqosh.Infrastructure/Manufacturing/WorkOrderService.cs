@@ -54,7 +54,8 @@ public class WorkOrderService(BrqoshDbContext db)
     /// <param name="outputExpiry">صلاحيةُ دفعة الإنتاج إن كانت لها صلاحية.</param>
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
         string username, DateOnly? completionDate = null, string? outputBatchNumber = null,
-        DateOnly? outputExpiry = null, CancellationToken ct = default, decimal scrapQuantity = 0m)
+        DateOnly? outputExpiry = null, CancellationToken ct = default, decimal scrapQuantity = 0m,
+        bool closeOrder = true)
     {
         SecurityContext.EnsureCanPost();
         username = SecurityContext.ResolveUsername(username);
@@ -103,7 +104,8 @@ public class WorkOrderService(BrqoshDbContext db)
             List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> issueLines;
             if (order.UsesActualIssues)
             {
-                materialCost = order.IssuedMaterialCost;
+                // ‏(ح-١٤٨) ‏**نصيبُ هذه الدفعة** من الباقي في WIP — والإغلاقُ يأخذ الباقيَ كلَّه.
+                materialCost = order.IssuedCostToRelieve(producedQuantity, closeOrder);
                 issueLines = [];
             }
             else
@@ -157,8 +159,10 @@ public class WorkOrderService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"الحساب {wip.Code} «{wip.NameAr}» ليس حسابَ أصلٍ قابلاً للترحيل — وهو رمزُ الإنتاج تحت التشغيل؛ صحّحه من دليل الحسابات.");
             var inventory = await AccountAsync(companyId, SaudiChartOfAccounts.SystemCodes.Inventory, token);
+            // ‏(ح-١٤٨) ‏مفتاحا الدفعة: الأولى بالمفتاحين القديمين (فلا يتغيّر شيءٌ لأمرٍ بدفعةٍ واحدة)، والتاليةُ بترتيبها.
+            var completion = order.CompletionCount + 1;
             var entry = JournalEntry.CreateDraft(companyId, completedOn,
-                $"إكمال أمر إنتاج {order.OrderNumber}", $"WorkOrderComplete:{order.Id}");
+                $"إكمال أمر إنتاج {order.OrderNumber}", CompleteSource(order.Id, completion));
             // ‏(ح-١٣) ‏**وWIP يُحمَّل بالثلاثة**: الموادُّ من المخزون، والأجرُ والتكاليفُ
             // ‏الصناعيّةُ من حسابَيهما — **فتُنقَل تكلفةٌ وقعت، لا تُخترع**. وحسابا 5106
             // ‏و5107 موجودان في الدليل منذ نشأته **ولا يكتبهما أحد**؛ وبعد هذا يحملان
@@ -183,7 +187,7 @@ public class WorkOrderService(BrqoshDbContext db)
             }
 
             var entry2 = JournalEntry.CreateDraft(companyId, completedOn,
-                $"استلام منتج تام — {order.OrderNumber}", $"WorkOrderReceipt:{order.Id}");
+                $"استلام منتج تام — {order.OrderNumber}", ReceiptSource(order.Id, completion));
             entry2.AddLine(inventory, totalProductionCost, 0m, "منتج تام");
             entry2.AddLine(wip, 0m, totalProductionCost, "إغلاق WIP");
 
@@ -199,7 +203,11 @@ public class WorkOrderService(BrqoshDbContext db)
             db.JournalEntries.Add(entry2);
             await db.SaveChangesAsync(token);
 
-            order.Complete(producedQuantity, scrapQuantity);
+            var relieved = order.UsesActualIssues ? materialCost : 0m;
+            if (closeOrder)
+                order.Complete(producedQuantity, scrapQuantity, relieved);
+            else
+                order.CompletePartially(producedQuantity, relieved, scrapQuantity);
             order.LinkCompletionJournal(entry2.Id);
             await db.SaveChangesAsync(token);
 
@@ -280,6 +288,14 @@ public class WorkOrderService(BrqoshDbContext db)
         }, ct);
     }
 
+    /// <summary>(ح-١٤٨) مفتاحُ قيد إكمال الدفعة <paramref name="n"/> — الأولى بالمفتاح القديم.</summary>
+    internal static string CompleteSource(long workOrderId, int n) =>
+        n <= 1 ? $"WorkOrderComplete:{workOrderId}" : $"WorkOrderComplete:{workOrderId}:{n}";
+
+    /// <summary>(ح-١٤٨) مفتاحُ قيد استلام الدفعة <paramref name="n"/> — الأولى بالمفتاح القديم.</summary>
+    internal static string ReceiptSource(long workOrderId, int n) =>
+        n <= 1 ? $"WorkOrderReceipt:{workOrderId}" : $"WorkOrderReceipt:{workOrderId}:{n}";
+
     /// <summary>مفتاحُ قيد الصرف رقم <paramref name="n"/> للأمر — ويقرؤه الإلغاءُ ليعكسه.</summary>
     internal static string IssueSource(long workOrderId, int n) => $"WorkOrderIssue:{workOrderId}:{n}";
 
@@ -346,7 +362,13 @@ public class WorkOrderService(BrqoshDbContext db)
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
             var cancelDate = cancellationDate ?? DateOnly.FromDateTime(DateTime.Today);
 
-            if (order.Status == WorkOrderStatus.Completed)
+            // ‏(ح-١٤٨) ‏**وأمرٌ صادرٌ أُكمل جزئيّاً يُعكس كالمكتمل** — استلاماتُه وصرفُه وحركاتُه — ثمّ يُلغى.
+            if (order.Status == WorkOrderStatus.Released && order.CompletionCount > 0)
+            {
+                await ReverseCompletedWorkOrderAsync(companyId, order, cancelDate, username, token);
+                order.Cancel();
+            }
+            else if (order.Status == WorkOrderStatus.Completed)
             {
                 await ReverseCompletedWorkOrderAsync(companyId, order, cancelDate, username, token);
                 order.MarkCancelledAfterCompletion();
@@ -380,6 +402,9 @@ public class WorkOrderService(BrqoshDbContext db)
 
         // ‏(ح-١٤٧) ‏وقيودُ الصرف الفعليّ مع قيدي الإكمال.
         entryKeys = [.. entryKeys, .. Enumerable.Range(1, order.IssueCount).Select(n => IssueSource(order.Id, n))];
+        // ‏(ح-١٤٨) ‏وقيدا كلِّ دفعة إكمالٍ بعد الأولى.
+        entryKeys = [.. entryKeys, .. Enumerable.Range(2, Math.Max(0, order.CompletionCount - 1))
+            .SelectMany(n => new[] { CompleteSource(order.Id, n), ReceiptSource(order.Id, n) })];
         foreach (var key in entryKeys)
         {
             var entry = await db.JournalEntries.FirstOrDefaultAsync(e =>

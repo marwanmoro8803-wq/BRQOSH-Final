@@ -1567,6 +1567,7 @@ public class BrqoshDbContext : DbContext
             // ‏(ح-١٤٧) ‏الصرفُ الفعليّ والتالف — صفرٌ افتراضاً: الأمرُ القائمُ يُكمَل بالوصفة كما كان.
             entity.Property(w => w.IssuedMaterialCost).HasPrecision(18, 2);
             entity.Property(w => w.ScrapQuantity).HasPrecision(18, 4);
+            entity.Property(w => w.MaterialCostRelieved).HasPrecision(18, 2);   // ‏(ح-١٤٨) دفعاتُ الإكمال
             entity.Property(w => w.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(w => new { w.CompanyId, w.OrderNumber });
             entity.HasIndex(w => w.BomId);
