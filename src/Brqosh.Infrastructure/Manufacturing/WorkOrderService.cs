@@ -52,10 +52,15 @@ public class WorkOrderService(BrqoshDbContext db)
     /// <param name="outputBatchNumber">(جاهزيّةُ الإطلاق · ح-١٠١ · <c>manufacturing#6</c>) دفعةُ الإنتاج — <b>مطلوبةٌ لمنتجٍ تامٍّ
     /// متتبَّع</b> ومرفوضةٌ لغيره.</param>
     /// <param name="outputExpiry">صلاحيةُ دفعة الإنتاج إن كانت لها صلاحية.</param>
+    /// <param name="outputSerials">
+    /// (جاهزيّةُ الإطلاق · ح-١٥٩ · <c>manufacturing#6</c>) <b>أرقامُ التامّ المتتبَّع تسلسليّاً</b> — رقمٌ لكلّ وحدةٍ منتَجة، بعددها
+    /// ومختلفةٌ لا تتكرّر؛ فيدخل كلُّ رقمٍ سطراً بوحدةٍ واحدة. وكان التامُّ التسلسليُّ يُكمَل وحدةً في المرّة.
+    /// </param>
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
         string username, DateOnly? completionDate = null, string? outputBatchNumber = null,
         DateOnly? outputExpiry = null, CancellationToken ct = default, decimal scrapQuantity = 0m,
-        bool closeOrder = true, IReadOnlyList<(long ProductId, decimal Quantity, decimal UnitValue)>? byProducts = null)
+        bool closeOrder = true, IReadOnlyList<(long ProductId, decimal Quantity, decimal UnitValue)>? byProducts = null,
+        IReadOnlyList<string>? outputSerials = null)
     {
         SecurityContext.EnsureCanPost();
         username = SecurityContext.ResolveUsername(username);
@@ -92,6 +97,9 @@ public class WorkOrderService(BrqoshDbContext db)
             var finished = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == bom.FinishedProductId, token);
             // ‏والفارغُ والمسافاتُ لا دفعة؛ والتشذيبُ في `StockMovement.AddLine` نفسِه (تشذيبٌ ثانٍ هنا لم يعضّ فأُزيل).
             var outputBatch = string.IsNullOrWhiteSpace(outputBatchNumber) ? null : outputBatchNumber;
+            var serials = OutputSerials(finished, order.OrderNumber, producedQuantity, outputSerials);
+            if (serials is not null)
+                outputBatch = serials[0];
             if (finished.IsTracked && outputBatch is null)
                 throw new AccountingException(
                     $"المنتج التامّ «{finished.NameAr}» يُتتبَّع بالدفعة — أدخِل رقمَ دفعة الإنتاج لإكمال الأمر {order.OrderNumber}.");
@@ -154,7 +162,9 @@ public class WorkOrderService(BrqoshDbContext db)
 
             await inv.PostDocumentMovementAsync(companyId, outputWarehouseId, StockMovementType.Receipt,
                 completedOn, $"إنتاج منتج — أمر {order.OrderNumber}", $"WorkOrder:{order.Id}",
-                [(bom.FinishedProductId, producedQuantity, unitCost, outputBatch, outputBatch is null ? null : outputExpiry),
+                [.. serials is null
+                    ? [(bom.FinishedProductId, producedQuantity, unitCost, outputBatch, outputBatch is null ? null : outputExpiry)]
+                    : serials.Select(s => (bom.FinishedProductId, 1m, unitCost, (string?)s, outputExpiry)),
                  .. byProductLines]);
 
             var posting = new JournalPostingService(db);
@@ -380,6 +390,45 @@ public class WorkOrderService(BrqoshDbContext db)
         }
 
         return (materialCost, issueLines);
+    }
+
+    /// <summary>
+    /// ‏(ح-١٥٩) <b>أرقامُ التامّ التسلسليّ</b> — <c>null</c> لغير التسلسليّ أو لوحدةٍ واحدةٍ برقمها في الدفعة؛ وإلا رقمٌ لكلّ وحدة.
+    /// </summary>
+    private static List<string>? OutputSerials(
+        Domain.Inventory.Product finished, string? orderNumber, decimal producedQuantity, IReadOnlyList<string>? outputSerials)
+    {
+        if (outputSerials is null || outputSerials.Count == 0)
+        {
+            if (finished.Tracking == InventoryTracking.Serial && producedQuantity != 1m)
+                throw new AccountingException(
+                    $"المنتج التامّ «{finished.NameAr}» يُتتبَّع بالرقم التسلسليّ — أدخِل رقماً لكلّ وحدةٍ من الـ{producedQuantity:N0} "
+                    + $"لإكمال الأمر {orderNumber}.");
+            return null;
+        }
+
+        if (finished.Tracking != InventoryTracking.Serial)
+            throw new AccountingException($"المنتج التامّ «{finished.NameAr}» لا يُتتبَّع بالرقم التسلسليّ — لا أرقامَ له.");
+        var serials = outputSerials.Select(s => (s ?? "").Trim()).ToList();
+        if (serials.Any(s => s.Length == 0))
+            throw new AccountingException("رقمٌ تسلسليٌّ فارغ — لكلّ وحدةٍ رقمُها.");
+        if (decimal.Truncate(producedQuantity) != producedQuantity || serials.Count != (int)producedQuantity)
+            throw new AccountingException(
+                $"الأرقامُ التسلسليّة {serials.Count} والكمّيّةُ المنتَجة {producedQuantity:N4} — رقمٌ لكلّ وحدةٍ لا أقلّ ولا أكثر.");
+        var duplicate = serials.GroupBy(s => s, StringComparer.Ordinal).FirstOrDefault(g => g.Count() > 1);
+        if (duplicate is not null)
+            throw new AccountingException($"الرقمُ التسلسليّ «{duplicate.Key}» مكرَّر — والرقمُ لا يتكرّر.");
+        return serials;
+    }
+
+    /// <summary>‏(ح-١٥٩) طريقةُ تتبّع المنتج التامّ — فتسأل الشاشةُ عن دفعةٍ أو عن رقمٍ لكلّ وحدة.</summary>
+    public async Task<InventoryTracking> OutputTrackingAsync(long companyId, long workOrderId, CancellationToken ct = default)
+    {
+        var bomId = await db.WorkOrders.Where(w => w.CompanyId == companyId && w.Id == workOrderId)
+            .Select(w => w.BomId).SingleAsync(ct);
+        var productId = await db.BillsOfMaterials.Where(b => b.CompanyId == companyId && b.Id == bomId)
+            .Select(b => b.FinishedProductId).SingleAsync(ct);
+        return await db.Products.IgnoreQueryFilters().Where(p => p.Id == productId).Select(p => p.Tracking).SingleAsync(ct);
     }
 
     /// <summary>

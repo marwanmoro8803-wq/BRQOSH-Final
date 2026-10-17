@@ -195,11 +195,101 @@ public class ABatchTrackedOrderDrawsAndYieldsByBatchTests : IDisposable
         var code = File.ReadAllText(Path.Combine(
             RepoRoot(), "src", "Brqosh.Desktop", "Views", "Pages", "WorkOrdersPage.xaml.cs"));
 
-        var asks = code.IndexOf("OutputIsTrackedAsync(", StringComparison.Ordinal);
+        // ‏(ح-١٥٩) ‏الصفحةُ تسأل طريقةَ التتبّع — دفعةً أو رقماً لكلّ وحدة.
+        var asks = code.IndexOf("OutputTrackingAsync(", StringComparison.Ordinal);
         var passes = code.IndexOf("outputBatchNumber: batch", StringComparison.Ordinal);
         Assert.True(asks >= 0, "الصفحةُ لا تسأل هل التامُّ متتبَّع");
         Assert.True(passes > asks, "الصفحةُ لا تُمرّر دفعةَ الإنتاج بعد السؤال");
         Assert.Contains("outputExpiry: expiry", code, StringComparison.Ordinal);
+        Assert.True(code.IndexOf("outputSerials: serials", StringComparison.Ordinal) > asks,
+            "الصفحةُ لا تُمرّر الأرقامَ التسلسليّة بعد السؤال");
+    }
+
+    // ── (جاهزيّةُ الإطلاق · ح-١٥٩ · manufacturing#6) التامُّ التسلسليّ: رقمٌ لكلّ وحدة ─────────────
+
+    /// <summary>
+    /// <b>ثلاثُ وحداتٍ بثلاثة أرقام — ثلاثةُ سطورٍ بوحدةٍ لكلٍّ</b>. وكان التامُّ التسلسليُّ يُكمَل وحدةً في المرّة: أكثرُ يرفضه المَخنَق.
+    /// </summary>
+    [Fact]
+    public async Task ASerialFinishedProduct_IsReceivedOneLinePerNumber()
+    {
+        await SetupAsync();
+        var raw = await PlainRawAsync("RM-159", "هيكل", 20m);
+        var finished = await SerialFinishedAsync("FG-159", "مولّد");
+        var orderId = await ReleasedOrderAsync(finished, raw, perUnit: 2m, planned: 3m);
+
+        await new WorkOrderService(_db).CompleteAsync(_companyId, orderId, 3m, "admin", CompletedOn,
+            outputSerials: [" SN-1 ", "SN-2", "SN-3"]);
+
+        var received = await LinesAsync(orderId, StockMovementType.Receipt);
+        Assert.Equal(3, received.Count);
+        Assert.All(received, l => Assert.Equal(1m, l.Quantity));
+        Assert.Equal(["SN-1", "SN-2", "SN-3"], received.Select(l => l.BatchNumber).Order().ToArray());
+        foreach (var serial in new[] { "SN-1", "SN-2", "SN-3" })
+            Assert.Equal(1m, await BatchQuantityAsync(finished, serial));
+        Assert.Equal(3m, await OnHandAsync(finished));
+    }
+
+    /// <summary><b>وبلا أرقامٍ لأكثرَ من وحدةٍ يُرفض باسمه — قبل أيّ صرف</b>.</summary>
+    [Fact]
+    public async Task SeveralSerialUnitsWithoutNumbers_AreRefusedByName_BeforeAnyMovement()
+    {
+        await SetupAsync();
+        var raw = await PlainRawAsync("RM-160", "هيكل", 20m);
+        var finished = await SerialFinishedAsync("FG-160", "مضخّة");
+        var orderId = await ReleasedOrderAsync(finished, raw, perUnit: 2m, planned: 2m);
+
+        var ex = await Assert.ThrowsAsync<AccountingException>(() =>
+            new WorkOrderService(_db).CompleteAsync(_companyId, orderId, 2m, "admin", CompletedOn, outputBatchNumber: "SN-9"));
+
+        Assert.Contains("مضخّة", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("رقماً لكلّ وحدة", ex.Message, StringComparison.Ordinal);
+        _db.ChangeTracker.Clear();
+        Assert.Empty(await _db.StockMovements.AsNoTracking()
+            .Where(m => m.SourceDocument == $"WorkOrder:{orderId}").ToListAsync());
+        Assert.Equal(20m, await OnHandAsync(raw));
+    }
+
+    /// <summary><b>والعددُ يطابق الكمّيّة، والرقمُ لا يتكرّر</b> — وإلا رُفض قبل أيّ حركة.</summary>
+    [Fact]
+    public async Task TooFewOrRepeatedNumbers_AreRefused()
+    {
+        await SetupAsync();
+        var raw = await PlainRawAsync("RM-161", "هيكل", 20m);
+        var finished = await SerialFinishedAsync("FG-161", "محرّك");
+        var orderId = await ReleasedOrderAsync(finished, raw, perUnit: 2m, planned: 3m);
+        var service = new WorkOrderService(_db);
+
+        var few = await Assert.ThrowsAsync<AccountingException>(() =>
+            service.CompleteAsync(_companyId, orderId, 3m, "admin", CompletedOn, outputSerials: ["A", "B"]));
+        Assert.Contains("رقمٌ لكلّ وحدة", few.Message, StringComparison.Ordinal);
+
+        var repeated = await Assert.ThrowsAsync<AccountingException>(() =>
+            service.CompleteAsync(_companyId, orderId, 3m, "admin", CompletedOn, outputSerials: ["A", "B", "A"]));
+        Assert.Contains("«A» مكرَّر", repeated.Message, StringComparison.Ordinal);
+
+        _db.ChangeTracker.Clear();
+        Assert.Empty(await _db.StockMovements.AsNoTracking()
+            .Where(m => m.SourceDocument == $"WorkOrder:{orderId}").ToListAsync());
+    }
+
+    /// <summary><b>وإلغاءُ الأمر يُخرج كلَّ رقمٍ بعينه</b>.</summary>
+    [Fact]
+    public async Task CancellingASerialOrder_EmptiesEachNumber()
+    {
+        await SetupAsync();
+        var raw = await PlainRawAsync("RM-162", "هيكل", 20m);
+        var finished = await SerialFinishedAsync("FG-162", "ضاغط");
+        var orderId = await ReleasedOrderAsync(finished, raw, perUnit: 2m, planned: 2m);
+        var service = new WorkOrderService(_db);
+        await service.CompleteAsync(_companyId, orderId, 2m, "admin", CompletedOn, outputSerials: ["C-1", "C-2"]);
+
+        await service.CancelAsync(_companyId, orderId, "admin", new DateOnly(2026, 4, 7));
+
+        Assert.Equal(0m, await BatchQuantityAsync(finished, "C-1"));
+        Assert.Equal(0m, await BatchQuantityAsync(finished, "C-2"));
+        Assert.Equal(0m, await OnHandAsync(finished));
+        Assert.Equal(20m, await OnHandAsync(raw));
     }
 
     // ── تهيئة ───────────────────────────────────────────────────────────────
@@ -224,6 +314,14 @@ public class ABatchTrackedOrderDrawsAndYieldsByBatchTests : IDisposable
     {
         var id = await PlainProductAsync(code, name);
         (await _db.Products.SingleAsync(p => p.Id == id)).SetTracking(InventoryTracking.Batch, currentOnHand: 0m);
+        await _db.SaveChangesAsync();
+        return id;
+    }
+
+    private async Task<long> SerialFinishedAsync(string code, string name)
+    {
+        var id = await PlainProductAsync(code, name);
+        (await _db.Products.SingleAsync(p => p.Id == id)).SetTracking(InventoryTracking.Serial, currentOnHand: 0m);
         await _db.SaveChangesAsync();
         return id;
     }

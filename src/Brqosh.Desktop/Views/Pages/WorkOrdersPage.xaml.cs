@@ -211,7 +211,21 @@ public partial class WorkOrdersPage : UserControl
             // ‏والخاماتُ المتتبَّعةُ تُصرف بالأقدم انتهاءً في الخدمة بلا سؤال.
             string? batch = null;
             DateOnly? expiry = null;
-            if (await service.OutputIsTrackedAsync(AppServices.CompanyId, row.Id))
+            List<string>? serials = null;
+            var tracking = await service.OutputTrackingAsync(AppServices.CompanyId, row.Id);
+            if (tracking == Brqosh.Domain.Inventory.InventoryTracking.Serial && qty != 1m)
+            {
+                // ‏(جاهزيّةُ الإطلاق · ح-١٥٩ · ‏`manufacturing#6`) ‏**رقمٌ لكلّ وحدة** — مفصولةً بفواصل أو أسطر؛ والخدمةُ تَعدّها وتمنع المكرَّر.
+                var serialDialog = new TextInputDialog(LocaleManager.T("الأرقام التسلسليّة", "Serial numbers"),
+                    LocaleManager.T("رقمٌ لكلّ وحدةٍ منتَجة، مفصولةً بفواصل:", "One number per unit produced, comma-separated:"))
+                    { Owner = Window.GetWindow(this) };
+                if (serialDialog.ShowDialog() != true)
+                    return;
+                serials = serialDialog.Value
+                    .Split([',', '\n', '\r', '،'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToList();
+            }
+            else if (tracking != Brqosh.Domain.Inventory.InventoryTracking.None)
             {
                 var batchDialog = new TextInputDialog("دفعة الإنتاج", "رقم دفعة الإنتاج:") { Owner = Window.GetWindow(this) };
                 if (batchDialog.ShowDialog() != true)
@@ -231,7 +245,8 @@ public partial class WorkOrdersPage : UserControl
             }
 
             await service.CompleteAsync(AppServices.CompanyId, row.Id, qty, username,
-                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap, closeOrder: close, byProducts: byProducts);
+                outputBatchNumber: batch, outputExpiry: expiry, scrapQuantity: scrap, closeOrder: close, byProducts: byProducts,
+                outputSerials: serials);
             UiDialog.Show("تم إكمال أمر الإنتاج وترحيل المخزون.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             await ReloadAsync();
         }
