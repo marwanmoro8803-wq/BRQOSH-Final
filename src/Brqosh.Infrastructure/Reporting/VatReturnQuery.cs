@@ -2,6 +2,7 @@
 using Brqosh.Domain.Construction;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
+using Brqosh.Domain.Tax;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Hospitality;
 using Brqosh.Infrastructure.Persistence;
@@ -27,6 +28,12 @@ namespace Brqosh.Infrastructure.Reporting;
 /// (CEEF-229 · A-15) وعاءٌ ضريبيّ واحد في الإقرار: فئةٌ ومبلغٌ خاضع وضريبة.
 /// </summary>
 public record VatReturnBucket(Brqosh.Domain.Tax.VatCategory Category, decimal TaxableAmount, decimal VatAmount);
+
+/// <summary>
+/// (جاهزيّةُ الإطلاق · ح-١٦٥ · <c>tax-zatca#12</c>) خانةٌ واحدةٌ من نموذج الإقرار بأعمدته في البوّابة:
+/// <b>المبلغ</b> (مستنداتُ الفترة) و<b>التعديلات</b> (الإشعاراتُ وتسويةُ إلغاء ما صدر قبلها) والضريبةُ لكلٍّ منهما.
+/// </summary>
+public record VatReturnBoxLine(int Box, decimal Amount, decimal Adjustments, decimal VatAmount, decimal VatAdjustments);
 
 public record VatReturnResult(
     DateOnly FromDate,
@@ -54,7 +61,10 @@ public record VatReturnResult(
     IReadOnlyList<VatReturnBucket>? PurchasesByCategory = null,
     // (CEEF-232 · ض-١) ضريبةٌ قُيّدت في الأستاذ بقيدٍ ليس مستنداً محسوباً ولا تسوية.
     decimal JournalOutputVat = 0m,
-    decimal JournalInputVat = 0m)
+    decimal JournalInputVat = 0m,
+    // (جاهزيّةُ الإطلاق · ح-١٦٥) ‏خاناتُ النموذج — من الأوعية نفسِها مقسومةً برمز الإعفاء؛ انظر `VatReturnBox`.
+    IReadOnlyList<VatReturnBoxLine>? SalesBoxes = null,
+    IReadOnlyList<VatReturnBoxLine>? PurchaseBoxes = null)
 {
     /// <summary>
     /// (CEEF-229 · A-15) المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
@@ -240,6 +250,33 @@ public class VatReturnQuery(BrqoshDbContext db)
                 p.Lines, 0m, p.ExchangeRate, p.Subtotal, -1)),
         ]);
 
+        // ‏(جاهزيّةُ الإطلاق · ح-١٦٥ · tax-zatca#12) ‏**وخاناتُ النموذج من الأوعية نفسِها** — كلُّ وعاءٍ يُقسم
+        // ‏على خاناته برمز إعفاء سطوره، فلا مصدرَ ثانٍ يفترق. ‏**ومستنداتُ الفترة «مبلغ»، وما يُصحّحها «تعديلات»**
+        // ‏كأعمدة البوّابة: الإشعاراتُ وتسويةُ إلغاء ما صدر قبل الفترة (في الاتّجاهين).
+        var salesBoxes = BoxLines(VatReturnBox.SalesBoxes,
+        [
+            .. sales.SelectMany(i => DocumentBoxParts(
+                i.Lines, i.DocumentDiscountAmount, i.ExchangeRate, i.Subtotal, +1, false, SaleBox)),
+            .. progressBillings.Select(b => ProgressBillingPart(b, +1, false)),
+            .. creditNotes.SelectMany(n => DocumentBoxParts(
+                n.Lines, n.DocumentDiscountAmount, n.ExchangeRate, n.Subtotal, -1, true, SaleBox)),
+            .. cancelledSales.SelectMany(i => DocumentBoxParts(
+                i.Lines, i.DocumentDiscountAmount, i.ExchangeRate, i.Subtotal, -1, true, SaleBox)),
+            .. cancelledProgressBillings.Select(b => ProgressBillingPart(b, -1, true)),
+            .. cancelledCreditNotes.SelectMany(n => DocumentBoxParts(
+                n.Lines, n.DocumentDiscountAmount, n.ExchangeRate, n.Subtotal, +1, true, SaleBox)),
+        ]);
+        var purchaseBoxes = BoxLines(VatReturnBox.PurchaseBoxes,
+        [
+            .. purchases.Where(p => p.VatDeductible).SelectMany(p => DocumentBoxParts(
+                p.Lines, 0m, p.ExchangeRate, p.Subtotal, +1, false, PurchaseBox)),
+            .. debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
+                .SelectMany(n => DocumentBoxParts(
+                    n.Lines, 0m, n.ExchangeRate, n.Subtotal, -1, true, PurchaseBox)),
+            .. cancelledPurchases.SelectMany(p => DocumentBoxParts(
+                p.Lines, 0m, p.ExchangeRate, p.Subtotal, -1, true, PurchaseBox)),
+        ]);
+
         // ‏(ح-٤١) ‏**والأبُ الذي تُعرض الأوعيةُ تحته — من إجماليّات المستندات المخزونة لا من
         // ‏الأوعية.** فأبٌ يُحسب من أبنائه لا يُثبت شيئاً؛ **ومن مصدرٍ آخر تصير المساواةُ فحصاً.**
         var salesBaseNet =
@@ -276,8 +313,82 @@ public class VatReturnQuery(BrqoshDbContext db)
             JournalOutputVat: journalOutputVat,
             JournalInputVat: journalInputVat,
             SalesBaseNet: salesBaseNet,
-            PurchasesBaseNet: purchasesBaseNet);
+            PurchasesBaseNet: purchasesBaseNet,
+            SalesBoxes: salesBoxes,
+            PurchaseBoxes: purchaseBoxes);
     }
+
+    /// <summary>(ح-١٦٥) جزءُ مستندٍ في خانة: مبلغٌ أو تعديل، وعاءٌ وضريبة؛ وخانةٌ عدمٌ لخارج النطاق.</summary>
+    private sealed record BoxPart(int? Box, bool Adjustment, decimal Taxable, decimal Vat);
+
+    private static int? SaleBox(SalesInvoiceLine line) =>
+        VatReturnBox.ForSale(line.VatCategory, line.TaxExemptionReasonCode);
+
+    private static int? PurchaseBox(SalesInvoiceLine line) => VatReturnBox.ForPurchase(line.VatCategory);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦٥) <b>أوعيةُ المستند مقسومةً على خاناتها.</b>
+    ///
+    /// <para>الوعاءُ من <see cref="DocumentBuckets"/> بعينه — بخصمه وسعره وفلسِ تحويله — <b>ثمّ يُقسم على خانات سطوره
+    /// بنسبة صافيها</b>: وهو مذهبُ <c>ComputeSubtotals</c> نفسِه في توزيع خصم المستند، والوعاءُ الصفريُّ وحدَه يقع في
+    /// أكثرَ من خانة (صادراتٌ ومحلّيٌّ ومواطنٌ). <b>والخانةُ الأخيرةُ تأخذ الباقي</b>، فمجموعُ الخانات وعاءُ المستند حرفاً.</para>
+    /// </summary>
+    private static IEnumerable<BoxPart> DocumentBoxParts(
+        IReadOnlyCollection<SalesInvoiceLine> lines, decimal documentDiscount, decimal rate,
+        decimal ledgerSubtotal, int sign, bool adjustment, Func<SalesInvoiceLine, int?> boxOf)
+    {
+        foreach (var bucket in DocumentBuckets(lines, documentDiscount, rate, ledgerSubtotal, sign))
+        {
+            var groups = lines.Where(l => l.VatCategory == bucket.Category)
+                .GroupBy(boxOf)
+                .Select(g => (Box: g.Key, Weight: g.Sum(l => l.LineTotal)))
+                .OrderBy(g => g.Box ?? int.MaxValue)
+                .ToList();
+            var totalWeight = groups.Sum(g => g.Weight);
+
+            if (groups.Count <= 1 || totalWeight == 0m)
+            {
+                yield return new BoxPart(groups.Count == 0 ? null : groups[0].Box, adjustment,
+                    bucket.TaxableAmount, bucket.VatAmount);
+                continue;
+            }
+
+            decimal taxableLeft = bucket.TaxableAmount, vatLeft = bucket.VatAmount;
+            for (var i = 0; i < groups.Count; i++)
+            {
+                if (i == groups.Count - 1)
+                {
+                    yield return new BoxPart(groups[i].Box, adjustment, taxableLeft, vatLeft);
+                    break;
+                }
+
+                var taxable = Math.Round(bucket.TaxableAmount * groups[i].Weight / totalWeight, 2, MidpointRounding.AwayFromZero);
+                var vat = Math.Round(bucket.VatAmount * groups[i].Weight / totalWeight, 2, MidpointRounding.AwayFromZero);
+                taxableLeft -= taxable;
+                vatLeft -= vat;
+                yield return new BoxPart(groups[i].Box, adjustment, taxable, vat);
+            }
+        }
+    }
+
+    /// <summary>(ح-١٦٥) المستخلصُ وعاءٌ أساسيٌّ — الخانة 1.</summary>
+    private static BoxPart ProgressBillingPart(ProgressBilling billing, int sign, bool adjustment)
+    {
+        var bucket = ProgressBillingBucket(billing, sign);
+        return new BoxPart(VatReturnBox.StandardRatedSales, adjustment, bucket.TaxableAmount, bucket.VatAmount);
+    }
+
+    /// <summary>(ح-١٦٥) سطرٌ لكلّ خانةٍ في النموذج — <b>والخانةُ الفارغةُ صفرٌ معلَنٌ لا غائب</b>؛ وخارجُ النطاق لا يُجمع.</summary>
+    private static IReadOnlyList<VatReturnBoxLine> BoxLines(IReadOnlyList<int> boxes, IReadOnlyList<BoxPart> parts) =>
+        [.. boxes.Select(box =>
+        {
+            var inBox = parts.Where(p => p.Box == box).ToList();
+            return new VatReturnBoxLine(box,
+                inBox.Where(p => !p.Adjustment).Sum(p => p.Taxable),
+                inBox.Where(p => p.Adjustment).Sum(p => p.Taxable),
+                inBox.Where(p => !p.Adjustment).Sum(p => p.Vat),
+                inBox.Where(p => p.Adjustment).Sum(p => p.Vat));
+        })];
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٤١) <b>أوعيةُ مستندٍ واحدٍ بالريال — كما يحسبها المستندُ لنفسه.</b>

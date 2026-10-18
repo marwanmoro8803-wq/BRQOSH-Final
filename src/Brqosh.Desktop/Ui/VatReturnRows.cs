@@ -63,8 +63,62 @@ public static class VatReturnRows
 
         rows.Add(new Row(LocaleManager.T("صافي الضريبة المستحقة/المستردة", "Net VAT payable / refundable"), r.NetVatPayable, Bold: true));
 
+        AddOfficialForm(rows, r);
         return rows;
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · ح-١٦٥ · tax-zatca#12) <b>خاناتُ نموذج الإقرار كما في بوّابة الهيئة</b> — يُنقل منها المالكُ
+    /// إلى البوّابة خانةً خانة: المبلغُ والتعديلاتُ والضريبة. <b>وضريبةٌ قُيّدت بلا مستندٍ محسوبٍ لا خانةَ لها هنا</b>
+    /// فتُعرض صفّاً مستقلّاً — ولا يُخترع لها وعاء.
+    /// </summary>
+    private static void AddOfficialForm(List<Row> rows, VatReturnDto r)
+    {
+        if (r.SalesBoxes is null || r.PurchaseBoxes is null)
+            return;
+
+        AddBoxes(rows, r.SalesBoxes, Brqosh.Domain.Tax.VatReturnBox.TotalSales);
+        if (r.JournalOutputVat != 0m)
+            rows.Add(new Row(LocaleManager.T("ضريبة مخرجات بلا مستند محسوب — لا خانة لها هنا", "Output VAT without a counted document — no box here"), r.JournalOutputVat, Indented: true));
+        AddBoxes(rows, r.PurchaseBoxes, Brqosh.Domain.Tax.VatReturnBox.TotalPurchases);
+        if (r.JournalInputVat != 0m)
+            rows.Add(new Row(LocaleManager.T("ضريبة مدخلات بلا مستند محسوب — لا خانة لها هنا", "Input VAT without a counted document — no box here"), r.JournalInputVat, Indented: true));
+    }
+
+    private static void AddBoxes(List<Row> rows, IReadOnlyList<VatReturnBoxDto> boxes, int totalBox)
+    {
+        foreach (var b in boxes)
+        {
+            rows.Add(new Row(BoxLabel(b.Box), b.Amount));
+            if (b.Adjustments != 0m)
+                rows.Add(new Row(LocaleManager.T("التعديلات", "Adjustments"), b.Adjustments, Indented: true));
+            rows.Add(new Row(LocaleManager.T("ضريبة القيمة المضافة", "VAT amount"), b.VatAmount + b.VatAdjustments, Indented: true));
+        }
+
+        rows.Add(new Row(BoxLabel(totalBox), boxes.Sum(b => b.Amount + b.Adjustments), Bold: true));
+        rows.Add(new Row(LocaleManager.T("ضريبة القيمة المضافة", "VAT amount"), boxes.Sum(b => b.VatAmount + b.VatAdjustments), Indented: true));
+    }
+
+    /// <summary>(ح-١٦٥) «خانة N — عنوانها» بلغة الواجهة.</summary>
+    private static string BoxLabel(int box) => LocaleManager.T("خانة ", "Box ") + $"{box} — {BoxTitle(box)}";
+
+    /// <summary>(ح-١٦٥) عنوانُ الخانة — والإنجليزيُّ حرفُ النموذج (<c>VatReturnBox.EnglishTitle</c>).</summary>
+    private static string BoxTitle(int box) => box switch
+    {
+        1 => LocaleManager.T("المبيعات الخاضعة للنسبة الأساسية", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        2 => LocaleManager.T("المبيعات التي تتحمل الدولة ضريبتها", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        3 => LocaleManager.T("المبيعات المحلية الخاضعة للنسبة الصفرية", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        4 => LocaleManager.T("الصادرات", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        5 => LocaleManager.T("المبيعات المعفاة", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        6 => LocaleManager.T("إجمالي المبيعات", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        7 => LocaleManager.T("المشتريات المحلية الخاضعة للنسبة الأساسية", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        8 => LocaleManager.T("الاستيرادات الخاضعة للضريبة المدفوعة في الجمارك", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        9 => LocaleManager.T("الاستيرادات الخاضعة للضريبة بآلية الاحتساب العكسي", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        10 => LocaleManager.T("المشتريات الخاضعة للنسبة الصفرية", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        11 => LocaleManager.T("المشتريات المعفاة", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        12 => LocaleManager.T("إجمالي المشتريات", Brqosh.Domain.Tax.VatReturnBox.EnglishTitle(box)),
+        _ => box.ToString(),
+    };
 
     /// <summary>
     /// (ح-٤١) <b>أوعيةُ الفئة «منها» تحت أبٍ تجمع إليه.</b> الوعاءُ تحت صافي الوعاء (سطرٌ

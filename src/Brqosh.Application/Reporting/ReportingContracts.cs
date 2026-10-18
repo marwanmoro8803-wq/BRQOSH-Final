@@ -137,6 +137,12 @@ public interface ICashFlowStatementQuery
 public record VatReturnCategoryDto(string Code, decimal TaxableAmount, decimal VatAmount);
 
 /// <summary>
+/// (جاهزيّةُ الإطلاق · ح-١٦٥ · <c>tax-zatca#12</c>) خانةٌ من نموذج الإقرار في بوّابة الهيئة — رقمُها ومبلغُها
+/// وتعديلاتُها والضريبةُ لكلٍّ منهما. والعنوانُ من <c>VatReturnBox</c> بالرقم.
+/// </summary>
+public record VatReturnBoxDto(int Box, decimal Amount, decimal Adjustments, decimal VatAmount, decimal VatAdjustments);
+
+/// <summary>
 /// (جاهزيّةُ الإطلاق · ح-٤٠) <b>صافي الإقرار — مالكٌ واحد.</b>
 ///
 /// <para><b>وكان له مالكان</b>: <c>VatReturnResult</c> (يقرؤه المطبوع) و<c>VatReturnDto</c>
@@ -192,7 +198,9 @@ public record VatReturnDto(
     decimal PurchasesBaseNet,
     decimal? GlVatNetPayableBalance = null,
     IReadOnlyList<VatReturnCategoryDto>? SalesByCategory = null,
-    IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null)
+    IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null,
+    IReadOnlyList<VatReturnBoxDto>? SalesBoxes = null,
+    IReadOnlyList<VatReturnBoxDto>? PurchaseBoxes = null)
 {
     public decimal NetOutputVat => VatReturnNet.Output(
         OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat);

@@ -34,7 +34,14 @@ public static class VatReturnMapping
             PurchasesBaseNet: r.PurchasesBaseNet,
             GlVatNetPayableBalance: r.GlVatNetPayableBalance,
             Map(r.SalesByCategory),
-            Map(r.PurchasesByCategory));
+            Map(r.PurchasesByCategory),
+            // ‏(جاهزيّةُ الإطلاق · ح-١٦٥) ‏وخاناتُ النموذج تعبر الحدَّ كذلك — وصلةٌ تُقاس هنا لا في المُحوِّل.
+            Map(r.SalesBoxes),
+            Map(r.PurchaseBoxes));
+
+    private static IReadOnlyList<VatReturnBoxDto>? Map(IReadOnlyList<VatReturnBoxLine>? boxes) =>
+        boxes?.Select(b => new VatReturnBoxDto(b.Box, b.Amount, b.Adjustments, b.VatAmount, b.VatAdjustments))
+            .ToList();
 
     private static IReadOnlyList<VatReturnCategoryDto>? Map(IReadOnlyList<VatReturnBucket>? buckets) =>
         buckets?.Select(b => new VatReturnCategoryDto(
