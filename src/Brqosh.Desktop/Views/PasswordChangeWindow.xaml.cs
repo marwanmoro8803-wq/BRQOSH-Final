@@ -27,6 +27,28 @@ public partial class PasswordChangeWindow : Window
             $"{PasswordPolicy.MinLength} حرفاً على الأقل، مع حرف كبير وصغير ورقم ورمز خاص.",
             $"At least {PasswordPolicy.MinLength} characters, with upper and lower case, a digit and a symbol.");
         CurrentPasswordBox.Focus();
+        if (user.Role == UserRole.Administrator)
+            ReissueKeyButton.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>
+    /// ‏(security-licensing-tenancy#7) مديرٌ داخلٌ يُصدر مفتاحَ استعادةٍ جديداً — للتركيبات التي سبقت المفتاح أو لمفتاحٍ انكشف؛
+    /// ‏ويُعرض مرّةً ويُبطل ما قبله.
+    /// </summary>
+    private async void OnReissueKey(object sender, RoutedEventArgs e)
+    {
+        ErrorText.Visibility = Visibility.Collapsed;
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var key = await new AdminRecoveryKey(facade.Db).ReissueAsync(_user.Id);
+            new RecoveryKeyWindow(key) { Owner = this }.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+            ErrorText.Visibility = Visibility.Visible;
+        }
     }
 
     private async void OnSave(object sender, RoutedEventArgs e)

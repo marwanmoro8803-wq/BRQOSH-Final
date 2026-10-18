@@ -241,6 +241,10 @@ public partial class App : System.Windows.Application
                         adminUsername, adminPassword, setup.CountryTemplateId);
                 AppServices.CompanyId = result.CompanyId;
 
+                // ‏(security-licensing-tenancy#7) ‏مفتاحُ استعادة المدير الأوّل يُعرض الآن مرّةً — ولا تُغلق نافذتُه قبل تأكيد حفظه.
+                if (result.RecoveryKey is { } recoveryKey)
+                    new Views.RecoveryKeyWindow(recoveryKey).ShowDialog();
+
                 // ‏(جاهزيّةُ الإطلاق · ح-٦٦ · sector-modules#10) **نظامُ العمل نظامُ المنشأة المخزَّن، لا اختيارُ هذا الجهاز.**
                 //
                 // ‏جهازٌ ثانٍ يُعَدّ على قاعدةٍ قائمة: معالجُه يبدأ على أوّل نظامٍ في القائمة، و`InitializeAsync`

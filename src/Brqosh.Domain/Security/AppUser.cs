@@ -27,6 +27,12 @@ public class AppUser : ISoftDeletable
     /// في <c>UserAuthService</c> لا عبر هذا الكائن، فلا يقبل دخولان متزامنان الرمزَ نفسَه.
     /// </summary>
     public long? MfaLastAcceptedStep { get; private set; }
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · <c>security-licensing-tenancy#7</c> · قرارُ المالك 2026-10-18) <b>تجزئةُ مفتاح الاستعادة</b> —
+    /// ‏يُعرض المفتاحُ مرّةً ولا يُخزَّن إلّا مجزَّأً كأيّ كلمة مرور؛ وعدمٌ = لا استعادةَ لهذا المستخدم.
+    /// </summary>
+    public string? RecoveryKeyHash { get; private set; }
     public int SessionVersion { get; private set; }
     public DateTime? DeletedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
@@ -104,6 +110,14 @@ public class AppUser : ISoftDeletable
     }
 
     public bool RequiresMfa => !string.IsNullOrWhiteSpace(MfaSecret);
+
+    /// <summary>مفتاحُ استعادةٍ جديدٌ يُبطل ما قبله — يُكتب مجزَّأً.</summary>
+    public void SetRecoveryKeyHash(string recoveryKeyHash)
+    {
+        if (string.IsNullOrWhiteSpace(recoveryKeyHash))
+            throw new ArgumentException("تجزئة مفتاح الاستعادة مطلوبة.");
+        RecoveryKeyHash = recoveryKeyHash;
+    }
 
     public void InvalidateSessions() => SessionVersion++;
 

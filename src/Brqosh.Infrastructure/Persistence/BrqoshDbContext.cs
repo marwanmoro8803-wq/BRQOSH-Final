@@ -1616,6 +1616,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(u => u.Role).HasConversion<string>().HasMaxLength(16);
             entity.Property(u => u.MfaSecret).HasMaxLength(64);
             entity.Property(u => u.MobilePhoneE164).HasMaxLength(16);
+            entity.Property(u => u.RecoveryKeyHash).HasMaxLength(128);
             entity.HasIndex(u => new { u.CompanyId, u.Username }).IsUnique();
             entity.HasQueryFilter(u => u.DeletedAtUtc == null);
         });

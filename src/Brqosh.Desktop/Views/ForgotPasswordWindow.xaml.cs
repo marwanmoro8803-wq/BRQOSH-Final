@@ -48,6 +48,44 @@ public partial class ForgotPasswordWindow : Window
         }
     }
 
+    /// <summary>
+    /// ‏(security-licensing-tenancy#7) <b>الاستعادةُ بمفتاح المدير</b> — الطريقُ الذي يعمل في الإنتاج بلا قناة رسائل.
+    /// ‏والمفتاحُ يُحرق ويُعرض بدلُه مرّةً قبل أن تُغلق هذه النافذة.
+    /// </summary>
+    private async void OnRecoverWithKey(object sender, RoutedEventArgs e)
+    {
+        if (_busy) return;
+        _busy = true;
+        ErrorText.Visibility = Visibility.Collapsed;
+        SuccessText.Visibility = Visibility.Collapsed;
+
+        try
+        {
+            if (!string.Equals(NewPasswordBox.Password, ConfirmPasswordBox.Password, StringComparison.Ordinal))
+                throw new InvalidOperationException("كلمة المرور وتأكيدها غير متطابقين.");
+            if (string.IsNullOrWhiteSpace(RecoveryKeyBox.Text))
+                throw new InvalidOperationException("أدخل مفتاح الاستعادة.");
+
+            await using var db = AppServices.CreateDb();
+            var next = await new AdminRecoveryKey(db).RecoverAsync(
+                AppServices.CompanyId, UsernameBox.Text, RecoveryKeyBox.Text, NewPasswordBox.Password);
+
+            RecoveryKeyBox.Clear();
+            new RecoveryKeyWindow(next) { Owner = this }.ShowDialog();
+            SuccessText.Text = "تم تعيين كلمة المرور بنجاح. يمكنك تسجيل الدخول الآن.";
+            SuccessText.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            ErrorText.Text = ex.Message;
+            ErrorText.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
     private async void OnResetPassword(object sender, RoutedEventArgs e)
     {
         if (_busy) return;

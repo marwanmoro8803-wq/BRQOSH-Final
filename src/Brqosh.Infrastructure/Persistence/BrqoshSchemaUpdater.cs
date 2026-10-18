@@ -484,6 +484,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("app_users", "MfaLastAcceptedStep", "BIGINT NULL", ct);
         else
             await EnsureSqliteColumnAsync("app_users", "MfaLastAcceptedStep", "INTEGER NULL", ct);
+
+        // ‏(security-licensing-tenancy#7) ‏تجزئةُ مفتاح استعادة المدير — فارغةٌ للتركيبات القائمة حتى يُصدر المديرُ مفتاحاً.
+        if (isPg)
+            await EnsurePgColumnAsync("app_users", "RecoveryKeyHash", "character varying(128) NULL", ct);
+        else
+            await EnsureSqliteColumnAsync("app_users", "RecoveryKeyHash", "TEXT NULL", ct);
     }
 
     private async Task EnsurePosShiftAndRecurringPlanWarehouseColumnsAsync(bool isPg, CancellationToken ct)

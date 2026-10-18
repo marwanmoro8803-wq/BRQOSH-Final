@@ -1,0 +1,37 @@
+<Window x:Class="Brqosh.Desktop.Views.RecoveryKeyWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="مفتاح استعادة المدير"
+        Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
+        Background="{StaticResource BackgroundBrush}"
+        ResizeMode="NoResize">
+    <Border Style="{StaticResource AuthCard}" Margin="28">
+        <StackPanel>
+            <TextBlock Text="مفتاح استعادة المدير"
+                       FontSize="22" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}"/>
+            <TextBlock Text="احفظ هذا المفتاح في مكان آمن خارج هذا الجهاز. إن نسيت كلمة مرور المدير فهو الطريق الوحيد للعودة إلى الدفاتر، ولن يُعرض مرة أخرى."
+                       FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="0,6,0,16"/>
+
+            <TextBox x:Name="KeyBox" IsReadOnly="True" FlowDirection="LeftToRight"
+                     FontFamily="Consolas" FontSize="18" HorizontalContentAlignment="Center"
+                     Style="{StaticResource AppTextBox}" Margin="0,0,0,10"/>
+
+            <Button Content="نسخ المفتاح" Style="{StaticResource SecondaryButton}"
+                    HorizontalAlignment="Stretch" Click="OnCopy"/>
+
+            <CheckBox x:Name="SavedCheck" Margin="0,16,0,0"
+                      Content="حفظت المفتاح في مكان آمن"
+                      Checked="OnSavedChanged" Unchecked="OnSavedChanged"/>
+
+            <Button x:Name="ContinueButton" Content="متابعة"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Stretch" Margin="0,20,0,0"
+                    IsEnabled="False" Click="OnContinue"/>
+        </StackPanel>
+    </Border>
+</Window>

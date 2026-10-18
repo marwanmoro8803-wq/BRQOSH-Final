@@ -27,13 +27,14 @@ public class DatabaseBootstrapService(BrqoshDbContext db)
         if (await Security.LeastPrivilegeDatabaseRole.CanChangeSchemaAsync(db, ct))
             await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
 
+        string? recoveryKey = null;
         if (!string.IsNullOrWhiteSpace(adminUsername) && !string.IsNullOrWhiteSpace(adminPassword))
-            await new UserAuthService(db).CreateInitialAdminAsync(company.Id, adminUsername, adminPassword, ct);
+            recoveryKey = await new UserAuthService(db).CreateInitialAdminAsync(company.Id, adminUsername, adminPassword, ct);
 
         if (!await db.InventoryBalances.AnyAsync(b => b.CompanyId == company.Id, ct))
             await new InventoryService(db).RebuildBalancesFromMovementsAsync(company.Id, ct);
 
-        return new CompanyBootstrapResult(company.Id, company.NameAr, company.Profile);
+        return new CompanyBootstrapResult(company.Id, company.NameAr, company.Profile, recoveryKey);
     }
 
     /// <summary>
@@ -112,7 +113,11 @@ public class DatabaseBootstrapService(BrqoshDbContext db)
 /// على قاعدةٍ فيها منشأةٌ يُعيد <see cref="DatabaseInitializer"/> المنشأةَ القائمة ويتجاهل النظامَ المطلوب،
 /// فالمطلوبُ اختيارُ معالجِ هذا الجهاز وحدَه. ويتبنّاه المُقلِع فتُبنى القوائمُ لنظام المنشأة.
 /// </param>
-public record CompanyBootstrapResult(long CompanyId, string CompanyName, BusinessProfile Profile);
+/// <summary>
+/// نتيجةُ التهيئة — و<paramref name="RecoveryKey"/> مفتاحُ استعادة المدير الأوّل <b>يُعرض مرّةً ثمّ لا يُعاد</b>
+/// (<c>security-licensing-tenancy#7</c>)؛ عدمٌ متى لم يُنشأ مدير.
+/// </summary>
+public record CompanyBootstrapResult(long CompanyId, string CompanyName, BusinessProfile Profile, string? RecoveryKey = null);
 
 /// <summary>
 /// هويّةُ القاعدة كما وُجدت. <see cref="SchemaPresent"/> يعني وجودَ مخطَّط BRQOSH؛

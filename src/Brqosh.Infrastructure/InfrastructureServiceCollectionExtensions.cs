@@ -171,6 +171,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<OrganizationProvisioningService>();
         services.AddScoped<IOrganizationProvisioningService>(sp => sp.GetRequiredService<OrganizationProvisioningService>());
         services.AddScoped<UserAuthService>();
+        services.AddScoped<AdminRecoveryKey>();   // (security-licensing-tenancy#7)
         services.AddScoped<UserManagementService>();
         services.AddScoped<DatabaseBootstrapService>();
 

@@ -90,19 +90,26 @@ public class UserAuthService(BrqoshDbContext db)
             .Where(u => u.Id == userId && (u.MfaLastAcceptedStep == null || u.MfaLastAcceptedStep < step))
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.MfaLastAcceptedStep, step)) == 1;
 
-    public async Task CreateInitialAdminAsync(long companyId, string username, string password,
+    /// <summary>
+    /// المديرُ الأوّل — <b>ومعه مفتاحُ استعادته يُعاد مرّةً</b> (<c>security-licensing-tenancy#7</c>) ليُعرض للمالك فيحفظه؛
+    /// وعدمٌ إن كانت المنشأةُ مأهولةً فلا يُنشأ شيء.
+    /// </summary>
+    public async Task<string?> CreateInitialAdminAsync(long companyId, string username, string password,
         CancellationToken ct = default)
     {
         if (await db.AppUsers.AnyAsync(u => u.CompanyId == companyId, ct))
-            return;
+            return null;
 
         if (!PasswordPolicy.IsValid(password, out var error))
             throw new ArgumentException(error);
 
         var normalized = username.Trim().ToLowerInvariant();
-        db.AppUsers.Add(AppUser.Create(companyId, normalized, HashPassword(password),
-            "مدير النظام", UserRole.Administrator, mustChangePassword: true));
+        var admin = AppUser.Create(companyId, normalized, HashPassword(password),
+            "مدير النظام", UserRole.Administrator, mustChangePassword: true);
+        var recoveryKey = AdminRecoveryKey.IssueFor(admin);
+        db.AppUsers.Add(admin);
         await db.SaveChangesAsync(ct);
+        return recoveryKey;
     }
 
     public async Task ChangePasswordAsync(long userId, string currentPassword, string newPassword,
