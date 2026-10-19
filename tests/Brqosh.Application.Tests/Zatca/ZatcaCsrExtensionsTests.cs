@@ -124,7 +124,7 @@ public class ZatcaCsrExtensionsTests : IDisposable
         // ‏المنحنى P-256 شرطٌ في المُوقِّع كما في الهيئة — تبديلُه يكسر التوقيع لا الـCSR.
         Assert.Equal("1.2.840.10045.2.1", request.PublicKey.Oid.Value);
         using var key = ECDsa.Create();
-        key.ImportFromPem(File.ReadAllText(material.PrivateKeyPath));
+        key.ImportFromPem(Brqosh.Infrastructure.Zatca.ZatcaKeyFile.ReadPem(material.PrivateKeyPath));
         Assert.Equal(256, key.KeySize);
     }
 

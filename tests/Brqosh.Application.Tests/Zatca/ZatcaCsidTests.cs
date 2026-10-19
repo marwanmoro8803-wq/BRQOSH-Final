@@ -56,7 +56,7 @@ public class ZatcaCsidTests
             .GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
 
         using var key = ECDsa.Create();
-        key.ImportFromPem(File.ReadAllText(material.PrivateKeyPath));
+        key.ImportFromPem(ZatcaKeyFile.ReadPem(material.PrivateKeyPath));
 
         var oid = key.ExportParameters(includePrivateParameters: false).Curve.Oid.Value;
 
@@ -83,19 +83,43 @@ public class ZatcaCsidTests
     ///
     /// <para><b>وهذا الاختبارُ يُثبّت الواقعَ ليُرى</b>: يسقط يومَ يُشفَّر — فيُتّخذ القرارُ
     /// عن قصدٍ ويُحدَّث معه كتيّبُ الاستعادة، <b>ولا ينزلق النظامُ إلى حالةٍ لا تُستعاد</b>.</para>
+    ///
+    /// <para><b>(security-licensing-tenancy#3 · قرارُ المالك 2026-10-18) واتُّخذ القرار:</b> DPAPI <b>للجهاز</b>
+    /// (<c>ZatcaKeyFile</c>) — يقرؤه كلُّ مستخدمٍ على هذا الجهاز، ولا يُقرأ منسوخاً على غيره؛ والاستعادةُ على جهازٍ جديدٍ
+    /// تعني إعادةَ التسجيل لدى الهيئة، وهي مقبولةٌ ومكتوبةٌ في الكتيّب. فانقلب الاختبارُ يُثبّت الحالةَ الجديدة.</para>
     /// </summary>
     [Fact]
-    public void TheStampPrivateKey_IsStoredInPlainText_NotProtected()
+    public void TheStampPrivateKey_IsSealedForTheMachine_AndNeverWrittenAsPem()
     {
         var material = new ZatcaCsidOnboardingService()
             .GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
 
         var onDisk = File.ReadAllText(material.PrivateKeyPath);
 
-        Assert.StartsWith("-----BEGIN EC PRIVATE KEY-----", onDisk.TrimStart(), StringComparison.Ordinal);
+        Assert.StartsWith(ZatcaKeyFile.Header, onDisk, StringComparison.Ordinal);
+        Assert.DoesNotContain("PRIVATE KEY", onDisk, StringComparison.Ordinal);
+        Assert.StartsWith("-----BEGIN EC PRIVATE KEY-----", ZatcaKeyFile.ReadPem(material.PrivateKeyPath).TrimStart(),
+            StringComparison.Ordinal);
+    }
 
-        // ‏**وشاهدُ نفي**: لو كان محميّاً لَحمل بادئةَ `LocalSecretProtector`.
-        Assert.False(Brqosh.Infrastructure.Security.LocalSecretProtector.IsProtected(onDisk));
+    /// <summary>(security-licensing-tenancy#3) <b>التركيبةُ القائمةُ لا تبقى على النصّ الصريح</b> — أوّلُ قراءةٍ تشفّره في مكانه.</summary>
+    [Fact]
+    public void ALegacyPlaintextKey_IsSealedInPlace_OnFirstRead()
+    {
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var pem = ecdsa.ExportECPrivateKeyPem();
+        var path = Path.Combine(Path.GetTempPath(), $"brqosh-legacy-{Guid.NewGuid():N}.key");
+        File.WriteAllText(path, pem);
+        try
+        {
+            Assert.Equal(pem, ZatcaKeyFile.ReadPem(path));
+            Assert.True(ZatcaKeyFile.IsSealed(path));
+            Assert.Equal(pem, ZatcaKeyFile.ReadPem(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]

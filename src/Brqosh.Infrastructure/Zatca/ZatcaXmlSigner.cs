@@ -44,7 +44,8 @@ public static class ZatcaXmlSigner
 
     public static ZatcaSignResult SignWithResult(byte[] xmlBytes, string certPath, string keyPath)
     {
-        var cert = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+        // ‏(security-licensing-tenancy#3) ‏المفتاحُ يُفكّ تشفيرُه إلى الذاكرة وحدَها — والملفُّ القديمُ الصريحُ يُشفَّر في مكانه.
+        var cert = X509Certificate2.CreateFromPem(File.ReadAllText(certPath), ZatcaKeyFile.ReadPem(keyPath));
 
         // ZATCA يتطلب EC P-256 حصراً
         var ecdsa = cert.GetECDsaPrivateKey()

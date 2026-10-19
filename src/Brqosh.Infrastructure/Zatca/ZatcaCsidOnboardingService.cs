@@ -84,7 +84,8 @@ public class ZatcaCsidOnboardingService
         var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         // ‏(ح-١٣٧) مفتاحُ التجديد يُكتب جانباً: المفتاحُ الحاليُّ يوقّع الفواتيرَ حتى تقبل الهيئةُ الجديد.
         var privateKeyPath = Path.Combine(dir, forRenewal ? RenewingKeyFile : "private.key");
-        File.WriteAllText(privateKeyPath, ecdsa.ExportECPrivateKeyPem());
+        // ‏(security-licensing-tenancy#3) ‏مشفَّراً للجهاز — لا يمسّ القرصَ PEM صريحٌ قطّ.
+        ZatcaKeyFile.Write(privateKeyPath, ecdsa.ExportECPrivateKeyPem());
 
         // ‏معرّفُ وحدة الإصدار (EGS) كما تتوقّعه الهيئة: 1-اسم الحلّ|2-إصدارُه|3-معرّفٌ فريد.
         var serial = $"1-{SanitizeDn(solutionName)}|2-1.0|3-{Guid.NewGuid()}";
