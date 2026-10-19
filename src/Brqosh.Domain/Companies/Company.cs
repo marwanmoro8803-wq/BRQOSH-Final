@@ -58,6 +58,14 @@ public class Company
 
     public CompanyOperationalMode OperationalMode { get; private set; } = CompanyOperationalMode.Active;
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · <c>accounting-core#6</c> · قرارُ المالك 2026-10-18) <b>حدُّ اعتماد القيد اليدويّ</b> — قيدٌ يدويٌّ
+    /// ‏مجموعُ مدينه فوقه لا يُرحَّل إلّا بسلسلة موافقاتٍ مكتملة، ومعتمدُها غيرُ منشئه. والافتراضُ ١٠٬٠٠٠ ريال يغيّره المدير.
+    /// </summary>
+    public decimal ManualJournalApprovalThreshold { get; private set; } = DefaultManualJournalApprovalThreshold;
+
+    public const decimal DefaultManualJournalApprovalThreshold = 10_000m;
+
     public DateTime CreatedAtUtc { get; private set; }
 
     // EF Core
@@ -184,6 +192,14 @@ public class Company
         CompanyGroupId = groupId is > 0 ? groupId : null;
 
     public void SetOperationalMode(CompanyOperationalMode mode) => OperationalMode = mode;
+
+    /// <summary>حدُّ اعتماد القيد اليدويّ — صفرٌ يعني أنّ كلَّ قيدٍ يدويٍّ يُعتمد، ولا سالب.</summary>
+    public void SetManualJournalApprovalThreshold(decimal threshold)
+    {
+        if (threshold < 0m)
+            throw new Accounting.AccountingException("حد اعتماد القيد اليدوي لا يكون سالباً.");
+        ManualJournalApprovalThreshold = Math.Round(threshold, 2, MidpointRounding.AwayFromZero);
+    }
 
     /// <summary>تغيير ملف العمل — يُستخدم في تدقيق UiAudit متعدد الملفات.</summary>
     public void UpdateBusinessProfile(BusinessProfile profile) => Profile = profile;

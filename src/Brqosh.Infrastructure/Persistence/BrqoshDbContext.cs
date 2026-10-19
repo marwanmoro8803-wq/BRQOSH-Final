@@ -133,6 +133,9 @@ public class BrqoshDbContext : DbContext
         {
             entity.ToTable("companies");
             entity.Property(c => c.NameAr).HasMaxLength(256).IsRequired();
+            // ‏(accounting-core#6) ‏الافتراضُ في الكائن وفي DDL وحدَهما — لا `HasDefaultValue`: معه يُسقط EF عند الإدراج صفراً يُضبط قبل الحفظ الأوّل
+            // ‏(صفرُ CLR) فتضع القاعدةُ ١٠٬٠٠٠ مكانه صامتة.
+            entity.Property(c => c.ManualJournalApprovalThreshold).HasPrecision(18, 2);
             entity.Property(c => c.NameEn).HasMaxLength(256);
             entity.Property(c => c.AddressAr).HasMaxLength(512);
             entity.Property(c => c.LogoFilePath).HasMaxLength(512);

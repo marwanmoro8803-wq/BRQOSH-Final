@@ -865,6 +865,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
         await EnsurePgColumnAsync("companies", "BaseCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
         await EnsurePgColumnAsync("companies", "FunctionalCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+        // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ — والقائمةُ تأخذ افتراضَ المنتج.
+        await EnsurePgColumnAsync("companies", "ManualJournalApprovalThreshold", "NUMERIC(18,2) NOT NULL DEFAULT 10000", ct);
         await EnsurePgColumnAsync("companies", "NameEn", "character varying(256) NULL", ct);
         await EnsurePgColumnAsync("companies", "AddressAr", "character varying(512) NULL", ct);
         await EnsurePgColumnAsync("companies", "LogoFilePath", "character varying(512) NULL", ct);
@@ -969,6 +971,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "BaseCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "FunctionalCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
+        await EnsureSqliteColumnAsync("companies", "ManualJournalApprovalThreshold", "TEXT NOT NULL DEFAULT '10000'", ct);   // ‏(accounting-core#6)
         await EnsureSqliteColumnAsync("companies", "NameEn", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "AddressAr", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "LogoFilePath", "TEXT NULL", ct);

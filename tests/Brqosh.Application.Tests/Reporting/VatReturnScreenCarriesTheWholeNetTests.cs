@@ -255,6 +255,7 @@ public class VatReturnScreenCarriesTheWholeNetTests : IDisposable
     {
         _companyId = (await new DatabaseInitializer(_db)
             .InitializeAsync("منشأة", "310123456700099", BusinessProfile.General)).Id;
+        ManualJournals.LiftApprovalThreshold(_db);   // ‏(accounting-core#6) قيودٌ يدويّةٌ كبيرةٌ لسببٍ غيرِ الاعتماد — منشأةٌ بمستخدمٍ واحد
 
         var customer = Customer.Create(_companyId, "عميل", "311111111100003");
         var supplier = Supplier.Create(_companyId, "مورّد", "312233344400003");

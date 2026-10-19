@@ -180,6 +180,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<PurchaseOrderWorkflowService>();
         services.AddScoped<PaymentVoucherWorkflowService>();
         services.AddScoped<ManualJournalEntryWorkflowService>();
+        services.AddScoped<ManualJournalApprovalPolicy>();   // (accounting-core#6)
         services.AddScoped<IMasterDataGovernanceService, MasterDataGovernanceService>();
         services.AddScoped<ICashFlowForecastService, CashFlowForecastService>();
         services.AddScoped<IPaymentRunService, PaymentRunService>();

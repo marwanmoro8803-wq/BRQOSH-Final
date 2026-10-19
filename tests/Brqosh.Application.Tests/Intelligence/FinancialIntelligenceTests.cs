@@ -67,6 +67,7 @@ public class FinancialIntelligenceTests : IDisposable
     {
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("شركة شذوذ", "310123456700003", BusinessProfile.Retail);
+        ManualJournals.LiftApprovalThreshold(_db);   // ‏(accounting-core#6) قيودٌ يدويّةٌ كبيرةٌ لسببٍ غيرِ الاعتماد — منشأةٌ بمستخدمٍ واحد
         var cash = await _db.Accounts.SingleAsync(a => a.CompanyId == company.Id && a.Code == "1101");
         var capital = await _db.Accounts.SingleAsync(a => a.CompanyId == company.Id && a.Code == "3101");
 

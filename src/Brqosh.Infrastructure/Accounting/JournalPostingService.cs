@@ -24,6 +24,8 @@ public class JournalPostingService(BrqoshDbContext db)
             if (entry.BranchId is null)
                 entry.AssignBranch(await new BranchAssignmentService(db)
                 .ResolveBranchIdAsync(entry.CompanyId, BranchSessionContext.PreferredBranchId));
+            if (entry.IsManual)
+                await EnsureApprovalAboveThresholdAsync(entry);
             if (entry.IsManual && entry.WorkflowInstanceId is not null)
                 await new ManualJournalEntryWorkflowService(db, new WorkflowEngine(db))
                     .EnsureWorkflowApprovedAsync(entry);
@@ -49,6 +51,30 @@ public class JournalPostingService(BrqoshDbContext db)
 
             return entry;
         });
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>accounting-core#6</c> · قرارُ المالك 2026-10-18) <b>القيدُ اليدويُّ فوق حدّ المنشأة لا يُرحَّل بلا اعتماد.</b>
+    /// </summary>
+    /// <remarks>
+    /// <para><b>ما كان:</b> سلسلةُ موافقات القيد اليدويّ موجودة (محاسبٌ ثمّ مدير، ولا يعتمد المرءُ ما قدّمه) <b>لكنّها اختياريّة</b> —
+    /// تُفحص فقط إن أرسل المنشئُ القيدَ إليها؛ فمن يملك صلاحيةَ الترحيل يُرحّل أيَّ مبلغٍ وحدَه. واختار المالكُ اعتماداً ثانياً
+    /// <b>فوق حدٍّ</b> يضبطه: ما دونه يُرحَّل مباشرةً، وما فوقه لا يُرحَّل إلّا بسلسلةٍ مكتملة (يفحصها <c>EnsureWorkflowApprovedAsync</c> بعده).</para>
+    /// <para>والمقياسُ مجموعُ المدين بعملة الأستاذ — وهو مبلغُ القيد نفسُه، يساوي مجموعَ الدائن في كلّ قيدٍ متوازن.</para>
+    /// </remarks>
+    private async Task EnsureApprovalAboveThresholdAsync(JournalEntry entry)
+    {
+        if (entry.WorkflowInstanceId is not null)
+            return;
+
+        var threshold = await db.Companies
+            .Where(c => c.Id == entry.CompanyId)
+            .Select(c => c.ManualJournalApprovalThreshold)
+            .SingleAsync();
+        var amount = entry.Lines.Sum(l => l.Debit);
+        if (amount > threshold)
+            throw new AccountingException(
+                $"القيد اليدوي بمبلغ {amount:N2} فوق حد الاعتماد {threshold:N2} — أرسله للموافقة قبل ترحيله.");
+    }
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-١٥٣ · <c>accounting-core#6</c>) <b>القيدُ اليدويُّ لا يمسّ حسابَ مراقبةٍ يُبنى من دفترٍ مساعد.</b>

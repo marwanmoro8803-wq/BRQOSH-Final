@@ -486,6 +486,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<decimal>("ManualJournalApprovalThreshold")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("NameAr")
                         .IsRequired()
                         .HasMaxLength(256)

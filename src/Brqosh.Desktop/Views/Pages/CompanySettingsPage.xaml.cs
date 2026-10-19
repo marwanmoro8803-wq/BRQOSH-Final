@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -7,6 +8,7 @@ using Brqosh.Desktop.Ui;
 using Brqosh.Desktop.Views;
 using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Inventory;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Reporting;
@@ -112,6 +114,7 @@ public partial class CompanySettingsPage : UserControl
 
         var idx = company.CostingMethod == InventoryCostingMethod.Fifo ? 1 : 0;
         CostingMethodBox.SelectedIndex = idx;
+        ManualJournalThresholdBox.Text = company.ManualJournalApprovalThreshold.ToString("0.##", CultureInfo.InvariantCulture);
         BaseCurrencyBox.Text = company.BaseCurrencyCode;
         FunctionalCurrencyBox.Text = company.FunctionalCurrencyCode;
 
@@ -229,6 +232,12 @@ public partial class CompanySettingsPage : UserControl
             await _shell.SwitchToCompanyAsync(companyId);
     }
 
+    /// <summary>(accounting-core#6) حدُّ الاعتماد كما كُتب — رقمٌ غيرُ سالب، وإلّا رُفض الحفظ باسمه.</summary>
+    private decimal ReadThreshold() =>
+        NumericInput.TryParseNonNegative(ManualJournalThresholdBox.Text, out var value)
+            ? value
+            : throw new InvalidOperationException("حد اعتماد القيد اليدوي رقم غير سالب.");
+
     private async void OnSave(object sender, RoutedEventArgs e)
     {
         try
@@ -285,6 +294,14 @@ public partial class CompanySettingsPage : UserControl
                 {
                 using var facade = new DesktopAccountingFacade();
                 await facade.GetService<CostingMethodService>().ChangeAsync(company.Id, opt.Method);
+            }
+
+            // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ ضابطٌ رقابيّ — يمرّ بخدمةٍ تشترط المديرَ وتُدقّق التغيير، ولا يُحفظ بالسنّارة.
+            var threshold = ReadThreshold();
+            if (company.ManualJournalApprovalThreshold != threshold)
+            {
+                using var facade = new DesktopAccountingFacade();
+                await facade.GetService<ManualJournalApprovalPolicy>().SetThresholdAsync(company.Id, threshold);
             }
 
             _pendingLogoSourcePath = null;

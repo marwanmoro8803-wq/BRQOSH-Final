@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Accounting;
+﻿using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Security;
@@ -44,6 +45,7 @@ public class CashFlowStatementAccuracyTests : IDisposable
             .InitializeAsync("شركة تدفق", "310123456700003", BusinessProfile.General);
         _companyId = company.Id;
         await new BrqoshSchemaUpdater(_db).ApplyAsync();
+        ManualJournals.LiftApprovalThreshold(_db);   // ‏(accounting-core#6) قيودٌ يدويّةٌ كبيرةٌ لسببٍ غيرِ الاعتماد — منشأةٌ بمستخدمٍ واحد
     }
 
     private async Task<Account> AccountAsync(string code) =>

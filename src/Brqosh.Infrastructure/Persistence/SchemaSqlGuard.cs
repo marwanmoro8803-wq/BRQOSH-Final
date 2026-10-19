@@ -49,6 +49,7 @@ internal static class SchemaSqlGuard
         // (CEEF-229 · م2-٢٤) لحظةُ الترحيل.
         "timestamp with time zone NULL",
         "NUMERIC(18,2) NOT NULL DEFAULT 0",
+        "NUMERIC(18,2) NOT NULL DEFAULT 10000",   // (accounting-core#6)
         // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر — مئةٌ بأربعة أرقامٍ عشرية.
         "NUMERIC(9,4) NOT NULL DEFAULT 0",
         // (CEEF-230 · ط1-٤) ‏سعرُ الصرف — افتراضُه واحدٌ لا صفر: صفرٌ يُصفّر كلَّ مبلغ.
@@ -98,6 +99,7 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT '11.75'",
         "TEXT NOT NULL DEFAULT '0.5'",
         "TEXT NOT NULL DEFAULT '2025-07-01'",
+        "TEXT NOT NULL DEFAULT '10000'",   // (accounting-core#6)
         "INTEGER NOT NULL DEFAULT 4",
     };
 

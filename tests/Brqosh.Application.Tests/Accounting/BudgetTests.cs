@@ -231,5 +231,6 @@ public class BudgetTests : IDisposable
         var company = await new DatabaseInitializer(_db)
             .InitializeAsync("منشأة الموازنة", "310123456700066", BusinessProfile.General);
         _companyId = company.Id;
+        ManualJournals.LiftApprovalThreshold(_db);   // ‏(accounting-core#6) قيودٌ يدويّةٌ كبيرةٌ لسببٍ غيرِ الاعتماد — منشأةٌ بمستخدمٍ واحد
     }
 }

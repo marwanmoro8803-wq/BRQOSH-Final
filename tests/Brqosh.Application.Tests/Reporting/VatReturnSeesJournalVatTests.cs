@@ -51,6 +51,7 @@ public class VatReturnSeesJournalVatTests : IDisposable
         _companyId = new DatabaseInitializer(_db)
             .InitializeAsync("منشأة", "310123456700099", BusinessProfile.General)
             .GetAwaiter().GetResult().Id;
+        ManualJournals.LiftApprovalThreshold(_db);   // ‏(accounting-core#6) قيودٌ يدويّةٌ كبيرةٌ لسببٍ غيرِ الاعتماد — منشأةٌ بمستخدمٍ واحد
 
         var customer = Customer.Create(_companyId, "عميل", "311111111100003");
         _db.Customers.Add(customer);

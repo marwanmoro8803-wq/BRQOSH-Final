@@ -1,4 +1,5 @@
-﻿using Brqosh.Domain.Accounting;
+﻿using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Security;
@@ -43,6 +44,7 @@ public class FixedAssetDisposalTests : IDisposable
             .InitializeAsync("شركة تجارية", "310123456700099", BusinessProfile.General)
             .GetAwaiter().GetResult();
         _companyId = company.Id;
+        ManualJournals.LiftApprovalThreshold(_db);   // ‏(accounting-core#6) قيودٌ يدويّةٌ كبيرةٌ لسببٍ غيرِ الاعتماد — منشأةٌ بمستخدمٍ واحد
 
         _assetAccountId = _db.Accounts.Single(a => a.CompanyId == _companyId && a.Code == "1203").Id;
         _accumAccountId = _db.Accounts.Single(a => a.CompanyId == _companyId && a.Code == "1207").Id;

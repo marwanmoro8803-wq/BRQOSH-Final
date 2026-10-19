@@ -125,6 +125,11 @@
                     <TextBlock Text="طريقة تكلفة المخزون *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="CostingMethodBox" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
 
+                    <TextBlock Text="حد اعتماد القيد اليدوي (ريال)" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="ManualJournalThresholdBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+                    <TextBlock Text="القيد اليدوي فوق هذا المبلغ لا يُرحَّل إلا بعد موافقة مستخدم آخر. يغيّره المدير وحده."
+                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+
                     <TextBlock Text="عملة العرض (ISO) *" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="BaseCurrencyBox" Style="{StaticResource AppTextBox}" MaxLength="3" Margin="0,0,0,16"/>
 
