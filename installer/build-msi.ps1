@@ -143,6 +143,37 @@ $Ledger = Join-Path $PSScriptRoot "shipped-versions.txt"
 # ‏(ح-٧٣) ‏البوّابةُ في ملفٍّ يُشغّله `verify-gates.ps1` أيضاً — وعلى دفترٍ مؤقّتٍ هناك لا على هذا.
 & (Join-Path $PSScriptRoot "..\scripts\assert-version-not-shipped.ps1") -Version $ProductVersion -Ledger $Ledger
 
+# ‏(data-upgrade-performance#6 · installer-deployment-ops#10 · قرارُ المالك 2026-10-18) ‏**أدواتُ النسخ تُشحن مع البرنامج.**
+#
+# ‏كان النسخُ المجدولُ يعمل فقط حيث ثُبِّت PostgreSQL يدويّاً، والمُنصِّبُ لا يشحن الأدواتِ ولا يفحصها. فتُنسخ هنا إلى
+# ‏`pgtools` تحت الحمولة — و`Files Include="**"` يحصدها — من تثبيت PostgreSQL على جهاز البناء (ترخيصُه يسمح بإعادة
+# ‏التوزيع)، **ومعها إشعاراتُ ترخيص المكتبات كما شحنها مصدرُها حرفاً**. والقائمةُ إغلاقُ جداول الاستيراد لـpg_dump
+# ‏وpg_restore (مقروءةٌ من ملفّاتها)، و`VCRUNTIME140.dll` محلّيٌّ بجوارها لأنّ ويندوز لا يشحنه. **ولا تُوقَّع بمفتاحنا**:
+# ‏الحمولةُ الموقَّعةُ `Brqosh.*` في الجذر وحدَه، وثنائيّاتُ PostgreSQL تحمل توقيعَ ناشرها.
+$PgBin = if ($env:BRQOSH_PG_BIN) { $env:BRQOSH_PG_BIN } else { "C:\Program Files\PostgreSQL\17\bin" }
+$PgToolFiles = @(
+    'pg_dump.exe', 'pg_restore.exe', 'libpq.dll', 'libintl-9.dll', 'libiconv-2.dll', 'libwinpthread-1.dll',
+    'liblz4.dll', 'libzstd.dll', 'libssl-3-x64.dll', 'libcrypto-3-x64.dll'
+)
+$PgNotices = @('server_license.txt', 'commandlinetools_3rd_party_licenses.txt')
+$PgToolsDir = Join-Path $PublishDir "pgtools"
+$missingPg = @($PgToolFiles | Where-Object { -not (Test-Path (Join-Path $PgBin $_)) }) +
+             @($PgNotices | Where-Object { -not (Test-Path (Join-Path (Split-Path $PgBin -Parent) $_)) })
+if ($missingPg.Count -gt 0) {
+    Write-Host "أدوات PostgreSQL ناقصة في $PgBin — لا حزمةَ بلا أدوات النسخ: $($missingPg -join ', ')" -ForegroundColor Red
+    exit 1
+}
+$pgVersion = & (Join-Path $PgBin 'pg_dump.exe') --version
+if ($pgVersion -notmatch '\) (\d+)\.' -or [int]$Matches[1] -lt 17) {
+    Write-Host "pg_dump في $PgBin إصدارُه '$pgVersion' — المشحونُ 17 فما فوق (أقدمُ من الخادم يرفضه PostgreSQL)." -ForegroundColor Red
+    exit 1
+}
+New-Item -ItemType Directory -Force $PgToolsDir | Out-Null
+foreach ($f in $PgToolFiles) { Copy-Item (Join-Path $PgBin $f) $PgToolsDir -Force }
+foreach ($f in $PgNotices) { Copy-Item (Join-Path (Split-Path $PgBin -Parent) $f) $PgToolsDir -Force }
+Copy-Item (Join-Path $env:SystemRoot 'System32\vcruntime140.dll') $PgToolsDir -Force
+Write-Host "أدوات النسخ: $pgVersion ⟵ $PgToolsDir" -ForegroundColor Cyan
+
 # (CEEF-236 · ر-ك · م-٣٢) ‏**‏-arch x64 — والحزمةُ كانت تُبنى ٣٢-بت بالافتراض.**
 #
 # ‏`wix build` يبني x86 ما لم يُقَل غيرُه، **وحزمةٌ ٣٢-بت يُعيد MSI فيها توجيهَ
