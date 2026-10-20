@@ -112,7 +112,9 @@ public class ADepreciationRunCanBeReversedTests : IDisposable
             .Where(a => a.CompanyId == _companyId && a.Code.StartsWith("1207"))
             .Select(a => a.Id).FirstAsync();
 
-        var asset = FixedAsset.Create(_companyId, "FA-H92", "معدات", new DateOnly(2026, 1, 10), 12_000m, 0m, 12, assetAcct, depAcct);
+        // ‏(treasury-payroll-assets#11) ‏الاقتناءُ أوّلَ الشهر كي تبقى الأشهرُ كاملةً — فشهرُ الاقتناء يُنسَّب بأيّامه منذ قرار المالك 2026-10-20،
+        // ‏وهذا الاختبارُ يقيس العكسَ لا التنسيب (المقيسَ في `ADepreciationStartsOnItsDayTests`).
+        var asset = FixedAsset.Create(_companyId, "FA-H92", "معدات", new DateOnly(2026, 1, 1), 12_000m, 0m, 12, assetAcct, depAcct);
         _db.FixedAssets.Add(asset);
         await _db.SaveChangesAsync();
         return asset;

@@ -45,7 +45,8 @@ public class DepreciationService(BrqoshDbContext db)
                     .FirstOrDefaultAsync(token);
 
                 var months = asset.MonthsDue(lastDepreciated, runDate);
-                var amount = asset.ApplyDepreciation(months);
+                // ‏(treasury-payroll-assets#11 · قرارُ المالك 2026-10-20) ‏وشهرُ الاقتناء بأيّامه لا كاملاً.
+                var amount = asset.ApplyDepreciationDue(lastDepreciated, runDate);
                 if (amount <= 0) continue;
 
                 // ‏**والاستدراكُ قيدٌ واحدٌ بتاريخ التشغيل** — أوّلُ فترةٍ مفتوحة، مذهبُ SAP وOracle؛ والفتراتُ التي

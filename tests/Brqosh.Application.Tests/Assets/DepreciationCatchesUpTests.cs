@@ -18,7 +18,8 @@ namespace Brqosh.Application.Tests.Assets;
 ///
 /// <para>‏<b>والإصلاح</b>: تشغيلُ شهرٍ يُحمّل <b>كلَّ شهرٍ مستحقٍّ</b> من آخر شهرٍ أُهلك — أو من شهر الاقتناء — حتى
 /// شهر التشغيل، <b>بقيدٍ واحدٍ بتاريخ التشغيل</b> (استدراكٌ في أوّل فترةٍ مفتوحة، مذهبُ SAP وOracle).
-/// <b>واتّفاقيّةُ الشهر الكامل</b> لشهر الاقتناء باقيةٌ كما هي — سياسةٌ محاسبيّةٌ لا تُغيَّر هنا.</para>
+/// <b>واتّفاقيّةُ الشهر الكامل</b> لشهر الاقتناء صارت <b>بالأيّام</b> (قرارُ المالك 2026-10-20 — <c>ADepreciationStartsOnItsDayTests</c>)؛
+/// فأصولُ هذا الصنف تُقتنى في أوّل الشهر، حيث الشهرُ الأوّلُ كاملٌ بالسياستين، فيبقى القياسُ هنا قياسَ الاستدراك وحدَه.</para>
 /// </summary>
 public class DepreciationCatchesUpTests : IDisposable
 {
@@ -62,7 +63,7 @@ public class DepreciationCatchesUpTests : IDisposable
     [Fact]
     public async Task AMissedMonth_IsCaughtUpByTheNextRun()
     {
-        var asset = await AssetAsync(new DateOnly(2026, 1, 10), 12_000m);   // ‏ألفٌ في الشهر
+        var asset = await AssetAsync(new DateOnly(2026, 1, 1), 12_000m);   // ‏ألفٌ في الشهر
 
         await RunAsync(new DateOnly(2026, 1, 31));
         await RunAsync(new DateOnly(2026, 3, 31));                          // ‏فبراير فات
@@ -76,7 +77,7 @@ public class DepreciationCatchesUpTests : IDisposable
     [Fact]
     public async Task TheFirstRun_CoversEveryMonthSinceAcquisition()
     {
-        var asset = await AssetAsync(new DateOnly(2026, 1, 10), 12_000m);
+        var asset = await AssetAsync(new DateOnly(2026, 1, 1), 12_000m);
 
         await RunAsync(new DateOnly(2026, 3, 31));
 
@@ -87,7 +88,7 @@ public class DepreciationCatchesUpTests : IDisposable
     [Fact]
     public async Task TheCatchUp_StopsAtTheDepreciableBase()
     {
-        var asset = await AssetAsync(new DateOnly(2026, 1, 10), 1_200m, salvage: 200m);   // ‏ألفٌ على ١٢ شهراً = ٨٣٫٣٣
+        var asset = await AssetAsync(new DateOnly(2026, 1, 1), 1_200m, salvage: 200m);   // ‏ألفٌ على ١٢ شهراً = ٨٣٫٣٣
 
         await RunAsync(new DateOnly(2027, 6, 30));   // ‏ثمانيةَ عشرَ شهراً مستحقّة = ١٬٥٠٠ لولا الحدّ
 
@@ -98,7 +99,7 @@ public class DepreciationCatchesUpTests : IDisposable
     [Fact]
     public async Task ConsecutiveRuns_ChargeOneMonthEach()
     {
-        var asset = await AssetAsync(new DateOnly(2026, 1, 10), 12_000m);
+        var asset = await AssetAsync(new DateOnly(2026, 1, 1), 12_000m);
 
         await RunAsync(new DateOnly(2026, 1, 31));
         await RunAsync(new DateOnly(2026, 2, 28));
@@ -111,7 +112,7 @@ public class DepreciationCatchesUpTests : IDisposable
     [Fact]
     public async Task NoMonth_IsChargedTwice()
     {
-        var asset = await AssetAsync(new DateOnly(2026, 1, 10), 12_000m);
+        var asset = await AssetAsync(new DateOnly(2026, 1, 1), 12_000m);
 
         await RunAsync(new DateOnly(2026, 3, 31));
         var again = await RunAsync(new DateOnly(2026, 3, 31));

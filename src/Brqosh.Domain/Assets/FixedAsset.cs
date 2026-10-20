@@ -347,16 +347,47 @@ public class FixedAsset : IBranchScoped
     ///
     /// <para>(ح-١٠٠) <b>ولأصلٍ قائمٍ قبل الدفاتر فمن الشهر التالي لـ<see cref="DepreciatedThrough"/></b> — ما أُهلك قبلها لا يُهلَك ثانيةً.</para>
     /// </summary>
-    public int MonthsDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
-    {
-        static int Index(DateOnly d) => d.Year * 12 + d.Month;
+    public int MonthsDue(DateOnly? lastDepreciatedMonth, DateOnly runDate) =>
+        Math.Max(0, MonthIndex(runDate) - FirstDueMonth(lastDepreciatedMonth) + 1);
 
-        var first = Index(AcquisitionDate);
+    private static int MonthIndex(DateOnly d) => d.Year * 12 + d.Month;
+
+    private int FirstDueMonth(DateOnly? lastDepreciatedMonth)
+    {
+        var first = MonthIndex(AcquisitionDate);
         if (DepreciatedThrough is { } through)
-            first = Math.Max(first, Index(through) + 1);
+            first = Math.Max(first, MonthIndex(through) + 1);
         if (lastDepreciatedMonth is { } last)
-            first = Math.Max(first, Index(last) + 1);
-        return Math.Max(0, Index(runDate) - first + 1);
+            first = Math.Max(first, MonthIndex(last) + 1);
+        return first;
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>treasury-payroll-assets#11</c> · قرارُ المالك 2026-10-20) <b>إهلاكُ تشغيلٍ — وشهرُ الاقتناء بأيّامه.</b>
+    ///
+    /// <para><b>ما كان:</b> اتّفاقيّةُ الشهر الكامل — أصلٌ يُقتنى في التاسعِ والعشرين يُحمَّل شهرَه كلَّه. <b>والآن</b>: إن دخل شهرُ
+    /// الاقتناء هذا التشغيلَ حُمِّل بنسبة أيّامه الباقية (من يوم الاقتناء إلى آخر الشهر)، وبقيّةُ الأشهر كاملة. <b>والنقصُ لا يضيع</b>:
+    /// الحدُّ «القيمةُ الدفتريّةُ ناقصَ الخردة» يُبقي الأصلَ يُهلَك بعد عمره الاسميّ حتى يُستنفد، فيأخذ الشهرُ الأخيرُ الباقي.</para>
+    ///
+    /// <para>والأصلُ القائمُ قبل الدفاتر (<see cref="DepreciatedThrough"/>) لا يدخل شهرُ اقتنائه أيَّ تشغيل، فلا يُنسَّب.</para>
+    /// </summary>
+    public decimal ApplyDepreciationDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
+    {
+        var months = MonthsDue(lastDepreciatedMonth, runDate);
+        var monthly = MonthlyDepreciation;
+        if (months <= 0 || monthly <= 0 || BookValue <= SalvageValue)
+            return 0m;
+
+        decimal portion = months;
+        if (FirstDueMonth(lastDepreciatedMonth) == MonthIndex(AcquisitionDate))
+        {
+            var days = DateTime.DaysInMonth(AcquisitionDate.Year, AcquisitionDate.Month);
+            portion -= (decimal)(AcquisitionDate.Day - 1) / days;
+        }
+
+        var amount = Math.Min(Math.Round(monthly * portion, 2, MidpointRounding.AwayFromZero), BookValue - SalvageValue);
+        AccumulatedDepreciation += amount;
+        return amount;
     }
     public void AssignBranch(long branchId)
     {
