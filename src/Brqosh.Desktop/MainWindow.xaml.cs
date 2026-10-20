@@ -42,6 +42,8 @@ public partial class MainWindow : Window
     {
         _setup = setup;
         InitializeComponent();
+        // ‏(UI-AUDIT · P1) الصفحةُ الطويلة تُمرَّر، والجدولُ يبقى محدودَ الارتفاع.
+        Ui.PageViewport.Attach(PageViewportScroll, PageHost);
 
         // ‏(ح-١٢٠) ‏**وضعُ القراءة يُرى في العنوان** — فلا يُحسب رفضُ الحفظ عطلاً.
         if (Brqosh.Infrastructure.Licensing.ReadOnlyBooks.IsActive)
