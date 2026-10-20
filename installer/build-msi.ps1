@@ -143,6 +143,18 @@ $Ledger = Join-Path $PSScriptRoot "shipped-versions.txt"
 # ‏(ح-٧٣) ‏البوّابةُ في ملفٍّ يُشغّله `verify-gates.ps1` أيضاً — وعلى دفترٍ مؤقّتٍ هناك لا على هذا.
 & (Join-Path $PSScriptRoot "..\scripts\assert-version-not-shipped.ps1") -Version $ProductVersion -Ledger $Ledger
 
+# (CEEF-236 · ر-ك · م-٣٢) ‏**‏-arch x64 — والحزمةُ كانت تُبنى ٣٢-بت بالافتراض.**
+#
+# ‏`wix build` يبني x86 ما لم يُقَل غيرُه، **وحزمةٌ ٣٢-بت يُعيد MSI فيها توجيهَ
+# ‏`ProgramFiles64Folder` إلى `Program Files (x86)`** — فينتهي تطبيقُ x64 في شجرة ٣٢-بت
+# ‏وتُكتب علامةُ السجلّ في `WOW6432Node`. والوسمُ في `brqosh.wxs` كان يقول 64 والناتجُ يخالفه.
+#
+# ‏**ولم يكشفه بناءٌ ولا اختبارٌ ولا مراجعة** — كشفه تنصيبٌ حيٌّ على آلةٍ نظيفة (CEEF-236 · ر-ك):
+# ‏  C:\Program Files\BRQOSH\Brqosh.Desktop.exe        False
+# ‏  C:\Program Files (x86)\BRQOSH\Brqosh.Desktop.exe  True
+# ‏**الحمولةُ تُوقَّع هنا** — قبل السطر التالي بالضبط، فـ`wix build` يقرأ `$PublishDir`
+# ‏من القرص. وتُختار الثنائيّاتُ التي **نملكها** بنمطٍ لا بقائمةٍ مكتوبةٍ باليد: مشروعٌ
+# ‏جديدٌ يدخل الحزمةَ يدخل التوقيعَ معها، **ولا يُنسى سطرٌ في سكربتٍ لا يقرؤه أحد**.
 # ‏(data-upgrade-performance#6 · installer-deployment-ops#10 · قرارُ المالك 2026-10-18) ‏**أدواتُ النسخ تُشحن مع البرنامج.**
 #
 # ‏كان النسخُ المجدولُ يعمل فقط حيث ثُبِّت PostgreSQL يدويّاً، والمُنصِّبُ لا يشحن الأدواتِ ولا يفحصها. فتُنسخ هنا إلى
@@ -174,18 +186,6 @@ foreach ($f in $PgNotices) { Copy-Item (Join-Path (Split-Path $PgBin -Parent) $f
 Copy-Item (Join-Path $env:SystemRoot 'System32\vcruntime140.dll') $PgToolsDir -Force
 Write-Host "أدوات النسخ: $pgVersion ⟵ $PgToolsDir" -ForegroundColor Cyan
 
-# (CEEF-236 · ر-ك · م-٣٢) ‏**‏-arch x64 — والحزمةُ كانت تُبنى ٣٢-بت بالافتراض.**
-#
-# ‏`wix build` يبني x86 ما لم يُقَل غيرُه، **وحزمةٌ ٣٢-بت يُعيد MSI فيها توجيهَ
-# ‏`ProgramFiles64Folder` إلى `Program Files (x86)`** — فينتهي تطبيقُ x64 في شجرة ٣٢-بت
-# ‏وتُكتب علامةُ السجلّ في `WOW6432Node`. والوسمُ في `brqosh.wxs` كان يقول 64 والناتجُ يخالفه.
-#
-# ‏**ولم يكشفه بناءٌ ولا اختبارٌ ولا مراجعة** — كشفه تنصيبٌ حيٌّ على آلةٍ نظيفة (CEEF-236 · ر-ك):
-# ‏  C:\Program Files\BRQOSH\Brqosh.Desktop.exe        False
-# ‏  C:\Program Files (x86)\BRQOSH\Brqosh.Desktop.exe  True
-# ‏**الحمولةُ تُوقَّع هنا** — قبل السطر التالي بالضبط، فـ`wix build` يقرأ `$PublishDir`
-# ‏من القرص. وتُختار الثنائيّاتُ التي **نملكها** بنمطٍ لا بقائمةٍ مكتوبةٍ باليد: مشروعٌ
-# ‏جديدٌ يدخل الحزمةَ يدخل التوقيعَ معها، **ولا يُنسى سطرٌ في سكربتٍ لا يقرؤه أحد**.
 $PayloadBinaries = @(Get-ChildItem $PublishDir -File |
     Where-Object { $_.Name -like 'Brqosh.*' -and $_.Extension -in '.exe', '.dll' } |
     ForEach-Object FullName)

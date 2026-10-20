@@ -189,10 +189,9 @@ public static class UblStructureValidator
         if (typeCode is null)
             return;
 
-        // ‏(sector-modules#6) ‏و386 فاتورةُ الدفعة المقدّمة — معيارُ XML (الإصدار 1.2، §9.5) يُوجبه لها، ولم يكن للمنتج مستندٌ به قبل العربون.
         var value = typeCode.Value;
-        if (value is not ("388" or "381" or "383" or "386"))
-            violations.Add($"رمز نوع المستند غير معروف: {value} (المتوقّع 388 أو 381 أو 383 أو 386)");
+        if (value is not ("388" or "381" or "383"))
+            violations.Add($"رمز نوع المستند غير معروف: {value} (المتوقّع 388 أو 381 أو 383)");
 
         var name = typeCode.Attribute("name")?.Value;
         if (string.IsNullOrWhiteSpace(name))

@@ -155,9 +155,9 @@ public partial class PurchaseOrdersPage : UserControl
         }
     }
 
-    private async void OnView(object sender, RoutedEventArgs e) => await ViewSelectedAsync();
+    private async void OnView(object sender, RoutedEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "PurchaseOrdersPage.View");
 
-    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await ViewSelectedAsync();
+    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "PurchaseOrdersPage.View");
 
     private async Task ViewSelectedAsync()
     {
@@ -168,9 +168,15 @@ public partial class PurchaseOrdersPage : UserControl
         }
 
         await using var db = AppServices.CreateDb();
-        var order = await db.PurchaseOrders.SingleAsync(o => o.Id == row.Id);
-        var supplier = await db.Suppliers.SingleAsync(s => s.Id == order.SupplierId);
-        var header = $"رقم: {order.OrderNumber ?? "—"}  |  التاريخ: {order.OrderDate:yyyy-MM-dd}  |  المورد: {supplier.NameAr}  |  الحالة: {row.StatusAr}";
+        var order = await db.PurchaseOrders.SingleOrDefaultAsync(o => o.Id == row.Id);
+        if (order is null)
+        {
+            UiFeedback.ShowRecordMissing(LocaleManager.T("لم يعد أمر الشراء هذا موجوداً — حدّث الجدول وحاول مجدداً.", "This purchase order no longer exists — refresh the list and try again."));
+            return;
+        }
+        var supplier = await db.Suppliers.SingleOrDefaultAsync(s => s.Id == order.SupplierId);
+        var supplierName = supplier?.NameAr ?? LocaleManager.T("(مورّد غير موجود)", "(supplier not found)");
+        var header = $"رقم: {order.OrderNumber ?? "—"}  |  التاريخ: {order.OrderDate:yyyy-MM-dd}  |  المورد: {supplierName}  |  الحالة: {row.StatusAr}";
         new DocumentLinesViewDialog("أمر شراء", header, order.Lines.ToList(),
             order.Subtotal, order.VatAmount, order.GrandTotal()) { Owner = Window.GetWindow(this) }.ShowDialog();
     }

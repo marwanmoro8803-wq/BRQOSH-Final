@@ -4,7 +4,6 @@ using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Tax;
 using Brqosh.Domain.Zatca;
-using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -60,9 +59,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         var source = $"{Brqosh.Infrastructure.Hospitality.ReservationDepositService.TakenPrefix}{reservationId}";
         var deposits = await db.JournalEntries
-            .Where(e => e.CompanyId == invoice.CompanyId && e.SourceDocument == source)
-            // ‏سؤالُ وجودٍ لا مبلغ: عربونٌ عُكس قيدُه لا يُسوّى، وقيدُ العكس يرث مصدرَه فلا يُعدّ عربوناً (WhereStanding).
-            .WhereStanding(db.JournalEntries)
+            .Where(e => e.CompanyId == invoice.CompanyId && e.SourceDocument == source && e.Status == JournalEntryStatus.Posted)
             .Select(e => e.Id)
             .ToListAsync();
         if (deposits.Count == 0)
@@ -341,6 +338,10 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٦١) <b>إشعارٌ دائنٌ عند عكس استبعاد أصلٍ بيع بفاتورة</b> — بمبالغ الفاتورة نفسِها ومشتريها، ومرجعُه هي.
+    /// ‏و<c>null</c> إن لم تكن للبيع فاتورةٌ إلكترونيّة أو كانت الفوترةُ معطَّلة — والمستدعي يقرّر.
+    /// </summary>
+    /// <summary>
     /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>إشعارٌ دائنٌ بردّ عربون حجزٍ أُلغي</b> — يُشير إلى فاتورة دفعته (386)
     /// بمبلغها نفسِه، فتخرج ضريبتُها من فترة الردّ كما خرجت من الأستاذ. وعربونٌ بلا فاتورةِ دفعةٍ لا إشعارَ له.
     /// </summary>
@@ -379,10 +380,6 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             issueReason: "إلغاء الحجز وردّ العربون");
     }
 
-    /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٦١) <b>إشعارٌ دائنٌ عند عكس استبعاد أصلٍ بيع بفاتورة</b> — بمبالغ الفاتورة نفسِها ومشتريها، ومرجعُه هي.
-    /// ‏و<c>null</c> إن لم تكن للبيع فاتورةٌ إلكترونيّة أو كانت الفوترةُ معطَّلة — والمستدعي يقرّر.
-    /// </summary>
     public async Task<ZatcaEInvoiceDocument?> TryGenerateCancellationForAssetDisposalAsync(
         long fixedAssetId, DateOnly reversalDate, string reason)
     {
@@ -490,6 +487,16 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 d.CompanyId == invoice.CompanyId &&
                 d.DocumentType == ZatcaDocumentType.InvoiceCancel &&
                 d.SourceDocumentId == salesInvoiceId))
+            return null;
+
+        // ‏(جاهزيّةُ الإطلاق · tax-zatca#8) ‏**فاتورةٌ قياسيّةٌ رفضت الهيئةُ اعتمادَها لم تصدر نظاماً** — فلا إشعارَ دائناً يُرسل عنها؛
+        // ‏إلغاؤها داخليٌّ بعكس قيدها، ثمّ تُصدر فاتورةٌ مصحَّحة. والمبسّطةُ المرفوضةُ وصلت المشتري فإلغاؤها إشعارٌ كما كان.
+        if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == invoice.CompanyId &&
+                d.DocumentType == ZatcaDocumentType.SalesInvoice &&
+                d.SourceDocumentId == salesInvoiceId &&
+                d.TransmissionMode == ZatcaTransmissionMode.Clearance &&
+                d.ComplianceStatus == ZatcaComplianceStatus.Rejected))
             return null;
 
         var company = await db.Companies.SingleAsync(c => c.Id == invoice.CompanyId);
@@ -811,17 +818,6 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             // ‏يقول ماذا يُلغي**. والنمطُ نمطُ `DebitNote` أعلاه حرفاً:
             // ‏يُبحث عن مستند المصدر المُرسَل سلفاً ويُشار إليه.
             // ‏(ح-١٦١) ‏وعكسُ بيع الأصل مرجعُه فاتورةُ بيعه — بالنمط نفسِه.
-            case ZatcaDocumentType.DisposalCancel:
-            {
-                var originalSale = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
-                    d.CompanyId == companyId &&
-                    d.DocumentType == ZatcaDocumentType.AssetDisposal &&
-                    d.SourceDocumentId == sourceId);
-                if (originalSale is not null)
-                    return (originalSale.InvoiceNumber, originalSale.InvoiceUuid);
-                break;
-            }
-
             case ZatcaDocumentType.DepositRefund:
             {
                 // ‏(sector-modules#6) ‏ردُّ العربون يُشير إلى فاتورة دفعته (386) — المصدرُ نفسُه: قيدُ العربون.
@@ -831,6 +827,17 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                     d.SourceDocumentId == sourceId);
                 if (prepayment is not null)
                     return (prepayment.InvoiceNumber, prepayment.InvoiceUuid);
+                break;
+            }
+
+            case ZatcaDocumentType.DisposalCancel:
+            {
+                var originalSale = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+                    d.CompanyId == companyId &&
+                    d.DocumentType == ZatcaDocumentType.AssetDisposal &&
+                    d.SourceDocumentId == sourceId);
+                if (originalSale is not null)
+                    return (originalSale.InvoiceNumber, originalSale.InvoiceUuid);
                 break;
             }
 

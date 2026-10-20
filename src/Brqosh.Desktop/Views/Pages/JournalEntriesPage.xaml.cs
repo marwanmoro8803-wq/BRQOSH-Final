@@ -85,15 +85,15 @@ public partial class JournalEntriesPage : UserControl
         }
     }
 
-    private void OnView(object sender, RoutedEventArgs e) => ViewSelected();
+    private void OnView(object sender, RoutedEventArgs e) => UiFeedback.RunViewSafe(ViewSelected, "JournalEntriesPage.View");
 
-    private void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => ViewSelected();
+    private void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => UiFeedback.RunViewSafe(ViewSelected, "JournalEntriesPage.View");
 
     private void ViewSelected()
     {
         if (EntriesGrid.SelectedItem is not EntryRow row)
         {
-            UiFeedback.ShowInfo("اختر قيداً من الجدول.");
+            UiFeedback.ShowSelectionRequired(LocaleManager.T("اختر قيداً من الجدول أولاً ثم اضغط «عرض».", "Select an entry first, then press View."));
             return;
         }
 

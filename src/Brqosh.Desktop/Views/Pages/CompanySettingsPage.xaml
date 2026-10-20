@@ -109,6 +109,9 @@
 
                     <TextBlock Text="نظام العمل" Style="{StaticResource FieldLabel}"/>
                     <TextBlock x:Name="ProfileText" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <ComboBox x:Name="ProfileBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
+                    <TextBlock Text="يغيّره المدير وحده، ولا يُقبل نظامٌ يُخفي وحدةً فيها بيانات. يُطبَّق على القوائم عند إعادة التشغيل."
+                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                     <TextBlock x:Name="ActiveModulesText" FontSize="12.5"
                                Foreground="{StaticResource InfoBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
@@ -149,9 +152,14 @@
                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                 Padding="24,14" Effect="{StaticResource CardShadow}">
             <Grid>
-                <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+                <!-- (UI-AUDIT) عمودان: رسالةُ خطأٍ طويلةٌ تلتفّ في عمودها ولا تمرّ تحت زرّ الحفظ. -->
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                            TextWrapping="Wrap" Visibility="Collapsed" VerticalAlignment="Center"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}"
                             AutomationProperties.AutomationId="CompanySettingsSave"
                             Padding="24,9" Click="OnSave"/>

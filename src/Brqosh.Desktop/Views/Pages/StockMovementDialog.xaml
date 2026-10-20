@@ -34,8 +34,8 @@
             <TextBlock Text="مستودع الوجهة *" Style="{StaticResource FieldLabel}"/>
             <ComboBox x:Name="ToWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
         </StackPanel>
-        <TextBox x:Name="DescBox" Grid.Row="1" Style="{StaticResource AppTextBox}" Margin="0,0,0,12"
-                 ToolTip="البيان" Visibility="Collapsed"/>
+        <!-- (UI-AUDIT) أُزيلت خانةُ «البيان» المخفيّة دائماً: كانت تشارك ToWarehousePanel الصفَّ نفسَه ولا تُقرأ —
+             فبيانُ الحركة في الدفتر ثابتٌ بقصد حسب نوعها (StoredDescriptions في الكود الخلفيّ). -->
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True" BorderThickness="0"
                       GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">

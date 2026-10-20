@@ -263,8 +263,7 @@ public class ReservationDepositService(BrqoshDbContext db)
         {
             var source = $"{TakenPrefix}{reservation.Id}";
             var deposits = await db.JournalEntries
-                .Where(e => e.CompanyId == companyId && e.SourceDocument == source)
-                .WhereStanding(db.JournalEntries)
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == source && e.Status == JournalEntryStatus.Posted)
                 .Select(e => e.Id)
                 .ToListAsync(ct);
             foreach (var depositId in deposits)

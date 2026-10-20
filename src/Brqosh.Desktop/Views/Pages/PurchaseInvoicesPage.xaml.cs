@@ -113,20 +113,25 @@ public partial class PurchaseInvoicesPage : UserControl
         }
     }
 
-    private async void OnView(object sender, RoutedEventArgs e) => await ViewSelectedAsync();
+    private async void OnView(object sender, RoutedEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "PurchaseInvoicesPage.View");
 
-    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await ViewSelectedAsync();
+    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "PurchaseInvoicesPage.View");
 
     private async Task ViewSelectedAsync()
     {
         if (InvoicesGrid.SelectedItem is not InvoiceRow row)
         {
-            UiFeedback.ShowInfo("اختر فاتورة من الجدول.");
+            UiFeedback.ShowSelectionRequired(LocaleManager.T("اختر فاتورة من الجدول أولاً ثم اضغط «عرض».", "Select an invoice first, then press View."));
             return;
         }
 
         await using var db = AppServices.CreateDb();
-        var invoice = await db.PurchaseInvoices.SingleAsync(i => i.Id == row.Id);
+        var invoice = await db.PurchaseInvoices.SingleOrDefaultAsync(i => i.Id == row.Id);
+        if (invoice is null)
+        {
+            UiFeedback.ShowRecordMissing(LocaleManager.T("لم تعد هذه الفاتورة موجودة — حدّث الجدول وحاول مجدداً.", "This invoice no longer exists — refresh the list and try again."));
+            return;
+        }
         var header = $"رقم: {invoice.InvoiceNumber ?? "—"}  |  مرجع المورد: {invoice.SupplierInvoiceReference}  |  التاريخ: {invoice.InvoiceDate:yyyy-MM-dd}  |  المورد: {row.SupplierName}";
         new DocumentLinesViewDialog("فاتورة مشتريات", header, invoice.Lines.ToList(),
             invoice.Subtotal, invoice.VatAmount, invoice.GrandTotal()) { Owner = Window.GetWindow(this) }.ShowDialog();

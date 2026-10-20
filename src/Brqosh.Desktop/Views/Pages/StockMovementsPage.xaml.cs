@@ -62,9 +62,9 @@ public partial class StockMovementsPage : UserControl
             await ReloadAsync();
     }
 
-    private async void OnView(object sender, RoutedEventArgs e) => await ViewSelectedAsync();
+    private async void OnView(object sender, RoutedEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "StockMovementsPage.View");
 
-    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await ViewSelectedAsync();
+    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "StockMovementsPage.View");
 
     private async void OnCancel(object sender, RoutedEventArgs e)
     {
@@ -127,7 +127,12 @@ public partial class StockMovementsPage : UserControl
         }
 
         await using var db = AppServices.CreateDb();
-        var movement = await db.StockMovements.SingleAsync(m => m.Id == row.Id);
+        var movement = await db.StockMovements.SingleOrDefaultAsync(m => m.Id == row.Id);
+        if (movement is null)
+        {
+            UiFeedback.ShowRecordMissing(LocaleManager.T("لم تعد هذه الحركة موجودة — حدّث الجدول وحاول مجدداً.", "This movement no longer exists — refresh the list and try again."));
+            return;
+        }
         var productIds = movement.Lines.Select(l => l.ProductId).Distinct().ToList();
         var products = await db.Products.Where(p => productIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, p => p.NameAr);

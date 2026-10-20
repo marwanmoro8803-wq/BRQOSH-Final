@@ -53,6 +53,8 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
         Ui.UiLocalizationHost.Register();
+        // ‏(UI-AUDIT · P1) كلُّ نافذةٍ تُحصر في مساحة العمل، وجسمُها يُمرَّر إن لم يتّسع.
+        Ui.WindowFit.Register();
 
         // (CEEF-231 · ط5-٦) ‏**والعطلُ يُكتب على القرص قبل أن يُعرض.**
         //
