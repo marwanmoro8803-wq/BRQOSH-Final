@@ -866,6 +866,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("fixed_assets", "DepreciatedThrough", "DATE NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "CancelledOn", "DATE NULL", ct);   // ‏(ح-١٥٧)
         await EnsurePgColumnAsync("fixed_assets", "AwaitingInvoice", "BOOLEAN NOT NULL DEFAULT false", ct);   // ‏(ح-١٥٨)
+        await EnsurePgColumnAsync("fixed_assets", "DepreciationMethod", "character varying(24) NOT NULL DEFAULT 'StraightLine'", ct);   // ‏(treasury-payroll-assets#11)
         await EnsurePgColumnAsync("app_users", "MustChangePasswordOnNextLogin", "BOOLEAN NOT NULL DEFAULT false", ct);
         await EnsurePgColumnAsync("app_users", "MobilePhoneE164", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
@@ -976,6 +977,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("fixed_assets", "DepreciatedThrough", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "CancelledOn", "TEXT NULL", ct);   // ‏(ح-١٥٧)
         await EnsureSqliteColumnAsync("fixed_assets", "AwaitingInvoice", "INTEGER NOT NULL DEFAULT 0", ct);   // ‏(ح-١٥٨)
+        await EnsureSqliteColumnAsync("fixed_assets", "DepreciationMethod", "TEXT NOT NULL DEFAULT 'StraightLine'", ct);   // ‏(treasury-payroll-assets#11)
         await EnsureSqliteColumnAsync("app_users", "MustChangePasswordOnNextLogin", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MobilePhoneE164", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);

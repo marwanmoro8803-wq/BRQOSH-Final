@@ -23,6 +23,8 @@ public partial class FixedAssetDialog : Window
         InitializeComponent();
         _assetId = null;
         DateBox.SelectedDate = DateTime.Today;
+        MethodCombo.ItemsSource = MethodOptions();
+        MethodCombo.SelectedIndex = 0;
         Loaded += async (_, _) => await LoadAccountsAsync();
     }
 
@@ -41,11 +43,27 @@ public partial class FixedAssetDialog : Window
         SalvageBox.IsReadOnly = true;
         LifeBox.Text = asset.UsefulLifeMonths.ToString();
         LifeBox.IsReadOnly = true;
+        // ‏(treasury-payroll-assets#11) ‏الطريقةُ تُحدَّد قبل أوّل إهلاكٍ وحدَه — فتُعرض ولا تُغيَّر هنا.
+        MethodCombo.SelectedItem = ((IEnumerable<MethodOption>)MethodCombo.ItemsSource).First(o => o.Value == asset.Method);
+        MethodCombo.IsEnabled = false;
         AssetAccountCombo.IsEnabled = false;
         DepAccountCombo.IsEnabled = false;
         FundingCombo.IsEnabled = false;
         OpeningCheck.IsEnabled = false;
     }
+
+    /// <summary>(جاهزيّةُ الإطلاق · <c>treasury-payroll-assets#11</c>) خيارُ طريقة الإهلاك في القائمة.</summary>
+    internal sealed record MethodOption(DepreciationMethod Value, string Label);
+
+    /// <summary>(<c>treasury-payroll-assets#11</c>) الطريقتان — والخطُّ المستقيمُ أوّلاً.</summary>
+    internal static IReadOnlyList<MethodOption> MethodOptions() =>
+    [
+        new(DepreciationMethod.StraightLine, LocaleManager.T("القسط الثابت (خط مستقيم)", "Straight-line")),
+        new(DepreciationMethod.DecliningBalance, LocaleManager.T("القسط المتناقص المضاعف", "Double-declining balance")),
+    ];
+
+    private DepreciationMethod SelectedMethod =>
+        (MethodCombo.SelectedItem as MethodOption)?.Value ?? DepreciationMethod.StraightLine;
 
     /// <summary>(جاهزيّةُ الإطلاق · ح-١٠٠) الرصيدُ الافتتاحيُّ لا يُدفع من شيء — فطريقةُ الدفع تُعطَّل ويظهر تاريخُه ومجمّعُه.</summary>
     private void OnOpeningToggled(object sender, RoutedEventArgs e)
@@ -135,7 +153,7 @@ public partial class FixedAssetDialog : Window
                 // ‏ولا يُهلَك ما أُهلك قبل الدفاتر ثانيةً.
                 var openingAsset = FixedAsset.CreateOpening(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
                     DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId,
-                    accumulated, DateOnly.FromDateTime(OpeningDateBox.SelectedDate.Value));
+                    accumulated, DateOnly.FromDateTime(OpeningDateBox.SelectedDate.Value), SelectedMethod);
                 await facade.GetService<FixedAssetAcquisitionPostingService>().PostOpeningAsync(openingAsset);
                 DialogResult = true;
                 Close();
@@ -148,7 +166,7 @@ public partial class FixedAssetDialog : Window
             if (funding.ByInvoice)
             {
                 var awaiting = FixedAsset.CreateAwaitingInvoice(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
-                    DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId);
+                    DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId, SelectedMethod);
                 await facade.GetService<FixedAssetAcquisitionPostingService>().RegisterAwaitingInvoiceAsync(awaiting);
                 DialogResult = true;
                 Close();
@@ -156,7 +174,7 @@ public partial class FixedAssetDialog : Window
             }
 
             var assetNew = FixedAsset.Create(AppServices.CompanyId, CodeBox.Text, NameBox.Text,
-                DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId);
+                DateOnly.FromDateTime(DateBox.SelectedDate.Value), cost, salvage, life, assetAcctId, depAcctId, SelectedMethod);
 
             // ‏(جاهزيّةُ الإطلاق · ح-٩٩) **الأصلُ يُحفظ مع قيد اقتنائه في معاملةٍ واحدة** — وكان يُحفظ هنا أوّلاً،
             // ‏فترحيلٌ يُرفض بعده يُبقي أصلاً بلا قيد.

@@ -385,6 +385,12 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("DepreciationMethod");
+
                     b.Property<string>("NameAr")
                         .IsRequired()
                         .HasMaxLength(256)

@@ -1660,6 +1660,8 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<FixedAsset>(entity =>
         {
             entity.ToTable("fixed_assets");
+            // ‏(جاهزيّةُ الإطلاق · treasury-payroll-assets#11) ‏طريقةُ الإهلاك — «StraightLine» لكلّ أصلٍ قائم، والافتراضُ في DDL وحدَه.
+            entity.Property(a => a.Method).HasColumnName("DepreciationMethod").HasConversion<string>().HasMaxLength(24);
             entity.Property(a => a.Code).HasMaxLength(32).IsRequired();
             entity.Property(a => a.NameAr).HasMaxLength(256).IsRequired();
             entity.Property(a => a.AcquisitionCost).HasPrecision(18, 2);

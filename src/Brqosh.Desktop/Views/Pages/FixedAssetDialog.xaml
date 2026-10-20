@@ -31,6 +31,10 @@
         <TextBlock Text="العمر الإنتاجي (أشهر) *" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="LifeBox" Style="{StaticResource AppTextBox}" Text="60" Margin="0,0,0,14"/>
 
+        <!-- (جاهزيّةُ الإطلاق · treasury-payroll-assets#11) طريقةُ الإهلاك — الخطُّ المستقيمُ أوّلاً فلا يتغيّر شيءٌ لمن لا يختار. -->
+        <TextBlock Text="طريقة الإهلاك" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="MethodCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Label" Margin="0,0,0,14"/>
+
         <TextBlock Text="حساب الأصل *" Style="{StaticResource FieldLabel}"/>
         <ComboBox x:Name="AssetAccountCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 

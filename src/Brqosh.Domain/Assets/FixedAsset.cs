@@ -7,9 +7,16 @@ namespace Brqosh.Domain.Assets;
 public enum DepreciationMethod
 {
     StraightLine = 0,
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>treasury-payroll-assets#11</c>) <b>القسطُ المتناقصُ المضاعَف</b> — ضعفُ نسبة الخطّ المستقيم على القيمة
+    /// الدفتريّة كلَّ شهر، <b>ويتحوّل إلى الخطّ المستقيم متى زاد قسطُه على الباقي من العمر</b> (العرفُ المحاسبيّ، فيُستنفد القابلُ
+    /// للإهلاك بنهاية العمر)، ولا ينزل عن الخردة. وهو من الطرق التي يقبلها IAS 16 §62.
+    /// </summary>
+    DecliningBalance = 1,
 }
 
-/// <summary>أصل ثابت — يُهلك شهرياً بخط مستقيم.</summary>
+/// <summary>أصل ثابت — يُهلك شهرياً بخط مستقيم أو بقسطٍ متناقص (<see cref="Assets.DepreciationMethod"/>).</summary>
 public class FixedAsset : IBranchScoped
 {
     public long Id { get; private set; }
@@ -53,10 +60,11 @@ public class FixedAsset : IBranchScoped
     /// <summary>(ح-١٥٨) أصلٌ يُسجَّل لتقتنيه فاتورةُ مورّد — لا قيدَ له حتى تُرحَّل.</summary>
     public static FixedAsset CreateAwaitingInvoice(long companyId, string code, string nameAr, DateOnly acquisitionDate,
         decimal acquisitionCost, decimal salvageValue, int usefulLifeMonths,
-        long glAssetAccountId, long glDepreciationAccountId)
+        long glAssetAccountId, long glDepreciationAccountId,
+        DepreciationMethod method = DepreciationMethod.StraightLine)
     {
         var asset = Create(companyId, code, nameAr, acquisitionDate, acquisitionCost, salvageValue,
-            usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
+            usefulLifeMonths, glAssetAccountId, glDepreciationAccountId, method);
         asset.AwaitingInvoice = true;
         asset.IsActive = false;
         return asset;
@@ -113,9 +121,33 @@ public class FixedAsset : IBranchScoped
     public string? DisposalVatExemptionCode { get; private set; }
 
     public decimal BookValue => AcquisitionCost - AccumulatedDepreciation;
+
+    /// <summary>(<c>treasury-payroll-assets#11</c>) طريقةُ الإهلاك — الخطُّ المستقيمُ لكلّ أصلٍ قائم.</summary>
+    public DepreciationMethod Method { get; private set; }
+
+    /// <summary>
+    /// قسطُ شهرٍ كامل — <b>وللقسط المتناقص قسطُ الشهر القادم على القيمة الدفتريّة اليوم</b> (تقديرٌ للعرض؛ والتشغيلُ يحسبه شهراً شهراً).
+    /// </summary>
     public decimal MonthlyDepreciation =>
         UsefulLifeMonths <= 0 ? 0m
-        : Math.Round((AcquisitionCost - SalvageValue) / UsefulLifeMonths, 2, MidpointRounding.AwayFromZero);
+        : Method == DepreciationMethod.DecliningBalance
+            ? Math.Min(Math.Round(BookValue * 2m / UsefulLifeMonths, 2, MidpointRounding.AwayFromZero), Math.Max(0m, BookValue - SalvageValue))
+            : Math.Round((AcquisitionCost - SalvageValue) / UsefulLifeMonths, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>treasury-payroll-assets#11</c>) <b>يحدّد طريقةَ الإهلاك — قبل أوّل إهلاكٍ وحدَه.</b> فتغييرُها بعده
+    /// تغييرٌ في تقديرٍ محاسبيٍّ يُعالَج بأثرٍ لاحقٍ مقصود (IAS 8 §36)، لا بخانةٍ تُعيد كتابةَ ما أُهلك.
+    /// </summary>
+    public void UseDepreciationMethod(DepreciationMethod method)
+    {
+        if (!Enum.IsDefined(method))
+            throw new AccountingException("طريقة الإهلاك غير معروفة.");
+        if (method == Method)
+            return;
+        if (AccumulatedDepreciation != 0m || DepreciatedThrough is not null)
+            throw new AccountingException("طريقة الإهلاك تُحدَّد قبل أول إهلاك — وتغييرها بعده تغييرٌ في التقدير لا تصحيح.");
+        Method = method;
+    }
 
     private FixedAsset()
     {
@@ -140,7 +172,8 @@ public class FixedAsset : IBranchScoped
 
     public static FixedAsset Create(long companyId, string code, string nameAr, DateOnly acquisitionDate,
         decimal acquisitionCost, decimal salvageValue, int usefulLifeMonths,
-        long glAssetAccountId, long glDepreciationAccountId)
+        long glAssetAccountId, long glDepreciationAccountId,
+        DepreciationMethod method = DepreciationMethod.StraightLine)
     {
         if (string.IsNullOrWhiteSpace(code))
             throw new AccountingException("كود الأصل مطلوب.");
@@ -149,10 +182,12 @@ public class FixedAsset : IBranchScoped
         if (usefulLifeMonths <= 0)
             throw new AccountingException("العمر الإنتاجي بالأشهر مطلوب.");
 
-        return new FixedAsset(companyId, code.Trim(), nameAr.Trim(), acquisitionDate,
+        var asset = new FixedAsset(companyId, code.Trim(), nameAr.Trim(), acquisitionDate,
             Math.Round(acquisitionCost, 2, MidpointRounding.AwayFromZero),
             Math.Round(salvageValue, 2, MidpointRounding.AwayFromZero),
             usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
+        asset.UseDepreciationMethod(method);
+        return asset;
     }
 
     /// <summary>
@@ -164,10 +199,11 @@ public class FixedAsset : IBranchScoped
     public static FixedAsset CreateOpening(long companyId, string code, string nameAr, DateOnly acquisitionDate,
         decimal acquisitionCost, decimal salvageValue, int usefulLifeMonths,
         long glAssetAccountId, long glDepreciationAccountId,
-        decimal accumulatedDepreciation, DateOnly openingDate)
+        decimal accumulatedDepreciation, DateOnly openingDate,
+        DepreciationMethod method = DepreciationMethod.StraightLine)
     {
         var asset = Create(companyId, code, nameAr, acquisitionDate, acquisitionCost, salvageValue,
-            usefulLifeMonths, glAssetAccountId, glDepreciationAccountId);
+            usefulLifeMonths, glAssetAccountId, glDepreciationAccountId, method);
 
         var accumulated = Math.Round(accumulatedDepreciation, 2, MidpointRounding.AwayFromZero);
         if (accumulated < 0m || accumulated > asset.AcquisitionCost - asset.SalvageValue)
@@ -373,6 +409,9 @@ public class FixedAsset : IBranchScoped
     /// </summary>
     public decimal ApplyDepreciationDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
     {
+        if (Method == DepreciationMethod.DecliningBalance)
+            return ApplyDecliningBalanceDue(lastDepreciatedMonth, runDate);
+
         var months = MonthsDue(lastDepreciatedMonth, runDate);
         var monthly = MonthlyDepreciation;
         if (months <= 0 || monthly <= 0 || BookValue <= SalvageValue)
@@ -389,6 +428,45 @@ public class FixedAsset : IBranchScoped
         AccumulatedDepreciation += amount;
         return amount;
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>treasury-payroll-assets#11</c>) <b>القسطُ المتناقصُ شهراً شهراً</b> — فالقسطُ ينقص كلَّ شهرٍ بنقص الدفتريّة،
+    /// والاستدراكُ مجموعُ الأشهر لا شهرٌ مضروبٌ في عددها. ولكلّ شهر: الأكبرُ من (الدفتريّة × ٢ ÷ العمر) و(القابلُ ÷ الباقي من العمر)،
+    /// <b>والباقي من العمر من تاريخ الاقتناء</b> لا من عدّادٍ مخزون — فلا يختلّ بعكس تشغيلةٍ أو باستدراك؛ وشهرُ الاقتناء بأيّامه كالخطّ المستقيم.
+    /// </summary>
+    private decimal ApplyDecliningBalanceDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
+    {
+        if (UsefulLifeMonths <= 0)
+            return 0m;
+
+        var acquisitionMonth = MonthIndex(AcquisitionDate);
+        var book = BookValue;
+        var total = 0m;
+        for (var month = FirstDueMonth(lastDepreciatedMonth); month <= MonthIndex(runDate); month++)
+        {
+            var depreciable = book - SalvageValue;
+            if (depreciable <= 0m)
+                break;
+
+            var remainingLife = UsefulLifeMonths - (month - acquisitionMonth);
+            var amount = remainingLife > 0
+                ? Math.Max(book * 2m / UsefulLifeMonths, depreciable / remainingLife)
+                : depreciable;
+            if (month == acquisitionMonth)
+            {
+                var days = DateTime.DaysInMonth(AcquisitionDate.Year, AcquisitionDate.Month);
+                amount *= 1m - (decimal)(AcquisitionDate.Day - 1) / days;
+            }
+
+            amount = Math.Min(Math.Round(amount, 2, MidpointRounding.AwayFromZero), depreciable);
+            book -= amount;
+            total += amount;
+        }
+
+        AccumulatedDepreciation += total;
+        return total;
+    }
+
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

@@ -1691,6 +1691,7 @@ public static partial class UiBilingualRegistry
         ["طباعة آخر إيصال"] = "Print last receipt",
         ["طباعة آخر فاتورة"] = "Print last invoice",
         ["طباعة القسيمة"] = "Print Payslip",
+        ["طريقة الإهلاك"] = "Depreciation method",
         ["طريقة الدفع"] = "Payment method",
         ["طريقة الصرف"] = "Payment method",
         ["طريقة الصرف *"] = "Method Issue",

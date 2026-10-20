@@ -22,6 +22,7 @@ internal static class SchemaSqlGuard
         "character varying(3) NOT NULL DEFAULT 'SAR'",
         "character varying(32) NOT NULL DEFAULT 'WeightedAverage'",
         "character varying(24) NOT NULL DEFAULT 'Domestic'",   // (tax-zatca#12) معاملةُ ضريبة فاتورة الشراء
+        "character varying(24) NOT NULL DEFAULT 'StraightLine'",   // (treasury-payroll-assets#11) طريقةُ الإهلاك
         // (CEEF-230 · ط1-٣) ‏نمطُ تتبّع الصنف — تعدادٌ نصّيّ افتراضُه None.
         "character varying(16) NOT NULL DEFAULT 'None'",
         "character varying(64) NOT NULL DEFAULT ''",
@@ -102,6 +103,7 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT '2025-07-01'",
         "TEXT NOT NULL DEFAULT '10000'",   // (accounting-core#6)
         "TEXT NOT NULL DEFAULT 'Domestic'",   // (tax-zatca#12)
+        "TEXT NOT NULL DEFAULT 'StraightLine'",   // (treasury-payroll-assets#11)
         "INTEGER NOT NULL DEFAULT 4",
     };
 
