@@ -1,0 +1,51 @@
+[DRAFT — UNDER LEGAL REVIEW] [مسوّدة — تحت المراجعة القانونيّة]
+This text is a draft prepared for review by the vendor's legal counsel. It is not final and must not ship in a release build.
+هذا النصّ مسوّدةٌ أُعدّت لمراجعة المستشار القانونيّ للمورّد، وليس نهائيّاً، ولا يُشحن في إصدارٍ نهائيّ.
+
+اتّفاقيّة ترخيص المستخدم النهائيّ — برنامج BRQOSH
+End-User Licence Agreement — BRQOSH Software
+
+1. الطرفان والقبول
+هذه الاتّفاقيّة بين مورّد البرنامج («المورّد») والمنشأة التي تثبّته أو تستخدمه («المرخَّص له»). بالضغط على «أوافق» أو بتثبيت البرنامج أو استخدامه يقرّ المرخَّص له بأنّه قرأ هذه الاتّفاقيّة ووافق عليها. ومن لا يوافق لا يثبّت البرنامج ولا يستخدمه.
+1. Parties and acceptance
+This Agreement is between the software vendor ("Vendor") and the entity that installs or uses the software ("Licensee"). By selecting "I agree", or by installing or using the software, the Licensee confirms it has read and accepts this Agreement. A party that does not accept must not install or use the software.
+
+2. منح الترخيص
+يمنح المورّد المرخَّص له ترخيصاً غير حصريّ وغير قابلٍ للتحويل لاستخدام البرنامج في عمليّاته الداخليّة، بعدد الأجهزة والمنشآت والوحدات المحدّدة في ملفّ الترخيص الموقَّع الصادر له، وطوال مدّته.
+2. Licence grant
+The Vendor grants the Licensee a non-exclusive, non-transferable licence to use the software for its internal operations, on the number of devices, entities and modules stated in the signed licence file issued to it, and for its term.
+
+3. القيود
+لا يجوز للمرخَّص له: (أ) نسخ البرنامج إلّا للنسخ الاحتياطيّ، (ب) تعديله أو فكّ ترجمته أو الهندسة العكسيّة له إلّا بقدر ما يجيزه النظام صراحةً، (ج) تأجيره أو بيعه أو ترخيصه من الباطن لغيره، (د) التحايل على آليّات الترخيص أو التفعيل.
+3. Restrictions
+The Licensee must not: (a) copy the software except for backup; (b) modify, decompile or reverse-engineer it except as expressly permitted by law; (c) rent, sell or sublicense it to others; (d) circumvent its licensing or activation mechanisms.
+
+4. الملكيّة
+البرنامج وجميع حقوق الملكيّة الفكريّة فيه مملوكة للمورّد أو لمرخِّصيه، ولا تنتقل بهذه الاتّفاقيّة إلّا حقوق الاستخدام المذكورة فيها.
+4. Ownership
+The software and all intellectual-property rights in it belong to the Vendor or its licensors. This Agreement transfers only the usage rights it states.
+
+5. البيانات والامتثال
+البيانات التي يُدخلها المرخَّص له ملكٌ له. والمرخَّص له مسؤولٌ عن صحّة ما يُدخله، وعن نسخه الاحتياطيّ، وعن التزامه بالأنظمة السارية ومنها أنظمة هيئة الزكاة والضريبة والجمارك. ولا يغني البرنامج عن مراجعة محاسبٍ أو مستشارٍ مختصّ.
+5. Data and compliance
+Data entered by the Licensee belongs to the Licensee. The Licensee is responsible for the accuracy of what it enters, for its backups, and for its compliance with applicable regulations, including those of the Zakat, Tax and Customs Authority. The software does not replace review by a qualified accountant or adviser.
+
+6. مكوّنات الأطراف الأخرى
+يتضمّن البرنامج مكوّناتٍ مرخَّصةً من أطرافٍ أخرى بشروطها الخاصّة، وهي مبيّنة في ملفّ إشعارات الأطراف الأخرى المرفق، وتسري عليها شروطها.
+6. Third-party components
+The software includes components licensed from third parties under their own terms, listed in the accompanying third-party notices, which govern those components.
+
+7. الضمان وحدود المسؤوليّة
+يُقدَّم البرنامج «بحالته» في حدود ما يجيزه النظام. ولا يتحمّل المورّد المسؤوليّة عن الأضرار غير المباشرة أو التبعيّة أو فوات الربح أو فقد البيانات، ولا تتجاوز مسؤوليّته الإجماليّة ما دفعه المرخَّص له عن الترخيص خلال الاثني عشر شهراً السابقة للمطالبة.
+7. Warranty and limitation of liability
+To the extent permitted by law, the software is provided "as is". The Vendor is not liable for indirect or consequential damages, lost profits or lost data, and its total liability shall not exceed the licence fees paid by the Licensee in the twelve months before the claim.
+
+8. الإنهاء
+ينتهي الترخيص بانتهاء مدّته أو بإخلال المرخَّص له بهذه الاتّفاقيّة. وعند انتهائه يبقى للمرخَّص له حقّ قراءة بياناته وتصديرها.
+8. Termination
+The licence ends at the end of its term or upon the Licensee's breach of this Agreement. After it ends, the Licensee keeps the right to read and export its data.
+
+9. النظام الواجب التطبيق
+تخضع هذه الاتّفاقيّة لأنظمة المملكة العربيّة السعوديّة، وتختصّ محاكمها بالنظر في أيّ نزاعٍ ينشأ عنها.
+9. Governing law
+This Agreement is governed by the laws of the Kingdom of Saudi Arabia, whose courts have jurisdiction over any dispute arising from it.

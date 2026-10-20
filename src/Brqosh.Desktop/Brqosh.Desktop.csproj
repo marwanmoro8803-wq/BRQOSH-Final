@@ -14,6 +14,7 @@
     <Content Include="..\..\config\templates\**\*.json" Link="config\templates\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <!-- (جاهزيّةُ الإطلاق · commercial-readiness#12) إشعاراتُ الطرف الثالث تُشحن بجوار البرنامج — والمُنصِّبُ يحصد مجلّدَ النشر كلَّه.
          تُولَّد بـ scripts/third_party_notices.py، ويُسقط TheShippedPackagesAreAllNoticedTests الحزمةَ إن لم تطابق ما يُشحن. -->
+    <Content Include="..\..\assets\legal\eula.txt" Link="legal\eula.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- (جاهزيّةُ الإطلاق · ح-١٦٠ · commercial-readiness#8) دليلُ المستخدم العربيّ يُشحن بجانب البرنامج. -->
     <Content Include="..\..\docs\user-manual\README.md" Link="UserManual-ar.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
