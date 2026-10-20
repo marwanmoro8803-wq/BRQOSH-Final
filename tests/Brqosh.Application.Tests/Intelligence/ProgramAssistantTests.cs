@@ -161,6 +161,38 @@ public class ProgramAssistantTests
         Assert.Contains("💡", reply.AnswerAr);
     }
 
+    // Audit: the four quick-prompt buttons of the AI panel must route to their topic
+    // from any screen (they were routed to the current page guide / financial engine).
+    [Theory]
+    [InlineData("كيف أرحّل؟", "اضغط ترحيل")]
+    [InlineData("How to post?", "اضغط ترحيل")]
+    [InlineData("صلاحياتي", "الصلاحيات الحالية")]
+    [InlineData("My permissions", "الصلاحيات الحالية")]
+    [InlineData("ZATCA / OTP", "O-01")]
+    public async Task Quick_prompts_route_to_their_topic_from_dashboard(string prompt, string expectedAr)
+    {
+        var financial = new StubFinancialAssistant();
+        var assistant = new ProgramAssistantService(financial);
+        var ctx = new ProgramAssistantContext(1, "dashboard", "محاسب", "Retail");
+
+        var reply = await assistant.AskAsync(ctx, prompt);
+
+        Assert.Contains(expectedAr, reply.AnswerAr);
+        Assert.False(financial.Called);
+    }
+
+    [Fact]
+    public async Task English_vat_keyword_does_not_match_inside_other_words()
+    {
+        var financial = new StubFinancialAssistant();
+        var assistant = new ProgramAssistantService(financial);
+        var ctx = new ProgramAssistantContext(1, "dashboard", "Viewer", "Retail");
+
+        await assistant.AskAsync(ctx, "is my data private");
+
+        Assert.False(financial.Called);
+    }
+
     private sealed class StubFinancialAssistant : IFinancialAssistantService
     {
         public bool Called { get; private set; }
