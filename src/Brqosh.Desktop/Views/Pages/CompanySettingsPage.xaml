@@ -109,6 +109,9 @@
 
                     <TextBlock Text="نظام العمل" Style="{StaticResource FieldLabel}"/>
                     <TextBlock x:Name="ProfileText" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <ComboBox x:Name="ProfileBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
+                    <TextBlock Text="يغيّره المدير وحده، ولا يُقبل نظامٌ يُخفي وحدةً فيها بيانات. يُطبَّق على القوائم عند إعادة التشغيل."
+                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                     <TextBlock x:Name="ActiveModulesText" FontSize="12.5"
                                Foreground="{StaticResource InfoBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 

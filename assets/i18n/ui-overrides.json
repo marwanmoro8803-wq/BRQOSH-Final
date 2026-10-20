@@ -6,6 +6,7 @@
   "فاتورة المورّد لمشروعٍ أو أصلٍ أو أصنافٍ مخزنيّة — لا تكون سندَ صيانة.": "The supplier invoice is for a project, an asset or stock items — it cannot back a maintenance order.",
   "ضريبة فاتورة المورّد غير قابلة للخصم — رحّل الأمر نقداً.": "The supplier invoice's VAT is not deductible — post the order as cash.",
   "فاتورة المورّد سندُ أمر صيانة آخر.": "The supplier invoice already backs another maintenance order.",
+  "يغيّره المدير وحده، ولا يُقبل نظامٌ يُخفي وحدةً فيها بيانات. يُطبَّق على القوائم عند إعادة التشغيل.": "Only the administrator can change it, and a profile that would hide a module holding data is refused. Menus update after a restart.",
   "إشعار ردّ هذا العربون صادر مسبقاً.": "A refund credit note for this deposit has already been issued.",
   "مستند ZATCA موجود مسبقاً لهذا العربون.": "A ZATCA document already exists for this deposit.",
   "لا يُربط حجزٌ بفاتورةٍ بعد ترحيلها.": "A reservation cannot be linked to an invoice after it is posted.",

@@ -10,6 +10,7 @@ using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Modules;
+using Brqosh.Infrastructure.Companies;
 using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Setup;
@@ -98,6 +99,9 @@ public partial class CompanySettingsPage : UserControl
         RenderEInvoiceReadiness(company);
         VatBox.Text = company.VatRegistrationNumber;
         ProfileText.Text = ProfileLabel(company.Profile);
+        ProfileBox.ItemsSource = Enum.GetValues<BusinessProfile>().Select(p => new ProfileOption(p, ProfileLabel(p))).ToList();
+        ProfileBox.DisplayMemberPath = nameof(ProfileOption.Label);
+        ProfileBox.SelectedItem = ((IEnumerable<ProfileOption>)ProfileBox.ItemsSource).First(o => o.Profile == company.Profile);
         ActiveModulesText.Text = ActiveModulesLabel(company.Profile);
 
         var countryId = string.IsNullOrWhiteSpace(_setup.CountryTemplateId)
@@ -175,6 +179,9 @@ public partial class CompanySettingsPage : UserControl
         LogoPreviewImage.Source = null;
         LogoPreviewPlaceholder.Visibility = Visibility.Visible;
     }
+
+    /// <summary>(ui-ux-i18n-printing#7) خيارُ ملفّ النشاط في القائمة.</summary>
+    private sealed record ProfileOption(BusinessProfile Profile, string Label);
 
     private static string ProfileLabel(BusinessProfile profile) => profile switch
     {
@@ -297,6 +304,25 @@ public partial class CompanySettingsPage : UserControl
             }
 
             // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ ضابطٌ رقابيّ — يمرّ بخدمةٍ تشترط المديرَ وتُدقّق التغيير، ولا يُحفظ بالسنّارة.
+            // ‏(ui-ux-i18n-printing#7) ‏ملفُّ النشاط يغيّره المديرُ عبر خدمةٍ تحرس الوحداتِ ذاتَ البيانات وتُدقّق التغيير؛
+            // ‏والرفضُ يُعرض بأسماء الوحدات المعروضة لا بأسمائها في الكود.
+            if (ProfileBox.SelectedItem is ProfileOption profileOpt && profileOpt.Profile != company.Profile)
+            {
+                using var facade = new DesktopAccountingFacade();
+                try
+                {
+                    await facade.GetService<BusinessProfileChangeService>().ChangeAsync(company.Id, profileOpt.Profile);
+                }
+                catch (ProfileHidesModulesWithDataException refused)
+                {
+                    var modules = string.Join(LocaleManager.T("، ", ", "), refused.Modules.Select(ModuleLabelAr));
+                    throw new InvalidOperationException(LocaleManager.T(
+                        $"لا يُغيَّر ملف النشاط إلى «{ProfileLabel(refused.Profile)}»: يُخفي وحداتٍ فيها بيانات — {modules}.",
+                        $"The business profile cannot change to “{ProfileLabel(refused.Profile)}”: it would hide modules that hold data — {modules}."));
+                }
+                ProfileText.Text = ProfileLabel(profileOpt.Profile);
+            }
+
             var threshold = ReadThreshold();
             if (company.ManualJournalApprovalThreshold != threshold)
             {
