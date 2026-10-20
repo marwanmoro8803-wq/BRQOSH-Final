@@ -31,8 +31,7 @@ public partial class ZatcaCsidWizardWindow : Window
             var settings = await db.ZatcaSettings.SingleOrDefaultAsync(s => s.CompanyId == AppServices.CompanyId);
             if (settings is not null && ZatcaSettingsSecrets.IsSignedOnAnotherMachine(settings)
                 && UiDialog.Show(
-                    "شهادة الختم مسجّلة على جهاز آخر في المنشأة. التسجيل هنا ينقل ختم الفواتير الإلكترونية إلى هذا الجهاز، "
-                    + "ويتوقف الجهاز الآخر عن إصدارها. متابعة؟",
+                    "شهادة الختم مسجّلة على جهاز آخر في المنشأة. التسجيل هنا ينقل ختم الفواتير الإلكترونية إلى هذا الجهاز، ويتوقف الجهاز الآخر عن إصدارها. متابعة؟",
                     "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                 return;
 
