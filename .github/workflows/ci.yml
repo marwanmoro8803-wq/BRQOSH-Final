@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, "wip/**"]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, "wip/**"]
 
 # ‏(م-٤ · ن-١٣) **صلاحيّاتُ الرمز — والافتراضُ كان مفتوحاً.**
 #
