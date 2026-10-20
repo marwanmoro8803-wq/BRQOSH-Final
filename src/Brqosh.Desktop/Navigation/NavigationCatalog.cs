@@ -201,15 +201,35 @@ public static class NavigationCatalog
         ]),
     ];
 
-    public static IReadOnlyList<NavGroup> ForProfile(BusinessProfile profile)
+    /// <param name="licensed">
+    /// ‏(ح-١٦٤ · security-licensing-tenancy#2) الوحداتُ التي يمنحها الترخيص — و<c>null</c> لا يحصر.
+    /// ‏فالقائمةُ لنظام العمل <b>وللترخيص معاً</b> (<see cref="ModuleCatalog.RestrictToLicense"/>).
+    /// </param>
+    public static IReadOnlyList<NavGroup> ForProfile(BusinessProfile profile, IReadOnlySet<ModuleKey>? licensed = null)
     {
-        var active = ModuleCatalog.ResolveModules(profile);
+        var active = ModuleCatalog.RestrictToLicense(ModuleCatalog.ResolveModules(profile), licensed);
         return Groups
             .Where(g => active.Contains(g.Module))
             .Select(g => g.Pages.All(p => p.Requires is null || active.Contains(p.Requires.Value))
                 ? g
                 : g with { Pages = g.Pages.Where(p => p.Requires is null || active.Contains(p.Requires.Value)).ToList() })
             .ToList();
+    }
+
+    /// <summary>
+    /// ‏(ح-١٦٤) <b>شاشةٌ يعرضها نظامُ العمل ويحجبها الترخيص</b> — فيرفضها <c>Navigate</c> نفسُه، لا القائمةُ وحدَها:
+    /// ‏الشاشةُ تُفتح كذلك من روابط اللوحة والشاشات الأخرى بمفتاحها، فإخفاءُ زرّها وحدَه لا يحجب شيئاً.
+    /// ‏وما لا يعرضه نظامُ العمل أصلاً ليس من شأن الترخيص — يبقى كما كان.
+    /// </summary>
+    public static bool IsWithheldByLicense(string pageKey, BusinessProfile profile, IReadOnlySet<ModuleKey>? licensed)
+    {
+        if (licensed is null)
+            return false;
+
+        static bool Shows(IReadOnlyList<NavGroup> groups, string key) =>
+            groups.Any(g => g.Pages.Any(p => p.Key == key));
+
+        return Shows(ForProfile(profile), pageKey) && !Shows(ForProfile(profile, licensed), pageKey);
     }
 
     /// <summary>عناوين إنجليزية للتنقل — G-27 i18n foundation.</summary>

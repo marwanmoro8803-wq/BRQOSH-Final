@@ -195,9 +195,12 @@ public partial class CompanySettingsPage : UserControl
         _ => LocaleManager.T("محاسبة عامة", "General accounting"),
     };
 
-    private static string ActiveModulesLabel(BusinessProfile profile)
+    /// <summary>‏(ح-١٦٤) ما تعرضه القائمةُ فعلاً: نظامُ العمل <b>محصوراً بالترخيص</b> — فلا تُعلَن وحدةٌ حجبها الترخيصُ مفعّلة.</summary>
+    private string ActiveModulesLabel(BusinessProfile profile)
     {
-        var modules = ModuleCatalog.ResolveModules(profile);
+        var modules = ModuleCatalog.RestrictToLicense(
+            ModuleCatalog.ResolveModules(profile),
+            Brqosh.Infrastructure.Licensing.LicenseStore.LicensedModulesFor(_setup.LicensedCompanyName ?? _setup.CompanyName));
         var labels = modules
             .Where(m => m != ModuleKey.GeneralLedger)
             .Select(ModuleLabelAr)

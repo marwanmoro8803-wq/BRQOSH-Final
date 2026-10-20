@@ -157,6 +157,20 @@ public static class LicenseStore
             : null;
     }
 
+    /// <summary>
+    /// ‏(ح-١٦٤ · security-licensing-tenancy#2) الوحداتُ التي يمنحها الترخيصُ الأصيلُ المحفوظ (<see cref="LicensedModules"/>)؛
+    /// ‏و<c>null</c> = لا حصر: ترخيصٌ بلا مدخلات <c>module:</c>، أو لا ترخيصَ أصيلاً (فالتطويرُ والتجربة — والإنتاجُ يُوقفه الإقلاعُ قبل هذا).
+    /// </summary>
+    public static IReadOnlySet<Brqosh.Domain.Modules.ModuleKey>? LicensedModulesFor(string companyName)
+    {
+        var stored = Load();
+        return stored?.SignedLicenseJson is not null
+               && RsaLicenseValidator.TryReadGenuine(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
+                   out var payload, alsoAcceptMachineId: LicenseService.LegacyMachineId())
+            ? LicensedModules.From(payload!.Features)
+            : null;
+    }
+
     public static void SaveSignedLicense(string companyName, string signedLicenseJson)
     {
         Save(new LicenseState(companyName, LicenseService.MachineId(), signedLicenseJson));

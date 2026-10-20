@@ -35,12 +35,20 @@ public partial class MainWindow : Window
     private bool _companyBinding;
     private bool _aiInputWired;
 
+    /// <summary>
+    /// ‏(ح-١٦٤ · security-licensing-tenancy#2) ما يمنحه الترخيصُ من وحدات — يُقرأ مرّةً عند فتح النافذة؛ و<c>null</c> لا يحصر.
+    /// ‏والترخيصُ يتبع الجهازَ لا المنشأةَ المختارة، فتبديلُ المنشأة لا يُعيد قراءتَه.
+    /// </summary>
+    private readonly IReadOnlySet<ModuleKey>? _licensedModules;
+
     private sealed record BranchOption(long Id, string Display, bool IsHeadquarters);
     private sealed record CompanyOption(long Id, string Display, BusinessProfile Profile);
 
     public MainWindow(SetupState setup)
     {
         _setup = setup;
+        _licensedModules = Brqosh.Infrastructure.Licensing.LicenseStore.LicensedModulesFor(
+            setup.LicensedCompanyName ?? setup.CompanyName);
         InitializeComponent();
 
         // ‏(ح-١٢٠) ‏**وضعُ القراءة يُرى في العنوان** — فلا يُحسب رفضُ الحفظ عطلاً.
@@ -586,7 +594,7 @@ public partial class MainWindow : Window
     {
         NavPanel.Children.Clear();
         _navButtons.Clear();
-        foreach (var group in NavigationCatalog.ForProfile(_setup.Profile))
+        foreach (var group in NavigationCatalog.ForProfile(_setup.Profile, _licensedModules))
         {
             var visiblePages = group.Pages
                 .Where(page => PermissionService.CanAccess(AppServices.CurrentUser, page.Key))
@@ -643,6 +651,14 @@ public partial class MainWindow : Window
         {
             UiDialog.Show(this, PermissionService.DeniedMessage(title), "BRQOSH",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // ‏(ح-١٦٤) ‏والترخيصُ يحجب هنا لا في القائمة وحدَها — فالشاشةُ تُفتح بمفتاحها من روابط اللوحة والشاشات.
+        if (NavigationCatalog.IsWithheldByLicense(pageKey, _setup.Profile, _licensedModules))
+        {
+            UiDialog.Show(this, "هذه الوحدة ليست ضمن ترخيصك. لإضافتها تواصل مع المورّد لإصدار ترخيصٍ يشملها.", "BRQOSH",
+                MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

@@ -114,6 +114,15 @@ public static class RsaLicenseValidator
                == LicenseVerdict.Valid
            && payload!.ExpiresUtc < (nowUtc ?? DateTime.UtcNow);
 
+    /// <summary>
+    /// ‏(ح-١٦٤) <b>حمولةُ ترخيصٍ أصيلٍ صالحاً كان أو منتهياً</b> — منشأتُه وجهازُه وتوقيعُه صحيحة. لقراءة ما يمنحه
+    /// ‏(<see cref="LicensedModules"/>) في وضع القراءة كذلك: فالترخيصُ المنتهي لا يفتح للقراءة وحداتٍ لم يمنحها.
+    /// </summary>
+    public static bool TryReadGenuine(string companyName, string machineId, string licenseJson,
+        out LicensePayload? payload, string? alsoAcceptMachineId = null)
+        => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId, ignoreExpiry: true, nowUtc: null)
+           == LicenseVerdict.Valid;
+
     private static LicenseVerdict Validate(string companyName, string machineId, string licenseJson,
         out LicensePayload? payload, string? alsoAcceptMachineId, bool ignoreExpiry, DateTime? nowUtc)
     {

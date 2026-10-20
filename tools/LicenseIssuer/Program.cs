@@ -27,8 +27,11 @@ static int PrintUsage()
                                      وإعادة بناء المنتج — ويُبطل كلَّ ترخيصٍ صادرٍ قبله.
                                    ⚠ لا يستبدل ملفَّ مفتاحٍ قائماً، ويرفض الكتابةَ في جذر
                                      بيانات المنتج (هناك يصير المفتاحُ مرساةَ ثقةٍ بلا قصد).
-        sign <company> <machineId> <privateKey.pem> [days]
+        sign <company> <machineId> <privateKey.pem> [days] [modules]
                                    اسمُ المنشأة يجب أن يطابق ما في معالج التهيئة حرفاً بحرف.
+                                   modules: وحداتٌ مفصولةٌ بفواصل (Sales,Inventory,...) تحصر الترخيص؛
+                                     وبدونها لا يحصر شيئاً. والمحاسبةُ العامّة تُمنح دائماً،
+                                     والفوترةُ الإلكترونيّة مع المبيعات.
         """);
     return 1;
 }
@@ -148,11 +151,28 @@ static int SignLicense(string[] args)
     var privateKeyPath = args[3];
     var days = args.Length > 4 && int.TryParse(args[4], out var d) ? d : 365;
 
+    // ‏(ح-١٦٤) ‏الوحداتُ تُكتب مدخلاتِ `module:` تحت التوقيع؛ واسمٌ لا يُعرف يُرفض هنا — لا يُسقَط صامتاً فيُصدَر ترخيصٌ أضيقُ ممّا بيع.
+    string[] features = ["core", "zatca", "construction"];
+    if (args.Length > 5 && !string.IsNullOrWhiteSpace(args[5]))
+    {
+        var modules = new List<Brqosh.Domain.Modules.ModuleKey>();
+        foreach (var name in args[5].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!Enum.TryParse<Brqosh.Domain.Modules.ModuleKey>(name, ignoreCase: true, out var key) || !Enum.IsDefined(key))
+            {
+                Console.Error.WriteLine($"وحدةٌ غيرُ معروفة: «{name}». المعروفة: {string.Join(", ", Enum.GetNames<Brqosh.Domain.Modules.ModuleKey>())}");
+                return 2;
+            }
+            modules.Add(key);
+        }
+        features = [.. features, .. LicensedModules.ToFeatures(modules)];
+    }
+
     var privatePem = File.ReadAllText(privateKeyPath);
     var payload = new LicensePayload(
         company, machineId, "standard",
         DateTime.UtcNow.AddDays(days),
-        ["core", "zatca", "construction"]);
+        features);
 
     var json = RsaLicenseValidator.CreateSignedLicenseJson(payload, privatePem);
     Console.WriteLine(json);

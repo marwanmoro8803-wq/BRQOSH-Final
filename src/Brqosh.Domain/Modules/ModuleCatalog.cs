@@ -99,6 +99,34 @@ public static class ModuleCatalog
         return resolved;
     }
 
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · ح-١٦٤ · security-licensing-tenancy#2) <b>وحداتُ نظام العمل التي يمنحها الترخيص.</b>
+    ///
+    /// <para>‏<paramref name="licensed"/> الفارغُ (<c>null</c>) = ترخيصٌ لا يحصر — ويبقى <paramref name="active"/> كما هو.
+    /// ‏وإلّا بقي من <paramref name="active"/> ما منحه الترخيصُ <b>وتبعيّاتُه كلُّها باقية</b>: فنقاطُ البيع بلا مخزونٍ
+    /// ‏ممنوحٍ تسقط ولا يجرّ ترخيصُها المخزونَ معها — <b>الحصرُ لا يتّسع بالتبعيّة</b>.</para>
+    ///
+    /// <para>‏ووحدتان لا تُحجبان: <b>المحاسبةُ العامّة</b> (النواة)، و<b>الفوترةُ الإلكترونيّة متى مُنحت المبيعات</b> —
+    /// ‏فمَن يبيع في السعوديّة يُفوتِر إلكترونيّاً، وحجبُها عن ترخيصٍ يبيع يُصدر فواتيرَ خارج نظام الهيئة: مخالفةٌ لا فئةٌ أدنى.</para>
+    /// </summary>
+    public static IReadOnlySet<ModuleKey> RestrictToLicense(IReadOnlySet<ModuleKey> active, IReadOnlySet<ModuleKey>? licensed)
+    {
+        if (licensed is null)
+            return active;
+
+        var granted = new HashSet<ModuleKey>(licensed) { ModuleKey.GeneralLedger };
+        if (granted.Contains(ModuleKey.Sales))
+            granted.Add(ModuleKey.Zatca);
+
+        var result = new HashSet<ModuleKey>(active.Where(granted.Contains));
+        while (result.RemoveWhere(m => Dependencies[m].Any(d => !result.Contains(d))) > 0)
+        {
+        }
+
+        result.Add(ModuleKey.GeneralLedger);
+        return result;
+    }
+
     public static IReadOnlyList<ModuleKey> DependenciesOf(ModuleKey module) => Dependencies[module];
 
     public static bool IsCore(ModuleKey module) => module == ModuleKey.GeneralLedger;

@@ -17,6 +17,7 @@
   "ستُلغى الفاتورة المرفوضة بعكس قيدها، ثم تُفتح فاتورة جديدة بسطورها لتصحّحها وترحّلها. متابعة؟": "The rejected invoice will be cancelled by reversing its entry, then a new invoice opens with its lines for you to correct and post. Continue?",
   "الفاتورة غير موجودة.": "Invoice not found.",
   "إعادة الإصدار للفواتير التي رفضتها الهيئة وحدها.": "Reissue applies only to invoices that ZATCA rejected.",
+  "هذه الوحدة ليست ضمن ترخيصك. لإضافتها تواصل مع المورّد لإصدار ترخيصٍ يشملها.": "This module is not included in your licence. To add it, contact the vendor for a licence that includes it.",
   "إشعار ردّ هذا العربون صادر مسبقاً.": "A refund credit note for this deposit has already been issued.",
   "مستند ZATCA موجود مسبقاً لهذا العربون.": "A ZATCA document already exists for this deposit.",
   "لا يُربط حجزٌ بفاتورةٍ بعد ترحيلها.": "A reservation cannot be linked to an invoice after it is posted.",

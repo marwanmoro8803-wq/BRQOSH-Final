@@ -2410,6 +2410,7 @@ public static partial class UiBilingualRegistry
         ["هذا النوع لا يدعم الاسترجاع بعد."] = "This type does not support restoring yet.",
         ["هذه العملية تتطلب صلاحية مدير النظام."] = "This operation requires system administrator permission.",
         ["هذه العملية للأوامر المكتملة فقط."] = "This operation is for completed orders only.",
+        ["هذه الوحدة ليست ضمن ترخيصك. لإضافتها تواصل مع المورّد لإصدار ترخيصٍ يشملها."] = "This module is not included in your licence. To add it, contact the vendor for a licence that includes it.",
         ["هل انتهت الخدمة بالاستقالة؟ — «نعم» تُطبّق سُلَّم المادة 85."] = "Did the service end by resignation? — \"Yes\" applies the Article 85 scale.",
         ["هل تريد حفظ نسخة من الملف؟"] = "Do you want to save a copy of the file?",
         ["هوية · جنسية · أجر · آيبان — والجنسية تحكم اشتراك التأمينات"] = "ID · Nationality · Pay · IBAN — nationality governs the GOSI contribution",

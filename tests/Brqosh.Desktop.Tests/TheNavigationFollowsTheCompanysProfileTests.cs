@@ -74,7 +74,8 @@ public class TheNavigationFollowsTheCompanysProfileTests
         var app = Source("App.xaml.cs");
 
         Assert.True(window.Length > 10_000 && app.Length > 10_000, "‏مصدرٌ مقروءٌ قصيرٌ — مشكوكٌ فيه.");
-        Assert.Contains("NavigationCatalog.ForProfile(_setup.Profile)", MethodBody(window, "private void BuildNavigation()"),
+        // ‏(ح-١٦٤) ‏والقائمةُ محصورةٌ بالترخيص كذلك — ونظامُها يبقى `_setup.Profile`، وهو ما يُثبَت هنا.
+        Assert.Contains("NavigationCatalog.ForProfile(_setup.Profile, _licensedModules)", MethodBody(window, "private void BuildNavigation()"),
             StringComparison.Ordinal);
         Assert.Contains("DatabaseBootstrapService", app, StringComparison.Ordinal);
     }
