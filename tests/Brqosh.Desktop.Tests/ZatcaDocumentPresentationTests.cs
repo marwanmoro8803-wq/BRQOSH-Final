@@ -38,6 +38,9 @@ public class ZatcaDocumentPresentationTests
         { ZatcaDocumentType.AssetDisposal, ZatcaDocumentPresentation.SourceKind.FixedAssetDisposal },
         // ‏(ح-١٦١) وإلغاءُ بيع الأصل — مصدرُه الأصلُ المبيع.
         { ZatcaDocumentType.DisposalCancel, ZatcaDocumentPresentation.SourceKind.FixedAssetDisposal },
+        // ‏(sector-modules#6) وفاتورةُ الدفعة المقدّمة وإشعارُ ردّها — **فضاءُ معرّفاتٍ خامس**، مصدرُهما قيدُ العربون.
+        { ZatcaDocumentType.Prepayment, ZatcaDocumentPresentation.SourceKind.ReservationDeposit },
+        { ZatcaDocumentType.DepositRefund, ZatcaDocumentPresentation.SourceKind.ReservationDeposit },
     };
 
     // ── العطلُ نفسُه ────────────────────────────────────────────────────────
@@ -73,7 +76,9 @@ public class ZatcaDocumentPresentationTests
              ZatcaDocumentType.InvoiceCancel,
              ZatcaDocumentType.BillingCancel,
              ZatcaDocumentType.AssetDisposal,
-             ZatcaDocumentType.DisposalCancel],
+             ZatcaDocumentType.DisposalCancel,
+             ZatcaDocumentType.Prepayment,
+             ZatcaDocumentType.DepositRefund],
             misread);
     }
 

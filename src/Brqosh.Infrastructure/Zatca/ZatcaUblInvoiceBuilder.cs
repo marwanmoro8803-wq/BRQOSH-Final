@@ -79,7 +79,16 @@ public static class ZatcaUblInvoiceBuilder
         /// تاليه — <b>يلزم أن يُمرَّر التاريخُ الحقيقيّ</b>، فهو الذي يُحدّد فترةَ الإقرار.
         /// والمستندُ اليومَ لا يحمل حقلاً له: <b>بندٌ مفتوحٌ مُسمّى، لا صمتٌ عنه</b>.</para>
         /// </summary>
-        DateOnly? SupplyDate = null);
+        DateOnly? SupplyDate = null,
+        bool IsPrepayment = false,
+        IReadOnlyList<PrepaymentReference>? Prepayments = null);
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) فاتورةُ دفعةٍ مقدّمةٍ (386) تُسوّى في الفاتورة النهائيّة — كما في معيار
+    /// XML (الإصدار 1.2، §9.5): رقمُها وتاريخُها ووقتُها (KSA-26/28/29) ووعاؤها وضريبتُها (KSA-31/32) بفئتها (KSA-33/34).
+    /// </summary>
+    public sealed record PrepaymentReference(
+        string Id, DateOnly IssueDate, TimeOnly IssueTime, decimal TaxableAmount, decimal VatAmount);
 
 /// <summary>
 /// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
@@ -103,7 +112,8 @@ public sealed record BuyerIdentity(
 
     public static byte[] BuildXml(InvoiceData data)
     {
-        var typeCode = data.IsDebitNote ? "383" : data.IsCreditNote ? "381" : "388";
+        // ‏(sector-modules#6) ‏386 فاتورةُ الدفعة المقدّمة — تُصدر يومَ قبضها، فهي نقطةُ استحقاق الضريبة.
+        var typeCode = data.IsDebitNote ? "383" : data.IsCreditNote ? "381" : data.IsPrepayment ? "386" : "388";
         var typeName = data.IsSimplified ? "0200000" : "0100000";
 
         var root = new XElement(Ubl + "Invoice",
@@ -231,6 +241,10 @@ public sealed record BuyerIdentity(
         // ‏`LineExtensionAmount` **قبل** الخصم و`TaxExclusiveAmount` بعده — والفرقُ بينهما
         // ‏هو `AllowanceTotalAmount` بعينه. وهذه المعادلةُ يفرضها المدقّق.
         var lineExtension = data.Subtotal + data.DocumentDiscount;
+
+        // ‏(sector-modules#6) ‏**والدفعةُ المقدّمةُ تُسوّى في المستحقّ لا في التوريد** (§9.5): `TaxInclusiveAmount` الإقامةُ
+        // ‏كلُّها بضريبتها، و`PrepaidAmount` = Σ(KSA-31 + KSA-32)، و`PayableAmount` الفرق.
+        var prepaid = data.Prepayments?.Sum(p => p.TaxableAmount + p.VatAmount) ?? 0m;
         var monetary = new XElement(Cac + "LegalMonetaryTotal",
             El(Cbc, "LineExtensionAmount", F(lineExtension), ("currencyID", data.CurrencyCode)),
             El(Cbc, "TaxExclusiveAmount", F(data.Subtotal), ("currencyID", data.CurrencyCode)),
@@ -238,7 +252,8 @@ public sealed record BuyerIdentity(
             data.DocumentDiscount > 0m
                 ? El(Cbc, "AllowanceTotalAmount", F(data.DocumentDiscount), ("currencyID", data.CurrencyCode))
                 : null,
-            El(Cbc, "PayableAmount", F(data.GrandTotal), ("currencyID", data.CurrencyCode)));
+            prepaid > 0m ? El(Cbc, "PrepaidAmount", F(prepaid), ("currencyID", data.CurrencyCode)) : null,
+            El(Cbc, "PayableAmount", F(data.GrandTotal - prepaid), ("currencyID", data.CurrencyCode)));
         root.Add(monetary);
 
         var idx = 1;
@@ -284,6 +299,40 @@ public sealed record BuyerIdentity(
                         new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))),
                 new XElement(Cac + "Price", El(Cbc, "PriceAmount", F(line.UnitPrice), ("currencyID", data.CurrencyCode))));
             root.Add(invLine);
+            idx++;
+        }
+
+        // ‏(sector-modules#6) ‏**سطرُ تسويةٍ لكلّ دفعةٍ مقدّمة** (§9.5): مبالغُ التوريد فيه أصفار، ومرجعُ فاتورة 386 بمعرّفها
+        // ‏وتاريخها ووقتها، وتفصيلُ وعائها وضريبتها في `TaxSubtotal` بفئة S ونسبة 15.
+        foreach (var p in data.Prepayments ?? [])
+        {
+            var rate = (SalesInvoice.SaudiVatRate * 100m).ToString("0.00", CultureInfo.InvariantCulture);
+            root.Add(new XElement(Cac + "InvoiceLine",
+                El(Cbc, "ID", idx.ToString()),
+                El(Cbc, "InvoicedQuantity", "0.00", ("unitCode", "PCE")),
+                El(Cbc, "LineExtensionAmount", "0.00", ("currencyID", data.CurrencyCode)),
+                new XElement(Cac + "DocumentReference",
+                    El(Cbc, "ID", p.Id),
+                    El(Cbc, "IssueDate", p.IssueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+                    El(Cbc, "IssueTime", p.IssueTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture)),
+                    El(Cbc, "DocumentTypeCode", "386")),
+                new XElement(Cac + "TaxTotal",
+                    El(Cbc, "TaxAmount", "0.00", ("currencyID", data.CurrencyCode)),
+                    El(Cbc, "RoundingAmount", "0.00", ("currencyID", data.CurrencyCode)),
+                    new XElement(Cac + "TaxSubtotal",
+                        El(Cbc, "TaxableAmount", F(p.TaxableAmount), ("currencyID", data.CurrencyCode)),
+                        El(Cbc, "TaxAmount", F(p.VatAmount), ("currencyID", data.CurrencyCode)),
+                        new XElement(Cac + "TaxCategory",
+                            El(Cbc, "ID", "S"),
+                            El(Cbc, "Percent", rate),
+                            new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT"))))),
+                new XElement(Cac + "Item",
+                    El(Cbc, "Name", "Prepayment adjustment"),
+                    new XElement(Cac + "ClassifiedTaxCategory",
+                        El(Cbc, "ID", "S"),
+                        El(Cbc, "Percent", rate),
+                        new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))),
+                new XElement(Cac + "Price", El(Cbc, "PriceAmount", "0.00", ("currencyID", data.CurrencyCode)))));
             idx++;
         }
 

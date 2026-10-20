@@ -770,6 +770,10 @@ public class GeneratedDocumentsConformTests : IDisposable
             nameof(ZatcaEInvoiceGenerator.TryGenerateForAssetDisposalAsync),
             // ‏(ح-١٦١) ‏وإلغاءُ بيع الأصل — <see cref="AGeneratedAssetDisposalCancellation_Conforms"/>.
             nameof(ZatcaEInvoiceGenerator.TryGenerateCancellationForAssetDisposalAsync),
+            // ‏(sector-modules#6) ‏فاتورةُ الدفعة المقدّمة (386) وإشعارُ ردّها — والمتجرُ لا يبلغهما (لا حجوزَ في التجزئة)، فيُقاسان
+            // ‏في ملفّ الضيافة: <see cref="Hospitality.AReservationDepositIssuesAPrepaymentInvoiceTests.ThePrepayment_TheSettlingInvoice_AndTheRefund_Conform"/>.
+            nameof(ZatcaEInvoiceGenerator.TryGenerateForPrepaymentAsync),
+            nameof(ZatcaEInvoiceGenerator.TryGenerateRefundForPrepaymentAsync),
         ];
 
         // ‏واسمٌ في القائمتين لا يقابله مسارٌ حقيقيّ يجعل الحارسَ يُصدّق ادّعاءَ نفسه —

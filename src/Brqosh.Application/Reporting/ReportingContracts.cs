@@ -200,7 +200,8 @@ public record VatReturnDto(
     IReadOnlyList<VatReturnCategoryDto>? SalesByCategory = null,
     IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null,
     IReadOnlyList<VatReturnBoxDto>? SalesBoxes = null,
-    IReadOnlyList<VatReturnBoxDto>? PurchaseBoxes = null)
+    IReadOnlyList<VatReturnBoxDto>? PurchaseBoxes = null,
+    decimal JournalOutputVatInBoxes = 0m)
 {
     public decimal NetOutputVat => VatReturnNet.Output(
         OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat);

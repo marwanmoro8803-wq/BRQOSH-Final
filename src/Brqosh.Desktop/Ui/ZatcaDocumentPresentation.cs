@@ -41,6 +41,9 @@ public static class ZatcaDocumentPresentation
 
         /// <summary>(ح-١٦) أصلٌ ثابتٌ بِيع — في <c>fixed_assets</c>.</summary>
         FixedAssetDisposal,
+
+        /// <summary>(sector-modules#6) عربونُ حجزٍ — قيدُه في <c>journal_entries</c>.</summary>
+        ReservationDeposit,
     }
 
     /// <summary>اسمُ نوع المستند كما يُعرض في الجدول.</summary>
@@ -54,6 +57,8 @@ public static class ZatcaDocumentPresentation
         ZatcaDocumentType.BillingCancel => LocaleManager.T("إشعار دائن (إلغاء مستخلص)", "Credit Note (Billing Cancellation)"),
         ZatcaDocumentType.AssetDisposal => LocaleManager.T("فاتورة بيع أصل ثابت", "Fixed Asset Sale Invoice"),
         ZatcaDocumentType.DisposalCancel => LocaleManager.T("إشعار دائن (إلغاء بيع أصل)", "Credit Note (Asset Sale Cancellation)"),
+        ZatcaDocumentType.Prepayment => LocaleManager.T("فاتورة دفعة مقدّمة", "Prepayment Invoice"),
+        ZatcaDocumentType.DepositRefund => LocaleManager.T("إشعار دائن (ردّ عربون)", "Credit Note (Deposit Refund)"),
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };
@@ -77,6 +82,8 @@ public static class ZatcaDocumentPresentation
         ZatcaDocumentType.AssetDisposal => SourceKind.FixedAssetDisposal,
         // ‏(ح-١٦١) ‏وإلغاءُ بيع الأصل مصدرُه الأصلُ المبيع نفسُه.
         ZatcaDocumentType.DisposalCancel => SourceKind.FixedAssetDisposal,
+        ZatcaDocumentType.Prepayment => SourceKind.ReservationDeposit,
+        ZatcaDocumentType.DepositRefund => SourceKind.ReservationDeposit,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "نوعُ مستندٍ إلكترونيٍّ غيرُ معروفٍ لشاشة المستندات."),
     };
@@ -88,6 +95,7 @@ public static class ZatcaDocumentPresentation
         SourceKind.CreditNote => LocaleManager.T("إشعار دائن", "Credit Note"),
         SourceKind.ProgressBilling => LocaleManager.T("مستخلص أعمال", "Progress Billing"),
         SourceKind.FixedAssetDisposal => LocaleManager.T("أصل ثابت مباع", "Fixed Asset Sold"),
+        SourceKind.ReservationDeposit => LocaleManager.T("عربون حجز", "Reservation Deposit"),
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
     };
 

@@ -78,8 +78,10 @@ public static class VatReturnRows
             return;
 
         AddBoxes(rows, r.SalesBoxes, Brqosh.Domain.Tax.VatReturnBox.TotalSales);
-        if (r.JournalOutputVat != 0m)
-            rows.Add(new Row(LocaleManager.T("ضريبة مخرجات بلا مستند محسوب — لا خانة لها هنا", "Output VAT without a counted document — no box here"), r.JournalOutputVat, Indented: true));
+        // ‏(sector-modules#6) ‏ضريبةُ العرابين قيدٌ لا مستندٌ محسوب — لكنّ لها فاتورةَ دفعةٍ (386) فبلغت الخانة 1؛ فلا تُعرض هنا مرّتين.
+        var outputVatWithoutBox = r.JournalOutputVat - r.JournalOutputVatInBoxes;
+        if (outputVatWithoutBox != 0m)
+            rows.Add(new Row(LocaleManager.T("ضريبة مخرجات بلا مستند محسوب — لا خانة لها هنا", "Output VAT without a counted document — no box here"), outputVatWithoutBox, Indented: true));
         AddBoxes(rows, r.PurchaseBoxes, Brqosh.Domain.Tax.VatReturnBox.TotalPurchases);
         if (r.JournalInputVat != 0m)
             rows.Add(new Row(LocaleManager.T("ضريبة مدخلات بلا مستند محسوب — لا خانة لها هنا", "Input VAT without a counted document — no box here"), r.JournalInputVat, Indented: true));

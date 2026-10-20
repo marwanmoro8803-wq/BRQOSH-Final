@@ -4,6 +4,7 @@ using Brqosh.Domain.Construction;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Tax;
 using Brqosh.Domain.Zatca;
+using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +45,91 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             invoice.Lines, mode,
             isCreditNote: false, documentDiscount: invoice.DocumentDiscountAmount,
             currencyCode: invoice.CurrencyCode, exchangeRate: invoice.ExchangeRate,
-            vatAmountInSar: invoice.VatAmount);
+            vatAmountInSar: invoice.VatAmount,
+            prepayments: await PrepaymentsSettledByAsync(invoice));
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>فواتيرُ الدفعات المقدّمة (386) التي تُسوّيها فاتورةُ المغادرة</b> — عرابينُ
+    /// حجزها التي صدرت لها فاتورةٌ إلكترونيّة، برقمها وتاريخها ووقتها كما صدرت، ووعائها وضريبتها من قيدها.
+    /// </summary>
+    private async Task<IReadOnlyList<ZatcaUblInvoiceBuilder.PrepaymentReference>?> PrepaymentsSettledByAsync(SalesInvoice invoice)
+    {
+        if (invoice.SettlesReservationId is not long reservationId)
+            return null;
+
+        var source = $"{Brqosh.Infrastructure.Hospitality.ReservationDepositService.TakenPrefix}{reservationId}";
+        var deposits = await db.JournalEntries
+            .Where(e => e.CompanyId == invoice.CompanyId && e.SourceDocument == source)
+            // ‏سؤالُ وجودٍ لا مبلغ: عربونٌ عُكس قيدُه لا يُسوّى، وقيدُ العكس يرث مصدرَه فلا يُعدّ عربوناً (WhereStanding).
+            .WhereStanding(db.JournalEntries)
+            .Select(e => e.Id)
+            .ToListAsync();
+        if (deposits.Count == 0)
+            return null;
+
+        var docs = await db.ZatcaEInvoiceDocuments
+            .Where(d => d.CompanyId == invoice.CompanyId && d.DocumentType == ZatcaDocumentType.Prepayment
+                        && deposits.Contains(d.SourceDocumentId))
+            .OrderBy(d => d.Icv)
+            .ToListAsync();
+
+        var refs = new List<ZatcaUblInvoiceBuilder.PrepaymentReference>();
+        foreach (var doc in docs)
+        {
+            var (date, net, vat) = await DepositAmountsAsync(doc.SourceDocumentId);
+            refs.Add(new(doc.InvoiceNumber, date, TimeOnly.FromDateTime(doc.GeneratedAtUtc + RiyadhOffset), net, vat));
+        }
+
+        return refs.Count == 0 ? null : refs;
+    }
+
+    /// <summary>(sector-modules#6) تاريخُ قيد العربون وصافيه (دائنُ 2105) وضريبتُه (دائنُ 2106).</summary>
+    private async Task<(DateOnly Date, decimal Net, decimal Vat)> DepositAmountsAsync(long depositEntryId)
+    {
+        var entry = await db.JournalEntries.Include(e => e.Lines).SingleAsync(e => e.Id == depositEntryId);
+        var net = entry.Lines.Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers).Sum(l => l.Credit);
+        var vat = entry.Lines.Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.VatOutput).Sum(l => l.Credit);
+        return (entry.EntryDate, net, vat);
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>فاتورةُ الدفعة المقدّمة (386) عن عربون حجز</b> — يومَ قبضه، فهو نقطةُ
+    /// استحقاق الضريبة. رقمُها <c>DEP-</c> ورقمُ قيدها (فريدٌ ومتسلسل)، ومشتريها نزيلُ الحجز، وسطرُها صافي العربون بالنسبة الأساسيّة.
+    /// </summary>
+    public async Task<ZatcaEInvoiceDocument?> TryGenerateForPrepaymentAsync(long depositEntryId)
+    {
+        var entry = await db.JournalEntries.SingleOrDefaultAsync(e => e.Id == depositEntryId);
+        var prefix = Brqosh.Infrastructure.Hospitality.ReservationDepositService.TakenPrefix;
+        if (entry is null || entry.Status != JournalEntryStatus.Posted || entry.EntryNumber is null
+            || entry.SourceDocument is null || !entry.SourceDocument.StartsWith(prefix, StringComparison.Ordinal))
+            return null;
+
+        var settings = await GetSettingsAsync(entry.CompanyId);
+        if (settings is null || !settings.IsEnabled) return null;
+
+        if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == entry.CompanyId && d.DocumentType == ZatcaDocumentType.Prepayment && d.SourceDocumentId == depositEntryId))
+            throw new AccountingException("مستند ZATCA موجود مسبقاً لهذا العربون.");
+
+        var reservationId = long.Parse(entry.SourceDocument[prefix.Length..], System.Globalization.CultureInfo.InvariantCulture);
+        var reservation = await db.Reservations.SingleAsync(r => r.Id == reservationId);
+        var company = await db.Companies.SingleAsync(c => c.Id == entry.CompanyId);
+        if (string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
+            throw new AccountingException("الرقم الضريبي للمنشأة مطلوب لتفعيل ZATCA.");
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == reservation.GuestCustomerId);
+        var mode = customer.SupportsStandardTaxInvoice ? ZatcaTransmissionMode.Clearance : ZatcaTransmissionMode.Reporting;
+
+        var (date, net, vat) = await DepositAmountsAsync(depositEntryId);
+        var lines = new List<SalesInvoiceLine>
+        {
+            new($"دفعة مقدّمة — حجز {reservation.ReservationNumber}", 1m, net, null),
+        };
+
+        return await GenerateAsync(
+            entry.CompanyId, ZatcaDocumentType.Prepayment, depositEntryId,
+            $"DEP-{entry.EntryNumber}", date, company, customer,
+            net, vat, net + vat, lines, mode, isCreditNote: false, isPrepayment: true);
     }
 
     public async Task<ZatcaEInvoiceDocument?> TryGenerateForCreditNoteAsync(long creditNoteId)
@@ -256,6 +341,45 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>إشعارٌ دائنٌ بردّ عربون حجزٍ أُلغي</b> — يُشير إلى فاتورة دفعته (386)
+    /// بمبلغها نفسِه، فتخرج ضريبتُها من فترة الردّ كما خرجت من الأستاذ. وعربونٌ بلا فاتورةِ دفعةٍ لا إشعارَ له.
+    /// </summary>
+    public async Task<ZatcaEInvoiceDocument?> TryGenerateRefundForPrepaymentAsync(long depositEntryId, DateOnly refundDate)
+    {
+        var prepayment = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+            d.DocumentType == ZatcaDocumentType.Prepayment && d.SourceDocumentId == depositEntryId);
+        if (prepayment is null)
+            return null;
+
+        var settings = await GetSettingsAsync(prepayment.CompanyId);
+        if (settings is null || !settings.IsEnabled) return null;
+        if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == prepayment.CompanyId && d.DocumentType == ZatcaDocumentType.DepositRefund
+                && d.SourceDocumentId == depositEntryId))
+            throw new AccountingException("إشعار ردّ هذا العربون صادر مسبقاً.");
+
+        var entry = await db.JournalEntries.SingleAsync(e => e.Id == depositEntryId);
+        var prefix = Brqosh.Infrastructure.Hospitality.ReservationDepositService.TakenPrefix;
+        var reservationId = long.Parse(entry.SourceDocument![prefix.Length..], System.Globalization.CultureInfo.InvariantCulture);
+        var reservation = await db.Reservations.SingleAsync(r => r.Id == reservationId);
+        var company = await db.Companies.SingleAsync(c => c.Id == prepayment.CompanyId);
+        var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == reservation.GuestCustomerId);
+        var mode = customer.SupportsStandardTaxInvoice ? ZatcaTransmissionMode.Clearance : ZatcaTransmissionMode.Reporting;
+
+        var (_, net, vat) = await DepositAmountsAsync(depositEntryId);
+        var lines = new List<SalesInvoiceLine>
+        {
+            new($"ردّ دفعة مقدّمة — حجز {reservation.ReservationNumber}", 1m, net, null),
+        };
+
+        return await GenerateAsync(
+            prepayment.CompanyId, ZatcaDocumentType.DepositRefund, depositEntryId,
+            $"CN-{prepayment.InvoiceNumber}", refundDate, company, customer,
+            net, vat, net + vat, lines, mode, isCreditNote: true,
+            issueReason: "إلغاء الحجز وردّ العربون");
+    }
+
+    /// <summary>
     /// ‏(جاهزيّةُ الإطلاق · ح-١٦١) <b>إشعارٌ دائنٌ عند عكس استبعاد أصلٍ بيع بفاتورة</b> — بمبالغ الفاتورة نفسِها ومشتريها، ومرجعُه هي.
     /// ‏و<c>null</c> إن لم تكن للبيع فاتورةٌ إلكترونيّة أو كانت الفوترةُ معطَّلة — والمستدعي يقرّر.
     /// </summary>
@@ -430,7 +554,8 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         decimal subtotal, decimal vat, decimal total,
         IReadOnlyList<SalesInvoiceLine> lines, ZatcaTransmissionMode mode, bool isCreditNote,
         bool isDebitNote = false, string? issueReason = null, decimal documentDiscount = 0m,
-        string currencyCode = "SAR", decimal exchangeRate = 1m, decimal? vatAmountInSar = null)
+        string currencyCode = "SAR", decimal exchangeRate = 1m, decimal? vatAmountInSar = null,
+        bool isPrepayment = false, IReadOnlyList<ZatcaUblInvoiceBuilder.PrepaymentReference>? prepayments = null)
     {
         // (CEEF-229 · م2-١٣أ) **هويةُ البائع تُفحص قبل استهلاك أيّ عدّاد.**
         //
@@ -576,7 +701,11 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             // (CEEF-230 · ط1-٤) ‏عملةُ المستند وسعرُها، والضريبةُ بالريال للإفصاح BT-111.
             CurrencyCode: currencyCode,
             ExchangeRate: exchangeRate,
-            VatAmountInSar: vatAmountInSar);
+            VatAmountInSar: vatAmountInSar,
+
+            // ‏(sector-modules#6) ‏فاتورةُ الدفعة المقدّمة (386)، وتسويةُ ما سبقها في فاتورة المغادرة.
+            IsPrepayment: isPrepayment,
+            Prepayments: prepayments);
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);
@@ -690,6 +819,18 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                     d.SourceDocumentId == sourceId);
                 if (originalSale is not null)
                     return (originalSale.InvoiceNumber, originalSale.InvoiceUuid);
+                break;
+            }
+
+            case ZatcaDocumentType.DepositRefund:
+            {
+                // ‏(sector-modules#6) ‏ردُّ العربون يُشير إلى فاتورة دفعته (386) — المصدرُ نفسُه: قيدُ العربون.
+                var prepayment = await db.ZatcaEInvoiceDocuments.FirstOrDefaultAsync(d =>
+                    d.CompanyId == companyId &&
+                    d.DocumentType == ZatcaDocumentType.Prepayment &&
+                    d.SourceDocumentId == sourceId);
+                if (prepayment is not null)
+                    return (prepayment.InvoiceNumber, prepayment.InvoiceUuid);
                 break;
             }
 

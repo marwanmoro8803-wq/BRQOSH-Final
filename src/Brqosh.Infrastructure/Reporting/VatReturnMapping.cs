@@ -37,7 +37,8 @@ public static class VatReturnMapping
             Map(r.PurchasesByCategory),
             // ‏(جاهزيّةُ الإطلاق · ح-١٦٥) ‏وخاناتُ النموذج تعبر الحدَّ كذلك — وصلةٌ تُقاس هنا لا في المُحوِّل.
             Map(r.SalesBoxes),
-            Map(r.PurchaseBoxes));
+            Map(r.PurchaseBoxes),
+            r.JournalOutputVatInBoxes);
 
     private static IReadOnlyList<VatReturnBoxDto>? Map(IReadOnlyList<VatReturnBoxLine>? boxes) =>
         boxes?.Select(b => new VatReturnBoxDto(b.Box, b.Amount, b.Adjustments, b.VatAmount, b.VatAdjustments))

@@ -194,6 +194,8 @@ public class FolioService(BrqoshDbContext db)
             }
 
             var invoice = SalesInvoice.CreateDraft(companyId, reservation.GuestCustomerId, on);
+            // ‏(sector-modules#6) ‏قبل الترحيل — فمستندُها الإلكترونيُّ يُولَّد داخله ويُسوّي فواتيرَ عرابين هذا الحجز (386).
+            invoice.MarkAsSettlementOf(reservation.Id);
             foreach (var charge in folio.Charges.OrderBy(c => c.ChargeDate))
                 invoice.AddLine(charge.Description, 1m, charge.Amount, vatCategory: charge.VatCategory);
 

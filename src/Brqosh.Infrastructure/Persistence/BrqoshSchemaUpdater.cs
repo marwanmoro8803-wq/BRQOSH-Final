@@ -515,6 +515,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("sales_invoices", "WarehouseId", "BIGINT NULL", ct);
         else
             await EnsureSqliteColumnAsync("sales_invoices", "WarehouseId", "INTEGER NULL", ct);
+
+        // ‏(sector-modules#6) ‏الحجزُ الذي تُصفّيه فاتورةُ المغادرة — فارغٌ لكلّ فاتورةٍ قائمة.
+        if (isPg)
+            await EnsurePgColumnAsync("sales_invoices", "SettlesReservationId", "BIGINT NULL", ct);
+        else
+            await EnsureSqliteColumnAsync("sales_invoices", "SettlesReservationId", "INTEGER NULL", ct);
     }
 
     private async Task EnsurePurchaseInvoiceWarehouseColumnAsync(bool isPg, CancellationToken ct)

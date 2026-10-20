@@ -1,4 +1,7 @@
 {
+  "إشعار ردّ هذا العربون صادر مسبقاً.": "A refund credit note for this deposit has already been issued.",
+  "مستند ZATCA موجود مسبقاً لهذا العربون.": "A ZATCA document already exists for this deposit.",
+  "لا يُربط حجزٌ بفاتورةٍ بعد ترحيلها.": "A reservation cannot be linked to an invoice after it is posted.",
   "مفتاح الختم مشفّر لجهاز آخر — أعد تسجيل هذا الجهاز لدى الهيئة (شهادة جديدة).": "The stamp key is encrypted for another machine — re-onboard this device with ZATCA (a new certificate).",
   "تشفير مفتاح الختم يتطلب ويندوز (DPAPI).": "Encrypting the stamp key requires Windows (DPAPI).",
   "مفتاح استعادة المدير": "Administrator recovery key",

@@ -230,6 +230,8 @@ public partial class DocumentPrintService
             // (جاهزيّةُ الإطلاق · ح-١٩) ‏ومستنداتُ الإلغاء الثلاثة — **بأنفسها لا بمصادرها**.
             ZatcaDocumentType.InvoiceCancel or ZatcaDocumentType.BillingCancel or ZatcaDocumentType.DebitNote
                 or ZatcaDocumentType.DisposalCancel
+                // ‏(sector-modules#6) ‏وفاتورةُ الدفعة المقدّمة — مصدرُها قيدٌ لا مستندٌ يُطبع، فتُطبع بنفسها.
+                or ZatcaDocumentType.Prepayment or ZatcaDocumentType.DepositRefund
                 => await ExportZatcaCancellationAsync(companyId, zatcaDocumentId, username, ct),
             _ => throw new InvalidOperationException($"طباعة PDF غير مدعومة لنوع المستند: {doc.DocumentType}"),
         };

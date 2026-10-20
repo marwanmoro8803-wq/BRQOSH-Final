@@ -64,7 +64,9 @@ public record VatReturnResult(
     decimal JournalInputVat = 0m,
     // (جاهزيّةُ الإطلاق · ح-١٦٥) ‏خاناتُ النموذج — من الأوعية نفسِها مقسومةً برمز الإعفاء؛ انظر `VatReturnBox`.
     IReadOnlyList<VatReturnBoxLine>? SalesBoxes = null,
-    IReadOnlyList<VatReturnBoxLine>? PurchaseBoxes = null)
+    IReadOnlyList<VatReturnBoxLine>? PurchaseBoxes = null,
+    // (sector-modules#6) ‏من `JournalOutputVat` ما بلغ خانةً — ضريبةُ العرابين (فاتورةُ دفعتها 386 في الخانة 1).
+    decimal JournalOutputVatInBoxes = 0m)
 {
     /// <summary>
     /// (CEEF-229 · A-15) المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
@@ -253,8 +255,10 @@ public class VatReturnQuery(BrqoshDbContext db)
         // ‏(جاهزيّةُ الإطلاق · ح-١٦٥ · tax-zatca#12) ‏**وخاناتُ النموذج من الأوعية نفسِها** — كلُّ وعاءٍ يُقسم
         // ‏على خاناته برمز إعفاء سطوره، فلا مصدرَ ثانٍ يفترق. ‏**ومستنداتُ الفترة «مبلغ»، وما يُصحّحها «تعديلات»**
         // ‏كأعمدة البوّابة: الإشعاراتُ وتسويةُ إلغاء ما صدر قبل الفترة (في الاتّجاهين).
+        var depositParts = await DepositBoxPartsAsync(companyId, from, to);
         var salesBoxes = BoxLines(VatReturnBox.SalesBoxes,
         [
+            .. depositParts,
             .. sales.SelectMany(i => DocumentBoxParts(
                 i.Lines, i.DocumentDiscountAmount, i.ExchangeRate, i.Subtotal, +1, false, SaleBox)),
             .. progressBillings.Select(b => ProgressBillingPart(b, +1, false)),
@@ -315,7 +319,57 @@ public class VatReturnQuery(BrqoshDbContext db)
             SalesBaseNet: salesBaseNet,
             PurchasesBaseNet: purchasesBaseNet,
             SalesBoxes: salesBoxes,
-            PurchaseBoxes: purchaseBoxes);
+            PurchaseBoxes: purchaseBoxes,
+            JournalOutputVatInBoxes: depositParts.Sum(p => p.Vat));
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>العرابينُ في الخانة 1</b> — لها فاتورةُ دفعةٍ مقدّمة (386): القبضُ «مبلغ»
+    /// بصافيه وضريبته، والإنزالُ على فاتورة المغادرة والردُّ «تعديلٌ» سالب؛ والمصادرةُ لا توريدَ جديداً فيها إلّا عربوناً قُبض قبل
+    /// ح-٨١ بلا ضريبةٍ تُستخرج الآن. <b>والمبالغُ من قيودها</b> (<c>2105</c> و<c>2106</c>) — وهي التي يقرؤها الصافي من قبل.
+    /// </summary>
+    private async Task<IReadOnlyList<BoxPart>> DepositBoxPartsAsync(long companyId, DateOnly from, DateOnly to)
+    {
+        var accounts = await db.Accounts
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(a => a.CompanyId == companyId
+                        && (a.Code == SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers
+                            || a.Code == SaudiChartOfAccounts.SystemCodes.VatOutput
+                            || a.Code == SaudiChartOfAccounts.SystemCodes.SalesRevenue))
+            .ToDictionaryAsync(a => a.Id, a => a.Code);
+        if (accounts.Count == 0)
+            return [];
+        var ids = accounts.Keys.ToList();
+
+        var entries = await db.JournalEntries
+            .WhereReportable(companyId, from, to)
+            .WhereStanding(db.JournalEntries)
+            .Where(e => e.SourceDocument != null && e.SourceDocument.StartsWith("ReservationDeposit"))
+            .Select(e => new
+            {
+                e.SourceDocument,
+                Lines = e.Lines.Where(l => ids.Contains(l.AccountId)).Select(l => new { l.AccountId, l.Debit, l.Credit }).ToList(),
+            })
+            .ToListAsync();
+
+        var parts = new List<BoxPart>();
+        foreach (var e in entries)
+        {
+            decimal Net(string code) => e.Lines.Where(l => accounts[l.AccountId] == code).Sum(l => l.Credit - l.Debit);
+            var advances = Net(SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers);
+            var vat = Net(SaudiChartOfAccounts.SystemCodes.VatOutput);
+            if (e.SourceDocument!.StartsWith(ReservationDepositService.TakenPrefix, StringComparison.Ordinal))
+                parts.Add(new BoxPart(VatReturnBox.StandardRatedSales, false, advances, vat));
+            else if (e.SourceDocument.StartsWith(ReservationDepositService.AppliedPrefix, StringComparison.Ordinal)
+                     || e.SourceDocument.StartsWith(ReservationDepositService.RefundedPrefix, StringComparison.Ordinal))
+                parts.Add(new BoxPart(VatReturnBox.StandardRatedSales, true, advances, vat));
+            else if (e.SourceDocument.StartsWith(ReservationDepositService.ForfeitedPrefix, StringComparison.Ordinal) && vat > 0m)
+                parts.Add(new BoxPart(VatReturnBox.StandardRatedSales, false,
+                    Net(SaudiChartOfAccounts.SystemCodes.SalesRevenue), vat));
+        }
+
+        return parts;
     }
 
     /// <summary>(ح-١٦٥) جزءُ مستندٍ في خانة: مبلغٌ أو تعديل، وعاءٌ وضريبة؛ وخانةٌ عدمٌ لخارج النطاق.</summary>

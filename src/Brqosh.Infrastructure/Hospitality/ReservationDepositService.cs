@@ -4,6 +4,7 @@ using Brqosh.Domain.Hospitality;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
 using Brqosh.Infrastructure.Security;
+using Brqosh.Infrastructure.Zatca;
 using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Hospitality;
@@ -107,6 +108,14 @@ public class ReservationDepositService(BrqoshDbContext db)
             entry.Post(number);
             db.JournalEntries.Add(entry);
             await db.SaveChangesAsync(token);
+
+            // ‏(جاهزيّةُ الإطلاق · sector-modules#6) ‏**وللعربون فاتورةُ دفعةٍ مقدّمة (386) يومَ قبضه** — والتوليدُ داخل المعاملة
+            // ‏كعرف المستودع، والإرسالُ يتولّاه مسارُ المعلَّق. وعربونٌ بلا ضريبةٍ (منشأةٌ غيرُ مسجَّلة) لا فاتورةَ ضريبةٍ له.
+            if (vat > 0m)
+                await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
+                    db, companyId,
+                    () => new ZatcaEInvoiceGenerator(db).TryGenerateForPrepaymentAsync(entry.Id),
+                    token);
 
             await FinancialPostingSupport.AuditPostAsync(
                 db, companyId, "ReservationDeposit", reservation.ReservationNumber,
@@ -247,6 +256,23 @@ public class ReservationDepositService(BrqoshDbContext db)
         entry.Post(await new JournalEntryNumberGenerator(db).NextAsync(companyId, on, ct));
         db.JournalEntries.Add(entry);
         await db.SaveChangesAsync(ct);
+
+        // ‏(جاهزيّةُ الإطلاق · sector-modules#6) ‏**والردُّ إشعارٌ دائنٌ لكلّ فاتورةِ دفعة (386)** — يُشير إليها بمبلغها. والمصادرةُ
+        // ‏لا إشعارَ لها: المصادَرُ مقابلُ توريدٍ خاضعٍ وفاتورتُه قائمة.
+        if (refund)
+        {
+            var source = $"{TakenPrefix}{reservation.Id}";
+            var deposits = await db.JournalEntries
+                .Where(e => e.CompanyId == companyId && e.SourceDocument == source)
+                .WhereStanding(db.JournalEntries)
+                .Select(e => e.Id)
+                .ToListAsync(ct);
+            foreach (var depositId in deposits)
+                await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
+                    db, companyId,
+                    () => new ZatcaEInvoiceGenerator(db).TryGenerateRefundForPrepaymentAsync(depositId, on),
+                    ct);
+        }
 
         await FinancialPostingSupport.AuditPostAsync(
             db, companyId, "ReservationDeposit", reservation.ReservationNumber,

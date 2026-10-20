@@ -3851,6 +3851,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("PostedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long?>("SettlesReservationId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)

@@ -47,6 +47,20 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     /// </summary>
     public long? WarehouseId { get; private set; }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>الحجزُ الذي تُصفّيه هذه الفاتورة</b> — فاتورةُ المغادرة. يُضبط <b>قبل</b>
+    /// الترحيل لأنّ المستندَ الإلكترونيَّ يُولَّد داخله، ومنه يجد المولّدُ فواتيرَ الدفعات المقدّمة (386) فيُسوّيها فيها.
+    /// </summary>
+    public long? SettlesReservationId { get; private set; }
+
+    /// <summary>يربط فاتورةَ المغادرة بحجزها قبل الترحيل — مرّةً، والمسودّةُ وحدَها.</summary>
+    public void MarkAsSettlementOf(long reservationId)
+    {
+        if (Status != SalesInvoiceStatus.Draft)
+            throw new AccountingException("لا يُربط حجزٌ بفاتورةٍ بعد ترحيلها.");
+        SettlesReservationId = reservationId;
+    }
+
     public IReadOnlyList<SalesInvoiceLine> Lines => _lines.AsReadOnly();
 
     /// <summary>الإجمالي قبل الضريبة — مُخزَّن ويُحدَّث مع السطور.</summary>
