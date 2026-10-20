@@ -30,6 +30,7 @@ $Root = Split-Path -Parent $PSScriptRoot
 $prefix = Get-BrqoshVersionPrefix -Props (Join-Path $Root 'Directory.Build.props')
 $version = Get-BrqoshReleaseVersion -Prefix $prefix -BuildNumber $BuildNumber
 $notes = Get-BrqoshReleaseNotes -Changelog (Join-Path $Root 'CHANGELOG.md') -Version $version
+Assert-BrqoshEulaFinal -Eula (Join-Path $Root 'assets\legal\eula.txt')   # (installer-deployment-ops#13)
 if (-not (Test-Path $UpdateKey)) { throw "مفتاحُ التحديث غير موجود: $UpdateKey" }
 
 Write-Host "=== إصدار $version ===" -ForegroundColor Cyan

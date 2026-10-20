@@ -120,6 +120,21 @@ public partial class App : System.Windows.Application
         // ‏مرحليّ — **ولا يُحسب نسخةً** إذ لا يطابق نمطَ `brqosh_*` (ن-٣١).
         try
         {
+            // ‏(installer-deployment-ops#13) ‏**اتّفاقيّةُ الترخيص قبل كلّ شيء** — قبل الإعداد وقبل القاعدة؛ ونصٌّ تغيّر يُسأل عنه من جديد.
+            var eula = System.IO.File.Exists(EulaAcceptance.TextPath) ? System.IO.File.ReadAllText(EulaAcceptance.TextPath) : null;
+            if (eula is null)
+            {
+                UiDialog.Show("نص اتفاقية الترخيص غير موجود بجوار البرنامج — أعد التثبيت.",
+                    "BRQOSH — خطأ في التشغيل", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown();
+                return;
+            }
+            if (!EulaAcceptance.IsAccepted(eula) && new Views.EulaWindow(eula).ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+
             var setup = _setupStore.Load();
             string? adminUsername = null;
             string? adminPassword = null;

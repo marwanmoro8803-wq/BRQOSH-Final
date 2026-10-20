@@ -1,4 +1,4 @@
-﻿using Brqosh.Application.Tests.TestSupport;
+using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Assets;
 using Brqosh.Domain.Modules;

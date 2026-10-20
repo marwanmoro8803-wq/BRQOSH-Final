@@ -82,6 +82,27 @@ public class AReturnBelowCostIsBalancedTests : IDisposable
     /// <b>والمخزونُ في الأستاذ يطابق الطبقات بعد المرتجع</b> (FIFO): ٦ وحداتٍ متبقّيةٍ بعشرة
     /// = ٦٠ — <b>ولو دائنُ المخزون ٢٤ (السعر) لانفصل الأستاذُ عنها بـ١٦.</b>
     /// </summary>
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · found#7 · قرارُ المالك 2026-10-18) <b>تأكيدُ الخسارة للمدير</b> — محاسبٌ يؤكّد المرتجعَ دون التكلفة
+    /// يُرفض بمبلغ الخسارة ولا يُرحَّل شيء، والمديرُ يُرحّله كما كان.
+    /// </summary>
+    [Fact]
+    public async Task OnlyTheAdministrator_ConfirmsAReturnBelowCost()
+    {
+        await SetupAsync(InventoryCostingMethod.Fifo);
+        var invoice = await PostInvoiceAsync();
+        TestActor.Accountant();
+
+        var refused = await Assert.ThrowsAsync<AccountingException>(() => ReturnAsync(invoice, quantity: 4m, unitPrice: 6m));
+        Assert.Contains("16.00", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("مدير النظام", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(0m, await LedgerAsync("5108"));
+
+        TestActor.Administrator();
+        await ReturnAsync(invoice, quantity: 4m, unitPrice: 6m);
+        Assert.Equal(16m, await LedgerAsync("5108"));
+    }
+
     [Fact]
     public async Task TheInventoryLedger_StillEqualsTheLayers()
     {

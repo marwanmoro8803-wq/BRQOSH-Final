@@ -58,3 +58,18 @@ function Get-BrqoshReleaseNotes {
     if ($notes.Length -eq 0) { throw "قسمُ «## $Version» في $Changelog فارغ." }
     return $notes
 }
+
+<#
+.SYNOPSIS
+  (installer-deployment-ops#13) اتّفاقيّةُ الترخيص نهائيّةٌ قبل الإصدار — المسوّدةُ لا تُشحن.
+.DESCRIPTION
+  النصُّ يُعرض للمستخدم قبل الإعداد (EulaWindow)، ويبدأ بوسم «DRAFT» حتى يعتمده المستشارُ القانونيّ. فالإصدارُ يرفض
+  نصّاً غائباً أو فارغاً أو ما زال يحمل الوسم — ولا يُنشر برنامجٌ يعرض على عميله مسوّدةً عقداً.
+#>
+function Assert-BrqoshEulaFinal {
+    param([Parameter(Mandatory)][string]$Eula)
+    if (-not (Test-Path $Eula)) { throw "اتّفاقيّة الترخيص غير موجودة: $Eula" }
+    $text = Get-Content -Path $Eula -Raw -Encoding utf8
+    if ([string]::IsNullOrWhiteSpace($text)) { throw "اتّفاقيّة الترخيص فارغة: $Eula" }
+    if ($text -match '\[DRAFT') { throw "اتّفاقيّة الترخيص ما زالت مسوّدةً (وسم [DRAFT]) — اعتمدها قانونيّاً وأزل الوسم قبل الإصدار." }
+}

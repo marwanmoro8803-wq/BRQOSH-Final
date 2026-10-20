@@ -6,6 +6,7 @@ using Brqosh.Domain.Sales;
 using Brqosh.Domain.Tax;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Zatca;
+using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Reporting;
@@ -201,6 +202,37 @@ public partial class ZatcaInvoicesPage : UserControl
             new DocumentDeliverOptions(Preview: true, OfferSaveAs: true));
     }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · tax-zatca#8) <b>فاتورةٌ رفضتها الهيئة: تُلغى وتُنشأ مسودّتُها المصحَّحة</b> — والرفضُ يُتحقَّق منه قبل الإلغاء
+    /// في الخدمة نفسِها، والقياسيّةُ المرفوضةُ تُلغى بلا إشعارٍ دائنٍ إلكترونيّ لأنّها لم تصدر نظاماً.
+    /// </summary>
+    private async void OnReissueRejected(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row || row.DocumentType != ZatcaDocumentType.SalesInvoice)
+        {
+            UiDialog.Show("اختر فاتورة مبيعات رفضتها الهيئة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (UiDialog.Show("ستُلغى الفاتورة المرفوضة بعكس قيدها وتُنشأ مسودة مصحَّحة بسطورها. متابعة؟", "BRQOSH",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<RejectedInvoiceReissueService>().CancelAndCreateCorrectedDraftAsync(
+                AppServices.CompanyId, row.SourceDocumentId, DateOnly.FromDateTime(DateTime.Today), SecurityContext.ResolveUsername());
+            UiDialog.Show("أُنشئت المسودة المصحَّحة — افتحها من فواتير المبيعات وعدّلها ثم رحّلها.", "BRQOSH",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     private async void OnViewXml(object sender, RoutedEventArgs e)
     {
         if (Grid.SelectedItem is not Row row)
@@ -325,6 +357,22 @@ public partial class ZatcaInvoicesPage : UserControl
                 new DocumentLinesViewDialog(title,
                     Header(asset.DisposalInvoiceNumber, disposalDate, $"الأصل: {asset.Code}"),
                     assetLines, proceeds, assetVat, proceeds + assetVat) { Owner = owner }.ShowDialog();
+                return;
+            }
+
+            case ZatcaDocumentPresentation.SourceKind.ReservationDeposit:
+            {
+                // ‏(sector-modules#6) ‏**والسطرُ هو نفسُه الذي أرسله المولّد** — انظر `TryGenerateForPrepaymentAsync`:
+                // ‏صافي العربون (دائنُ 2105) وضريبتُه (دائنُ 2106) من قيده، بتاريخه.
+                var deposit = await db.JournalEntries.Include(e => e.Lines)
+                    .SingleOrDefaultAsync(e => e.Id == row.SourceDocumentId);
+                if (deposit is null) { Missing(); return; }
+                var net = deposit.Lines.Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.AdvancesFromCustomers).Sum(l => l.Credit);
+                var depositVat = deposit.Lines.Where(l => l.AccountCode == SaudiChartOfAccounts.SystemCodes.VatOutput).Sum(l => l.Credit);
+                var depositLines = new List<SalesInvoiceLine> { new(deposit.Description, 1m, net, null) };
+
+                new DocumentLinesViewDialog(title, Header(row.InvoiceNumber, deposit.EntryDate, deposit.Description),
+                    depositLines, net, depositVat, net + depositVat) { Owner = owner }.ShowDialog();
                 return;
             }
 

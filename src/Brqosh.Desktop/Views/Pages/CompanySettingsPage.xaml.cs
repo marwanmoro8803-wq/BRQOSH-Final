@@ -13,6 +13,7 @@ using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Setup;
+using Brqosh.Infrastructure.Companies;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Microsoft.Win32;
@@ -98,6 +99,9 @@ public partial class CompanySettingsPage : UserControl
         RenderEInvoiceReadiness(company);
         VatBox.Text = company.VatRegistrationNumber;
         ProfileText.Text = ProfileLabel(company.Profile);
+        ProfileBox.ItemsSource = Enum.GetValues<BusinessProfile>().Select(p => new ProfileOption(p, ProfileLabel(p))).ToList();
+        ProfileBox.DisplayMemberPath = nameof(ProfileOption.Label);
+        ProfileBox.SelectedItem = ((IEnumerable<ProfileOption>)ProfileBox.ItemsSource).First(o => o.Profile == company.Profile);
         ActiveModulesText.Text = ActiveModulesLabel(company.Profile);
 
         var countryId = string.IsNullOrWhiteSpace(_setup.CountryTemplateId)
@@ -175,6 +179,9 @@ public partial class CompanySettingsPage : UserControl
         LogoPreviewImage.Source = null;
         LogoPreviewPlaceholder.Visibility = Visibility.Visible;
     }
+
+    /// <summary>(ui-ux-i18n-printing#7) خيارُ ملفّ النشاط في القائمة.</summary>
+    private sealed record ProfileOption(BusinessProfile Profile, string Label);
 
     private static string ProfileLabel(BusinessProfile profile) => profile switch
     {
@@ -296,12 +303,19 @@ public partial class CompanySettingsPage : UserControl
                 await facade.GetService<CostingMethodService>().ChangeAsync(company.Id, opt.Method);
             }
 
-            // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ ضابطٌ رقابيّ — يمرّ بخدمةٍ تشترط المديرَ وتُدقّق التغيير، ولا يُحفظ بالسنّارة.
-            var threshold = ReadThreshold();
-            if (company.ManualJournalApprovalThreshold != threshold)
+            // ‏(ui-ux-i18n-printing#7) ‏ملفُّ النشاط يغيّره المديرُ عبر خدمةٍ تحرس الوحداتِ ذاتَ البيانات وتُدقّق التغيير.
+            if (ProfileBox.SelectedItem is ProfileOption profileOpt && profileOpt.Profile != company.Profile)
             {
                 using var facade = new DesktopAccountingFacade();
-                await facade.GetService<ManualJournalApprovalPolicy>().SetThresholdAsync(company.Id, threshold);
+                await facade.GetService<BusinessProfileChangeService>().ChangeAsync(company.Id, profileOpt.Profile);
+                ProfileText.Text = ProfileLabel(profileOpt.Profile);
+            }
+
+            // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ ضابطٌ رقابيّ — يمرّ بخدمةٍ تشترط المديرَ وتُدقّق التغيير، ولا يُحفظ بالسنّارة.
+            if (company.ManualJournalApprovalThreshold != ReadThreshold())
+            {
+                using var facade = new DesktopAccountingFacade();
+                await facade.GetService<ManualJournalApprovalPolicy>().SetThresholdAsync(company.Id, ReadThreshold());
             }
 
             _pendingLogoSourcePath = null;

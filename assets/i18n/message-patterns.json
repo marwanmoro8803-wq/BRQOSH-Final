@@ -1,5 +1,6 @@
 {
   "_comment": "(ح-١٦٣ · ui-ux#9) رسائلُ الأخطاء المركَّبة: القالبُ العربيُّ بثقوبٍ مرقّمة {0}… ومقابلُه الإنجليزيّ. تُطابَق في UiMessages.Translate حين لا يُطابَق النصُّ حرفيّاً؛ وما في الثقوب يُنقل كما هو.",
+  "لا يُغيَّر ملف النشاط إلى «{0}»: يُخفي وحداتٍ فيها بيانات — {1}.": "The business profile cannot change to “{0}”: it would hide modules that hold data — {1}.",
   "القيد اليدوي بمبلغ {0} فوق حد الاعتماد {1} — أرسله للموافقة قبل ترحيله.": "The manual entry of {0} is above the approval threshold of {1} — submit it for approval before posting.",
   "رقم الحساب يجب أن يبدأ برقم الحساب الأب ({0}).": "The account number must start with the parent account number ({0}).",
   "رقم الحساب {0} مستخدم مسبقاً.": "Account number {0} is already in use.",

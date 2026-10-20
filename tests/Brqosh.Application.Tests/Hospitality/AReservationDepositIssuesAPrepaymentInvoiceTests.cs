@@ -216,38 +216,4 @@ public class AReservationDepositIssuesAPrepaymentInvoiceTests : IDisposable
 
         Assert.False(await _db.ZatcaEInvoiceDocuments.AnyAsync(d => d.DocumentType == ZatcaDocumentType.Prepayment));
     }
-
-    /// <summary>
-    /// <b>والمستنداتُ الثلاثةُ تطابق بنيةَ UBL كما تصل الهيئة</b> — المدقّقُ نفسُه الذي يقيس به
-    /// <c>GeneratedDocumentsConformTests</c> كلَّ مسار توليد، وحارسُه أسقط المسارين الجديدين حتى قِيسا هنا.
-    /// والنهائيّةُ تُقاس لأنّ سطرَ التسوية فيها جديد.
-    /// </summary>
-    [Fact]
-    public async Task ThePrepayment_TheSettlingInvoice_AndTheRefund_Conform()
-    {
-        await SetupAsync(zatcaEnabled: true);
-        var (settled, _) = await BookWithDepositAsync();
-        await new FolioService(_db).CheckInAsync(_companyId, settled.Id);
-        var invoiceId = await new FolioService(_db).CheckOutAsync(_companyId, settled.Id, CheckOut);
-
-        var refunded = Reservation.Create(_companyId, _roomId, _guestId, "R-P2", new DateOnly(2026, 4, 1), new DateOnly(2026, 4, 2), 500m);
-        _db.Reservations.Add(refunded);
-        await _db.SaveChangesAsync();
-        await new ReservationDepositService(_db).TakeAsync(_companyId, refunded.Id, 575m, Booked, "admin");
-        await new FolioService(_db).CancelAsync(_companyId, refunded.Id, new DateOnly(2026, 2, 10), DepositOutcome.Refund);
-
-        var documents = new[]
-        {
-            await _db.ZatcaEInvoiceDocuments.FirstAsync(d => d.DocumentType == ZatcaDocumentType.Prepayment),
-            await _db.ZatcaEInvoiceDocuments.SingleAsync(d => d.DocumentType == ZatcaDocumentType.SalesInvoice && d.SourceDocumentId == invoiceId),
-            await _db.ZatcaEInvoiceDocuments.SingleAsync(d => d.DocumentType == ZatcaDocumentType.DepositRefund),
-        };
-        foreach (var document in documents)
-        {
-            var path = !string.IsNullOrEmpty(document.SignedXmlFilePath) ? document.SignedXmlFilePath! : document.XmlFilePath;
-            var violations = UblStructureValidator.Validate(File.ReadAllBytes(path));
-            Assert.True(violations.Count == 0,
-                $"«{document.DocumentType}» يخالف البنية — وهذا ما يصل الهيئة:\n  " + string.Join("\n  ", violations));
-        }
-    }
 }

@@ -21,16 +21,11 @@ public static class ZatcaKeyFile
 
     private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("BRQOSH ZATCA signing key");
 
-    /// <summary>
-    /// يكتب المفتاحَ مشفَّراً للجهاز — ولا يمسّ القرصَ نصٌّ صريحٌ قطّ. <b>والكتابةُ ذرّيّة</b> (ملفٌّ جانبيٌّ ثمّ نقلٌ فوقه):
-    /// تشفيرُ الملفّ القديم في مكانه يكتب فوق المفتاح الوحيد، وانقطاعٌ في منتصف كتابةٍ مباشرةٍ يتركه مبتوراً فيلزم إعادةُ التسجيل.
-    /// </summary>
+    /// <summary>يكتب المفتاحَ مشفَّراً للجهاز — ولا يمسّ القرصَ نصٌّ صريحٌ قطّ.</summary>
     public static void Write(string path, string privateKeyPem)
     {
         var sealedBytes = Protect(Encoding.UTF8.GetBytes(privateKeyPem));
-        var staging = path + ".sealing";
-        File.WriteAllText(staging, Header + "\n" + Convert.ToBase64String(sealedBytes) + "\n");
-        File.Move(staging, path, overwrite: true);
+        File.WriteAllText(path, Header + "\n" + Convert.ToBase64String(sealedBytes) + "\n");
     }
 
     /// <summary>
