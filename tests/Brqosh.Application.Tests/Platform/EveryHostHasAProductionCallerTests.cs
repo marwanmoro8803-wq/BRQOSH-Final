@@ -36,6 +36,9 @@ public class EveryHostHasAProductionCallerTests
          "‏مُضيفُ التعريب — بلا تسجيلٍ تبقى الواجهةُ على لغة الإقلاع."),
         ("src/Brqosh.Desktop/UiFeedback.cs", "AttachToastHost",
          "‏مُضيفُ التنبيهات — بلا وصلٍ تختفي رسائلُ النجاح والتحذير بلا أثر."),
+        // ‏(PR #8 · fix/ui-layout-audit) ‏مُسجِّلُ ملاءمة النوافذ — حالتُه علَمُ تسجيلٍ لمعالجٍ عامٍّ على كلّ نافذة.
+        ("src/Brqosh.Desktop/Ui/WindowFit.cs", "Register",
+         "‏ملاءمةُ النوافذ لمساحة الشاشة — بلا تسجيلٍ تتجاوز النوافذُ الشاشةَ وتُخفي أزرارَ الحفظ والإلغاء."),
     ];
 
     private static string RepoRoot()
