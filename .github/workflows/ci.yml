@@ -1,10 +1,15 @@
 ﻿name: CI
 
+# ‏(جاهزيّةُ الإطلاق · evidence-integrity#5 · installer-deployment-ops#2) ‏**البوّابةُ لم تعمل على GitHub قطّ.**
+#
+# ‏كانت تُقصر على `main`/`master`/`develop` — **ولا فرعَ بهذه الأسماء في المستودع**: العملُ في `wip/*` و`claude/*`
+# ‏فلم يُشغَّل CI على إيداعٍ واحد، و«السلسلةُ خضراء» كانت إعادةً محلّيّة. **فصار كلُّ طلب دمجٍ يُقاس هنا على ويندوز**
+# ‏— وهو وحده ما يقيس DPAPI ووقتَ تشغيل سطح المكتب — و`workflow_dispatch` لتشغيلٍ يدويٍّ على أيّ فرع.
 on:
   push:
     branches: [main, master, develop]
   pull_request:
-    branches: [main, master, develop]
+  workflow_dispatch:
 
 # ‏(م-٤ · ن-١٣) **صلاحيّاتُ الرمز — والافتراضُ كان مفتوحاً.**
 #
