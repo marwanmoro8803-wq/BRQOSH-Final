@@ -41,6 +41,18 @@ public class TheLicenceAgreementIsAcceptedBeforeUseTests : IDisposable
     }
 
     [Fact]
+    public void AnUnreadableRecord_AsksAgain_InsteadOfFailingStartup()
+    {
+        EulaAcceptance.Accept("النصّ");
+        var record = Path.Combine(_root, "eula-accepted.json");
+
+        using (new FileStream(record, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            Assert.False(EulaAcceptance.IsAccepted("النصّ"));
+
+        Assert.True(EulaAcceptance.IsAccepted("النصّ"));
+    }
+
+    [Fact]
     public void TheShippedText_IsBilingual_AndStillMarkedAsADraft()
     {
         var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "assets", "legal", "eula.txt"));

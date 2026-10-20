@@ -26,6 +26,7 @@ public static class EulaAcceptance
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
 
     /// <summary>هل قُبل هذا النصُّ بعينه؟ — وغيابُ النصّ نفسِه لا يُعدّ قبولاً.</summary>
+    /// <remarks>سجلٌّ تالفٌ أو محجوزٌ أو ممنوعٌ يُعامَل «غيرَ مقبول» فتُعرض الاتّفاقيّةُ من جديد — <b>ولا يُسقط الإقلاعَ كلَّ مرّة</b>.</remarks>
     public static bool IsAccepted(string text)
     {
         try
@@ -35,7 +36,7 @@ public static class EulaAcceptance
             var record = JsonSerializer.Deserialize<Record>(File.ReadAllText(RecordPath));
             return record is not null && string.Equals(record.TextSha256, Fingerprint(text), StringComparison.Ordinal);
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             return false;
         }
