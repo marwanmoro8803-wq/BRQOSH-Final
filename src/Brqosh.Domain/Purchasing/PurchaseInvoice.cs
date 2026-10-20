@@ -12,6 +12,28 @@ public enum PurchaseInvoiceStatus
 }
 
 /// <summary>
+/// (جاهزيّةُ الإطلاق · <c>tax-zatca#12</c>) <b>معاملةُ ضريبة المستند في الإقرار</b> — من دليل الهيئة «الاستيراد والتصدير»
+/// §5.3 و§6.3 و§10.3–10.4.
+/// </summary>
+public enum PurchaseVatTreatment
+{
+    /// <summary>شراءٌ محلّيّ — ضريبةُ المورّد على فاتورته (الخانات 7 و10 و11).</summary>
+    Domestic = 0,
+
+    /// <summary>
+    /// <b>الاحتسابُ العكسيّ</b> — مورّدٌ غيرُ مقيم: لا ضريبةَ على فاتورته، والمستلمُ «يُعدّ مورّداً لنفسه» فيحتسب ضريبةَ المخرجات
+    /// ويخصم المدخلاتِ المقابلةَ معاً، <b>في الخانة 9</b> (§6.3 · §10.4).
+    /// </summary>
+    ReverseCharge = 1,
+
+    /// <summary>
+    /// <b>ضريبةُ استيرادٍ دُفعت في الجمارك</b> — مستندُ التخليص: الضريبةُ وحدَها مستحقّةٌ للجمارك أو المخلِّص، والقيمةُ الجمركيّةُ وعاؤها
+    /// <b>في الخانة 8</b> (§5.3 · §10.3)؛ وقيمةُ البضاعة نفسِها في فاتورة المورّد الأجنبيّ.
+    /// </summary>
+    ImportPaidAtCustoms = 2,
+}
+
+/// <summary>
 /// فاتورة مشتريات — ضريبة المدخلات 15% قابلة للخصم إذا كان المورد مسجلاً.
 /// القيد الآلي: مشتريات/مصروف + ضريبة مدخلات (مدين) ← الموردون (دائن).
 /// </summary>
@@ -45,6 +67,21 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
 
     public decimal Subtotal { get; private set; }
     public decimal VatAmount { get; private set; }
+
+    /// <summary>(<c>tax-zatca#12</c>) معاملةُ الضريبة — المحلّيُّ هو الأصلُ لكلّ فاتورةٍ قائمة.</summary>
+    public PurchaseVatTreatment VatTreatment { get; private set; }
+
+    /// <summary>
+    /// (<c>tax-zatca#12</c>) <b>ضريبةُ الاحتساب العكسيّ</b> — يحتسبها المستلمُ على صافي الفاتورة ولا يدفعها للمورّد، فهي خارجَ
+    /// <see cref="VatAmount"/>: <b>والمورّدُ يُستحقّ له الصافي وحدَه</b>، وكلُّ ما يقرأ «الإجماليّ» في الذمم يبقى صحيحاً بلا تعديل.
+    /// </summary>
+    public decimal ReverseChargeVatAmount { get; private set; }
+
+    /// <summary>
+    /// (<c>tax-zatca#12</c>) <b>القيمةُ الجمركيّةُ لمستند التخليص</b> — وعاءُ الخانة 8، خارجَ <see cref="Subtotal"/>: فالمستحقُّ
+    /// للجمارك أو المخلِّص الضريبةُ وحدَها، وقيمةُ البضاعة تُقيَّد بفاتورة المورّد الأجنبيّ لا هنا.
+    /// </summary>
+    public decimal ImportCustomsValue { get; private set; }
 
 
     /// <summary>
@@ -150,6 +187,39 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
 
         Subtotal = Math.Round(ForeignSubtotal * ExchangeRate, 2, MidpointRounding.AwayFromZero);
         VatAmount = Math.Round(ForeignVatAmount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
+
+        // ‏(tax-zatca#12) ‏الضريبةُ نفسُها محسوبةٌ من السطور — وما يتغيّر أين تُحمل: فالمستحقُّ للطرف الآخر هو «الإجماليّ» دائماً.
+        ReverseChargeVatAmount = 0m;
+        ImportCustomsValue = 0m;
+        switch (VatTreatment)
+        {
+            case PurchaseVatTreatment.ReverseCharge:
+                ReverseChargeVatAmount = VatAmount;
+                VatAmount = 0m;
+                ForeignVatAmount = 0m;
+                break;
+            case PurchaseVatTreatment.ImportPaidAtCustoms:
+                ImportCustomsValue = Subtotal;
+                Subtotal = 0m;
+                ForeignSubtotal = 0m;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>tax-zatca#12</c>) <b>يحدّد معاملةَ الضريبة</b> — في المسوّدة وحدَها، ولمن يخصم المدخلات: فالإقرارُ يعدّ
+    /// ضريبةَ الاحتساب العكسيّ وضريبةَ الاستيراد قابلتين للخصم، وفاتورةٌ معلَّمةٌ «غير قابلة» تناقض ذلك.
+    /// </summary>
+    public void SetVatTreatment(PurchaseVatTreatment treatment)
+    {
+        EnsureDraft();
+        if (!Enum.IsDefined(treatment))
+            throw new AccountingException("معاملة الضريبة غير معروفة.");
+        if (treatment != PurchaseVatTreatment.Domestic && !VatDeductible)
+            throw new AccountingException(
+                "الاحتساب العكسي وضريبة الاستيراد للمسجَّل الذي يخصم المدخلات — والفاتورة معلَّمة «غير قابلة للخصم».");
+        VatTreatment = treatment;
+        RecalculateTotals();
     }
 
     /// <summary>
@@ -159,24 +229,38 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
     public JournalEntry Post(string invoiceNumber, Account purchasesAccount, Account vatInputAccount,
         Account payableAccount, decimal inventorySubtotal = 0m, Account? inventoryAccount = null,
         decimal grniRelief = 0m, Account? grniAccount = null,
-        decimal priceVariance = 0m, Account? varianceAccount = null)
+        decimal priceVariance = 0m, Account? varianceAccount = null,
+        Account? vatOutputAccount = null)
     {
         EnsureDraft();
         if (_lines.Count == 0)
             throw new AccountingException("الفاتورة بلا سطور.");
-        if (Subtotal <= 0)
-            throw new AccountingException("إجمالي الفاتورة يجب أن يكون أكبر من صفر.");
         if (string.IsNullOrWhiteSpace(invoiceNumber))
             throw new AccountingException("الرقم الداخلي مطلوب عند الترحيل.");
 
         RecalculateTotals();
+        if ((VatTreatment == PurchaseVatTreatment.ImportPaidAtCustoms ? ImportCustomsValue : Subtotal) <= 0)
+            throw new AccountingException("إجمالي الفاتورة يجب أن يكون أكبر من صفر.");
 
         var entry = JournalEntry.CreateDraft(
             CompanyId, InvoiceDate,
             $"فاتورة مشتريات {invoiceNumber} — مرجع المورد {SupplierInvoiceReference}",
             sourceDocument: $"PurchaseInvoice:{invoiceNumber}");
 
-        if (VatDeductible)
+        if (VatTreatment == PurchaseVatTreatment.ImportPaidAtCustoms)
+        {
+            // ‏(tax-zatca#12) ‏**مستندُ التخليص يُثبت الضريبةَ وحدَها** — مدخلاتٌ قابلةٌ للخصم دائنُها الجماركُ أو المخلِّص. فبضاعةٌ
+            // ‏أو استلامٌ هنا تُقيَّد مرّتين: مرّةً بفاتورة المورّد الأجنبيّ ومرّةً بهذا.
+            if (inventorySubtotal != 0m || grniRelief != 0m || priceVariance != 0m)
+                throw new AccountingException(
+                    "مستند ضريبة الاستيراد لا يحمل أصنافاً مخزنية — قيمة البضاعة في فاتورة المورد الأجنبي.");
+            if (IsForeignCurrency)
+                throw new AccountingException("ضريبة الاستيراد تُدفع بالريال — مستند التخليص بالريال.");
+            if (VatAmount <= 0m)
+                throw new AccountingException("مستند ضريبة الاستيراد بلا ضريبة — السطور خاضعة للنسبة الأساسية.");
+            entry.AddLine(vatInputAccount, VatAmount, 0m, "ضريبة استيراد مدفوعة في الجمارك — قابلة للخصم");
+        }
+        else if (VatDeductible)
         {
             var expenseSubtotal = Subtotal - inventorySubtotal - grniRelief - priceVariance;
             if (expenseSubtotal > 0)
@@ -190,6 +274,15 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
             AddAccrualRelief(entry, grniRelief, grniAccount, priceVariance, varianceAccount);
             if (VatAmount > 0)
                 entry.AddLine(vatInputAccount, VatAmount, 0m, "ضريبة مدخلات قابلة للخصم 15%");
+            if (ReverseChargeVatAmount > 0)
+            {
+                // ‏(tax-zatca#12) ‏**المستلمُ مورّدٌ لنفسه** (§6.3): مخرجاتٌ يحتسبها ومدخلاتٌ يخصمها في القيد نفسِه — فلا يُدفع شيءٌ
+                // ‏للمورّد غيرَ الصافي، **والإقرارُ يقرأهما معاً في الخانة 9**.
+                if (vatOutputAccount is null)
+                    throw new AccountingException("حساب ضريبة المخرجات مطلوب للاحتساب العكسي.");
+                entry.AddLine(vatInputAccount, ReverseChargeVatAmount, 0m, "ضريبة مدخلات — احتساب عكسي");
+                entry.AddLine(vatOutputAccount, 0m, ReverseChargeVatAmount, "ضريبة مخرجات — احتساب عكسي");
+            }
         }
         else
         {

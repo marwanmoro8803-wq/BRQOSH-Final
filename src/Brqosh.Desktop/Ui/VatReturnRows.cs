@@ -36,6 +36,8 @@ public static class VatReturnRows
         // **رقمٌ لا يُراجَع**، ولا يعرف المالكُ من أين جاءه فرقُ بيع الأصل.
         rows.Add(new Row(LocaleManager.T("تسوية إلغاء مستندات فترات سابقة (تُطرح)", "Prior-period cancellations (deducted)"), r.CancelledOutputVat));
         rows.Add(new Row(LocaleManager.T("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", "Output VAT posted without a document (added)"), r.JournalOutputVat));
+        // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏حدٌّ في الصافي فله صفّ — ومقابلُه في المدخلات القابلة للخصم.
+        rows.Add(new Row(LocaleManager.T("ضريبة الاحتساب العكسي (تُضاف، وتُخصم في المدخلات)", "Reverse-charge VAT (added, and deducted in input VAT)"), r.ReverseChargeVat));
         rows.Add(new Row(LocaleManager.T("صافي ضريبة المخرجات", "Net output VAT"), r.NetOutputVat, Bold: true));
 
         // (CEEF-229 · م1-١٠) **التفكيكُ تحت الإجمالي مباشرةً — لا في تقريرٍ آخر.**
@@ -47,6 +49,8 @@ public static class VatReturnRows
         // فلا تجمع إليه متى وُجد إشعارٌ واحد. **والأبُ الآن الصافي**، والضريبةُ المقيّدة بلا
         // مستندٍ «منها» بلا فئة: فهي في الصافي ولا وعاءَ لها يُخترع.
         AddBreakdown(rows, null, r.NetOutputVat, r.SalesByCategory, r.JournalOutputVat, taxable: false);
+        if (r.SalesByCategory is not null && r.ReverseChargeVat != 0m)
+            rows.Add(new Row(LocaleManager.T("منها احتساب عكسي — الخانة 9", "of which reverse charge — box 9"), r.ReverseChargeVat, Indented: true));
         AddBreakdown(rows, LocaleManager.T("صافي وعاء المبيعات (من المستندات)", "Net sales base (from documents)"), r.SalesBaseNet,
             r.SalesByCategory, r.JournalOutputVat, taxable: true);
 
@@ -83,6 +87,9 @@ public static class VatReturnRows
         if (outputVatWithoutBox != 0m)
             rows.Add(new Row(LocaleManager.T("ضريبة مخرجات بلا مستند محسوب — لا خانة لها هنا", "Output VAT without a counted document — no box here"), outputVatWithoutBox, Indented: true));
         AddBoxes(rows, r.PurchaseBoxes, Brqosh.Domain.Tax.VatReturnBox.TotalPurchases);
+        // ‏(tax-zatca#12) ‏ضريبةُ الخانة 9 مستحقّةٌ وقابلةٌ للخصم معاً — يحتسبها النموذجُ بنفسه (دليلُ الاستيراد §6.3).
+        if (r.ReverseChargeVat != 0m)
+            rows.Add(new Row(LocaleManager.T("ضريبة الخانة 9 مستحقة وقابلة للخصم معاً — أثرها في الصافي صفر", "Box 9 VAT is both due and deductible — no net effect"), r.ReverseChargeVat, Indented: true));
         if (r.JournalInputVat != 0m)
             rows.Add(new Row(LocaleManager.T("ضريبة مدخلات بلا مستند محسوب — لا خانة لها هنا", "Input VAT without a counted document — no box here"), r.JournalInputVat, Indented: true));
     }

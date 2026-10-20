@@ -23,6 +23,8 @@ public partial class PurchaseInvoiceDialog : Window
         InitializeComponent();
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
+        TreatmentCombo.ItemsSource = TreatmentOptions();
+        TreatmentCombo.SelectedIndex = 0;
         Loaded += async (_, _) =>
         {
             await LoadSuppliersAsync(); await LoadWarehousesAsync(); await LoadProjectsAsync(); await LoadAssetsAsync(); await LoadProductsAsync();
@@ -97,14 +99,45 @@ public partial class PurchaseInvoiceDialog : Window
         // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
-    private void OnSupplierSelected(object sender, SelectionChangedEventArgs e)
+    private void OnSupplierSelected(object sender, SelectionChangedEventArgs e) => ApplyDeductibility();
+
+    /// <summary>(جاهزيّةُ الإطلاق · <c>tax-zatca#12</c>) خيارُ معاملة الضريبة في القائمة.</summary>
+    internal sealed record TreatmentOption(PurchaseVatTreatment Value, string Label);
+
+    /// <summary>(<c>tax-zatca#12</c>) الخياراتُ الثلاثة — والمحلّيُّ أوّلاً.</summary>
+    internal static IReadOnlyList<TreatmentOption> TreatmentOptions() =>
+    [
+        new(PurchaseVatTreatment.Domestic, LocaleManager.T("شراء محلي — ضريبة المورد على فاتورته", "Domestic purchase — VAT on the supplier's invoice")),
+        new(PurchaseVatTreatment.ReverseCharge, LocaleManager.T("احتساب عكسي — مورد غير مقيم (الخانة 9)", "Reverse charge — non-resident supplier (box 9)")),
+        new(PurchaseVatTreatment.ImportPaidAtCustoms, LocaleManager.T("ضريبة استيراد مدفوعة في الجمارك — مستند التخليص (الخانة 8)", "Import VAT paid at customs — clearance document (box 8)")),
+    ];
+
+    private PurchaseVatTreatment SelectedTreatment =>
+        (TreatmentCombo.SelectedItem as TreatmentOption)?.Value ?? PurchaseVatTreatment.Domestic;
+
+    private void OnTreatmentChanged(object sender, SelectionChangedEventArgs e) => ApplyDeductibility();
+
+    /// <summary>
+    /// مورد غير مسجل ⇒ لا خصم لضريبة المدخلات — <b>إلّا في الاحتساب العكسيّ والاستيراد</b> (<c>tax-zatca#12</c>): فالمورّدُ غيرُ المقيم
+    /// لا يُسجَّل أصلاً، والإقرارُ يعدّ الضريبتين قابلتين للخصم (دليلُ الاستيراد §6.3 و§10.3).
+    /// </summary>
+    private void ApplyDeductibility()
     {
-        // مورد غير مسجل ⇒ لا خصم لضريبة المدخلات
-        if (SupplierCombo.SelectedItem is SupplierOption option)
+        if (SelectedTreatment != PurchaseVatTreatment.Domestic)
+        {
+            DeductibleCheck.IsChecked = true;
+            DeductibleCheck.IsEnabled = false;
+        }
+        else if (SupplierCombo.SelectedItem is SupplierOption option)
         {
             DeductibleCheck.IsChecked = option.IsVatRegistered;
             DeductibleCheck.IsEnabled = option.IsVatRegistered;
         }
+        else
+        {
+            DeductibleCheck.IsEnabled = true;
+        }
+        UpdateTotals();
     }
 
     private void OnCellEditEnding(object sender, DataGridCellEditEndingEventArgs e) =>
@@ -117,7 +150,13 @@ public partial class PurchaseInvoiceDialog : Window
         var (subtotal, vat) = SalesInvoiceDialog.TotalsOf(_rows, documentDiscount: 0m);
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");
-        TotalText.Text = (subtotal + vat).ToString("N2");
+        // ‏(tax-zatca#12) ‏المستحقُّ للمورّد: الصافي في الاحتساب العكسيّ، والضريبةُ وحدَها لمستند التخليص.
+        TotalText.Text = (SelectedTreatment switch
+        {
+            PurchaseVatTreatment.ReverseCharge => subtotal,
+            PurchaseVatTreatment.ImportPaidAtCustoms => vat,
+            _ => subtotal + vat,
+        }).ToString("N2");
     }
 
     private async void OnPost(object sender, RoutedEventArgs e)
@@ -170,6 +209,10 @@ public partial class PurchaseInvoiceDialog : Window
         // ‏المجاميع. وكان المستوردُ يُدخل فاتورةَ الدولار محوَّلةً بيده، **فتضيع القيمةُ
         // ‏الأصلية ولا يُحسب فرقُ عملةٍ محقَّقٌ عند السداد**.
         ApplyCurrency(invoice);
+
+        // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏معاملةُ الضريبة — المحلّيُّ لمن لم يختر، فيبقى المسارُ القديمُ حرفاً.
+        if (SelectedTreatment != PurchaseVatTreatment.Domestic)
+            invoice.SetVatTreatment(SelectedTreatment);
 
         // ‏(ح-١١١) ‏مستودعُ الاستلام — الفارغُ هو الافتراضيّ؛ والمستودعُ يُسأل عند الترحيل.
         invoice.SetWarehouse(WarehouseCombo.SelectedValue as long?);

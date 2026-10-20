@@ -66,7 +66,9 @@ public record VatReturnResult(
     IReadOnlyList<VatReturnBoxLine>? SalesBoxes = null,
     IReadOnlyList<VatReturnBoxLine>? PurchaseBoxes = null,
     // (sector-modules#6) ‏من `JournalOutputVat` ما بلغ خانةً — ضريبةُ العرابين (فاتورةُ دفعتها 386 في الخانة 1).
-    decimal JournalOutputVatInBoxes = 0m)
+    decimal JournalOutputVatInBoxes = 0m,
+    // (جاهزيّةُ الإطلاق · tax-zatca#12) ‏ضريبةُ الاحتساب العكسيّ — مخرجاتٌ هنا ومدخلاتٌ في `DeductibleInputVat` معاً (الخانة 9).
+    decimal ReverseChargeVat = 0m)
 {
     /// <summary>
     /// (CEEF-229 · A-15) المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
@@ -107,7 +109,7 @@ public record VatReturnResult(
     /// مالكٌ واحدٌ للمطبوعة والشاشة، وكانت الشاشةُ تشتقّها بنفسها فتُسقط حدّين.</para>
     /// </summary>
     public decimal NetOutputVat => Brqosh.Application.Reporting.VatReturnNet.Output(
-        OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat);
+        OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat, ReverseChargeVat);
 
     /// <summary>
     /// (CEEF-232 · ض-١) والمدخلاتُ كذلك — <b>والاتجاهُ هنا في صالح المنشأة</b>: عماها عنه
@@ -212,7 +214,13 @@ public class VatReturnQuery(BrqoshDbContext db)
           // إلغاء إشعار دائن يعكس خصماً سابقاً — فيزيد ضريبة المخرجات لا ينقصها.
           - cancelledCreditNotes.Sum(n => n.VatAmount);
 
-        var cancelledInputVat = cancelledPurchases.Sum(p => p.VatAmount);
+        var cancelledInputVat = cancelledPurchases.Sum(InputVatOf);
+
+        // (جاهزيّةُ الإطلاق · tax-zatca#12) ‏**الاحتسابُ العكسيُّ مخرجاتٌ ومدخلاتٌ معاً** (دليلُ الاستيراد §6.3): يُضاف إلى صافي
+        // ‏المخرجات بقدر ما أُضيف إلى المدخلات، فلا يتغيّر الصافي — **والأستاذُ كذلك**: القيدُ يُدين المدخلاتِ ويُدائن المخرجات.
+        var reverseChargeVat =
+            purchases.Where(p => p.VatTreatment == PurchaseVatTreatment.ReverseCharge).Sum(p => p.ReverseChargeVatAmount)
+          - cancelledPurchases.Where(p => p.VatTreatment == PurchaseVatTreatment.ReverseCharge).Sum(p => p.ReverseChargeVatAmount);
 
         var glBalance = await ReadVatNetPayableGlAsync(companyId, to);
 
@@ -244,12 +252,12 @@ public class VatReturnQuery(BrqoshDbContext db)
         var purchasesByCategory = SumByCategory(
         [
             .. purchases.Where(p => p.VatDeductible).SelectMany(p => DocumentBuckets(
-                p.Lines, 0m, p.ExchangeRate, p.Subtotal, +1)),
+                p.Lines, 0m, p.ExchangeRate, TaxBaseOf(p), +1)),
             .. debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
                 .SelectMany(n => DocumentBuckets(
                     n.Lines, 0m, n.ExchangeRate, n.Subtotal, -1)),
             .. cancelledPurchases.SelectMany(p => DocumentBuckets(
-                p.Lines, 0m, p.ExchangeRate, p.Subtotal, -1)),
+                p.Lines, 0m, p.ExchangeRate, TaxBaseOf(p), -1)),
         ]);
 
         // ‏(جاهزيّةُ الإطلاق · ح-١٦٥ · tax-zatca#12) ‏**وخاناتُ النموذج من الأوعية نفسِها** — كلُّ وعاءٍ يُقسم
@@ -273,12 +281,12 @@ public class VatReturnQuery(BrqoshDbContext db)
         var purchaseBoxes = BoxLines(VatReturnBox.PurchaseBoxes,
         [
             .. purchases.Where(p => p.VatDeductible).SelectMany(p => DocumentBoxParts(
-                p.Lines, 0m, p.ExchangeRate, p.Subtotal, +1, false, PurchaseBox)),
+                p.Lines, 0m, p.ExchangeRate, TaxBaseOf(p), +1, false, PurchaseBoxFor(p))),
             .. debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
                 .SelectMany(n => DocumentBoxParts(
                     n.Lines, 0m, n.ExchangeRate, n.Subtotal, -1, true, PurchaseBox)),
             .. cancelledPurchases.SelectMany(p => DocumentBoxParts(
-                p.Lines, 0m, p.ExchangeRate, p.Subtotal, -1, true, PurchaseBox)),
+                p.Lines, 0m, p.ExchangeRate, TaxBaseOf(p), -1, true, PurchaseBoxFor(p))),
         ]);
 
         // ‏(ح-٤١) ‏**والأبُ الذي تُعرض الأوعيةُ تحته — من إجماليّات المستندات المخزونة لا من
@@ -289,10 +297,10 @@ public class VatReturnQuery(BrqoshDbContext db)
             - (cancelledSales.Sum(i => i.Subtotal) + cancelledProgressBillings.Sum(b => b.TaxableAmount)
                - cancelledCreditNotes.Sum(n => n.Subtotal));
         var purchasesBaseNet =
-            purchases.Where(p => p.VatDeductible).Sum(p => p.Subtotal)
+            purchases.Where(p => p.VatDeductible).Sum(TaxBaseOf)
             - debitNotes.Where(n => deductiblePurchaseIds.Contains(n.OriginalPurchaseInvoiceId))
                         .Sum(n => n.Subtotal)
-            - cancelledPurchases.Sum(p => p.Subtotal);
+            - cancelledPurchases.Sum(TaxBaseOf);
 
         return new VatReturnResult(
             from, to,
@@ -302,8 +310,8 @@ public class VatReturnQuery(BrqoshDbContext db)
             ProgressBillingsVat: progressBillings.Sum(b => b.VatAmount),
             CreditNotesSubtotal: creditNotes.Sum(n => n.Subtotal),
             CreditNotesVat: creditNotes.Sum(n => n.VatAmount),
-            PurchasesSubtotal: purchases.Sum(p => p.Subtotal),
-            DeductibleInputVat: purchases.Where(p => p.VatDeductible).Sum(p => p.VatAmount),
+            PurchasesSubtotal: purchases.Sum(TaxBaseOf),
+            DeductibleInputVat: purchases.Where(p => p.VatDeductible).Sum(InputVatOf),
             DebitNotesSubtotal: debitNotes.Sum(n => n.Subtotal),
             DebitNotesVat: debitNotes.Sum(n => n.VatAmount),
             DebitNotesDeductibleVat: debitNotes
@@ -320,8 +328,31 @@ public class VatReturnQuery(BrqoshDbContext db)
             PurchasesBaseNet: purchasesBaseNet,
             SalesBoxes: salesBoxes,
             PurchaseBoxes: purchaseBoxes,
-            JournalOutputVatInBoxes: depositParts.Sum(p => p.Vat));
+            JournalOutputVatInBoxes: depositParts.Sum(p => p.Vat),
+            ReverseChargeVat: reverseChargeVat);
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>tax-zatca#12</c>) <b>وعاءُ فاتورة الشراء في الإقرار</b> — صافيها، <b>ولمستند التخليص قيمتُه الجمركيّة</b>:
+    /// فصافيه صفرٌ عمداً (المستحقُّ للجمارك الضريبةُ وحدَها) ووعاءُ الخانة 8 القيمةُ التي حُسبت عليها.
+    /// </summary>
+    private static decimal TaxBaseOf(PurchaseInvoice p) =>
+        p.VatTreatment == PurchaseVatTreatment.ImportPaidAtCustoms ? p.ImportCustomsValue : p.Subtotal;
+
+    /// <summary>(<c>tax-zatca#12</c>) <b>المدخلاتُ القابلةُ للخصم من فاتورة الشراء</b> — ضريبةُ المورّد أو الجمارك، وضريبةُ الاحتساب العكسيّ.</summary>
+    private static decimal InputVatOf(PurchaseInvoice p) => p.VatAmount + p.ReverseChargeVatAmount;
+
+    /// <summary>
+    /// (<c>tax-zatca#12</c>) <b>خانةُ سطر الشراء بمعاملة مستنده</b> — الخاضعُ للأساسيّة في الخانة 8 للتخليص و9 للاحتساب العكسيّ بدل 7،
+    /// والصفريُّ والمعفى في خانتيهما كما كانا.
+    /// </summary>
+    private static Func<SalesInvoiceLine, int?> PurchaseBoxFor(PurchaseInvoice p) => line =>
+        (p.VatTreatment, PurchaseBox(line)) switch
+        {
+            (PurchaseVatTreatment.ImportPaidAtCustoms, VatReturnBox.StandardRatedDomesticPurchases) => VatReturnBox.ImportsPaidAtCustoms,
+            (PurchaseVatTreatment.ReverseCharge, VatReturnBox.StandardRatedDomesticPurchases) => VatReturnBox.ImportsUnderReverseCharge,
+            (_, var box) => box,
+        };
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>العرابينُ في الخانة 1</b> — لها فاتورةُ دفعةٍ مقدّمة (386): القبضُ «مبلغ»

@@ -873,6 +873,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("companies", "FunctionalCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
         // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ — والقائمةُ تأخذ افتراضَ المنتج.
         await EnsurePgColumnAsync("companies", "ManualJournalApprovalThreshold", "NUMERIC(18,2) NOT NULL DEFAULT 10000", ct);
+        // ‏(tax-zatca#12) ‏معاملةُ ضريبة فاتورة الشراء — والقائمةُ محلّيّةٌ بلا احتسابٍ عكسيٍّ ولا قيمةٍ جمركيّة.
+        await EnsurePgColumnAsync("purchase_invoices", "VatTreatment", "character varying(24) NOT NULL DEFAULT 'Domestic'", ct);
+        await EnsurePgColumnAsync("purchase_invoices", "ReverseChargeVatAmount", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+        await EnsurePgColumnAsync("purchase_invoices", "ImportCustomsValue", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
         await EnsurePgColumnAsync("companies", "NameEn", "character varying(256) NULL", ct);
         await EnsurePgColumnAsync("companies", "AddressAr", "character varying(512) NULL", ct);
         await EnsurePgColumnAsync("companies", "LogoFilePath", "character varying(512) NULL", ct);
@@ -978,6 +982,9 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("companies", "BaseCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "FunctionalCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "ManualJournalApprovalThreshold", "TEXT NOT NULL DEFAULT '10000'", ct);   // ‏(accounting-core#6)
+        await EnsureSqliteColumnAsync("purchase_invoices", "VatTreatment", "TEXT NOT NULL DEFAULT 'Domestic'", ct);   // ‏(tax-zatca#12)
+        await EnsureSqliteColumnAsync("purchase_invoices", "ReverseChargeVatAmount", "TEXT NOT NULL DEFAULT '0'", ct);
+        await EnsureSqliteColumnAsync("purchase_invoices", "ImportCustomsValue", "TEXT NOT NULL DEFAULT '0'", ct);
         await EnsureSqliteColumnAsync("companies", "NameEn", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "AddressAr", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "LogoFilePath", "TEXT NULL", ct);

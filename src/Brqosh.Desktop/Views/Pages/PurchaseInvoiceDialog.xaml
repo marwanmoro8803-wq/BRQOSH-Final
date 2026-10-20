@@ -75,9 +75,15 @@
             </StackPanel>
         </Grid>
 
-        <CheckBox Grid.Row="2" x:Name="DeductibleCheck" Content="ضريبة المدخلات قابلة للخصم (مورد مسجل بفاتورة ضريبية صحيحة)"
-                  IsChecked="True" FontSize="13" Margin="0,0,0,10"
-                  Foreground="{StaticResource TextSecondaryBrush}"/>
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <CheckBox x:Name="DeductibleCheck" Content="ضريبة المدخلات قابلة للخصم (مورد مسجل بفاتورة ضريبية صحيحة)"
+                      IsChecked="True" FontSize="13"
+                      Foreground="{StaticResource TextSecondaryBrush}"/>
+            <!-- (جاهزيّةُ الإطلاق · tax-zatca#12) معاملةُ الضريبة في الإقرار — المحلّيُّ أوّلاً فلا يتغيّر شيءٌ لمن لا يختار. -->
+            <TextBlock Text="معاملة الضريبة في الإقرار" Style="{StaticResource FieldLabel}" Margin="0,8,0,0"/>
+            <ComboBox x:Name="TreatmentCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Label"
+                      SelectionChanged="OnTreatmentChanged"/>
+        </StackPanel>
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"

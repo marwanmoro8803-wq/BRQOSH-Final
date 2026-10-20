@@ -159,8 +159,8 @@ public static class VatReturnNet
     /// </summary>
     public static decimal Output(
         decimal outputVat, decimal progressBillingsVat, decimal creditNotesVat,
-        decimal cancelledOutputVat, decimal journalOutputVat) =>
-        outputVat + progressBillingsVat - creditNotesVat - cancelledOutputVat + journalOutputVat;
+        decimal cancelledOutputVat, decimal journalOutputVat, decimal reverseChargeVat = 0m) =>
+        outputVat + progressBillingsVat - creditNotesVat - cancelledOutputVat + journalOutputVat + reverseChargeVat;
 
     /// <summary>المدخلاتُ القابلةُ للخصم — بالبنية نفسِها.</summary>
     public static decimal Input(
@@ -201,10 +201,12 @@ public record VatReturnDto(
     IReadOnlyList<VatReturnCategoryDto>? PurchasesByCategory = null,
     IReadOnlyList<VatReturnBoxDto>? SalesBoxes = null,
     IReadOnlyList<VatReturnBoxDto>? PurchaseBoxes = null,
-    decimal JournalOutputVatInBoxes = 0m)
+    decimal JournalOutputVatInBoxes = 0m,
+    // (جاهزيّةُ الإطلاق · tax-zatca#12) ‏ضريبةُ الاحتساب العكسيّ — مخرجاتٌ هنا ومدخلاتٌ في `DeductibleInputVat` معاً (الخانة 9).
+    decimal ReverseChargeVat = 0m)
 {
     public decimal NetOutputVat => VatReturnNet.Output(
-        OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat);
+        OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat, ReverseChargeVat);
     public decimal NetDeductibleInputVat => VatReturnNet.Input(
         DeductibleInputVat, DebitNotesDeductibleVat, CancelledInputVat, JournalInputVat);
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;

@@ -494,6 +494,11 @@ public class BrqoshDbContext : DbContext
 
             entity.Property(i => i.Subtotal).HasPrecision(18, 2);
             entity.Property(i => i.VatAmount).HasPrecision(18, 2);
+            // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏معاملةُ الضريبة — «Domestic» لكلّ فاتورةٍ قائمة — وضريبةُ الاحتساب العكسيّ والقيمةُ الجمركيّة.
+            // ‏والافتراضُ في الكائن وفي DDL وحدَهما — لا `HasDefaultValue` (انظر accounting-core#6 أعلاه).
+            entity.Property(i => i.VatTreatment).HasConversion<string>().HasMaxLength(24);
+            entity.Property(i => i.ReverseChargeVatAmount).HasPrecision(18, 2);
+            entity.Property(i => i.ImportCustomsValue).HasPrecision(18, 2);
 
             entity.OwnsMany(i => i.Lines, lines =>
             {

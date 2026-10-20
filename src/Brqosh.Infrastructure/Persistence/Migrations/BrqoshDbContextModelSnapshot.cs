@@ -2926,6 +2926,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal>("ImportCustomsValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateOnly>("InvoiceDate")
                         .HasColumnType("date");
 
@@ -2941,6 +2945,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<long?>("PurchaseOrderId")
                         .HasColumnType("bigint");
+
+                    b.Property<decimal>("ReverseChargeVatAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -2965,6 +2973,11 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("VatDeductible")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("VatTreatment")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
 
                     b.Property<long?>("WarehouseId")
                         .HasColumnType("bigint");

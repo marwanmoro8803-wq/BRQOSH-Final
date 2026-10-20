@@ -46,6 +46,14 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"فاتورة المورد بالمرجع '{invoice.SupplierInvoiceReference}' مسجلة مسبقاً لنفس المورد.");
 
+            // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏**مستندُ التخليص ضريبةٌ لا بضاعة** — فلا أمرَ شراءٍ ولا مشروعَ ولا أصلَ ولا مستودع:
+            // ‏كلُّها تُحمَّل بفاتورة المورّد الأجنبيّ، وتحميلُها هنا يُثبت التكلفةَ مرّتين.
+            if (invoice.VatTreatment == PurchaseVatTreatment.ImportPaidAtCustoms
+                && (invoice.PurchaseOrderId is not null || invoice.ProjectId is not null
+                    || invoice.FixedAssetId is not null || invoice.WarehouseId is not null))
+                throw new AccountingException(
+                    "مستند ضريبة الاستيراد لا يُربط بأمر شراء أو مشروع أو أصل أو مستودع — اربطها بفاتورة المورد الأجنبي.");
+
             if (invoice.PurchaseOrderId is not null)
                 await new ThreeWayMatchService(db).EnsureMatchOrThrowAsync(invoice, ct);
 
@@ -154,6 +162,9 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 : null;
             var vatInput = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.VatInput);
             var payable = await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsPayable);
+            var vatOutput = invoice.VatTreatment == PurchaseVatTreatment.ReverseCharge
+                ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.VatOutput)
+                : null;
 
             var invoiceNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.PurchaseInvoices.Where(i => i.CompanyId == invoice.CompanyId).Select(i => i.InvoiceNumber),
@@ -167,7 +178,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 : null;
 
             var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable,
-                inventorySubtotal, inventoryAccount, grniRelief, grniAccount, priceVariance, varianceAccount);
+                inventorySubtotal, inventoryAccount, grniRelief, grniAccount, priceVariance, varianceAccount, vatOutput);
             if (asset is not null)
             {
                 var booked = entry.Lines.Where(l => l.AccountId == asset.GlAssetAccountId).Sum(l => l.Debit - l.Credit);

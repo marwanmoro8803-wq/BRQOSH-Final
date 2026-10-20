@@ -31,6 +31,11 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 throw new AccountingException("لا يصدر إشعار مدين إلا على فاتورة مرحّلة.");
             if (invoice.SupplierId != note.SupplierId)
                 throw new AccountingException("مورد الإشعار لا يطابق فاتورة المشتريات.");
+            // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏**الإشعارُ يعكس ضريبةَ المورّد** — وفاتورةُ الاحتساب العكسيّ أو التخليص لا ضريبةَ مورّدٍ
+            // ‏عليها: إشعارٌ عنها يُنقص مدخلاتٍ بلا مخرجاتٍ مقابلة أو يُدائن الجماركَ بقيمة بضاعة. فتُلغى وتُعاد بقيمتها الصحيحة.
+            if (invoice.VatTreatment != PurchaseVatTreatment.Domestic)
+                throw new AccountingException(
+                    "لا يصدر إشعار مدين على فاتورة احتساب عكسي أو ضريبة استيراد — ألغِها وأعد إدخالها بالقيمة الصحيحة.");
             // ‏(جاهزيّةُ الإطلاق · ح-١٠٧ · ‏`found#7`) ‏**وعملةُ الإشعار عملةُ فاتورته وسعرُها** — وإلّا قورنت قيمةٌ بالدولار بطبقاتٍ بالريال.
             if (note.CurrencyCode != invoice.CurrencyCode || note.ExchangeRate != invoice.ExchangeRate)
                 throw new AccountingException(

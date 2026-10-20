@@ -38,7 +38,9 @@ public static class VatReturnMapping
             // ‏(جاهزيّةُ الإطلاق · ح-١٦٥) ‏وخاناتُ النموذج تعبر الحدَّ كذلك — وصلةٌ تُقاس هنا لا في المُحوِّل.
             Map(r.SalesBoxes),
             Map(r.PurchaseBoxes),
-            r.JournalOutputVatInBoxes);
+            r.JournalOutputVatInBoxes,
+            // ‏(tax-zatca#12) ‏وضريبةُ الاحتساب العكسيّ — حدٌّ في صافي المخرجات، فتعبر كإخوته.
+            r.ReverseChargeVat);
 
     private static IReadOnlyList<VatReturnBoxDto>? Map(IReadOnlyList<VatReturnBoxLine>? boxes) =>
         boxes?.Select(b => new VatReturnBoxDto(b.Box, b.Amount, b.Adjustments, b.VatAmount, b.VatAdjustments))

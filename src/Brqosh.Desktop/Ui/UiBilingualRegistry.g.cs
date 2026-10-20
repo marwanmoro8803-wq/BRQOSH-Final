@@ -2283,6 +2283,7 @@ public static partial class UiBilingualRegistry
         ["معامل التحويل"] = "Conversion Factor",
         ["معامل التحويل *"] = "Conversion Factor *",
         ["معامل التحويل يجب أن يكون موجباً."] = "The conversion factor must be positive.",
+        ["معاملة الضريبة في الإقرار"] = "VAT treatment in the return",
         ["معاملة بين الشركات"] = "Intercompany transaction",
         ["معاينة"] = "Preview",
         ["معاينة PDF"] = "Preview PDF",
