@@ -3280,6 +3280,15 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_trip_expenses_trip_id" ON trip_expenses (trip_id);""", ct);
         }
 
+        // ‏(sector-modules#11) ‏فاتورةُ المورّد التي سندُ أمر الصيانة — فارغةٌ لكلّ أمرٍ قائم (دُفع نقداً).
+        if (await TableExistsAsync("maintenance_orders", isPg, ct))
+        {
+            if (isPg)
+                await EnsurePgColumnAsync("maintenance_orders", "PurchaseInvoiceId", "BIGINT NULL", ct);
+            else
+                await EnsureSqliteColumnAsync("maintenance_orders", "PurchaseInvoiceId", "INTEGER NULL", ct);
+        }
+
         // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
         if (isPg)
         {

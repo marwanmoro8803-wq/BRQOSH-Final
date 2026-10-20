@@ -2,6 +2,7 @@
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.RealEstate;
 using Brqosh.Domain.Assets;
+using Brqosh.Domain.Purchasing;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Persistence;
@@ -51,9 +52,15 @@ public class MaintenanceOrderService(BrqoshDbContext db)
     ///
     /// <para><b>ولا يُرحَّل إلا أمرٌ أُنهي</b>: تكلفتُه لم تثبت بعد، <b>وترحيلُ أمرٍ
     /// قائمٍ يُقيّد مصروفاً يزيد غداً</b> فيفترق القيدُ عن سنده.</para>
+    ///
+    /// <para>(جاهزيّةُ الإطلاق · <c>sector-modules#11</c> · قرارُ المالك 2026-10-20) <b>وبفاتورة المورّد</b>
+    /// (<paramref name="purchaseInvoiceId"/>): كان الأمرُ يُدفع نقداً بالتكلفة الإجماليّة بلا مورّدٍ ولا ضريبة مدخلات — والمدخلاتُ لا تُخصم
+    /// إلّا بفاتورةٍ ضريبيّة. فالفاتورةُ المرحّلةُ (سطرٌ بلا صنفٍ يُدين <c>5102</c>) أثبتت المورّدَ والضريبةَ والدَّين، <b>والأمرُ ينقل
+    /// تكلفتَه من <c>5102</c> إلى الصيانة</b> (أو إلى الأصل للتجديد) بدل أن يُدائن النقد — فلا تُحمَّل مرّتين ولا يُدفع ما لم يُستحقّ.</para>
     /// </remarks>
     public async Task<MaintenancePostingResult> PostAsync(long companyId, long orderId, DateOnly on,
         string? cashAccountCode = null,
+        long? purchaseInvoiceId = null,
         CancellationToken ct = default)
     {
         SecurityContext.EnsureCanPostAccounting();
@@ -102,8 +109,15 @@ public class MaintenanceOrderService(BrqoshDbContext db)
                 : await db.Accounts.SingleAsync(
                     a => a.Id == asset.GlAssetAccountId && a.CompanyId == companyId, token);
 
+            // ‏(sector-modules#11) ‏بفاتورة المورّد: الدائنُ ما أدانته الفاتورةُ (`5102`) لا النقد.
+            var supplierInvoice = purchaseInvoiceId is long supplierInvoiceId
+                ? await SupplierInvoiceForAsync(companyId, order, supplierInvoiceId, token)
+                : null;
+
             // ‏(ح-٤٨) البنكُ من مالكه لا من قيمةٍ افتراضيّة — انظر `BankGlAccountResolver.ResolveCodeAsync`.
-            var cash = await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, token);
+            var cash = supplierInvoice is not null
+                ? await SystemAccountProvisioning.EnsureAsync(db, companyId, NonInventoryPurchasesCode, token)
+                : await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, on, PostingDocumentKind.JournalEntry,
@@ -116,7 +130,9 @@ public class MaintenanceOrderService(BrqoshDbContext db)
                 asset is not null
                     ? $"رسملة تجديد — {asset.NameAr}"
                     : order.VendorName is null ? "صيانة" : $"صيانة — {order.VendorName}");
-            entry.AddLine(cash, 0m, order.TotalCost, $"دفعُ صيانة {order.OrderNumber}");
+            entry.AddLine(cash, 0m, order.TotalCost, supplierInvoice is null
+                ? $"دفعُ صيانة {order.OrderNumber}"
+                : $"تكلفةُ صيانة {order.OrderNumber} من فاتورة المورّد {supplierInvoice.InvoiceNumber}");
 
             // ‏**وتكلفةُ الأصل تزيد بالمُرسمَل** — وإلّا كان القيدُ على حسابٍ لا يقابله
             // ‏سجلُّ أصلٍ، **فيُهلَك المبنى على تكلفته القديمة إلى الأبد**.
@@ -128,6 +144,8 @@ public class MaintenanceOrderService(BrqoshDbContext db)
             await db.SaveChangesAsync(token);
 
             order.LinkJournalEntry(entry.Id);
+            if (supplierInvoice is not null)
+                order.LinkPurchaseInvoice(supplierInvoice.Id);
 
             long? invoiceId = null;
             if (order.TenantChargeAmount > 0m)
@@ -150,6 +168,32 @@ public class MaintenanceOrderService(BrqoshDbContext db)
             return new MaintenancePostingResult(order.Id, order.TotalCost, order.OwnerCost,
                 order.TenantChargeAmount, entry.Id, invoiceId);
         }, ct);
+    }
+
+    /// <summary>حسابُ المشتريات غير المخزنيّة — يُدينه سطرُ فاتورة الشراء بلا صنف.</summary>
+    public const string NonInventoryPurchasesCode = "5102";
+
+    /// <summary>
+    /// (<c>sector-modules#11</c>) <b>فاتورةُ المورّد التي تكون سندَ الأمر</b> — مرحّلةٌ، صافيها تكلفةُ الأمر نفسُها، بلا صنفٍ مخزنيّ
+    /// ولا مشروعٍ ولا أصل (فتلك تُدين غيرَ <c>5102</c>)، وقابلةٌ ضريبتُها للخصم، ولم تكن سندَ أمرٍ آخر.
+    /// </summary>
+    private async Task<PurchaseInvoice> SupplierInvoiceForAsync(long companyId, MaintenanceOrder order, long invoiceId,
+        CancellationToken ct)
+    {
+        var invoice = await db.PurchaseInvoices.SingleOrDefaultAsync(i => i.Id == invoiceId && i.CompanyId == companyId, ct)
+                      ?? throw new AccountingException("فاتورة المورّد غير موجودة.");
+        if (invoice.Status != PurchaseInvoiceStatus.Posted)
+            throw new AccountingException("فاتورة المورّد غير مرحّلة — رحّلها أولاً ثم رحّل الأمر بها.");
+        if (invoice.ProjectId is not null || invoice.FixedAssetId is not null || invoice.Lines.Any(l => l.ProductId is not null))
+            throw new AccountingException("فاتورة المورّد لمشروعٍ أو أصلٍ أو أصنافٍ مخزنيّة — لا تكون سندَ صيانة.");
+        if (!invoice.VatDeductible)
+            throw new AccountingException("ضريبة فاتورة المورّد غير قابلة للخصم — رحّل الأمر نقداً.");
+        if (invoice.Subtotal != order.TotalCost)
+            throw new AccountingException(
+                $"صافي فاتورة المورّد {invoice.Subtotal:N2} غير تكلفة الأمر {order.TotalCost:N2} — وحّدهما.");
+        if (await db.MaintenanceOrders.AnyAsync(m => m.CompanyId == companyId && m.PurchaseInvoiceId == invoiceId, ct))
+            throw new AccountingException("فاتورة المورّد سندُ أمر صيانة آخر.");
+        return invoice;
     }
 
     /// <summary>

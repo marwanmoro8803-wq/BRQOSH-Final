@@ -269,6 +269,70 @@ public class MaintenancePostingTests : IDisposable
         Assert.Equal(10_000m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
     }
 
+    // ── بفاتورة المورّد (sector-modules#11 · قرارُ المالك 2026-10-20) ─────────
+
+    /// <summary>
+    /// <b>الأمرُ بفاتورة المورّد</b>: الفاتورةُ أثبتت المورّدَ وضريبةَ المدخلات (١٥٠) والدَّينَ (١٬١٥٠)، والأمرُ ينقل التكلفةَ من
+    /// المشتريات غير المخزنيّة (5102) إلى الصيانة (5206) — <b>ولا نقدَ يخرج</b>، وكان يُدفع نقداً بالإجماليّ بلا ضريبة.
+    /// </summary>
+    [Fact]
+    public async Task FromTheSupplierInvoice_TheCostMovesToMaintenance_AndNoCashLeaves()
+    {
+        await SetupAsync();
+        var invoice = await SupplierInvoiceAsync("SUP-1", 1_000m);
+        var order = await CompletedDamageOrderAsync(total: 1_000m, tenantShare: 0m);
+
+        await new MaintenanceOrderService(_db).PostAsync(_companyId, order.Id, new DateOnly(2026, 5, 20), purchaseInvoiceId: invoice.Id);
+
+        Assert.Equal(1_000m, await ExactBalanceAsync(MaintenanceOrderService.MaintenanceExpenseCode));
+        Assert.Equal(0m, await ExactBalanceAsync(MaintenanceOrderService.NonInventoryPurchasesCode));
+        Assert.Equal(150m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.VatInput));
+        Assert.Equal(-1_150m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.AccountsPayable));
+        Assert.Equal(0m, await ExactBalanceAsync(SaudiChartOfAccounts.SystemCodes.CashAtBanks));
+        Assert.Equal(invoice.Id, (await _db.MaintenanceOrders.SingleAsync(m => m.Id == order.Id)).PurchaseInvoiceId);
+    }
+
+    [Fact]
+    public async Task ASupplierInvoiceWithAnotherNet_IsRefused_NamingBoth()
+    {
+        await SetupAsync();
+        var invoice = await SupplierInvoiceAsync("SUP-2", 900m);
+        var order = await CompletedDamageOrderAsync(total: 1_000m, tenantShare: 0m);
+
+        var refused = await Assert.ThrowsAsync<AccountingException>(() => new MaintenanceOrderService(_db)
+            .PostAsync(_companyId, order.Id, new DateOnly(2026, 5, 20), purchaseInvoiceId: invoice.Id));
+
+        Assert.Contains("900.00", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("1,000.00", refused.Message, StringComparison.Ordinal);
+        Assert.Null((await _db.MaintenanceOrders.SingleAsync(m => m.Id == order.Id)).JournalEntryId);
+    }
+
+    [Fact]
+    public async Task ASupplierInvoice_BacksOneOrderOnly()
+    {
+        await SetupAsync();
+        var invoice = await SupplierInvoiceAsync("SUP-3", 500m);
+        var first = await CompletedDamageOrderAsync(total: 500m, tenantShare: 0m);
+        var second = await CompletedDamageOrderAsync(total: 500m, tenantShare: 0m);
+        var service = new MaintenanceOrderService(_db);
+
+        await service.PostAsync(_companyId, first.Id, new DateOnly(2026, 5, 20), purchaseInvoiceId: invoice.Id);
+        await Assert.ThrowsAsync<AccountingException>(() =>
+            service.PostAsync(_companyId, second.Id, new DateOnly(2026, 5, 20), purchaseInvoiceId: invoice.Id));
+    }
+
+    /// <summary>فاتورةُ شراءٍ مرحّلةٌ لمورّدٍ مسجَّل — سطرُ خدمةٍ بلا صنف بصافي <paramref name="net"/> وضريبته ١٥٪.</summary>
+    private async Task<Brqosh.Domain.Purchasing.PurchaseInvoice> SupplierInvoiceAsync(string number, decimal net)
+    {
+        var supplier = Brqosh.Domain.Purchasing.Supplier.Create(_companyId, $"مقاول صيانة {number}", "312222222200003");
+        _db.Suppliers.Add(supplier);
+        await _db.SaveChangesAsync();
+
+        var invoice = Brqosh.Domain.Purchasing.PurchaseInvoice.CreateDraft(_companyId, supplier.Id, new DateOnly(2026, 5, 15), number, true);
+        invoice.AddLine("أعمال صيانة", 1m, net);
+        return await new Brqosh.Infrastructure.Purchasing.PurchaseInvoicePostingService(_db).PostAsync(invoice);
+    }
+
     // ── تهيئة ───────────────────────────────────────────────────────────────
 
     /// <summary>

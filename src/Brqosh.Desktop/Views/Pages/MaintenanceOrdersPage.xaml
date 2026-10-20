@@ -25,6 +25,9 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="PostBtn" DockPanel.Dock="Right" Content="ترحيل الأمر"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnPost"/>
+                <ComboBox x:Name="SupplierInvoiceBox" DockPanel.Dock="Right" MinWidth="220" FontSize="14"
+                          VerticalAlignment="Center" Margin="0,0,10,0" DisplayMemberPath="Label"
+                          ToolTip="فاتورة المورّد (اختياري) — بها تُخصم ضريبة المدخلات بدل الدفع نقداً"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="14"
                             VerticalAlignment="Center" Margin="0,0,10,0"/>

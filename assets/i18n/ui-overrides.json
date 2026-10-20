@@ -1,4 +1,11 @@
 {
+  "فاتورة المورّد (اختياري) — بها تُخصم ضريبة المدخلات بدل الدفع نقداً": "Supplier invoice (optional) — deducts the input VAT instead of paying cash",
+  "بلا فاتورة — دفع نقدي": "No invoice — cash",
+  "فاتورة المورّد غير موجودة.": "The supplier invoice does not exist.",
+  "فاتورة المورّد غير مرحّلة — رحّلها أولاً ثم رحّل الأمر بها.": "The supplier invoice is not posted — post it first, then post the order with it.",
+  "فاتورة المورّد لمشروعٍ أو أصلٍ أو أصنافٍ مخزنيّة — لا تكون سندَ صيانة.": "The supplier invoice is for a project, an asset or stock items — it cannot back a maintenance order.",
+  "ضريبة فاتورة المورّد غير قابلة للخصم — رحّل الأمر نقداً.": "The supplier invoice's VAT is not deductible — post the order as cash.",
+  "فاتورة المورّد سندُ أمر صيانة آخر.": "The supplier invoice already backs another maintenance order.",
   "إشعار ردّ هذا العربون صادر مسبقاً.": "A refund credit note for this deposit has already been issued.",
   "مستند ZATCA موجود مسبقاً لهذا العربون.": "A ZATCA document already exists for this deposit.",
   "لا يُربط حجزٌ بفاتورةٍ بعد ترحيلها.": "A reservation cannot be linked to an invoice after it is posted.",

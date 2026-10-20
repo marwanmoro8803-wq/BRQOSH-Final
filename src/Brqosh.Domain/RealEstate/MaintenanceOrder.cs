@@ -113,6 +113,13 @@ public class MaintenanceOrder : IBranchScoped
     public decimal TenantChargeAmount { get; private set; }
 
     public long? JournalEntryId { get; private set; }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>sector-modules#11</c> · قرارُ المالك 2026-10-20) <b>فاتورةُ المورّد التي سندُ التكلفة</b> — بها خُصمت
+    /// ضريبةُ المدخلات وثبت الدَّينُ للمورّد؛ و<c>null</c> لأمرٍ دُفع نقداً كما كان.
+    /// </summary>
+    public long? PurchaseInvoiceId { get; private set; }
+
     public DateTime CreatedAtUtc { get; private set; }
 
     private readonly List<MaintenanceCostLine> _lines = [];
@@ -269,6 +276,8 @@ public class MaintenanceOrder : IBranchScoped
     }
 
     public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
+
+    public void LinkPurchaseInvoice(long purchaseInvoiceId) => PurchaseInvoiceId = purchaseInvoiceId;
 
     public void Cancel()
     {

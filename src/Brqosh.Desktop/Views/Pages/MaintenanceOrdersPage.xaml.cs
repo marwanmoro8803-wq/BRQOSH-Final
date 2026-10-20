@@ -25,6 +25,9 @@ namespace Brqosh.Desktop.Views.Pages;
 /// </summary>
 public partial class MaintenanceOrdersPage : UserControl
 {
+    /// <summary>(sector-modules#11) خيارُ فاتورة المورّد — و<c>Id</c> الفارغُ دفعٌ نقديّ.</summary>
+    public sealed record SupplierInvoiceOption(long? Id, string Label);
+
     public record Row(long Id, string OrderNumber, string UnitLabel, string KindText,
         string Description, string StatusText, decimal TotalCost, decimal TenantCharge,
         decimal OwnerCost, string PostedText, MaintenanceStatus Status);
@@ -79,6 +82,23 @@ public partial class MaintenanceOrdersPage : UserControl
             Grid.ItemsSource = rows;
             UiTestAutomation.PublishGridCount(Grid, rows.Count);
 
+            // ‏(sector-modules#11) ‏فواتيرُ المورّدين المرحّلةُ التي لم تكن سندَ أمرٍ بعد — والأوّلُ «بلا فاتورة» فيبقى الدفعُ النقديُّ كما كان.
+            var used = await db.MaintenanceOrders
+                .Where(m => m.CompanyId == AppServices.CompanyId && m.PurchaseInvoiceId != null)
+                .Select(m => m.PurchaseInvoiceId!.Value)
+                .ToListAsync();
+            var invoices = await db.PurchaseInvoices.AsNoTracking()
+                .Where(i => i.CompanyId == AppServices.CompanyId
+                            && i.Status == Brqosh.Domain.Purchasing.PurchaseInvoiceStatus.Posted
+                            && !used.Contains(i.Id))
+                .OrderByDescending(i => i.InvoiceDate)
+                .Select(i => new { i.Id, i.InvoiceNumber, i.Subtotal })
+                .ToListAsync();
+            SupplierInvoiceBox.ItemsSource = new[] { new SupplierInvoiceOption(null, LocaleManager.T("بلا فاتورة — دفع نقدي", "No invoice — cash")) }
+                .Concat(invoices.Select(i => new SupplierInvoiceOption(i.Id, $"{i.InvoiceNumber} — {i.Subtotal:N2}")))
+                .ToList();
+            SupplierInvoiceBox.SelectedIndex = 0;
+
             using var facade = new DesktopAccountingFacade();
             var byUnit = await facade.GetService<MaintenanceOrderService>()
                 .CostByUnitAsync(AppServices.CompanyId, from, to);
@@ -121,7 +141,8 @@ public partial class MaintenanceOrdersPage : UserControl
         {
             using var facade = new DesktopAccountingFacade();
             var result = await facade.GetService<MaintenanceOrderService>().PostAsync(
-                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today));
+                AppServices.CompanyId, row.Id, DateOnly.FromDateTime(DateTime.Today),
+                purchaseInvoiceId: (SupplierInvoiceBox.SelectedItem as SupplierInvoiceOption)?.Id);
 
             SummaryText.Text = result.TenantInvoiceId is null
                 ? $"رُحّل الأمر: {result.TotalCost:N2} على المالك كاملةً."

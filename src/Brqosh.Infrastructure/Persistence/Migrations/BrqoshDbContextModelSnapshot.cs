@@ -3289,6 +3289,9 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long>("PropertyId")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("PurchaseInvoiceId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateOnly>("RequestDate")
                         .HasColumnType("date");
 
