@@ -492,6 +492,16 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 d.SourceDocumentId == salesInvoiceId))
             return null;
 
+        // ‏(جاهزيّةُ الإطلاق · tax-zatca#8) ‏**فاتورةٌ قياسيّةٌ رفضت الهيئةُ اعتمادَها لم تصدر نظاماً** — فلا إشعارَ دائناً يُرسل عنها؛
+        // ‏إلغاؤها داخليٌّ بعكس قيدها، ثمّ تُصدر فاتورةٌ مصحَّحة. والمبسّطةُ المرفوضةُ وصلت المشتري فإلغاؤها إشعارٌ كما كان.
+        if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
+                d.CompanyId == invoice.CompanyId &&
+                d.DocumentType == ZatcaDocumentType.SalesInvoice &&
+                d.SourceDocumentId == salesInvoiceId &&
+                d.TransmissionMode == ZatcaTransmissionMode.Clearance &&
+                d.ComplianceStatus == ZatcaComplianceStatus.Rejected))
+            return null;
+
         var company = await db.Companies.SingleAsync(c => c.Id == invoice.CompanyId);
         if (string.IsNullOrWhiteSpace(company.VatRegistrationNumber))
             return null;

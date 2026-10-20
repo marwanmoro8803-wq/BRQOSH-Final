@@ -25,6 +25,7 @@
                 <Button Content="طباعة PDF" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnPrintPdf"/>
                 <Button Content="عرض XML" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnViewXml"/>
                 <Button Content="فتح المستند المصدر" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnOpenSource"/>
+                <Button x:Name="ReissueBtn" Content="إلغاء المرفوضة وإصدار مصحَّحة" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnReissueRejected"/>
             </StackPanel>
         </Border>
 

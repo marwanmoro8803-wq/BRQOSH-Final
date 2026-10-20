@@ -117,6 +117,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         // CEEF-123: إلغاء/عكس/فترات — Tier P0 هجرة Desktop
         services.AddScoped<SalesInvoiceCancellationService>();
+        services.AddScoped<RejectedInvoiceReissueService>();   // (tax-zatca#8)
         services.AddScoped<PurchaseInvoiceCancellationService>();
         services.AddScoped<CreditNoteCancellationService>();
         services.AddScoped<DebitNoteCancellationService>();

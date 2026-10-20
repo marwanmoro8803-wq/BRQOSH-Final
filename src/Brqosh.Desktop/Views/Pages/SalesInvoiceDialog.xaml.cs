@@ -39,6 +39,12 @@ public partial class SalesInvoiceDialog : Window
         /// <summary>‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏انتهاءُ الدفعة المشتراة — لشاشة الشراء المباشر وحدَها.</summary>
         public DateTime? ExpiryDate { get; set; }
 
+        /// <summary>
+        /// ‏(جاهزيّةُ الإطلاق · <c>tax-zatca#8</c>) ‏وحدةُ السطر — يملؤها نسخُ الفاتورة المرفوضة وحدَه؛ <b>وبلاها تصير «٢ كرتون»
+        /// ‏«٢ حبّة»</b>. وفارغةً هي وحدةُ الصنف كما كانت كلُّ فاتورةٍ تُدخَل هنا.
+        /// </summary>
+        public string? UnitCode { get; set; }
+
         public decimal Quantity
         {
             get => _quantity;
@@ -109,7 +115,39 @@ public partial class SalesInvoiceDialog : Window
             await LoadWarehousesAsync();
             await LoadProductsAsync();
             await LoadZatcaPanelAsync();
+            SelectSeededParties();
         };
+    }
+
+    private CorrectedInvoiceSeed? _seed;
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإطلاق · <c>tax-zatca#8</c>) <b>فاتورةٌ جديدةٌ مملوءةٌ ببيانات فاتورةٍ رفضتها الهيئةُ وأُلغيت</b> — يُعدّلها المستخدمُ
+    /// ‏ثمّ يُرحّلها بزرّ الترحيل نفسِه، فتأخذ رقماً جديداً ومستنداً إلكترونيّاً جديداً.
+    /// </summary>
+    public SalesInvoiceDialog(CorrectedInvoiceSeed seed) : this()
+    {
+        _seed = seed;
+        CurrencyBox.Text = seed.CurrencyCode;
+        RateBox.Text = seed.ExchangeRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        DocumentDiscountBox.Text = seed.DocumentDiscountAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        foreach (var line in seed.Lines)
+            _rows.Add(new LineRow
+            {
+                ProductId = line.ProductId, Description = line.Description, Quantity = line.Quantity,
+                UnitPrice = line.UnitPrice, DiscountPercent = line.DiscountPercent, VatCategory = line.VatCategory,
+                TaxExemptionReasonCode = line.TaxExemptionReasonCode, TaxExemptionReason = line.TaxExemptionReason,
+                BatchNumber = line.BatchNumber, UnitCode = line.UnitCode,
+            });
+    }
+
+    /// <summary>العميلُ والمستودعُ يُختاران بعد تحميل قائمتيهما — <b>وعميلٌ أُوقف بعدها لا يُختار</b>، فيختار المستخدمُ غيرَه.</summary>
+    private void SelectSeededParties()
+    {
+        if (_seed is null) return;
+        CustomerCombo.SelectedValue = _seed.CustomerId;
+        WarehouseCombo.SelectedValue = _seed.WarehouseId;
+        UpdateTotals();
     }
 
     private async Task LoadZatcaPanelAsync()
@@ -305,7 +343,7 @@ public partial class SalesInvoiceDialog : Window
         {
             invoice.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId,
                 row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason,
-                discountPercent: row.DiscountPercent);
+                batchNumber: row.BatchNumber, discountPercent: row.DiscountPercent, unitCode: row.UnitCode);
         }
 
         // (CEEF-231 · ط1-٢ب) ‏**وخصمُ المستند بعد السطور**: النطاقُ يرفض خصماً يتجاوز

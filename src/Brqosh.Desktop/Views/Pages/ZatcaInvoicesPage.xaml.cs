@@ -6,6 +6,7 @@ using Brqosh.Domain.Sales;
 using Brqosh.Domain.Tax;
 using Brqosh.Domain.Zatca;
 using Brqosh.Infrastructure.Zatca;
+using Brqosh.Infrastructure.Sales;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Reporting;
@@ -160,7 +161,7 @@ public partial class ZatcaInvoicesPage : UserControl
         }
         catch (Exception ex)
         {
-            UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Warn(ex);
         }
     }
 
@@ -200,6 +201,42 @@ public partial class ZatcaInvoicesPage : UserControl
             Window.GetWindow(this),
             new DocumentDeliverOptions(Preview: true, OfferSaveAs: true));
     }
+
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · tax-zatca#8) <b>فاتورةٌ رفضتها الهيئة: تُلغى وتُفتح فاتورةٌ جديدةٌ بسطورها</b> — والرفضُ يُتحقَّق منه قبل الإلغاء
+    /// في الخدمة نفسِها، والقياسيّةُ المرفوضةُ تُلغى بلا إشعارٍ دائنٍ إلكترونيّ لأنّها لم تصدر نظاماً.
+    /// </summary>
+    private async void OnReissueRejected(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not Row row || row.DocumentType != ZatcaDocumentType.SalesInvoice)
+        {
+            UiDialog.Show("اختر فاتورة مبيعات رفضتها الهيئة.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (UiDialog.Show("ستُلغى الفاتورة المرفوضة بعكس قيدها، ثم تُفتح فاتورة جديدة بسطورها لتصحّحها وترحّلها. متابعة؟", "BRQOSH",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            CorrectedInvoiceSeed seed;
+            using (var facade = new DesktopAccountingFacade())
+                seed = await facade.GetService<RejectedInvoiceReissueService>().CancelRejectedAsync(
+                    AppServices.CompanyId, row.SourceDocumentId, DateOnly.FromDateTime(DateTime.Today), SecurityContext.ResolveUsername());
+
+            new SalesInvoiceDialog(seed) { Owner = Window.GetWindow(this) }.ShowDialog();
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            Warn(ex);
+        }
+    }
+
+    /// <summary>رسالةُ الخطأ كما رفعها النطاق — والغلافُ يترجمها في الوضع الإنجليزيّ (<c>UiMessages.Translate</c>).</summary>
+    private static void Warn(Exception ex) =>
+        UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
 
     private async void OnViewXml(object sender, RoutedEventArgs e)
     {
