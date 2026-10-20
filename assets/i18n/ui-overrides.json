@@ -1,4 +1,6 @@
 {
+  "شهادة الختم مسجّلة على جهاز آخر في المنشأة. التسجيل هنا ينقل ختم الفواتير الإلكترونية إلى هذا الجهاز، ويتوقف الجهاز الآخر عن إصدارها. متابعة؟": "The signing certificate is registered on another workstation of this company. Registering here moves e-invoice signing to this workstation, and the other one stops issuing them. Continue?",
+  "الفواتير الإلكترونية تُختم على الجهاز المسجَّل لدى الهيئة وحده — وهذا الجهاز غير مسجَّل. أصدِر الفاتورة من ذلك الجهاز؛ وتشغيلُ معالج الشهادة هنا ينقل الختم إليه ويوقف الجهاز الآخر.": "E-invoices are signed only on the workstation registered with ZATCA — and this workstation is not registered. Issue the invoice from that workstation; running the certificate wizard here moves signing to it and stops the other one.",
   "طريقة الإهلاك": "Depreciation method",
   "معاملة الضريبة في الإقرار": "VAT treatment in the return",
   "اتفاقية ترخيص المستخدم": "End-User Licence Agreement",

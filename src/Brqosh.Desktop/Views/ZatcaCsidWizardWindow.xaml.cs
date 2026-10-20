@@ -26,6 +26,16 @@ public partial class ZatcaCsidWizardWindow : Window
             var db = facade.Db;
             var company = await db.Companies.SingleAsync(c => c.Id == AppServices.CompanyId);
 
+            // ‏(جاهزيّةُ الإطلاق · tax-zatca#16) ‏**الختمُ على جهازٍ آخر** — فالتسجيلُ هنا ينقله إلى هذا الجهاز، ويتوقّف ذاك عن إصدار
+            // ‏الفواتير الإلكترونيّة. يُسأل ولا يُمنع: فالاستعادةُ على جهازٍ جديدٍ تحتاجه (دليل المستخدم §13).
+            var settings = await db.ZatcaSettings.SingleOrDefaultAsync(s => s.CompanyId == AppServices.CompanyId);
+            if (settings is not null && ZatcaSettingsSecrets.IsSignedOnAnotherMachine(settings)
+                && UiDialog.Show(
+                    "شهادة الختم مسجّلة على جهاز آخر في المنشأة. التسجيل هنا ينقل ختم الفواتير الإلكترونية إلى هذا الجهاز، "
+                    + "ويتوقف الجهاز الآخر عن إصدارها. متابعة؟",
+                    "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
             var onboarding = facade.GetService<ZatcaCsidOnboardingService>();
             _keyMaterial = onboarding.GenerateKeyPairAndCsr(
                 AppServices.CompanyId, company.NameAr, company.VatRegistrationNumber);

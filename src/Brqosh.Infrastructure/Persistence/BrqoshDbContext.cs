@@ -1212,6 +1212,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(s => s.ApiToken).HasMaxLength(2048);
             entity.Property(s => s.ComplianceRequestId).HasMaxLength(64);
             entity.Property(s => s.CsidSecret).HasMaxLength(512);
+            entity.Property(s => s.SigningMachineId).HasMaxLength(128);   // ‏(tax-zatca#16)
             entity.Property(s => s.Environment).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(s => s.CompanyId).IsUnique();
         });

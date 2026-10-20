@@ -25,6 +25,13 @@ public class ZatcaSettings
     /// <summary>السرّ المُرجَع مع شهادة CSID — يُستخدم في Basic Auth مع الشهادة.</summary>
     public string CsidSecret { get; private set; }
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق · <c>tax-zatca#16</c>) <b>الجهازُ الذي يحمل مفتاحَ الختم</b> — مفتاحٌ مشفَّرٌ لجهازه (DPAPI) وسرُّ الشهادة لمستخدمه،
+    /// والإعداداتُ مشتركةٌ في القاعدة: فجهازٌ ثانٍ لا يختم، <b>ومعالجُ الشهادة عليه يكتب فوق إعدادات الأوّل</b>. ويُحفظ معرّفُه هنا
+    /// ليقول الرفضُ لماذا ويسأل المعالجُ قبل أن ينقل الختم — والفارغُ لإعدادٍ سابقٍ لهذا الحقل.
+    /// </summary>
+    public string SigningMachineId { get; private set; } = "";
+
     public DateTime UpdatedAtUtc { get; private set; }
 
     // EF Core
@@ -36,6 +43,7 @@ public class ZatcaSettings
         ApiToken = null!;
         ComplianceRequestId = null!;
         CsidSecret = null!;
+        SigningMachineId = "";
     }
 
     public static ZatcaSettings CreateDefault(long companyId) => new()
@@ -76,6 +84,13 @@ public class ZatcaSettings
     }
 
     /// <summary>تطبيق قيم افتراضية من قالب الدولة عند التهيئة الأولى.</summary>
+    /// <summary>(<c>tax-zatca#16</c>) يسجّل الجهازَ الذي سُجِّلت عليه الشهادةُ ويحمل مفتاحَها.</summary>
+    public void RecordSigningMachine(string machineId)
+    {
+        SigningMachineId = (machineId ?? "").Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public void ApplyTemplateDefaults(bool enabled, string apiBaseUrl)
     {
         if (!string.IsNullOrWhiteSpace(apiBaseUrl))

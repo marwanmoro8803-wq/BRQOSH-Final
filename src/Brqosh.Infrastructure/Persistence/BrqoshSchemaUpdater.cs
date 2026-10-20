@@ -854,6 +854,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("sales_invoices", "PosPaymentMethod", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("zatca_settings", "ComplianceRequestId", "character varying(64) NOT NULL DEFAULT ''", ct);
         await EnsurePgColumnAsync("zatca_settings", "CsidSecret", "character varying(512) NOT NULL DEFAULT ''", ct);
+        await EnsurePgColumnAsync("zatca_settings", "SigningMachineId", "character varying(128) NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
         await EnsurePgColumnAsync("fixed_assets", "AcquisitionJournalEntryId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalJournalEntryId", "BIGINT NULL", ct);
         // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل: المشتري ورقمُ فاتورته ومقابلُه وفئتُه وسببُها.
@@ -965,6 +966,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("sales_invoices", "PosPaymentMethod", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "ComplianceRequestId", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "CsidSecret", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("zatca_settings", "SigningMachineId", "TEXT NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
         await EnsureSqliteColumnAsync("fixed_assets", "AcquisitionJournalEntryId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalJournalEntryId", "INTEGER NULL", ct);
         // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل — انظر النظيرَ في مسار PostgreSQL أعلاه.

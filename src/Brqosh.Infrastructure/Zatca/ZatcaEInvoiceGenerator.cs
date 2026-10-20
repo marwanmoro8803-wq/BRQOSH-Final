@@ -605,6 +605,13 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         // ولا يوجد في النظام مفهومُ «طورٍ أوّل» أصلاً: لا إعدادَ ولا حقل. فالانحدارُ الصامت
         // ليس وضعاً مشروعاً، ولا يملك المالكُ ما يخبره أيَّهما هو فيه.
         var zatcaSettings = await GetSettingsAsync(companyId);
+        // ‏(جاهزيّةُ الإطلاق · tax-zatca#16) ‏**وعلى جهازٍ غيرِ جهاز الختم فالسببُ الجهازُ لا الشهادة** — والرسالةُ القديمةُ تدعو إلى
+        // ‏معالج الشهادة، وهو هنا يكتب فوق إعدادات الجهاز الذي يختم فيتوقّف.
+        if (zatcaSettings is not null && !ZatcaXmlSigner.CanSign(zatcaSettings)
+            && ZatcaSettingsSecrets.IsSignedOnAnotherMachine(zatcaSettings))
+            throw new AccountingException(
+                "الفواتير الإلكترونية تُختم على الجهاز المسجَّل لدى الهيئة وحده — وهذا الجهاز غير مسجَّل. "
+                + "أصدِر الفاتورة من ذلك الجهاز؛ وتشغيلُ معالج الشهادة هنا ينقل الختم إليه ويوقف الجهاز الآخر.");
         if (!ZatcaXmlSigner.CanSign(zatcaSettings))
             throw new AccountingException(
                 "لا يمكن إصدار فاتورة إلكترونية بلا شهادة توقيع. أكمِل تسجيل الشهادة (CSID) "
