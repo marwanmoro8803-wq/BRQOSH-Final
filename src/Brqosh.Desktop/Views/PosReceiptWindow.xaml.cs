@@ -36,13 +36,25 @@ public partial class PosReceiptWindow : Window
         TotalText.Text = LocaleManager.T("الإجمالي: ", "Total: ") + $"{receipt.Total:N2} " + LocaleManager.T("ر.س", "SAR");
 
         // ‏(ح-٥٣) ‏الرمزُ من القارئ الواحد؛ وما لم يُعتمد يُطبع بتنبيهٍ لا برمز.
-        if (receipt.PrintedQr is { } qr && BuildQrImage(qr) is { } image)
-        {
-            QrImage.Source = image;
-            QrImage.Visibility = Visibility.Visible;
-        }
-
         ZatcaStatusText.Text = receipt.Notice ?? statusMessage ?? string.Empty;
+
+        if (receipt.PrintedQr is { } qr)
+        {
+            if (BuildQrImage(qr) is { } image)
+            {
+                QrImage.Source = image;
+                QrImage.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // ‏(UI-AUDIT · P2) ‏**إيصالٌ مبسّطٌ بلا رمزٍ لا يُطبع صامتاً.** كان فشلُ الرسم يُخفي
+                // ‏الرمزَ ويطبع الإيصالَ كأنّ شيئاً لم يكن — والرمزُ شرطُ الفاتورة المبسّطة لدى الهيئة.
+                ZatcaStatusText.Text = LocaleManager.T(
+                    "تعذّر رسم رمز QR لهذا الإيصال — لا تسلّمه للعميل؛ أعد طباعته من سجلّ الفواتير الإلكترونية.",
+                    "The QR code could not be drawn — do not hand this receipt over; reprint it from the e-invoice log.");
+                ZatcaStatusText.Foreground = (System.Windows.Media.Brush)FindResource("DangerBrush");
+            }
+        }
     }
 
     private void OnPrint(object sender, RoutedEventArgs e)
@@ -68,8 +80,9 @@ public partial class PosReceiptWindow : Window
             image.Freeze();
             return image;
         }
-        catch
+        catch (Exception ex)
         {
+            Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "PosReceiptWindow.BuildQrImage");
             return null;
         }
     }
