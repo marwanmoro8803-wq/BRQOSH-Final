@@ -36,6 +36,8 @@ public class EveryHostHasAProductionCallerTests
          "‏مُضيفُ التعريب — بلا تسجيلٍ تبقى الواجهةُ على لغة الإقلاع."),
         ("src/Brqosh.Desktop/UiFeedback.cs", "AttachToastHost",
          "‏مُضيفُ التنبيهات — بلا وصلٍ تختفي رسائلُ النجاح والتحذير بلا أثر."),
+        ("src/Brqosh.Desktop/Ui/WindowFit.cs", "Register",
+         "‏حاصرُ النوافذ في مساحة العمل (UI-AUDIT) — بلا تسجيلٍ تعود الحواراتُ مقصوصةً على شاشة 1366×768."),
     ];
 
     private static string RepoRoot()
