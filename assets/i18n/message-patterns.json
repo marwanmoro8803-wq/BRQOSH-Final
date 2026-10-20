@@ -1,4 +1,5 @@
 {
+  "المرتجعُ دون التكلفة بخسارة {0} يتطلّب تأكيدَ مدير النظام.": "A return below cost with a loss of {0} requires the system administrator's confirmation.",
   "_comment": "(ح-١٦٣ · ui-ux#9) رسائلُ الأخطاء المركَّبة: القالبُ العربيُّ بثقوبٍ مرقّمة {0}… ومقابلُه الإنجليزيّ. تُطابَق في UiMessages.Translate حين لا يُطابَق النصُّ حرفيّاً؛ وما في الثقوب يُنقل كما هو.",
   "القيد اليدوي بمبلغ {0} فوق حد الاعتماد {1} — أرسله للموافقة قبل ترحيله.": "The manual entry of {0} is above the approval threshold of {1} — submit it for approval before posting.",
   "رقم الحساب يجب أن يبدأ برقم الحساب الأب ({0}).": "The account number must start with the parent account number ({0}).",

@@ -3,6 +3,7 @@ using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Inventory;
 using Brqosh.Domain.Platform;
 using Brqosh.Domain.Purchasing;
+using Brqosh.Domain.Security;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Companies;
 using Brqosh.Infrastructure.Inventory;
@@ -124,6 +125,11 @@ public class DebitNotePostingService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"يُدائَن المرتجعُ بـ{credited:N2} وتكلفتُه {inventoryReduction:N2} — والفرقُ {inventoryReduction - credited:N2} "
                     + "خسارةٌ في «فروق أسعار المشتريات». راجِع السعر، أو أكِّد المرتجعَ دون التكلفة إن كان مقصوداً.");
+            // ‏(جاهزيّةُ الإطلاق · found#7 · قرارُ المالك 2026-10-18) ‏**والتأكيدُ بالخسارة للمدير** — وكان يملكه كلُّ مرحِّل، فالحارسُ
+            // ‏الوحيدُ على خطأ كتابة السعر يُرفع بخانةٍ يضعها من أخطأ. ولا دورَ «مدير قسم» في المنتج: المديرُ هو مديرُ النظام.
+            if (inventoryReduction > credited && SecurityContext.CurrentRole != UserRole.Administrator)
+                throw new AccountingException(
+                    $"المرتجعُ دون التكلفة بخسارة {inventoryReduction - credited:N2} يتطلّب تأكيدَ مدير النظام.");
             var variance = inventoryReduction > credited
                 ? await PurchaseAccountProvisioning.PriceVarianceAsync(db, note.CompanyId, token)
                 : null;
