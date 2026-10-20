@@ -70,6 +70,58 @@ internal static class UiFeedback
         }
     }
 
+    /// <summary>
+    /// (UI-AUDIT · عرض) <b>زرُّ «عرض» لا يصمت أبداً.</b>
+    ///
+    /// <para>كان «اختر صفاً أولاً» Toast يختفي بعد ثلاث ثوانٍ ونصف، والعطلُ داخل المعالج
+    /// (سجلٌّ محذوف، مورّدٌ غير موجود) يذهب إلى المعالج العامّ — فيبدو الزرُّ ميتاً.
+    /// والآن: نافذةُ رسالةٍ واضحة في الحالتين، والعطلُ يُكتب في سجلّ الأعطال قبل عرضه.</para>
+    /// </summary>
+    public static void ShowSelectionRequired(string message) =>
+        UiDialog.Show(message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+
+    /// <summary>رسالةٌ واضحة لسجلٍّ لم يعد موجوداً (حُذف أو تغيّر بعد تحميل الجدول).</summary>
+    public static void ShowRecordMissing(string message) =>
+        UiDialog.Show(message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+    /// <summary>
+    /// ينفّذ إجراءَ عرضٍ ويعرض أيَّ عطلٍ في نافذة رسالةٍ (لا Toast) بعد كتابته في سجلّ الأعطال.
+    /// </summary>
+    public static async Task RunViewSafeAsync(Func<Task> action, string context)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            ShowViewError(ex, context);
+        }
+    }
+
+    /// <inheritdoc cref="RunViewSafeAsync"/>
+    public static void RunViewSafe(Action action, string context)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            ShowViewError(ex, context);
+        }
+    }
+
+    private static void ShowViewError(Exception ex, string context)
+    {
+        var path = Brqosh.Infrastructure.Operations.CrashLog.Write(ex, context);
+        var detail = ex.InnerException is null ? ex.Message : $"{ex.Message}\n\n{ex.InnerException.Message}";
+        var hint = path is null ? string.Empty : "\n\n" + LocaleManager.T("سُجّل التفصيل في:", "Details were logged to:") + "\n" + path;
+        UiDialog.Show(
+            LocaleManager.T("تعذّر عرض المستند:", "Could not display the document:") + "\n" + UiDialog.Localize(detail) + hint,
+            "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
     private static void ShowToast(string message, string hexBackground)
     {
         if (_toastHost is null || _toastText is null)

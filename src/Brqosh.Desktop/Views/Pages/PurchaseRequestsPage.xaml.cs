@@ -117,21 +117,27 @@ public partial class PurchaseRequestsPage : UserControl
             await ReloadAsync();
     }
 
-    private async void OnView(object sender, RoutedEventArgs e) => await ViewSelectedAsync();
-    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await ViewSelectedAsync();
+    private async void OnView(object sender, RoutedEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "PurchaseRequestsPage.View");
+    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "PurchaseRequestsPage.View");
 
     private async Task ViewSelectedAsync()
     {
         if (Selected is not { } row)
         {
-            UiFeedback.ShowInfo(LocaleManager.T("اختر طلباً من الجدول.", "Select a request."));
+            UiFeedback.ShowSelectionRequired(LocaleManager.T("اختر طلباً من الجدول أولاً ثم اضغط «عرض».", "Select a request first, then press View."));
             return;
         }
 
         await using var db = AppServices.CreateDb();
-        var request = await db.PurchaseRequests.SingleAsync(r => r.Id == row.Id);
-        var supplier = await db.Suppliers.SingleAsync(s => s.Id == request.SupplierId);
-        var header = $"رقم: {request.RequestNumber ?? "—"}  |  {row.StatusAr}  |  {row.PipelineStep}  |  المورد: {supplier.NameAr}";
+        var request = await db.PurchaseRequests.SingleOrDefaultAsync(r => r.Id == row.Id);
+        if (request is null)
+        {
+            UiFeedback.ShowRecordMissing(LocaleManager.T("لم يعد طلب الشراء هذا موجوداً — حدّث الجدول وحاول مجدداً.", "This purchase request no longer exists — refresh the list and try again."));
+            return;
+        }
+        var supplier = await db.Suppliers.SingleOrDefaultAsync(s => s.Id == request.SupplierId);
+        var supplierName = supplier?.NameAr ?? LocaleManager.T("(مورّد غير موجود)", "(supplier not found)");
+        var header = $"رقم: {request.RequestNumber ?? "—"}  |  {row.StatusAr}  |  {row.PipelineStep}  |  المورد: {supplierName}";
         new DocumentLinesViewDialog("طلب شراء", header, request.Lines.ToList(), request.Subtotal, 0m, request.Subtotal)
         {
             Owner = Window.GetWindow(this),

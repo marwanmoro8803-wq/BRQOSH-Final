@@ -105,9 +105,9 @@ public partial class CreditNotesPage : UserControl
         }
     }
 
-    private async void OnView(object sender, RoutedEventArgs e) => await ViewSelectedAsync();
+    private async void OnView(object sender, RoutedEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "CreditNotesPage.View");
 
-    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await ViewSelectedAsync();
+    private async void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => await UiFeedback.RunViewSafeAsync(ViewSelectedAsync, "CreditNotesPage.View");
 
     private async Task ViewSelectedAsync()
     {
@@ -118,7 +118,12 @@ public partial class CreditNotesPage : UserControl
         }
 
         await using var db = AppServices.CreateDb();
-        var note = await db.CreditNotes.SingleAsync(n => n.Id == row.Id);
+        var note = await db.CreditNotes.SingleOrDefaultAsync(n => n.Id == row.Id);
+        if (note is null)
+        {
+            UiFeedback.ShowRecordMissing(LocaleManager.T("لم يعد هذا الإشعار موجوداً — حدّث الجدول وحاول مجدداً.", "This note no longer exists — refresh the list and try again."));
+            return;
+        }
         var header = $"رقم: {note.NoteNumber ?? "—"}  |  التاريخ: {note.NoteDate:yyyy-MM-dd}  |  السبب: {note.Reason}";
         new DocumentLinesViewDialog("إشعار دائن", header, note.Lines.ToList(),
             note.Subtotal, note.VatAmount, note.GrandTotal()) { Owner = Window.GetWindow(this) }.ShowDialog();
