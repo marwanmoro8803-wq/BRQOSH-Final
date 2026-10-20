@@ -1219,6 +1219,7 @@ public static partial class UiBilingualRegistry
         ["تعديل الاسم"] = "Edit Name",
         ["تعديل بند BOQ"] = "Edit Line BOQ",
         ["تعذّر إتمام العملية: عُدِّلت البيانات من جلسة أخرى أثناء الحفظ. لم يُحفظ أي تغيير — أعد فتح الشاشة وحاول مرة أخرى."] = "The operation could not be completed: the data was changed by another session while saving. Nothing was saved — reopen the screen and try again.",
+        ["تعذّر عرض المستند:"] = "تعذّر View المستند:",
         ["تعذّر فتح شاشة إعدادات الاتصال. احذف ملف الاتصال database.json من مجلد BRQOSH في APPDATA ثم أعد التشغيل — التفصيل في سجل الأعطال."] = "Could not open the database connection screen. Delete database.json from the BRQOSH folder in APPDATA and restart — details are in the crash log.",
         ["تعيين كلمة المرور"] = "Set password",
         ["تعيين كلمة المرور بمفتاح الاستعادة"] = "Set the password with the recovery key",

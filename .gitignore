@@ -63,3 +63,9 @@ __pycache__/
 venv/
 
 TestResults-measure/
+.claude/data/
+.claude/odoo-timesheet/
+.claude/settings.local.json
+TestResults*/
+*.sqlite*
+.env

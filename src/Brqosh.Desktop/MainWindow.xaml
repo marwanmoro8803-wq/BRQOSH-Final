@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="BRQOSH ERP"
         Width="1400" Height="900"
-        MinWidth="1100" MinHeight="700"
+        MinWidth="1024" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         FlowDirection="RightToLeft"
@@ -189,8 +189,16 @@
 
                 <!-- منطقة الصفحة + Toast -->
                 <Grid Grid.Row="1" Margin="20">
-                    <ContentControl x:Name="PageHost"
-                                    AutomationProperties.AutomationId="PageHost"/>
+                    <!-- (UI-AUDIT · P1) الصفحةُ تُمرَّر إن طالت — والارتفاعُ يُدار في Ui/PageViewport
+                         حتى تبقى الجداولُ محدودةً فلا يُكسر ترشيدُ صفوفها. والـ Toast خارج التمرير فيبقى مرئياً. -->
+                    <ScrollViewer x:Name="PageViewportScroll"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  CanContentScroll="False" Focusable="False">
+                        <ContentControl x:Name="PageHost"
+                                        VerticalAlignment="Top"
+                                        AutomationProperties.AutomationId="PageHost"/>
+                    </ScrollViewer>
                     <Grid x:Name="ToastOverlay" IsHitTestVisible="False"/>
                 </Grid>
             </Grid>

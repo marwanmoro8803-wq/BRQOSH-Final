@@ -152,9 +152,14 @@
                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
                 Padding="24,14" Effect="{StaticResource CardShadow}">
             <Grid>
-                <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+                <!-- (UI-AUDIT) عمودان: رسالةُ خطأٍ طويلةٌ تلتفّ في عمودها ولا تمرّ تحت زرّ الحفظ. -->
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
                            TextWrapping="Wrap" Visibility="Collapsed" VerticalAlignment="Center"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}"
                             AutomationProperties.AutomationId="CompanySettingsSave"
                             Padding="24,9" Click="OnSave"/>

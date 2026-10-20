@@ -50,6 +50,8 @@ public partial class MainWindow : Window
         _licensedModules = Brqosh.Infrastructure.Licensing.LicenseStore.LicensedModulesFor(
             setup.LicensedCompanyName ?? setup.CompanyName);
         InitializeComponent();
+        // ‏(UI-AUDIT · P1) الصفحةُ الطويلة تُمرَّر، والجدولُ يبقى محدودَ الارتفاع.
+        Ui.PageViewport.Attach(PageViewportScroll, PageHost);
 
         // ‏(ح-١٢٠) ‏**وضعُ القراءة يُرى في العنوان** — فلا يُحسب رفضُ الحفظ عطلاً.
         if (Brqosh.Infrastructure.Licensing.ReadOnlyBooks.IsActive)
