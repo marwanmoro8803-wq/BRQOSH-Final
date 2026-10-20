@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-10-20 (جاهزيّةُ الإطلاق · **مئةٌ وسبعةٌ وسبعون إغلاقاً ح-١…ح-١٧٧**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-10-20 (جاهزيّةُ الإطلاق · **مئةٌ وتسعةٌ وسبعون إغلاقاً ح-١…ح-١٧٩**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٧٧ (2026-09-20…10-21)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٧٩ (2026-09-20…10-21)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3193,6 +3193,8 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١٧٥ | `cf711fc` | `Companies/BusinessProfileChangeService.cs` · `CompanySettingsPage` · `TheBusinessProfileChangesOnlyWithoutHidingDataTests` | **ملفُّ النشاط يغيّره المدير بحارس** (`ui-ux-i18n-printing#7` ✅، قرارُ المالك 2026-10-18)؛ سبعةُ براهين |
 | ح-١٧٦ | `ade3a6e` | `Sales/RejectedInvoiceReissueService.cs` · `ZatcaEInvoiceGenerator` · `ZatcaInvoicesPage` · `SalesInvoiceDialog` · `ARejectedInvoiceIsCorrectedAndReissuedTests` | **المرفوضةُ تُلغى وتُصدَر مصحَّحتُها** (`tax-zatca#8` ✅) — ومعه سجلُّ الواجهة يُولَّد بأداته فأمسك نصوصَ ح-١٧١ وح-١٧٤ غيرَ المترجمة؛ ستّةُ براهين |
 | ح-١٧٧ | `21d8bba` | `PurchaseVatTreatment` · `PurchaseInvoice` · `VatReturnQuery` · `PurchaseInvoiceDialog` · هجرة `AddPurchaseVatTreatment` · `ImportsAndReverseChargeFillBoxesEightAndNineTests` | **الخانتان 8 و9** (`tax-zatca#12` ✅) — القاعدةُ من نصّ دليل الهيئة نفسِه لا من ملخّصاتٍ ثانويّة؛ والمولِّدُ كتب افتراضاً فارغاً فكُتبت الهجرةُ بـ«Domestic»؛ ثمانيةُ براهين |
+| ح-١٧٨ | `e95f435` | `DepreciationMethod.DecliningBalance` · `FixedAsset.ApplyDecliningBalanceDue` · `FixedAssetDialog` · هجرة `AddFixedAssetDepreciationMethod` · `ADecliningBalanceDepreciatesTheBookValueTests` | **القسطُ المتناقصُ المضاعَف** (`treasury-payroll-assets#11` ✅) — الأرقامُ محسوبةٌ سلفاً، والاستدراكُ يساوي الأشهرَ واحداً واحداً، والعكسُ ثمّ الإعادةُ بالمبلغ نفسِه؛ ستّةُ براهين |
+| ح-١٧٩ | `79fbf4a` | `ZatcaSettings.SigningMachineId` · `ZatcaSettingsSecrets` · `ZatcaEInvoiceGenerator` · `ZatcaCsidWizardWindow` · هجرة `AddZatcaSigningMachine` · `AnotherWorkstationIsToldWhereSigningLivesTests` | **الجهازُ الثاني يُقال له أين يُختم** (`tax-zatca#16` ☐ — إجراءٌ مؤقّت) — ويبقى القرارُ المعماريُّ للمالك؛ ثلاثةُ براهين |
 
 **والقياسُ عند آخر إيداع (`e126aac`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **248/248** ·
 `Brqosh.Application.Tests` **2236/2236** · `Brqosh.Desktop.Tests` **437/437** · `Brqosh.Api.Tests` **107/107** ·
