@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-10-17 (جاهزيّةُ الإطلاق · **مئةٌ وثلاثةٌ وستّون إغلاقاً ح-١…ح-١٦٣**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-10-20 (جاهزيّةُ الإطلاق · **مئةٌ وتسعةٌ وستّون إغلاقاً ح-١…ح-١٧٠** — والرقمُ ح-١٦٤ محجوز، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٦٣ (2026-09-20…10-17)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٧٠ (2026-09-20…10-20)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3179,6 +3179,12 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١٦١ | `c055050` | `Assets/FixedAssetDisposalReversalService.cs` · `ZatcaDocumentType.DisposalCancel` · المولّدُ والطباعةُ والعرض | **عكسُ الاستبعاد وإشعارُه الدائن** (`treasury-payroll-assets#10` ✅) — وحارسُ مسارات التوليد أسقطه حتّى قِيس؛ أربعةُ براهين |
 | ح-١٦٢ | `e1ca4b6` | `Views/ZatcaCsidWizardWindow.xaml(.cs)` · `RenewingTheProductionCsidFromTheWizardTests` · سجلُّ الترجمة | **تجديدُ شهادة الإنتاج من المعالج** (`tax-zatca#10` ✅) — خدمةُ ح-١٣٧ كانت بلا زرّ، وتعديلاتُ الواجهة المتروكةُ منذ 10-15 لم تكن تُترجَم (سطرٌ خامٌ في `$"…"`)، وسجلُّها المولَّدُ القديمُ يحذف تسعةَ مفاتيحَ من ح-١٣٨ فأُعيد توليدُه؛ وحارسُ «شهادة إنتاجٍ قائمة» وإبقاءُ اختيار المالك أُضيفا؛ أربعةُ براهين |
 | ح-١٦٣ | `1abc531` | `Ui/UiMessages.cs` · `assets/i18n/message-patterns.json` · `ui-overrides.json` · `UiDialog` · `UiFeedback` · `tools/I18nRegistryGen` · `EveryAccountingMessageIsTranslatedTests` | **رسائلُ الأخطاء في الوضع الإنجليزيّ** (`ui-ux-i18n-printing#9` ✅) — ٧١٥ ثابتةً و٢٥٧ قالباً؛ وبرهانُ الترتيب لم يعضّ أوّلاً فقِيس الترتيبُ نفسُه؛ أربعةُ براهين |
+| ح-١٦٥ | `8b1de15` | `Domain/Tax/VatReturnBox.cs` · `VatReturnQuery` · `VatReturnMapping` · `VatReturnRows` · `VatReturnFillsTheOfficialBoxesTests` | **الإقرارُ يملأ خاناتِ نموذج الهيئة** (`tax-zatca#12` ◐) — الخاناتُ من لقطات دليل خدمة الإقرار نفسِه؛ 8 و9 صفرٌ معلَن؛ خمسةُ براهين |
+| ح-١٦٦ | `11ed203` | `Security/AdminRecoveryKey.cs` · `UserAuthService` · `RecoveryKeyWindow` · هجرة `AddUserRecoveryKey` · `TheAdministratorRecoversWithTheRecoveryKeyTests` | **مفتاحُ استعادة المدير** (`security-licensing-tenancy#7` ✅، قرارُ المالك 2026-10-18) — يُعرض مرّةً ويُحرق عند الاستعمال؛ ستّةُ براهين |
+| ح-١٦٧ | `bd1166c` | `Company.ManualJournalApprovalThreshold` · `JournalPostingService` · `ManualJournalApprovalPolicy` · هجرة `AddManualJournalApprovalThreshold` · `AManualEntryAboveTheThresholdNeedsApprovalTests` | **اعتمادُ القيد اليدويّ فوق حدّ** (`accounting-core#6` ✅، قرارُ المالك 2026-10-18) — مسوّدةٌ متروكةٌ من جلسةٍ انقطعت: أسقطت ١٦ اختباراً في قياسها الأوّل، وبرهانُ افتراض EF فيها كان أخضر حتى كُتب اختبارُه؛ خمسةُ براهين |
+| ح-١٦٨ | `6e62a63` | `Zatca/ZatcaKeyFile.cs` · `ZatcaCsidOnboardingService` · `ZatcaXmlSigner` · `ZatcaCsidTests` · دليل المستخدم §13 | **مفتاحُ الختم بـDPAPI للجهاز** (`security-licensing-tenancy#3` ✅، قرارُ المالك 2026-10-18) — والكتابةُ ذرّيّة (غيرُ مقيسةٍ بانقطاعٍ فعليّ)؛ برهانان |
+| ح-١٦٩ | `5fcdea6` | `installer/build-msi.ps1` · `Operations/PgToolLocator.cs` · `TheBackupToolsShipWithTheProgramTests` | **أدواتُ النسخ تُشحن** (`data-upgrade-performance#6` · `installer-deployment-ops#10` ✅، قرارُ المالك 2026-10-18) — المتروكُ بلا اختبار فكُتب، **والحزمةُ بُنيت وفُكّت بـmsiexec /a**؛ أربعةُ براهين |
+| ح-١٧٠ | `3d12154` | `ReservationDepositService` · `FolioService` · `ZatcaEInvoiceGenerator` · `ZatcaUblInvoiceBuilder` · `VatReturnQuery` · هجرة `AddSalesInvoiceSettlesReservation` · `AReservationDepositIssuesAPrepaymentInvoiceTests` | **عربونُ الحجز فاتورةٌ 386 تُسوّى في المغادرة** (`sector-modules#6` ✅) — حارسُ مسارات التوليد أسقط المسارين حتى قِيسا، والقياسُ الأوّلُ أسقط «Posted وحده» فصار `WhereStanding`؛ ستّةُ براهين |
 
 **والقياسُ عند آخر إيداع (`e126aac`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **248/248** ·
 `Brqosh.Application.Tests` **2236/2236** · `Brqosh.Desktop.Tests` **437/437** · `Brqosh.Api.Tests` **107/107** ·
@@ -3204,6 +3210,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 **وما بعده (`be49c5c`…`c055050`، ح-١٦٠…ح-١٦١) دليلُ المستخدم وعكسُ الاستبعاد** — قِيس كاملاً مرّتين في شجرةٍ معزولةٍ على SDK 10.0.402، كلُّ إيداعٍ وحدَه: **`be49c5c`** (ح-١٦٠) أخضرُ كلُّه — Domain ٢٤٨ وApi ١٢٦ وDesktop ٥٣٥ (منها حارسُ الدليل) وApplication ٢٤٣١، صفرُ متخطًّى، 66.14%؛ **و`c055050`** (ح-١٦١) أخضر — Desktop ٥٣٧ وApplication ٢٤٣٦ (منها قياسُ مطابقة الإشعار الدائن)، 66.13%.
 **وما بعده (`e1ca4b6`، ح-١٦٢) تجديدُ شهادة الإنتاج من المعالج** — قِيس كاملاً بخطوات `ci.yml` في شجرةٍ معزولةٍ على SDK 10.0.402، **وقُرئت عدّاداتُ الـ`trx` الأربعة مباشرةً** لأنّ خطوةَ الاختبار لم تطبع حصيلتَها: **أخضرُ كلُّه** — Domain ٢٤٨ وApi ١٢٦ وDesktop ٥٤١ (منها اختباراتُ التوصيل الأربعة) وApplication ٢٤٣٦، صفرُ ساقطٍ وصفرُ متخطًّى، 66.06%، والماسحُ الأمنيّ وUI UX PASS، والحرّاسُ الماسحة ٢٤٤/٢٤٤؛ **وبصماتُ الملفّات الخمسة في الإيداع طُوبقت ببصمات الشجرة المقيسة**.
 **وما بعده (`1abc531`، ح-١٦٣) ترجمةُ رسائل الأخطاء** — قِيس كاملاً في شجرةٍ معزولةٍ على SDK 10.0.402: **أخضرُ كلُّه** — Domain ٢٤٨ وApi ١٢٦ وDesktop ٥٤٧ (منها حارسُ الترجمة الستّة) وApplication ٢٤٣٦، صفرُ متخطًّى، **66.55%** (صعدت التغطيةُ لأنّ `UiMessages` مقيسٌ كلُّه).
+**وما بعده (`8b1de15`…`3d12154`، ح-١٦٥…ح-١٧٠)** — **ح-١٦٧…ح-١٧٠ تنفيذُ قرارُ المالك 2026-10-18، مسوّدةً متروكةً من جلسةٍ انقطعت** (٦٣ ملفّاً غيرَ مودَعٍ في الشجرة الرئيسة) — فُصل كلُّ بندٍ إلى شجرةٍ معزولةٍ فوق سابقه وقِيس كاملاً بخطوات `ci.yml` على SDK 10.0.402 وأُودع من بصماتها (`update-index --cacheinfo`) **مع مطابقة شجرة الإيداع بالشجرة المقيسة**: ح-١٦٧ ٢٤٦٤ · ح-١٦٨ ٢٤٦٥ · ح-١٦٩ ٢٤٧١ · ح-١٧٠ ٢٤٧٨ — وDomain ٢٤٨ وApi ١٢٦ وDesktop ٥٥٥ في كلٍّ، صفرُ ساقطٍ وصفرُ متخطًّى. **وبقي من الدفعة نفسِها خمسةُ بنودٍ لم تُبدأ**: `tax-zatca#8` · `installer-deployment-ops#13` · `ui-ux-i18n-printing#7` · `security-licensing-tenancy#2`/`commercial-readiness#5` (ح-١٦٤ المحجوز) · `found#7` — **ومسوّداتُها في الشجرة الرئيسة غيرُ مقيسة**.
 **ولم يُشغَّل** `BRQOSH_REQUIRE_PG=1` ولا مسبارُ تغطية المخطّط: يحتاجان اعتمادَ PostgreSQL، وهو للمالك يضبطه. **وتشغيلٌ أوّلُ أبطله تشغيلٌ متزامنٌ من جلسةٍ أخرى في الشجرة نفسِها** (سبعةُ `trx` لأربعة مشاريع، ثمّ `Brqosh.Infrastructure.dll` يختفي في منتصف الحزمة) — فأُعيد في مجلّدٍ معزولٍ بعد إيقافه.
 
 ### وأصلٌ واحدٌ يجمع ثمانيةً من هذه العشرة — **قارئٌ ثانٍ يشتقُّ ما تملكُه الشجرةُ أصلاً**
