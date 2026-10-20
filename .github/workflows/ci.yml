@@ -80,6 +80,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $svc = Get-Service -Name 'postgresql*' -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $svc) { throw 'لا خدمةَ PostgreSQL على العدّاء — والبوّابةُ تشترطها.' }
+          # ‏الخدمةُ معطَّلةٌ على صورة windows-latest («Cannot start service» في أوّل تشغيلٍ للبوّابة على GitHub) — ووثيقةُ
+          # ‏actions/runner-images تقول: يُضبط نوعُ بدئها أوّلاً ثمّ تُشغَّل.
+          Set-Service -Name $svc.Name -StartupType Manual
           Start-Service $svc.Name
           $bin = (Get-ChildItem 'C:\Program Files\PostgreSQL' -Directory |
                   Sort-Object Name -Descending | Select-Object -First 1).FullName + '\bin'
