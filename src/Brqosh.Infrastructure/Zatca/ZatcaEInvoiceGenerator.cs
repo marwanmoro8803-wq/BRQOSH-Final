@@ -610,8 +610,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         if (zatcaSettings is not null && !ZatcaXmlSigner.CanSign(zatcaSettings)
             && ZatcaSettingsSecrets.IsSignedOnAnotherMachine(zatcaSettings))
             throw new AccountingException(
-                "الفواتير الإلكترونية تُختم على الجهاز المسجَّل لدى الهيئة وحده — وهذا الجهاز غير مسجَّل. "
-                + "أصدِر الفاتورة من ذلك الجهاز؛ وتشغيلُ معالج الشهادة هنا ينقل الختم إليه ويوقف الجهاز الآخر.");
+                "الفواتير الإلكترونية تُختم على الجهاز المسجَّل لدى الهيئة وحده — وهذا الجهاز غير مسجَّل. أصدِر الفاتورة من ذلك الجهاز؛ وتشغيلُ معالج الشهادة هنا ينقل الختم إليه ويوقف الجهاز الآخر.");
         if (!ZatcaXmlSigner.CanSign(zatcaSettings))
             throw new AccountingException(
                 "لا يمكن إصدار فاتورة إلكترونية بلا شهادة توقيع. أكمِل تسجيل الشهادة (CSID) "
