@@ -68,9 +68,9 @@ public partial class ProgressBillingsPage : UserControl
             await ReloadAsync();
     }
 
-    private void OnView(object sender, RoutedEventArgs e) => ViewSelected();
+    private void OnView(object sender, RoutedEventArgs e) => UiFeedback.RunViewSafe(ViewSelected, "ProgressBillingsPage.View");
 
-    private void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => ViewSelected();
+    private void OnGridDoubleClick(object sender, MouseButtonEventArgs e) => UiFeedback.RunViewSafe(ViewSelected, "ProgressBillingsPage.View");
 
     private void ViewSelected()
     {
