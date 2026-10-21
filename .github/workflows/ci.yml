@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, "wip/**"]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, "wip/**"]
 
 # ‏(م-٤ · ن-١٣) **صلاحيّاتُ الرمز — والافتراضُ كان مفتوحاً.**
 #
@@ -68,27 +68,54 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      # (CEEF-237 · ج-٢) تشغيلُ PostgreSQL المُثبَّت على عدّاء ويندوز وضبطُ كلمة المرور.
-      - name: Start PostgreSQL
+      # (CEEF-237 · ج-٢) ‏تثبيتُ PostgreSQL 17 صراحةً بدل افتراض خدمةٍ وكلمة مرور على الصورة.
+      # ‏كلمةُ المرور مولّدةٌ لكلّ تشغيلة ومُقنَّعة قبل أيّ استعمال.
+      - name: Generate PostgreSQL password
+        id: pgpass
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $svc = Get-Service -Name 'postgresql*' -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $svc) { throw 'لا خدمةَ PostgreSQL على العدّاء — والبوّابةُ تشترطها.' }
-          Start-Service $svc.Name
-          $bin = (Get-ChildItem 'C:\Program Files\PostgreSQL' -Directory |
-                  Sort-Object Name -Descending | Select-Object -First 1).FullName + '\bin'
-          # ‏كلمةُ postgres على صورة windows-latest هي 'root' — فإن تغيّرت، تسقط الخطوةُ
-          # ‏برسالةٍ تُسمّي الافتراض بدل أن يُتخطّى الفحصُ صامتاً.
-          $env:PGPASSWORD = 'root'
-          $generated = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray()).TrimEnd('=')
-          & "$bin\psql.exe" -U postgres -h localhost -p 5432 -c `
-            "ALTER USER postgres PASSWORD '$generated';"
-          if ($LASTEXITCODE -ne 0) { throw "تعذّر ضبطُ كلمة مرور postgres (exit=$LASTEXITCODE)." }
+          $bytes = [byte[]]::new(24)
+          [Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+          $generated = ([Convert]::ToBase64String($bytes) -replace '[+/=]', 'x')
+          Write-Host "::add-mask::$generated"
           "BRQOSH_PG_PASSWORD=$generated" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          $env:PGPASSWORD = $generated
-          $v = & "$bin\psql.exe" -U postgres -h localhost -p 5432 -tAc 'select version();'
-          if ($LASTEXITCODE -ne 0) { throw 'الخادمُ لا يقبل الاتصالَ بعد الضبط.' }
+
+      # ‏الخدمةُ المسبقة على الصورة تحجز المنفذ 5432؛ إيقافُها شرط، وفشلُه فشلٌ لا تجاهل.
+      - name: Stop preinstalled PostgreSQL
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $services = @(Get-Service -Name 'postgresql*' -ErrorAction SilentlyContinue)
+          foreach ($svc in $services) {
+            Stop-Service -Name $svc.Name -Force
+            Set-Service -Name $svc.Name -StartupType Disabled
+            $svc.Refresh()
+            if ($svc.Status -ne 'Stopped') { throw "تعذّر إيقافُ $($svc.Name) (الحالة: $($svc.Status))." }
+          }
+          if (Get-NetTCPConnection -LocalPort 5432 -State Listen -ErrorAction SilentlyContinue) {
+            throw 'المنفذ 5432 ما زال محجوزاً بعد إيقاف الخدمات المسبقة.'
+          }
+
+      - name: Setup PostgreSQL 17
+        id: postgres
+        uses: ikalnytskyi/action-setup-postgres@c4dda34aae1c821e3a771b68b73b13af3198a7ee # v8
+        with:
+          postgres-version: "17"
+          username: postgres
+          password: ${{ env.BRQOSH_PG_PASSWORD }}
+          database: postgres
+          port: "5432"
+
+      - name: Verify PostgreSQL
+        shell: pwsh
+        env:
+          PGSERVICE: ${{ steps.postgres.outputs.service-name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = psql -tAc 'select version();'
+          if ($LASTEXITCODE -ne 0) { throw 'الخادمُ لا يقبل الاتصال بعد الإعداد.' }
+          if ($v -notmatch 'PostgreSQL 17') { throw "إصدارٌ غير متوقّع: $v" }
           Write-Host "PostgreSQL جاهز: $v"
 
       - name: Restore
