@@ -221,7 +221,14 @@ public static class AiAssistantPanelBuilder
                 Cursor = Cursors.Hand,
             };
 
-            btn.Click += async (_, _) => await onSendAsync(prompt);
+            // Audit fix: guard against double-clicks firing the same question twice.
+            btn.Click += async (_, _) =>
+            {
+                if (!btn.IsEnabled) return;
+                btn.IsEnabled = false;
+                try { await onSendAsync(prompt); }
+                finally { btn.IsEnabled = true; }
+            };
             promptHost.Children.Add(btn);
         }
     }
