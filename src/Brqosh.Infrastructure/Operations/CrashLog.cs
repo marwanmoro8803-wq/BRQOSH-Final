@@ -83,7 +83,8 @@ public static class CrashLog
             // ‏من عطلٍ متكرّرٍ واحدٍ وأيُّها من أعطالٍ مختلفة. واللاحقةُ تقع **بعد** الخيط
             // ‏فلا تُزحزح موضعَ السياق الذي يقرؤه `ContextOf`.
             var baseName = $"crash-{DateTime.Now:yyyy-MM-dd_HHmmss.fff}{ContextSeparator}{Slug(context)}"
-                           + $"{ContextSeparator}{Environment.CurrentManagedThreadId}";
+                           + $"{ContextSeparator}{Environment.CurrentManagedThreadId}"
+                           + $"-{Interlocked.Increment(ref _sequence)}";
             var body = Compose(exception, context);
 
             var path = string.Empty;
@@ -112,7 +113,7 @@ public static class CrashLog
             if (path.Length == 0)
                 return null;
 
-            Prune();
+            Prune(path);
             PruneSchemaReports();
             return path;
         }
@@ -172,6 +173,15 @@ public static class CrashLog
     /// </summary>
     private const int NameAttempts = 50;
 
+    /// <summary>
+    /// (جاهزيّةُ الإطلاق) <b>تسلسلٌ في العمليّة يجعل الاسمَ لا يتكرّر — والتقليمُ كان يُعيده.</b>
+    ///
+    /// <para>الحجزُ الذرّيُّ أعلاه يمنع الدهسَ ما دام الملفُّ قائماً؛ <b>لكنّ التقليمَ يمحو</b>، وكتاباتُ الميلّي ثانية
+    /// الواحدة تتساوى في <c>LastWriteTimeUtc</c> فيُمحى منها أيُّها اتّفق — <b>والاسمُ الممحوُّ يُعاد للكتابة التالية</b>.
+    /// مقيسٌ على لينكس: دفقةُ العشرين أعادت خمسةَ عشرَ اسماً مختلفاً.</para>
+    /// </summary>
+    private static long _sequence;
+
     private const string ContextSeparator = "__";
 
     /// <summary>حصّةُ كلّ سياق — فلا يبتلع عطلٌ متكرّرٌ الأدلّةَ كلَّها.</summary>
@@ -216,10 +226,12 @@ public static class CrashLog
     public static void PruneSchemaReports() =>
         PruneFamily("schema-*.log", perContextLimit: int.MaxValue, totalLimit: SchemaReportLimit);
 
-    private static void Prune() =>
-        PruneFamily("crash-*.log", PerContextLimit, TotalLimit);
+    /// <remarks><b>والمكتوبُ للتوّ لا يُقلَّم أبداً</b> — فتساوي الأوقات في الميلّي ثانية لا يمحو التقريرَ الذي يُعاد مسارُه
+    /// للمستدعي ليعرضه.</remarks>
+    private static void Prune(string justWritten) =>
+        PruneFamily("crash-*.log", PerContextLimit, TotalLimit, justWritten);
 
-    private static void PruneFamily(string pattern, int perContextLimit, int totalLimit)
+    private static void PruneFamily(string pattern, int perContextLimit, int totalLimit, string? justWritten = null)
     {
         try
         {
@@ -232,6 +244,8 @@ public static class CrashLog
                 .Take(totalLimit)
                 .Select(f => f.FullName)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (justWritten is not null)
+                keep.Add(Path.GetFullPath(justWritten));
 
             foreach (var file in files.Where(f => !keep.Contains(f.FullName)))
             {

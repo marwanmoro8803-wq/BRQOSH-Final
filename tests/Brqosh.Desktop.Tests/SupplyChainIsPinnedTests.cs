@@ -65,7 +65,7 @@ public class SupplyChainIsPinnedTests
         // ‏وشاهدٌ ثانٍ: العددُ المقيس. فمسحٌ يجد صفرَ أسطرٍ يمرّ خضراءَ بلا أن يفحص شيئاً.
         var total = files.Sum(f => File.ReadAllLines(f).Count(l => AnyUse.IsMatch(l)));
         // ‏(ح-١٤٢) ‏عشرةٌ: سبعةٌ قبلُ، وثلاثةٌ في `release.yml` (checkout · setup-dotnet · upload-artifact).
-        Assert.Equal(10, total);
+        Assert.Equal(11, total); // +1 action-setup-postgres (ci.yml)
     }
 
     /// <summary>

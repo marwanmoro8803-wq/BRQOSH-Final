@@ -108,6 +108,9 @@ public sealed class CrashLogKeepsTheRootCauseTests : IDisposable
         // ‏**وحصّةُ السياق تُقلّم بعدها** — فالباقي على القرص خمسةٌ بحكم `PerContextLimit`،
         // ‏وهو سلوكٌ مقصود. والمقيسُ هنا **أنّ الأسماء لم تتصادم**، لا أنّ الكلَّ باقٍ.
         Assert.Equal(burst, paths.Count);
+
+        // ‏**والمسارُ المُعاد قائمٌ على القرص** — فالتقليمُ لا يمحو ما كُتب للتوّ وإن تساوت الأوقاتُ في الميلّي ثانية.
+        Assert.True(File.Exists(paths[^1]), "‏قُلّم التقريرُ المكتوبُ للتوّ — والمستدعي يعرض مساراً لا وجودَ له.");
     }
 
     private static void Clear()

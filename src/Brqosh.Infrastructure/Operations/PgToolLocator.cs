@@ -38,12 +38,9 @@ public static class PgToolLocator
     public static Tool? Find(string toolName, out IReadOnlyList<string> searched) =>
         Find(toolName, BundledDirectory, ReadVersion, out searched);
 
-    /// <summary>
-    /// التفتيشُ نفسُه بمجلّدٍ مشحونٍ وقارئِ إصدارٍ يُمرَّران — <b>درزُ الاختبار</b>: يُثبت أنّ المشحونَ يُفتَّش ويُختار
-    /// دون تشغيل عمليّةٍ ولا الكتابةِ بجوار تنفيذيّ الاختبار.
-    /// </summary>
-    public static Tool? Find(
-        string toolName, string bundledDirectory, Func<string, Version?> readVersion, out IReadOnlyList<string> searched)
+    /// <summary>درزُ الاختبار: مجلّدُ المشحون وقارئُ الإصدار يُمرَّران — والسلوكُ نفسه.</summary>
+    public static Tool? Find(string toolName, string bundledDirectory, Func<string, Version?> versionProbe,
+        out IReadOnlyList<string> searched)
     {
         var looked = new List<string>();
         var found = new List<Tool>();
@@ -51,7 +48,7 @@ public static class PgToolLocator
         // ‏(data-upgrade-performance#6) ‏المشحونةُ أوّلاً في التفتيش — ويبقى الاختيارُ للأحدث: تثبيتٌ محلّيٌّ أحدثُ (خادمٌ رُقّي) يُقدَّم عليها.
         var bundled = Path.Combine(bundledDirectory, $"{toolName}.exe");
         looked.Add(bundledDirectory);
-        if (File.Exists(bundled) && readVersion(bundled) is Version bundledVersion)
+        if (File.Exists(bundled) && versionProbe(bundled) is Version bundledVersion)
             found.Add(new Tool(bundled, bundledVersion));
 
         foreach (var root in SearchRoots)
@@ -63,13 +60,13 @@ public static class PgToolLocator
             foreach (var versionDir in Directory.EnumerateDirectories(root))
             {
                 var candidate = Path.Combine(versionDir, "bin", $"{toolName}.exe");
-                if (File.Exists(candidate) && readVersion(candidate) is Version v)
+                if (File.Exists(candidate) && versionProbe(candidate) is Version v)
                     found.Add(new Tool(candidate, v));
             }
         }
 
         // ‏وأخيراً المسار — قد يكون التثبيت في مكانٍ غير معتاد.
-        var onPath = FromPath(toolName, readVersion);
+        var onPath = FromPath(toolName, versionProbe);
         looked.Add("PATH");
         if (onPath is not null)
             found.Add(onPath);
@@ -78,7 +75,7 @@ public static class PgToolLocator
         return found.OrderByDescending(t => t.Version).FirstOrDefault();
     }
 
-    private static Tool? FromPath(string toolName, Func<string, Version?> readVersion)
+    private static Tool? FromPath(string toolName, Func<string, Version?> versionProbe)
     {
         var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
         foreach (var dir in paths)
@@ -87,7 +84,7 @@ public static class PgToolLocator
             try { candidate = Path.Combine(dir, $"{toolName}.exe"); }
             catch { continue; }
 
-            if (File.Exists(candidate) && readVersion(candidate) is Version v)
+            if (File.Exists(candidate) && versionProbe(candidate) is Version v)
                 return new Tool(candidate, v);
         }
 

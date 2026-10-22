@@ -44,16 +44,22 @@ public sealed class ProgramAssistantService(
 
     private static ProgramTopic Classify(string original, string lower)
     {
+        // Audit fix: specific topics (ZATCA, permissions, posting verbs) are checked
+        // before the generic "how to" bucket. Previously the panel's own quick prompts
+        // "كيف أرحّل؟" / "How to post?" fell into HowTo and answered with the current
+        // page guide, and "صلاحياتي" matched nothing and was sent to the financial engine.
         if (ContainsAny(lower, original, "هذه الشاشة", "الصفحة", "الشاشة", "أين أنا", "where am i", "this screen", "current page", "ماذا أفعل", "what do i do"))
             return ProgramTopic.CurrentPage;
-        if (ContainsAny(lower, original, "كيف", "how to", "how do", "خطوات", "steps", "أنشئ", "انشئ", "create", "أضف", "add new"))
-            return ProgramTopic.HowTo;
-        if (ContainsAny(lower, original, "ترحيل", "post", "posted", "مسودة", "draft"))
-            return ProgramTopic.Posting;
         if (ContainsAny(lower, original, "زاتكا", "zatca", "فاتورة إلكترون", "e-invoice", "csid", "otp"))
             return ProgramTopic.Zatca;
-        if (ContainsAny(lower, original, "صلاحية", "permission", "دوري", "role", "rbac", "لماذا مرفوض", "مرفوض"))
+        if (ContainsAny(lower, original, "صلاحي", "permission", "دوري", "role", "rbac", "لماذا مرفوض", "مرفوض"))
             return ProgramTopic.Permissions;
+        if (ContainsAny(lower, original, "ترحيل", "أرحل", "ارحل", "نرحل", "يرحل", "مرحل", "post"))
+            return ProgramTopic.Posting;
+        if (ContainsAny(lower, original, "كيف", "how to", "how do", "خطوات", "steps", "أنشئ", "انشئ", "create", "أضف", "add new"))
+            return ProgramTopic.HowTo;
+        if (ContainsAny(lower, original, "مسودة", "draft"))
+            return ProgramTopic.Posting;
         if (ContainsAny(lower, original, "مساعدة", "help", "ماذا يمكن", "what can"))
             return ProgramTopic.Help;
 
@@ -65,9 +71,45 @@ public sealed class ProgramAssistantService(
         return ProgramTopic.General;
     }
 
-    private static bool ContainsAny(string lower, string original, params string[] needles) =>
-        needles.Any(n => lower.Contains(n, StringComparison.OrdinalIgnoreCase)
-                         || original.Contains(n, StringComparison.OrdinalIgnoreCase));
+    /// <summary>
+    /// Arabic needles are matched after removing diacritics/tatweel and unifying alef forms
+    /// (so "أرحّل" matches "ارحل"); Latin needles must start at a word boundary
+    /// (so "vat" no longer matches inside "private", nor "post" inside "compost").
+    /// </summary>
+    private static bool ContainsAny(string lower, string original, params string[] needles)
+    {
+        var text = NormalizeArabic(lower);
+        foreach (var n in needles)
+        {
+            var needle = NormalizeArabic(n.ToLowerInvariant());
+            if (needle.All(c => c < 128))
+            {
+                if (System.Text.RegularExpressions.Regex.IsMatch(
+                        text, @"(?<![a-z0-9])" + System.Text.RegularExpressions.Regex.Escape(needle)))
+                    return true;
+            }
+            else if (text.Contains(needle, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        _ = original;
+        return false;
+    }
+
+    private static string NormalizeArabic(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (var c in s)
+        {
+            if (c is >= '\u064B' and <= '\u0652' or '\u0640' or '\u0670')
+                continue;
+            sb.Append(c is 'أ' or 'إ' or 'آ' ? 'ا' : c);
+        }
+
+        return sb.ToString();
+    }
 
     private static FinancialAssistantReply PageReply(ProgramAssistantContext context)
     {
