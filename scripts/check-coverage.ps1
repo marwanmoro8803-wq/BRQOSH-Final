@@ -107,6 +107,11 @@ if ($stale.Count -gt 0) {
 #
 # ‏وتقريرٌ لا يُعرف جذرُه **يُرفض ولا يُخمَّن**: التخمينُ بالاسم العاري هو العطلُ نفسُه.
 function Resolve-CoveredPath([string]$FileName, [object[]]$Sources, [string]$Report) {
+    # ‏الفاصلان كلاهما فاصلٌ هنا: على لينكس لا يعدّ `Combine` الشرطةَ المائلةَ العكسيّةَ فاصلاً فيُقحم `/` بعدها،
+    # ‏فيصير السطرُ الواحدُ مفتاحين — وهو العطلُ نفسُه بجذرٍ مختلف. وعلى ويندوز لا يتغيّر شيء.
+    $sep = [IO.Path]::DirectorySeparatorChar
+    $FileName = $FileName -replace '[\\/]', $sep
+    $Sources = @($Sources | ForEach-Object { ([string]$_) -replace '[\\/]', $sep })
     if ([IO.Path]::IsPathRooted($FileName)) { $full = $FileName }
     elseif ($Sources.Count -eq 1) { $full = [IO.Path]::Combine([string]$Sources[0], $FileName) }
     else {
@@ -181,7 +186,7 @@ $aggregatePct = [math]::Round($aggregate * 100, 2)
 
 Write-Host "## Code coverage (merged across $($files.Count) cobertura report(s))"
 Write-Host ""
-$rows | Format-Table -AutoSize | Out-String | Write-Host
+$rows | Format-Table -AutoSize | Out-String -Width 200 | Write-Host
 Write-Host "Merged total: $grandCovered / $grandTotal = $aggregatePct% (floor $([math]::Round($MinimumLineRate * 100, 0))%)"
 Write-Host ""
 
