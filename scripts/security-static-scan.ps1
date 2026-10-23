@@ -175,8 +175,8 @@ foreach ($case in $patternSelfTest) {
 $secretAllowlist = @(
     @{ Pattern = 'Database=brqosh_design;Username=postgres;Password=design'
        Reason  = 'مصنعُ EF وقتَ التصميم: قاعدةٌ محلّيّةٌ على المنفذ 5433 تُولّد منها الهجراتُ على جهازِ المطوِّر؛ لا تُشحن ولا تُستعمل وقتَ التشغيل.' }
-    @{ Pattern = 'PGPASSWORD = ''root'''
-       Reason  = 'كلمةُ postgres الموثّقة على صورة windows-latest من GitHub؛ تُستعمل مرّةً واحدةً لتبديلها بمولَّدةٍ على عدّاءٍ يُتلف بعد التشغيلة.' }
+    # ‏(CEEF-237) ‏**وحُذف مدخلُ `PGPASSWORD = 'root'`**: سيرُ CI صار يثبّت PostgreSQL 17 بكلمةٍ مولَّدةٍ مُقنَّعة،
+    # ‏فلا كلمةَ افتراضيّةً على الصورة تُستعمل — والمدخلُ بقي ميّتاً يُسقط الماسح.
     # ‏(م-٦ · تبعيّةُ ن-٢٢) ‏**وحُذف من هنا مدخلُ `ProdBoot!2026`** بعد أن نُزعت الكلمتان
     # ‏من `live-production-first-boot.ps1` و`rk-prodboot-guest.ps1` إلى متغيّر بيئةٍ برميٍ
     # ‏صريح (والثانيةُ صارت تُولَّد، فلا تُخزَّن أصلاً). **ومدخلُ سماحٍ لا يُطابق شيئاً
