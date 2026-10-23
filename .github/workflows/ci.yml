@@ -105,7 +105,7 @@ jobs:
 
       - name: Setup PostgreSQL 17
         id: postgres
-        uses: ikalnytskyi/action-setup-postgres@c4dda34aae1c821e3a771b68b73b13af3198a7ee # v8
+        uses: ikalnytskyi/action-setup-postgres@c4dda34aae1c821e3a771b68b73b13af3198a7ee # v8 — 2026-10-21
         with:
           postgres-version: "17"
           username: postgres
