@@ -388,7 +388,7 @@ public static class ExecutiveDashboardBuilder
             grid.Children.Add(sp);
         }
 
-        AddMetric(0, 0, "الإيرادات", "Revenue", revenue, "#22D3EE");
+        AddMetric(0, 0, "الإيرادات", "Revenue", revenue, "#5BA4D6");
         AddMetric(1, 0, "المصروفات", "Expenses", expenses, "#F87171");
         AddMetric(0, 1, "صافي الربح", "Net Profit", net, "#D4AF37");
         AddMetric(1, 1, "رأس المال العامل", "Working Capital", wc, "#34D399");

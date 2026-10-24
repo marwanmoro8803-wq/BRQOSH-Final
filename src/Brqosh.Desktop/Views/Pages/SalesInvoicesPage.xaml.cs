@@ -85,7 +85,7 @@ public partial class SalesInvoicesPage : UserControl
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
             LocaleManager.T("فواتير الشهر", "Month invoices"), "INV", monthCount, "#2563EB", KpiValueKind.Count));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("إيراد الشهر", "Month revenue"), "RV", monthTotal, "#0D9488", KpiValueKind.Currency));
+            LocaleManager.T("إيراد الشهر", "Month revenue"), "RV", monthTotal, "#2A6F9E", KpiValueKind.Currency));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
             LocaleManager.T("ضريبة الشهر", "Month VAT"), "VT", vatTotal, "#7C3AED", KpiValueKind.Currency));
     }

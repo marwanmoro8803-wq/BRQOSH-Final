@@ -44,7 +44,7 @@ public partial class ProjectProfitabilityPage : UserControl
             _rows.Sum(r => r.IncurredCost), "#DC2626", KpiValueKind.Currency));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
             LocaleManager.T("هامش إجمالي", "Gross margin"), "GM",
-            _rows.Sum(r => r.GrossMarginEstimate), "#0D9488", KpiValueKind.Currency));
+            _rows.Sum(r => r.GrossMarginEstimate), "#2A6F9E", KpiValueKind.Currency));
     }
 
     private void OnExport(object sender, RoutedEventArgs e)

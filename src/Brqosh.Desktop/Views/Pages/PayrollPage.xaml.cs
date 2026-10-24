@@ -71,7 +71,7 @@ public partial class PayrollPage : UserControl
             LocaleManager.T("إجمالي إجمالي", "Total gross"), "GR",
             runs.Sum(r => r.TotalGross), "#2563EB", KpiValueKind.Currency));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("مرحّل", "Posted"), "OK", posted, "#0D9488", KpiValueKind.Count));
+            LocaleManager.T("مرحّل", "Posted"), "OK", posted, "#2A6F9E", KpiValueKind.Count));
     }
 
     private async void OnNew(object sender, RoutedEventArgs e)

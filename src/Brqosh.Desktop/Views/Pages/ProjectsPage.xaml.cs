@@ -65,7 +65,7 @@ public partial class ProjectsPage : UserControl
     {
         KpiGrid.Children.Clear();
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("مشاريع نشطة", "Active projects"), "PJ", visible.Count, "#0D9488", KpiValueKind.Count));
+            LocaleManager.T("مشاريع نشطة", "Active projects"), "PJ", visible.Count, "#2A6F9E", KpiValueKind.Count));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
             LocaleManager.T("قيمة العقود", "Contract value"), "CV",
             visible.Sum(p => p.ContractValue), "#2563EB", KpiValueKind.Currency));

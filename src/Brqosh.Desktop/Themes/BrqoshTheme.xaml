@@ -11,19 +11,19 @@
     <!-- ═══════════════════════════════════════════════
          لوحة الألوان — هوية BRQOSH
     ═══════════════════════════════════════════════ -->
-    <Color x:Key="PrimaryColor">#0D9488</Color>
-    <Color x:Key="ElectricCyanColor">#22D3EE</Color>
+    <Color x:Key="PrimaryColor">#0F3D5E</Color>
+    <Color x:Key="ElectricCyanColor">#5BA4D6</Color>
     <Color x:Key="GlassSurfaceColor">#F8FAFC</Color>
-    <Color x:Key="PrimaryDarkColor">#0F766E</Color>
-    <Color x:Key="PrimaryLightColor">#14B8A6</Color>
-    <Color x:Key="PrimarySoftColor">#CCFBF1</Color>
+    <Color x:Key="PrimaryDarkColor">#0A2C45</Color>
+    <Color x:Key="PrimaryLightColor">#2A6F9E</Color>
+    <Color x:Key="PrimarySoftColor">#DCE9F3</Color>
     <Color x:Key="AccentColor">#D4A853</Color>
     <Color x:Key="AccentDarkColor">#B8862E</Color>
     <Color x:Key="SurfaceColor">#FFFFFF</Color>
     <Color x:Key="BackgroundColor">#F1F5F9</Color>
-    <Color x:Key="SidebarColor">#0F172A</Color>
-    <Color x:Key="SidebarMidColor">#1E293B</Color>
-    <Color x:Key="SidebarHoverColor">#334155</Color>
+    <Color x:Key="SidebarColor">#0B2A42</Color>
+    <Color x:Key="SidebarMidColor">#12384F</Color>
+    <Color x:Key="SidebarHoverColor">#1D4B6A</Color>
     <Color x:Key="TextPrimaryColor">#1C1917</Color>
     <Color x:Key="TextSecondaryColor">#44403C</Color>
     <Color x:Key="TextMutedColor">#57534E</Color>
@@ -33,7 +33,7 @@
     <Color x:Key="DangerColor">#EF4444</Color>
     <Color x:Key="InfoColor">#3B82F6</Color>
     <Color x:Key="WarningColor">#F59E0B</Color>
-    <Color x:Key="StatusBarColor">#0F172A</Color>
+    <Color x:Key="StatusBarColor">#0B2A42</Color>
     <Color x:Key="StatusBarTextColor">#64748B</Color>
     <!-- (CEEF-222) ألوان الجداول — كانت مثبَّتة نصّاً داخل الأنماط فلا تتبع الثيم. -->
     <Color x:Key="RowAltColor">#FAFBFC</Color>
@@ -75,9 +75,9 @@
 
     <!-- تدرجات -->
     <LinearGradientBrush x:Key="SidebarGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#0F172A" Offset="0"/>
-        <GradientStop Color="#1A2332" Offset="0.55"/>
-        <GradientStop Color="#0F172A" Offset="1"/>
+        <GradientStop Color="#0B2A42" Offset="0"/>
+        <GradientStop Color="#123650" Offset="0.55"/>
+        <GradientStop Color="#0B2A42" Offset="1"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrandAccentGradient" StartPoint="0,0" EndPoint="1,0">
@@ -86,15 +86,15 @@
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="HeroPanelGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0F766E" Offset="0"/>
-        <GradientStop Color="#0D9488" Offset="0.45"/>
-        <GradientStop Color="#134E4A" Offset="1"/>
+        <GradientStop Color="#0A2C45" Offset="0"/>
+        <GradientStop Color="#0F3D5E" Offset="0.45"/>
+        <GradientStop Color="#071F31" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- ظلال -->
-    <DropShadowEffect x:Key="CardShadow"     BlurRadius="20" ShadowDepth="3" Opacity="0.07" Color="#0F172A"/>
-    <DropShadowEffect x:Key="ElevatedShadow" BlurRadius="32" ShadowDepth="6" Opacity="0.12" Color="#0F172A"/>
-    <DropShadowEffect x:Key="HeroShadow"     BlurRadius="48" ShadowDepth="8" Opacity="0.18" Color="#0F172A"/>
+    <DropShadowEffect x:Key="CardShadow"     BlurRadius="20" ShadowDepth="3" Opacity="0.07" Color="#0B2A42"/>
+    <DropShadowEffect x:Key="ElevatedShadow" BlurRadius="32" ShadowDepth="6" Opacity="0.12" Color="#0B2A42"/>
+    <DropShadowEffect x:Key="HeroShadow"     BlurRadius="48" ShadowDepth="8" Opacity="0.18" Color="#0B2A42"/>
 
     <!-- UI UX Pro Max — حركة وتركيز لوحة المفاتيح -->
     <sys:Double x:Key="MotionDurationFast">150</sys:Double>
@@ -137,7 +137,7 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryDarkBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#115E59"/>
+                            <Setter TargetName="Bd" Property="Background" Value="#12384F"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Background" Value="#CBD5E1"/>
@@ -330,7 +330,7 @@
                             <Setter TargetName="Bd" Property="Background"  Value="#FAFFFE"/>
                             <Setter TargetName="Bd" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0D9488"/>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0F3D5E"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -370,7 +370,7 @@
                             <Setter TargetName="Bd" Property="Background"  Value="#FAFFFE"/>
                             <Setter TargetName="Bd" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0D9488"/>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0F3D5E"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -680,7 +680,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="NavBorder"  Property="Background" Value="#1E293B"/>
+                            <Setter TargetName="NavBorder"  Property="Background" Value="#12384F"/>
                             <Setter Property="Foreground" Value="#E2E8F0"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -695,7 +695,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="NavBorder" Background="#1E293B" CornerRadius="10"
+                    <Border x:Name="NavBorder" Background="#12384F" CornerRadius="10"
                             Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
                         <Grid>
                             <Border Width="3" HorizontalAlignment="Right" CornerRadius="2"
@@ -707,7 +707,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="NavBorder" Property="Background" Value="#334155"/>
+                            <Setter TargetName="NavBorder" Property="Background" Value="#1D4B6A"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -950,7 +950,7 @@
         <Setter Property="Width"           Value="28"/>
         <Setter Property="Height"          Value="28"/>
         <Setter Property="CornerRadius"    Value="8"/>
-        <Setter Property="Background"      Value="#1E293B"/>
+        <Setter Property="Background"      Value="#12384F"/>
         <Setter Property="Margin"          Value="10,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>

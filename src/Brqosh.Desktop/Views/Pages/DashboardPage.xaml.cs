@@ -14,14 +14,14 @@ public partial class DashboardPage : UserControl
 {
     private static readonly (string TitleAr, string TitleEn, string Monogram, string Color, KpiValueKind Kind)[] CardMeta =
     [
-        ("الإيرادات", "Revenue", "RV", "#22D3EE", KpiValueKind.Currency),
+        ("الإيرادات", "Revenue", "RV", "#5BA4D6", KpiValueKind.Currency),
         ("المصروفات", "Expenses", "EX", "#F87171", KpiValueKind.Currency),
         ("صافي الربح", "Net Profit", "NP", "#D4AF37", KpiValueKind.Currency),
         ("التدفق النقدي", "Cash Flow", "CF", "#34D399", KpiValueKind.Currency),
-        ("ذمم العملاء", "AR", "AR", "#0891B2", KpiValueKind.Currency),
+        ("ذمم العملاء", "AR", "AR", "#3B82B6", KpiValueKind.Currency),
         ("ذمم الموردين", "AP", "AP", "#EA580C", KpiValueKind.Currency),
         ("صافي ضريبة", "Net VAT", "VT", "#4F46E5", KpiValueKind.Currency),
-        ("قيمة المخزون", "Inventory", "ST", "#0D9488", KpiValueKind.Currency),
+        ("قيمة المخزون", "Inventory", "ST", "#2A6F9E", KpiValueKind.Currency),
         ("فترات مفتوحة", "Open Periods", "OP", "#16A34A", KpiValueKind.Count),
         ("فترات مقفلة", "Closed Periods", "CL", "#64748B", KpiValueKind.Count),
     ];

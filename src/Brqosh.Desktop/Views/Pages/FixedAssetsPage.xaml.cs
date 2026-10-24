@@ -61,7 +61,7 @@ public partial class FixedAssetsPage : UserControl
     {
         KpiGrid.Children.Clear();
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("أصول نشطة", "Active assets"), "FA", _assets.Count, "#0D9488", KpiValueKind.Count));
+            LocaleManager.T("أصول نشطة", "Active assets"), "FA", _assets.Count, "#2A6F9E", KpiValueKind.Count));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
             LocaleManager.T("تكلفة الاقتناء", "Acquisition cost"), "AC",
             _assets.Sum(a => a.AcquisitionCost), "#2563EB", KpiValueKind.Currency));
