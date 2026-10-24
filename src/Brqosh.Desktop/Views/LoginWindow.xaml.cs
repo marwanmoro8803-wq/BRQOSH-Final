@@ -17,6 +17,7 @@ public partial class LoginWindow : Window
     public LoginWindow()
     {
         InitializeComponent();
+        EnvironmentFooterText.Text = $"BRQOSH ERP v{Brqosh.Desktop.Ui.AppVersion.Display}";
         PasswordFieldHelper.Wire(PasswordBox, PasswordPlainBox, PasswordRevealToggle);
         PasswordFieldHelper.Wire(RegPasswordBox, RegPasswordPlainBox, RegPasswordRevealToggle);
         PasswordFieldHelper.Wire(RegConfirmPasswordBox, RegConfirmPlainBox, RegConfirmRevealToggle);
