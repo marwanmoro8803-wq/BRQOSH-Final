@@ -191,11 +191,15 @@ $PayloadBinaries = @(Get-ChildItem $PublishDir -File |
     ForEach-Object FullName)
 Invoke-BrqoshSign -Paths $PayloadBinaries -What "الحمولة"
 
+# مراجعةُ الإصدار 1.0.1: التعبيرُ لا يُقيَّم داخل وسيطِ أمرٍ أصليّ — -d BrandIcon=(Join-Path ...) كان يصل إلى wix فارغاً فلا MSI. فالمسارُ يُحسب قبل النداء.
+$BrandIconPath = Join-Path $Root 'assets\brand\brqosh.ico'
+if (-not (Test-Path $BrandIconPath)) { throw "أيقونةُ البرنامج غير موجودة: $BrandIconPath" }
+
 wix build $WxsPath `
     -arch x64 `
-    -d PublishDir=$PublishDir `
-    -d ProductVersion=$ProductVersion `
-    -d BrandIcon=(Join-Path $Root 'assets\brand\brqosh.ico') `
+    -d "PublishDir=$PublishDir" `
+    -d "ProductVersion=$ProductVersion" `
+    -d "BrandIcon=$BrandIconPath" `
     -o $MsiOut
 
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $MsiOut)) {
