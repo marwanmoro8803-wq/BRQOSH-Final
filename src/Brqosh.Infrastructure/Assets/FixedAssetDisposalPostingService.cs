@@ -107,6 +107,34 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
                          && a.Code == SaudiChartOfAccounts.SystemCodes.VatOutput, token)
                 : null;
 
+            // (قرارُ المالك 2026-10-20 · ملاحظةُ تدقيق Codex) ‏**إهلاكُ ما انقضى قبل الاستبعاد يُقيَّد أوّلاً.**
+            //
+            // ‏كان الربحُ والخسارةُ يُقاسان على الدفتريّة «وقتَ آخر تشغيل» — والإهلاكُ يُشغَّل بزرّ — فأصلٌ يُباع في
+            // ‏٢٨ فبراير قبل تشغيل فبراير يُخرَج بدفتريّةٍ تفوق الحقيقة بقسط الشهر، فتُضخَّم الخسارةُ وتُهمَل المصروفُ.
+            // ‏والآن: ما استحقّ من الأشهر السابقة كاملاً، وشهرُ الاستبعاد بأيّامه المنقضية (يومُ الاستبعاد محسوب)،
+            // ‏بالقاعدة نفسها التي يُشغَّل بها الإهلاك — `ApplyDepreciationDue` — فلا يختلف الرقمان.
+            var sourceDoc = $"Depreciation:{asset.Code}";
+            var lastDepreciated = await db.JournalEntries
+                .Where(e => e.CompanyId == asset.CompanyId && e.SourceDocument == sourceDoc)
+                .WhereStanding(db.JournalEntries)
+                .OrderByDescending(e => e.EntryDate)
+                .Select(e => (DateOnly?)e.EntryDate)
+                .FirstOrDefaultAsync(token);
+
+            var catchUp = asset.ApplyDepreciationDue(lastDepreciated, disposalDate, throughRunDay: true);
+            if (catchUp > 0)
+            {
+                var depExpense = await db.Accounts.SingleAsync(
+                    a => a.CompanyId == asset.CompanyId && a.Code == "5211", token);
+                var catchUpEntry = JournalEntry.CreateDraft(
+                    asset.CompanyId, disposalDate, $"إهلاك {asset.NameAr} — حتى تاريخ الاستبعاد", sourceDoc);
+                catchUpEntry.AddLine(depExpense, catchUp, 0m, asset.NameAr);
+                catchUpEntry.AddLine(accumAccount, 0m, catchUp, "مجمع إهلاك");
+                catchUpEntry.Post(await new JournalEntryNumberGenerator(db).NextAsync(asset.CompanyId, disposalDate));
+                db.JournalEntries.Add(catchUpEntry);
+                await db.SaveChangesAsync(token);
+            }
+
             var bookValue = asset.BookValue;
             var gainLoss = Math.Round(saleProceeds - bookValue, 2, MidpointRounding.AwayFromZero);
 

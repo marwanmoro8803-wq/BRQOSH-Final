@@ -129,10 +129,11 @@ public class ADisposalCanBeReversedTests : IDisposable
 
     private async Task<FixedAsset> DisposeAsync(decimal proceeds, long? buyer)
     {
-        var asset = FixedAsset.Create(_companyId, "FA-1", "سيارة", new DateOnly(2024, 1, 1),
+        // ‏مُهلَكٌ حتى شهر الاستبعاد — فلا استدراكَ هنا؛ وللاستدراك ملفُّه (AnAssetSoldMidMonth…).
+        var asset = FixedAsset.CreateOpening(_companyId, "FA-1", "سيارة", new DateOnly(2024, 1, 1),
             acquisitionCost: 120_000m, salvageValue: 0m, usefulLifeMonths: 120,
-            glAssetAccountId: _assetAccountId, glDepreciationAccountId: _accumAccountId);
-        for (var i = 0; i < 24; i++) asset.ApplyDepreciation();
+            glAssetAccountId: _assetAccountId, glDepreciationAccountId: _accumAccountId,
+            accumulatedDepreciation: 24_000m, openingDate: new DateOnly(Disposed.Year, Disposed.Month, 1).AddMonths(1));
         _db.FixedAssets.Add(asset);
         await _db.SaveChangesAsync();
         await new FixedAssetDisposalPostingService(_db).PostDisposalAsync(

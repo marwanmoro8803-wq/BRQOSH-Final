@@ -407,10 +407,10 @@ public class FixedAsset : IBranchScoped
     ///
     /// <para>والأصلُ القائمُ قبل الدفاتر (<see cref="DepreciatedThrough"/>) لا يدخل شهرُ اقتنائه أيَّ تشغيل، فلا يُنسَّب.</para>
     /// </summary>
-    public decimal ApplyDepreciationDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
+    public decimal ApplyDepreciationDue(DateOnly? lastDepreciatedMonth, DateOnly runDate, bool throughRunDay = false)
     {
         if (Method == DepreciationMethod.DecliningBalance)
-            return ApplyDecliningBalanceDue(lastDepreciatedMonth, runDate);
+            return ApplyDecliningBalanceDue(lastDepreciatedMonth, runDate, throughRunDay);
 
         var months = MonthsDue(lastDepreciatedMonth, runDate);
         var monthly = MonthlyDepreciation;
@@ -424,6 +424,11 @@ public class FixedAsset : IBranchScoped
             portion -= (decimal)(AcquisitionDate.Day - 1) / days;
         }
 
+        // ‏(قرارُ المالك 2026-10-20) ‏**شهرُ الاستبعاد بأيّامه المنقضية** — يومُ الاستبعاد محسوبٌ، وما بعده لا يُهلَك.
+        if (throughRunDay)
+            portion -= (decimal)(DateTime.DaysInMonth(runDate.Year, runDate.Month) - runDate.Day)
+                       / DateTime.DaysInMonth(runDate.Year, runDate.Month);
+
         var amount = Math.Min(Math.Round(monthly * portion, 2, MidpointRounding.AwayFromZero), BookValue - SalvageValue);
         AccumulatedDepreciation += amount;
         return amount;
@@ -434,7 +439,7 @@ public class FixedAsset : IBranchScoped
     /// والاستدراكُ مجموعُ الأشهر لا شهرٌ مضروبٌ في عددها. ولكلّ شهر: الأكبرُ من (الدفتريّة × ٢ ÷ العمر) و(القابلُ ÷ الباقي من العمر)،
     /// <b>والباقي من العمر من تاريخ الاقتناء</b> لا من عدّادٍ مخزون — فلا يختلّ بعكس تشغيلةٍ أو باستدراك؛ وشهرُ الاقتناء بأيّامه كالخطّ المستقيم.
     /// </summary>
-    private decimal ApplyDecliningBalanceDue(DateOnly? lastDepreciatedMonth, DateOnly runDate)
+    private decimal ApplyDecliningBalanceDue(DateOnly? lastDepreciatedMonth, DateOnly runDate, bool throughRunDay)
     {
         if (UsefulLifeMonths <= 0)
             return 0m;
@@ -452,11 +457,14 @@ public class FixedAsset : IBranchScoped
             var amount = remainingLife > 0
                 ? Math.Max(book * 2m / UsefulLifeMonths, depreciable / remainingLife)
                 : depreciable;
-            if (month == acquisitionMonth)
-            {
-                var days = DateTime.DaysInMonth(AcquisitionDate.Year, AcquisitionDate.Month);
-                amount *= 1m - (decimal)(AcquisitionDate.Day - 1) / days;
-            }
+            // ‏أيّامُ الشهر المُهلَكة: من يوم الاقتناء (في شهر الاقتناء) إلى يوم الاستبعاد (في شهر الاستبعاد).
+            var monthYear = (month - 1) / 12;
+            var monthNumber = (month - 1) % 12 + 1;
+            var daysInMonth = DateTime.DaysInMonth(monthYear, monthNumber);
+            var startDay = month == acquisitionMonth ? AcquisitionDate.Day : 1;
+            var endDay = throughRunDay && month == MonthIndex(runDate) ? runDate.Day : daysInMonth;
+            if (startDay > 1 || endDay < daysInMonth)
+                amount *= (decimal)(endDay - startDay + 1) / daysInMonth;
 
             amount = Math.Min(Math.Round(amount, 2, MidpointRounding.AwayFromZero), depreciable);
             book -= amount;

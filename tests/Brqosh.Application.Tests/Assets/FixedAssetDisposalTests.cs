@@ -53,13 +53,13 @@ public class FixedAssetDisposalTests : IDisposable
     /// <summary>سيارة بـ120,000، عمر 120 شهراً، خردة صفر — أي 1,000 شهرياً.</summary>
     private async Task<FixedAsset> CreateVehicleAsync(int monthsDepreciated)
     {
-        var asset = FixedAsset.Create(
+        // ‏الأصلُ «مُهلَكٌ حتى شهر الاستبعاد»: الاستبعادُ يُقيّد إهلاكَ ما انقضى قبله (قرارُ المالك 2026-10-20)،
+        // ‏وهذه الاختباراتُ تقيس حسابَ القيد لا ذلك الاستدراك — فتُعطى أصلاً قائماً بمجمّعه (الاستدراكُ له ملفُّه).
+        var asset = FixedAsset.CreateOpening(
             _companyId, "FA-1", "سيارة", new DateOnly(2024, 1, 1),
             acquisitionCost: 120_000m, salvageValue: 0m, usefulLifeMonths: 120,
-            glAssetAccountId: _assetAccountId, glDepreciationAccountId: _accumAccountId);
-
-        for (var i = 0; i < monthsDepreciated; i++)
-            asset.ApplyDepreciation();
+            glAssetAccountId: _assetAccountId, glDepreciationAccountId: _accumAccountId,
+            accumulatedDepreciation: monthsDepreciated * 1_000m, openingDate: new DateOnly(2026, 2, 1));
 
         _db.FixedAssets.Add(asset);
         await _db.SaveChangesAsync();
