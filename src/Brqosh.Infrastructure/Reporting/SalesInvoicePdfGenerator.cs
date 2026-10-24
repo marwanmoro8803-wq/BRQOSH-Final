@@ -251,7 +251,7 @@ public static class SalesInvoicePdfGenerator
 
                 page.Header().Element(h => branding.RenderHeader(h, title));
 
-                page.Content().PaddingVertical(12).Column(col =>
+                page.Content().PaddingVertical(12).ContentFromRightToLeft().Column(col =>
                 {
                     col.Spacing(10);
 
@@ -360,7 +360,7 @@ public static class SalesInvoicePdfGenerator
 
                         row.ConstantItem(12);
 
-                        row.ConstantItem(220).AlignTop().Column(side =>
+                        row.ConstantItem(250).AlignTop().Column(side =>
                         {
                             side.Spacing(6);
                             // ‏(ح-٤٤) **والخصمُ مُفصَحٌ عنه قبل الوعاء** — ومنه خصمُ المستند.
@@ -374,20 +374,25 @@ public static class SalesInvoicePdfGenerator
                         });
                     });
 
+                    // المبلغ كتابةً: للمستند بالريال وحده — العملةُ الأجنبيّةُ لها إفصاحُها المستقلّ فلا يُكتب مبلغُها ريالاً.
+                    if (figures.Sar is null && options.Currency is null)
+                        col.Item().Element(c => PrintTheme.AmountInWords(c, figures.Total));
+
                     if (!string.IsNullOrWhiteSpace(options.NotesAr))
                         col.Item().Element(c => LabelBox(c, "ملاحظات", [("", options.NotesAr!)]));
+
+                    if (options.Kind is not (PrintDocumentKind.PurchaseInvoice or PrintDocumentKind.PurchaseDebitNote))
+                        col.Item().PaddingTop(6).Row(sign =>
+                        {
+                            sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "البائع"));
+                            sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المحاسب"));
+                            sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المستلم"));
+                        });
                 });
 
                 page.Footer().Column(f =>
                 {
                     f.Item().Element(x => branding.RenderFooterMeta(x, null));
-                    f.Item().AlignCenter().Text(t =>
-                    {
-                        t.Span("صفحة ").FontSize(7);
-                        t.CurrentPageNumber().FontSize(7);
-                        t.Span(" من ").FontSize(7);
-                        t.TotalPages().FontSize(7);
-                    });
                 });
             });
         }).GeneratePdf();
@@ -451,10 +456,10 @@ public static class SalesInvoicePdfGenerator
 
     // ── لبنات التخطيط ──────────────────────────────────────────────────────
 
-    private const string BorderColour = "#94A3B8";
-    private const string HeaderFill = "#E2E8F0";
-    private const string RowFill = "#F5F7FA";
-    private const string BoxTitleFill = "#EDF1F6";
+    private const string BorderColour = PrintTheme.Line;
+    private const string HeaderFill = PrintTheme.Navy;
+    private const string RowFill = PrintTheme.Zebra;
+    private const string BoxTitleFill = PrintTheme.Tint;
     private const string NoticeColour = "#B91C1C";
     private const string NoticeFill = "#FEF2F2";
 
@@ -465,8 +470,9 @@ public static class SalesInvoicePdfGenerator
         {
             if (!string.IsNullOrWhiteSpace(title))
             {
-                col.Item().Background(BoxTitleFill).PaddingVertical(4).PaddingHorizontal(8)
-                    .Text(title).Bold().FontSize(9.5f);
+                col.Item().Background(BoxTitleFill).BorderBottom(1.5f).BorderColor(PrintTheme.Gold)
+                    .PaddingVertical(4).PaddingHorizontal(8)
+                    .Text(title).Bold().FontSize(9.5f).FontColor(PrintTheme.Navy);
             }
 
             foreach (var (label, value) in rows)
@@ -490,13 +496,13 @@ public static class SalesInvoicePdfGenerator
     private static void HeaderCell(IContainer cell, string text) =>
         cell.Background(HeaderFill).Border(0.8f).BorderColor(BorderColour)
             .PaddingVertical(5).PaddingHorizontal(4)
-            .AlignCenter().Text(text).Bold().FontSize(9);
+            .AlignCenter().Text(text).Bold().FontSize(9).FontColor("#FFFFFF");
 
     private static void BodyCell(IContainer cell, string text, bool shaded, bool center = false)
     {
-        var box = cell.Border(0.5f).BorderColor(BorderColour).PaddingVertical(4).PaddingHorizontal(4);
-        if (shaded)
-            box = box.Background(RowFill);
+        // الخلفيّةُ قبل الحشو وإلّا ظهر تظليلٌ داخليٌّ أصغرُ من الخليّة.
+        var box = shaded ? cell.Background(RowFill) : cell;
+        box = box.Border(0.5f).BorderColor(BorderColour).PaddingVertical(4).PaddingHorizontal(4);
         var slot = center ? box.AlignCenter() : box;
         slot.Text(text).FontSize(9);
     }
@@ -559,7 +565,7 @@ public static class SalesInvoicePdfGenerator
     {
         var item = col.Item();
         if (emphasis)
-            item = item.Background(HeaderFill);
+            item = item.Background(PrintTheme.Navy);
         if (!first)
             item = item.BorderTop(0.5f).BorderColor(BorderColour);
 
@@ -570,8 +576,8 @@ public static class SalesInvoicePdfGenerator
                 .Text($"{value:N2} {suffix}").FontSize(emphasis ? 11 : 9.5f);
             if (emphasis)
             {
-                labelSpan.Bold();
-                valueSpan.Bold();
+                labelSpan.Bold().FontColor("#FFFFFF");
+                valueSpan.Bold().FontColor("#FFFFFF");
             }
         });
     }

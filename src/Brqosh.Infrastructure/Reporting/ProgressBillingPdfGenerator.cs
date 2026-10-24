@@ -49,66 +49,103 @@ public static class ProgressBillingPdfGenerator
 
                 page.Header().Element(h => branding.RenderHeader(h, Title(data)));
 
-                page.Content().PaddingVertical(12).Column(col =>
+                page.Content().PaddingVertical(12).ContentFromRightToLeft().Column(col =>
                 {
+                    col.Spacing(10);
+
                     // ‏(ح-٥٣) **التنبيهُ أوّلَ الصفحة** — بالصندوق نفسِه الذي تحمله الفاتورة.
                     if (!string.IsNullOrWhiteSpace(data.ClearanceNotice))
-                        col.Item().PaddingBottom(10).Element(c =>
+                        col.Item().Element(c =>
                             SalesInvoicePdfGenerator.ClearanceNoticeBox(c, data.ClearanceNotice));
+
+                    // ‏(ح-٥٦) **المشتري بهويّته** — رقمُه الضريبيُّ وعنوانُه، كما على الفاتورة منذ CEEF-227.
+                    // ‏والصفوفُ من `PartyRows` وحدَها؛ تُقسَم هنا بطاقتين: المستخلص (مشروعٌ وفترة) ثمّ الطرف.
+                    var party = PartyRows(data);
+                    var documentRows = new List<(string Label, string Value)>
+                    {
+                        ("رقم المستخلص", PrintText.Code(data.BillingNumber)),
+                        ("التاريخ", PrintText.Date(data.BillingDate)),
+                    };
+                    var partyRows = new List<(string Label, string Value)>();
+                    foreach (var row in party)
+                        (row.Label is "المشروع" or "الفترة" ? documentRows : partyRows).Add(row);
 
                     col.Item().Row(row =>
                     {
-                        row.RelativeItem().Text($"رقم: {PrintText.Code(data.BillingNumber)}");
-                        row.RelativeItem().AlignLeft().Text($"التاريخ: {PrintText.Date(data.BillingDate)}");
-                    });
-                    // ‏(ح-٥٦) **المشتري بهويّته** — رقمُه الضريبيُّ وعنوانُه، كما على الفاتورة منذ CEEF-227.
-                    col.Item().PaddingTop(6).Column(inner =>
-                    {
-                        foreach (var (label, value) in PartyRows(data))
-                            inner.Item().Text($"{label}: {value}");
+                        row.RelativeItem().Element(c => InfoCard(c, "بيانات المستخلص", documentRows));
+                        row.ConstantItem(12);
+                        row.RelativeItem().Element(c => InfoCard(c, "بيانات العميل", partyRows));
                     });
 
-                    col.Item().PaddingTop(16).Table(table =>
+                    col.Item().Row(row =>
                     {
-                        table.ColumnsDefinition(c =>
+                        row.RelativeItem().Column(inner =>
                         {
-                            c.RelativeColumn(2);
-                            c.RelativeColumn(1);
-                        });
-                        void Row(string label, string value, bool bold = false)
-                        {
-                            var labelCell = table.Cell().Text(label);
-                            if (bold) labelCell.Bold();
-                            var valueCell = table.Cell().AlignLeft().Text(value);
-                            if (bold) valueCell.Bold();
-                        }
-
-                        Row("قيمة الأعمال الحالية", $"{data.CurrentWorkAmount:N2} ر.س");
-                        Row("نسبة المحتجز", $"{data.RetentionPercent:N2}%");
-                        Row("مبلغ المحتجز", $"{data.RetentionAmount:N2} ر.س");
-                        Row("صافي الذمة (قبل الضريبة)", $"{data.NetBillableAmount:N2} ر.س");
-                        Row(VatLabel(data.VatRate), $"{data.VatAmount:N2} ر.س");
-                        Row("الإجمالي المستحق", $"{data.GrandTotal:N2} ر.س", bold: true);
-                    });
-
-                    if (qrPng is not null)
-                    {
-                        col.Item().PaddingTop(16).Row(row =>
-                        {
-                            row.ConstantItem(96).Height(96).Image(qrPng);
-                            row.RelativeItem().PaddingLeft(8).Column(inner =>
+                            if (qrPng is not null)
                             {
-                                inner.Item().Text("رمز ZATCA — مسح للتحقق").Bold().FontSize(9);
-                                if (!string.IsNullOrWhiteSpace(compliance))
-                                    inner.Item().Text(compliance).FontSize(8);
-                            });
+                                inner.Item().Row(qr =>
+                                {
+                                    qr.ConstantItem(104).Height(104).Image(qrPng);
+                                    qr.RelativeItem().PaddingRight(8).Column(t =>
+                                    {
+                                        t.Item().Text("رمز التحقق (ZATCA)").Bold().FontSize(9);
+                                        t.Item().Text("امسح الرمز للتحقق من صحة الفاتورة").FontSize(8);
+                                        if (!string.IsNullOrWhiteSpace(compliance))
+                                            t.Item().PaddingTop(2).Text(compliance).FontSize(8);
+                                    });
+                                });
+                            }
                         });
-                    }
+                        row.ConstantItem(12);
+                        row.ConstantItem(250).AlignTop().Element(c => TotalsCard(c, data, VatLabel(data.VatRate)));
+                    });
+
+                    col.Item().Element(c => PrintTheme.AmountInWords(c, data.GrandTotal));
+
+                    col.Item().PaddingTop(6).Row(sign =>
+                    {
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "مهندس الموقع"));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "مدير المشروع"));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "اعتماد العميل"));
+                    });
                 });
 
                 page.Footer().Element(f => branding.RenderFooterMeta(f, compliance));
             });
         }).GeneratePdf();
+    }
+
+    private static void InfoCard(IContainer container, string title, IReadOnlyList<(string Label, string Value)> rows)
+    {
+        container.Card().Column(col =>
+        {
+            col.Item().Element(c => PrintTheme.CardTitle(c, title));
+            foreach (var (label, value) in rows)
+                col.Item().Element(c => PrintTheme.LabelValue(c, label, value));
+        });
+    }
+
+    /// <summary>الإجماليّاتُ بالترتيب المحاسبيّ: الأعمال ← المحتجز ← الصافي ← الضريبة ← المستحق (الأخيرُ على كحليّ).</summary>
+    private static void TotalsCard(IContainer container, BillingPrintData data, string vatLabel)
+    {
+        static string Money(decimal value) => PrintText.Ltr(value.ToString("N2", CultureInfo.InvariantCulture)) + " ر.س";
+
+        container.Card().Column(col =>
+        {
+            col.Item().Element(c => PrintTheme.LabelValue(c, "قيمة الأعمال الحالية", Money(data.CurrentWorkAmount), labelWidth: 128));
+            col.Item().BorderTop(0.5f).BorderColor(PrintTheme.Line)
+                .Element(c => PrintTheme.LabelValue(c, $"المحتجز ({data.RetentionPercent:0.##}%)", Money(-data.RetentionAmount), labelWidth: 128));
+            col.Item().BorderTop(0.5f).BorderColor(PrintTheme.Line)
+                .Element(c => PrintTheme.LabelValue(c, "صافي الذمة (قبل الضريبة)", Money(data.NetBillableAmount), labelWidth: 128));
+            col.Item().BorderTop(0.5f).BorderColor(PrintTheme.Line)
+                .Element(c => PrintTheme.LabelValue(c, vatLabel, Money(data.VatAmount), labelWidth: 128));
+            col.Item().Background(PrintTheme.Navy).PaddingVertical(6).PaddingHorizontal(10).Row(row =>
+            {
+                row.RelativeItem().AlignLeft().Text(Money(data.GrandTotal)).Bold().FontSize(11).FontColor("#FFFFFF");
+                row.ConstantItem(10);
+                row.ConstantItem(92).AlignRight().Text("الإجمالي المستحق").Bold().FontSize(10).FontColor("#FFFFFF");
+            });
+        });
     }
 
     /// <summary>

@@ -8,6 +8,27 @@
 
 ---
 
+## 0. Visual identity (v3 — implemented 2026-10-24)
+
+Every PDF now shares one visual system, implemented once and reused:
+
+| Piece | Where | What it gives |
+|-------|-------|---------------|
+| `PrintTheme` | `Reporting/PrintTheme.cs` | Palette (navy `#0F3D5E`, gold `#C9A227` as a hairline accent only, ink/muted/line/tint), title badge, cards, label/value rows, amount-in-words band, signature lines, `ReportTable`, `SummaryBand` |
+| `PrintBranding.RenderHeader` / `RenderFooterMeta` | `Reporting/PrintBranding.cs` | Letterhead (company right, logo far right, title badge left, navy+gold rules) and footer (rule, company · BRQOSH timestamp · page x of y) |
+| `PrintReport.Table` | `Reporting/PrintReport.cs` | Header → table → summary band → footer for every tabular report (TB, income, balance sheet, VAT, cash flow, GL, POS, consolidated) |
+| `ArabicAmountWords` | `Reporting/ArabicAmountWords.cs` | "المبلغ كتابةً" (riyals and halalas, Arabic grammar) |
+
+**Rules (enforced by `EveryPrintedDocumentSharesOneLayoutTests`):**
+- A generator uses `branding.RenderHeader` + `branding.RenderFooterMeta` (or `PrintReport.Table`, which does). No hand-drawn headers, no text-only footers, no per-file font overrides.
+- Page text style comes from `branding.PageTextStyle` — it sets the **paragraph direction to right-to-left**. Without it QuestPDF lays Arabic paragraphs out LTR and mixed text such as "من 2026-10-01 إلى 2026-10-31" prints in the wrong order.
+- Reading order is right → left: list table columns in reading order (first = rightmost) and wrap content rows with `ContentFromRightToLeft()`; `PrintTheme.LabelValue` fixes its own order.
+- Dates/codes/amounts go through `PrintText` (`Date`, `Code`, `Money`) so numbers stay intact inside Arabic paragraphs.
+
+**Rendering a document to look at it:** build the generator's output to bytes and convert with `pdftoppm -png` (poppler); compare against this table before changing layout.
+
+---
+
 ## 1. Current workflow (implemented)
 
 ### Architecture

@@ -1,6 +1,5 @@
+using System.Globalization;
 using Brqosh.Infrastructure.Retail;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
 namespace Brqosh.Infrastructure.Reporting;
@@ -14,44 +13,24 @@ public static class PosReportPdfGenerator
         PrintBranding branding,
         IReadOnlyList<PosReportQuery.DailySaleRow> rows)
     {
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(28);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 10));
+        PrintColumn[] columns =
+        [
+            new("التاريخ"),
+            new("العمليات", Numeric: true),
+            new("المبيعات", Numeric: true),
+            new("الضريبة", Numeric: true),
+        ];
 
-                page.Header().Element(h => branding.RenderHeader(h, "تقرير مبيعات نقاط البيع اليومي"));
-
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("التاريخ").Bold();
-                        h.Cell().AlignCenter().Text("العمليات").Bold();
-                        h.Cell().AlignCenter().Text("المبيعات").Bold();
-                        h.Cell().AlignCenter().Text("الضريبة").Bold();
-                    });
-                    foreach (var row in rows)
-                    {
-                        table.Cell().Text(PrintText.Ltr(row.Date));
-                        table.Cell().AlignCenter().Text(row.Transactions.ToString());
-                        table.Cell().AlignCenter().Text($"{row.TotalSales:N2}");
-                        table.Cell().AlignCenter().Text($"{row.VatAmount:N2}");
-                    }
-                });
-
-                page.Footer().Text(
-                    $"إجمالي المبيعات: {rows.Sum(r => r.TotalSales):N2} ر.س  |  الضريبة: {rows.Sum(r => r.VatAmount):N2} ر.س");
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(branding, "تقرير مبيعات نقاط البيع اليومي", null, columns,
+            rows.Select(r => (IReadOnlyList<string>)
+            [
+                PrintText.Ltr(r.Date), r.Transactions.ToString(CultureInfo.InvariantCulture),
+                PrintText.Money(r.TotalSales), PrintText.Money(r.VatAmount),
+            ]),
+            [
+                ("إجمالي العمليات", rows.Sum(r => r.Transactions).ToString(CultureInfo.InvariantCulture)),
+                ("إجمالي الضريبة (ر.س)", PrintText.Money(rows.Sum(r => r.VatAmount))),
+                ("إجمالي المبيعات (ر.س)", PrintText.Money(rows.Sum(r => r.TotalSales))),
+            ]);
     }
 }

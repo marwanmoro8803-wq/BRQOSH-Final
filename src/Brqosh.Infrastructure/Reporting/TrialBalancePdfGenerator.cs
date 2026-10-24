@@ -1,5 +1,3 @@
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
 namespace Brqosh.Infrastructure.Reporting;
@@ -20,52 +18,28 @@ public static class TrialBalancePdfGenerator
         var totalDebit = rows.Sum(r => r.TotalDebit);
         var totalCredit = rows.Sum(r => r.TotalCredit);
 
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(28);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 10));
+        PrintColumn[] columns =
+        [
+            new("الكود", FixedWidth: 70),
+            new("الحساب", Weight: 3f),
+            new("مدين", Numeric: true),
+            new("دائن", Numeric: true),
+            new("رصيد مدين", Numeric: true),
+            new("رصيد دائن", Numeric: true),
+        ];
 
-                page.Header().Element(h => branding.RenderHeader(
-                    h, "ميزان المراجعة", $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}"));
-
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.ConstantColumn(70);
-                        c.RelativeColumn(3);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("الكود").Bold();
-                        h.Cell().Text("الحساب").Bold();
-                        h.Cell().AlignCenter().Text("مدين").Bold();
-                        h.Cell().AlignCenter().Text("دائن").Bold();
-                        h.Cell().AlignCenter().Text("ر.مدين").Bold();
-                        h.Cell().AlignCenter().Text("ر.دائن").Bold();
-                    });
-                    foreach (var row in rows)
-                    {
-                        table.Cell().Text(row.AccountCode);
-                        table.Cell().Text(row.AccountNameAr);
-                        table.Cell().AlignCenter().Text($"{row.TotalDebit:N2}");
-                        table.Cell().AlignCenter().Text($"{row.TotalCredit:N2}");
-                        table.Cell().AlignCenter().Text($"{row.BalanceDebit:N2}");
-                        table.Cell().AlignCenter().Text($"{row.BalanceCredit:N2}");
-                    }
-                });
-
-                page.Footer().Text(
-                    $"إجمالي المدين: {totalDebit:N2}  |  إجمالي الدائن: {totalCredit:N2}  |  " +
-                    (totalDebit == totalCredit ? "متوازن ✓" : "غير متوازن ✗"));
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(branding, "ميزان المراجعة",
+            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", columns,
+            rows.Select(r => (IReadOnlyList<string>)
+            [
+                PrintText.Code(r.AccountCode), r.AccountNameAr,
+                PrintText.Money(r.TotalDebit), PrintText.Money(r.TotalCredit),
+                PrintText.Money(r.BalanceDebit), PrintText.Money(r.BalanceCredit),
+            ]),
+            [
+                ("إجمالي المدين", PrintText.Money(totalDebit)),
+                ("إجمالي الدائن", PrintText.Money(totalCredit)),
+                (totalDebit == totalCredit ? "الميزان متوازن" : "الميزان غير متوازن", PrintText.Money(totalDebit - totalCredit)),
+            ]);
     }
 }

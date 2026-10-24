@@ -17,8 +17,8 @@ public static class StatementPdfGenerator
     {
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(PrintBranding.From(companyName, ""), $"كشف حساب عميل — {customerName}",
-            $"الرصيد المستحق: {closingBalance:N2} ر.س", rows);
+        return Build(PrintBranding.From(companyName, ""), "كشف حساب عميل", "العميل", customerName,
+            closingBalance, rows);
     }
 
     public static byte[] CustomerStatement(
@@ -27,8 +27,8 @@ public static class StatementPdfGenerator
     {
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(branding, $"كشف حساب عميل — {customerName}",
-            $"الرصيد المستحق: {closingBalance:N2} ر.س", rows);
+        return Build(branding, "كشف حساب عميل", "العميل", customerName,
+            closingBalance, rows);
     }
 
     public static byte[] SupplierStatement(
@@ -37,8 +37,8 @@ public static class StatementPdfGenerator
     {
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(PrintBranding.From(companyName, ""), $"كشف حساب مورد — {supplierName}",
-            $"الرصيد المستحق: {closingBalance:N2} ر.س", rows);
+        return Build(PrintBranding.From(companyName, ""), "كشف حساب مورد", "المورد", supplierName,
+            closingBalance, rows);
     }
 
     public static byte[] SupplierStatement(
@@ -47,56 +47,60 @@ public static class StatementPdfGenerator
     {
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(branding, $"كشف حساب مورد — {supplierName}",
-            $"الرصيد المستحق: {closingBalance:N2} ر.س", rows);
+        return Build(branding, "كشف حساب مورد", "المورد", supplierName,
+            closingBalance, rows);
     }
 
     private static byte[] Build(
-        PrintBranding branding, string title, string footer,
+        PrintBranding branding, string title, string partyLabel, string partyName, decimal closingBalance,
         IReadOnlyList<(DateOnly Date, string Number, string Type, decimal Debit, decimal Credit, decimal Balance)> rows)
     {
+        // بترتيب القراءة: التاريخ أقصى اليمين ثمّ الرصيدُ أقصى اليسار.
+        PrintColumn[] columns =
+        [
+            new("التاريخ", FixedWidth: 76),
+            new("رقم المستند", FixedWidth: 108),
+            new("النوع", Weight: 1.4f),
+            new("مدين", Numeric: true),
+            new("دائن", Numeric: true),
+            new("الرصيد", Numeric: true),
+        ];
+
         return Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
                 page.Margin(24);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 9));
+                page.DefaultTextStyle(x => branding.PageTextStyle(9));
 
                 page.Header().Element(h => branding.RenderHeader(h, title));
 
-                page.Content().PaddingVertical(8).Table(table =>
+                page.Content().PaddingVertical(8).Column(col =>
                 {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.ConstantColumn(70);
-                        c.ConstantColumn(100);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("التاريخ").Bold();
-                        h.Cell().Text("رقم المستند").Bold();
-                        h.Cell().Text("النوع").Bold();
-                        h.Cell().AlignCenter().Text("مدين").Bold();
-                        h.Cell().AlignCenter().Text("دائن").Bold();
-                        h.Cell().AlignCenter().Text("الرصيد").Bold();
-                    });
-                    foreach (var (date, number, type, debit, credit, balance) in rows)
-                    {
-                        table.Cell().Text(PrintText.Date(date));
-                        table.Cell().Text(number);
-                        table.Cell().Text(type);
-                        table.Cell().AlignCenter().Text(debit > 0 ? $"{debit:N2}" : "");
-                        table.Cell().AlignCenter().Text(credit > 0 ? $"{credit:N2}" : "");
-                        table.Cell().AlignCenter().Text($"{balance:N2}");
-                    }
+                    col.Spacing(8);
+                    col.Item().Card().Element(c => PrintTheme.LabelValue(c, partyLabel, partyName, emphasizeValue: true));
+                    col.Item().Element(c => PrintTheme.ReportTable(c, columns, rows.Select(r => (IReadOnlyList<string>)
+                    [
+                        PrintText.Date(r.Date),
+                        PrintText.Code(r.Number),
+                        r.Type,
+                        r.Debit > 0 ? PrintText.Money(r.Debit) : "",
+                        r.Credit > 0 ? PrintText.Money(r.Credit) : "",
+                        PrintText.Money(r.Balance),
+                    ])));
+
+                    col.Item().Element(c => PrintTheme.SummaryBand(c,
+                    [
+                        ("إجمالي المدين", PrintText.Money(rows.Sum(r => r.Debit))),
+                        ("إجمالي الدائن", PrintText.Money(rows.Sum(r => r.Credit))),
+                        ("الرصيد المستحق (ر.س)", PrintText.Money(closingBalance)),
+                    ]));
+
+                    col.Item().Element(c => PrintTheme.AmountInWords(c, closingBalance));
                 });
 
-                page.Footer().Text(footer);
+                page.Footer().Element(f => branding.RenderFooterMeta(f));
             });
         }).GeneratePdf();
     }

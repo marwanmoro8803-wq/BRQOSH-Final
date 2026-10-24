@@ -1,6 +1,9 @@
 using Brqosh.Application.Tests.TestSupport;
 using Brqosh.Domain.Accounting;
+using Brqosh.Domain.Healthcare;
 using Brqosh.Domain.Hospitality;
+using Brqosh.Domain.Inventory;
+using Brqosh.Domain.Manufacturing;
 using Brqosh.Domain.Modules;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Companies;
@@ -100,5 +103,40 @@ public class TheBusinessProfileChangesOnlyWithoutHidingDataTests : IDisposable
 
         foreach (var module in Enum.GetValues<ModuleKey>())
             Assert.False(await service.HasDataAsync(_companyId, module), $"{module} يُعدّ ذا بياناتٍ في منشأةٍ فارغة");
+    }
+
+    [Fact]
+    public async Task ARecipeWithoutAnyWorkOrder_StillCountsAsManufacturingData()
+    {
+        // ‏وصفةُ التصنيع تُحفظ مستقلّةً عن أوامر الإنتاج — إخفاءُ الوحدة يُخفيها عن صاحبها وإن لم يُشغَّل أمرٌ بعد.
+        await SetupAsync(BusinessProfile.Manufacturing);
+        var finished = Product.Create(_companyId, "FG-1", "منتج", "قطعة", ProductType.Stockable, 0m);
+        _db.Products.Add(finished);
+        await _db.SaveChangesAsync();
+        _db.BillsOfMaterials.Add(BillOfMaterials.Create(_companyId, "BOM-1", "وصفة", finished.Id));
+        await _db.SaveChangesAsync();
+
+        var refused = await Assert.ThrowsAsync<ProfileHidesModulesWithDataException>(() =>
+            new BusinessProfileChangeService(_db).ChangeAsync(_companyId, BusinessProfile.General));
+
+        Assert.Contains(ModuleKey.Manufacturing, refused.Modules);
+    }
+
+    [Fact]
+    public async Task APatientWithoutAnyVisit_StillCountsAsHealthcareData()
+    {
+        // ‏ملفُّ المريض يُفتح قبل أوّل زيارة — إخفاءُ الوحدة يُخفي سجلّاً طبيّاً قائماً.
+        await SetupAsync(BusinessProfile.Healthcare);
+        var customer = Customer.Create(_companyId, "مريض");
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync();
+        _db.Patients.Add(Patient.Create(_companyId, "P-001", "مريض", "1012345678",
+            new DateOnly(1990, 5, 1), PatientGender.Male, customer.Id));
+        await _db.SaveChangesAsync();
+
+        var refused = await Assert.ThrowsAsync<ProfileHidesModulesWithDataException>(() =>
+            new BusinessProfileChangeService(_db).ChangeAsync(_companyId, BusinessProfile.General));
+
+        Assert.Contains(ModuleKey.Healthcare, refused.Modules);
     }
 }

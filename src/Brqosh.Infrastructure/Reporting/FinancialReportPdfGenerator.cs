@@ -24,7 +24,11 @@ public static class FinancialReportPdfGenerator
             branding, "قائمة الدخل",
             $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}",
             rows,
-            $"إجمالي الإيرادات: {result.TotalRevenue:N2}  |  إجمالي المصروفات: {result.TotalExpenses:N2}  |  صافي الدخل: {result.NetIncome:N2}");
+            [
+                ("إجمالي الإيرادات", PrintText.Money(result.TotalRevenue)),
+                ("إجمالي المصروفات", PrintText.Money(result.TotalExpenses)),
+                ("صافي الدخل", PrintText.Money(result.NetIncome)),
+            ]);
     }
 
     public static byte[] BalanceSheet(string companyName, BalanceSheetResult result) =>
@@ -38,11 +42,16 @@ public static class FinancialReportPdfGenerator
             .Concat(result.Equity.Select(r => ("حقوق ملكية", r.AccountCode, r.AccountNameAr, r.Amount)))
             .ToList();
 
-        var footer = $"الأصول: {result.TotalAssets:N2}  |  الالتزامات + حقوق الملكية: {result.TotalLiabilitiesAndEquity:N2}  |  " +
-                     (result.IsBalanced ? "متوازنة ✓" : "غير متوازنة ✗");
+        IReadOnlyList<(string Label, string Value)> summary =
+        [
+            ("الأصول", PrintText.Money(result.TotalAssets)),
+            ("الالتزامات + حقوق الملكية", PrintText.Money(result.TotalLiabilitiesAndEquity)),
+            (result.IsBalanced ? "المركز متوازن" : "المركز غير متوازن",
+                PrintText.Money(result.TotalAssets - result.TotalLiabilitiesAndEquity)),
+        ];
 
         return BuildTableReport(branding, "قائمة المركز المالي",
-            $"حتى {PrintText.Date(result.AsOfDate)}", rows, footer);
+            $"حتى {PrintText.Date(result.AsOfDate)}", rows, summary);
     }
 
     public static byte[] VatReturn(string companyName, VatReturnResult result) =>
@@ -55,7 +64,7 @@ public static class FinancialReportPdfGenerator
         var label = result.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
         return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
             $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", rows,
-            $"صافي الضريبة ({label}): {result.NetVatPayable:N2} ر.س");
+            [($"صافي الضريبة ({label}) — ر.س", PrintText.Money(result.NetVatPayable))]);
     }
 
     /// <summary>
@@ -135,7 +144,11 @@ public static class FinancialReportPdfGenerator
 
         return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
             $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", rows,
-            $"صافي الضريبة المستحقة: {netPayable:N2} ر.س");
+            [
+                ("ضريبة المخرجات", PrintText.Money(outputVat)),
+                ("ضريبة المدخلات", PrintText.Money(inputVat)),
+                ("صافي الضريبة المستحقة — ر.س", PrintText.Money(netPayable)),
+            ]);
     }
 
     public static byte[] CashFlowStatement(string companyName, CashFlowStatementResult result) =>
@@ -148,44 +161,21 @@ public static class FinancialReportPdfGenerator
         AppendSection(rows, result.Investing);
         AppendSection(rows, result.Financing);
 
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(28);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 10));
+        PrintColumn[] columns =
+        [
+            new("القسم", Weight: 1f),
+            new("البند", Weight: 2f),
+            new("المبلغ", Numeric: true),
+        ];
 
-                page.Header().Element(h => branding.RenderHeader(
-                    h, "قائمة التدفقات النقدية",
-                    $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}"));
-
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(2);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("القسم").Bold();
-                        h.Cell().Text("البند").Bold();
-                        h.Cell().AlignCenter().Text("المبلغ").Bold();
-                    });
-                    foreach (var (section, label, amount) in rows)
-                    {
-                        table.Cell().Text(section);
-                        table.Cell().Text(label);
-                        table.Cell().AlignCenter().Text($"{amount:N2}");
-                    }
-                });
-
-                page.Footer().Text(
-                    $"صافي التغيّر: {result.NetCashChange:N2} · افتتاحي: {result.OpeningCash:N2} · إغلاق: {result.ClosingCash:N2}");
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(branding, "قائمة التدفقات النقدية",
+            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", columns,
+            rows.Select(r => (IReadOnlyList<string>)[r.Section, r.Label, PrintText.Money(r.Amount)]),
+            [
+                ("الرصيد الافتتاحي", PrintText.Money(result.OpeningCash)),
+                ("صافي التغيّر", PrintText.Money(result.NetCashChange)),
+                ("الرصيد الختامي", PrintText.Money(result.ClosingCash)),
+            ]);
     }
 
     private static void AppendSection(
@@ -205,96 +195,46 @@ public static class FinancialReportPdfGenerator
         IReadOnlyList<(DateOnly EntryDate, string AccountCode, string AccountNameAr,
             decimal Debit, decimal Credit, string Description)> rows)
     {
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4.Landscape());
-                page.Margin(24);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 9));
+        PrintColumn[] columns =
+        [
+            new("التاريخ", FixedWidth: 76),
+            new("الكود", FixedWidth: 64),
+            new("الحساب", Weight: 2f),
+            new("مدين", Numeric: true),
+            new("دائن", Numeric: true),
+            new("البيان", Weight: 2.2f),
+        ];
 
-                page.Header().Element(h => branding.RenderHeader(
-                    h, "دفتر الأستاذ العام", $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}"));
-
-                page.Content().PaddingVertical(8).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.ConstantColumn(70);
-                        c.ConstantColumn(60);
-                        c.RelativeColumn(2);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(2);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("التاريخ").Bold();
-                        h.Cell().Text("الكود").Bold();
-                        h.Cell().Text("الحساب").Bold();
-                        h.Cell().AlignCenter().Text("مدين").Bold();
-                        h.Cell().AlignCenter().Text("دائن").Bold();
-                        h.Cell().Text("البيان").Bold();
-                    });
-                    foreach (var (date, code, name, debit, credit, desc) in rows)
-                    {
-                        table.Cell().Text(PrintText.Date(date));
-                        table.Cell().Text(code);
-                        table.Cell().Text(name);
-                        table.Cell().AlignCenter().Text(debit > 0 ? $"{debit:N2}" : "");
-                        table.Cell().AlignCenter().Text(credit > 0 ? $"{credit:N2}" : "");
-                        table.Cell().Text(desc);
-                    }
-                });
-
-                page.Footer().AlignCenter().Text(
-                    $"إجمالي المدين: {rows.Sum(r => r.Debit):N2}  |  إجمالي الدائن: {rows.Sum(r => r.Credit):N2}");
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(branding, "دفتر الأستاذ العام",
+            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", columns,
+            rows.Select(r => (IReadOnlyList<string>)
+            [
+                PrintText.Date(r.EntryDate), PrintText.Code(r.AccountCode), r.AccountNameAr,
+                r.Debit > 0 ? PrintText.Money(r.Debit) : "", r.Credit > 0 ? PrintText.Money(r.Credit) : "",
+                r.Description,
+            ]),
+            [
+                ("إجمالي المدين", PrintText.Money(rows.Sum(r => r.Debit))),
+                ("إجمالي الدائن", PrintText.Money(rows.Sum(r => r.Credit))),
+            ],
+            landscape: true, fontSize: 9);
     }
 
     private static byte[] BuildTableReport(
         PrintBranding branding, string title, string subtitle,
         IReadOnlyList<(string Section, string Code, string Name, decimal Amount)> rows,
-        string footer)
+        IReadOnlyList<(string Label, string Value)> summary)
     {
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(28);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 10));
+        PrintColumn[] columns =
+        [
+            new("القسم", Weight: 1f),
+            new("الكود", FixedWidth: 70),
+            new("الحساب", Weight: 3f),
+            new("المبلغ", Numeric: true),
+        ];
 
-                page.Header().Element(h => branding.RenderHeader(h, title, subtitle));
-
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.RelativeColumn(1);
-                        c.ConstantColumn(70);
-                        c.RelativeColumn(3);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("القسم").Bold();
-                        h.Cell().Text("الكود").Bold();
-                        h.Cell().Text("الحساب").Bold();
-                        h.Cell().AlignCenter().Text("المبلغ").Bold();
-                    });
-                    foreach (var (section, code, name, amount) in rows)
-                    {
-                        table.Cell().Text(section);
-                        table.Cell().Text(code);
-                        table.Cell().Text(name);
-                        table.Cell().AlignCenter().Text($"{amount:N2}");
-                    }
-                });
-
-                page.Footer().Text(footer);
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(branding, title, subtitle, columns,
+            rows.Select(r => (IReadOnlyList<string>)[r.Section, PrintText.Code(r.Code), r.Name, PrintText.Money(r.Amount)]),
+            summary);
     }
 }

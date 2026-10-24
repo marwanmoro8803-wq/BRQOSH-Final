@@ -47,13 +47,17 @@ public class BusinessProfileChangeService(BrqoshDbContext db)
         ModuleKey.Payroll => await db.PayrollRuns.AnyAsync(x => x.CompanyId == companyId, ct)
                              || await db.Employees.IgnoreQueryFilters().AnyAsync(x => x.CompanyId == companyId, ct),
         ModuleKey.PointOfSale => await db.PosShifts.AnyAsync(x => x.CompanyId == companyId, ct),
-        ModuleKey.Manufacturing => await db.WorkOrders.AnyAsync(x => x.CompanyId == companyId, ct),
+        // ‏الوصفةُ تُحفظ قبل أيّ أمرٍ — فإخفاءُ الوحدة يُخفيها عن صاحبها وإن لم يُشغَّل أمرُ إنتاجٍ بعد.
+        ModuleKey.Manufacturing => await db.WorkOrders.AnyAsync(x => x.CompanyId == companyId, ct)
+                                   || await db.BillsOfMaterials.AnyAsync(x => x.CompanyId == companyId, ct),
         ModuleKey.ProjectsConstruction => await db.ConstructionProjects.AnyAsync(x => x.CompanyId == companyId, ct),
         ModuleKey.Crm => await db.CrmLeads.AnyAsync(x => x.CompanyId == companyId, ct)
                          || await db.CrmOpportunities.AnyAsync(x => x.CompanyId == companyId, ct),
         ModuleKey.RealEstate => await db.Properties.AnyAsync(x => x.CompanyId == companyId, ct)
                                 || await db.LeaseContracts.AnyAsync(x => x.CompanyId == companyId, ct),
-        ModuleKey.Healthcare => await db.Visits.AnyAsync(x => x.CompanyId == companyId, ct),
+        // ‏ملفُّ المريض يُفتح قبل أوّل زيارة، وهو سجلٌّ طبيٌّ قائم.
+        ModuleKey.Healthcare => await db.Visits.AnyAsync(x => x.CompanyId == companyId, ct)
+                                || await db.Patients.IgnoreQueryFilters().AnyAsync(x => x.CompanyId == companyId, ct),
         ModuleKey.Hospitality => await db.Reservations.AnyAsync(x => x.CompanyId == companyId, ct)
                                  || await db.Rooms.AnyAsync(x => x.CompanyId == companyId, ct),
         ModuleKey.Logistics => await db.Shipments.AnyAsync(x => x.CompanyId == companyId, ct),

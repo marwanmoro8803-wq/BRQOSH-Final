@@ -1,3 +1,4 @@
+using System.Globalization;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -36,40 +37,86 @@ public static class VoucherPdfGenerator
         string partyLabel, string partyName, decimal amount, string method,
         string reference, string description)
     {
+        var isReceipt = title == "سند قبض";
+        var partyCardTitle = isReceipt ? $"استلمنا من ({partyLabel})" : $"صرفنا إلى ({partyLabel})";
+
         return Document.Create(container =>
         {
             container.Page(page =>
             {
-                page.Size(PageSizes.A5);
-                page.Margin(28);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 11));
+                // A5 أفقيّ: السندُ ورقةٌ قصيرة العرض — الاتجاه الأفقيّ يُسكن البطاقاتِ جنباً إلى جنب
+                // فلا يبقى ثلثُ الورقة فارغاً تحت التواقيع.
+                page.Size(PageSizes.A5.Landscape());
+                page.Margin(24);
+                page.DefaultTextStyle(x => branding.PageTextStyle(11));
 
                 page.Header().Element(h => branding.RenderHeader(h, title));
 
-                page.Content().Column(col =>
+                page.Content().PaddingTop(12).Column(col =>
                 {
-                    col.Item().Text($"رقم السند: {PrintText.Code(voucherNumber)}");
-                    col.Item().Text($"التاريخ: {PrintText.Date(date)}");
-                    col.Item().PaddingTop(8).Text($"{partyLabel}: {partyName}");
-                    col.Item().Text($"طريقة الدفع: {method}");
-                    if (!string.IsNullOrWhiteSpace(reference))
-                        col.Item().Text($"المرجع: {reference}");
-                    col.Item().PaddingTop(12).Text($"المبلغ: {amount:N2} ر.س").Bold().FontSize(14);
-                    if (!string.IsNullOrWhiteSpace(description))
-                        col.Item().PaddingTop(8).Text($"البيان: {description}");
+                    col.Spacing(8);
+
+                    col.Item().Row(row =>
+                    {
+                        row.ConstantItem(170).Element(c => AmountCard(c, amount));
+                        row.ConstantItem(10);
+                        row.RelativeItem().Element(c => InfoCard(c, voucherNumber, date, method, reference));
+                    });
+
+                    col.Item().Element(c => PartyCard(c, partyCardTitle, partyName, description));
+                    col.Item().Element(c => PrintTheme.AmountInWords(c, amount));
                 });
 
                 page.Footer().Column(col =>
                 {
-                    col.Item().PaddingTop(16).Row(row =>
+                    col.Item().PaddingBottom(8).Row(row =>
                     {
-                        row.RelativeItem().AlignCenter().Text("المحاسب").FontSize(10);
-                        row.RelativeItem().AlignCenter().Text("المدير المالي").FontSize(10);
-                        row.RelativeItem().AlignCenter().Text("المستلم").FontSize(10);
+                        // من اليسار: المستلم · المدير المالي · المحاسب — فيقع المحاسبُ أقصى اليمين كما تُقرأ الورقة.
+                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, isReceipt ? "المستلم" : "المستفيد"));
+                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المدير المالي"));
+                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المحاسب"));
                     });
                     col.Item().Element(f => branding.RenderFooterMeta(f));
                 });
             });
         }).GeneratePdf();
+    }
+
+    private static void AmountCard(IContainer container, decimal amount)
+    {
+        container.Card().Column(col =>
+        {
+            col.Item().Background(PrintTheme.Navy).PaddingVertical(5).AlignCenter()
+                .Text("المبلغ").Bold().FontSize(10).FontColor("#FFFFFF");
+            col.Item().PaddingVertical(14).AlignCenter().Text(text =>
+            {
+                text.Span(PrintText.Ltr(amount.ToString("N2", CultureInfo.InvariantCulture)))
+                    .Bold().FontSize(21).FontColor(PrintTheme.Navy);
+                text.Span("  ر.س").Bold().FontSize(13).FontColor(PrintTheme.Navy);
+            });
+        });
+    }
+
+    private static void InfoCard(IContainer container, string voucherNumber, DateOnly date, string method, string reference)
+    {
+        container.Card().Column(col =>
+        {
+            col.Item().Element(c => PrintTheme.LabelValue(c, "رقم السند", PrintText.Code(voucherNumber), emphasizeValue: true));
+            col.Item().Element(c => PrintTheme.LabelValue(c, "التاريخ", PrintText.Date(date)));
+            col.Item().Element(c => PrintTheme.LabelValue(c, "طريقة الدفع", method));
+            if (!string.IsNullOrWhiteSpace(reference))
+                col.Item().Element(c => PrintTheme.LabelValue(c, "المرجع", PrintText.Code(reference)));
+        });
+    }
+
+    private static void PartyCard(IContainer container, string cardTitle, string partyName, string description)
+    {
+        container.Card().Column(col =>
+        {
+            col.Item().Element(c => PrintTheme.CardTitle(c, cardTitle));
+            col.Item().Element(c => PrintTheme.LabelValue(c, "الاسم", partyName, emphasizeValue: true));
+            if (!string.IsNullOrWhiteSpace(description))
+                col.Item().Element(c => PrintTheme.LabelValue(c, "وذلك عن", description));
+        });
     }
 }

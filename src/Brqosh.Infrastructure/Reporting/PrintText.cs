@@ -36,6 +36,10 @@ public static class PrintText
     public static string Timestamp(DateTime value) =>
         Ltr(value.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
 
+    /// <summary>مبلغٌ بمنزلتين وفاصل آلاف — معزولٌ فلا يعكسه المتن العربيّ، وثابتٌ مهما كانت ثقافةُ الجهاز.</summary>
+    public static string Money(decimal value) =>
+        Ltr(value.ToString("N2", CultureInfo.InvariantCulture));
+
     /// <summary>رقم مستند أو مرجع لاتينيّ (INV-2026-000001) — يُعزل كذلك.</summary>
     public static string Code(string? value) => Ltr(value);
 }

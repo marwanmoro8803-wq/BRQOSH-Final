@@ -22,51 +22,55 @@ public static class JournalEntryPdfGenerator
         decimal totalDebit,
         decimal totalCredit)
     {
+        PrintColumn[] columns =
+        [
+            new("الحساب", FixedWidth: 80),
+            new("البيان", Weight: 3f),
+            new("مدين", Numeric: true),
+            new("دائن", Numeric: true),
+        ];
+
         return Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4);
                 page.Margin(28);
-                page.DefaultTextStyle(x => branding.PageTextStyle( 10));
+                page.DefaultTextStyle(x => branding.PageTextStyle(10));
 
-                page.Header().Element(h => branding.RenderHeader(h, "قيد يومية", $"رقم {entryNumber}"));
+                page.Header().Element(h => branding.RenderHeader(h, "قيد يومية", $"رقم {PrintText.Code(entryNumber)}"));
 
                 page.Content().PaddingVertical(10).Column(col =>
                 {
-                    col.Item().Text($"التاريخ: {PrintText.Date(entryDate)}  |  الحالة: {statusAr}");
-                    if (!string.IsNullOrWhiteSpace(headerDescription))
-                        col.Item().Text($"البيان: {headerDescription}");
-                    if (!string.IsNullOrWhiteSpace(sourceDocument))
-                        col.Item().Text($"المستند المصدر: {sourceDocument}");
+                    col.Spacing(8);
 
-                    col.Item().PaddingTop(12).Table(table =>
+                    col.Item().Card().Column(info =>
                     {
-                        table.ColumnsDefinition(c =>
-                        {
-                            c.ConstantColumn(80);
-                            c.RelativeColumn(3);
-                            c.RelativeColumn(1);
-                            c.RelativeColumn(1);
-                        });
-                        table.Header(h =>
-                        {
-                            h.Cell().Text("الحساب").Bold();
-                            h.Cell().Text("البيان").Bold();
-                            h.Cell().AlignCenter().Text("مدين").Bold();
-                            h.Cell().AlignCenter().Text("دائن").Bold();
-                        });
-                        foreach (var line in lines)
-                        {
-                            table.Cell().Text(line.AccountCode);
-                            table.Cell().Text(line.Description);
-                            table.Cell().AlignCenter().Text(line.Debit > 0 ? $"{line.Debit:N2}" : "");
-                            table.Cell().AlignCenter().Text(line.Credit > 0 ? $"{line.Credit:N2}" : "");
-                        }
+                        info.Item().Element(c => PrintTheme.LabelValue(c, "التاريخ", PrintText.Date(entryDate)));
+                        info.Item().Element(c => PrintTheme.LabelValue(c, "الحالة", statusAr));
+                        if (!string.IsNullOrWhiteSpace(headerDescription))
+                            info.Item().Element(c => PrintTheme.LabelValue(c, "البيان", headerDescription));
+                        if (!string.IsNullOrWhiteSpace(sourceDocument))
+                            info.Item().Element(c => PrintTheme.LabelValue(c, "المستند المصدر", PrintText.Code(sourceDocument)));
                     });
 
-                    col.Item().PaddingTop(10).Text(
-                        $"مجموع المدين: {totalDebit:N2}  |  مجموع الدائن: {totalCredit:N2}").Bold();
+                    col.Item().Element(c => PrintTheme.ReportTable(c, columns, lines.Select(l => (IReadOnlyList<string>)
+                    [
+                        PrintText.Code(l.AccountCode), l.Description,
+                        l.Debit > 0 ? PrintText.Money(l.Debit) : "", l.Credit > 0 ? PrintText.Money(l.Credit) : "",
+                    ])));
+
+                    col.Item().Element(c => PrintTheme.SummaryBand(c,
+                    [
+                        ("مجموع المدين", PrintText.Money(totalDebit)),
+                        ("مجموع الدائن", PrintText.Money(totalCredit)),
+                    ]));
+
+                    col.Item().PaddingTop(6).Row(sign =>
+                    {
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المحاسب"));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المدير المالي"));
+                    });
                 });
 
                 page.Footer().Element(f => branding.RenderFooterMeta(f));

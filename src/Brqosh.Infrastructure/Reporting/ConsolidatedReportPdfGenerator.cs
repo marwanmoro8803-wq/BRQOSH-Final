@@ -1,5 +1,4 @@
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
+using System.Globalization;
 using QuestPDF.Infrastructure;
 
 namespace Brqosh.Infrastructure.Reporting;
@@ -16,60 +15,34 @@ public static class ConsolidatedReportPdfGenerator
         DateOnly to,
         IReadOnlyList<ConsolidatedTrialBalanceRow> rows)
     {
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(28);
-                page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Arial"));
+        PrintColumn[] columns =
+        [
+            new("الكود", FixedWidth: 70),
+            new("الحساب", Weight: 3f),
+            new("شركات", Numeric: true, FixedWidth: 50),
+            new("مدين", Numeric: true),
+            new("دائن", Numeric: true),
+            new("رصيد مدين", Numeric: true),
+            new("رصيد دائن", Numeric: true),
+        ];
 
-                page.Header().Column(col =>
-                {
-                    col.Item().AlignCenter().Text(groupName).Bold().FontSize(16);
-                    col.Item().AlignCenter().Text("ميزان مراجعة موحّد").FontSize(14);
-                    col.Item().AlignCenter().Text($"من {PrintText.Date(from)} إلى {PrintText.Date(to)} · {reportingCurrency}").FontSize(10);
-                });
+        var totalDebit = rows.Sum(r => r.TotalDebit);
+        var totalCredit = rows.Sum(r => r.TotalCredit);
 
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.ConstantColumn(70);
-                        c.RelativeColumn(3);
-                        c.ConstantColumn(50);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("الكود").Bold();
-                        h.Cell().Text("الحساب").Bold();
-                        h.Cell().AlignCenter().Text("شركات").Bold();
-                        h.Cell().AlignCenter().Text("مدين").Bold();
-                        h.Cell().AlignCenter().Text("دائن").Bold();
-                        h.Cell().AlignCenter().Text("رصيد مدين").Bold();
-                        h.Cell().AlignCenter().Text("رصيد دائن").Bold();
-                    });
-                    foreach (var row in rows)
-                    {
-                        table.Cell().Text(row.AccountCode);
-                        table.Cell().Text(row.AccountNameAr);
-                        table.Cell().AlignCenter().Text(row.CompanyCount.ToString());
-                        table.Cell().AlignCenter().Text($"{row.TotalDebit:N2}");
-                        table.Cell().AlignCenter().Text($"{row.TotalCredit:N2}");
-                        table.Cell().AlignCenter().Text(row.BalanceDebit > 0 ? $"{row.BalanceDebit:N2}" : "");
-                        table.Cell().AlignCenter().Text(row.BalanceCredit > 0 ? $"{row.BalanceCredit:N2}" : "");
-                    }
-                });
-
-                var totalDebit = rows.Sum(r => r.TotalDebit);
-                var totalCredit = rows.Sum(r => r.TotalCredit);
-                page.Footer().Text($"إجمالي المدين: {totalDebit:N2} | إجمالي الدائن: {totalCredit:N2}");
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(PrintBranding.From(groupName, ""), "ميزان مراجعة موحّد",
+            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)} · {reportingCurrency}", columns,
+            rows.Select(r => (IReadOnlyList<string>)
+            [
+                PrintText.Code(r.AccountCode), r.AccountNameAr, r.CompanyCount.ToString(CultureInfo.InvariantCulture),
+                PrintText.Money(r.TotalDebit), PrintText.Money(r.TotalCredit),
+                r.BalanceDebit > 0 ? PrintText.Money(r.BalanceDebit) : "",
+                r.BalanceCredit > 0 ? PrintText.Money(r.BalanceCredit) : "",
+            ]),
+            [
+                ("إجمالي المدين", PrintText.Money(totalDebit)),
+                ("إجمالي الدائن", PrintText.Money(totalCredit)),
+            ],
+            fontSize: 9);
     }
 
     public static byte[] IncomeStatement(
@@ -85,7 +58,11 @@ public static class ConsolidatedReportPdfGenerator
             "قائمة دخل موحّدة",
             $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)} · {result.ReportingCurrencyCode}",
             rows,
-            $"الإيرادات: {result.TotalRevenue:N2} | المصروفات: {result.TotalExpenses:N2} | صافي الدخل: {result.NetIncome:N2}");
+            [
+                ("الإيرادات", PrintText.Money(result.TotalRevenue)),
+                ("المصروفات", PrintText.Money(result.TotalExpenses)),
+                ("صافي الدخل", PrintText.Money(result.NetIncome)),
+            ]);
     }
 
     public static byte[] BalanceSheet(
@@ -102,7 +79,10 @@ public static class ConsolidatedReportPdfGenerator
             "مركز مالي موحّد",
             $"كما في {PrintText.Date(result.AsOfDate)} · {result.ReportingCurrencyCode}",
             rows,
-            $"الأصول: {result.TotalAssets:N2} | الالتزامات+الملكية: {result.TotalLiabilities + result.TotalEquity:N2}");
+            [
+                ("الأصول", PrintText.Money(result.TotalAssets)),
+                ("الالتزامات + الملكية", PrintText.Money(result.TotalLiabilities + result.TotalEquity)),
+            ]);
     }
 
     private static byte[] BuildSectionReport(
@@ -110,53 +90,23 @@ public static class ConsolidatedReportPdfGenerator
         string title,
         string subtitle,
         IReadOnlyList<(string Section, string Code, string Name, decimal Amount, int CompanyCount)> rows,
-        string footer)
+        IReadOnlyList<(string Label, string Value)> summary)
     {
-        return Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4);
-                page.Margin(28);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
+        PrintColumn[] columns =
+        [
+            new("القسم", Weight: 1f),
+            new("الكود", FixedWidth: 70),
+            new("الحساب", Weight: 3f),
+            new("شركات", Numeric: true, FixedWidth: 50),
+            new("المبلغ", Numeric: true),
+        ];
 
-                page.Header().Column(col =>
-                {
-                    col.Item().AlignCenter().Text(groupName).Bold().FontSize(16);
-                    col.Item().AlignCenter().Text(title).FontSize(14);
-                    col.Item().AlignCenter().Text(subtitle).FontSize(10);
-                });
-
-                page.Content().PaddingVertical(10).Table(table =>
-                {
-                    table.ColumnsDefinition(c =>
-                    {
-                        c.RelativeColumn(1);
-                        c.ConstantColumn(70);
-                        c.RelativeColumn(3);
-                        c.ConstantColumn(50);
-                        c.RelativeColumn(1);
-                    });
-                    table.Header(h =>
-                    {
-                        h.Cell().Text("القسم").Bold();
-                        h.Cell().Text("الكود").Bold();
-                        h.Cell().Text("الحساب").Bold();
-                        h.Cell().AlignCenter().Text("شركات").Bold();
-                        h.Cell().AlignCenter().Text("المبلغ").Bold();
-                    });
-                    foreach (var (section, code, name, amount, companyCount) in rows)
-                    {
-                        table.Cell().Text(section);
-                        table.Cell().Text(code);
-                        table.Cell().Text(name);
-                        table.Cell().AlignCenter().Text(companyCount.ToString());
-                        table.Cell().AlignCenter().Text($"{amount:N2}");
-                    }
-                });
-
-                page.Footer().Text(footer);
-            });
-        }).GeneratePdf();
+        return PrintReport.Table(PrintBranding.From(groupName, ""), title, subtitle, columns,
+            rows.Select(r => (IReadOnlyList<string>)
+            [
+                r.Section, PrintText.Code(r.Code), r.Name,
+                r.CompanyCount.ToString(CultureInfo.InvariantCulture), PrintText.Money(r.Amount),
+            ]),
+            summary);
     }
 }
