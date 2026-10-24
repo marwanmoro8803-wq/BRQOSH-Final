@@ -17,7 +17,8 @@ public sealed record PrintBranding(
     string? AuditorName = null,
     string? PreparedBy = null,
     // ‏(أسئلةُ المالك · طباعةٌ بالإنجليزيّة) ‏لغةُ المطبوع: الإنجليزيّةُ LTR. والفاتورةُ الضريبيّةُ تبقى عربيّةً أياً كانت.
-    bool English = false)
+    bool English = false,
+    string? AddressEn = null)
 {
     /// <summary>
     /// ما يُكتب بجوار المبالغ في المطبوع — رمزُ عملة دفاتر المنشأة (ر.س للريال). كان «ر.س» مكتوباً في كلّ مولِّد،
@@ -54,7 +55,8 @@ public sealed record PrintBranding(
             company.FunctionalCurrencyCode,
             company.AuditorName,
             string.IsNullOrWhiteSpace(preparedBy) ? null : preparedBy.Trim(),
-            english ?? PrintLang.Preferred);
+            english ?? PrintLang.Preferred,
+            company.AddressEn);
     }
 
     /// <summary>سطرُ «أعدّه · المراجع» — <c>null</c> إن لم يُعرف أيٌّ منهما. والمراجعُ يظهر حيث طُلب (<paramref name="withAuditor"/>) وعُرف.</summary>
@@ -109,8 +111,9 @@ public sealed record PrintBranding(
                         info.Item().PaddingTop(2).AlignStart()
                             .Text(PrintLang.TF("الرقم الضريبي: {0}", PrintText.Code(VatRegistrationNumber))).FontSize(9)
                             .FontColor(PrintTheme.Ink).FontFamily(EffectiveFontFamily);
-                    if (!string.IsNullOrWhiteSpace(AddressAr))
-                        info.Item().AlignStart().Text(AddressAr).FontSize(9).FontColor(PrintTheme.Muted)
+                    var addressLine = English && !string.IsNullOrWhiteSpace(AddressEn) ? AddressEn : AddressAr;
+                    if (!string.IsNullOrWhiteSpace(addressLine))
+                        info.Item().AlignStart().Text(addressLine).FontSize(9).FontColor(PrintTheme.Muted)
                             .FontFamily(EffectiveFontFamily);
                 });
 

@@ -164,6 +164,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(c => c.Profile).HasConversion<string>().HasMaxLength(32);
             entity.Property(c => c.CostingMethod).HasConversion<string>().HasMaxLength(32);
             entity.Property(c => c.AuditorName).HasMaxLength(Company.AuditorNameMaxLength);
+            entity.Property(c => c.AddressEn).HasMaxLength(Company.AddressEnMaxLength);
             entity.Property(c => c.BaseCurrencyCode).HasMaxLength(3).IsRequired();
             entity.Property(c => c.FunctionalCurrencyCode).HasMaxLength(3).IsRequired();
             entity.Property(c => c.TenantId).IsRequired();

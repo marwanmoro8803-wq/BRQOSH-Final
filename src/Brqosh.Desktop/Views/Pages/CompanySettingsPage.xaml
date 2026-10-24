@@ -50,6 +50,11 @@
                     <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" TextWrapping="Wrap"
                              AcceptsReturn="True" MinHeight="56" Margin="0,0,0,16"/>
 
+                    <TextBlock x:Name="AddressEnLabel" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="AddressEnBox" Style="{StaticResource AppTextBox}" TextWrapping="Wrap" MaxLength="512"
+                             AcceptsReturn="True" MinHeight="44" Margin="0,0,0,16" FlowDirection="LeftToRight"
+                             AutomationProperties.AutomationId="CompanySettingsAddressEn"/>
+
                     <TextBlock x:Name="AuditorLabel" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="AuditorBox" Style="{StaticResource AppTextBox}" MaxLength="120" Margin="0,0,0,4"
                              AutomationProperties.AutomationId="CompanySettingsAuditor"/>

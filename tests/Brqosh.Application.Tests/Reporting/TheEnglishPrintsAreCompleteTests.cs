@@ -191,6 +191,17 @@ public class TheEnglishPrintsAreCompleteTests
     }
 
     [Fact]
+    public void AnEnglishPrint_CarriesTheEnglishAddress_AndTheArabicOneStaysArabic()
+    {
+        var company = Brqosh.Domain.Companies.Company.Create("منشأة", "310123456700003", Brqosh.Domain.Modules.BusinessProfile.General);
+        company.UpdateBranding(null, "الرياض", "Tahoma");
+        company.SetAddressEn("Riyadh");
+
+        Assert.Equal("Riyadh", PrintBranding.FromCompany(company, null, english: true).AddressEn);
+        Assert.Equal("الرياض", PrintBranding.FromCompany(company, null, english: false).AddressAr);
+    }
+
+    [Fact]
     public void TheScopeRestoresTheDirectionAfterwards()
     {
         Assert.False(PrintLang.English);

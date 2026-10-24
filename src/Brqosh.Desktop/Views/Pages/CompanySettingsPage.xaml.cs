@@ -125,6 +125,8 @@ public partial class CompanySettingsPage : UserControl
             "اختياري. يُطبع في تذييل القوائم والكشوف والتقارير المالية («المراجع: …») بجانب اسم من أعدّها.",
             "Optional. Printed in the footer of statements, ledgers and financial reports (\"Auditor: …\") beside the name of whoever prepared them.");
         AuditorBox.Text = company.AuditorName ?? "";
+        AddressEnLabel.Text = LocaleManager.T("عنوان المنشأة بالإنجليزية (للمطبوعات الإنجليزية)", "Company address in English (for English printouts)");
+        AddressEnBox.Text = company.AddressEn ?? "";
         CurrencyHintText.Text = LocaleManager.T(
             "عملةُ القياس هي ما يُكتب بجوار كلّ مبلغٍ في الشاشات والمطبوعات. لا تُغيَّر بعد تسجيل قيودٍ أو مستنداتٍ في المنشأة — فالمبالغُ المخزَّنةُ تبقى أرقامَها. والفوترةُ الإلكترونية (زاتكا) ومعالجةُ فروق العملة مبنيّتان على الريال السعودي، فغيِّرها فقط لمنشأةٍ دفاترُها بعملةٍ أخرى لأجل التقارير الموحَّدة؛ والمستنداتُ بعملةٍ أجنبية تُسجَّل بسعر الصرف.",
             "The measurement currency is what is written beside every amount on screens and printouts. It cannot be changed once entries or documents are recorded in the company — stored amounts keep their numbers. E-invoicing (ZATCA) and exchange-difference handling are built on the Saudi riyal, so change it only for a company whose books are in another currency for consolidated reporting; foreign-currency documents are recorded at an exchange rate.");
@@ -281,6 +283,7 @@ public partial class CompanySettingsPage : UserControl
                 AddressBox.Text,
                 PrintFontBox.SelectedItem?.ToString() ?? "Tahoma");
             company.SetAuditor(AuditorBox.Text);
+            company.SetAddressEn(AddressEnBox.Text);
 
             if (_removeLogoRequested)
             {

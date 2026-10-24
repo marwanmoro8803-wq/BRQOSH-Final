@@ -35,3 +35,22 @@ public class CompanyAuditorTests
         Assert.Equal(Company.AuditorNameMaxLength, company.AuditorName!.Length);
     }
 }
+
+/// <summary>عنوانُ المنشأة بالإنجليزيّة للمطبوعات الإنجليزيّة.</summary>
+public class CompanyEnglishAddressTests
+{
+    private static Company NewCompany() => Company.Create("منشأة", "310123456700003", BusinessProfile.General);
+
+    [Fact]
+    public void TheEnglishAddress_IsTrimmed_AndBounded()
+    {
+        var company = NewCompany();
+        company.SetAddressEn("  Olaya St., Riyadh  ");
+        Assert.Equal("Olaya St., Riyadh", company.AddressEn);
+
+        company.SetAddressEn(" ");
+        Assert.Null(company.AddressEn);
+
+        Assert.Throws<ArgumentException>(() => company.SetAddressEn(new string('a', Company.AddressEnMaxLength + 1)));
+    }
+}

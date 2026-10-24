@@ -188,6 +188,19 @@ public class Company
 
     public const int AuditorNameMaxLength = 120;
 
+    /// <summary>عنوانُ المنشأة بالإنجليزيّة — يُطبع في ترويسة المطبوعات الإنجليزيّة (وإلّا خرج العنوانُ العربيّ).</summary>
+    public string? AddressEn { get; private set; }
+
+    public const int AddressEnMaxLength = 512;
+
+    public void SetAddressEn(string? address)
+    {
+        var value = TrimOrNull(address);
+        if (value is not null && value.Length > AddressEnMaxLength)
+            throw new ArgumentException($"العنوان الإنجليزي لا يتجاوز {AddressEnMaxLength} حرفاً.", nameof(address));
+        AddressEn = value;
+    }
+
     public void SetAuditor(string? name)
     {
         var value = TrimOrNull(name);
