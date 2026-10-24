@@ -12,33 +12,37 @@
          لوحة الألوان — هوية BRQOSH
     ═══════════════════════════════════════════════ -->
     <Color x:Key="PrimaryColor">#0F3D5E</Color>
-    <Color x:Key="ElectricCyanColor">#5BA4D6</Color>
-    <Color x:Key="GlassSurfaceColor">#F8FAFC</Color>
+    <Color x:Key="ElectricCyanColor">#0F3D5E</Color>
+    <Color x:Key="GlassSurfaceColor">#EFEADF</Color>
     <Color x:Key="PrimaryDarkColor">#0A2C45</Color>
-    <Color x:Key="PrimaryLightColor">#2A6F9E</Color>
+    <Color x:Key="PrimaryLightColor">#2B5F86</Color>
     <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
-    <Color x:Key="PrimarySoftColor">#DCE9F3</Color>
-    <Color x:Key="AccentColor">#D4A853</Color>
-    <Color x:Key="AccentDarkColor">#B8862E</Color>
-    <Color x:Key="SurfaceColor">#FFFFFF</Color>
-    <Color x:Key="BackgroundColor">#F1F5F9</Color>
-    <Color x:Key="SidebarColor">#0B2A42</Color>
-    <Color x:Key="SidebarMidColor">#12384F</Color>
-    <Color x:Key="SidebarHoverColor">#1D4B6A</Color>
-    <Color x:Key="TextPrimaryColor">#1C1917</Color>
-    <Color x:Key="TextSecondaryColor">#44403C</Color>
-    <Color x:Key="TextMutedColor">#57534E</Color>
-    <Color x:Key="BorderColor">#E2E8F0</Color>
-    <Color x:Key="BorderLightColor">#F1F5F9</Color>
-    <Color x:Key="SuccessColor">#10B981</Color>
-    <Color x:Key="DangerColor">#EF4444</Color>
-    <Color x:Key="InfoColor">#3B82F6</Color>
-    <Color x:Key="WarningColor">#F59E0B</Color>
-    <Color x:Key="StatusBarColor">#0B2A42</Color>
-    <Color x:Key="StatusBarTextColor">#64748B</Color>
+    <Color x:Key="AccentInkColor">#846510</Color>
+    <Color x:Key="RuleStrongColor">#8F8676</Color>
+    <Color x:Key="SidebarTextColor">#C9D6E2</Color>
+    <Color x:Key="SidebarMutedColor">#9FB3C6</Color>
+    <Color x:Key="PrimarySoftColor">#DDE6EE</Color>
+    <Color x:Key="AccentColor">#C9A227</Color>
+    <Color x:Key="AccentDarkColor">#A8861C</Color>
+    <Color x:Key="SurfaceColor">#FFFDF8</Color>
+    <Color x:Key="BackgroundColor">#F5F1E8</Color>
+    <Color x:Key="SidebarColor">#0B3150</Color>
+    <Color x:Key="SidebarMidColor">#0B3150</Color>
+    <Color x:Key="SidebarHoverColor">#123E60</Color>
+    <Color x:Key="TextPrimaryColor">#14212D</Color>
+    <Color x:Key="TextSecondaryColor">#38444F</Color>
+    <Color x:Key="TextMutedColor">#56606A</Color>
+    <Color x:Key="BorderColor">#DDD6C6</Color>
+    <Color x:Key="BorderLightColor">#ECE6D8</Color>
+    <Color x:Key="SuccessColor">#2E6B45</Color>
+    <Color x:Key="DangerColor">#B3261E</Color>
+    <Color x:Key="InfoColor">#2F5F86</Color>
+    <Color x:Key="WarningColor">#8C5A0B</Color>
+    <Color x:Key="StatusBarColor">#ECE6D9</Color>
+    <Color x:Key="StatusBarTextColor">#38444F</Color>
     <!-- (CEEF-222) ألوان الجداول — كانت مثبَّتة نصّاً داخل الأنماط فلا تتبع الثيم. -->
-    <Color x:Key="RowAltColor">#FAFBFC</Color>
-    <Color x:Key="RowHoverColor">#EFF6FF</Color>
+    <Color x:Key="RowAltColor">#F9F6EF</Color>
+    <Color x:Key="RowHoverColor">#E9EEF3</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush"       Color="{StaticResource PrimaryColor}"/>
     <SolidColorBrush x:Key="ElectricCyanBrush" Color="{StaticResource ElectricCyanColor}"/>
@@ -46,6 +50,10 @@
     <SolidColorBrush x:Key="PrimaryDarkBrush"   Color="{StaticResource PrimaryDarkColor}"/>
     <SolidColorBrush x:Key="PrimaryLightBrush"  Color="{StaticResource PrimaryLightColor}"/>
     <SolidColorBrush x:Key="OnPrimaryBrush"     Color="{StaticResource OnPrimaryColor}"/>
+    <SolidColorBrush x:Key="AccentInkBrush"     Color="{StaticResource AccentInkColor}"/>
+    <SolidColorBrush x:Key="RuleStrongBrush"    Color="{StaticResource RuleStrongColor}"/>
+    <SolidColorBrush x:Key="SidebarTextBrush"   Color="{StaticResource SidebarTextColor}"/>
+    <SolidColorBrush x:Key="SidebarMutedBrush"  Color="{StaticResource SidebarMutedColor}"/>
     <SolidColorBrush x:Key="PrimarySoftBrush"   Color="{StaticResource PrimarySoftColor}"/>
     <SolidColorBrush x:Key="AccentBrush"        Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentDarkBrush"    Color="{StaticResource AccentDarkColor}"/>
@@ -68,7 +76,9 @@
     <SolidColorBrush x:Key="RowAltBrush"        Color="{StaticResource RowAltColor}"/>
     <SolidColorBrush x:Key="RowHoverBrush"      Color="{StaticResource RowHoverColor}"/>
 
-    <FontFamily x:Key="AppFont">Segoe UI Variable, Segoe UI, Tahoma, Arial</FontFamily>
+    <FontFamily x:Key="AppFont">Segoe UI, Tahoma, Arial</FontFamily>
+    <FontFamily x:Key="FigureFont">Bahnschrift, Segoe UI, Tahoma</FontFamily>
+    <FontFamily x:Key="DisplayFont">Sakkal Majalla, Segoe UI, Tahoma</FontFamily>
 
     <Style TargetType="UserControl">
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Local"/>
@@ -77,26 +87,24 @@
 
     <!-- تدرجات -->
     <LinearGradientBrush x:Key="SidebarGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#0B2A42" Offset="0"/>
-        <GradientStop Color="#123650" Offset="0.55"/>
-        <GradientStop Color="#0B2A42" Offset="1"/>
+        <GradientStop Color="#0B3150" Offset="0"/>
+        <GradientStop Color="#0B3150" Offset="1"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrandAccentGradient" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="{StaticResource PrimaryColor}"      Offset="0"/>
-        <GradientStop Color="{StaticResource PrimaryLightColor}" Offset="1"/>
+        <GradientStop Color="{StaticResource AccentColor}" Offset="0"/>
+        <GradientStop Color="{StaticResource AccentColor}" Offset="1"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="HeroPanelGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0A2C45" Offset="0"/>
-        <GradientStop Color="#0F3D5E" Offset="0.45"/>
-        <GradientStop Color="#071F31" Offset="1"/>
+        <GradientStop Color="#0B3150" Offset="0"/>
+        <GradientStop Color="#0B3150" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- ظلال -->
-    <DropShadowEffect x:Key="CardShadow"     BlurRadius="20" ShadowDepth="3" Opacity="0.07" Color="#0B2A42"/>
-    <DropShadowEffect x:Key="ElevatedShadow" BlurRadius="32" ShadowDepth="6" Opacity="0.12" Color="#0B2A42"/>
-    <DropShadowEffect x:Key="HeroShadow"     BlurRadius="48" ShadowDepth="8" Opacity="0.18" Color="#0B2A42"/>
+    <DropShadowEffect x:Key="CardShadow"     BlurRadius="20" ShadowDepth="3" Opacity="0" Color="#0B2A42"/>
+    <DropShadowEffect x:Key="ElevatedShadow" BlurRadius="32" ShadowDepth="6" Opacity="0" Color="#0B2A42"/>
+    <DropShadowEffect x:Key="HeroShadow"     BlurRadius="48" ShadowDepth="8" Opacity="0" Color="#0B2A42"/>
 
     <!-- UI UX Pro Max — حركة وتركيز لوحة المفاتيح -->
     <sys:Double x:Key="MotionDurationFast">150</sys:Double>
@@ -131,7 +139,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                            CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            CornerRadius="3" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -168,7 +176,7 @@
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            CornerRadius="3" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -202,7 +210,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                            CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            CornerRadius="3" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -249,7 +257,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                            CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            CornerRadius="3" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -282,7 +290,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                            CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            CornerRadius="3" Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -323,7 +331,7 @@
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="10">
+                            CornerRadius="3">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -363,7 +371,7 @@
                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="10">
+                            CornerRadius="3">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -451,7 +459,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border x:Name="Indicator" Width="18" Height="18" CornerRadius="5"
+                        <Border x:Name="Indicator" Width="18" Height="18" CornerRadius="2"
                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="1.5"
                                 Background="{StaticResource SurfaceBrush}" VerticalAlignment="Center">
                             <Path x:Name="Check" Width="10" Height="7"
@@ -530,7 +538,7 @@
                 <ControlTemplate TargetType="Button">
                     <StackPanel>
                         <ContentPresenter HorizontalAlignment="Center"/>
-                        <Border x:Name="Underline" Height="3" CornerRadius="2" Margin="0,8,0,0"
+                        <Border x:Name="Underline" Height="3" CornerRadius="1" Margin="0,8,0,0"
                                 Background="Transparent"/>
                     </StackPanel>
                     <ControlTemplate.Triggers>
@@ -557,7 +565,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="3">
                         <Grid>
                             <Path x:Name="EyeOpen" Width="18" Height="18" Stretch="Uniform"
                                   Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.6"
@@ -589,7 +597,7 @@
     ═══════════════════════════════════════════════ -->
     <Style x:Key="ToolbarCard" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="14"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="18,14"/>
         <Setter Property="Margin"          Value="0,0,0,16"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
@@ -599,7 +607,7 @@
 
     <Style x:Key="ContentCard" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="14"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="6"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -608,14 +616,14 @@
 
     <Style x:Key="SummaryCard" TargetType="Border">
         <Setter Property="Background"   Value="{DynamicResource SidebarBrush}"/>
-        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="CornerRadius" Value="0"/>
         <Setter Property="Padding"      Value="18,12"/>
         <Setter Property="Margin"       Value="0,12,0,0"/>
     </Style>
 
     <Style x:Key="TotalsCard" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="12"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="16,12"/>
         <Setter Property="Margin"          Value="0,12,0,0"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
@@ -625,7 +633,7 @@
 
     <Style x:Key="AuthCard" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="20"/>
+        <Setter Property="CornerRadius"    Value="2"/>
         <Setter Property="Padding"         Value="40,36"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -654,7 +662,7 @@
         <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"    Value="10.5"/>
         <Setter Property="FontWeight"  Value="Bold"/>
-        <Setter Property="Foreground"  Value="#9FB3C8"/>
+        <Setter Property="Foreground"  Value="{DynamicResource SidebarMutedBrush}"/>
         <Setter Property="Margin"      Value="20,22,20,6"/>
     </Style>
 
@@ -670,7 +678,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="NavBorder" Background="Transparent" CornerRadius="10"
+                    <Border x:Name="NavBorder" Background="Transparent" CornerRadius="3"
                             Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
                         <Grid>
                             <Border x:Name="ActiveBar" Width="3" HorizontalAlignment="Right"
@@ -697,7 +705,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="NavBorder" Background="#12384F" CornerRadius="10"
+                    <Border x:Name="NavBorder" Background="#12384F" CornerRadius="3"
                             Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
                         <Grid>
                             <Border Width="3" HorizontalAlignment="Right" CornerRadius="2"
@@ -728,7 +736,7 @@
                             Background="{StaticResource SurfaceBrush}"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="2"
-                            CornerRadius="16"
+                            CornerRadius="3"
                             Padding="22"
                             Effect="{StaticResource CardShadow}">
                         <ContentPresenter/>
@@ -939,7 +947,7 @@
          شارات الحالة
     ═══════════════════════════════════════════════ -->
     <Style x:Key="StatusBadge" TargetType="Border">
-        <Setter Property="CornerRadius"      Value="20"/>
+        <Setter Property="CornerRadius"      Value="3"/>
         <Setter Property="Padding"           Value="10,4"/>
         <Setter Property="HorizontalAlignment" Value="Right"/>
     </Style>
@@ -951,7 +959,7 @@
     <Style x:Key="NavMonogramBadge" TargetType="Border">
         <Setter Property="Width"           Value="28"/>
         <Setter Property="Height"          Value="28"/>
-        <Setter Property="CornerRadius"    Value="8"/>
+        <Setter Property="CornerRadius"    Value="3"/>
         <Setter Property="Background"      Value="#12384F"/>
         <Setter Property="Margin"          Value="10,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -963,13 +971,13 @@
         <Setter Property="Margin"          Value="6"/>
         <Setter Property="MinWidth"        Value="0"/>
         <Setter Property="MinHeight"       Value="112"/>
-        <Setter Property="CornerRadius"    Value="16"/>
+        <Setter Property="CornerRadius"    Value="0"/>
     </Style>
 
     <Style x:Key="KpiMonogramBadge" TargetType="Border">
         <Setter Property="Width"           Value="36"/>
         <Setter Property="Height"          Value="36"/>
-        <Setter Property="CornerRadius"    Value="10"/>
+        <Setter Property="CornerRadius"    Value="3"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
@@ -1001,7 +1009,7 @@
 
     <Style x:Key="LoadingStatePanel" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="14"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="32,24"/>
         <Setter Property="Margin"          Value="0,0,0,16"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
@@ -1034,13 +1042,13 @@
 
     <!-- ═══ Luxury Ecosystem — Glass · Charts · AI · Executive ═══ -->
     <Style x:Key="TabularText" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Segoe UI"/>
+        <Setter Property="FontFamily" Value="{StaticResource FigureFont}"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
 
     <Style x:Key="GlassPanel" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource GlassSurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="18"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="20"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -1055,7 +1063,7 @@
 
     <Style x:Key="AlertStrip" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource GlassSurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="12"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="16,12"/>
         <Setter Property="Margin"          Value="0,0,0,16"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource ElectricCyanBrush}"/>
@@ -1064,7 +1072,7 @@
 
     <Style x:Key="AiInsightCard" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="12"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="14,12"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource ElectricCyanBrush}"/>
         <Setter Property="BorderThickness" Value="1,1,1,1"/>
@@ -1072,7 +1080,7 @@
 
     <Style x:Key="AiUserBubble" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource PrimarySoftBrush}"/>
-        <Setter Property="CornerRadius"    Value="12"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="12,10"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -1080,7 +1088,7 @@
 
     <Style x:Key="QuickActionChip" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource SurfaceBrush}"/>
-        <Setter Property="CornerRadius"    Value="24"/>
+        <Setter Property="CornerRadius"    Value="0"/>
         <Setter Property="Padding"         Value="10,8"/>
         <Setter Property="Margin"          Value="0,0,10,10"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource BorderBrush}"/>

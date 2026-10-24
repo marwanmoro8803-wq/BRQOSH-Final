@@ -40,6 +40,8 @@ public class ThemePaletteContrastTests
                      "BackgroundBrush", "SurfaceBrush", "GlassSurfaceBrush", "PrimaryBrush", "PrimaryDarkBrush", "PrimaryLightBrush",
                      "PrimarySoftBrush", "AccentBrush", "ElectricCyanBrush", "TextPrimaryBrush", "TextSecondaryBrush", "TextMutedBrush",
                      "BorderBrush", "BorderLightBrush", "StatusBarBrush", "StatusBarTextBrush", "SidebarBrush", "RowAltBrush", "RowHoverBrush",
+                     "OnPrimaryBrush", "AccentInkBrush", "RuleStrongBrush", "SidebarTextBrush", "SidebarMutedBrush", "SuccessBrush", "DangerBrush",
+                     "WarningBrush", "InfoBrush",
                  })
             r[key] = new SolidColorBrush(Colors.Magenta);
 
@@ -103,5 +105,23 @@ public class ThemePaletteContrastTests
             var ratio = Ratio(Of(palette, "PrimaryBrush"), Of(palette, surface));
             Assert.True(ratio >= 3.0, $"{(dark ? "الداكن" : "الفاتح")}: PrimaryBrush على {surface} = {ratio:F2}.");
         }
+    }
+
+    // ‏(مراجعةُ التصميم) ‏أزواجٌ لم يكن يحرسها شيء — وكشفت تدقيقَ «زرٌّ أبيضُ على أزرق فاتح بنسبة ٢٫٧٢ في الداكن».
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TheNewInkAndSealKeys_AreReadable(bool dark)
+    {
+        var p = Palette(dark);
+        var name = dark ? "الداكن" : "الفاتح";
+        Assert.True(Ratio(Of(p, "OnPrimaryBrush"), Of(p, "PrimaryBrush")) >= 4.5, $"{name}: نصُّ الزرّ الأساسيّ على لونه.");
+        Assert.True(Ratio(Of(p, "SidebarMutedBrush"), Of(p, "SidebarBrush")) >= 4.5, $"{name}: عناوينُ مجموعات القائمة على الشريط.");
+        Assert.True(Ratio(Of(p, "SidebarTextBrush"), Of(p, "SidebarBrush")) >= 4.5, $"{name}: نصُّ القائمة على الشريط.");
+        Assert.True(Ratio(Of(p, "RuleStrongBrush"), Of(p, "SurfaceBrush")) >= 3.0, $"{name}: حدُّ الحقل على الورقة (WCAG 1.4.11).");
+        foreach (var surface in new[] { "BackgroundBrush", "SurfaceBrush", "GlassSurfaceBrush" })
+            Assert.True(Ratio(Of(p, "AccentInkBrush"), Of(p, surface)) >= 4.5, $"{name}: حبرُ الذهب على {surface}.");
+        foreach (var status in new[] { "SuccessBrush", "DangerBrush", "WarningBrush", "InfoBrush" })
+            Assert.True(Ratio(Of(p, status), Of(p, "SurfaceBrush")) >= 4.5, $"{name}: {status} نصّاً على الورقة.");
     }
 }
