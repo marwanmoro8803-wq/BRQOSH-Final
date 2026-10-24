@@ -10,6 +10,38 @@ namespace Brqosh.Infrastructure.Reporting;
 
 public partial class DocumentPrintService
 {
+    /// <summary>
+    /// (المخرجاتُ كلُّها بالقالب الموحَّد) <b>أيُّ جدولٍ في البرنامج يُطبع بالترويسة والتذييل والشعار والخطّ نفسِها</b> — كانت الطباعةُ لأربعٍ وعشرين
+    /// شاشةً فقط، وما سواها (الأعمار والمستودعات والعملاء والموردون…) يُصدَّر إلى Excel ولا يُطبع. الأرقامُ تُحاذى عند نهاية العمود، وعمودٌ كلُّه
+    /// أرقامٌ يُعامَل رقميّاً؛ وما زاد على <see cref="MaxTableRows"/> صفٍّ يُقصّ <b>بتنبيهٍ ظاهرٍ في الورقة</b> لا بصمت.
+    /// </summary>
+    public async Task<PrintResult> ExportTableAsync(
+        long companyId, string username, string title, IReadOnlyList<string> headers,
+        IReadOnlyList<IReadOnlyList<string>> rows, CancellationToken ct = default)
+    {
+        var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
+        var branding = PrintBranding.FromCompany(company, username);
+        using var _lang = PrintLang.Begin(branding.English);
+
+        var shown = rows.Take(MaxTableRows).ToList();
+        PrintColumn[] columns = headers.Select((h, i) => new PrintColumn(
+            h, Numeric: shown.Count > 0 && shown.All(r => i < r.Count && (string.IsNullOrEmpty(r[i]) || IsNumberText(r[i]))))).ToArray();
+
+        var summary = new List<(string Label, string Value)> { (PrintLang.T("عدد الصفوف"), PrintText.Money(rows.Count).Replace(".00", "")) };
+        if (rows.Count > shown.Count)
+            summary.Add((PrintLang.T("تنبيه"), PrintLang.TF("المعروض {0} صفٍّ من {1} — صدِّر إلى Excel للباقي", shown.Count, rows.Count)));
+
+        var pdf = PrintReport.Table(branding, title, null, columns, shown, summary, landscape: columns.Length > 6);
+        await LogAsync(companyId, username, "Table", title, ct);
+        return new PrintResult(pdf, $"brqosh-table-{DateTime.Now:yyyyMMdd-HHmm}.pdf");
+    }
+
+    public const int MaxTableRows = 3000;
+
+    private static bool IsNumberText(string s) =>
+        decimal.TryParse(s.Replace(",", "").Replace("(", "-").Replace(")", "").Trim(), System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out _);
+
     public async Task<PrintResult> ExportTrialBalanceAsync(
         long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
     {

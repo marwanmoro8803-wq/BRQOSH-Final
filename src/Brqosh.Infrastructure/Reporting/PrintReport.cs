@@ -11,6 +11,9 @@ namespace Brqosh.Infrastructure.Reporting;
 /// </summary>
 internal static class PrintReport
 {
+    // ‏رخصةُ المجتمع تُضبط هنا أيضاً: الجدولُ العامّ يُطبع دون أن يمرّ بأيّ مولِّدٍ يضبطها.
+    static PrintReport() => QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
     public static byte[] Table(
         PrintBranding branding, string title, string? subtitle,
         IReadOnlyList<PrintColumn> columns, IEnumerable<IReadOnlyList<string>> rows,

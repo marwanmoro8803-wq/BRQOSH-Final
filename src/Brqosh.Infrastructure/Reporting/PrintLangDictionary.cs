@@ -216,5 +216,10 @@ internal static class PrintLangDictionary
         ["صفحة "] = "Page ",
         [" من "] = " of ",
         ["المبلغ كتابةً: "] = "Amount in words: ",
+
+        // — طباعةُ أيّ جدول —
+        ["عدد الصفوف"] = "Rows",
+        ["تنبيه"] = "Notice",
+        ["المعروض {0} صفٍّ من {1} — صدِّر إلى Excel للباقي"] = "Showing {0} of {1} rows — export to Excel for the rest",
     };
 }

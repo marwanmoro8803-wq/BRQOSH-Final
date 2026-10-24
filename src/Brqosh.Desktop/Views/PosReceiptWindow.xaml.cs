@@ -26,6 +26,7 @@ public partial class PosReceiptWindow : Window
         InitializeComponent();
         _invoiceNumber = receipt.InvoiceNumber;
 
+        ApplyLogo();
         CompanyText.Text = receipt.SellerName;
         VatNumberText.Text = LocaleManager.T("الرقم الضريبي: ", "VAT No.: ") + receipt.SellerVatNumber;
         InvoiceNumberText.Text = receipt.InvoiceNumber;
@@ -62,6 +63,35 @@ public partial class PosReceiptWindow : Window
         var dialog = new PrintDialog();
         if (dialog.ShowDialog() == true)
             dialog.PrintVisual(ReceiptPanel, "BRQOSH " + _invoiceNumber);
+    }
+
+    /// <summary>شعارُ المنشأة من إعداداتها إن وُجد، وإلا يبقى درعُ BRQOSH.</summary>
+    private void ApplyLogo()
+    {
+        try
+        {
+            using var db = AppServices.CreateDb();
+            var companyId = AppServices.CompanyId;
+            var path = db.Companies.Where(c => c.Id == companyId).Select(c => c.LogoFilePath).FirstOrDefault();
+            if (Brqosh.Infrastructure.Reporting.CompanyBrandingStorage.TryReadLogo(path) is not { Length: > 0 } bytes)
+                return;
+
+            using var stream = new MemoryStream(bytes);
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.StreamSource = stream;
+            image.EndInit();
+            image.Freeze();
+            LogoImage.Source = image;
+            LogoImage.Visibility = Visibility.Visible;
+            MarkPath.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            // ‏تعذّرُ قراءة الشعار لا يُسقط الإيصال — يبقى درعُ البرنامج، ويُسجَّل السببُ.
+            Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "PosReceiptWindow.ApplyLogo");
+        }
     }
 
     private static BitmapImage? BuildQrImage(string tlvBase64)

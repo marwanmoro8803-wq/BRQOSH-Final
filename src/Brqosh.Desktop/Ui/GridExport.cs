@@ -80,7 +80,58 @@ public static class GridExport
 
         var item = new MenuItem { Header = LocaleManager.T("تصدير الجدول إلى Excel", "Export table to Excel") };
         item.Click += (_, _) => Export(grid);
-        grid.ContextMenu = new ContextMenu { Items = { item } };
+        var print = new MenuItem { Header = LocaleManager.T("طباعة الجدول / PDF", "Print table / PDF") };
+        print.Click += async (_, _) => await PrintAsync(grid);
+        grid.ContextMenu = new ContextMenu { Items = { item, print } };
+    }
+
+    /// <summary>
+    /// (المخرجاتُ كلُّها بالقالب الموحَّد) يطبع الجدولَ بترويسة المنشأة وشعارها وخطّها وتذييلها — كما تُطبع التقارير — عبر
+    /// <c>DocumentPrintService.ExportTableAsync</c>. العنوانُ هو عنوانُ الصفحة الجارية.
+    /// </summary>
+    private static async Task PrintAsync(DataGrid grid)
+    {
+        try
+        {
+            var columns = ColumnsOf(grid);
+            if (columns.Count == 0)
+            {
+                UiFeedback.ShowWarning(LocaleManager.T("لا أعمدةَ قابلةً للطباعة في هذا الجدول.", "This table has no printable columns."));
+                return;
+            }
+
+            var (headers, cells) = Extract(columns, grid.ItemsSource);
+            var rows = Stringify(cells);
+            var title = (System.Windows.Application.Current?.MainWindow?.FindName("PageTitle") as TextBlock)?.Text;
+            if (string.IsNullOrWhiteSpace(title))
+                title = LocaleManager.T("جدول", "Table");
+            var username = Brqosh.Infrastructure.Security.SecurityContext.ResolveUsername();
+
+            await Reporting.DocumentPrintHelper.ExportAndDeliverAsync(
+                s => s.ExportTableAsync(AppServices.CompanyId, username, title!, headers, rows),
+                Window.GetWindow(grid),
+                new Reporting.DocumentDeliverOptions(OfferSaveAs: true));
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
+    /// <summary>خلايا الجدول نصّاً للطباعة: عمودٌ أعدادُه صحيحةٌ بلا كسور، وعمودٌ فيه كسورٌ بمنزلتين.</summary>
+    public static IReadOnlyList<IReadOnlyList<string>> Stringify(IReadOnlyList<IReadOnlyList<XlsxWriter.Cell>> cells)
+    {
+        var width = cells.Count == 0 ? 0 : cells.Max(r => r.Count);
+        var fractional = Enumerable.Range(0, width)
+            .Select(i => cells.Any(r => i < r.Count && r[i].Kind == XlsxCellKind.Number && r[i].Value is decimal d && d != decimal.Truncate(d)))
+            .ToArray();
+
+        return cells.Select(r => (IReadOnlyList<string>)r.Select((c, i) => c.Kind switch
+        {
+            XlsxCellKind.Number when c.Value is decimal d => d.ToString(fractional[i] ? "N2" : "N0", System.Globalization.CultureInfo.InvariantCulture),
+            XlsxCellKind.Date when c.Value is DateOnly day => day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            _ => c.Value?.ToString() ?? "",
+        }).ToList()).ToList();
     }
 
     private static void Export(DataGrid grid)

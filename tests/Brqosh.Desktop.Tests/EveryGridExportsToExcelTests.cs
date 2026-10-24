@@ -52,4 +52,17 @@ public class EveryGridExportsToExcelTests
 
         Assert.Equal(["أ", "ب"], columns.Select(c => c.Header).ToArray());
     }
+
+    [Fact]
+    public void ThePrintedCells_UseWholeNumbersOrTwoDecimals_PerColumn()
+    {
+        var (_, cells) = GridExport.Extract(
+            [new("الاسم", "Name"), new("المبلغ", "Amount"), new("التاريخ", "Day")],
+            new[] { new Row("أ", 1250.5m, new DateOnly(2026, 10, 1), true), new Row("ب", 3m, new DateOnly(2026, 10, 2), false) });
+
+        var text = GridExport.Stringify(cells);
+
+        Assert.Equal(["أ", "1,250.50", "2026-10-01"], text[0]);
+        Assert.Equal(["ب", "3.00", "2026-10-02"], text[1]);           // العمودُ فيه كسرٌ فكلُّه منزلتان
+    }
 }

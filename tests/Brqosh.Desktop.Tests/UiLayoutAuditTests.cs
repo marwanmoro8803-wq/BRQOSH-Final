@@ -27,7 +27,7 @@ public class UiLayoutAuditTests
         {
             ["MainWindow.xaml"] = (1, "ToastOverlay فوق منطقة الصفحة — طبقةٌ لا تلتقط النقر"),
             ["Reporting/DocumentPdfPreviewWindow.xaml"] = (1, "WebView2 أو لوحةُ البديل — يُخفى أحدهما في الكود"),
-            ["Themes/BrqoshTheme.xaml"] = (3, "أيقونتا العين، وشريطُ التحديد/خلفيّةُ القالب تحت ContentPresenter"),
+            ["Themes/BrqoshTheme.xaml"] = (5, "أيقونتا العين، وشريطُ التحديد/خلفيّةُ القالب تحت ContentPresenter، وقالبا ComboBox وDatePicker (تراكبُ الزرّ والنصّ والنافذة المنبثقة عمداً)"),
             ["Views/ForgotPasswordWindow.xaml"] = (2, "PasswordBox/نصٌّ ظاهر/زرُّ الإظهار — حقلٌ واحدٌ بوجهين"),
             ["Views/LoginWindow.xaml"] = (4, "ثلاثةُ حقول كلمة مرور بوجهين، و«تذكّرني» يميناً و«نسيت» يساراً"),
             ["Views/Pages/CompanySettingsPage.xaml"] = (1, "صورةُ الشعار أو نصُّ «لا يوجد شعار»"),

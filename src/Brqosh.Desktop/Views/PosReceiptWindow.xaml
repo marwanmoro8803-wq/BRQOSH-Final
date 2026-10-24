@@ -13,6 +13,10 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <!-- ‏(ح-١٢٣) ‏لوحةُ الإيصال وحدَها تُطبع — بعرض شريطٍ حراريٍّ ٨٠ ملم (٢٨٠ وحدةً ≈ ٧٤ ملم قابلةً للطباعة). -->
             <StackPanel x:Name="ReceiptPanel" Width="280" Margin="0,16,0,0" Background="White">
+                <!-- ‏(المخرجاتُ كلُّها بهويّةٍ واحدة) ‏شعارُ المنشأة إن رفعته، وإلا درعُ BRQOSH — بالأسود لأنّ الطابعةَ الحراريّةَ لا تعرف الألوان. -->
+                <Image x:Name="LogoImage" MaxWidth="150" MaxHeight="64" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,6" Visibility="Collapsed"/>
+                <Path x:Name="MarkPath" Data="{StaticResource BrqoshMarkGeometry}" Fill="Black" Stretch="Uniform" Width="26" Height="32"
+                      HorizontalAlignment="Center" Margin="0,0,0,6"/>
                 <TextBlock x:Name="CompanyText" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap"/>
                 <TextBlock x:Name="VatNumberText" FontSize="11" HorizontalAlignment="Center"/>
                 <TextBlock Text="فاتورة ضريبية مبسّطة" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,8"/>
