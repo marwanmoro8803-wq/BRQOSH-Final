@@ -1,6 +1,6 @@
 ﻿# سجل البنود غير المغلقة — BRQOSH
 
-**آخر تحديث:** 2026-10-20 (جاهزيّةُ الإطلاق · **مئةٌ وتسعةٌ وسبعون إغلاقاً ح-١…ح-١٧٩**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
+**آخر تحديث:** 2026-10-24 (جاهزيّةُ الإطلاق · **مئةٌ واثنان وثمانون إغلاقاً ح-١…ح-١٨٢**، كلٌّ بأحمرَ قبلُ في شجرةٍ معزولة — انظر §1ل. **والحكمُ `NO-GO` قائم**)  
 **سابقه:** 2026-09-21 (اثنان وعشرون إغلاقاً ح-١…ح-٢٢ — **وبقي هذا الرأسُ يقولها واثنان وأربعون إغلاقاً تُسجَّل تحته**، حتى ح-٦٥؛ **ويحرسه الآن `TheHeaderReachesTheLastClosureTests`**)  
 **وقبله:** 2026-09-05 (CEEF-237 · تسعةُ إغلاقات: ز-١ ز-٢ ت-٤ ج-٢ ت-٦ ت-٥ ت-٧ ت-١٢ ت-١٠ — انظر §CEEF-237)  
 **الغرض:** ذاكرة مشروع دائمة — لا تُحذف عند انتقال المرحلة  
@@ -2997,7 +2997,7 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 
 ---
 
-## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٧٩ (2026-09-20…10-21)
+## 1ل. جاهزيّةُ الإطلاق · ح-١…ح-١٨٢ (2026-09-20…10-24)
 
 **المدخل:** حكمُ `MASTER` صار **NO-GO** (`0815835`) — ورقمُ «٩٧٪» نُقض ولم يُستبدَل بتخمين،
 لأنّه مؤرَّخٌ على `main @ 00ce286` **قبل** تدقيق S0. والحصيلةُ المقيسة: **١٦ مانعاً مؤكَّداً
@@ -3195,6 +3195,16 @@ python -c "..."   # ‏%APPDATA%\BRQOSH\database.json
 | ح-١٧٧ | `21d8bba` | `PurchaseVatTreatment` · `PurchaseInvoice` · `VatReturnQuery` · `PurchaseInvoiceDialog` · هجرة `AddPurchaseVatTreatment` · `ImportsAndReverseChargeFillBoxesEightAndNineTests` | **الخانتان 8 و9** (`tax-zatca#12` ✅) — القاعدةُ من نصّ دليل الهيئة نفسِه لا من ملخّصاتٍ ثانويّة؛ والمولِّدُ كتب افتراضاً فارغاً فكُتبت الهجرةُ بـ«Domestic»؛ ثمانيةُ براهين |
 | ح-١٧٨ | `e95f435` | `DepreciationMethod.DecliningBalance` · `FixedAsset.ApplyDecliningBalanceDue` · `FixedAssetDialog` · هجرة `AddFixedAssetDepreciationMethod` · `ADecliningBalanceDepreciatesTheBookValueTests` | **القسطُ المتناقصُ المضاعَف** (`treasury-payroll-assets#11` ✅) — الأرقامُ محسوبةٌ سلفاً، والاستدراكُ يساوي الأشهرَ واحداً واحداً، والعكسُ ثمّ الإعادةُ بالمبلغ نفسِه؛ ستّةُ براهين |
 | ح-١٧٩ | `79fbf4a` | `ZatcaSettings.SigningMachineId` · `ZatcaSettingsSecrets` · `ZatcaEInvoiceGenerator` · `ZatcaCsidWizardWindow` · هجرة `AddZatcaSigningMachine` · `AnotherWorkstationIsToldWhereSigningLivesTests` | **الجهازُ الثاني يُقال له أين يُختم** (`tax-zatca#16` ☐ — إجراءٌ مؤقّت) — ويبقى القرارُ المعماريُّ للمالك؛ ثلاثةُ براهين |
+| ح-١٨٠ | `7fb58a5` | `PrintTheme` · `PrintReport` · `PrintBranding.RenderHeader/RenderFooterMeta` · `ArabicAmountWords` (`c675f59`) · `VoucherPdfGenerator` · `SalesInvoicePdfGenerator` · `ProgressBillingPdfGenerator` · `StatementPdfGenerator` · `FinancialReportPdfGenerator` · `TrialBalancePdfGenerator` · `JournalEntryPdfGenerator` · `PayslipPdfGenerator` · `PosReportPdfGenerator` · `ConsolidatedReportPdfGenerator` · `EveryPrintedDocumentSharesOneLayoutTests` · `ArabicAmountWordsTests` | **المطبوعاتُ كلُّها بهويّةٍ واحدة** (`ui-ux-i18n-printing`): ترويسةٌ وتذييلٌ وجداولُ مشتركة، والمبلغُ كتابةً بالعربية، واتّجاهُ الفقرة RTL في نمط الصفحة — **وكان QuestPDF يطبع «من 2026-10-01 إلى 2026-10-31» بترتيبٍ معكوس** (قِيس بالعين على PDF مولَّد) ؛ وملفُّ النشاط لا يُخفي وصفةَ تصنيعٍ أو ملفَّ مريضٍ (ملاحظةُ تدقيق Codex، أحمرُ قبلُ) — **وكلُّ مولِّدٍ يمرّ بالقالب بحارسٍ ثنائيّ** |
+| ح-١٨١ | `c75dcf0` | `FixedAsset.ApplyDepreciationDue(throughRunDay)` · `FixedAssetDisposalPostingService` · `AnAssetSoldMidMonthIsDepreciatedToTheDayOfSaleTests` | **الاستبعادُ يُهلِك ما انقضى قبله وشهرَ البيع بأيّامه** (`treasury-payroll-assets#11` · قرارُ المالك 2026-10-20 · ملاحظةُ تدقيق Codex): أصلٌ ١٢٬٠٠٠ متناقصٌ يُباع ٢٨ فبراير يُسجَّل بخسارة ٣٣٣٫٣٣ لا ٢٬٠٠٠ — **أربعةٌ من خمسة اختباراتٍ تفشل بدون الإصلاح**؛ وفرضيّةُ «مُهلَكٌ حتى شهر البيع» صارت صريحةً في اختبارات الاستبعاد القديمة |
+| ح-١٨٢ | `b41df4d` | `BrandLogo` · `BrandMark.xaml` · `tools/brand/build_brand.py` · `assets/brand/*` · `WindowFit.ContentOverflow` · `ToolbarDockPanel` · `ShellLayout` · `UiResponsiveLayoutTests` | **شعارُ BRQOSH وتدقيقُ الواجهة** (`ui-ux-i18n-printing`): الشعارُ متّجهيٌّ وأيقونةُ البرنامج والمُنصِّب (جُرّب `wix build`)؛ ومسبارٌ يُظهر كلَّ نافذةٍ وصفحةٍ خارجَ الشاشة قاس **١٢ نافذةً أقصرَ من محتواها وأشرطةَ أدواتٍ تعصر وتُخرج الأزرار ولوحةَ مساعدٍ تُفتح فتترك الصفحةَ ٤٥٢ بكسلاً** — أُصلحت بالنموّ إلى المحتوى والالتفاف وطيّ المساعد، فبلغ المقيسُ صفرَ ملاحظاتٍ في أربعة مقاسات واقعيّة |
+
+**مفتوحٌ بعد تدقيق Codex المستقلّ (2026-10-24) — تحقّقتُ منه بنفسي قبل تسجيله:**
+
+- **إعادةُ إصدار الفاتورة المرفوضة مرّتين** (`RejectedInvoiceReissueService`): الأصليّةُ الملغاةُ تعيد بذرتَها لمن أغلق الشاشةَ قبل الترحيل، ولا رابطَ بين الأصليّة وبديلتها — فبديلان يُرحَّلان ويضاعفان المبيعاتِ والضريبة. **يحتاج ربطاً في المخطّط** (`ReplacesInvoiceId`) فهو بندٌ مستقلّ لا حيلةُ تحقّقٍ.
+- **واجهةُ الـAPI لا تفحص وحدات الترخيص** (`/api/v1/products` وأخواتها): قراءةٌ بمفتاحٍ صحيح تتجاوز «مبيعاتٍ فقط»؛ والـAPI ليست ما يُشحن للعميل (البند `security-licensing-tenancy#6`).
+- **سكربتُ `publish.ps1` لا يفحص نصَّ الاتفاقيّة «مسودة»** — الفحصُ في `release.ps1` وهو مدخلُ الإصدار الرسميّ عمداً؛ وبناءُ حزمةٍ تجريبيّة بنصّ المسودّة مقصود.
+- **الاختباراتُ على جهازٍ موسومٍ بالإنتاج** (`BRQOSH_ENV=production` بنطاق الجهاز) تسقط ~١٤٧٠ حالةً (SQLite مرفوض عمداً) — القياسُ الكاملُ هنا يجري في WSL (Linux) فيُسقط ١٤٥ حالةً تتطلّب ويندوز (DPAPI · `pwsh`)؛ **ولا قياسَ على جهازٍ نظيفٍ بعد.**
 
 **والقياسُ عند آخر إيداع (`e126aac`) — بخطوات `ci.yml` نفسِها محلّيّاً، في مجلّد نتائجَ معزول:** `Brqosh.Domain.Tests` **248/248** ·
 `Brqosh.Application.Tests` **2236/2236** · `Brqosh.Desktop.Tests` **437/437** · `Brqosh.Api.Tests` **107/107** ·
