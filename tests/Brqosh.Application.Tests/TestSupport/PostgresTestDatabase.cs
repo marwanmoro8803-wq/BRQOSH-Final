@@ -40,10 +40,16 @@ public static class PostgresTestDatabase
     public const string PortEnvironmentVariable = "BRQOSH_PG_PORT";
     public const string PasswordEnvironmentVariable = "BRQOSH_PG_PASSWORD";
 
+    /// <summary>
+    /// (قياسُ الشبكة) منفذٌ بديلٌ لسياقات <b>القراءة</b> وحدَها — يمرّ عبر وسيطٍ يُضيف تأخيراً (<c>tools/pg-latency-proxy.py</c>) فتُقاس
+    /// الشاشاتُ بزمن ذهابٍ وإيابٍ حقيقيّ، بينما تبقى التهيئةُ الثقيلةُ على الاتصال المباشر.
+    /// </summary>
+    public const string ReadPortEnvironmentVariable = "BRQOSH_PG_READ_PORT";
+
     private static string Host =>
         Environment.GetEnvironmentVariable(HostEnvironmentVariable) is { Length: > 0 } h ? h : "localhost";
 
-    private static int Port =>
+    internal static int Port =>
         int.TryParse(Environment.GetEnvironmentVariable(PortEnvironmentVariable), out var p) ? p : 5433;
 
     private const string User = "postgres";
@@ -172,6 +178,15 @@ public static class PostgresTestDatabase
         /// </summary>
         public BrqoshDbContext OpenIndependentContext() =>
             BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, ConnectionStringFor(database));
+
+        /// <summary>سياقٌ للقراءة — عبر <see cref="ReadPortEnvironmentVariable"/> إن وُجد، وإلا كالمستقلّ.</summary>
+        public BrqoshDbContext OpenReadContext()
+        {
+            if (!int.TryParse(Environment.GetEnvironmentVariable(ReadPortEnvironmentVariable), out var readPort))
+                return OpenIndependentContext();
+            var cs = ConnectionStringFor(database).Replace($"Port={Port};", $"Port={readPort};", StringComparison.Ordinal);
+            return BrqoshDbContextFactory.Create(DatabaseProvider.PostgreSql, cs);
+        }
 
         public async ValueTask DisposeAsync()
         {

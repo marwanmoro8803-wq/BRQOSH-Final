@@ -15,6 +15,10 @@
     <!-- أيقونةُ «التطبيقات المُثبَّتة»؛ أمّا المختصراتُ فتأخذ أيقونةَ الملف التنفيذيّ المدمَجة (ApplicationIcon). -->
     <Icon Id="BrqoshIcon.ico" SourceFile="$(var.BrandIcon)" />
     <Property Id="ARPPRODUCTICON" Value="BrqoshIcon.ico" />
+    <!-- (brqosh.com) ‏روابطُ «برامج وميزات»: الموقعُ ومساعدةُ الدعم وجهةُ الاتّصال. -->
+    <Property Id="ARPURLINFOABOUT" Value="https://brqosh.com" />
+    <Property Id="ARPHELPLINK" Value="https://brqosh.com/contact" />
+    <Property Id="ARPCONTACT" Value="support@brqosh.com" />
     <!-- ‏ما يظهر في «التطبيقات المُثبَّتة»: وصفُ المنتج ونوعُ استخدامه. -->
     <Property Id="ARPCOMMENTS" Value="BRQOSH ERP - نظام محاسبة وإدارة أعمال للمنشآت (استخدام مهني)" />
 

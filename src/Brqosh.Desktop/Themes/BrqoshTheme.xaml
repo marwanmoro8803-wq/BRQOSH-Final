@@ -16,6 +16,7 @@
     <Color x:Key="GlassSurfaceColor">#F8FAFC</Color>
     <Color x:Key="PrimaryDarkColor">#0A2C45</Color>
     <Color x:Key="PrimaryLightColor">#2A6F9E</Color>
+    <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
     <Color x:Key="PrimarySoftColor">#DCE9F3</Color>
     <Color x:Key="AccentColor">#D4A853</Color>
     <Color x:Key="AccentDarkColor">#B8862E</Color>
@@ -44,6 +45,7 @@
     <SolidColorBrush x:Key="GlassSurfaceBrush" Color="{StaticResource GlassSurfaceColor}"/>
     <SolidColorBrush x:Key="PrimaryDarkBrush"   Color="{StaticResource PrimaryDarkColor}"/>
     <SolidColorBrush x:Key="PrimaryLightBrush"  Color="{StaticResource PrimaryLightColor}"/>
+    <SolidColorBrush x:Key="OnPrimaryBrush"     Color="{StaticResource OnPrimaryColor}"/>
     <SolidColorBrush x:Key="PrimarySoftBrush"   Color="{StaticResource PrimarySoftColor}"/>
     <SolidColorBrush x:Key="AccentBrush"        Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentDarkBrush"    Color="{StaticResource AccentDarkColor}"/>
@@ -118,7 +120,7 @@
     <Style x:Key="PrimaryButton" TargetType="Button">
         <Setter Property="FocusVisualStyle" Value="{StaticResource AppFocusVisual}"/>
         <Setter Property="Background"   Value="{DynamicResource PrimaryBrush}"/>
-        <Setter Property="Foreground"   Value="White"/>
+        <Setter Property="Foreground"   Value="{DynamicResource OnPrimaryBrush}"/>
         <Setter Property="FontFamily"   Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"     Value="14"/>
         <Setter Property="FontWeight"   Value="SemiBold"/>
@@ -171,7 +173,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background"   Value="#F8FAFC"/>
+                            <Setter TargetName="Bd" Property="Background"   Value="{DynamicResource RowHoverBrush}"/>
                             <Setter TargetName="Bd" Property="BorderBrush"  Value="{DynamicResource PrimaryBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource PrimaryDarkBrush}"/>
                         </Trigger>
@@ -205,11 +207,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#F1F5F9"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHoverBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E2E8F0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BorderBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -258,7 +260,7 @@
                             <Setter TargetName="Bd" Property="Background" Value="#FCA5A5"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Bd" Property="Background" Value="#F1F5F9"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHoverBrush}"/>
                             <Setter Property="Foreground" Value="#94A3B8"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -327,7 +329,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                            <Setter TargetName="Bd" Property="Background"  Value="#FAFFFE"/>
+                            <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource SurfaceBrush}"/>
                             <Setter TargetName="Bd" Property="Effect">
                                 <Setter.Value>
                                     <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0F3D5E"/>
@@ -335,7 +337,7 @@
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Bd" Property="Background" Value="#F8FAFC"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHoverBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -367,7 +369,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                            <Setter TargetName="Bd" Property="Background"  Value="#FAFFFE"/>
+                            <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource SurfaceBrush}"/>
                             <Setter TargetName="Bd" Property="Effect">
                                 <Setter.Value>
                                     <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0F3D5E"/>
@@ -652,7 +654,7 @@
         <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"    Value="10.5"/>
         <Setter Property="FontWeight"  Value="Bold"/>
-        <Setter Property="Foreground"  Value="#475569"/>
+        <Setter Property="Foreground"  Value="#9FB3C8"/>
         <Setter Property="Margin"      Value="20,22,20,6"/>
     </Style>
 
@@ -734,7 +736,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                            <Setter TargetName="CardBorder" Property="Background"  Value="#F0FDFA"/>
+                            <Setter TargetName="CardBorder" Property="Background"  Value="{DynamicResource RowHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>

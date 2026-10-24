@@ -32,7 +32,7 @@ public class TheAppWearsThePrintPaletteTests
             .ToList();
         Assert.True(files.Count > 100, "القارئُ وجد ملفّاتٍ قليلة — أعمى.");
 
-        var pattern = new Regex("#(" + string.Join("|", OldTeal) + ")\b", RegexOptions.IgnoreCase);
+        var pattern = new Regex("#(" + string.Join("|", OldTeal) + ")\\b", RegexOptions.IgnoreCase);
         var offenders = files.Where(f => pattern.IsMatch(File.ReadAllText(f))).Select(f => Path.GetRelativePath(Root(), f)).ToList();
         Assert.True(offenders.Count == 0, "ألوانٌ من اللوحة القديمة:\n  " + string.Join("\n  ", offenders));
     }

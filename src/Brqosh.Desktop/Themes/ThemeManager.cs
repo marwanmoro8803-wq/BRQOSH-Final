@@ -41,6 +41,7 @@ public static class ThemeManager
         SetColor(r, "PrimaryDarkColor", "PrimaryDarkBrush", "#3B82B6");
         SetColor(r, "PrimaryLightColor", "PrimaryLightBrush", "#9CCBEA");
         SetColor(r, "PrimarySoftColor", "PrimarySoftBrush", "#0F3D5E");
+        SetColor(r, "OnPrimaryColor", "OnPrimaryBrush", "#06182A");   // حبرٌ كحليٌّ داكنٌ على الأزرق الفاتح (كان أبيض بنسبة 2.72)
         SetColor(r, "AccentColor", "AccentBrush", "#D4AF37");
         SetColor(r, "ElectricCyanColor", "ElectricCyanBrush", "#5BA4D6");
         SetColor(r, "TextPrimaryColor", "TextPrimaryBrush", "#F8FAFC");
@@ -66,6 +67,7 @@ public static class ThemeManager
         SetColor(r, "PrimaryDarkColor", "PrimaryDarkBrush", "#0A2C45");
         SetColor(r, "PrimaryLightColor", "PrimaryLightBrush", "#2A6F9E");
         SetColor(r, "PrimarySoftColor", "PrimarySoftBrush", "#DCE9F3");
+        SetColor(r, "OnPrimaryColor", "OnPrimaryBrush", "#FFFFFF");
         SetColor(r, "AccentColor", "AccentBrush", "#C9A227");
         SetColor(r, "ElectricCyanColor", "ElectricCyanBrush", "#0F3D5E");
         SetColor(r, "TextPrimaryColor", "TextPrimaryBrush", "#1C1917");

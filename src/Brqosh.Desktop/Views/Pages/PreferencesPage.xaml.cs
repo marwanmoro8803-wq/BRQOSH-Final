@@ -108,6 +108,9 @@ public partial class PreferencesPage : UserControl
             Latin(LocaleManager.T("البرنامج", "Program"), entry.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "BRQOSH ERP"),
             Latin(LocaleManager.T("الإصدار", "Version"), InstalledVersion(entry)),
             Latin(LocaleManager.T("المورّد", "Vendor"), entry.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "BRQOSH"),
+            Latin(LocaleManager.T("موقع المورّد", "Vendor website"), "brqosh.com"),
+            Latin(LocaleManager.T("بريد الدعم", "Support e-mail"), "support@brqosh.com"),
+            Latin(LocaleManager.T("هاتف / واتساب الدعم", "Support phone / WhatsApp"), "+966 58 277 8405"),
             Latin(LocaleManager.T("حقوق النشر", "Copyright"), string.IsNullOrWhiteSpace(copyright) ? "BRQOSH" : copyright),
             new(LocaleManager.T("نوع الاستخدام", "Type of use"), LocaleManager.T(
                 "برنامج محاسبة وإدارة أعمال للمنشآت — للاستخدام المهني والتجاري.",

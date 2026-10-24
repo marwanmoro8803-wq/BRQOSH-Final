@@ -24,7 +24,7 @@ public partial class App : System.Windows.Application
     /// لا وجودَ له، فيضيع وقتُ الطرفين.
     /// </remarks>
     private static string CrashHint(string? path) =>
-        path is null ? string.Empty : $"\n\nسُجّل التفصيل في:\n{path}";
+        path is null ? string.Empty : $"\n\n{LocaleManager.T("سُجّل التفصيل في:", "Details were logged to:")}\n{path}";
 
     /// <summary>
     /// (م-٤ · ن-١٥) <b>يكتب العطلَ ثمّ يعرضه — مسارُ إبلاغٍ واحدٌ لا اثنان.</b>
@@ -40,13 +40,18 @@ public partial class App : System.Windows.Application
     {
         var path = Brqosh.Infrastructure.Operations.CrashLog.Write(ex, context);
 
+        // ‏(مراجعةُ سجلّ الأعطال) ‏الرسالةُ مركَّبةٌ فلا تُترجَم ككلٍّ: يُترجَم كلُّ جزءٍ على حدة (العنوانُ والتفصيلُ والمسار)،
+        // ‏وتفصيلُ الاستثناء الداخليّ كذلك — فالواجهةُ الإنجليزيّةُ لا تُظهر نصفاً عربيّاً.
+        var title = headline.StartsWith("خطأ حرج", StringComparison.Ordinal)
+            ? LocaleManager.T("خطأ حرج:", "Critical error:")
+            : LocaleManager.T("خطأ غير متوقع:", "Unexpected error:");
         var detail = ex.InnerException is null
-            ? ex.Message
-            : $"{ex.Message}\n\n{ex.InnerException.Message}";
+            ? UiDialog.Localize(ex.Message)
+            : $"{UiDialog.Localize(ex.Message)}\n\n{UiDialog.Localize(ex.InnerException.Message)}";
 
         UiDialog.Show(
-            $"{headline}\n{detail}" + CrashHint(path),
-            "BRQOSH — خطأ", MessageBoxButton.OK, MessageBoxImage.Error);
+            $"{title}\n{detail}" + CrashHint(path),
+            LocaleManager.T("BRQOSH — خطأ", "BRQOSH — Error"), MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     protected override async void OnStartup(StartupEventArgs e)

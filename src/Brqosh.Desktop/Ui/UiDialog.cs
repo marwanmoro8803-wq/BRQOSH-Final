@@ -23,37 +23,43 @@ namespace Brqosh.Desktop.Ui;
 /// </summary>
 public static class UiDialog
 {
+    // ‏(مراجعةُ الحوارات) ‏كلُّها تمرّ بنافذة البرنامج `BrandedMessageWindow` (شعارٌ وألوانٌ واتجاهٌ يتبع اللغة) بدل نافذة النظام،
+    // ‏وبالتواقيع نفسِها: فلا يتغيّر نداءٌ ولا نتيجة.
     public static MessageBoxResult Show(string text) =>
-        MessageBox.Show(Localize(text));
+        Box(null, text, "", MessageBoxButton.OK, MessageBoxImage.None, MessageBoxResult.None);
 
     public static MessageBoxResult Show(string text, string caption) =>
-        MessageBox.Show(Localize(text), Localize(caption));
+        Box(null, text, caption, MessageBoxButton.OK, MessageBoxImage.None, MessageBoxResult.None);
 
     public static MessageBoxResult Show(string text, string caption, MessageBoxButton button) =>
-        MessageBox.Show(Localize(text), Localize(caption), button);
+        Box(null, text, caption, button, MessageBoxImage.None, MessageBoxResult.None);
 
     public static MessageBoxResult Show(
         string text, string caption, MessageBoxButton button, MessageBoxImage icon) =>
-        MessageBox.Show(Localize(text), Localize(caption), button, icon);
+        Box(null, text, caption, button, icon, MessageBoxResult.None);
 
     public static MessageBoxResult Show(
         string text, string caption, MessageBoxButton button, MessageBoxImage icon,
         MessageBoxResult defaultResult) =>
-        MessageBox.Show(Localize(text), Localize(caption), button, icon, defaultResult);
+        Box(null, text, caption, button, icon, defaultResult);
 
     public static MessageBoxResult Show(Window owner, string text) =>
-        MessageBox.Show(owner, Localize(text));
+        Box(owner, text, "", MessageBoxButton.OK, MessageBoxImage.None, MessageBoxResult.None);
 
     public static MessageBoxResult Show(Window owner, string text, string caption) =>
-        MessageBox.Show(owner, Localize(text), Localize(caption));
+        Box(owner, text, caption, MessageBoxButton.OK, MessageBoxImage.None, MessageBoxResult.None);
 
     public static MessageBoxResult Show(
         Window owner, string text, string caption, MessageBoxButton button) =>
-        MessageBox.Show(owner, Localize(text), Localize(caption), button);
+        Box(owner, text, caption, button, MessageBoxImage.None, MessageBoxResult.None);
 
     public static MessageBoxResult Show(
         Window owner, string text, string caption, MessageBoxButton button, MessageBoxImage icon) =>
-        MessageBox.Show(owner, Localize(text), Localize(caption), button, icon);
+        Box(owner, text, caption, button, icon, MessageBoxResult.None);
+
+    private static MessageBoxResult Box(
+        Window? owner, string text, string caption, MessageBoxButton button, MessageBoxImage icon, MessageBoxResult defaultResult) =>
+        BrandedMessageWindow.Show(owner, Localize(text), Localize(caption), button, icon, defaultResult);
 
     /// <summary>
     /// ‏الترجمةُ: بحثٌ في السجلّ حين تكون الواجهةُ إنجليزية، وإعادةُ الأصل إن لم يوجد.

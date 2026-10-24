@@ -53,11 +53,19 @@ public class TheLicenceAgreementIsAcceptedBeforeUseTests : IDisposable
     }
 
     [Fact]
-    public void TheShippedText_IsBilingual_AndStillMarkedAsADraft()
+    public void TheShippedText_IsBilingual_AndIsFinal()
     {
         var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "assets", "legal", "eula.txt"));
 
-        Assert.StartsWith("[DRAFT", text, StringComparison.Ordinal);
+        // ‏(2026-10-24) ‏النصُّ النهائيّ: بلا وسم مسوّدة، وستّةَ عشر بنداً بالعربيّة والإنجليزيّة، ويُسمّي المورّدَ وقناةَ التواصل.
+        Assert.DoesNotContain("DRAFT", text, StringComparison.OrdinalIgnoreCase);
+        for (var clause = 1; clause <= 16; clause++)
+        {
+            Assert.Matches($@"(?m)^{clause}\. [؀-ۿ]", text);
+            Assert.Matches($@"(?m)^{clause}\. [A-Za-z]", text);
+        }
+        Assert.Contains("brqosh.com", text, StringComparison.Ordinal);
+        Assert.Contains("support@brqosh.com", text, StringComparison.Ordinal);
         Assert.Contains("End-User Licence Agreement", text, StringComparison.Ordinal);
         Assert.Contains("اتّفاقيّة ترخيص المستخدم النهائيّ", text, StringComparison.Ordinal);
     }

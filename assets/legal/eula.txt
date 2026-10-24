@@ -1,51 +1,83 @@
-[DRAFT — UNDER LEGAL REVIEW] [مسوّدة — تحت المراجعة القانونيّة]
-This text is a draft prepared for review by the vendor's legal counsel. It is not final and must not ship in a release build.
-هذا النصّ مسوّدةٌ أُعدّت لمراجعة المستشار القانونيّ للمورّد، وليس نهائيّاً، ولا يُشحن في إصدارٍ نهائيّ.
-
 اتّفاقيّة ترخيص المستخدم النهائيّ — برنامج BRQOSH
 End-User Licence Agreement — BRQOSH Software
+الإصدار 1.0 · Version 1.0 — brqosh.com · support@brqosh.com
 
-1. الطرفان والقبول
-هذه الاتّفاقيّة بين مورّد البرنامج («المورّد») والمنشأة التي تثبّته أو تستخدمه («المرخَّص له»). بالضغط على «أوافق» أو بتثبيت البرنامج أو استخدامه يقرّ المرخَّص له بأنّه قرأ هذه الاتّفاقيّة ووافق عليها. ومن لا يوافق لا يثبّت البرنامج ولا يستخدمه.
-1. Parties and acceptance
-This Agreement is between the software vendor ("Vendor") and the entity that installs or uses the software ("Licensee"). By selecting "I agree", or by installing or using the software, the Licensee confirms it has read and accepts this Agreement. A party that does not accept must not install or use the software.
+1. التعريفات والقبول
+«المورّد» هو BRQOSH (brqosh.com)، مطوّر البرنامج ومالك حقوقه. «المرخَّص له» هو المنشأة أو الشخص الذي يثبّت البرنامج أو يستخدمه. «البرنامج» هو نظام BRQOSH لتخطيط موارد المؤسّسة بجميع وحداته وتحديثاته ووثائقه. «ملفّ الترخيص» هو الملفّ الموقَّع رقميّاً الذي يصدره المورّد ويحدّد الجهة والجهاز والفئة والوحدات والمدّة. بالضغط على «أوافق» أو بتثبيت البرنامج أو استخدامه يقرّ المرخَّص له بأنّه قرأ هذه الاتّفاقيّة وفهمها ووافق عليها، وأنّ من يقبلها نيابةً عن منشأة يملك صلاحيّة إلزامها. ومن لا يوافق لا يثبّت البرنامج ولا يستخدمه.
+1. Definitions and acceptance
+"Vendor" means BRQOSH (brqosh.com), the developer and rights holder of the software. "Licensee" means the entity or person that installs or uses the software. "Software" means the BRQOSH enterprise resource planning system, with all its modules, updates and documentation. "Licence File" means the digitally signed file issued by the Vendor stating the licensed party, device, tier, modules and term. By selecting "I agree", or by installing or using the software, the Licensee confirms it has read, understood and accepts this Agreement and that whoever accepts on behalf of an entity has authority to bind it. A party that does not accept must not install or use the software.
 
 2. منح الترخيص
-يمنح المورّد المرخَّص له ترخيصاً غير حصريّ وغير قابلٍ للتحويل لاستخدام البرنامج في عمليّاته الداخليّة، بعدد الأجهزة والمنشآت والوحدات المحدّدة في ملفّ الترخيص الموقَّع الصادر له، وطوال مدّته.
+يمنح المورّد المرخَّص له ترخيصاً محدوداً وغير حصريّ وغير قابلٍ للتحويل ولا للترخيص من الباطن، لاستخدام البرنامج في عمليّاته الداخليّة فقط، على الأجهزة والمنشآت والوحدات المحدّدة في ملفّ الترخيص، وطوال مدّته. وكلّ حقٍّ لم يُمنح صراحةً محفوظٌ للمورّد.
 2. Licence grant
-The Vendor grants the Licensee a non-exclusive, non-transferable licence to use the software for its internal operations, on the number of devices, entities and modules stated in the signed licence file issued to it, and for its term.
+The Vendor grants the Licensee a limited, non-exclusive, non-transferable, non-sublicensable licence to use the software for its internal operations only, on the devices, entities and modules stated in the Licence File and for its term. Every right not expressly granted is reserved by the Vendor.
 
 3. القيود
-لا يجوز للمرخَّص له: (أ) نسخ البرنامج إلّا للنسخ الاحتياطيّ، (ب) تعديله أو فكّ ترجمته أو الهندسة العكسيّة له إلّا بقدر ما يجيزه النظام صراحةً، (ج) تأجيره أو بيعه أو ترخيصه من الباطن لغيره، (د) التحايل على آليّات الترخيص أو التفعيل.
+لا يجوز للمرخَّص له: (أ) نسخ البرنامج إلّا نسخةً احتياطيّةً واحدة، (ب) تعديله أو فكّ ترجمته أو الهندسة العكسيّة له إلّا بقدر ما يجيزه النظام صراحةً، (ج) تأجيره أو بيعه أو إعارته أو ترخيصه من الباطن أو استضافته لحساب الغير، (د) التحايل على آليّات الترخيص أو التفعيل أو التحقّق من الوقت أو إزالة إشعارات الملكيّة، (هـ) استخدامه لخرق الأنظمة أو لإساءة معاملة الغير.
 3. Restrictions
-The Licensee must not: (a) copy the software except for backup; (b) modify, decompile or reverse-engineer it except as expressly permitted by law; (c) rent, sell or sublicense it to others; (d) circumvent its licensing or activation mechanisms.
+The Licensee must not: (a) copy the software except for one backup copy; (b) modify, decompile or reverse-engineer it except as expressly permitted by law; (c) rent, sell, lend, sublicense or host it for third parties; (d) circumvent its licensing, activation or clock-integrity mechanisms or remove proprietary notices; (e) use it to violate any law or to harm others.
 
-4. الملكيّة
-البرنامج وجميع حقوق الملكيّة الفكريّة فيه مملوكة للمورّد أو لمرخِّصيه، ولا تنتقل بهذه الاتّفاقيّة إلّا حقوق الاستخدام المذكورة فيها.
-4. Ownership
-The software and all intellectual-property rights in it belong to the Vendor or its licensors. This Agreement transfers only the usage rights it states.
+4. الملكيّة الفكريّة
+البرنامج وشعاره وتصميمه ونصوصه وجميع حقوق الملكيّة الفكريّة فيه مملوكةٌ للمورّد أو لمرخِّصيه، ولا تنتقل بهذه الاتّفاقيّة إلّا حقوق الاستخدام المذكورة فيها. واسم BRQOSH وشعاره علامتان للمورّد.
+4. Intellectual property
+The software, its logo, design, text and all intellectual-property rights in it belong to the Vendor or its licensors. This Agreement transfers only the usage rights it states. The BRQOSH name and logo are marks of the Vendor.
 
-5. البيانات والامتثال
-البيانات التي يُدخلها المرخَّص له ملكٌ له. والمرخَّص له مسؤولٌ عن صحّة ما يُدخله، وعن نسخه الاحتياطيّ، وعن التزامه بالأنظمة السارية ومنها أنظمة هيئة الزكاة والضريبة والجمارك. ولا يغني البرنامج عن مراجعة محاسبٍ أو مستشارٍ مختصّ.
-5. Data and compliance
-Data entered by the Licensee belongs to the Licensee. The Licensee is responsible for the accuracy of what it enters, for its backups, and for its compliance with applicable regulations, including those of the Zakat, Tax and Customs Authority. The software does not replace review by a qualified accountant or adviser.
+5. الترخيص والتفعيل
+يرتبط الترخيص بالجهة وبمعرّف الجهاز المذكورَين في ملفّ الترخيص ولا يعمل على غيرهما. وعند انتهاء مدّته أو تعذّر التحقّق منه يعمل البرنامج بوضع القراءة والتصدير فقط ولا تُحذف البيانات. ويجوز للمورّد إصدار ملفّ ترخيصٍ جديدٍ عند تغيّر الجهاز بطلبٍ موثَّق. ولا يجوز مشاركة ملفّ الترخيص مع غير المرخَّص له.
+5. Licensing and activation
+The licence is bound to the licensed party and the device identifier stated in the Licence File and does not work for others. When its term ends, or if it cannot be verified, the software operates in read-and-export mode only and no data is deleted. The Vendor may issue a new Licence File when the device changes, on a documented request. The Licence File must not be shared with anyone other than the Licensee.
 
-6. مكوّنات الأطراف الأخرى
+6. البيانات والخصوصيّة
+تُحفظ بيانات المرخَّص له على أجهزته وخوادمه هو، والبيانات التي يُدخلها ملكٌ له. ولا يطّلع المورّد على هذه البيانات ولا يجمعها ولا ينقلها، إلّا ما يرسله المرخَّص له بنفسه إلى الدعم (كطلب دعمٍ أو سجلّ تشخيص) وبقدر ما يرسله، ويُستعمل لمعالجة الطلب وحده. والمرخَّص له مسؤولٌ عن صحّة ما يُدخله، وعن نسخه الاحتياطيّ الدوريّ واختبار استعادته، وعن صلاحيّات مستخدميه وكلمات مرورهم، وعن التزامه بأنظمة حماية البيانات الشخصيّة السارية في المملكة.
+6. Data and privacy
+The Licensee's data is stored on its own devices and servers and belongs to the Licensee. The Vendor does not access, collect or transmit that data, except what the Licensee itself sends to support (such as a support request or a diagnostic log), only to the extent sent, and used solely to handle that request. The Licensee is responsible for the accuracy of what it enters, for regular backups and restore testing, for its users' permissions and passwords, and for its compliance with the personal-data-protection laws in force in the Kingdom.
+
+7. الامتثال النظاميّ
+يوفّر البرنامج أدواتٍ تساعد على الالتزام بأنظمة الفوترة الإلكترونيّة وضريبة القيمة المضافة والمحاسبة، ومنها متطلّبات هيئة الزكاة والضريبة والجمارك. والمرخَّص له وحده مسؤولٌ عن صحّة إقراراته وقيوده وفواتيره وتقديمها في مواعيدها، ولا يغني البرنامج عن مراجعة محاسبٍ قانونيٍّ أو مستشارٍ ضريبيٍّ مختصّ. وتبقى الفاتورة الضريبيّة بالعربيّة وفق متطلّبات الهيئة.
+7. Regulatory compliance
+The software provides tools that help with e-invoicing, VAT and accounting regulations, including the requirements of the Zakat, Tax and Customs Authority. The Licensee alone is responsible for the correctness and timely filing of its returns, entries and invoices, and the software does not replace review by a qualified accountant or tax adviser. Tax invoices remain in Arabic as the Authority requires.
+
+8. التحديثات والدعم
+يوفّر المورّد تحديثاتٍ موقَّعةً رقميّاً عبر قناة التحديث، ولا يُثبَّت تحديثٌ لا يتحقّق توقيعُه. ويقدّم الدعمَ عبر support@brqosh.com أو واتساب الرقم 00966582778405 وفق مستوى الخدمة المتّفق عليه مع المرخَّص له. ولا يلتزم المورّد بدعم نسخةٍ غير مرخَّصةٍ أو عُدّلت أو لم تُحدَّث.
+8. Updates and support
+The Vendor provides digitally signed updates through the update channel, and an update whose signature does not verify is not installed. Support is provided through support@brqosh.com or WhatsApp at 00966582778405, according to the service level agreed with the Licensee. The Vendor is not obliged to support an unlicensed, modified or non-updated copy.
+
+9. مكوّنات الأطراف الأخرى
 يتضمّن البرنامج مكوّناتٍ مرخَّصةً من أطرافٍ أخرى بشروطها الخاصّة، وهي مبيّنة في ملفّ إشعارات الأطراف الأخرى المرفق، وتسري عليها شروطها.
-6. Third-party components
+9. Third-party components
 The software includes components licensed from third parties under their own terms, listed in the accompanying third-party notices, which govern those components.
 
-7. الضمان وحدود المسؤوليّة
-يُقدَّم البرنامج «بحالته» في حدود ما يجيزه النظام. ولا يتحمّل المورّد المسؤوليّة عن الأضرار غير المباشرة أو التبعيّة أو فوات الربح أو فقد البيانات، ولا تتجاوز مسؤوليّته الإجماليّة ما دفعه المرخَّص له عن الترخيص خلال الاثني عشر شهراً السابقة للمطالبة.
-7. Warranty and limitation of liability
-To the extent permitted by law, the software is provided "as is". The Vendor is not liable for indirect or consequential damages, lost profits or lost data, and its total liability shall not exceed the licence fees paid by the Licensee in the twelve months before the claim.
+10. الضمان
+يُقدَّم البرنامج «بحالته» في حدود ما يجيزه النظام، ويبذل المورّد عنايةً معقولةً لسلامته وصحّة حساباته، ولا يضمن خلوَّه التامّ من الأخطاء أو عمله دون انقطاع أو ملاءمته لغرضٍ بعينه. وعلى المرخَّص له مراجعة مخرجاته قبل الاعتماد عليها.
+10. Warranty
+To the extent permitted by law, the software is provided "as is". The Vendor takes reasonable care for its soundness and the correctness of its calculations but does not warrant that it is error-free, uninterrupted or fit for a particular purpose. The Licensee must review its outputs before relying on them.
 
-8. الإنهاء
-ينتهي الترخيص بانتهاء مدّته أو بإخلال المرخَّص له بهذه الاتّفاقيّة. وعند انتهائه يبقى للمرخَّص له حقّ قراءة بياناته وتصديرها.
-8. Termination
-The licence ends at the end of its term or upon the Licensee's breach of this Agreement. After it ends, the Licensee keeps the right to read and export its data.
+11. حدود المسؤوليّة
+لا يتحمّل المورّد المسؤوليّة عن الأضرار غير المباشرة أو التبعيّة أو فوات الربح أو فقد البيانات أو الغرامات النظاميّة الناشئة عن إدخالات المرخَّص له أو إهماله في النسخ الاحتياطيّ، ولا تتجاوز مسؤوليّته الإجماليّة ما دفعه المرخَّص له عن الترخيص خلال الاثني عشر شهراً السابقة للمطالبة. ولا يستبعد ذلك مسؤوليّةً لا يجيز النظام استبعادها.
+11. Limitation of liability
+The Vendor is not liable for indirect or consequential damages, lost profits, lost data, or regulatory penalties arising from the Licensee's entries or its failure to keep backups, and its total liability shall not exceed the licence fees paid by the Licensee in the twelve months before the claim. This does not exclude liability that the law does not permit to be excluded.
 
-9. النظام الواجب التطبيق
-تخضع هذه الاتّفاقيّة لأنظمة المملكة العربيّة السعوديّة، وتختصّ محاكمها بالنظر في أيّ نزاعٍ ينشأ عنها.
-9. Governing law
-This Agreement is governed by the laws of the Kingdom of Saudi Arabia, whose courts have jurisdiction over any dispute arising from it.
+12. المدّة والإنهاء
+تسري الاتّفاقيّة من القبول وحتى انتهاء مدّة الترخيص أو إنهائه. وللمورّد إنهاء الترخيص عند إخلالٍ جوهريٍّ لم يُصحَّح خلال ثلاثين يوماً من إشعاره. وعند الانتهاء يلتزم المرخَّص له بالتوقّف عن استخدام البرنامج، ويبقى له حقّ قراءة بياناته وتصديرها، وتبقى سارية البنودُ التي بطبيعتها تستمرّ (الملكيّة وحدود المسؤوليّة والنظام الواجب التطبيق).
+12. Term and termination
+The Agreement runs from acceptance until the licence term ends or it is terminated. The Vendor may terminate the licence on a material breach not remedied within thirty days of notice. On termination the Licensee must stop using the software but keeps the right to read and export its data; clauses that by nature survive (ownership, limitation of liability, governing law) remain in force.
+
+13. تعديل الاتّفاقيّة
+قد يُحدّث المورّد نصّ هذه الاتّفاقيّة. ويُعرض النصّ المعدَّل على المرخَّص له ليقبله من جديد قبل متابعة الاستخدام، ولا يُحتجّ عليه بقبولٍ لنصٍّ سابق.
+13. Changes to this Agreement
+The Vendor may update this Agreement. The updated text is shown to the Licensee for fresh acceptance before use continues, and an earlier acceptance does not bind the Licensee to a later text.
+
+14. الإشعارات والتواصل
+تُرسَل الإشعارات والطلبات إلى المورّد على support@brqosh.com، وإلى المرخَّص له على العنوان الإلكترونيّ المسجَّل في طلب الترخيص.
+14. Notices and contact
+Notices and requests to the Vendor are sent to support@brqosh.com, and to the Licensee at the e-mail address registered in its licence request.
+
+15. النظام الواجب التطبيق وتسوية المنازعات
+تخضع هذه الاتّفاقيّة لأنظمة المملكة العربيّة السعوديّة، ويُسعى أوّلاً إلى حلّ أيّ نزاعٍ وِدّيّاً خلال ثلاثين يوماً، فإن تعذّر اختصّت بالنظر فيه المحاكمُ المختصّة في المملكة.
+15. Governing law and disputes
+This Agreement is governed by the laws of the Kingdom of Saudi Arabia. The parties first try to settle any dispute amicably within thirty days, failing which the competent courts of the Kingdom have jurisdiction.
+
+16. اللغة والاتّفاق الكامل
+حُرّرت هذه الاتّفاقيّة بالعربيّة والإنجليزيّة، وعند الاختلاف يُعتدّ بالنصّ العربيّ. وهي الاتّفاق الكامل بين الطرفين في موضوعها وتحلّ محلّ ما سبقها، وبطلان بندٍ منها لا يُبطل سائرها.
+16. Language and entire agreement
+This Agreement is made in Arabic and English; in case of difference the Arabic text prevails. It is the entire agreement between the parties on its subject and supersedes earlier understandings, and the invalidity of one clause does not invalidate the rest.

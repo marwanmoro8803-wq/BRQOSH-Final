@@ -55,7 +55,7 @@ public class FiveYearsOfBooksTests(Xunit.Abstractions.ITestOutputHelper output)
         if (JournalStressLoadTests.UsesPostgres(Environment.GetEnvironmentVariable(JournalStressLoadTests.ProviderVariable)))
         {
             await using var scope = await PostgresTestDatabase.CreateAsync("five-years");
-            await RunAsync(scope.Db, scope.OpenIndependentContext, months, "PostgreSQL");
+            await RunAsync(scope.Db, scope.OpenIndependentContext, months, "PostgreSQL", scope.OpenReadContext);
             return;
         }
 
@@ -75,7 +75,7 @@ public class FiveYearsOfBooksTests(Xunit.Abstractions.ITestOutputHelper output)
         }
     }
 
-    private async Task RunAsync(BrqoshDbContext db, Func<BrqoshDbContext> fresh, int months, string provider)
+    private async Task RunAsync(BrqoshDbContext db, Func<BrqoshDbContext> fresh, int months, string provider, Func<BrqoshDbContext>? readFresh = null)
     {
         var company = await new DatabaseInitializer(db).InitializeAsync("شركة السنوات", "310123456700003", BusinessProfile.Retail);
         await new BrqoshSchemaUpdater(db).ApplyAsync();
@@ -103,7 +103,7 @@ public class FiveYearsOfBooksTests(Xunit.Abstractions.ITestOutputHelper output)
             var note = "";
             for (var run = 0; run < 3; run++)
             {
-                await using var ctx = fresh();
+                await using var ctx = (readFresh ?? fresh)();
                 var sw = Stopwatch.StartNew();
                 note = await work(ctx);
                 sw.Stop();

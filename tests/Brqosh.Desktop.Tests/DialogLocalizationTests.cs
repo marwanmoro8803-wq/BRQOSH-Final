@@ -22,6 +22,7 @@ public class DialogLocalizationTests
     private static readonly Dictionary<string, string> Allowed = new(StringComparer.OrdinalIgnoreCase)
     {
         ["UiDialog.cs"] = "‏الغلافُ نفسُه — وهو الطريقُ الوحيد المقصود.",
+        ["BrandedMessageWindow.cs"] = "‏نافذةُ الغلاف بتصميم البرنامج — ونداؤها المباشر احتياطٌ حين لا تطبيقَ يعمل، والنصُّ يصلها مترجَماً من الغلاف.",
     };
 
     /// <summary>
@@ -150,7 +151,9 @@ public class DialogLocalizationTests
         foreach (var file in DesktopSources())
         {
             // ‏الغلافُ نفسُه ليس مستدعياً — تواقيعُه تمرّر ما يصلها.
-            if (Path.GetFileName(file).Equals("UiDialog.cs", StringComparison.OrdinalIgnoreCase))
+            if (Path.GetFileName(file) is var name
+                && (name.Equals("UiDialog.cs", StringComparison.OrdinalIgnoreCase)
+                    || name.Equals("BrandedMessageWindow.cs", StringComparison.OrdinalIgnoreCase)))
                 continue;
 
             var source = StripComments(File.ReadAllText(file));

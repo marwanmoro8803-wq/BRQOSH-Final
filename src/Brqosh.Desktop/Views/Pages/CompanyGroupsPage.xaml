@@ -21,7 +21,7 @@
         </Border>
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,12,0,0">
             <StackPanel>
-                <StackPanel Orientation="Horizontal">
+                <WrapPanel Orientation="Horizontal">
                     <TextBlock Text="رمز" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBox x:Name="CodeBox" Width="100" Style="{StaticResource AppTextBox}"/>
                     <TextBlock Text="الاسم" VerticalAlignment="Center" Margin="12,0,8,0"/>
@@ -29,7 +29,7 @@
                     <TextBlock Text="عملة التقرير" VerticalAlignment="Center" Margin="12,0,8,0"/>
                     <TextBox x:Name="CurrencyBox" Width="60" MaxLength="3" Style="{StaticResource AppTextBox}" Text="SAR"/>
                     <Button x:Name="AddBtn" Content="إضافة مجموعة" Style="{StaticResource PrimaryButton}" Padding="16,7" Margin="16,0,0,0" Click="OnAdd"/>
-                </StackPanel>
+                </WrapPanel>
                 <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" Margin="0,8,0,0" Visibility="Collapsed"/>
             </StackPanel>
         </Border>
