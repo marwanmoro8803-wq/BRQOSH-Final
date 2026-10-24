@@ -39,6 +39,9 @@ public static class ProgressBillingPdfGenerator
 
     public static byte[] Generate(PrintBranding branding, BillingPrintData data)
     {
+        // المستخلصُ فاتورةٌ ضريبيّة — عربيٌّ دائماً.
+        using var _lang = PrintLang.Begin(false);
+        branding = branding with { English = false };
         data = data with { CurrencyCode = branding.CurrencyCode };
         var qrPng = ZatcaQrImageHelper.TryCreatePng(data.QrTlvBase64);
         var compliance = BuildComplianceLine(data);

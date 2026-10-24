@@ -64,8 +64,10 @@ public static class PayslipPdfGenerator
 {
     static PayslipPdfGenerator() => QuestPDF.Settings.License = LicenseType.Community;
 
-    public static byte[] Build(PrintBranding branding, PayslipData data) =>
-        Document.Create(container =>
+    public static byte[] Build(PrintBranding branding, PayslipData data) 
+    {
+        using var _lang = PrintLang.Begin(branding.English);
+        return Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -74,9 +76,9 @@ public static class PayslipPdfGenerator
                 page.Margin(28);
                 page.DefaultTextStyle(x => branding.PageTextStyle(10));
 
-                page.Header().Element(h => branding.RenderHeader(h, "قسيمة راتب", $"الفترة {PrintText.Code(data.PeriodCode)}"));
+                page.Header().Element(h => branding.RenderHeader(h, PrintLang.T("قسيمة راتب"), PrintLang.TF("الفترة {0}", PrintText.Code(data.PeriodCode))));
 
-                page.Content().PaddingTop(10).ContentFromRightToLeft().Column(col =>
+                page.Content().PaddingTop(10).Flow().Column(col =>
                 {
                     col.Spacing(8);
 
@@ -84,17 +86,17 @@ public static class PayslipPdfGenerator
                     {
                         row.RelativeItem().Card().Column(info =>
                         {
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "الموظف", data.EmployeeName, emphasizeValue: true));
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "الرقم الوظيفي", PrintText.Code(data.EmployeeCode)));
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "المسمى الوظيفي", data.JobTitle));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("الموظف"), data.EmployeeName, emphasizeValue: true));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("الرقم الوظيفي"), PrintText.Code(data.EmployeeCode)));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("المسمى الوظيفي"), data.JobTitle));
                         });
                         row.ConstantItem(10);
                         row.RelativeItem().Card().Column(info =>
                         {
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "الهوية / الإقامة", PrintText.Code(data.NationalId)));
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "تاريخ الصرف", PrintText.Date(data.PayDate)));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("الهوية / الإقامة"), PrintText.Code(data.NationalId)));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("تاريخ الصرف"), PrintText.Date(data.PayDate)));
                             if (!string.IsNullOrWhiteSpace(data.Iban))
-                                info.Item().Element(c => PrintTheme.LabelValue(c, "الآيبان", PrintText.Code(data.Iban)));
+                                info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("الآيبان"), PrintText.Code(data.Iban)));
                         });
                     });
 
@@ -102,43 +104,44 @@ public static class PayslipPdfGenerator
                     {
                         row.RelativeItem().Card().Column(earn =>
                         {
-                            earn.Item().Element(c => PrintTheme.CardTitle(c, "الاستحقاق"));
-                            Line(earn, "الراتب الأساسي", data.BasicSalary);
-                            Line(earn, "بدل السكن", data.HousingAllowance);
-                            Line(earn, "بدل النقل", data.TransportAllowance);
-                            Line(earn, "بدلات أخرى", data.OtherAllowance);
+                            earn.Item().Element(c => PrintTheme.CardTitle(c, PrintLang.T("الاستحقاق")));
+                            Line(earn, PrintLang.T("الراتب الأساسي"), data.BasicSalary);
+                            Line(earn, PrintLang.T("بدل السكن"), data.HousingAllowance);
+                            Line(earn, PrintLang.T("بدل النقل"), data.TransportAllowance);
+                            Line(earn, PrintLang.T("بدلات أخرى"), data.OtherAllowance);
                             // ‏**والغيابُ يُعرَض طرحاً لا يُطوى في الإجمالي**: موظّفٌ يرى أساسيّاً
                             // ‏أعلى من إجماليه يسأل عن الفرق، **وحقُّه أن يقرأه لا أن يُحسبه**.
                             if (data.AbsenceDeduction != 0m)
-                                Line(earn, "خصم غياب / إجازة بلا أجر", -data.AbsenceDeduction);
-                            Line(earn, "إجمالي الاستحقاق", data.GrossPay, bold: true);
+                                Line(earn, PrintLang.T("خصم غياب / إجازة بلا أجر"), -data.AbsenceDeduction);
+                            Line(earn, PrintLang.T("إجمالي الاستحقاق"), data.GrossPay, bold: true);
                         });
                         row.ConstantItem(10);
                         row.RelativeItem().Card().Column(cut =>
                         {
                             // ‏**والاستقطاعُ يُعرض ولو كان صفراً**: غيابُ السطر يُقرأ «لم يُحسب»،
                             // ‏ووجودُه بصفرٍ يقول «حُسب ولم يُستقطع». والوافدُ حصّتُه صفرٌ نظاماً.
-                            cut.Item().Element(c => PrintTheme.CardTitle(c, "الاستقطاعات"));
-                            Line(cut, "التأمينات الاجتماعية", data.GosiEmployee);
-                            Line(cut, "سداد سلفة", data.AdvanceDeduction);
-                            Line(cut, "إجمالي الاستقطاعات", data.TotalDeductions, bold: true);
+                            cut.Item().Element(c => PrintTheme.CardTitle(c, PrintLang.T("الاستقطاعات")));
+                            Line(cut, PrintLang.T("التأمينات الاجتماعية"), data.GosiEmployee);
+                            Line(cut, PrintLang.T("سداد سلفة"), data.AdvanceDeduction);
+                            Line(cut, PrintLang.T("إجمالي الاستقطاعات"), data.TotalDeductions, bold: true);
                         });
                     });
 
-                    col.Item().Element(c => PrintTheme.SummaryBand(c, [($"صافي المستحق ({branding.CurrencyAr})", PrintText.Money(data.NetPay))]));
+                    col.Item().Element(c => PrintTheme.SummaryBand(c, [(PrintLang.TF("صافي المستحق ({0})", branding.CurrencyAr), PrintText.Money(data.NetPay))]));
                     col.Item().Element(c => PrintTheme.AmountInWords(c, data.NetPay, branding.CurrencyCode));
 
                     col.Item().PaddingTop(6).Row(sign =>
                     {
                         // فيقع المحاسبُ أقصى اليمين كما تُقرأ الورقة (المحتوى يُبنى من اليمين).
-                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المحاسب"));
-                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "الموظف"));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, PrintLang.T("المحاسب")));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, PrintLang.T("الموظف")));
                     });
                 });
 
                 page.Footer().Element(f => branding.RenderFooterMeta(f));
             });
         }).GeneratePdf();
+    }
 
     private static void Line(ColumnDescriptor col, string label, decimal amount, bool bold = false) =>
         col.Item().Element(c => PrintTheme.LabelValue(c, label, PrintText.Money(amount), emphasizeValue: bold, labelWidth: 120));

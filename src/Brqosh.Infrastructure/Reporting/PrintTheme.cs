@@ -25,7 +25,7 @@ public static class PrintTheme
     public static void TitleBadge(IContainer container, string title, float fontSize = 13)
     {
         container.Background(Navy).PaddingVertical(9).PaddingHorizontal(14).AlignCenter().AlignMiddle()
-            .Text(title).Bold().FontSize(fontSize).FontColor("#FFFFFF");
+            .Text(PrintLang.T(title)).Bold().FontSize(fontSize).FontColor("#FFFFFF");
     }
 
     /// <summary>بطاقةٌ بإطارٍ رماديٍّ هادئ — لحزم البيانات (المستند، الطرف، المجاميع).</summary>
@@ -36,7 +36,7 @@ public static class PrintTheme
     public static void CardTitle(IContainer container, string title)
     {
         container.Background(Tint).BorderBottom(1.5f).BorderColor(Gold).PaddingVertical(5).PaddingHorizontal(10)
-            .AlignRight().Text(title).Bold().FontSize(10).FontColor(Navy);
+            .AlignStart().Text(PrintLang.T(title)).Bold().FontSize(10).FontColor(Navy);
     }
 
     /// <summary>سطرُ «اسم : قيمة» داخل بطاقة — الاسمُ رماديٌّ والقيمةُ داكنةٌ فتُقرأ القيمةُ أوّلاً.</summary>
@@ -44,13 +44,29 @@ public static class PrintTheme
         float labelWidth = 92)
     {
         // الصفحةُ تُبنى من اليسار: فالقيمةُ أوّلاً (يساراً) والاسمُ أخيراً (أقصى اليمين) — وهذا ترتيبُ القراءة العربيّة.
+        // ‏للإنجليزيّة الاسمُ يساراً ثم القيمة — بترتيب العناصر لا بقلب الحاوية (القلبُ يقلب اتجاهَ النصّ فيُزيح النقطةَ الأخيرة).
         container.ContentFromLeftToRight().PaddingVertical(4).PaddingHorizontal(10).Row(row =>
         {
-            var valueText = row.RelativeItem().AlignRight().Text(value).FontSize(10).FontColor(Ink);
-            if (emphasizeValue)
-                valueText.Bold();
-            row.ConstantItem(10);
-            row.ConstantItem(labelWidth).AlignRight().Text(label).FontSize(9).FontColor(Muted);
+            void Label() => row.ConstantItem(labelWidth).AlignStart().Text(PrintLang.T(label)).FontSize(9).FontColor(Muted);
+            void Value()
+            {
+                var valueText = row.RelativeItem().AlignStart().Text(value).FontSize(10).FontColor(Ink);
+                if (emphasizeValue)
+                    valueText.Bold();
+            }
+
+            if (PrintLang.English)
+            {
+                Label();
+                row.ConstantItem(10);
+                Value();
+            }
+            else
+            {
+                Value();
+                row.ConstantItem(10);
+                Label();
+            }
         });
     }
 
@@ -64,10 +80,11 @@ public static class PrintTheme
         if (words is null)
             return;
 
-        container.Background(Tint).BorderRight(3).BorderColor(Gold).PaddingVertical(7).PaddingHorizontal(10)
-            .AlignRight().Text(text =>
+        var band = container.Background(Tint);
+        (PrintLang.English ? band.BorderLeft(3) : band.BorderRight(3)).BorderColor(Gold).PaddingVertical(7).PaddingHorizontal(10)
+            .AlignStart().Text(text =>
             {
-                text.Span("المبلغ كتابةً: ").Bold().FontSize(9).FontColor(Navy);
+                text.Span(PrintLang.T("المبلغ كتابةً: ")).Bold().FontSize(9).FontColor(Navy);
                 text.Span(words).FontSize(9).FontColor(Ink);
             });
     }
@@ -78,7 +95,7 @@ public static class PrintTheme
     /// </summary>
     public static string? AmountInWordsText(decimal amount, string currencyCode = "SAR") =>
         string.Equals(currencyCode, "SAR", StringComparison.OrdinalIgnoreCase)
-            ? ArabicAmountWords.ForRiyals(amount)
+            ? (PrintLang.English ? EnglishAmountWords.ForRiyals(amount) : ArabicAmountWords.ForRiyals(amount))
             : null;
 
     /// <summary>خانةُ توقيعٍ: خطٌّ ثمّ الصفةُ تحته.</summary>
@@ -87,7 +104,7 @@ public static class PrintTheme
         container.PaddingHorizontal(14).Column(col =>
         {
             col.Item().PaddingTop(34).LineHorizontal(0.75f).LineColor(Ink);
-            col.Item().PaddingTop(3).AlignCenter().Text(role).FontSize(9).FontColor(Muted);
+            col.Item().PaddingTop(3).AlignCenter().Text(PrintLang.T(role)).FontSize(9).FontColor(Muted);
         });
     }
 
@@ -98,7 +115,7 @@ public static class PrintTheme
     public static void ReportTable(IContainer container, IReadOnlyList<PrintColumn> columns,
         IEnumerable<IReadOnlyList<string>> rows)
     {
-        container.ContentFromRightToLeft().Table(table =>
+        container.Flow().Table(table =>
         {
             table.ColumnsDefinition(c =>
             {
@@ -115,7 +132,7 @@ public static class PrintTheme
             {
                 foreach (var column in columns)
                     h.Cell().Background(Navy).Border(0.5f).BorderColor(Line).PaddingVertical(5).PaddingHorizontal(5)
-                        .AlignCenter().Text(column.Header).Bold().FontSize(9).FontColor("#FFFFFF");
+                        .AlignCenter().Text(PrintLang.T(column.Header)).Bold().FontSize(9).FontColor("#FFFFFF");
             });
 
             var index = 0;
@@ -140,7 +157,7 @@ public static class PrintTheme
     /// </summary>
     public static void SummaryBand(IContainer container, IReadOnlyList<(string Label, string Value)> items)
     {
-        container.ContentFromRightToLeft().Border(0.75f).BorderColor(Line).Row(row =>
+        container.Flow().Border(0.75f).BorderColor(Line).Row(row =>
         {
             for (var i = 0; i < items.Count; i++)
             {
@@ -151,8 +168,8 @@ public static class PrintTheme
                 var valueColor = last ? "#FFFFFF" : Navy;
                 box.PaddingVertical(7).PaddingHorizontal(9).Column(col =>
                 {
-                    col.Item().AlignRight().Text(items[i].Label).FontSize(8.5f).FontColor(labelColor);
-                    col.Item().AlignRight().Text(items[i].Value).Bold().FontSize(11).FontColor(valueColor);
+                    col.Item().AlignStart().Text(PrintLang.T(items[i].Label)).FontSize(8.5f).FontColor(labelColor);
+                    col.Item().AlignStart().Text(items[i].Value).Bold().FontSize(11).FontColor(valueColor);
                 });
             }
         });

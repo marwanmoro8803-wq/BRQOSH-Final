@@ -75,8 +75,8 @@ public partial class PreferencesPage : UserControl
             LanguageBox.DisplayMemberPath = nameof(Choice.Label);
             LanguageBox.SelectedItem = ((IEnumerable<Choice>)LanguageBox.ItemsSource).First(c => c.Value == LocaleManager.IsEnglish);
             LanguageHint.Text = LocaleManager.T(
-                "تغيّر القوائم والشاشات والاتجاه (يمين ← يسار أو العكس). المطبوعات — الفواتير والكشوف والتقارير — تصدر بالعربية.",
-                "Changes menus, screens and direction (right-to-left or left-to-right). Printed documents — invoices, statements and reports — are issued in Arabic.");
+                "تغيّر القوائم والشاشات والاتجاه (يمين ← يسار أو العكس). والمطبوعات — السندات والكشوف والتقارير — تصدر بلغة الواجهة، أمّا الفاتورة الضريبية فتبقى عربية دائماً (متطلب الهيئة).",
+                "Changes menus, screens and direction (right-to-left or left-to-right). Printed vouchers, statements and reports follow the interface language; tax invoices always stay in Arabic (authority requirement).");
 
             AboutTitle.Text = LocaleManager.T("عن البرنامج", "About the program");
             AboutList.ItemsSource = BuildAboutRows();

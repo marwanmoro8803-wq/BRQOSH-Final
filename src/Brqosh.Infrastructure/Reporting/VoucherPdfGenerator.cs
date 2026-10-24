@@ -16,16 +16,22 @@ public static class VoucherPdfGenerator
     public static byte[] ReceiptVoucher(
         PrintBranding branding, string voucherNumber, DateOnly date,
         string partyName, decimal amount, string method, string reference, string description,
-        string? currencyCode = null, decimal exchangeRate = 1m) =>
-        Build(branding, "سند قبض", voucherNumber, date, "العميل", partyName, amount, method, reference, description,
+        string? currencyCode = null, decimal exchangeRate = 1m) 
+    {
+        using var _lang = PrintLang.Begin(branding.English);
+        return Build(branding, PrintLang.T("سند قبض"), voucherNumber, date, PrintLang.T("العميل"), partyName, amount, method, reference, description,
             currencyCode ?? branding.CurrencyCode, exchangeRate);
+    }
 
     public static byte[] PaymentVoucher(
         PrintBranding branding, string voucherNumber, DateOnly date,
         string partyName, decimal amount, string method, string reference, string description,
-        string? currencyCode = null, decimal exchangeRate = 1m) =>
-        Build(branding, "سند صرف", voucherNumber, date, "المورد", partyName, amount, method, reference, description,
+        string? currencyCode = null, decimal exchangeRate = 1m) 
+    {
+        using var _lang = PrintLang.Begin(branding.English);
+        return Build(branding, PrintLang.T("سند صرف"), voucherNumber, date, PrintLang.T("المورد"), partyName, amount, method, reference, description,
             currencyCode ?? branding.CurrencyCode, exchangeRate);
+    }
 
     public static byte[] ReceiptVoucher(
         string companyName, string vatNumber, string voucherNumber, DateOnly date,
@@ -44,8 +50,8 @@ public static class VoucherPdfGenerator
         string partyLabel, string partyName, decimal amount, string method,
         string reference, string description, string currencyCode, decimal exchangeRate)
     {
-        var isReceipt = title == "سند قبض";
-        var partyCardTitle = isReceipt ? $"استلمنا من ({partyLabel})" : $"صرفنا إلى ({partyLabel})";
+        var isReceipt = title == PrintLang.T("سند قبض");
+        var partyCardTitle = isReceipt ? PrintLang.TF("استلمنا من ({0})", partyLabel) : PrintLang.TF("صرفنا إلى ({0})", partyLabel);
 
         return Document.Create(container =>
         {
@@ -80,9 +86,9 @@ public static class VoucherPdfGenerator
                     col.Item().PaddingBottom(8).Row(row =>
                     {
                         // من اليسار: المستلم · المدير المالي · المحاسب — فيقع المحاسبُ أقصى اليمين كما تُقرأ الورقة.
-                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, isReceipt ? "المستلم" : "المستفيد"));
-                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المدير المالي"));
-                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المحاسب"));
+                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, isReceipt ? PrintLang.T("المستلم") : PrintLang.T("المستفيد")));
+                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, PrintLang.T("المدير المالي")));
+                        row.RelativeItem().Element(c => PrintTheme.SignatureLine(c, PrintLang.T("المحاسب")));
                     });
                     col.Item().Element(f => branding.RenderFooterMeta(f));
                 });
@@ -97,7 +103,7 @@ public static class VoucherPdfGenerator
             return null;
         var inBooks = Math.Round(amount * rate, 2, MidpointRounding.AwayFromZero);
         return $"{PrintText.Ltr(inBooks.ToString("N2", CultureInfo.InvariantCulture))} {branding.CurrencyAr}" +
-               $" (سعر الصرف {PrintText.Ltr(rate.ToString("0.######", CultureInfo.InvariantCulture))})";
+               PrintLang.TF(" (سعر الصرف {0})", PrintText.Ltr(rate.ToString("0.######", CultureInfo.InvariantCulture)));
     }
 
     private static void AmountCard(IContainer container, decimal amount, string currencyCode)
@@ -105,12 +111,12 @@ public static class VoucherPdfGenerator
         container.Card().Column(col =>
         {
             col.Item().Background(PrintTheme.Navy).PaddingVertical(5).AlignCenter()
-                .Text("المبلغ").Bold().FontSize(10).FontColor("#FFFFFF");
+                .Text(PrintLang.T("المبلغ")).Bold().FontSize(10).FontColor("#FFFFFF");
             col.Item().PaddingVertical(14).AlignCenter().Text(text =>
             {
                 text.Span(PrintText.Ltr(amount.ToString("N2", CultureInfo.InvariantCulture)))
                     .Bold().FontSize(21).FontColor(PrintTheme.Navy);
-                text.Span("  " + CurrencyCatalog.Short(currencyCode, english: false)).Bold().FontSize(13).FontColor(PrintTheme.Navy);
+                text.Span("  " + CurrencyCatalog.Short(currencyCode, english: PrintLang.English)).Bold().FontSize(13).FontColor(PrintTheme.Navy);
             });
         });
     }
@@ -120,13 +126,13 @@ public static class VoucherPdfGenerator
     {
         container.Card().Column(col =>
         {
-            col.Item().Element(c => PrintTheme.LabelValue(c, "رقم السند", PrintText.Code(voucherNumber), emphasizeValue: true));
-            col.Item().Element(c => PrintTheme.LabelValue(c, "التاريخ", PrintText.Date(date)));
-            col.Item().Element(c => PrintTheme.LabelValue(c, "طريقة الدفع", method));
+            col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("رقم السند"), PrintText.Code(voucherNumber), emphasizeValue: true));
+            col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("التاريخ"), PrintText.Date(date)));
+            col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("طريقة الدفع"), PrintLang.T(method)));
             if (!string.IsNullOrWhiteSpace(reference))
-                col.Item().Element(c => PrintTheme.LabelValue(c, "المرجع", PrintText.Code(reference)));
+                col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("المرجع"), PrintText.Code(reference)));
             if (bookEquivalent is not null)
-                col.Item().Element(c => PrintTheme.LabelValue(c, "يعادل بالدفاتر", bookEquivalent));
+                col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("يعادل بالدفاتر"), bookEquivalent));
         });
     }
 
@@ -135,9 +141,9 @@ public static class VoucherPdfGenerator
         container.Card().Column(col =>
         {
             col.Item().Element(c => PrintTheme.CardTitle(c, cardTitle));
-            col.Item().Element(c => PrintTheme.LabelValue(c, "الاسم", partyName, emphasizeValue: true));
+            col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("الاسم"), partyName, emphasizeValue: true));
             if (!string.IsNullOrWhiteSpace(description))
-                col.Item().Element(c => PrintTheme.LabelValue(c, "وذلك عن", description));
+                col.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("وذلك عن"), description));
         });
     }
 }

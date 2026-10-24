@@ -15,19 +15,20 @@ public static class FinancialReportPdfGenerator
 
     public static byte[] IncomeStatement(PrintBranding branding, IncomeStatementResult result)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = result.RevenueRows
-            .Select(r => ("إيرادات", r.AccountCode, r.AccountNameAr, r.Amount))
-            .Concat(result.ExpenseRows.Select(r => ("مصروفات", r.AccountCode, r.AccountNameAr, r.Amount)))
+            .Select(r => (PrintLang.T("إيرادات"), r.AccountCode, r.AccountNameAr, r.Amount))
+            .Concat(result.ExpenseRows.Select(r => (PrintLang.T("مصروفات"), r.AccountCode, r.AccountNameAr, r.Amount)))
             .ToList();
 
         return BuildTableReport(
-            branding, "قائمة الدخل",
-            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}",
+            branding, PrintLang.T("قائمة الدخل"),
+            PrintLang.TF("من {0} إلى {1}", PrintText.Date(result.FromDate), PrintText.Date(result.ToDate)),
             rows,
             [
-                ("إجمالي الإيرادات", PrintText.Money(result.TotalRevenue)),
-                ("إجمالي المصروفات", PrintText.Money(result.TotalExpenses)),
-                ("صافي الدخل", PrintText.Money(result.NetIncome)),
+                (PrintLang.T("إجمالي الإيرادات"), PrintText.Money(result.TotalRevenue)),
+                (PrintLang.T("إجمالي المصروفات"), PrintText.Money(result.TotalExpenses)),
+                (PrintLang.T("صافي الدخل"), PrintText.Money(result.NetIncome)),
             ]);
     }
 
@@ -36,22 +37,23 @@ public static class FinancialReportPdfGenerator
 
     public static byte[] BalanceSheet(PrintBranding branding, BalanceSheetResult result)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = result.Assets
-            .Select(r => ("أصول", r.AccountCode, r.AccountNameAr, r.Amount))
-            .Concat(result.Liabilities.Select(r => ("التزامات", r.AccountCode, r.AccountNameAr, r.Amount)))
-            .Concat(result.Equity.Select(r => ("حقوق ملكية", r.AccountCode, r.AccountNameAr, r.Amount)))
+            .Select(r => (PrintLang.T("أصول"), r.AccountCode, r.AccountNameAr, r.Amount))
+            .Concat(result.Liabilities.Select(r => (PrintLang.T("التزامات"), r.AccountCode, r.AccountNameAr, r.Amount)))
+            .Concat(result.Equity.Select(r => (PrintLang.T("حقوق ملكية"), r.AccountCode, r.AccountNameAr, r.Amount)))
             .ToList();
 
         IReadOnlyList<(string Label, string Value)> summary =
         [
-            ("الأصول", PrintText.Money(result.TotalAssets)),
-            ("الالتزامات + حقوق الملكية", PrintText.Money(result.TotalLiabilitiesAndEquity)),
-            (result.IsBalanced ? "المركز متوازن" : "المركز غير متوازن",
+            (PrintLang.T("الأصول"), PrintText.Money(result.TotalAssets)),
+            (PrintLang.T("الالتزامات + حقوق الملكية"), PrintText.Money(result.TotalLiabilitiesAndEquity)),
+            (result.IsBalanced ? PrintLang.T("المركز متوازن") : PrintLang.T("المركز غير متوازن"),
                 PrintText.Money(result.TotalAssets - result.TotalLiabilitiesAndEquity)),
         ];
 
-        return BuildTableReport(branding, "قائمة المركز المالي",
-            $"حتى {PrintText.Date(result.AsOfDate)}", rows, summary);
+        return BuildTableReport(branding, PrintLang.T("قائمة المركز المالي"),
+            PrintLang.TF("حتى {0}", PrintText.Date(result.AsOfDate)), rows, summary);
     }
 
     public static byte[] VatReturn(string companyName, VatReturnResult result) =>
@@ -59,12 +61,13 @@ public static class FinancialReportPdfGenerator
 
     public static byte[] VatReturn(PrintBranding branding, VatReturnResult result)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = VatReturnRows(result);
 
-        var label = result.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
-        return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
-            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", rows,
-            [($"صافي الضريبة ({label}) — {branding.CurrencyAr}", PrintText.Money(result.NetVatPayable))]);
+        var label = result.NetVatPayable >= 0 ? PrintLang.T("مستحقة للهيئة") : PrintLang.T("مستردة/مرحّلة");
+        return BuildTableReport(branding, PrintLang.T("إقرار ضريبة القيمة المضافة"),
+            PrintLang.TF("من {0} إلى {1}", PrintText.Date(result.FromDate), PrintText.Date(result.ToDate)), rows,
+            [(PrintLang.TF("صافي الضريبة ({0}) — {1}", label, branding.CurrencyAr), PrintText.Money(result.NetVatPayable))]);
     }
 
     /// <summary>
@@ -80,30 +83,30 @@ public static class FinancialReportPdfGenerator
     {
         var rows = new List<(string Section, string Code, string Name, decimal Amount)>
         {
-            ("مبيعات", "—", "مبيعات خاضعة (وعاء)", result.SalesSubtotal),
-            ("مبيعات", "—", "ضريبة المخرجات — مبيعات", result.OutputVat),
-            ("مستخلصات", "—", "مستخلصات أعمال (وعاء)", result.ProgressBillingsSubtotal),
-            ("مستخلصات", "—", "ضريبة المخرجات — مستخلصات", result.ProgressBillingsVat),
-            ("مردودات", "—", "إشعارات دائن (وعاء)", result.CreditNotesSubtotal),
-            ("مردودات", "—", "ضريبة مرتجعة", result.CreditNotesVat),
-            ("تسويات", "—", "تسوية إلغاء مستندات فترات سابقة (تُطرح)", result.CancelledOutputVat),
-            ("تسويات", "—", "ضريبة مخرجات مقيّدة بلا مستند (تُضاف)", result.JournalOutputVat),
-            ("مبيعات", "—", "صافي ضريبة المخرجات", result.NetOutputVat),
+            (PrintLang.T("مبيعات"), "—", PrintLang.T("مبيعات خاضعة (وعاء)"), result.SalesSubtotal),
+            (PrintLang.T("مبيعات"), "—", PrintLang.T("ضريبة المخرجات — مبيعات"), result.OutputVat),
+            (PrintLang.T("مستخلصات"), "—", PrintLang.T("مستخلصات أعمال (وعاء)"), result.ProgressBillingsSubtotal),
+            (PrintLang.T("مستخلصات"), "—", PrintLang.T("ضريبة المخرجات — مستخلصات"), result.ProgressBillingsVat),
+            (PrintLang.T("مردودات"), "—", PrintLang.T("إشعارات دائن (وعاء)"), result.CreditNotesSubtotal),
+            (PrintLang.T("مردودات"), "—", PrintLang.T("ضريبة مرتجعة"), result.CreditNotesVat),
+            (PrintLang.T("تسويات"), "—", PrintLang.T("تسوية إلغاء مستندات فترات سابقة (تُطرح)"), result.CancelledOutputVat),
+            (PrintLang.T("تسويات"), "—", PrintLang.T("ضريبة مخرجات مقيّدة بلا مستند (تُضاف)"), result.JournalOutputVat),
+            (PrintLang.T("مبيعات"), "—", PrintLang.T("صافي ضريبة المخرجات"), result.NetOutputVat),
         };
-        AddBreakdown(rows, "مبيعات حسب الفئة", "صافي وعاء المبيعات (من المستندات)",
+        AddBreakdown(rows, PrintLang.T("مبيعات حسب الفئة"), PrintLang.T("صافي وعاء المبيعات (من المستندات)"),
             result.SalesBaseNet, result.Sales, result.JournalOutputVat);
 
         rows.AddRange(
         [
-            ("مشتريات", "—", "مشتريات (وعاء)", result.PurchasesSubtotal),
-            ("مشتريات", "—", "ضريبة مدخلات قابلة للخصم", result.DeductibleInputVat),
-            ("مردودات مشتريات", "—", "إشعارات مدينة (وعاء)", result.DebitNotesSubtotal),
-            ("مردودات مشتريات", "—", "ضريبة مدخلات مُخفّضة", result.DebitNotesDeductibleVat),
-            ("تسويات", "—", "تسوية إلغاء مشتريات فترات سابقة (تُطرح)", result.CancelledInputVat),
-            ("تسويات", "—", "ضريبة مدخلات مقيّدة بلا مستند (تُضاف)", result.JournalInputVat),
-            ("مشتريات", "—", "صافي ضريبة المدخلات", result.NetDeductibleInputVat),
+            (PrintLang.T("مشتريات"), "—", PrintLang.T("مشتريات (وعاء)"), result.PurchasesSubtotal),
+            (PrintLang.T("مشتريات"), "—", PrintLang.T("ضريبة مدخلات قابلة للخصم"), result.DeductibleInputVat),
+            (PrintLang.T("مردودات مشتريات"), "—", PrintLang.T("إشعارات مدينة (وعاء)"), result.DebitNotesSubtotal),
+            (PrintLang.T("مردودات مشتريات"), "—", PrintLang.T("ضريبة مدخلات مُخفّضة"), result.DebitNotesDeductibleVat),
+            (PrintLang.T("تسويات"), "—", PrintLang.T("تسوية إلغاء مشتريات فترات سابقة (تُطرح)"), result.CancelledInputVat),
+            (PrintLang.T("تسويات"), "—", PrintLang.T("ضريبة مدخلات مقيّدة بلا مستند (تُضاف)"), result.JournalInputVat),
+            (PrintLang.T("مشتريات"), "—", PrintLang.T("صافي ضريبة المدخلات"), result.NetDeductibleInputVat),
         ]);
-        AddBreakdown(rows, "مشتريات حسب الفئة", "صافي وعاء المشتريات القابلة للخصم (من المستندات)",
+        AddBreakdown(rows, PrintLang.T("مشتريات حسب الفئة"), PrintLang.T("صافي وعاء المشتريات القابلة للخصم (من المستندات)"),
             result.PurchasesBaseNet, result.Purchases, result.JournalInputVat);
 
         return rows;
@@ -120,13 +123,13 @@ public static class FinancialReportPdfGenerator
         IReadOnlyList<VatReturnBucket> buckets, decimal uncategorisedVat)
     {
         foreach (var b in buckets.Where(b => b.VatAmount != 0m))
-            rows.Add((section, b.Category.UblCode(), $"منها ضريبة {b.Category.NameAr()}", b.VatAmount));
+            rows.Add((section, b.Category.UblCode(), PrintLang.TF("منها ضريبة {0}", PrintLang.T(b.Category.NameAr())), b.VatAmount));
         if (uncategorisedVat != 0m)
-            rows.Add((section, "—", "منها بلا فئة — مقيّدة بلا مستند", uncategorisedVat));
+            rows.Add((section, "—", PrintLang.T("منها بلا فئة — مقيّدة بلا مستند"), uncategorisedVat));
 
         rows.Add((section, "—", baseLabel, baseNet));
         foreach (var b in buckets)
-            rows.Add((section, b.Category.UblCode(), $"منها وعاء {b.Category.NameAr()}", b.TaxableAmount));
+            rows.Add((section, b.Category.UblCode(), PrintLang.TF("منها وعاء {0}", PrintLang.T(b.Category.NameAr())), b.TaxableAmount));
     }
 
     public static byte[] VatReturn(string companyName, DateOnly from, DateOnly to,
@@ -136,18 +139,19 @@ public static class FinancialReportPdfGenerator
     public static byte[] VatReturn(PrintBranding branding, DateOnly from, DateOnly to,
         decimal outputVat, decimal inputVat, decimal netPayable)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = new List<(string Section, string Code, string Name, decimal Amount)>
         {
-            ("ضريبة مخرجات", "—", "ضريبة المبيعات (مخرجات)", outputVat),
-            ("ضريبة مدخلات", "—", "ضريبة المشتريات (مدخلات)", inputVat),
+            (PrintLang.T("ضريبة مخرجات"), "—", PrintLang.T("ضريبة المبيعات (مخرجات)"), outputVat),
+            (PrintLang.T("ضريبة مدخلات"), "—", PrintLang.T("ضريبة المشتريات (مدخلات)"), inputVat),
         };
 
-        return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
-            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", rows,
+        return BuildTableReport(branding, PrintLang.T("إقرار ضريبة القيمة المضافة"),
+            PrintLang.TF("من {0} إلى {1}", PrintText.Date(from), PrintText.Date(to)), rows,
             [
-                ("ضريبة المخرجات", PrintText.Money(outputVat)),
-                ("ضريبة المدخلات", PrintText.Money(inputVat)),
-                ($"صافي الضريبة المستحقة — {branding.CurrencyAr}", PrintText.Money(netPayable)),
+                (PrintLang.T("ضريبة المخرجات"), PrintText.Money(outputVat)),
+                (PrintLang.T("ضريبة المدخلات"), PrintText.Money(inputVat)),
+                (PrintLang.TF("صافي الضريبة المستحقة — {0}", branding.CurrencyAr), PrintText.Money(netPayable)),
             ]);
     }
 
@@ -156,6 +160,7 @@ public static class FinancialReportPdfGenerator
 
     public static byte[] CashFlowStatement(PrintBranding branding, CashFlowStatementResult result)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = new List<(string Section, string Label, decimal Amount)>();
         AppendSection(rows, result.Operating);
         AppendSection(rows, result.Investing);
@@ -163,18 +168,18 @@ public static class FinancialReportPdfGenerator
 
         PrintColumn[] columns =
         [
-            new("القسم", Weight: 1f),
-            new("البند", Weight: 2f),
-            new("المبلغ", Numeric: true),
+            new(PrintLang.T("القسم"), Weight: 1f),
+            new(PrintLang.T("البند"), Weight: 2f),
+            new(PrintLang.T("المبلغ"), Numeric: true),
         ];
 
-        return PrintReport.Table(branding, "قائمة التدفقات النقدية",
-            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", columns,
+        return PrintReport.Table(branding, PrintLang.T("قائمة التدفقات النقدية"),
+            PrintLang.TF("من {0} إلى {1}", PrintText.Date(result.FromDate), PrintText.Date(result.ToDate)), columns,
             rows.Select(r => (IReadOnlyList<string>)[r.Section, r.Label, PrintText.Money(r.Amount)]),
             [
-                ("الرصيد الافتتاحي", PrintText.Money(result.OpeningCash)),
-                ("صافي التغيّر", PrintText.Money(result.NetCashChange)),
-                ("الرصيد الختامي", PrintText.Money(result.ClosingCash)),
+                (PrintLang.T("الرصيد الافتتاحي"), PrintText.Money(result.OpeningCash)),
+                (PrintLang.T("صافي التغيّر"), PrintText.Money(result.NetCashChange)),
+                (PrintLang.T("الرصيد الختامي"), PrintText.Money(result.ClosingCash)),
             ]);
     }
 
@@ -182,8 +187,8 @@ public static class FinancialReportPdfGenerator
         List<(string Section, string Label, decimal Amount)> rows, CashFlowSection section)
     {
         foreach (var line in section.Lines)
-            rows.Add((section.NameAr, line.Label, line.Amount));
-        rows.Add((section.NameAr, $"إجمالي {section.NameAr}", section.Subtotal));
+            rows.Add((PrintLang.T(section.NameAr), PrintLang.T(line.Label), line.Amount));
+        rows.Add((PrintLang.T(section.NameAr), PrintLang.TF("إجمالي {0}", PrintLang.T(section.NameAr)), section.Subtotal));
     }
 
     public static byte[] GeneralLedger(string companyName, DateOnly from, DateOnly to,
@@ -195,18 +200,19 @@ public static class FinancialReportPdfGenerator
         IReadOnlyList<(DateOnly EntryDate, string AccountCode, string AccountNameAr,
             decimal Debit, decimal Credit, string Description)> rows)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         PrintColumn[] columns =
         [
-            new("التاريخ", FixedWidth: 76),
-            new("الكود", FixedWidth: 64),
-            new("الحساب", Weight: 2f),
-            new("مدين", Numeric: true),
-            new("دائن", Numeric: true),
-            new("البيان", Weight: 2.2f),
+            new(PrintLang.T("التاريخ"), FixedWidth: 76),
+            new(PrintLang.T("الكود"), FixedWidth: 64),
+            new(PrintLang.T("الحساب"), Weight: 2f),
+            new(PrintLang.T("مدين"), Numeric: true),
+            new(PrintLang.T("دائن"), Numeric: true),
+            new(PrintLang.T("البيان"), Weight: 2.2f),
         ];
 
-        return PrintReport.Table(branding, "دفتر الأستاذ العام",
-            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", columns,
+        return PrintReport.Table(branding, PrintLang.T("دفتر الأستاذ العام"),
+            PrintLang.TF("من {0} إلى {1}", PrintText.Date(from), PrintText.Date(to)), columns,
             rows.Select(r => (IReadOnlyList<string>)
             [
                 PrintText.Date(r.EntryDate), PrintText.Code(r.AccountCode), r.AccountNameAr,
@@ -214,8 +220,8 @@ public static class FinancialReportPdfGenerator
                 r.Description,
             ]),
             [
-                ("إجمالي المدين", PrintText.Money(rows.Sum(r => r.Debit))),
-                ("إجمالي الدائن", PrintText.Money(rows.Sum(r => r.Credit))),
+                (PrintLang.T("إجمالي المدين"), PrintText.Money(rows.Sum(r => r.Debit))),
+                (PrintLang.T("إجمالي الدائن"), PrintText.Money(rows.Sum(r => r.Credit))),
             ],
             landscape: true, fontSize: 9);
     }
@@ -227,10 +233,10 @@ public static class FinancialReportPdfGenerator
     {
         PrintColumn[] columns =
         [
-            new("القسم", Weight: 1f),
-            new("الكود", FixedWidth: 70),
-            new("الحساب", Weight: 3f),
-            new("المبلغ", Numeric: true),
+            new(PrintLang.T("القسم"), Weight: 1f),
+            new(PrintLang.T("الكود"), FixedWidth: 70),
+            new(PrintLang.T("الحساب"), Weight: 3f),
+            new(PrintLang.T("المبلغ"), Numeric: true),
         ];
 
         return PrintReport.Table(branding, title, subtitle, columns,

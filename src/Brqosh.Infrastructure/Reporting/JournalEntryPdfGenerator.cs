@@ -22,12 +22,13 @@ public static class JournalEntryPdfGenerator
         decimal totalDebit,
         decimal totalCredit)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         PrintColumn[] columns =
         [
-            new("الحساب", FixedWidth: 80),
-            new("البيان", Weight: 3f),
-            new("مدين", Numeric: true),
-            new("دائن", Numeric: true),
+            new(PrintLang.T("الحساب"), FixedWidth: 80),
+            new(PrintLang.T("البيان"), Weight: 3f),
+            new(PrintLang.T("مدين"), Numeric: true),
+            new(PrintLang.T("دائن"), Numeric: true),
         ];
 
         return Document.Create(container =>
@@ -38,7 +39,7 @@ public static class JournalEntryPdfGenerator
                 page.Margin(28);
                 page.DefaultTextStyle(x => branding.PageTextStyle(10));
 
-                page.Header().Element(h => branding.RenderHeader(h, "قيد يومية", $"رقم {PrintText.Code(entryNumber)}"));
+                page.Header().Element(h => branding.RenderHeader(h, PrintLang.T("قيد يومية"), PrintLang.TF("رقم {0}", PrintText.Code(entryNumber))));
 
                 page.Content().PaddingVertical(10).Column(col =>
                 {
@@ -46,12 +47,12 @@ public static class JournalEntryPdfGenerator
 
                     col.Item().Card().Column(info =>
                     {
-                        info.Item().Element(c => PrintTheme.LabelValue(c, "التاريخ", PrintText.Date(entryDate)));
-                        info.Item().Element(c => PrintTheme.LabelValue(c, "الحالة", statusAr));
+                        info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("التاريخ"), PrintText.Date(entryDate)));
+                        info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("الحالة"), PrintLang.T(statusAr)));
                         if (!string.IsNullOrWhiteSpace(headerDescription))
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "البيان", headerDescription));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("البيان"), headerDescription));
                         if (!string.IsNullOrWhiteSpace(sourceDocument))
-                            info.Item().Element(c => PrintTheme.LabelValue(c, "المستند المصدر", PrintText.Code(sourceDocument)));
+                            info.Item().Element(c => PrintTheme.LabelValue(c, PrintLang.T("المستند المصدر"), PrintText.Code(sourceDocument)));
                     });
 
                     col.Item().Element(c => PrintTheme.ReportTable(c, columns, lines.Select(l => (IReadOnlyList<string>)
@@ -62,14 +63,14 @@ public static class JournalEntryPdfGenerator
 
                     col.Item().Element(c => PrintTheme.SummaryBand(c,
                     [
-                        ("مجموع المدين", PrintText.Money(totalDebit)),
-                        ("مجموع الدائن", PrintText.Money(totalCredit)),
+                        (PrintLang.T("مجموع المدين"), PrintText.Money(totalDebit)),
+                        (PrintLang.T("مجموع الدائن"), PrintText.Money(totalCredit)),
                     ]));
 
                     col.Item().PaddingTop(6).Row(sign =>
                     {
-                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المحاسب"));
-                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, "المدير المالي"));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, PrintLang.T("المحاسب")));
+                        sign.RelativeItem().Element(c => PrintTheme.SignatureLine(c, PrintLang.T("المدير المالي")));
                     });
                 });
 

@@ -13,24 +13,25 @@ public static class PosReportPdfGenerator
         PrintBranding branding,
         IReadOnlyList<PosReportQuery.DailySaleRow> rows)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         PrintColumn[] columns =
         [
-            new("التاريخ"),
-            new("العمليات", Numeric: true),
-            new("المبيعات", Numeric: true),
-            new("الضريبة", Numeric: true),
+            new(PrintLang.T("التاريخ")),
+            new(PrintLang.T("العمليات"), Numeric: true),
+            new(PrintLang.T("المبيعات"), Numeric: true),
+            new(PrintLang.T("الضريبة"), Numeric: true),
         ];
 
-        return PrintReport.Table(branding, "تقرير مبيعات نقاط البيع اليومي", null, columns,
+        return PrintReport.Table(branding, PrintLang.T("تقرير مبيعات نقاط البيع اليومي"), null, columns,
             rows.Select(r => (IReadOnlyList<string>)
             [
                 PrintText.Ltr(r.Date), r.Transactions.ToString(CultureInfo.InvariantCulture),
                 PrintText.Money(r.TotalSales), PrintText.Money(r.VatAmount),
             ]),
             [
-                ("إجمالي العمليات", rows.Sum(r => r.Transactions).ToString(CultureInfo.InvariantCulture)),
-                ($"إجمالي الضريبة ({branding.CurrencyAr})", PrintText.Money(rows.Sum(r => r.VatAmount))),
-                ($"إجمالي المبيعات ({branding.CurrencyAr})", PrintText.Money(rows.Sum(r => r.TotalSales))),
+                (PrintLang.T("إجمالي العمليات"), rows.Sum(r => r.Transactions).ToString(CultureInfo.InvariantCulture)),
+                (PrintLang.TF("إجمالي الضريبة ({0})", branding.CurrencyAr), PrintText.Money(rows.Sum(r => r.VatAmount))),
+                (PrintLang.TF("إجمالي المبيعات ({0})", branding.CurrencyAr), PrintText.Money(rows.Sum(r => r.TotalSales))),
             ]);
     }
 }

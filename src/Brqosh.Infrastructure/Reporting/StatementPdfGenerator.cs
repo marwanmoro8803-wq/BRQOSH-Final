@@ -17,7 +17,7 @@ public static class StatementPdfGenerator
     {
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(PrintBranding.From(companyName, ""), "كشف حساب عميل", "العميل", customerName,
+        return Build(PrintBranding.From(companyName, ""), PrintLang.T("كشف حساب عميل"), PrintLang.T("العميل"), customerName,
             closingBalance, rows);
     }
 
@@ -25,9 +25,10 @@ public static class StatementPdfGenerator
         PrintBranding branding, string customerName, decimal closingBalance,
         IReadOnlyList<CustomerStatementLine> lines)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(branding, "كشف حساب عميل", "العميل", customerName,
+        return Build(branding, PrintLang.T("كشف حساب عميل"), PrintLang.T("العميل"), customerName,
             closingBalance, rows);
     }
 
@@ -37,7 +38,7 @@ public static class StatementPdfGenerator
     {
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(PrintBranding.From(companyName, ""), "كشف حساب مورد", "المورد", supplierName,
+        return Build(PrintBranding.From(companyName, ""), PrintLang.T("كشف حساب مورد"), PrintLang.T("المورد"), supplierName,
             closingBalance, rows);
     }
 
@@ -45,9 +46,10 @@ public static class StatementPdfGenerator
         PrintBranding branding, string supplierName, decimal closingBalance,
         IReadOnlyList<SupplierStatementLine> lines)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var rows = lines.Select(l => (
             l.Date, l.DocumentNumber, l.DocumentType, l.Debit, l.Credit, l.RunningBalance)).ToList();
-        return Build(branding, "كشف حساب مورد", "المورد", supplierName,
+        return Build(branding, PrintLang.T("كشف حساب مورد"), PrintLang.T("المورد"), supplierName,
             closingBalance, rows);
     }
 
@@ -58,12 +60,12 @@ public static class StatementPdfGenerator
         // بترتيب القراءة: التاريخ أقصى اليمين ثمّ الرصيدُ أقصى اليسار.
         PrintColumn[] columns =
         [
-            new("التاريخ", FixedWidth: 76),
-            new("رقم المستند", FixedWidth: 108),
-            new("النوع", Weight: 1.4f),
-            new("مدين", Numeric: true),
-            new("دائن", Numeric: true),
-            new("الرصيد", Numeric: true),
+            new(PrintLang.T("التاريخ"), FixedWidth: 76),
+            new(PrintLang.T("رقم المستند"), FixedWidth: 108),
+            new(PrintLang.T("النوع"), Weight: 1.4f),
+            new(PrintLang.T("مدين"), Numeric: true),
+            new(PrintLang.T("دائن"), Numeric: true),
+            new(PrintLang.T("الرصيد"), Numeric: true),
         ];
 
         return Document.Create(container =>
@@ -84,7 +86,7 @@ public static class StatementPdfGenerator
                     [
                         PrintText.Date(r.Date),
                         PrintText.Code(r.Number),
-                        r.Type,
+                        PrintLang.T(r.Type),
                         r.Debit > 0 ? PrintText.Money(r.Debit) : "",
                         r.Credit > 0 ? PrintText.Money(r.Credit) : "",
                         PrintText.Money(r.Balance),
@@ -92,9 +94,9 @@ public static class StatementPdfGenerator
 
                     col.Item().Element(c => PrintTheme.SummaryBand(c,
                     [
-                        ("إجمالي المدين", PrintText.Money(rows.Sum(r => r.Debit))),
-                        ("إجمالي الدائن", PrintText.Money(rows.Sum(r => r.Credit))),
-                        ($"الرصيد المستحق ({branding.CurrencyAr})", PrintText.Money(closingBalance)),
+                        (PrintLang.T("إجمالي المدين"), PrintText.Money(rows.Sum(r => r.Debit))),
+                        (PrintLang.T("إجمالي الدائن"), PrintText.Money(rows.Sum(r => r.Credit))),
+                        (PrintLang.TF("الرصيد المستحق ({0})", branding.CurrencyAr), PrintText.Money(closingBalance)),
                     ]));
 
                     col.Item().Element(c => PrintTheme.AmountInWords(c, closingBalance, branding.CurrencyCode));

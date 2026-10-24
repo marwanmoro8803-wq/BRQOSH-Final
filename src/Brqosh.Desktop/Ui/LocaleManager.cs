@@ -20,6 +20,7 @@ public static class LocaleManager
     public static void Toggle()
     {
         IsEnglish = !IsEnglish;
+        PrintLanguage();
         Changed?.Invoke();
     }
 
@@ -29,8 +30,12 @@ public static class LocaleManager
         if (IsEnglish == english)
             return;
         IsEnglish = english;
+        PrintLanguage();
         Changed?.Invoke();
     }
+
+    /// <summary>المطبوعاتُ تتبع لغةَ الواجهة (الفاتورةُ الضريبيّةُ وحدَها تبقى عربيّةً — الهيئة).</summary>
+    private static void PrintLanguage() => Brqosh.Infrastructure.Reporting.PrintLang.Preferred = IsEnglish;
 
     public static void ApplyTo(FrameworkElement element) =>
         element.FlowDirection = Flow;

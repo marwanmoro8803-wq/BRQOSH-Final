@@ -15,21 +15,22 @@ public static class TrialBalancePdfGenerator
         PrintBranding branding, DateOnly from, DateOnly to,
         IReadOnlyList<TrialBalanceRow> rows)
     {
+        using var _lang = PrintLang.Begin(branding.English);
         var totalDebit = rows.Sum(r => r.TotalDebit);
         var totalCredit = rows.Sum(r => r.TotalCredit);
 
         PrintColumn[] columns =
         [
-            new("الكود", FixedWidth: 70),
-            new("الحساب", Weight: 3f),
-            new("مدين", Numeric: true),
-            new("دائن", Numeric: true),
-            new("رصيد مدين", Numeric: true),
-            new("رصيد دائن", Numeric: true),
+            new(PrintLang.T("الكود"), FixedWidth: 70),
+            new(PrintLang.T("الحساب"), Weight: 3f),
+            new(PrintLang.T("مدين"), Numeric: true),
+            new(PrintLang.T("دائن"), Numeric: true),
+            new(PrintLang.T("رصيد مدين"), Numeric: true),
+            new(PrintLang.T("رصيد دائن"), Numeric: true),
         ];
 
-        return PrintReport.Table(branding, "ميزان المراجعة",
-            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)}", columns,
+        return PrintReport.Table(branding, PrintLang.T("ميزان المراجعة"),
+            PrintLang.TF("من {0} إلى {1}", PrintText.Date(from), PrintText.Date(to)), columns,
             rows.Select(r => (IReadOnlyList<string>)
             [
                 PrintText.Code(r.AccountCode), r.AccountNameAr,
@@ -37,9 +38,9 @@ public static class TrialBalancePdfGenerator
                 PrintText.Money(r.BalanceDebit), PrintText.Money(r.BalanceCredit),
             ]),
             [
-                ("إجمالي المدين", PrintText.Money(totalDebit)),
-                ("إجمالي الدائن", PrintText.Money(totalCredit)),
-                (totalDebit == totalCredit ? "الميزان متوازن" : "الميزان غير متوازن", PrintText.Money(totalDebit - totalCredit)),
+                (PrintLang.T("إجمالي المدين"), PrintText.Money(totalDebit)),
+                (PrintLang.T("إجمالي الدائن"), PrintText.Money(totalCredit)),
+                (totalDebit == totalCredit ? PrintLang.T("الميزان متوازن") : PrintLang.T("الميزان غير متوازن"), PrintText.Money(totalDebit - totalCredit)),
             ]);
     }
 }

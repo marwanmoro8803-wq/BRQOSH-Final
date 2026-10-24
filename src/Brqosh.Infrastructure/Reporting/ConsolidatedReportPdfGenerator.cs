@@ -15,22 +15,23 @@ public static class ConsolidatedReportPdfGenerator
         DateOnly to,
         IReadOnlyList<ConsolidatedTrialBalanceRow> rows)
     {
+        using var _lang = PrintLang.Begin(PrintLang.Preferred);
         PrintColumn[] columns =
         [
-            new("الكود", FixedWidth: 70),
-            new("الحساب", Weight: 3f),
-            new("شركات", Numeric: true, FixedWidth: 50),
-            new("مدين", Numeric: true),
-            new("دائن", Numeric: true),
-            new("رصيد مدين", Numeric: true),
-            new("رصيد دائن", Numeric: true),
+            new(PrintLang.T("الكود"), FixedWidth: 70),
+            new(PrintLang.T("الحساب"), Weight: 3f),
+            new(PrintLang.T("شركات"), Numeric: true, FixedWidth: 50),
+            new(PrintLang.T("مدين"), Numeric: true),
+            new(PrintLang.T("دائن"), Numeric: true),
+            new(PrintLang.T("رصيد مدين"), Numeric: true),
+            new(PrintLang.T("رصيد دائن"), Numeric: true),
         ];
 
         var totalDebit = rows.Sum(r => r.TotalDebit);
         var totalCredit = rows.Sum(r => r.TotalCredit);
 
-        return PrintReport.Table(PrintBranding.From(groupName, ""), "ميزان مراجعة موحّد",
-            $"من {PrintText.Date(from)} إلى {PrintText.Date(to)} · {reportingCurrency}", columns,
+        return PrintReport.Table(PrintBranding.From(groupName, ""), PrintLang.T("ميزان مراجعة موحّد"),
+            PrintLang.TF("من {0} إلى {1} · {2}", PrintText.Date(from), PrintText.Date(to), reportingCurrency), columns,
             rows.Select(r => (IReadOnlyList<string>)
             [
                 PrintText.Code(r.AccountCode), r.AccountNameAr, r.CompanyCount.ToString(CultureInfo.InvariantCulture),
@@ -39,8 +40,8 @@ public static class ConsolidatedReportPdfGenerator
                 r.BalanceCredit > 0 ? PrintText.Money(r.BalanceCredit) : "",
             ]),
             [
-                ("إجمالي المدين", PrintText.Money(totalDebit)),
-                ("إجمالي الدائن", PrintText.Money(totalCredit)),
+                (PrintLang.T("إجمالي المدين"), PrintText.Money(totalDebit)),
+                (PrintLang.T("إجمالي الدائن"), PrintText.Money(totalCredit)),
             ],
             fontSize: 9);
     }
@@ -49,19 +50,20 @@ public static class ConsolidatedReportPdfGenerator
         string groupName,
         ConsolidatedIncomeStatementResult result)
     {
-        var rows = result.RevenueRows.Select(r => ("إيرادات", r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount))
-            .Concat(result.ExpenseRows.Select(r => ("مصروفات", r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount)))
+        using var _lang = PrintLang.Begin(PrintLang.Preferred);
+        var rows = result.RevenueRows.Select(r => (PrintLang.T("إيرادات"), r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount))
+            .Concat(result.ExpenseRows.Select(r => (PrintLang.T("مصروفات"), r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount)))
             .ToList();
 
         return BuildSectionReport(
             groupName,
-            "قائمة دخل موحّدة",
-            $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)} · {result.ReportingCurrencyCode}",
+            PrintLang.T("قائمة دخل موحّدة"),
+            PrintLang.TF("من {0} إلى {1} · {2}", PrintText.Date(result.FromDate), PrintText.Date(result.ToDate), result.ReportingCurrencyCode),
             rows,
             [
-                ("الإيرادات", PrintText.Money(result.TotalRevenue)),
-                ("المصروفات", PrintText.Money(result.TotalExpenses)),
-                ("صافي الدخل", PrintText.Money(result.NetIncome)),
+                (PrintLang.T("الإيرادات"), PrintText.Money(result.TotalRevenue)),
+                (PrintLang.T("المصروفات"), PrintText.Money(result.TotalExpenses)),
+                (PrintLang.T("صافي الدخل"), PrintText.Money(result.NetIncome)),
             ]);
     }
 
@@ -69,19 +71,20 @@ public static class ConsolidatedReportPdfGenerator
         string groupName,
         ConsolidatedBalanceSheetResult result)
     {
-        var rows = result.Assets.Select(r => ("أصول", r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount))
-            .Concat(result.Liabilities.Select(r => ("التزامات", r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount)))
-            .Concat(result.Equity.Select(r => ("حقوق ملكية", r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount)))
+        using var _lang = PrintLang.Begin(PrintLang.Preferred);
+        var rows = result.Assets.Select(r => (PrintLang.T("أصول"), r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount))
+            .Concat(result.Liabilities.Select(r => (PrintLang.T("التزامات"), r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount)))
+            .Concat(result.Equity.Select(r => (PrintLang.T("حقوق ملكية"), r.AccountCode, r.AccountNameAr, r.Amount, r.CompanyCount)))
             .ToList();
 
         return BuildSectionReport(
             groupName,
-            "مركز مالي موحّد",
-            $"كما في {PrintText.Date(result.AsOfDate)} · {result.ReportingCurrencyCode}",
+            PrintLang.T("مركز مالي موحّد"),
+            PrintLang.TF("كما في {0} · {1}", PrintText.Date(result.AsOfDate), result.ReportingCurrencyCode),
             rows,
             [
-                ("الأصول", PrintText.Money(result.TotalAssets)),
-                ("الالتزامات + الملكية", PrintText.Money(result.TotalLiabilities + result.TotalEquity)),
+                (PrintLang.T("الأصول"), PrintText.Money(result.TotalAssets)),
+                (PrintLang.T("الالتزامات + الملكية"), PrintText.Money(result.TotalLiabilities + result.TotalEquity)),
             ]);
     }
 
@@ -94,11 +97,11 @@ public static class ConsolidatedReportPdfGenerator
     {
         PrintColumn[] columns =
         [
-            new("القسم", Weight: 1f),
-            new("الكود", FixedWidth: 70),
-            new("الحساب", Weight: 3f),
-            new("شركات", Numeric: true, FixedWidth: 50),
-            new("المبلغ", Numeric: true),
+            new(PrintLang.T("القسم"), Weight: 1f),
+            new(PrintLang.T("الكود"), FixedWidth: 70),
+            new(PrintLang.T("الحساب"), Weight: 3f),
+            new(PrintLang.T("شركات"), Numeric: true, FixedWidth: 50),
+            new(PrintLang.T("المبلغ"), Numeric: true),
         ];
 
         return PrintReport.Table(PrintBranding.From(groupName, ""), title, subtitle, columns,

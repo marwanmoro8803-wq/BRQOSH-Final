@@ -37,6 +37,7 @@ internal static class SchemaSqlGuard
         "character varying(64) NULL",
         "character varying(128) NULL",
         "character varying(256) NULL",
+        "character varying(120) NULL",   // اسمُ المدقق (Company.AuditorName)
         "character varying(64) NOT NULL DEFAULT 'Tahoma'",
         // (CEEF-229 · Z-10) هوية المنشأة النظامية — نصوص غير قابلة للعدم، فارغُها يعني «لم يُدخَل».
         "character varying(16) NOT NULL DEFAULT ''",

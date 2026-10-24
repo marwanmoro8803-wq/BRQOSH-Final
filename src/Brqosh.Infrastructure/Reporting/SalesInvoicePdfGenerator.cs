@@ -215,7 +215,10 @@ public static class SalesInvoicePdfGenerator
     /// <summary>(ح-٤٢ · ح-٤٤) يرسم الصفحةَ من أرقامها — <b>ولا رقمَ يُحسب هنا</b>.</summary>
     private static byte[] Render(Request request, PrintFigures figures)
     {
+        // الفاتورةُ الضريبيّةُ عربيّةٌ دائماً (الهيئة) — أياً كانت لغةُ الواجهة والمطبوعات الأخرى.
+        using var _lang = PrintLang.Begin(false);
         var (branding, documentNumber, date, lines, _, _, _, _, options) = request;
+        branding = branding with { English = false };
         var title = TitleFor(options.Kind);
         var partyLabel = options.PartyLabel ?? PartyLabelFor(options.Kind);
         var qrPng = ZatcaQrImageHelper.TryCreatePng(options.QrTlvBase64);

@@ -15,21 +15,23 @@ public sealed record PrintBranding(
     string CurrencyCode = "SAR",
     // ‏(أسئلةُ المالك 2026-10-24) ‏المدقِّق/المراجعُ القانونيّ للمنشأة (من إعداداتها)، ومَن طبع الورقة (مستخدمُ الجلسة).
     string? AuditorName = null,
-    string? PreparedBy = null)
+    string? PreparedBy = null,
+    // ‏(أسئلةُ المالك · طباعةٌ بالإنجليزيّة) ‏لغةُ المطبوع: الإنجليزيّةُ LTR. والفاتورةُ الضريبيّةُ تبقى عربيّةً أياً كانت.
+    bool English = false)
 {
     /// <summary>
     /// ما يُكتب بجوار المبالغ في المطبوع — رمزُ عملة دفاتر المنشأة (ر.س للريال). كان «ر.س» مكتوباً في كلّ مولِّد،
     /// فمنشأةٌ بعملةٍ أخرى كانت تطبع مبالغَها موسومةً بالريال.
     /// </summary>
-    public string CurrencyAr => CurrencyCatalog.Short(CurrencyCode, english: false);
+    public string CurrencyAr => CurrencyCatalog.Short(CurrencyCode, english: PrintLang.English);
 
     public string EffectiveFontFamily =>
         string.IsNullOrWhiteSpace(PrintFontFamily) ? "Tahoma" : PrintFontFamily;
 
     public static PrintBranding From(string companyNameAr, string vatNumber) =>
-        new(companyNameAr, vatNumber);
+        new(companyNameAr, vatNumber, English: PrintLang.Preferred);
 
-    public static PrintBranding FromCompany(Company company, string? preparedBy = null)
+    public static PrintBranding FromCompany(Company company, string? preparedBy = null, bool? english = null)
     {
         var logo = CompanyBrandingStorage.TryReadLogo(company.LogoFilePath);
 
@@ -51,7 +53,8 @@ public sealed record PrintBranding(
             CompanyBrandingStorage.NormalizePrintFont(company.PrintFontFamily),
             company.FunctionalCurrencyCode,
             company.AuditorName,
-            string.IsNullOrWhiteSpace(preparedBy) ? null : preparedBy.Trim());
+            string.IsNullOrWhiteSpace(preparedBy) ? null : preparedBy.Trim(),
+            english ?? PrintLang.Preferred);
     }
 
     /// <summary>سطرُ «أعدّه · المراجع» — <c>null</c> إن لم يُعرف أيٌّ منهما. والمراجعُ يظهر حيث طُلب (<paramref name="withAuditor"/>) وعُرف.</summary>
@@ -59,14 +62,21 @@ public sealed record PrintBranding(
     {
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(PreparedBy))
-            parts.Add($"أعدّه: {PreparedBy}");
+            parts.Add(PrintLang.TF("أعدّه: {0}", PreparedBy));
         if (withAuditor && !string.IsNullOrWhiteSpace(AuditorName))
-            parts.Add($"المراجع: {AuditorName}");
+            parts.Add(PrintLang.TF("المراجع: {0}", AuditorName));
         return parts.Count == 0 ? null : string.Join("   ·   ", parts);
     }
 
     public TextStyle PageTextStyle(float fontSize = 11) =>
-        TextStyle.Default.FontSize(fontSize).FontFamily(EffectiveFontFamily).DirectionFromRightToLeft();
+        English
+            ? TextStyle.Default.FontSize(fontSize).FontFamily(EffectiveFontFamily).DirectionFromLeftToRight()
+            : TextStyle.Default.FontSize(fontSize).FontFamily(EffectiveFontFamily).DirectionFromRightToLeft();
+
+    /// <summary>
+    /// اسمُ المنشأة المعروض: بالإنجليزيّة اسمُها الإنجليزيّ إن وُجد (وإلّا العربيّ)، وبالعربيّة العربيّ يعلوه الإنجليزيّ صغيراً.
+    /// </summary>
+    private string PrimaryName => English && !string.IsNullOrWhiteSpace(CompanyNameEn) ? CompanyNameEn! : CompanyNameAr;
 
     /// <summary>
     /// ترويسةٌ موحّدة: اسمُ المنشأة وبياناتُها يميناً (والشعارُ إن وُجد أقصى اليمين)، وشارةُ نوع المستند كحليّةً
@@ -76,9 +86,11 @@ public sealed record PrintBranding(
     {
         container.Column(col =>
         {
+            // ‏الصفُّ يُبنى من اليسار: للعربيّة (شارةٌ · بياناتٌ · شعارٌ أقصى اليمين) وللإنجليزيّة بالعكس (شعارٌ · بياناتٌ · شارة).
+            // ‏لا نعكس الحاويةَ بـ`ContentFromRightToLeft` — فهي تقلب اتجاهَ النصوص داخلها وتُزيح النقطةَ الأخيرة إلى أوّل السطر.
             col.Item().Row(row =>
             {
-                row.ConstantItem(150).Column(badge =>
+                void Badge() => row.ConstantItem(150).Column(badge =>
                 {
                     badge.Item().Element(c => PrintTheme.TitleBadge(c, documentTitleAr));
                     if (!string.IsNullOrWhiteSpace(documentSubtitleAr))
@@ -86,24 +98,40 @@ public sealed record PrintBranding(
                             .FontColor(PrintTheme.Muted).FontFamily(EffectiveFontFamily);
                 });
 
-                row.RelativeItem().PaddingHorizontal(12).Column(info =>
+                void Info() => row.RelativeItem().PaddingHorizontal(12).Column(info =>
                 {
-                    info.Item().AlignRight().Text(CompanyNameAr).Bold().FontSize(17).FontColor(PrintTheme.Navy)
+                    info.Item().AlignStart().Text(PrimaryName).Bold().FontSize(17).FontColor(PrintTheme.Navy)
                         .FontFamily(EffectiveFontFamily);
-                    if (!string.IsNullOrWhiteSpace(CompanyNameEn))
-                        info.Item().AlignRight().Text(CompanyNameEn).FontSize(9).FontColor(PrintTheme.Muted)
+                    if (!English && !string.IsNullOrWhiteSpace(CompanyNameEn))
+                        info.Item().AlignStart().Text(CompanyNameEn).FontSize(9).FontColor(PrintTheme.Muted)
                             .FontFamily(EffectiveFontFamily);
                     if (!string.IsNullOrWhiteSpace(VatRegistrationNumber))
-                        info.Item().PaddingTop(2).AlignRight()
-                            .Text($"الرقم الضريبي: {PrintText.Code(VatRegistrationNumber)}").FontSize(9)
+                        info.Item().PaddingTop(2).AlignStart()
+                            .Text(PrintLang.TF("الرقم الضريبي: {0}", PrintText.Code(VatRegistrationNumber))).FontSize(9)
                             .FontColor(PrintTheme.Ink).FontFamily(EffectiveFontFamily);
                     if (!string.IsNullOrWhiteSpace(AddressAr))
-                        info.Item().AlignRight().Text(AddressAr).FontSize(9).FontColor(PrintTheme.Muted)
+                        info.Item().AlignStart().Text(AddressAr).FontSize(9).FontColor(PrintTheme.Muted)
                             .FontFamily(EffectiveFontFamily);
                 });
 
-                if (LogoImageBytes is { Length: > 0 })
-                    row.ConstantItem(72).AlignRight().AlignTop().MaxHeight(64).Image(LogoImageBytes).FitArea();
+                void Logo()
+                {
+                    if (LogoImageBytes is { Length: > 0 })
+                        row.ConstantItem(72).AlignStart().AlignTop().MaxHeight(64).Image(LogoImageBytes).FitArea();
+                }
+
+                if (English)
+                {
+                    Logo();
+                    Info();
+                    Badge();
+                }
+                else
+                {
+                    Badge();
+                    Info();
+                    Logo();
+                }
             });
 
             col.Item().PaddingTop(8).LineHorizontal(3).LineColor(PrintTheme.Navy);
@@ -129,24 +157,38 @@ public sealed record PrintBranding(
 
             var people = PeopleLine(showAuditor);
             if (people is not null)
-                col.Item().PaddingBottom(3).AlignRight().Text(people).FontSize(8)
+                col.Item().PaddingBottom(3).AlignStart().Text(people).FontSize(8)
                     .FontColor(PrintTheme.Ink).FontFamily(EffectiveFontFamily);
 
             col.Item().LineHorizontal(0.75f).LineColor(PrintTheme.Line);
             col.Item().PaddingTop(3).Row(row =>
             {
-                row.RelativeItem().AlignLeft().Text(text =>
+                void Page() => row.RelativeItem().AlignEnd().Text(text =>
                 {
                     text.DefaultTextStyle(x => x.FontSize(8).FontColor(PrintTheme.Muted).FontFamily(EffectiveFontFamily));
-                    text.Span("صفحة ");
+                    text.Span(PrintLang.T("صفحة "));
                     text.CurrentPageNumber();
-                    text.Span(" من ");
+                    text.Span(PrintLang.T(" من "));
                     text.TotalPages();
                 });
-                row.RelativeItem(2).AlignCenter().Text($"BRQOSH · {PrintText.Timestamp(DateTime.Now)}").FontSize(7)
+                void Stamp() => row.RelativeItem(2).AlignCenter().Text($"BRQOSH · {PrintText.Timestamp(DateTime.Now)}").FontSize(7)
                     .FontColor(PrintTheme.Muted).FontFamily(EffectiveFontFamily);
-                row.RelativeItem().AlignRight().Text(CompanyNameAr).FontSize(8)
+                void Name() => row.RelativeItem().AlignStart().Text(PrimaryName).FontSize(8)
                     .FontColor(PrintTheme.Muted).FontFamily(EffectiveFontFamily);
+
+                // ‏العربيّةُ: الصفحةُ يساراً والاسمُ يميناً؛ والإنجليزيّةُ بالعكس.
+                if (English)
+                {
+                    Name();
+                    Stamp();
+                    Page();
+                }
+                else
+                {
+                    Page();
+                    Stamp();
+                    Name();
+                }
             });
         });
     }
