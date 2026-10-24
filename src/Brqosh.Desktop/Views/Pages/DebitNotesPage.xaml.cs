@@ -58,7 +58,7 @@ public partial class DebitNotesPage : UserControl
 
         var posted = notes.Count(n => n.Status == DebitNoteStatus.Posted);
         NoteSummaryText.Text =
-            $"إشعارات: {notes.Count} · مرحّل: {posted} · إجمالي: {notes.Where(n => n.Status == DebitNoteStatus.Posted).Sum(n => n.GrandTotal()):N2} ر.س";
+            $"إشعارات: {notes.Count} · مرحّل: {posted} · إجمالي: {notes.Where(n => n.Status == DebitNoteStatus.Posted).Sum(n => n.GrandTotal()):N2} {CurrencyLabel.Short}";
     }
 
     private async void OnNew(object sender, RoutedEventArgs e)

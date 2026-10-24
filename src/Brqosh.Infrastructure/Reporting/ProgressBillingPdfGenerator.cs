@@ -1,4 +1,5 @@
 using System.Globalization;
+using Brqosh.Domain.Companies;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -32,10 +33,13 @@ public static class ProgressBillingPdfGenerator
         int? Icv = null,
         string? ComplianceStatus = null,
         // (جاهزيّةُ الإطلاق · ح-٥٣) ‏المستخلصُ لعميلٍ مسجَّلٍ يُخلَّص — وما لم يُعتمد يقول ذلك.
-        string? ClearanceNotice = null);
+        string? ClearanceNotice = null,
+        // ‏(أسئلةُ المالك 2026-10-24 · العملة) ‏عملةُ دفاتر المنشأة — يملؤها المولِّدُ من الترويسة.
+        string CurrencyCode = "SAR");
 
     public static byte[] Generate(PrintBranding branding, BillingPrintData data)
     {
+        data = data with { CurrencyCode = branding.CurrencyCode };
         var qrPng = ZatcaQrImageHelper.TryCreatePng(data.QrTlvBase64);
         var compliance = BuildComplianceLine(data);
 
@@ -100,7 +104,7 @@ public static class ProgressBillingPdfGenerator
                         row.ConstantItem(250).AlignTop().Element(c => TotalsCard(c, data, VatLabel(data.VatRate)));
                     });
 
-                    col.Item().Element(c => PrintTheme.AmountInWords(c, data.GrandTotal));
+                    col.Item().Element(c => PrintTheme.AmountInWords(c, data.GrandTotal, branding.CurrencyCode));
 
                     col.Item().PaddingTop(6).Row(sign =>
                     {
@@ -128,7 +132,8 @@ public static class ProgressBillingPdfGenerator
     /// <summary>الإجماليّاتُ بالترتيب المحاسبيّ: الأعمال ← المحتجز ← الصافي ← الضريبة ← المستحق (الأخيرُ على كحليّ).</summary>
     private static void TotalsCard(IContainer container, BillingPrintData data, string vatLabel)
     {
-        static string Money(decimal value) => PrintText.Ltr(value.ToString("N2", CultureInfo.InvariantCulture)) + " ر.س";
+        var currency = CurrencyCatalog.Short(data.CurrencyCode, english: false);
+        string Money(decimal value) => PrintText.Ltr(value.ToString("N2", CultureInfo.InvariantCulture)) + " " + currency;
 
         container.Card().Column(col =>
         {

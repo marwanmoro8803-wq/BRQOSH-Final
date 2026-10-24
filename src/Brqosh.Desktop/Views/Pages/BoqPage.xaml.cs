@@ -55,7 +55,7 @@ public partial class BoqPage : UserControl
 
         UiTestAutomation.PublishGridCount(Grid, items.Count);
         BoqSummaryText.Text =
-            $"مشروع: {project.Name} · بنود: {items.Count} · إجمالي BOQ: {entity.BoqTotal:N2} ر.س";
+            $"مشروع: {project.Name} · بنود: {items.Count} · إجمالي BOQ: {entity.BoqTotal:N2} {CurrencyLabel.Short}";
     }
 
     private ProjectOption? SelectedProject =>

@@ -463,6 +463,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<string>("AuditorName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<string>("BaseCurrencyCode")
                         .IsRequired()
                         .HasMaxLength(3)

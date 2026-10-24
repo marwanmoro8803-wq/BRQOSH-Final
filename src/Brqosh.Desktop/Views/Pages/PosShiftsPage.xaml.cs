@@ -97,7 +97,7 @@ public partial class PosShiftsPage : UserControl
         var short_ = closed.Where(s => s.CashDifference < 0m).ToList();
 
         ShiftSummaryText.Text =
-            $"ورديات: {shifts.Count} · مفتوحة: {open} · إجمالي مبيعات: {sales:N2} ر.س"
+            $"ورديات: {shifts.Count} · مفتوحة: {open} · إجمالي مبيعات: {sales:N2} {CurrencyLabel.Short}"
             + (short_.Count > 0
                 ? $" · ورديات بعجز: {short_.Count} بمجموع {Math.Abs(short_.Sum(s => s.CashDifference)):N2}"
                 : closed.Count > 0 ? " · ولا عجزَ في أي وردية مغلقة." : string.Empty);

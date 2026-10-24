@@ -11,11 +11,20 @@ public partial class EulaWindow : Window
 {
     private readonly string _text;
 
-    public EulaWindow(string text)
+    /// <param name="readOnly">
+    /// ‏للاطّلاع بعد القبول (من «تفضيلات البرنامج»): لا خانةَ قبولٍ ولا «أوافق» — زرُّ إغلاقٍ وحده، ولا يُسجَّل قبولٌ جديد.
+    /// </param>
+    public EulaWindow(string text, bool readOnly = false)
     {
         InitializeComponent();
         _text = text;
         TextBox.Text = text;
+        if (readOnly)
+        {
+            AgreeCheck.Visibility = Visibility.Collapsed;
+            AcceptButton.Visibility = Visibility.Collapsed;
+            DeclineButton.Content = "إغلاق";
+        }
     }
 
     private void OnAgreeChanged(object sender, RoutedEventArgs e) => AcceptButton.IsEnabled = AgreeCheck.IsChecked == true;

@@ -41,6 +41,9 @@
 
     <Company>BRQOSH</Company>
     <Product>BRQOSH ERP</Product>
+    <!-- ‏(أسئلةُ المالك 2026-10-24) ‏هويّةُ المورّد في الملف التنفيذيّ نفسِه (خصائص الملف) وفي «عن البرنامج». -->
+    <Copyright>© 2026 BRQOSH. All rights reserved.</Copyright>
+    <Description>BRQOSH ERP — accounting and business management for companies (professional use)</Description>
   </PropertyGroup>
 
   <!--

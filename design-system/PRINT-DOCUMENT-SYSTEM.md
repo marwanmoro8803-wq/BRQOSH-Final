@@ -24,6 +24,10 @@ Every PDF now shares one visual system, implemented once and reused:
 - Page text style comes from `branding.PageTextStyle` — it sets the **paragraph direction to right-to-left**. Without it QuestPDF lays Arabic paragraphs out LTR and mixed text such as "من 2026-10-01 إلى 2026-10-31" prints in the wrong order.
 - Reading order is right → left: list table columns in reading order (first = rightmost) and wrap content rows with `ContentFromRightToLeft()`; `PrintTheme.LabelValue` fixes its own order.
 - Dates/codes/amounts go through `PrintText` (`Date`, `Code`, `Money`) so numbers stay intact inside Arabic paragraphs.
+- **Currency** is never typed into a generator: the symbol beside an amount comes from `branding.CurrencyAr` (the company's books currency, `Company.FunctionalCurrencyCode`) or, for a voucher, the voucher's own currency. `NoGeneratorHardcodesTheRiyalSymbol` fails any generator that spells it out (the sales invoice is the one exception — it prints the SAR equivalent of a foreign-currency invoice, as the authority requires). A foreign-currency voucher also prints its book equivalent and rate.
+- **Amount in words** (`PrintTheme.AmountInWordsText`) exists for SAR only: the wording is riyals and halalas, so in any other currency the line is omitted rather than printed wrong.
+- **Who prepared / who reviewed:** the footer carries `أعدّه: <user who printed>` on every document, and `المراجع: <Company.AuditorName>` on statements, ledgers and financial reports (`RenderFooterMeta(showAuditor: true)`, which `PrintReport.Table` and the statement generator use). The auditor is set in Company settings; invoices and vouchers do not show it.
+- **Language:** printed documents are Arabic/right-to-left in this version. The interface language switch (Preferences) does not change them — an English/LTR print set is a separate piece of work (see OPEN_ITEMS).
 
 **Rendering a document to look at it:** build the generator's output to bytes and convert with `pdftoppm -png` (poppler); compare against this table before changing layout.
 

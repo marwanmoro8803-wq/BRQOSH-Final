@@ -11,15 +11,25 @@ public sealed record PrintBranding(
     string? CompanyNameEn = null,
     string? AddressAr = null,
     byte[]? LogoImageBytes = null,
-    string PrintFontFamily = "Tahoma")
+    string PrintFontFamily = "Tahoma",
+    string CurrencyCode = "SAR",
+    // ‏(أسئلةُ المالك 2026-10-24) ‏المدقِّق/المراجعُ القانونيّ للمنشأة (من إعداداتها)، ومَن طبع الورقة (مستخدمُ الجلسة).
+    string? AuditorName = null,
+    string? PreparedBy = null)
 {
+    /// <summary>
+    /// ما يُكتب بجوار المبالغ في المطبوع — رمزُ عملة دفاتر المنشأة (ر.س للريال). كان «ر.س» مكتوباً في كلّ مولِّد،
+    /// فمنشأةٌ بعملةٍ أخرى كانت تطبع مبالغَها موسومةً بالريال.
+    /// </summary>
+    public string CurrencyAr => CurrencyCatalog.Short(CurrencyCode, english: false);
+
     public string EffectiveFontFamily =>
         string.IsNullOrWhiteSpace(PrintFontFamily) ? "Tahoma" : PrintFontFamily;
 
     public static PrintBranding From(string companyNameAr, string vatNumber) =>
         new(companyNameAr, vatNumber);
 
-    public static PrintBranding FromCompany(Company company)
+    public static PrintBranding FromCompany(Company company, string? preparedBy = null)
     {
         var logo = CompanyBrandingStorage.TryReadLogo(company.LogoFilePath);
 
@@ -38,7 +48,21 @@ public sealed record PrintBranding(
             company.NameEn,
             address,
             logo,
-            CompanyBrandingStorage.NormalizePrintFont(company.PrintFontFamily));
+            CompanyBrandingStorage.NormalizePrintFont(company.PrintFontFamily),
+            company.FunctionalCurrencyCode,
+            company.AuditorName,
+            string.IsNullOrWhiteSpace(preparedBy) ? null : preparedBy.Trim());
+    }
+
+    /// <summary>سطرُ «أعدّه · المراجع» — <c>null</c> إن لم يُعرف أيٌّ منهما. والمراجعُ يظهر حيث طُلب (<paramref name="withAuditor"/>) وعُرف.</summary>
+    public string? PeopleLine(bool withAuditor)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(PreparedBy))
+            parts.Add($"أعدّه: {PreparedBy}");
+        if (withAuditor && !string.IsNullOrWhiteSpace(AuditorName))
+            parts.Add($"المراجع: {AuditorName}");
+        return parts.Count == 0 ? null : string.Join("   ·   ", parts);
     }
 
     public TextStyle PageTextStyle(float fontSize = 11) =>
@@ -91,13 +115,22 @@ public sealed record PrintBranding(
     /// تذييلٌ موحّد: خطٌّ رفيع، ثمّ اسمُ المنشأة يميناً وختمُ الطباعة وسطاً ورقمُ الصفحة يساراً.
     /// سطرُ الامتثال (إن وُجد) فوقه.
     /// </summary>
-    public void RenderFooterMeta(IContainer container, string? complianceLine = null)
+    /// <param name="showAuditor">
+    /// ‏للقوائم والكشوف والتقارير المالية: يُضاف سطرٌ بـ«أعدّه: … · المراجع: …». أمّا الفاتورةُ والسند فلا مراجعَ لهما، ويظهر فيهما
+    /// ‏«أعدّه» وحدَه إن عُرف.
+    /// </param>
+    public void RenderFooterMeta(IContainer container, string? complianceLine = null, bool showAuditor = false)
     {
         container.Column(col =>
         {
             if (!string.IsNullOrWhiteSpace(complianceLine))
                 col.Item().PaddingBottom(3).AlignCenter().Text(complianceLine).FontSize(8)
                     .FontColor(PrintTheme.Muted).FontFamily(EffectiveFontFamily);
+
+            var people = PeopleLine(showAuditor);
+            if (people is not null)
+                col.Item().PaddingBottom(3).AlignRight().Text(people).FontSize(8)
+                    .FontColor(PrintTheme.Ink).FontFamily(EffectiveFontFamily);
 
             col.Item().LineHorizontal(0.75f).LineColor(PrintTheme.Line);
             col.Item().PaddingTop(3).Row(row =>

@@ -23,6 +23,15 @@ public static class LocaleManager
         Changed?.Invoke();
     }
 
+    /// <summary>يضبط اللغة صراحةً (من التفضيلات المحفوظة) — ولا يُطلق <see cref="Changed"/> إن لم تتغيّر.</summary>
+    public static void Set(bool english)
+    {
+        if (IsEnglish == english)
+            return;
+        IsEnglish = english;
+        Changed?.Invoke();
+    }
+
     public static void ApplyTo(FrameworkElement element) =>
         element.FlowDirection = Flow;
 }

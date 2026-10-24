@@ -27,7 +27,8 @@ public class ProgramAssistantTests
 
         var reply = await assistant.AskAsync(ctx, "ZATCA OTP");
 
-        Assert.Contains("O-01", reply.AnswerAr);
+        Assert.Contains("OTP", reply.AnswerAr);
+        Assert.DoesNotContain("O-01", reply.AnswerAr);
     }
 
     [Fact]
@@ -41,6 +42,27 @@ public class ProgramAssistantTests
 
         Assert.True(financial.Called);
         Assert.Contains("تحصيلات", reply.AnswerAr);
+    }
+
+    /// <summary>
+    /// (أسئلةُ المالك 2026-10-24) «ماذا أفعل في هذه الشاشة؟» على <b>كلِّ</b> شاشةٍ في الفهرس: الردُّ يحمل عنوانَها ودليلَها وسياقَ المستخدم،
+    /// ولا يذكر مفتاحَها البرمجيّ — لا على «بعض» الشاشات التي كُتب لها دليلٌ يدويّ.
+    /// </summary>
+    [Fact]
+    public async Task EveryScreenAnswers_WhatToDoHere_WithItsOwnGuide()
+    {
+        var assistant = new ProgramAssistantService(new StubFinancialAssistant());
+
+        foreach (var key in ProgramNavCatalog.Keys)
+        {
+            var guide = ProgramKnowledge.TryGetPageGuide(key)!;
+            var reply = await assistant.AskAsync(new ProgramAssistantContext(1, key, "محاسب", "Retail"), "ماذا أفعل في هذه الشاشة؟");
+
+            Assert.Contains(guide.TitleAr, reply.AnswerAr);
+            Assert.Contains(guide.GuideAr, reply.AnswerAr);
+            Assert.Contains(guide.GuideEn, reply.AnswerEn);
+            Assert.DoesNotContain(key, reply.AnswerAr, StringComparison.Ordinal);
+        }
     }
 
     [Theory]
@@ -168,7 +190,7 @@ public class ProgramAssistantTests
     [InlineData("How to post?", "اضغط ترحيل")]
     [InlineData("صلاحياتي", "الصلاحيات الحالية")]
     [InlineData("My permissions", "الصلاحيات الحالية")]
-    [InlineData("ZATCA / OTP", "O-01")]
+    [InlineData("ZATCA / OTP", "OTP")]
     public async Task Quick_prompts_route_to_their_topic_from_dashboard(string prompt, string expectedAr)
     {
         var financial = new StubFinancialAssistant();

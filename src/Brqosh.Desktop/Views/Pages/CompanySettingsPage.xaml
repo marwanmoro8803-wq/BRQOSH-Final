@@ -50,6 +50,12 @@
                     <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" TextWrapping="Wrap"
                              AcceptsReturn="True" MinHeight="56" Margin="0,0,0,16"/>
 
+                    <TextBlock x:Name="AuditorLabel" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="AuditorBox" Style="{StaticResource AppTextBox}" MaxLength="120" Margin="0,0,0,4"
+                             AutomationProperties.AutomationId="CompanySettingsAuditor"/>
+                    <TextBlock x:Name="AuditorHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                               TextWrapping="Wrap" Margin="0,0,0,16"/>
+
                     <!-- (CEEF-229 · Z-10) بيانات البائع النظامية للفوترة الإلكترونية.
                          العنوان أعلاه نصّ حرّ للترويسة؛ والفاتورة الإلكترونية تلزم حقولاً مفكَّكة. -->
                     <TextBlock Text="بيانات الفاتورة الإلكترونية" Style="{StaticResource FieldLabel}"
@@ -134,10 +140,12 @@
                                FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة العرض (ISO) *" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="BaseCurrencyBox" Style="{StaticResource AppTextBox}" MaxLength="3" Margin="0,0,0,16"/>
+                    <ComboBox x:Name="BaseCurrencyBox" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة القياس المحاسبي (ISO) *" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="FunctionalCurrencyBox" Style="{StaticResource AppTextBox}" MaxLength="3" Margin="0,0,0,16"/>
+                    <ComboBox x:Name="FunctionalCurrencyBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="CurrencyHintText"
+                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="مجموعة التقارير الموحّدة" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="GroupCombo" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>

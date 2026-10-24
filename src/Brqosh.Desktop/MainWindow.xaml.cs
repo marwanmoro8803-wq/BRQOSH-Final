@@ -62,7 +62,15 @@ public partial class MainWindow : Window
         if (Brqosh.Infrastructure.Licensing.ReadOnlyBooks.IsActive)
             Title += " — " + LocaleManager.T("للقراءة فقط (الترخيص منتهٍ)", "Read-only (licence expired)");
 
-        ThemeManager.Apply(true);
+        // ‏(أسئلةُ المالك 2026-10-24) ‏المظهرُ واللغةُ من تفضيلات المستخدم المحفوظة — كان يبدأ داكناً عربيّاً دائماً.
+        var uiPrefs = UiPreferencesStore.Load();
+        ThemeManager.Apply(uiPrefs.Dark);
+        if (uiPrefs.English)
+        {
+            LocaleManager.Set(true);
+            FlowDirection = LocaleManager.Flow;
+            LanguageToggleBtn.Content = LocaleManager.LanguageLabel;
+        }
         RefreshThemeToggleText();
         KeyboardNavigationHelper.ApplyShellHeader(BranchCombo, ThemeToggleBtn);
         LocaleManager.Changed += OnLocaleChanged;
@@ -117,6 +125,20 @@ public partial class MainWindow : Window
         licenseTimer.Start();
         Closed += (_, _) => licenseTimer.Stop();
 
+        // ‏عملةُ دفاتر المنشأة الجارية قبل أوّل شاشة — فلا تُرسم اللوحةُ بالريال ثمّ تتغيّر.
+        CurrencyLabel.Load();
+        // ‏الشاشاتُ تطلب فتحَ شاشةٍ أخرى (إجراءاتُ اللوحة) من هنا، فتمرّ بفحوص Navigate نفسِها.
+        Navigation.AppNavigator.Handler = key => Navigate(key, NavTitleFor(key));
+        Navigation.AppNavigator.LanguageHandler = english =>
+        {
+            if (LocaleManager.IsEnglish != english)
+                OnToggleLanguage(this, new RoutedEventArgs());
+        };
+        Closed += (_, _) =>
+        {
+            Navigation.AppNavigator.Handler = null;
+            Navigation.AppNavigator.LanguageHandler = null;
+        };
         BindUserHeader();
         BindStatusBar();
         _ = RefreshDbHealthAsync();
@@ -202,6 +224,7 @@ public partial class MainWindow : Window
     {
         AppServices.CompanyId = company.Id;
         AppServices.TouchSession();
+        CurrencyLabel.Load();
 
         // ‏(جاهزيّةُ الإطلاق · ح-٦٦ · sector-modules#10) **القوائمُ تتبع نظامَ المنشأة المطبَّقة — هنا لا عند مستدعيها.**
         // ‏كان هذا يُحدّث النظامَ والشارةَ ولا يُعيد بناءَ القوائم، وأوّلُ بناءٍ يقع في المُنشئ قبل أن
@@ -391,12 +414,9 @@ public partial class MainWindow : Window
         return true;
     }
 
-    private void OnToggleTheme(object sender, RoutedEventArgs e)
-    {
-        ThemeManager.Toggle();
-        RefreshThemeToggleText();
-        RefreshActivePage();
-    }
+    // ‏التبديلُ يُطلق ThemeManager.Changed فيُحدّث OnThemeChanged زرَّ الثيم ويحفظ الاختيارَ ويُعيد رسم الصفحة — مرّةً واحدة
+    // ‏(كانت الصفحةُ تُبنى مرّتين لكلّ نقرة: هنا وفي المعالج).
+    private void OnToggleTheme(object sender, RoutedEventArgs e) => ThemeManager.Toggle();
 
     /// <summary>
     /// نصّ زرّ الثيم باللغة الجارية (O-25). كان مثبّتاً بالعربية فيبقى «فاتح» في
@@ -413,7 +433,16 @@ public partial class MainWindow : Window
     }
 
     private void OnThemeChanged() =>
-        Dispatcher.Invoke(RefreshActivePage);
+        Dispatcher.Invoke(() =>
+        {
+            RefreshThemeToggleText();
+            SaveUiPreferences();
+            RefreshActivePage();
+        });
+
+    /// <summary>يحفظ المظهرَ واللغةَ الجاريين — أياً كان من غيّرهما (زرُّ الترويسة أو صفحةُ التفضيلات).</summary>
+    private static void SaveUiPreferences() =>
+        UiPreferencesStore.Save(new UiPreferences { Dark = ThemeManager.IsDark, English = LocaleManager.IsEnglish });
 
     private void RefreshActivePage()
     {
@@ -451,6 +480,7 @@ public partial class MainWindow : Window
 
         var key = _activePageKey;
         Navigate(key, NavTitleFor(key));
+        SaveUiPreferences();
     }
 
     /// <summary>عنوان الصفحة باللغة الجارية من الكتالوج — لا من نصّ الشاشة الحاليّ.</summary>
@@ -536,9 +566,8 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var scope = AppServices.CreateInfrastructureScope();
-            var intel = scope.ServiceProvider.GetRequiredService<IFinancialIntelligenceService>();
-            var report = await intel.AnalyzeAsync(AppServices.CompanyId);
+            // ‏تحليلٌ مشتركٌ مع اللوحة (IntelligenceCache): فتحُ اللوحة والتنقّلُ المتتابع لا يحملان القاعدةَ بالتحليل نفسِه مرّتين.
+            var report = await IntelligenceCache.AnalyzeAsync(AppServices.CompanyId);
             AiInsightHost.Children.Clear();
             var pageGuide = ProgramKnowledge.TryGetPageGuide(_activePageKey);
             if (pageGuide is not null)

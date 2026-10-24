@@ -52,6 +52,56 @@ public class EveryPrintedDocumentSharesOneLayoutTests
         }
     }
 
+    /// <summary>
+    /// (أسئلةُ المالك 2026-10-24 · العملة) <b>لا مولِّدَ يكتب «ر.س» في شيفرته</b> — رمزُ العملة من <c>branding.CurrencyAr</c> (عملةِ دفاتر
+    /// المنشأة) أو من عملةِ المستند. واستثناءٌ واحد: فاتورةُ المبيعات تطبع مكافئَ الريال لفاتورةٍ بعملةٍ أجنبية (متطلّبُ الهيئة).
+    /// </summary>
+    [Fact]
+    public void NoGeneratorHardcodesTheRiyalSymbol()
+    {
+        foreach (var file in Directory.GetFiles(ReportingDirectory(), "*PdfGenerator.cs"))
+        {
+            var name = Path.GetFileName(file);
+            if (name == "SalesInvoicePdfGenerator.cs")
+                continue;
+
+            Assert.False(File.ReadAllText(file).Contains("ر.س", StringComparison.Ordinal),
+                $"{name}: «ر.س» مكتوبةٌ في المولِّد — استعمل branding.CurrencyAr.");
+        }
+    }
+
+    [Theory]
+    [InlineData("SAR", true)]
+    [InlineData("sar", true)]
+    [InlineData("USD", false)]
+    [InlineData("KWD", false)]
+    public void TheAmountInWordsIsPrintedForTheRiyalOnly(string currency, bool printed)
+    {
+        var words = PrintTheme.AmountInWordsText(1250.5m, currency);
+
+        Assert.Equal(printed, words is not null);
+        if (printed)
+            Assert.Contains("ريالاً", words!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AVoucherInAForeignCurrencyRendersWithItsCurrencyAndTheBookEquivalent()
+    {
+        var pdf = VoucherPdfGenerator.ReceiptVoucher(Branding, "RV-2026-000312", new DateOnly(2026, 10, 20),
+            "Acme Inc.", 1000m, "تحويل بنكي", "TRX-1", "سداد", currencyCode: "USD", exchangeRate: 3.75m);
+
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(pdf, 0, 4));
+        Assert.True(pdf.Length > 1500);
+    }
+
+    [Fact]
+    public void TheBrandingCarriesTheCompanysCurrencyLabel()
+    {
+        Assert.Equal("ر.س", Branding.CurrencyAr);
+        Assert.Equal("$", (Branding with { CurrencyCode = "USD" }).CurrencyAr);
+        Assert.Equal("د.إ", (Branding with { CurrencyCode = "AED" }).CurrencyAr);
+    }
+
     [Fact]
     public void EveryDocumentRendersToARealPdf()
     {

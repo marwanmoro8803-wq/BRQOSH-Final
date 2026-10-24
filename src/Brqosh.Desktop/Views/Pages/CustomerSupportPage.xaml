@@ -6,56 +6,91 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="دعم العملاء" FontSize="18"/>
-                <TextBlock Style="{StaticResource PageSubtitleText}"
-                           Text="قنوات التواصل · مستويات الخدمة · تذاكر الدعم"/>
+                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="18"/>
+                <TextBlock x:Name="SubtitleText" Style="{StaticResource PageSubtitleText}"/>
             </StackPanel>
         </Border>
 
         <!-- (commercial-readiness#7) القنواتُ والباقاتُ من config/support.json الذي يعتمده المورّد — وبدونه تقول الشاشةُ ذلك. -->
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock FontWeight="SemiBold" Text="مستويات الخدمة (SLA)" Margin="0,0,0,8"/>
+                <TextBlock x:Name="SlaTitle" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <TextBlock x:Name="SupportStateText" Foreground="{StaticResource TextSecondaryBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,8"/>
                 <DataGrid x:Name="SlaGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
                           FontSize="14" RowHeight="32" MaxHeight="140">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الباقة" Binding="{Binding Plan}" Width="*"/>
-                        <DataGridTextColumn Header="زمن الاستجابة" Binding="{Binding Response}" Width="160"/>
-                        <DataGridTextColumn Header="ساعات العمل" Binding="{Binding Hours}" Width="160"/>
+                        <DataGridTextColumn x:Name="SlaPlanCol" Binding="{Binding Plan}" Width="*"/>
+                        <DataGridTextColumn x:Name="SlaResponseCol" Binding="{Binding Response}" Width="160"/>
+                        <DataGridTextColumn x:Name="SlaHoursCol" Binding="{Binding Hours}" Width="160"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <StackPanel x:Name="EmailRow" Orientation="Horizontal" Margin="0,12,0,0">
-                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="البريد:" Margin="0,0,6,0"/>
+                <WrapPanel x:Name="EmailRow" Margin="0,12,0,0">
+                    <TextBlock x:Name="EmailLabel" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                     <TextBlock x:Name="EmailText" FlowDirection="LeftToRight"/>
-                </StackPanel>
-                <StackPanel x:Name="PhoneRow" Orientation="Horizontal" Margin="0,4,0,0">
-                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" Text="الهاتف:" Margin="0,0,6,0"/>
+                </WrapPanel>
+                <WrapPanel x:Name="PhoneRow" Margin="0,4,0,0">
+                    <TextBlock x:Name="PhoneLabel" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                     <TextBlock x:Name="PhoneText" FlowDirection="LeftToRight"/>
-                </StackPanel>
+                </WrapPanel>
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+        <!-- طلبٌ جديد: سؤال · مشكلة · شكوى · اقتراح — يُسجَّل برقمٍ على هذا الجهاز، ويُفتح بريدٌ جاهزٌ إن اعتُمد عنوانُ الدعم. -->
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" Padding="20" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock FontWeight="SemiBold" Text="تذاكر الدعم" Margin="0,0,0,8"/>
-                <TextBlock x:Name="TicketsSummaryText" Margin="0,0,0,8"/>
+                <TextBlock x:Name="NewTitle" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <TextBlock x:Name="KindLabel" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="KindBox" FontSize="14" Padding="10,8" Margin="0,0,0,10" MaxWidth="320" HorizontalAlignment="Left"
+                          AutomationProperties.AutomationId="SupportKind"/>
+                <TextBlock x:Name="SubjectLabel" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="SubjectBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,10" MaxLength="140"
+                         AutomationProperties.AutomationId="SupportSubject"/>
+                <TextBlock x:Name="DetailsLabel" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="DetailsBox" Style="{StaticResource AppTextBox}" TextWrapping="Wrap" AcceptsReturn="True"
+                         MinHeight="84" MaxHeight="160" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10" MaxLength="4000"
+                         AutomationProperties.AutomationId="SupportDetails"/>
+                <TextBlock x:Name="FormError" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                           Visibility="Collapsed" Margin="0,0,0,8"/>
+                <WrapPanel>
+                    <Button x:Name="RegisterBtn" Style="{StaticResource PrimaryButton}" Padding="20,9" Margin="0,0,8,6"
+                            AutomationProperties.AutomationId="SupportRegister" Click="OnRegister"/>
+                    <Button x:Name="RegisterMailBtn" Style="{StaticResource SecondaryButton}" Padding="20,9" Margin="0,0,8,6"
+                            AutomationProperties.AutomationId="SupportRegisterMail" Click="OnRegisterAndMail"/>
+                </WrapPanel>
+                <TextBlock x:Name="HonestyText" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock x:Name="RequestsTitle" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="TicketsSummaryText" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                    <WrapPanel Margin="0,0,0,8">
+                        <Button x:Name="CopyBtn" Style="{StaticResource SecondaryButton}" Padding="16,7" Margin="0,0,8,6" Click="OnCopyRequest"/>
+                        <Button x:Name="MailBtn" Style="{StaticResource SecondaryButton}" Padding="16,7" Margin="0,0,8,6" Click="OnMailRequest"/>
+                        <Button x:Name="CloseBtn" Style="{StaticResource SecondaryButton}" Padding="16,7" Margin="0,0,8,6" Click="OnCloseRequest"/>
+                    </WrapPanel>
+                </StackPanel>
                 <DataGrid x:Name="TicketsGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
-                          FontSize="14" RowHeight="34">
+                          FontSize="14" RowHeight="34" SelectionMode="Single" MinHeight="120"
+                          AutomationProperties.AutomationId="SupportRequestsGrid">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الرقم" Binding="{Binding Id}" Width="80"/>
-                        <DataGridTextColumn Header="الموضوع" Binding="{Binding Subject}" Width="*"/>
-                        <DataGridTextColumn Header="الأولوية" Binding="{Binding Priority}" Width="100"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="120"/>
+                        <DataGridTextColumn x:Name="IdCol" Binding="{Binding Id}" Width="90"/>
+                        <DataGridTextColumn x:Name="KindCol" Binding="{Binding KindLabel}" Width="100"/>
+                        <DataGridTextColumn x:Name="SubjectCol" Binding="{Binding Subject}" Width="*"/>
+                        <DataGridTextColumn x:Name="DateCol" Binding="{Binding Date}" Width="110"/>
+                        <DataGridTextColumn x:Name="StatusCol" Binding="{Binding StatusLabel}" Width="100"/>
                     </DataGrid.Columns>
                 </DataGrid>
-            </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </UserControl>

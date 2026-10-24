@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using Brqosh.Application.Setup;
 using Brqosh.Desktop.Ui;
 using Brqosh.Desktop.Views;
+using Brqosh.Domain.Companies;
 using Brqosh.Domain.Inventory;
 using Brqosh.Infrastructure.Inventory;
 using Brqosh.Infrastructure.Accounting;
@@ -119,8 +120,18 @@ public partial class CompanySettingsPage : UserControl
         var idx = company.CostingMethod == InventoryCostingMethod.Fifo ? 1 : 0;
         CostingMethodBox.SelectedIndex = idx;
         ManualJournalThresholdBox.Text = company.ManualJournalApprovalThreshold.ToString("0.##", CultureInfo.InvariantCulture);
-        BaseCurrencyBox.Text = company.BaseCurrencyCode;
-        FunctionalCurrencyBox.Text = company.FunctionalCurrencyCode;
+        AuditorLabel.Text = LocaleManager.T("اسم المدقق / المراجع القانوني", "Auditor / statutory reviewer name");
+        AuditorHint.Text = LocaleManager.T(
+            "اختياري. يُطبع في تذييل القوائم والكشوف والتقارير المالية («المراجع: …») بجانب اسم من أعدّها.",
+            "Optional. Printed in the footer of statements, ledgers and financial reports (\"Auditor: …\") beside the name of whoever prepared them.");
+        AuditorBox.Text = company.AuditorName ?? "";
+        CurrencyHintText.Text = LocaleManager.T(
+            "عملةُ القياس هي ما يُكتب بجوار كلّ مبلغٍ في الشاشات والمطبوعات. لا تُغيَّر بعد تسجيل قيودٍ أو مستنداتٍ في المنشأة — فالمبالغُ المخزَّنةُ تبقى أرقامَها. والفوترةُ الإلكترونية (زاتكا) ومعالجةُ فروق العملة مبنيّتان على الريال السعودي، فغيِّرها فقط لمنشأةٍ دفاترُها بعملةٍ أخرى لأجل التقارير الموحَّدة؛ والمستنداتُ بعملةٍ أجنبية تُسجَّل بسعر الصرف.",
+            "The measurement currency is what is written beside every amount on screens and printouts. It cannot be changed once entries or documents are recorded in the company — stored amounts keep their numbers. E-invoicing (ZATCA) and exchange-difference handling are built on the Saudi riyal, so change it only for a company whose books are in another currency for consolidated reporting; foreign-currency documents are recorded at an exchange rate.");
+        BaseCurrencyBox.ItemsSource = CurrencyCatalog.Codes;
+        FunctionalCurrencyBox.ItemsSource = CurrencyCatalog.Codes;
+        BaseCurrencyBox.SelectedItem = company.BaseCurrencyCode;
+        FunctionalCurrencyBox.SelectedItem = company.FunctionalCurrencyCode;
 
         var fontName = CompanyBrandingStorage.NormalizePrintFont(company.PrintFontFamily);
         PrintFontBox.SelectedItem = CompanyBrandingStorage.AllowedPrintFonts.Contains(fontName)
@@ -269,6 +280,7 @@ public partial class CompanySettingsPage : UserControl
                 NameEnBox.Text,
                 AddressBox.Text,
                 PrintFontBox.SelectedItem?.ToString() ?? "Tahoma");
+            company.SetAuditor(AuditorBox.Text);
 
             if (_removeLogoRequested)
             {
@@ -289,7 +301,6 @@ public partial class CompanySettingsPage : UserControl
                 company.SetLogoFilePath(savedPath);
             }
 
-            company.SetCurrencies(BaseCurrencyBox.Text, FunctionalCurrencyBox.Text);
             if (GroupCombo.SelectedItem is GroupOption groupOpt)
                 company.AssignCompanyGroup(groupOpt.Id);
             await db.SaveChangesAsync();
@@ -305,6 +316,29 @@ public partial class CompanySettingsPage : UserControl
                 using var facade = new DesktopAccountingFacade();
                 await facade.GetService<CostingMethodService>().ChangeAsync(company.Id, opt.Method);
             }
+
+            // ‏(أسئلةُ المالك 2026-10-24) ‏العملةُ **لا تُبدَّل بالسنّارة**: تمرّ بخدمةٍ تشترط المديرَ وترفض التبديلَ بعد أن تُقيَّد
+            // ‏في الدفاتر قيودٌ أو مستنداتٌ بها، وتُدقّق التغيير. وبعد الحفظ لا قبله، فرفضُها لا يُضيّع ما عداها.
+            using (var facade = new DesktopAccountingFacade())
+            {
+                try
+                {
+                    await facade.GetService<CompanyCurrencyChangeService>().ChangeAsync(
+                        company.Id,
+                        BaseCurrencyBox.SelectedItem as string ?? company.BaseCurrencyCode,
+                        FunctionalCurrencyBox.SelectedItem as string ?? company.FunctionalCurrencyCode);
+                }
+                catch (CurrencyLockedException refused)
+                {
+                    throw new InvalidOperationException(LocaleManager.T(
+                        refused.Message,
+                        $"The company currency ({refused.CurrentCurrency}) cannot change once entries or documents are recorded in it — " +
+                        "the stored amounts keep their numbers and would be read in a currency they were never recorded in. " +
+                        "Create a new company in the required currency."));
+                }
+            }
+
+            CurrencyLabel.Load();
 
             // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ ضابطٌ رقابيّ — يمرّ بخدمةٍ تشترط المديرَ وتُدقّق التغيير، ولا يُحفظ بالسنّارة.
             // ‏(ui-ux-i18n-printing#7) ‏ملفُّ النشاط يغيّره المديرُ عبر خدمةٍ تحرس الوحداتِ ذاتَ البيانات وتُدقّق التغيير؛

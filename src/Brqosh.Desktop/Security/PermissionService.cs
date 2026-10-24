@@ -74,7 +74,9 @@ public static class PermissionService
         ["intercompany_elimination"] = [UserRole.Administrator, UserRole.Accountant],
         ["data_quality"] = [UserRole.Administrator, UserRole.Accountant],
         ["platform_events"] = [UserRole.Administrator],
-        ["customer_support"] = [UserRole.Administrator],
+        // ‏(أسئلةُ المالك 2026-10-24) ‏الدعمُ والتفضيلاتُ لكلّ دور: من يواجه المشكلةَ ليس المديرَ دائماً، والمظهرُ تفضيلُ كلِّ مستخدم.
+        ["customer_support"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier, UserRole.Viewer],
+        ["preferences"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier, UserRole.Viewer],
         ["pricing_plans"] = [UserRole.Administrator],
         ["vat_return"] = [UserRole.Administrator, UserRole.Accountant],
         ["general_ledger_report"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],

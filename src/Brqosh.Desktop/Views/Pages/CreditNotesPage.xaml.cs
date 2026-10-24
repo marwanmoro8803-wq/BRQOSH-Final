@@ -80,7 +80,7 @@ public partial class CreditNotesPage : UserControl
             .Where(n => n.Status == CreditNoteStatus.Posted)
             .SumGrandTotalAsync();
         NoteSummaryText.Text =
-            $"إشعارات: {_paging.TotalCount:N0} · مرحّل: {posted:N0} · إجمالي: {postedTotal:N2} ر.س";
+            $"إشعارات: {_paging.TotalCount:N0} · مرحّل: {posted:N0} · إجمالي: {postedTotal:N2} {CurrencyLabel.Short}";
     }
 
     private async void OnPrev(object sender, RoutedEventArgs e)

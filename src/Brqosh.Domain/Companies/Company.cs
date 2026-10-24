@@ -180,6 +180,24 @@ public class Company
     public void SetLogoFilePath(string? path) =>
         LogoFilePath = TrimOrNull(path);
 
+    /// <summary>
+    /// (أسئلةُ المالك 2026-10-24) <b>اسمُ المدقِّق/المراجع القانونيّ</b> للمنشأة — اختياريّ. يُطبع في تذييل القوائم والكشوف
+    /// والتقارير («المراجع: …») فتحمل الورقةُ مَن يراجعها، لا مَن طبعها وحدَه.
+    /// </summary>
+    public string? AuditorName { get; private set; }
+
+    public const int AuditorNameMaxLength = 120;
+
+    public void SetAuditor(string? name)
+    {
+        var value = TrimOrNull(name);
+        if (value is not null && value.Length > AuditorNameMaxLength)
+            throw new ArgumentException($"اسم المدقق لا يتجاوز {AuditorNameMaxLength} حرفاً.", nameof(name));
+        if (value is not null && value.Any(char.IsControl))
+            throw new ArgumentException("اسم المدقق لا يحوي محارف تحكّم.", nameof(name));
+        AuditorName = value;
+    }
+
     public void SetCostingMethod(InventoryCostingMethod method) => CostingMethod = method;
 
     public void SetCurrencies(string baseCurrencyCode, string functionalCurrencyCode)
@@ -212,11 +230,15 @@ public class Company
             throw new AccountingException("المنشأة في وضع القراءة فقط — الترحيل محظور.");
     }
 
-    private static string NormalizeCurrency(string code)
+    /// <summary>رمزُ العملة مطبَّعاً (ثلاثةُ أحرفٍ كبيرة) ومن الكتالوج — يرمي إن لم يكن عملةً معروفة.</summary>
+    public static string NormalizeCurrency(string code)
     {
         var c = (code ?? "").Trim().ToUpperInvariant();
         if (c.Length != 3 || !c.All(char.IsLetter))
             throw new ArgumentException("رمز العملة يجب أن يكون ISO 4217 من 3 أحرف.", nameof(code));
+        // ‏ثلاثةُ أحرفٍ لا تكفي: «ABC» ليست عملة، وتُكتب بجوار كلِّ مبلغٍ في الشاشات والمطبوعات.
+        if (!CurrencyCatalog.IsKnown(c))
+            throw new ArgumentException($"رمز العملة «{c}» غير معروف — اختر عملةً من قائمة ISO 4217.", nameof(code));
         return c;
     }
 

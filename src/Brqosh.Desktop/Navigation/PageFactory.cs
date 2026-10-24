@@ -125,6 +125,7 @@ public static class PageFactory
         ["data_quality"] = () => new Views.Pages.DataQualityPage(),
         ["platform_events"] = () => new Views.Pages.PlatformEventsPage(),
         ["customer_support"] = () => new Views.Pages.CustomerSupportPage(),
+        ["preferences"] = () => new Views.Pages.PreferencesPage(),
         ["pricing_plans"] = () => new Views.Pages.PricingPlansPage(),
         ["backup"] = () => new Views.Pages.BackupPage(),
         ["company_groups"] = () => new Views.Pages.CompanyGroupsPage(),

@@ -58,15 +58,28 @@ public static class PrintTheme
     /// «المبلغ كتابةً» على شريطٍ فاتحٍ بخطٍّ ذهبيٍّ جانبيّ — يمنع التلاعبَ بالرقم وحدَه
     /// (يُستعمل في السند والفاتورة والمستخلص).
     /// </summary>
-    public static void AmountInWords(IContainer container, decimal amount)
+    public static void AmountInWords(IContainer container, decimal amount, string currencyCode = "SAR")
     {
+        var words = AmountInWordsText(amount, currencyCode);
+        if (words is null)
+            return;
+
         container.Background(Tint).BorderRight(3).BorderColor(Gold).PaddingVertical(7).PaddingHorizontal(10)
             .AlignRight().Text(text =>
             {
                 text.Span("المبلغ كتابةً: ").Bold().FontSize(9).FontColor(Navy);
-                text.Span(ArabicAmountWords.ForRiyals(amount)).FontSize(9).FontColor(Ink);
+                text.Span(words).FontSize(9).FontColor(Ink);
             });
     }
+
+    /// <summary>
+    /// نصُّ «المبلغ كتابةً» — <b>للريال وحدَه</b>. الصيغةُ ريالٌ وهللة؛ وفي عملةٍ أخرى تكون كتابةً خاطئةً توهم ريالاً مكانَ الدينار،
+    /// فلا يُطبع سطرٌ أصلاً (<c>null</c>) بدل أن يُطبع سطرٌ مغلوط.
+    /// </summary>
+    public static string? AmountInWordsText(decimal amount, string currencyCode = "SAR") =>
+        string.Equals(currencyCode, "SAR", StringComparison.OrdinalIgnoreCase)
+            ? ArabicAmountWords.ForRiyals(amount)
+            : null;
 
     /// <summary>خانةُ توقيعٍ: خطٌّ ثمّ الصفةُ تحته.</summary>
     public static void SignatureLine(IContainer container, string role)

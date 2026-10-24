@@ -95,7 +95,7 @@ public class NoInternalTagReachesTheCustomerTests
     public void TheScanner_SeesRealText_AndThePatternsTellLeaksFromLookalikes()
     {
         var texts = DisplayedTexts();
-        Assert.Contains(texts, t => t.Text == "دعم العملاء");
+        Assert.Contains(texts, t => t.Text == "حالة النظام");
         Assert.Contains(texts, t => t.File.EndsWith(".cs", StringComparison.Ordinal));
 
         Assert.Equal(2, LeaksIn("G-31 · SLA · قنوات التواصل · تذاكر الدعم (MVP)").Count);

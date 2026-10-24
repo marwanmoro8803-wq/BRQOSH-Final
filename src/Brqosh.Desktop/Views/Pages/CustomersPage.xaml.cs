@@ -49,7 +49,7 @@ public partial class CustomersPage : UserControl
         Render(filter);
         var totalAr = _balances.Values.Sum();
         CustomerSummaryText.Text =
-            $"عملاء نشطون: {total:N0} · معروض: {_customers.Count:N0} · إجمالي AR: {totalAr:N2} ر.س";
+            $"عملاء نشطون: {total:N0} · معروض: {_customers.Count:N0} · إجمالي AR: {totalAr:N2} {CurrencyLabel.Short}";
     }
 
     private void Render(string filter)

@@ -125,8 +125,8 @@ public static class PayslipPdfGenerator
                         });
                     });
 
-                    col.Item().Element(c => PrintTheme.SummaryBand(c, [("صافي المستحق (ر.س)", PrintText.Money(data.NetPay))]));
-                    col.Item().Element(c => PrintTheme.AmountInWords(c, data.NetPay));
+                    col.Item().Element(c => PrintTheme.SummaryBand(c, [($"صافي المستحق ({branding.CurrencyAr})", PrintText.Money(data.NetPay))]));
+                    col.Item().Element(c => PrintTheme.AmountInWords(c, data.NetPay, branding.CurrencyCode));
 
                     col.Item().PaddingTop(6).Row(sign =>
                     {

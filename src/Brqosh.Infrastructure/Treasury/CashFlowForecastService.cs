@@ -98,21 +98,18 @@ public sealed class CashFlowForecastService(BrqoshDbContext db) : ICashFlowForec
         CancellationToken ct)
     {
         var result = new List<DueAmount>();
-        var allocation = new PaymentAllocationService(db);
 
-        var customers = await db.Customers.AsNoTracking()
+        // ‏(أسئلةُ المالك 2026-10-24 · الأداء) ‏كانت تمرّ على كلّ عميلٍ وتسأل القاعدةَ عن كلّ فاتورة — استعلاماً لكلّ مستند. صارت أربعةَ استعلاماتٍ
+        // ‏بالجملة؛ والمهلةُ تُطبَّق بحسب عميل المستند، وعملاؤه المحذوفون ناعماً خارجَ القائمة كما كانوا.
+        var terms = await db.Customers.AsNoTracking()
             .Where(c => c.CompanyId == companyId)
             .Select(c => new { c.Id, c.PaymentTermDays })
-            .ToListAsync(ct);
+            .ToDictionaryAsync(c => c.Id, c => c.PaymentTermDays, ct);
 
-        foreach (var customer in customers)
+        foreach (var (customerId, doc) in await new PaymentAllocationService(db).OpenSalesDocumentsForAllAsync(companyId, ct))
         {
-            foreach (var doc in await allocation.OpenSalesDocumentsAsync(companyId, customer.Id, ct))
-            {
-                if (doc.RemainingAmount <= 0m) continue;
-                result.Add(new DueAmount(
-                    doc.DocumentDate.AddDays(customer.PaymentTermDays), Round(doc.RemainingAmount)));
-            }
+            if (doc.RemainingAmount <= 0m || !terms.TryGetValue(customerId, out var days)) continue;
+            result.Add(new DueAmount(doc.DocumentDate.AddDays(days), Round(doc.RemainingAmount)));
         }
 
         // ‏**والشيكاتُ بتاريخها المكتوب** — أوثقُ ما يُتنبَّأ به، وكانت مُهمَلة.
@@ -132,21 +129,16 @@ public sealed class CashFlowForecastService(BrqoshDbContext db) : ICashFlowForec
         CancellationToken ct)
     {
         var result = new List<DueAmount>();
-        var allocation = new PaymentAllocationService(db);
 
-        var suppliers = await db.Suppliers.AsNoTracking()
+        var terms = await db.Suppliers.AsNoTracking()
             .Where(s => s.CompanyId == companyId)
             .Select(s => new { s.Id, s.PaymentTermDays })
-            .ToListAsync(ct);
+            .ToDictionaryAsync(s => s.Id, s => s.PaymentTermDays, ct);
 
-        foreach (var supplier in suppliers)
+        foreach (var (supplierId, doc) in await new PaymentAllocationService(db).OpenPurchaseDocumentsForAllAsync(companyId, ct))
         {
-            foreach (var doc in await allocation.OpenPurchaseDocumentsAsync(companyId, supplier.Id, ct))
-            {
-                if (doc.RemainingAmount <= 0m) continue;
-                result.Add(new DueAmount(
-                    doc.DocumentDate.AddDays(supplier.PaymentTermDays), Round(doc.RemainingAmount)));
-            }
+            if (doc.RemainingAmount <= 0m || !terms.TryGetValue(supplierId, out var days)) continue;
+            result.Add(new DueAmount(doc.DocumentDate.AddDays(days), Round(doc.RemainingAmount)));
         }
 
         var cheques = await db.Cheques.AsNoTracking()

@@ -1,7 +1,7 @@
 namespace Brqosh.Application.Intelligence;
 
 /// <summary>
-/// قاعدة معرفة البرنامج — حقائق in-repo فقط (لا LLM خارجي).
+/// قاعدة معرفة البرنامج — حقائق البرنامج وبيانات الشركة فقط (لا نموذج لغوي خارجي).
 /// مبادئ: Fable epistemic humility · لا إغلاق كاذب على OTP/ZATCA الحي.
 /// </summary>
 public static class ProgramKnowledge
@@ -38,8 +38,8 @@ public static class ProgramKnowledge
             navKey ?? "unknown",
             "شاشة البرنامج",
             "Program screen",
-            $"أنت على الشاشة «{navKey}». استخدم القائمة الجانبية للتنقل. اسأل عن: ترحيل · ZATCA · الصلاحيات · التدفق النقدي.",
-            $"You are on «{navKey}». Use the side nav. Ask about: posting · ZATCA · permissions · cash flow.");
+            "أنت على إحدى شاشات البرنامج. استخدم القائمة الجانبية للتنقل. اسأل عن: ترحيل · الفوترة الإلكترونية · الصلاحيات · التدفق النقدي.",
+            "You are on one of the program screens. Use the side menu to move around. Ask about: posting · e-invoicing · permissions · cash flow.");
 
     public static FinancialAssistantReply PostingGuide() =>
         new(
@@ -49,14 +49,14 @@ public static class ProgramKnowledge
 
     public static FinancialAssistantReply ZatcaGuide() =>
         new(
-            "ZATCA in-repo: إعدادات الفوترة · معالج CSID · توليد XML/QR للفواتير المرحّلة. ⏭ الإغلاق الحي (OTP + 10 فواتير مقبولة) يتطلب O-01 خارج المستودع — راجع إعدادات ZATCA ثم دليل O-01.",
-            "ZATCA in-repo: settings · CSID wizard · XML/QR for posted invoices. ⏭ Live OTP closure (O-01) is external — use ZATCA settings then O-01 runbook.",
+            "الفوترة الإلكترونية (زاتكا): إعدادات الفوترة · معالج الشهادة CSID · توليد XML وQR للفواتير المرحّلة. ⏭ الاعتماد الحي لدى الهيئة يتطلب رمز OTP من بوابة فاتورة وإرسال فواتير تجريبية مقبولة — يتم خارج البرنامج؛ راجع إعدادات الفوترة الإلكترونية ثم دليل الشهادة.",
+            "E-invoicing (ZATCA): settings · CSID wizard · XML and QR for posted invoices. ⏭ Live approval by the authority needs an OTP from the Fatoora portal and accepted sample invoices — done outside the program; see e-invoicing settings, then the certificate guide.",
             SourceId);
 
     public static FinancialAssistantReply RbacGuide(string? roleName) =>
         new(
-            $"الصلاحيات الحالية: {roleName ?? "غير معروف"}. المدير: كامل. المحاسب: ترحيل ومحاسبة. أمين الصندوق: قبض/صرف وPOS. المشاهد: قراءة فقط. إن رُفضت شاشة فالدور لا يملك nav key المطلوب.",
-            $"Current role: {roleName ?? "unknown"}. Admin: full. Accountant: posting. Cashier: treasury/POS. Viewer: read-only. Denied screens mean missing permission for that nav key.",
+            $"الصلاحيات الحالية: {roleName ?? "غير معروف"}. المدير: كامل. المحاسب: ترحيل ومحاسبة. أمين الصندوق: قبض/صرف وPOS. المشاهد: قراءة فقط. إن رُفضت شاشة فالدور لا يملك صلاحية فتحها — اطلب من المدير تعديل دورك.",
+            $"Current role: {roleName ?? "unknown"}. Admin: full. Accountant: posting. Cashier: treasury/POS. Viewer: read-only. A denied screen means your role lacks permission to open it — ask the administrator to adjust your role.",
             SourceId);
 
     public static FinancialAssistantReply ProgramHelp() =>
@@ -84,17 +84,17 @@ public static class ProgramKnowledge
             "قيد يدوي: مسودة → سطور مدين=دائن → ترحيل. لا ترحيل في فترة مغلقة.",
             "Manual JE: draft → balanced lines → Post. Blocked in closed fiscal periods."),
         ["zatca_settings"] = new("zatca_settings", "إعدادات ZATCA", "ZATCA settings",
-            "ربط الشهادة/CSID · بيئة محاكاة أو إنتاج. OTP الحي ⏭ O-01.",
-            "Certificate/CSID · simulation or production. Live OTP ⏭ O-01."),
+            "ربط الشهادة/CSID · بيئة محاكاة أو إنتاج. الاعتماد الحي بالرمز OTP ⏭ يتم خارج البرنامج.",
+            "Certificate/CSID · simulation or production. Live approval by OTP ⏭ is done outside the program."),
         ["zatca_invoices"] = new("zatca_invoices", "فواتير ZATCA", "ZATCA invoices",
             "عرض حالة الامتثال للفواتير المرحّلة: ICV · QR · حالة الإرسال.",
             "Compliance status for posted invoices: ICV · QR · submission state."),
         ["receipt_vouchers"] = new("receipt_vouchers", "سندات القبض", "Receipt vouchers",
-            "تحصيل من عميل → ترحيل يخفّض الذمم ويزيد النقدية/البنك.",
-            "Customer collection → posting reduces AR and increases cash/bank."),
+            "سند قبض: سجّل تحصيلاً من عميل ثم رحّل — الترحيل يخفّض ذمم العملاء ويزيد النقدية أو رصيد البنك.",
+            "Receipt voucher: record a collection from a customer, then post — posting reduces receivables and raises cash or the bank balance."),
         ["payment_vouchers"] = new("payment_vouchers", "سندات الصرف", "Payment vouchers",
-            "سداد مورد → ترحيل يخفّض الذمم الدائنة.",
-            "Supplier payment → posting reduces AP."),
+            "سند صرف: اختر المورد والمبلغ وطريقة الدفع ثم رحّل — الترحيل يخفّض ذمم الموردين ويُنقص النقدية أو رصيد البنك.",
+            "Payment voucher: pick the supplier, amount and method, then post — posting reduces supplier payables and cash or the bank balance."),
         ["trial_balance"] = new("trial_balance", "ميزان المراجعة", "Trial balance",
             "تقرير أرصدة الحسابات لفترة — تحقق أن المدين = الدائن قبل الإقفال.",
             "Account balances for a period — verify debits equal credits before close."),
@@ -107,12 +107,15 @@ public static class ProgramKnowledge
         ["products"] = new("products", "الأصناف", "Products",
             "أصناف مخزنية أو خدمات — تُستخدم في الفواتير والمخزون.",
             "Stock or service items for invoices and inventory."),
-        ["customer_support"] = new("customer_support", "دعم العملاء", "Customer support",
-            "MVP دعم: SLA · قنوات · تذاكر placeholder — G-31 in-repo.",
-            "Support MVP: SLA · channels · ticket placeholder — G-31 in-repo."),
+        ["preferences"] = new("preferences", "تفضيلات البرنامج", "Preferences",
+            "اختر المظهر (داكن أو فاتح) واللغة — يُحفظان لك ويعودان عند كل تشغيل. وفي «عن البرنامج» الإصدار والمورّد والشروط والأحكام وفحص التحديث.",
+            "Choose the appearance (dark or light) and language — remembered for you on every start. 'About the program' shows the version, vendor, terms and conditions, and the update check."),
+        ["customer_support"] = new("customer_support", "الدعم والشكاوى", "Support & complaints",
+            "قنوات التواصل ومستويات الخدمة كما اعتمدها المورّد، وسجل بطلبات الدعم التي رفعتها من هذا الجهاز.",
+            "Contact channels and service levels as approved by the vendor, plus a log of the support requests you raised from this device."),
         ["pricing_plans"] = new("pricing_plans", "الباقات والتسعير", "Pricing plans",
-            "عرض خطط الاشتراك من قاعدة البيانات — G-32 MVP.",
-            "Subscription plans from database — G-32 MVP."),
+            "خطط الاشتراك وحدّ عدد الشركات المسموح لكل خطة.",
+            "The subscription plans and the maximum number of companies each allows."),
         ["chart_of_accounts"] = new("chart_of_accounts", "دليل الحسابات", "Chart of accounts",
             "هيكل الحسابات: مجموعات + حسابات تشغيلية. أنشئ حساباً جديداً أو عدّل قبل الترحيل.",
             "Account hierarchy: groups + posting accounts. Create or edit before posting."),
@@ -138,8 +141,8 @@ public static class ProgramKnowledge
             "الرقم الضريبي · ملف العمل · الشعار · الترخيص. ملف العمل يحدد الوحدات الظاهرة.",
             "VAT ID · business profile · logo · license. Profile controls visible modules."),
         ["crm_leads"] = new("crm_leads", "العملاء المحتملون", "Leads",
-            "CRM MVP: عملاء محتملون قبل فرص البيع والفواتير.",
-            "CRM MVP: leads before opportunities and invoices."),
+            "العملاء المحتملون: سجّل من اهتم بخدماتك قبل أن تتحول فرصته إلى بيع وفاتورة.",
+            "Leads: record who showed interest before the opportunity becomes a sale and an invoice."),
         ["bom"] = new("bom", "قوائم المواد", "Bill of materials",
             "BOM: مكونات المنتج النهائي — أساس أوامر الإنتاج.",
             "BOM: components for finished goods — basis for work orders."),

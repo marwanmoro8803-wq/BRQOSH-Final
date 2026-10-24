@@ -245,7 +245,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             new($"بيع أصل ثابت {asset.Code} — {asset.NameAr}", 1m, proceeds, proceeds, category),
         };
 
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         // ‏(ح-٥٣) وبيعُ الأصل لمشترٍ مسجَّلٍ فاتورةٌ ضريبيّةٌ تُخلَّص — فرمزُه من القارئ الواحد.
         var mark = ZatcaHandOverCopy.MarkFor(zatca,
             () => Phase1QrFallback(company, invoiceDate, null, proceeds + vat, vat));
@@ -481,7 +481,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         long companyId, long voucherId, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var voucher = await db.ReceiptVouchers.SingleAsync(v => v.CompanyId == companyId && v.Id == voucherId, ct);
         PrintPostedGuard.EnsureReceiptVoucherPosted(voucher);
         var customer = await db.Customers.IgnoreQueryFilters().SingleAsync(c => c.Id == voucher.CustomerId, ct);
@@ -493,7 +493,9 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             voucher.Amount,
             MethodAr(voucher.Method),
             voucher.Reference ?? "",
-            voucher.Description ?? "");
+            voucher.Description ?? "",
+            voucher.CurrencyCode,
+            voucher.ExchangeRate);
 
         var fileName = $"brqosh-rv-{SanitizeFileName(voucher.VoucherNumber ?? voucher.Id.ToString())}.pdf";
         await LogAsync(companyId, username, "ReceiptVoucher", voucher.VoucherNumber ?? voucher.Id.ToString(), ct);
@@ -504,7 +506,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         long companyId, long voucherId, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var voucher = await db.PaymentVouchers.SingleAsync(v => v.CompanyId == companyId && v.Id == voucherId, ct);
         PrintPostedGuard.EnsurePaymentVoucherPosted(voucher);
         var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == voucher.SupplierId, ct);
@@ -516,7 +518,9 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             voucher.Amount,
             MethodAr(voucher.Method),
             voucher.Reference ?? "",
-            voucher.Description ?? "");
+            voucher.Description ?? "",
+            voucher.CurrencyCode,
+            voucher.ExchangeRate);
 
         var fileName = $"brqosh-pv-{SanitizeFileName(voucher.VoucherNumber ?? voucher.Id.ToString())}.pdf";
         await LogAsync(companyId, username, "PaymentVoucher", voucher.VoucherNumber ?? voucher.Id.ToString(), ct);
@@ -548,7 +552,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
             _ => "مسودة",
         };
 
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var pdf = JournalEntryPdfGenerator.Generate(
             branding,
             entry.EntryNumber ?? entry.Id.ToString(),
@@ -569,7 +573,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var result = await new CashFlowStatementService(db).ExecuteAsync(companyId, fromDate, toDate);
         var pdf = FinancialReportPdfGenerator.CashFlowStatement(branding, result);
         var fileName = $"brqosh-cashflow-{fromDate:yyyyMMdd}-{toDate:yyyyMMdd}.pdf";
@@ -582,7 +586,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var rows = await new PosReportQuery(db).DailySummaryAsync(companyId, days, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var pdf = PosReportPdfGenerator.DailySummary(branding, rows);
         var fileName = $"brqosh-pos-{DateTime.Now:yyyyMMdd}.pdf";
         await LogAsync(companyId, username, "PosDailyReport", DateTime.Today.ToString("yyyy-MM-dd"), ct);

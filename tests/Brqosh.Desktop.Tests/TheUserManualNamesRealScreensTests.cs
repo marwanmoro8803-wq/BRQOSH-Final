@@ -62,6 +62,8 @@ public class TheUserManualNamesRealScreensTests
     [InlineData("النسخ الاحتياطي")]
     [InlineData("حالة النظام")]
     [InlineData("سجل التدقيق")]
+    [InlineData("تفضيلات البرنامج")]
+    [InlineData("الدعم والشكاوى")]
     public void EachScreenTheManualNames_IsInTheNavigation(string title)
     {
         var catalog = File.ReadAllText(Path.Combine(Root, "src", "Brqosh.Desktop", "Navigation", "NavigationCatalog.cs"));
@@ -110,6 +112,13 @@ public class TheUserManualNamesRealScreensTests
     [InlineData("BackupPage", "استعادة من ملفّ...")]
     [InlineData("DiagnosticsPage", "فحص التحديث")]
     [InlineData("DiagnosticsPage", "حزمة الدعم")]
+    [InlineData("PreferencesPage", "الشروط والأحكام")]
+    [InlineData("PreferencesPage", "دليل المستخدم")]
+    [InlineData("PreferencesPage", "فحص التحديث")]
+    [InlineData("CustomerSupportPage", "تسجيل الطلب")]
+    [InlineData("CustomerSupportPage", "تسجيل وفتح بريد إلى الدعم")]
+    [InlineData("CustomerSupportPage", "نسخ نص الطلب")]
+    [InlineData("CustomerSupportPage", "إغلاق الطلب")]
     public void EachButtonTheManualNames_IsOnItsScreen(string page, string text)
     {
         var dir = Path.Combine(Root, "src", "Brqosh.Desktop", "Views", "Pages");

@@ -94,13 +94,13 @@ public static class StatementPdfGenerator
                     [
                         ("إجمالي المدين", PrintText.Money(rows.Sum(r => r.Debit))),
                         ("إجمالي الدائن", PrintText.Money(rows.Sum(r => r.Credit))),
-                        ("الرصيد المستحق (ر.س)", PrintText.Money(closingBalance)),
+                        ($"الرصيد المستحق ({branding.CurrencyAr})", PrintText.Money(closingBalance)),
                     ]));
 
-                    col.Item().Element(c => PrintTheme.AmountInWords(c, closingBalance));
+                    col.Item().Element(c => PrintTheme.AmountInWords(c, closingBalance, branding.CurrencyCode));
                 });
 
-                page.Footer().Element(f => branding.RenderFooterMeta(f));
+                page.Footer().Element(f => branding.RenderFooterMeta(f, showAuditor: true));
             });
         }).GeneratePdf();
     }

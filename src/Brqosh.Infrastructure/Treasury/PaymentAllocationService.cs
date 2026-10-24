@@ -75,6 +75,100 @@ public class PaymentAllocationService(BrqoshDbContext db)
         return result.OrderBy(r => r.DocumentDate).ThenBy(r => r.DocumentNumber).ToList();
     }
 
+    /// <summary>
+    /// (أسئلةُ المالك 2026-10-24 · الأداء) <b>كلُّ المفتوح على كلِّ العملاء بعددٍ ثابتٍ من الاستعلامات.</b>
+    ///
+    /// <para><b>ما كان:</b> توقّعُ النقد (وهو يُحسب عند كلّ فتحٍ للوحة) يمرّ على كلّ عميل، ولكلّ فاتورةٍ مرحَّلةٍ يسأل القاعدةَ مرّتين
+    /// (التخصيصات وإشعارات الدائن) — استعلامٌ لكلّ مستند. على دفاترَ لخمس سنوات (٣٬٦٠٠ فاتورة) كان ذلك ٧٬٢٠٠+ استعلاماً ونحو ١٫٧ ثانية على
+    /// قرصٍ محلّيّ، <b>وعلى PostgreSQL بشبكةٍ يتضاعف بعدد الرحلات</b>. <b>الآن</b> أربعةُ استعلاماتٍ بالجملة ثم حسابٌ في الذاكرة بالمعادلة
+    /// نفسِها (<c>RemainingAsync</c>): المتبقّي = الأصلُ − إشعاراتُ الدائن المرحَّلة − ما خُصِّص، لا أقلَّ من صفر.</para>
+    /// </summary>
+    public async Task<IReadOnlyList<(long CustomerId, OpenDocumentBalance Document)>> OpenSalesDocumentsForAllAsync(
+        long companyId, CancellationToken ct = default)
+    {
+        // ‏أعمدةٌ لا كيانات: `GrandTotal()` = `Subtotal + VatAmount` وكلاهما مخزَّن، فلا حاجةَ إلى تحميل سطور آلاف الفواتير لجمعها.
+        var invoices = await db.SalesInvoices
+            .Where(i => i.CompanyId == companyId && i.Status == SalesInvoiceStatus.Posted && i.PosShiftId == null)
+            .Select(i => new { i.Id, i.CustomerId, i.InvoiceNumber, i.InvoiceDate, i.Subtotal, i.VatAmount })
+            .ToListAsync(ct);
+        var billings = await db.ProgressBillings
+            .Where(b => b.CompanyId == companyId && b.Status == ProgressBillingStatus.Posted)
+            .ToListAsync(ct);
+
+        var allocated = await AllocatedByDocumentAsync(companyId,
+            [PaymentAllocationDocumentType.SalesInvoice, PaymentAllocationDocumentType.ProgressBilling], ct);
+        var credited = await db.CreditNotes
+            .Where(n => n.CompanyId == companyId && n.Status == CreditNoteStatus.Posted)
+            .GroupBy(n => n.OriginalInvoiceId)
+            .Select(g => new { InvoiceId = g.Key, Total = g.Sum(n => n.Subtotal + n.VatAmount) })
+            .ToDictionaryAsync(x => x.InvoiceId, x => x.Total, ct);
+
+        var result = new List<(long, OpenDocumentBalance)>();
+        foreach (var inv in invoices)
+        {
+            var original = inv.Subtotal + inv.VatAmount;
+            var net = Math.Max(0m, original - credited.GetValueOrDefault(inv.Id));
+            var remaining = RemainingOf(net, allocated.GetValueOrDefault((PaymentAllocationDocumentType.SalesInvoice, inv.Id)));
+            if (remaining > 0.009m)
+                result.Add((inv.CustomerId, new OpenDocumentBalance(
+                    PaymentAllocationDocumentType.SalesInvoice, inv.Id,
+                    inv.InvoiceNumber ?? inv.Id.ToString(), inv.InvoiceDate,
+                    original, original - remaining, remaining)));
+        }
+
+        foreach (var b in billings)
+        {
+            var receivable = b.NetBillableAmount + b.VatAmount;
+            var remaining = RemainingOf(receivable, allocated.GetValueOrDefault((PaymentAllocationDocumentType.ProgressBilling, b.Id)));
+            if (remaining > 0.009m)
+                result.Add((b.CustomerId, new OpenDocumentBalance(
+                    PaymentAllocationDocumentType.ProgressBilling, b.Id,
+                    b.BillingNumber ?? b.Id.ToString(), b.BillingDate,
+                    receivable, receivable - remaining, remaining)));
+        }
+
+        return result;
+    }
+
+    /// <summary>كلُّ المفتوح على كلّ الموردين بعددٍ ثابتٍ من الاستعلامات — انظر <see cref="OpenSalesDocumentsForAllAsync"/>.</summary>
+    public async Task<IReadOnlyList<(long SupplierId, OpenDocumentBalance Document)>> OpenPurchaseDocumentsForAllAsync(
+        long companyId, CancellationToken ct = default)
+    {
+        var invoices = await db.PurchaseInvoices
+            .Where(i => i.CompanyId == companyId && i.Status == PurchaseInvoiceStatus.Posted)
+            .Select(i => new { i.Id, i.SupplierId, i.InvoiceNumber, i.InvoiceDate, i.Subtotal, i.VatAmount })
+            .ToListAsync(ct);
+        var allocated = await AllocatedByDocumentAsync(companyId, [PaymentAllocationDocumentType.PurchaseInvoice], ct);
+
+        var result = new List<(long, OpenDocumentBalance)>();
+        foreach (var inv in invoices)
+        {
+            var original = inv.Subtotal + inv.VatAmount;
+            var remaining = RemainingOf(original, allocated.GetValueOrDefault((PaymentAllocationDocumentType.PurchaseInvoice, inv.Id)));
+            if (remaining > 0.009m)
+                result.Add((inv.SupplierId, new OpenDocumentBalance(
+                    PaymentAllocationDocumentType.PurchaseInvoice, inv.Id,
+                    inv.InvoiceNumber ?? inv.Id.ToString(), inv.InvoiceDate,
+                    original, original - remaining, remaining)));
+        }
+
+        return result;
+    }
+
+    private async Task<Dictionary<(PaymentAllocationDocumentType, long), decimal>> AllocatedByDocumentAsync(
+        long companyId, PaymentAllocationDocumentType[] types, CancellationToken ct)
+    {
+        var rows = await db.PaymentAllocationLines
+            .Where(a => a.CompanyId == companyId && types.Contains(a.DocumentType))
+            .GroupBy(a => new { a.DocumentType, a.DocumentId })
+            .Select(g => new { g.Key.DocumentType, g.Key.DocumentId, Total = g.Sum(a => a.Amount) })
+            .ToListAsync(ct);
+        return rows.ToDictionary(r => (r.DocumentType, r.DocumentId), r => r.Total);
+    }
+
+    private static decimal RemainingOf(decimal original, decimal allocated) =>
+        Math.Round(Math.Max(0m, original - allocated), 2, MidpointRounding.AwayFromZero);
+
     public async Task<IReadOnlyList<OpenDocumentBalance>> OpenPurchaseDocumentsAsync(
         long companyId, long supplierId, CancellationToken ct = default)
     {

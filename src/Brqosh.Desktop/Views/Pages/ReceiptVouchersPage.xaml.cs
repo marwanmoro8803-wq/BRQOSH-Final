@@ -69,7 +69,7 @@ public partial class ReceiptVouchersPage : UserControl
 
         var postedCount = await baseQuery.CountAsync(v => v.Status == ReceiptVoucherStatus.Posted);
         VoucherSummaryText.Text =
-            $"سندات: {_paging.TotalCount:N0} · مرحّل: {postedCount:N0} · إجمالي التحصيلات المرحّلة: {total:N2} ر.س";
+            $"سندات: {_paging.TotalCount:N0} · مرحّل: {postedCount:N0} · إجمالي التحصيلات المرحّلة: {total:N2} {CurrencyLabel.Short}";
         UiTestAutomation.PublishSummary(VoucherSummaryText, VoucherSummaryText.Text);
     }
 

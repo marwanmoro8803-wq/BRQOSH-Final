@@ -71,7 +71,7 @@ public static class KpiMetricCardBuilder
         {
             valuePanel.Children.Add(new TextBlock
             {
-                Text = LocaleManager.T(" ر.س", " SAR"),
+                Text = " " + CurrencyLabel.Short,
                 Style = UiResources.StyleOf(host, "KpiCurrencySuffixText"),
                 VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 0, 4),

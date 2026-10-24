@@ -22,6 +22,9 @@
             <!-- Smart alert -->
             <ContentControl x:Name="AlertHost" Margin="0,0,0,16"/>
 
+            <!-- ابدأ هنا — مراحلُ البدء الأولى، تُقرأ من الدفاتر وتختفي حين تكتمل. -->
+            <ContentControl x:Name="GettingStartedHost" Margin="0,0,0,16"/>
+
             <!-- KPI Bento — 5 columns -->
             <Border Style="{StaticResource ContentCard}" Padding="12" Margin="0,0,0,16">
                 <UniformGrid x:Name="KpiGrid"

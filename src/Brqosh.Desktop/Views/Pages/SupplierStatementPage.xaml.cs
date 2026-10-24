@@ -77,7 +77,7 @@ public partial class SupplierStatementPage : UserControl
             r.Debit, r.Credit, r.RunningBalance)).ToList();
         ReportGrid.ItemsSource = displayRows;
         UiTestAutomation.PublishGridCount(ReportGrid, displayRows.Count);
-        TotalsText.Text = $"الرصيد المستحق للمورد: {result.ClosingBalance:N2} ر.س";
+        TotalsText.Text = $"الرصيد المستحق للمورد: {result.ClosingBalance:N2} {CurrencyLabel.Short}";
         UiTestAutomation.PublishSummary(TotalsText, TotalsText.Text);
     }
 }

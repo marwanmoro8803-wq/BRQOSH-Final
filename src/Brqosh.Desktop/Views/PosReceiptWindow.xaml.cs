@@ -33,7 +33,7 @@ public partial class PosReceiptWindow : Window
         LinesList.ItemsSource = receipt.Lines;
         SubtotalText.Text = LocaleManager.T("قبل الضريبة: ", "Before VAT: ") + $"{receipt.Subtotal:N2}";
         VatText.Text = LocaleManager.T("ضريبة القيمة المضافة: ", "VAT: ") + $"{receipt.VatAmount:N2}";
-        TotalText.Text = LocaleManager.T("الإجمالي: ", "Total: ") + $"{receipt.Total:N2} " + LocaleManager.T("ر.س", "SAR");
+        TotalText.Text = LocaleManager.T("الإجمالي: ", "Total: ") + $"{receipt.Total:N2} " + CurrencyLabel.Short;
 
         // ‏(ح-٥٣) ‏الرمزُ من القارئ الواحد؛ وما لم يُعتمد يُطبع بتنبيهٍ لا برمز.
         ZatcaStatusText.Text = receipt.Notice ?? statusMessage ?? string.Empty;

@@ -50,7 +50,7 @@ public partial class SuppliersPage : UserControl
         Render(filter);
         var totalAp = _balances.Values.Sum();
         SupplierSummaryText.Text =
-            $"موردون نشطون: {total:N0} · معروض: {_suppliers.Count:N0} · إجمالي AP: {totalAp:N2} ر.س";
+            $"موردون نشطون: {total:N0} · معروض: {_suppliers.Count:N0} · إجمالي AP: {totalAp:N2} {CurrencyLabel.Short}";
     }
 
     private void Render(string filter)

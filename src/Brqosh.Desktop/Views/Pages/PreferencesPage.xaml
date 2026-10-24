@@ -1,0 +1,95 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PreferencesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
+             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="18"/>
+                <TextBlock x:Name="SubtitleText" Style="{StaticResource PageSubtitleText}"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+
+                <!-- المظهر واللغة — يُحفظان لمستخدم ويندوز هذا ويعودان عند كلّ تشغيل. -->
+                <Border Style="{StaticResource ContentCard}" Padding="28" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock x:Name="AppearanceTitle" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                        <TextBlock x:Name="ThemeLabel" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="ThemeBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"
+                                  AutomationProperties.AutomationId="PreferencesTheme"
+                                  SelectionChanged="OnThemeChosen"/>
+                        <TextBlock x:Name="ThemeHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                   TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+                        <TextBlock x:Name="LanguageLabel" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="LanguageBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"
+                                  AutomationProperties.AutomationId="PreferencesLanguage"
+                                  SelectionChanged="OnLanguageChosen"/>
+                        <TextBlock x:Name="LanguageHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- عن البرنامج -->
+                <Border Style="{StaticResource ContentCard}" Padding="28" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock x:Name="AboutTitle" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <ItemsControl x:Name="AboutList" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="170"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Label}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <!-- قيمٌ لاتينيّةٌ (إصدار · مسار · حقوق نشر): أرقامٌ لاتينيّة واتجاهُ يسارٍ-يمين، وإلّا قُلب ترتيبُ «© 2026 BRQOSH». -->
+                                        <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap"
+                                                   NumberSubstitution.Substitution="European"
+                                                   Foreground="{StaticResource TextPrimaryBrush}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Ltr}" Value="True">
+                                                            <Setter Property="FlowDirection" Value="LeftToRight"/>
+                                                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <WrapPanel Margin="0,12,0,0">
+                            <Button x:Name="TermsBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="PreferencesTerms" Click="OnTerms"/>
+                            <Button x:Name="ManualBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="PreferencesManual" Click="OnManual"/>
+                            <Button x:Name="UpdateBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="PreferencesUpdate" Click="OnCheckUpdate"/>
+                            <Button x:Name="SupportBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="PreferencesSupport" Click="OnSupport"/>
+                            <Button x:Name="StatusBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="PreferencesStatus" Click="OnStatus"/>
+                        </WrapPanel>
+                        <TextBlock x:Name="UpdateText" FontWeight="SemiBold" TextWrapping="Wrap"
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

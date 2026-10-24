@@ -11,7 +11,7 @@ public partial class RetentionReleaseDialog : Window
     public RetentionReleaseDialog(string projectName, decimal maxAmount)
     {
         InitializeComponent();
-        HintText.Text = $"مشروع: {projectName}\nالحد الأقصى للإفراج: {maxAmount:N2} ر.س";
+        HintText.Text = $"مشروع: {projectName}\nالحد الأقصى للإفراج: {maxAmount:N2} {CurrencyLabel.Short}";
         AmountBox.Text = maxAmount.ToString("F2", CultureInfo.InvariantCulture);
     }
 

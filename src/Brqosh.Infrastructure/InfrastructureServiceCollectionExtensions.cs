@@ -183,6 +183,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ManualJournalEntryWorkflowService>();
         services.AddScoped<ManualJournalApprovalPolicy>();   // (accounting-core#6)
         services.AddScoped<Brqosh.Infrastructure.Companies.BusinessProfileChangeService>();   // (ui-ux-i18n-printing#7)
+        services.AddScoped<Brqosh.Infrastructure.Companies.CompanyCurrencyChangeService>();   // (أسئلةُ المالك 2026-10-24 · العملة)
         services.AddScoped<IMasterDataGovernanceService, MasterDataGovernanceService>();
         services.AddScoped<ICashFlowForecastService, CashFlowForecastService>();
         services.AddScoped<IPaymentRunService, PaymentRunService>();

@@ -64,7 +64,7 @@ public static class FinancialReportPdfGenerator
         var label = result.NetVatPayable >= 0 ? "مستحقة للهيئة" : "مستردة/مرحّلة";
         return BuildTableReport(branding, "إقرار ضريبة القيمة المضافة",
             $"من {PrintText.Date(result.FromDate)} إلى {PrintText.Date(result.ToDate)}", rows,
-            [($"صافي الضريبة ({label}) — ر.س", PrintText.Money(result.NetVatPayable))]);
+            [($"صافي الضريبة ({label}) — {branding.CurrencyAr}", PrintText.Money(result.NetVatPayable))]);
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public static class FinancialReportPdfGenerator
             [
                 ("ضريبة المخرجات", PrintText.Money(outputVat)),
                 ("ضريبة المدخلات", PrintText.Money(inputVat)),
-                ("صافي الضريبة المستحقة — ر.س", PrintText.Money(netPayable)),
+                ($"صافي الضريبة المستحقة — {branding.CurrencyAr}", PrintText.Money(netPayable)),
             ]);
     }
 

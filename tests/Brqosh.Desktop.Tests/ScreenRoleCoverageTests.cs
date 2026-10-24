@@ -86,7 +86,7 @@ public class ScreenRoleCoverageTests
     {
         string[] mustStayAdministratorOnly =
             ["audit_log", "users", "zatca_settings", "backup", "organizations",
-             "company_settings", "platform_events", "customer_support", "pricing_plans",
+             "company_settings", "platform_events", "pricing_plans",
              "soft_deleted_rows", "data_migration", "diagnostics", "gosi_policy"];
 
         var widened = mustStayAdministratorOnly
@@ -102,6 +102,21 @@ public class ScreenRoleCoverageTests
 
         Assert.True(widened.Count == 0,
             "‏مفاتيحُ كانت للمدير وحدَه بقرارٍ مكتوبٍ فاتّسعت:\n  " + string.Join("\n  ", widened));
+    }
+
+    /// <summary>
+    /// (أسئلةُ المالك 2026-10-24) <b>الدعمُ والتفضيلاتُ مفتوحان لكلّ دور بقرارٍ مكتوب</b> — من يواجه مشكلةً أو يريد مظهراً آخر
+    /// ليس المديرَ بالضرورة. وكان الدعمُ «للمدير وحده» فلا يرفع الصرّافُ شكوى من البرنامج نفسِه.
+    /// </summary>
+    [Theory]
+    [InlineData("customer_support")]
+    [InlineData("preferences")]
+    public void SupportAndPreferences_AreOpenToEveryRole(string key)
+    {
+        Assert.True(PermissionService.DecidedKeys.Contains(key), $"‏«{key}» غاب عن الجدول.");
+        Assert.True(PermissionService.CanAccess(Accountant, key));
+        Assert.True(PermissionService.CanAccess(Cashier, key));
+        Assert.True(PermissionService.CanAccess(Viewer, key));
     }
 
     /// <summary>

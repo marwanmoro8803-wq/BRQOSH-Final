@@ -29,8 +29,8 @@ public static class PosReportPdfGenerator
             ]),
             [
                 ("إجمالي العمليات", rows.Sum(r => r.Transactions).ToString(CultureInfo.InvariantCulture)),
-                ("إجمالي الضريبة (ر.س)", PrintText.Money(rows.Sum(r => r.VatAmount))),
-                ("إجمالي المبيعات (ر.س)", PrintText.Money(rows.Sum(r => r.TotalSales))),
+                ($"إجمالي الضريبة ({branding.CurrencyAr})", PrintText.Money(rows.Sum(r => r.VatAmount))),
+                ($"إجمالي المبيعات ({branding.CurrencyAr})", PrintText.Money(rows.Sum(r => r.TotalSales))),
             ]);
     }
 }

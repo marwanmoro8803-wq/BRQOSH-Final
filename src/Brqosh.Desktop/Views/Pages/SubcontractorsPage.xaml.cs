@@ -62,7 +62,7 @@ public partial class SubcontractorsPage : UserControl
         var activeValue = agreements.Where(a => a.Status == SubcontractAgreementStatus.Active)
             .Sum(a => a.ContractValue);
         SubcontractorSummaryText.Text =
-            $"عقود باطن: {agreements.Count} · نشط: {active} · قيمة نشطة: {activeValue:N2} ر.س";
+            $"عقود باطن: {agreements.Count} · نشط: {active} · قيمة نشطة: {activeValue:N2} {CurrencyLabel.Short}";
     }
 
     private async void OnAddAgreement(object sender, RoutedEventArgs e)

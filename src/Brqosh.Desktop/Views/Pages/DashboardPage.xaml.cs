@@ -54,6 +54,7 @@ public partial class DashboardPage : UserControl
         KpiGrid.Children.Clear();
         ChartsColumn.Children.Clear();
         IntelColumn.Children.Clear();
+        GettingStartedHost.Content = null;
         AlertHost.Content = new Border
         {
             Style = UiResources.StyleOf(this, "ContentCard"),
@@ -70,28 +71,66 @@ public partial class DashboardPage : UserControl
     private async Task LoadAsync()
     {
         SetLoading(true);
-        await using var db = AppServices.CreateDb();
-        var k = await new DashboardQuery(db).ExecuteAsync(AppServices.CompanyId);
+        var companyId = AppServices.CompanyId;
 
-        FinancialIntelligenceReport? intel = null;
-        CashFlowForecastResult? forecast = null;
-        try
+        // ‏(أسئلةُ المالك 2026-10-24 · الأداء) ‏**ثلاثةُ استعلاماتٍ مستقلّةٍ تجري معاً، كلٌّ بسياقها** — كانت تجري واحداً بعد واحدٍ فيكون زمنُ
+        // ‏الفتح مجموعَها. والآن أبطؤُها. و`CreateDb`/`CreateInfrastructureScope` يُعيدان ربطَ الجلسة على الخيط الذي يُنادي بهما، فلا يضيع الفاعلُ
+        // ‏في خيط العمل. والتحليلُ مشتركٌ مع لوحة المساعد (`IntelligenceCache`) فلا يُحسب مرّتين.
+        var kpiTask = Task.Run(async () =>
         {
-            using var scope = AppServices.CreateInfrastructureScope();
-            var service = scope.ServiceProvider.GetRequiredService<IFinancialIntelligenceService>();
-            intel = await service.AnalyzeAsync(AppServices.CompanyId);
-            forecast = await scope.ServiceProvider.GetRequiredService<ICashFlowForecastService>()
-                .ForecastAsync(AppServices.CompanyId);
-        }
-        catch (Exception ex)
+            await using var db = AppServices.CreateDb();
+            var kpis = await new DashboardQuery(db).ExecuteAsync(companyId);
+            IReadOnlyList<OnboardingStep> steps = [];
+            try
+            {
+                steps = await new OnboardingQuery(db).ExecuteAsync(companyId);
+            }
+            catch (Exception ex)
+            {
+                // ‏دليلُ البدء تحسينٌ لا شرط: عطلُه لا يُسقط لوحةً تعمل، لكنّه يُسجَّل ولا يُبتلع.
+                Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "DashboardPage.Onboarding");
+            }
+
+            return (kpis, steps);
+        });
+
+        var intelTask = Task.Run(async () =>
         {
-            // (CEEF-231 · O-36) ‏**التدهورُ إلى لوحةِ المؤشّرات وحدَها يبقى** — فشاشةٌ
-            // ‏تسقط لتحليلٍ اختياريٍّ أسوأُ من شاشةٍ بلا تحليل. **لكنّ الابتلاعَ الصامتَ
-            // ‏كان يجعل عطلاً دائماً يُقرأ «لا توجد رؤى اليوم»**، فلا يُبلَّغ عنه أبداً.
-            Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "DashboardPage.FinancialIntelligence");
-        }
+            try
+            {
+                return (FinancialIntelligenceReport?)await IntelligenceCache.AnalyzeAsync(companyId);
+            }
+            catch (Exception ex)
+            {
+                // (CEEF-231 · O-36) ‏**التدهورُ إلى لوحةِ المؤشّراتِ وحدَها يبقى** — فشاشةٌ
+                // ‏تسقط لتحليلٍ اختياريٍّ أسوأُ من شاشةٍ بلا تحليل. **لكنّ الابتلاعَ الصامتَ
+                // ‏كان يجعل عطلاً دائماً يُقرأ «لا توجد رؤى اليوم»**، فلا يُبلَّغ عنه أبداً.
+                Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "DashboardPage.FinancialIntelligence");
+                return null;
+            }
+        });
+
+        var forecastTask = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = AppServices.CreateInfrastructureScope();
+                return (CashFlowForecastResult?)await scope.ServiceProvider.GetRequiredService<ICashFlowForecastService>()
+                    .ForecastAsync(companyId);
+            }
+            catch (Exception ex)
+            {
+                Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "DashboardPage.CashFlowForecast");
+                return null;
+            }
+        });
+
+        var (k, onboarding) = await kpiTask;
+        var intel = await intelTask;
+        var forecast = await forecastTask;
 
         RenderExecutive(k, intel, forecast);
+        GettingStartedHost.Content = ExecutiveDashboardBuilder.BuildGettingStarted(this, onboarding);
         SetLoading(false);
     }
 
@@ -110,8 +149,8 @@ public partial class DashboardPage : UserControl
                 "نظرة مالية لحظية — محدّثة من القيود والمستندات المرحّلة.",
                 "Real-time financial pulse — synced from posted documents.")
             : LocaleManager.T(
-                $"توقع تدفق نقدي 13 أسبوعاً: صافي {forecast.TotalProjectedInflows - forecast.TotalProjectedOutflows:N0} ر.س (تحصيل {forecast.TotalProjectedInflows:N0} · سداد {forecast.TotalProjectedOutflows:N0}).",
-                $"13-week cash forecast: net SAR {forecast.TotalProjectedInflows - forecast.TotalProjectedOutflows:N0} (in {forecast.TotalProjectedInflows:N0} · out {forecast.TotalProjectedOutflows:N0}).");
+                $"توقع تدفق نقدي 13 أسبوعاً: صافي {forecast.TotalProjectedInflows - forecast.TotalProjectedOutflows:N0} {CurrencyLabel.Short} (تحصيل {forecast.TotalProjectedInflows:N0} · سداد {forecast.TotalProjectedOutflows:N0}).",
+                $"13-week cash forecast: net {CurrencyLabel.Code} {forecast.TotalProjectedInflows - forecast.TotalProjectedOutflows:N0} (in {forecast.TotalProjectedInflows:N0} · out {forecast.TotalProjectedOutflows:N0}).");
 
         AlertHost.Content = ExecutiveDashboardBuilder.BuildAlertStrip(this, k);
 

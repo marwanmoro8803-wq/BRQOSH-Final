@@ -196,8 +196,15 @@ public static class NavigationCatalog
             new("diagnostics", "حالة النظام"),
             new("data_quality", "جودة البيانات"),
             new("platform_events", "أحداث المنصة"),
-            new("customer_support", "دعم العملاء"),
             new("pricing_plans", "الباقات والتسعير"),
+        ]),
+
+        // ‏(أسئلةُ المالك 2026-10-24) ‏صفحتان لكلّ دور: تفضيلاتُ المستخدم (المظهر واللغة وعن البرنامج) والدعم والشكاوى —
+        // ‏كان الدعمُ للمدير وحده بين صفحات الأمان، فلا يرفع المحاسبُ أو الصرّافُ مشكلةً من البرنامج.
+        new("البرنامج", ModuleKey.GeneralLedger,
+        [
+            new("preferences", "تفضيلات البرنامج"),
+            new("customer_support", "الدعم والشكاوى"),
         ]),
     ];
 
@@ -346,7 +353,8 @@ public static class NavigationCatalog
         ["data_migration"] = "Data Migration",
         ["data_quality"] = "Data Quality",
         ["platform_events"] = "Platform Events",
-        ["customer_support"] = "Customer Support",
+        ["customer_support"] = "Support & Complaints",
+        ["preferences"] = "Preferences",
         ["pricing_plans"] = "Pricing Plans",
     };
 
@@ -371,5 +379,6 @@ public static class NavigationCatalog
         ["الأصول الثابتة"] = "Fixed Assets",
         ["الرواتب"] = "Payroll",
         ["الأمان والتدقيق"] = "Security & Audit",
+        ["البرنامج"] = "Program",
     };
 }

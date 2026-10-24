@@ -17,7 +17,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
                     <Button x:Name="AcceptButton" Content="أوافق" Style="{StaticResource PrimaryButton}"
                             Padding="24,8" IsEnabled="False" Click="OnAccept" Margin="0,0,8,0"/>
-                    <Button Content="لا أوافق" Style="{StaticResource SecondaryButton}" Padding="24,8" Click="OnDecline"/>
+                    <Button x:Name="DeclineButton" Content="لا أوافق" Style="{StaticResource SecondaryButton}" Padding="24,8" Click="OnDecline"/>
                 </StackPanel>
             </StackPanel>
             <TextBox x:Name="TextBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"

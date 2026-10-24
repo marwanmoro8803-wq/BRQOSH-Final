@@ -73,7 +73,8 @@ internal static class NavKeyMap
         ["سجل التدقيق"] = "audit_log",
         ["جودة البيانات"] = "data_quality",
         ["أحداث المنصة"] = "platform_events",
-        ["دعم العملاء"] = "customer_support",
+        ["الدعم والشكاوى"] = "customer_support",
+        ["تفضيلات البرنامج"] = "preferences",
         ["الباقات والتسعير"] = "pricing_plans",
     };
 
@@ -147,7 +148,8 @@ internal static class NavKeyMap
         ["Audit Log"] = "audit_log",
         ["Data Quality"] = "data_quality",
         ["Platform Events"] = "platform_events",
-        ["Customer Support"] = "customer_support",
+        ["Support & Complaints"] = "customer_support",
+        ["Preferences"] = "preferences",
         ["Pricing Plans"] = "pricing_plans",
     };
 

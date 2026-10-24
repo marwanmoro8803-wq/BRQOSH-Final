@@ -62,7 +62,7 @@ public partial class ChequesPage : UserControl
         var inPortfolio = cheques.Count(c => c.Status == ChequeStatus.InPortfolio);
         var totalAmount = cheques.Where(c => c.Status != ChequeStatus.Cancelled).Sum(c => c.Amount);
         ChequeSummaryText.Text =
-            $"شيكات: {cheques.Count} · في المحفظة: {inPortfolio} · إجمالي نشط: {totalAmount:N2} ر.س";
+            $"شيكات: {cheques.Count} · في المحفظة: {inPortfolio} · إجمالي نشط: {totalAmount:N2} {CurrencyLabel.Short}";
 
         UpdateActionButtons();
     }

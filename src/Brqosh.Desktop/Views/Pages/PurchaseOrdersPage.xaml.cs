@@ -104,7 +104,7 @@ public partial class PurchaseOrdersPage : UserControl
             o.Status == PurchaseOrderStatus.Draft || o.Status == PurchaseOrderStatus.Approved);
         var totalValue = await baseQuery.SumGrandTotalAsync();
         OrderSummaryText.Text =
-            $"أوامر: {_paging.TotalCount:N0} · مفتوحة: {open:N0} · إجمالي القيمة: {totalValue:N2} ر.س";
+            $"أوامر: {_paging.TotalCount:N0} · مفتوحة: {open:N0} · إجمالي القيمة: {totalValue:N2} {CurrencyLabel.Short}";
     }
 
     private static string StatusLabel(PurchaseOrderStatus status) => status switch

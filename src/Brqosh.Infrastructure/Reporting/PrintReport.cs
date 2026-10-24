@@ -35,7 +35,7 @@ internal static class PrintReport
                         col.Item().Element(c => PrintTheme.SummaryBand(c, summary));
                 });
 
-                page.Footer().Element(f => branding.RenderFooterMeta(f));
+                page.Footer().Element(f => branding.RenderFooterMeta(f, showAuditor: true));
             });
         }).GeneratePdf();
     }

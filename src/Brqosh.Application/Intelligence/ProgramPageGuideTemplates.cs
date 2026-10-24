@@ -61,8 +61,8 @@ public static class ProgramPageGuideTemplates
                 "كشف مورد: فواتير مشتريات · مدفوعات · رصيد مستحق.",
                 "Supplier statement: purchase invoices · payments · outstanding balance."),
             ["purchase_requests"] = (
-                "طلب شراء: موافقات workflow · تحويل لأمر شراء عند الاعتماد.",
-                "Purchase request: workflow approvals · convert to PO when approved."),
+                "طلب شراء: يمرّ بالموافقات · ويتحوّل إلى أمر شراء عند الاعتماد.",
+                "Purchase request: goes through approvals · converts to a purchase order once approved."),
             ["goods_receipts"] = (
                 "إذن استلام: استلام بضاعة مقابل أمر شراء · يزيد المخزون عند الترحيل.",
                 "Goods receipt: receive against PO · increases stock on posting."),
@@ -121,20 +121,131 @@ public static class ProgramPageGuideTemplates
                 "مجموعات شركات: تجميع للتقارير الموحّدة والإزالة بين الشركات.",
                 "Company groups: rollup for consolidated reporting and IC elimination."),
             ["branches"] = (
-                "فروع: BranchId على المستندات · منتقي الفرع في الجلسة.",
-                "Branches: BranchId on documents · branch picker in session."),
+                "فروع: يُنسب كل مستند إلى فرع · ويُختار الفرع الجاري من أعلى الشاشة.",
+                "Branches: every document is tied to a branch · the current branch is chosen at the top of the screen."),
             ["users"] = (
-                "مستخدمون: حساب · دور · MustChangePassword · ربط بصلاحيات التنقل.",
-                "Users: account · role · password policy · nav permissions."),
+                "مستخدمون: حساب ودور وسياسة كلمة المرور · والدور يحدد الشاشات التي تظهر له.",
+                "Users: account, role and password policy · the role decides which screens the user sees."),
             ["audit_log"] = (
-                "سجل تدقيق: كل ترحيل/تعديل حرج · غير قابل للحذف in-repo.",
-                "Audit log: every critical post/change · immutable in-repo."),
+                "سجل تدقيق: كل ترحيل أو تعديل حرج مسجّل بمن فعله ومتى · لا يُحذف ولا يُعدَّل.",
+                "Audit log: every critical post or change with who and when · it cannot be deleted or edited."),
             ["data_quality"] = (
                 "جودة البيانات: فحوصات ذمم · فترات · أرصدة · تنبيهات قبل الإقفال.",
                 "Data quality: AR/period/balance checks · alerts before close."),
             ["platform_events"] = (
                 "أحداث المنصة: سجل أحداث النظام والتكامل · للمراقبة التشغيلية.",
                 "Platform events: system/integration event log for operations monitoring."),
+            ["branch_profitability"] = (
+                "اختر الفترة ليظهر لكل فرع إيراده ومصروفه وربحه. مجموع الفروع يساوي صافي قائمة الدخل، فإن اختلف فراجع قيوداً غير منسوبة لفرع.",
+                "Pick a period to see revenue, expenses and profit per branch. The branches add up to the income statement's net result; if they do not, look for entries not tied to a branch."),
+            ["budget_variance"] = (
+                "قارن المخطط بالفعلي لكل بند في الفترة. الانحراف الموجب صالح للمنشأة في الحالتين: إيراد أعلى من المخطط أو مصروف أقل منه.",
+                "Compare planned against actual per line for the period. A positive variance is favourable either way: revenue above plan or expense below it."),
+            ["cost_center_statement"] = (
+                "إيراد ومصروف كل مركز تكلفة في الفترة. ما لم يُنسب إلى مركز يظهر في سطر «غير مصنف» ولا يُخفى.",
+                "Revenue and expense per cost center for the period. Anything not assigned to a center appears as 'unclassified' rather than being hidden."),
+            ["production_cost_sheet"] = (
+                "لكل أمر إنتاج مكتمل: المواد والأجر والتحميل وتكلفة الوحدة، مأخوذة من قيد إكمال الأمر نفسه. اختر الفترة واضغط عرض.",
+                "For each completed work order: materials, labour, overhead and unit cost, taken from the order's own completion entry. Pick the period and press View."),
+            ["receivable_aging"] = (
+                "من عليه وكم ومنذ متى. العمر يُحسب من تاريخ المستند. ابدأ بالتحصيل من الشرائح الأقدم.",
+                "Who owes, how much and since when. Age is counted from the document date. Chase the oldest buckets first."),
+            ["recurring_plans"] = (
+                "خطط لفواتير متكررة (إيجار، اشتراك، عقد صيانة). التوليد دفعة يطلقها المستخدم بزر «توليد المستحق» ولا يجري وحده، ويمكن إيقاف خطة مؤقتاً.",
+                "Plans for repeating invoices (rent, subscription, maintenance contract). Generation is a batch you start with 'Generate due'; it does not run by itself, and a plan can be paused."),
+            ["payable_aging"] = (
+                "لمن هو عليك ومنذ متى. العمر يُحسب من تاريخ المستند. رتّب السداد بحسب الاستحقاق والعمر.",
+                "Whom you owe and since when. Age is counted from the document date. Plan payments by due date and age."),
+            ["stock_batches"] = (
+                "أرصدة كل دفعة وتاريخ انتهائها. رشّح بين: كل الدفعات، وما يقارب الانتهاء (٩٠ يوماً)، وما انتهت صلاحيته.",
+                "Balance and expiry of every batch. Filter between all batches, those nearing expiry (90 days) and those already expired."),
+            ["units_of_measure"] = (
+                "عرّف الوحدات (كرتون، حبة، كيلو). رمز UN/ECE للوحدة هو ما يذهب إلى الفاتورة الإلكترونية، فتأكد منه.",
+                "Define units (carton, piece, kilo). The unit's UN/ECE code is what goes onto the e-invoice, so check it."),
+            ["fx_revaluation"] = (
+                "رصيد بعملة أجنبية يبقى بسعر يوم إيداعه ما لم يُعَد تقييمه. هنا تعيد تقييم الحسابات البنكية بعملة تخالف عملة الدفاتر بسعر الصرف المسجّل.",
+                "A foreign-currency balance stays at its deposit-day rate unless revalued. Here you revalue bank accounts held in a currency other than the books' currency, at the recorded exchange rate."),
+            ["monetary_revaluation"] = (
+                "البنود النقدية بعملة أجنبية تُترجم بسعر الإقفال، ويُعكس القيد في اليوم التالي فلا يتراكم.",
+                "Foreign-currency monetary items are translated at the closing rate, and the entry reverses the next day so it does not accumulate."),
+            ["bank_statements"] = (
+                "استورد كشف البنك، ثم طابقه آلياً مع القيود، ثم رحّل الفروق. ما لم يُطابَق يبقى ظاهراً حتى تعالجه.",
+                "Import the bank statement, match it automatically against the entries, then post the differences. Unmatched lines stay visible until you handle them."),
+            ["cash_position"] = (
+                "داخل وخارج لكل حساب نقدي أو بنكي، والمركز الموحد في العنوان.",
+                "Inflows and outflows per cash or bank account, with the combined position in the header."),
+            ["cash_flow_forecast"] = (
+                "ثلاثة عشر أسبوعاً مبنية على الذمم المستحقة فعلاً لا على النية: التحصيل المتوقع من فواتير العملاء، والسداد من فواتير الموردين.",
+                "Thirteen weeks built from receivables and payables actually due, not intentions: expected collections from customer invoices and payments from supplier invoices."),
+            ["properties"] = (
+                "سجّل العقار ثم وحداته. حالة الإشغال قيد تحكمه عقود الإيجار لا وصف يُكتب يدوياً.",
+                "Register the property, then its units. Occupancy is a constraint driven by lease contracts, not a free-text description."),
+            ["leases"] = (
+                "تفعيل العقد ينشئ خطة فوترة دورية. مبلغ التأمين أمانة تُرد للمستأجر وليس إيراداً.",
+                "Activating a lease creates a recurring billing plan. The security deposit is held in trust for the tenant, not revenue."),
+            ["maintenance_orders"] = (
+                "تُسجَّل تكلفة الصيانة على وحدتها. تحميل التلف على المستأجر هو سند مصادرة التأمين.",
+                "Maintenance cost is recorded against its unit. Charging damage to the tenant is the basis for forfeiting the deposit."),
+            ["patients"] = (
+                "رقم الملف لا يتكرر. ملفان لشخص واحد يفرّقان تاريخه المرضي، فابحث عن المريض قبل فتح ملف جديد.",
+                "A file number is never repeated. Two files for one person split their history, so search for the patient before opening a new file."),
+            ["visits"] = (
+                "زيارة واحدة تنتج ذمتين: على المريض وعلى شركة التأمين. راجع بيانات التأمين ثم اضغط «فوترة الزيارة».",
+                "One visit produces two receivables: one on the patient and one on the insurer. Check the insurance details, then press 'Bill visit'."),
+            ["insurance_payers"] = (
+                "شركة التأمين عميل له ذمة، ومهلة سدادها تختلف عن مهلة المريض. اضبط المهلة لكل شركة.",
+                "An insurer is a customer with its own receivable, and its payment term differs from the patient's. Set the term per insurer."),
+            ["insurance_claims"] = (
+                "المطالبة المرفوضة تخرج من ذمة الشركة بإشعار دائن: إما تحميلاً على المريض أو شطباً.",
+                "A rejected claim leaves the insurer's receivable through a credit note: either charged to the patient or written off."),
+            ["tip_pools"] = (
+                "الإكرامية مال العامل لا إيراد المطعم: التزام يخرج بالصرف إلى مستحقيه.",
+                "A tip belongs to the staff, not the restaurant's revenue: a liability that leaves when paid out to its recipients."),
+            ["menu_items"] = (
+                "بيع الطبق يصرف مكوناته من المخزون إن كانت له وصفة؛ وبغير وصفة يبقى المخزون كما اشتُري.",
+                "Selling a dish consumes its ingredients from stock if it has a recipe; without a recipe, stock stays as purchased."),
+            ["rooms"] = (
+                "حالة الإشغال يقودها الحجز ولا تُضبط يدوياً.",
+                "Occupancy status is driven by the reservation and is not set by hand."),
+            ["reservations"] = (
+                "إيراد الغرفة يُستحق ليلة بليلة لا عند الوصول: أنزل النزيل، وقيّد الليالي، واقبض العربون عند الحاجة، ثم «مغادرة وتصفية» لإقفال حسابه.",
+                "Room revenue is earned night by night, not on arrival: check the guest in, post the nights, take a deposit if needed, then 'Check-out and settle' to close the folio."),
+            ["delivery_trips"] = (
+                "عهدة السائق أصل لا مصروف، والمسار الخاسر يظهر أولاً لتراجعه.",
+                "The driver's advance is an asset, not an expense, and the loss-making route is listed first so you can review it."),
+            ["shipments"] = (
+                "ما يُحصَّل عند الاستلام أمانة للتاجر لا إيراد للشركة: يُثبَت التحصيل ثم يُورَّد للتاجر، أما أجرة الشحن فتُفوتَر وحدها.",
+                "Cash collected on delivery is held in trust for the merchant, not company revenue: record the collection, then remit it to the merchant; only the shipping fee is invoiced."),
+            ["employees"] = (
+                "هوية وجنسية وأجر وآيبان. الجنسية تحكم اشتراك التأمينات الاجتماعية، فأدخلها بدقة.",
+                "Identity, nationality, pay and IBAN. Nationality decides social-insurance enrolment, so enter it accurately."),
+            ["gosi_policy"] = (
+                "النسب تتغير بقرار الهيئة، والمنشأة تملكها لا البرنامج: راجعها عند أي قرار جديد قبل ترحيل رواتب.",
+                "The rates change by the authority's decision and are owned by the company, not the software: review them whenever a new decision is issued, before posting payroll."),
+            ["payslips"] = (
+                "تُبنى القسيمة من الدورة المرحّلة لا من سجل الموظفين الحالي، فتبقى كما صُرفت مهما تغيّر الأجر بعدها.",
+                "A payslip is built from the posted run, not from the current employee record, so it stays as paid however the salary changes later."),
+            ["employee_advances"] = (
+                "السلفة ذمة على الموظف لا مصروف راتب، وتُسدد بالاستقطاع الشهري من الراتب.",
+                "An advance is a receivable from the employee, not a salary expense, and is repaid through monthly payroll deductions."),
+            ["leave_requests"] = (
+                "رصيد الإجازات التزام يتراكم كل يوم ويُدفع نقداً عند انتهاء الخدمة. سجّل الإجازة والغياب أولاً بأول.",
+                "The leave balance is a liability that builds up daily and is paid in cash at end of service. Record leave and absence as they happen."),
+            ["wage_protection"] = (
+                "إلزامي نظاماً: اختر دورة الرواتب ثم «تصدير الملف» وارفعه إلى البنك ليودع الرواتب. ويُنبَّه إلى موظفين لم يدخلوا الملف مع سبب كلٍّ منهم.",
+                "Mandatory by regulation: pick the payroll run, press 'Export file' and submit it to the bank, which then credits salaries. Employees left out of the file are flagged with the reason for each."),
+            ["soft_deleted_rows"] = (
+                "الحذف في برقوش إخفاء لا إعدام. اختر النوع ثم السجل واضغط «استعادة المحدد» لإرجاعه.",
+                "Deleting in BRQOSH hides a record rather than destroying it. Pick the type, then the record, and press 'Restore selected'."),
+            ["data_migration"] = (
+                "نقل الدليل والعملاء والموردين والأصناف والأرصدة الافتتاحية من نظام سابق بملف CSV. الصف الأول عناوين، وما تعذّر يُعرض بسطره وسببه. ابدأ بالدليل ثم الميزان الافتتاحي ثم الذمم.",
+                "Move the chart, customers, suppliers, items and opening balances from a previous system via CSV. The first row is headers and anything that fails is shown with its line and reason. Start with the chart, then the opening trial balance, then the open items."),
+            ["backup"] = (
+                "خذ نسخة كل يوم عمل واحفظ نسخة على قرص آخر. النسخة التي لا تُجرَّب ليست نسخة. الاستعادة تمحو ما في القاعدة الحالية ولا رجعة فيها، فأغلق البرنامج على بقية الأجهزة أولاً.",
+                "Take a backup every working day and keep a copy on another disk. A backup that has never been tested is not a backup. Restore wipes the current database and cannot be undone, so close the program on other machines first."),
+            ["diagnostics"] = (
+                "ما يسأل عنه الدعم في أول مكالمة: الإصدار والقاعدة والترخيص والنسخ. استعمل «نسخ التقرير» أو «حزمة الدعم» عند الإبلاغ عن مشكلة، و«فحص التحديث» لمعرفة الإصدار الأحدث.",
+                "What support asks first: version, database, licence and backups. Use 'Copy report' or 'Support bundle' when reporting a problem, and 'Check for update' to see the latest version."),
         };
 
     public static bool TryGet(string navKey, out (string Ar, string En) guide) =>

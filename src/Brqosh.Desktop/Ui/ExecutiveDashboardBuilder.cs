@@ -13,11 +13,11 @@ public static class ExecutiveDashboardBuilder
         var netCash = k.CollectedThisMonth - k.PaidThisMonth;
         var msg = netCash >= 0
             ? LocaleManager.T(
-                $"تدفق نقدي إيجابي هذا الشهر: {netCash:N2} ر.س",
-                $"Positive cash flow this month: SAR {netCash:N2}")
+                $"تدفق نقدي إيجابي هذا الشهر: {netCash:N2} {CurrencyLabel.Short}",
+                $"Positive cash flow this month: {CurrencyLabel.Code} {netCash:N2}")
             : LocaleManager.T(
-                $"تنبيه: تدفق نقدي سلبي {netCash:N2} ر.س",
-                $"Alert: negative cash flow SAR {netCash:N2}");
+                $"تنبيه: تدفق نقدي سلبي {netCash:N2} {CurrencyLabel.Short}",
+                $"Alert: negative cash flow {CurrencyLabel.Code} {netCash:N2}");
 
         var dot = new Border
         {
@@ -115,15 +115,15 @@ public static class ExecutiveDashboardBuilder
     {
         var items = new[]
         {
-            LocaleManager.T($"ذمم العملاء {k.Receivables:N0} ر.س — راجع أعمار الديون.", $"AR SAR {k.Receivables:N0} — review aging."),
-            LocaleManager.T($"صافي ضريبة {k.NetVatThisMonth:N2} ر.س — جاهز للإقرار.", $"Net VAT SAR {k.NetVatThisMonth:N2} — filing ready."),
-            LocaleManager.T($"مخزون {k.InventoryValue:N0} ر.س — تحقق من بطء الحركة.", $"Inventory SAR {k.InventoryValue:N0} — slow movers."),
+            LocaleManager.T($"ذمم العملاء {k.Receivables:N0} {CurrencyLabel.Short} — راجع أعمار الديون.", $"AR {CurrencyLabel.Code} {k.Receivables:N0} — review aging."),
+            LocaleManager.T($"صافي ضريبة {k.NetVatThisMonth:N2} {CurrencyLabel.Short} هذا الشهر — راجعه قبل الإقرار.", $"Net VAT {CurrencyLabel.Code} {k.NetVatThisMonth:N2} this month — review before filing."),
+            LocaleManager.T($"مخزون {k.InventoryValue:N0} {CurrencyLabel.Short} — تحقق من بطء الحركة.", $"Inventory {CurrencyLabel.Code} {k.InventoryValue:N0} — slow movers."),
         };
 
         var stack = new StackPanel();
         stack.Children.Add(new TextBlock
         {
-            Text = LocaleManager.T("رؤى الذكاء الاصطناعي", "AI Insights"),
+            Text = LocaleManager.T("مؤشرات سريعة", "Quick indicators"),
             Style = UiResources.StyleOf(host, "FormSectionTitle"),
             Margin = new Thickness(0, 0, 0, 12),
         });
@@ -149,7 +149,7 @@ public static class ExecutiveDashboardBuilder
         });
         stack.Children.Add(new TextBlock
         {
-            Text = report.Engine,
+            Text = LocaleManager.T("قواعد محاسبية قابلة للشرح على بيانات شركتك — لا نموذج لغوي", "Explainable accounting rules on your company data — not a language model"),
             FontSize = 11,
             Foreground = UiResources.BrushOf(host, "TextMutedBrush"),
             Margin = new Thickness(0, 0, 0, 12),
@@ -166,22 +166,102 @@ public static class ExecutiveDashboardBuilder
         };
     }
 
+    /// <summary>
+    /// «ابدأ هنا» — مراحلُ البدء التي لم تكتمل، كلٌّ منها ينقل إلى شاشتها. <c>null</c> إن اكتملت كلُّها أو لم يبقَ ما يستطيعه هذا
+    /// الدور (الصرّافُ لا يُطالَب بإكمال بيانات المنشأة). والإنجازُ يُقرأ من الدفاتر (<see cref="OnboardingQuery"/>) لا من علامة.
+    /// </summary>
+    public static UIElement? BuildGettingStarted(FrameworkElement host, IReadOnlyList<OnboardingStep> steps)
+    {
+        var mine = steps
+            .Where(s => Brqosh.Desktop.Security.PermissionService.CanAccess(AppServices.CurrentUser, s.PageKey))
+            .ToList();
+        if (mine.Count == 0 || mine.All(s => s.Done))
+            return null;
+
+        var done = mine.Count(s => s.Done);
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock
+        {
+            Text = LocaleManager.T("ابدأ هنا", "Get started"),
+            Style = UiResources.StyleOf(host, "FormSectionTitle"),
+            Margin = new Thickness(0, 0, 0, 4),
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = LocaleManager.T($"{done} من {mine.Count} مراحل مكتملة — تختفي هذه اللوحة حين تكتمل كلّها.",
+                $"{done} of {mine.Count} steps complete — this panel disappears when all are done."),
+            FontSize = 11,
+            Foreground = UiResources.BrushOf(host, "TextMutedBrush"),
+            Margin = new Thickness(0, 0, 0, 10),
+        });
+
+        foreach (var step in mine)
+        {
+            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6), LastChildFill = true };
+            var mark = new TextBlock
+            {
+                Text = step.Done ? "✓" : "○",
+                FontWeight = FontWeights.Bold,
+                Width = 20,
+                Foreground = UiResources.BrushOf(host, step.Done ? "SuccessBrush" : "TextMutedBrush"),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            DockPanel.SetDock(mark, Dock.Right);
+            row.Children.Add(mark);
+
+            if (!step.Done)
+            {
+                var open = new Button
+                {
+                    Content = LocaleManager.T("افتح", "Open"),
+                    Style = UiResources.StyleOf(host, "SecondaryButton"),
+                    Padding = new Thickness(14, 4, 14, 4),
+                    Margin = new Thickness(8, 0, 0, 0),
+                };
+                var key = step.PageKey;
+                open.Click += (_, _) => Brqosh.Desktop.Navigation.AppNavigator.Go(key);
+                System.Windows.Automation.AutomationProperties.SetAutomationId(open, "GettingStarted_" + step.Code);
+                DockPanel.SetDock(open, Dock.Left);
+                row.Children.Add(open);
+            }
+
+            row.Children.Add(new TextBlock
+            {
+                Text = LocaleManager.T(step.TitleAr, step.TitleEn),
+                TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = UiResources.BrushOf(host, step.Done ? "TextMutedBrush" : "TextPrimaryBrush"),
+                TextDecorations = step.Done ? TextDecorations.Strikethrough : null,
+            });
+            stack.Children.Add(row);
+        }
+
+        return new Border { Style = UiResources.StyleOf(host, "GlassPanel"), Child = stack };
+    }
+
     public static UIElement BuildQuickActions(FrameworkElement host)
     {
-        var actions = new (string Ar, string En, string Code)[]
+        // ‏(أسئلةُ المالك 2026-10-24) ‏كانت أربعَ بطاقاتٍ تُرسَم ولا تفعل شيئاً. صارت تفتح شاشاتِها — وبمفتاح الشاشة تمرّ بفحوص
+        // ‏الصلاحية والترخيص نفسِها كالقائمة، ولا تظهر لمن لا يملك الصلاحية أصلاً.
+        var actions = new (string Ar, string En, string Code, string PageKey)[]
         {
-            ("فاتورة مبيعات", "Sales Invoice", "SI"),
-            ("قيد يومية", "Journal Entry", "JE"),
-            ("سند قبض", "Receipt", "RC"),
-            ("تقرير VAT", "VAT Report", "VT"),
+            ("فاتورة مبيعات", "Sales Invoice", "SI", "sales_invoices"),
+            ("قيد يومية", "Journal Entry", "JE", "journal_entries"),
+            ("سند قبض", "Receipt", "RC", "receipt_vouchers"),
+            ("تقرير VAT", "VAT Report", "VT", "vat_return"),
         };
 
         var wrap = new WrapPanel();
-        foreach (var (ar, en, code) in actions)
+        foreach (var (ar, en, code, pageKey) in actions)
         {
-            wrap.Children.Add(new Border
+            if (!Brqosh.Desktop.Security.PermissionService.CanAccess(AppServices.CurrentUser, pageKey))
+                continue;
+
+            var chip = new Border
             {
                 Style = UiResources.StyleOf(host, "QuickActionChip"),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Focusable = true,
                 Child = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -209,7 +289,20 @@ public static class ExecutiveDashboardBuilder
                         },
                     },
                 },
-            });
+            };
+            var key = pageKey;
+            chip.MouseLeftButtonUp += (_, _) => Brqosh.Desktop.Navigation.AppNavigator.Go(key);
+            chip.KeyDown += (_, e) =>
+            {
+                if (e.Key is System.Windows.Input.Key.Enter or System.Windows.Input.Key.Space)
+                {
+                    e.Handled = true;
+                    Brqosh.Desktop.Navigation.AppNavigator.Go(key);
+                }
+            };
+            System.Windows.Automation.AutomationProperties.SetName(chip, LocaleManager.T(ar, en));
+            System.Windows.Automation.AutomationProperties.SetAutomationId(chip, "QuickAction_" + key);
+            wrap.Children.Add(chip);
         }
 
         var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
@@ -227,16 +320,16 @@ public static class ExecutiveDashboardBuilder
     {
         var rows = new[]
         {
-            LocaleManager.T($"تحصيلات: {k.CollectedThisMonth:N2} ر.س", $"Collections: SAR {k.CollectedThisMonth:N2}"),
-            LocaleManager.T($"مدفوعات: {k.PaidThisMonth:N2} ر.س", $"Payments: SAR {k.PaidThisMonth:N2}"),
-            LocaleManager.T($"مبيعات: {k.SalesThisMonth:N2} ر.س", $"Sales: SAR {k.SalesThisMonth:N2}"),
-            LocaleManager.T($"مشتريات: {k.PurchasesThisMonth:N2} ر.س", $"Purchases: SAR {k.PurchasesThisMonth:N2}"),
+            LocaleManager.T($"تحصيلات: {k.CollectedThisMonth:N2} {CurrencyLabel.Short}", $"Collections: {CurrencyLabel.Code} {k.CollectedThisMonth:N2}"),
+            LocaleManager.T($"مدفوعات: {k.PaidThisMonth:N2} {CurrencyLabel.Short}", $"Payments: {CurrencyLabel.Code} {k.PaidThisMonth:N2}"),
+            LocaleManager.T($"مبيعات: {k.SalesThisMonth:N2} {CurrencyLabel.Short}", $"Sales: {CurrencyLabel.Code} {k.SalesThisMonth:N2}"),
+            LocaleManager.T($"مشتريات: {k.PurchasesThisMonth:N2} {CurrencyLabel.Short}", $"Purchases: {CurrencyLabel.Code} {k.PurchasesThisMonth:N2}"),
         };
 
         var list = new StackPanel();
         list.Children.Add(new TextBlock
         {
-            Text = LocaleManager.T("النشاط الأخير", "Recent Activity"),
+            Text = LocaleManager.T("حركة الشهر", "This month's movement"),
             Style = UiResources.StyleOf(host, "FormSectionTitle"),
             Margin = new Thickness(0, 0, 0, 10),
         });
@@ -258,9 +351,12 @@ public static class ExecutiveDashboardBuilder
 
     public static UIElement BuildPerformanceSummary(FrameworkElement host, DashboardKpis k)
     {
-        var revenue = k.SalesThisMonth;
-        var expenses = k.PurchasesThisMonth + k.PaidThisMonth;
-        var net = k.SalesThisMonth - k.PurchasesThisMonth;
+        // ‏(أسئلةُ المالك 2026-10-24 · المؤشّرات) ‏**الأرقامُ نفسُها التي في البطاقات أعلاه** — من قائمة الدخل.
+        // ‏كان هذا الملخّصُ يحسب الإيرادَ من مبيعات المستندات شاملةً الضريبة، والمصروفَ مشتريات + سدادات (فيزدوج: شراءٌ ثمّ سدادُه)،
+        // ‏والربحَ مبيعات − مشتريات — وهي الصيغةُ التي أُسقطت من البطاقات في CEEF-214. فكانت الشاشةُ الواحدةُ تعرض رقمَين لكلّ مؤشّر.
+        var revenue = k.RevenueThisMonth;
+        var expenses = k.ExpensesThisMonth;
+        var net = k.NetProfitThisMonth;
         var wc = k.Receivables - k.Payables;
 
         var grid = new Grid();
@@ -280,7 +376,7 @@ public static class ExecutiveDashboardBuilder
             });
             sp.Children.Add(new TextBlock
             {
-                Text = value.ToString("N2"),
+                Text = CurrencyLabel.Format(value),
                 Style = UiResources.StyleOf(host, "TabularText"),
                 FontSize = 20,
                 FontWeight = FontWeights.Bold,

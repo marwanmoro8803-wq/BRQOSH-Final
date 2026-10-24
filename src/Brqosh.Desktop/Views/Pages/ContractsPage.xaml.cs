@@ -54,7 +54,7 @@ public partial class ContractsPage : UserControl
         var totalValue = contracts.Where(c => c.Status == ConstructionContractStatus.Active)
             .Sum(c => c.ContractValue);
         ContractSummaryText.Text =
-            $"عقود: {contracts.Count} · نشط: {active} · قيمة نشطة: {totalValue:N2} ر.س";
+            $"عقود: {contracts.Count} · نشط: {active} · قيمة نشطة: {totalValue:N2} {CurrencyLabel.Short}";
     }
 
     private async void OnAddContract(object sender, RoutedEventArgs e)

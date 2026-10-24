@@ -157,9 +157,9 @@ public partial class PosSessionPage : UserControl
     private void UpdateTotal()
     {
         var total = _cart.Sum(c => c.LineTotal);
-        TotalText.Text = $"الإجمالي: {total:N2} ر.س";
+        TotalText.Text = $"الإجمالي: {total:N2} {CurrencyLabel.Short}";
         PosSessionSummaryText.Text =
-            $"أصناف متاحة: {_products.Count} · بنود السلة: {_cart.Count} · الإجمالي: {total:N2} ر.س";
+            $"أصناف متاحة: {_products.Count} · بنود السلة: {_cart.Count} · الإجمالي: {total:N2} {CurrencyLabel.Short}";
         UiTestAutomation.PublishGridCount(CartGrid, _cart.Count);
     }
 

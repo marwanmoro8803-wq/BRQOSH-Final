@@ -122,7 +122,8 @@ public class NavigationCatalogTests
     [InlineData("organizations", "المنشآت")]
     [InlineData("crm_leads", "العملاء المحتملون")]
     [InlineData("crm_opportunities", "فرص البيع")]
-    [InlineData("customer_support", "دعم العملاء")]
+    [InlineData("customer_support", "الدعم والشكاوى")]
+    [InlineData("preferences", "تفضيلات البرنامج")]
     [InlineData("pricing_plans", "الباقات والتسعير")]
     public void V13_lifecycle_pages_registered_in_catalog(string key, string titleAr)
     {

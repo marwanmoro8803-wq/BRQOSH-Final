@@ -14,7 +14,7 @@ public partial class DocumentPrintService
         long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var rows = await new TrialBalanceQuery(db).ExecuteAsync(companyId, fromDate, toDate);
         var pdf = TrialBalancePdfGenerator.Generate(branding, fromDate, toDate, rows);
         var fileName = $"brqosh-trial-{fromDate:yyyyMMdd}-{toDate:yyyyMMdd}.pdf";
@@ -26,7 +26,7 @@ public partial class DocumentPrintService
         long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var result = await new IncomeStatementQuery(db).ExecuteAsync(companyId, fromDate, toDate);
         var pdf = FinancialReportPdfGenerator.IncomeStatement(branding, result);
         var fileName = $"brqosh-income-{fromDate:yyyyMMdd}-{toDate:yyyyMMdd}.pdf";
@@ -38,7 +38,7 @@ public partial class DocumentPrintService
         long companyId, DateOnly asOfDate, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var result = await new BalanceSheetQuery(db).ExecuteAsync(companyId, asOfDate);
         var pdf = FinancialReportPdfGenerator.BalanceSheet(branding, result);
         var fileName = $"brqosh-balance-{asOfDate:yyyyMMdd}.pdf";
@@ -51,7 +51,7 @@ public partial class DocumentPrintService
         string? accountCodeFilter = null, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var accounts = await new GeneralLedgerQuery(db).ExecuteAsync(companyId, fromDate, toDate, accountCodeFilter);
         var rows = accounts.SelectMany(a => a.Lines.Select(l =>
             (l.EntryDate, a.AccountCode, a.AccountNameAr, l.Debit, l.Credit, l.Description))).ToList();
@@ -65,7 +65,7 @@ public partial class DocumentPrintService
         long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var result = await new VatReturnQuery(db).ExecuteAsync(companyId, fromDate, toDate);
         var pdf = FinancialReportPdfGenerator.VatReturn(branding, result);
         var fileName = $"brqosh-vat-{fromDate:yyyyMMdd}-{toDate:yyyyMMdd}.pdf";
@@ -77,7 +77,7 @@ public partial class DocumentPrintService
         long companyId, long customerId, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         // (CEEF-229 · م2-١٨) قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
         // الطرف كان موجوداً يوم صدور المستند، وحذفُه لاحقاً لا يُلغي المستند. وقراءةُ
         // المرشَّح كانت ترمي «Sequence contains no elements» بالإنجليزية داخل واجهةٍ
@@ -96,7 +96,7 @@ public partial class DocumentPrintService
         long companyId, long supplierId, string username, CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
         var supplier = await db.Suppliers.IgnoreQueryFilters().SingleAsync(s => s.Id == supplierId, ct);
         var lines = await new SupplierBalanceQuery(db).StatementAsync(companyId, supplierId);
         var balance = await new SupplierBalanceQuery(db).ForSupplierAsync(companyId, supplierId);
@@ -152,7 +152,7 @@ public partial class DocumentPrintService
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var data = await ProgressBillingRequestAsync(companyId, billingId, ct);
 
-        var pdf = ProgressBillingPdfGenerator.Generate(PrintBranding.FromCompany(company), data);
+        var pdf = ProgressBillingPdfGenerator.Generate(PrintBranding.FromCompany(company, username), data);
         var fileName = $"brqosh-pb-{SanitizeFileName(data.BillingNumber)}.pdf";
         await LogAsync(companyId, username, "ProgressBilling", data.BillingNumber, ct);
         return new PrintResult(pdf, fileName);
@@ -252,7 +252,7 @@ public partial class DocumentPrintService
         CancellationToken ct = default)
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
-        var branding = PrintBranding.FromCompany(company);
+        var branding = PrintBranding.FromCompany(company, username);
 
         var slips = await new Brqosh.Infrastructure.Payroll.PayslipQuery(db)
             .ExecuteAsync(companyId, payrollRunId, ct);
