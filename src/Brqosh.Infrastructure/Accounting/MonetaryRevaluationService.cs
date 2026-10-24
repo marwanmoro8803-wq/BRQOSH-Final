@@ -217,12 +217,12 @@ public class MonetaryRevaluationService(BrqoshDbContext db)
 
         var sales = await db.SalesInvoices.AsNoTracking()
             .Where(i => i.CompanyId == companyId && i.Status == SalesInvoiceStatus.Posted
-                        && i.CurrencyCode != "SAR" && i.InvoiceDate <= asOf)
+                        && i.ExchangeRate != 1m && i.InvoiceDate <= asOf)
             .ToListAsync(ct);
 
         var purchases = await db.PurchaseInvoices.AsNoTracking()
             .Where(i => i.CompanyId == companyId && i.Status == PurchaseInvoiceStatus.Posted
-                        && i.CurrencyCode != "SAR" && i.InvoiceDate <= asOf)
+                        && i.ExchangeRate != 1m && i.InvoiceDate <= asOf)
             .ToListAsync(ct);
 
         var byCurrency = new Dictionary<string, (decimal Fr, decimal Br, decimal Fp, decimal Bp)>(

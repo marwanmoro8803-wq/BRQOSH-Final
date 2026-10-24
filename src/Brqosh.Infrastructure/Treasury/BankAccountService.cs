@@ -60,6 +60,10 @@ public class BankAccountService(BrqoshDbContext db)
 
         // ‏**والريالُ لا يُستدعى له شيء** — فالمسارُ القديم يبقى حرفاً، ولا يتغيّر رقمٌ
         // ‏في منشأةٍ لا تتعامل بالعملات.
+        // ‏(دفاترٌ بغير الريال) ‏وغيابُ العملة = عملةُ دفاتر المنشأة، لا الريالُ بالضرورة.
+        if (string.IsNullOrWhiteSpace(currencyCode))
+            currencyCode = await db.Companies.IgnoreQueryFilters().Where(c => c.Id == companyId)
+                .Select(c => c.FunctionalCurrencyCode).FirstOrDefaultAsync(ct);
         if (!string.IsNullOrWhiteSpace(currencyCode)
             && !currencyCode.Trim().Equals("SAR", StringComparison.OrdinalIgnoreCase))
             bank.SetCurrency(currencyCode);

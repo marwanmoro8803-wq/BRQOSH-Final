@@ -260,5 +260,6 @@
   "دورك الحالي لا يملك موافقة {0}.": "Your current role does not hold the {0} approval.",
   "رفضت الهيئة الطلب ({0}): {1}": "ZATCA rejected the request ({0}): {1}",
   "إشعارُ إلغاء بيع الأصل {0} صادرٌ مسبقاً.": "The cancellation note for the sale of asset {0} has already been issued.",
-  "رفضت الهيئة المستند: {0}": "ZATCA rejected the document: {0}"
+  "رفضت الهيئة المستند: {0}": "ZATCA rejected the document: {0}",
+  "عملةُ المستند ({0}) تخالف عملةَ الدفاتر ({1}) فلا يصحّ سعرُ الصرف ١ — أدخل السعرَ الفعليّ.": "The document currency ({0}) differs from the books currency ({1}), so an exchange rate of 1 is not valid — enter the actual rate."
 }

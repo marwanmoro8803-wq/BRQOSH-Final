@@ -30,6 +30,7 @@ public partial class JournalEntryDialog : Window
     public JournalEntryDialog()
     {
         InitializeComponent();
+        CurrencyBox.Text = Brqosh.Desktop.Ui.CurrencyLabel.Code;
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
         Loaded += async (_, _) =>
@@ -108,9 +109,9 @@ public partial class JournalEntryDialog : Window
     /// </remarks>
     private (string Code, decimal Rate)? ReadCurrency()
     {
-        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
-        if (code.Length == 0) code = "SAR";
-        if (code == "SAR") return null;
+        var code = (CurrencyBox.Text ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
+        if (code.Length == 0) code = Brqosh.Desktop.Ui.CurrencyLabel.Code;
+        if (code == Brqosh.Desktop.Ui.CurrencyLabel.Code) return null;
 
         if (!NumericInput.TryParsePositive(RateBox.Text, out var rate))
             throw new AccountingException($"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");

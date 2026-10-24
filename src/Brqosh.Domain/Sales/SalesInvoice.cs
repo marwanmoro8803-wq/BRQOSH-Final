@@ -235,17 +235,28 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     /// <para><b>ويُرفض بعد الترحيل</b>: تغييرُ العملة أو السعر يُعيد كتابة قيدٍ مرحَّل
     /// وإقرارٍ سُلّم.</para>
     /// </summary>
-    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    public void SetCurrency(string currencyCode, decimal exchangeRate, string? booksCurrencyCode = null)
     {
         EnsureDraft();
         if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
             throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
         if (exchangeRate <= 0m)
             throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+        BooksCurrency.Validate(currencyCode, exchangeRate, booksCurrencyCode);
 
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
         ExchangeRate = exchangeRate;
         RecalculateTotals();
+    }
+
+    /// <summary>
+    /// (دفاترٌ بغير الريال) مستندٌ بسعر صرفٍ <c>1</c> هو بعملة الدفاتر نفسِها، فيُوسَم بها: المستندُ يُنشأ بـ<c>SAR</c> أصلاً،
+    /// وفي منشأةٍ دفاترُها بغيره يُصحَّح الوسمُ قبل الحفظ (<c>BooksCurrencyInterceptor</c>). لا يمسّ مستنداً بعملةٍ أجنبيّةٍ صريحة.
+    /// </summary>
+    public void AlignToBooksCurrency(string booksCurrencyCode)
+    {
+        if (ExchangeRate == 1m && CurrencyCode == "SAR" && !string.IsNullOrWhiteSpace(booksCurrencyCode))
+            CurrencyCode = booksCurrencyCode.Trim().ToUpperInvariant();
     }
 
     public void RecalculateTotals()
@@ -264,7 +275,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     public decimal ForeignGrandTotal => ForeignSubtotal + ForeignVatAmount;
 
     /// <summary>عملةُ المستند تخالف عملةَ الدفاتر — فيلزم المستندَ إفصاحٌ إضافيّ.</summary>
-    public bool IsForeignCurrency => CurrencyCode != "SAR";
+    public bool IsForeignCurrency => ExchangeRate != 1m;
 
     /// <summary>
     /// ترحيل الفاتورة وتوليد قيدها: مدين العميل بالإجمالي، دائن الإيراد بالوعاء، دائن ضريبة المخرجات.

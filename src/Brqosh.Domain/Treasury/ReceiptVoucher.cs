@@ -154,7 +154,7 @@ public class ReceiptVoucher : IBranchScoped
         SettlementDiscount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
     }
 
-    public void SetCurrency(string currencyCode, decimal exchangeRate)
+    public void SetCurrency(string currencyCode, decimal exchangeRate, string? booksCurrencyCode = null)
     {
         if (Status != ReceiptVoucherStatus.Draft)
             throw new AccountingException("السند مرحّل — لا يُعدَّل.");
@@ -162,9 +162,20 @@ public class ReceiptVoucher : IBranchScoped
             throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
         if (exchangeRate <= 0m)
             throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+        BooksCurrency.Validate(currencyCode, exchangeRate, booksCurrencyCode);
 
         CurrencyCode = currencyCode.Trim().ToUpperInvariant();
         ExchangeRate = exchangeRate;
+    }
+
+    /// <summary>
+    /// (دفاترٌ بغير الريال) مستندٌ بسعر صرفٍ <c>1</c> هو بعملة الدفاتر نفسِها، فيُوسَم بها: المستندُ يُنشأ بـ<c>SAR</c> أصلاً،
+    /// وفي منشأةٍ دفاترُها بغيره يُصحَّح الوسمُ قبل الحفظ (<c>BooksCurrencyInterceptor</c>). لا يمسّ مستنداً بعملةٍ أجنبيّةٍ صريحة.
+    /// </summary>
+    public void AlignToBooksCurrency(string booksCurrencyCode)
+    {
+        if (ExchangeRate == 1m && CurrencyCode == "SAR" && !string.IsNullOrWhiteSpace(booksCurrencyCode))
+            CurrencyCode = booksCurrencyCode.Trim().ToUpperInvariant();
     }
 
     /// <summary>

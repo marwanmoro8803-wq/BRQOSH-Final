@@ -34,7 +34,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db)
         IReadOnlyList<(PaymentAllocationDocumentType Type, long DocumentId, string Number, decimal Amount)> allocations,
         CancellationToken ct)
     {
-        if (voucher.CurrencyCode == "SAR" || allocations.Count == 0)
+        if (voucher.ExchangeRate == 1m || allocations.Count == 0)
             return (null, null, null);
 
         var invoiceIds = allocations

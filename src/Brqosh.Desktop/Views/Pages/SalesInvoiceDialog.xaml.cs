@@ -104,6 +104,7 @@ public partial class SalesInvoiceDialog : Window
     public SalesInvoiceDialog()
     {
         InitializeComponent();
+        CurrencyBox.Text = Brqosh.Desktop.Ui.CurrencyLabel.Code;
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
         Loaded += async (_, _) =>
@@ -374,14 +375,14 @@ public partial class SalesInvoiceDialog : Window
     /// </summary>
     private void ApplyCurrency(Brqosh.Domain.Sales.SalesInvoice invoice)
     {
-        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
-        if (code.Length == 0) code = "SAR";
-        if (code == "SAR") return;
+        var code = (CurrencyBox.Text ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
+        if (code.Length == 0) code = Brqosh.Desktop.Ui.CurrencyLabel.Code;
+        if (code == Brqosh.Desktop.Ui.CurrencyLabel.Code) return;
 
         if (!NumericInput.TryParse(RateBox.Text, out var rate))
             throw new Brqosh.Domain.Accounting.AccountingException(
                 $"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
 
-        invoice.SetCurrency(code, rate);
+        invoice.SetCurrency(code, rate, Brqosh.Desktop.Ui.CurrencyLabel.Code);
     }
 }

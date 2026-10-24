@@ -13,6 +13,7 @@ public partial class BankAccountDialog : Window
     public BankAccountDialog()
     {
         InitializeComponent();
+        CurrencyBox.Text = Brqosh.Desktop.Ui.CurrencyLabel.Code;
         _bankAccountId = null;
     }
 
@@ -70,8 +71,8 @@ public partial class BankAccountDialog : Window
     /// </remarks>
     private string Currency()
     {
-        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
-        return code.Length == 0 ? "SAR" : code;
+        var code = (CurrencyBox.Text ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
+        return code.Length == 0 ? Brqosh.Desktop.Ui.CurrencyLabel.Code : code;
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)

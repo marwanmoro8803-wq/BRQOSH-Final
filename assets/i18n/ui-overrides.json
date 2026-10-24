@@ -1995,5 +1995,6 @@
   "يُعتمد أمر مُرسَل فقط.": "Only a submitted order can be approved.",
   "يُعتمد طلب مُرسَل فقط.": "Only a submitted request can be approved.",
   "يُنشأ الفاتورة من أمر بيع مؤكد فقط.": "An invoice is created only from a confirmed sales order.",
-  "يُنشأ الفاتورة من أمر شراء معتمد فقط.": "An invoice is created only from an approved purchase order."
+  "يُنشأ الفاتورة من أمر شراء معتمد فقط.": "An invoice is created only from an approved purchase order.",
+  "مستندٌ بعملة الدفاتر نفسِها سعرُ صرفه ١.": "A document in the books currency has an exchange rate of 1."
 }

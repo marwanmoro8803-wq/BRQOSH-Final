@@ -40,6 +40,7 @@ public partial class ReceiptVoucherDialog : Window
     public ReceiptVoucherDialog()
     {
         InitializeComponent();
+        CurrencyBox.Text = Brqosh.Desktop.Ui.CurrencyLabel.Code;
         DatePickerBox.SelectedDate = DateTime.Today;
         AllocGrid.ItemsSource = _allocations;
         Loaded += async (_, _) =>
@@ -184,7 +185,7 @@ public partial class ReceiptVoucherDialog : Window
                 amount, method, DescriptionBox.Text, ReferenceBox.Text, bankId);
 
             if (ReadCurrency() is (string code, decimal rate))
-                voucher.SetCurrency(code, rate);
+                voucher.SetCurrency(code, rate, Brqosh.Desktop.Ui.CurrencyLabel.Code);
 
             // (CEEF-231 · ط1-٢ج) ‏**والخصمُ يُطفئ من الذمّة ما لم يمرّ بالصندوق.**
             var discount = SettlementDiscount();
@@ -219,9 +220,9 @@ public partial class ReceiptVoucherDialog : Window
     /// </remarks>
     private (string Code, decimal Rate)? ReadCurrency()
     {
-        var code = (CurrencyBox.Text ?? "SAR").Trim().ToUpperInvariant();
-        if (code.Length == 0) code = "SAR";
-        if (code == "SAR") return null;
+        var code = (CurrencyBox.Text ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
+        if (code.Length == 0) code = Brqosh.Desktop.Ui.CurrencyLabel.Code;
+        if (code == Brqosh.Desktop.Ui.CurrencyLabel.Code) return null;
 
         if (!NumericInput.TryParse(RateBox.Text, out var rate))
             throw new AccountingException($"سعر الصرف غير صالح — ووردَ «{RateBox.Text}».");
