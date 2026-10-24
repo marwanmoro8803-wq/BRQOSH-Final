@@ -91,22 +91,9 @@ public static class NavIconFactory
 {
     public static UIElement BuildContent(FrameworkElement host, string pageKey, string titleAr)
     {
-        var glyph = NavIconGlyphs.Get(pageKey);
-        var fontSize = glyph.Length > 2 ? 8.5 : 10.5;
-
-        var badge = new Border
-        {
-            Style = UiResources.StyleOf(host, "NavMonogramBadge"),
-            Child = new TextBlock
-            {
-                Text = glyph,
-                FontSize = fontSize,
-                FontWeight = FontWeights.Bold,
-                Foreground = UiResources.BrushOf(host, "PrimaryLightBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
-        };
+        // ‏(«مِسطرة») ‏القائمةُ نصٌّ عربيٌّ خالص: لا شاراتُ حروفٍ لاتينيّةٍ (SI · JE · CTB) داخل قائمةٍ عربيّة — فهرسٌ لا لوحةُ أيقونات.
+        // ‏والمعاملُ `pageKey` باقٍ في التوقيع ليبقى النداءُ كما هو.
+        _ = pageKey;
 
         var title = new TextBlock
         {
@@ -115,11 +102,6 @@ public static class NavIconFactory
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
 
-        return new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            FlowDirection = FlowDirection.RightToLeft,
-            Children = { badge, title },
-        };
+        return title;
     }
 }
