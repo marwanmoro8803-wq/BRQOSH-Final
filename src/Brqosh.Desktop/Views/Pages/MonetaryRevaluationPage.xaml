@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.MonetaryRevaluationPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -9,21 +10,20 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="إعادة تقييم الذمم بالعملات" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="البنود النقدية تُترجم بسعر الإقفال — والقيد يُعكس في اليوم التالي"/>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Style="{StaticResource ToolbarPrimaryGroup}">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="RunBtn" Content="إعادة التقييم" Style="{StaticResource PrimaryButton}"
                             Padding="18,9" Click="OnRun"/>
                     <!-- (جاهزيّةُ الإطلاق · ح-٣٨) سعرٌ خاطئٌ يُلغى من هنا —
                          وكانت رسالةُ الرفض تُحيل إلى عكسٍ مرفوضٍ في نفسِه. -->
                     <Button x:Name="CancelBtn" Content="إلغاء تقييم التاريخ" Style="{StaticResource SecondaryButton}"
                             Margin="10,0,0,0" Padding="18,9" Click="OnCancelRevaluation"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="RefreshBtn" DockPanel.Dock="Right" Content="عرض المكشوف"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnRefresh"/>
@@ -32,7 +32,7 @@
                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="تاريخ الإقفال" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"

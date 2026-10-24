@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.AuditLogPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -9,19 +10,19 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="سجل التدقيق" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="من · ماذا · متى · أثر مالي"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                <WrapPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button x:Name="PrevBtn" Content="السابق" Style="{StaticResource SecondaryButton}" Padding="14,7" Click="OnPrev" IsEnabled="False"/>
                     <Button x:Name="NextBtn" Content="التالي" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="8,0,0,0" Click="OnNext"/>
-                </StackPanel>
+                </WrapPanel>
                 <TextBlock x:Name="CountText" DockPanel.Dock="Left" VerticalAlignment="Center"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="AuditSummaryText" FontWeight="SemiBold"

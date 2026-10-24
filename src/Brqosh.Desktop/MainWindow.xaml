@@ -1,6 +1,7 @@
 ﻿<Window x:Class="Brqosh.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Brqosh.Desktop.Views.Controls"
         Title="BRQOSH ERP"
         Width="1400" Height="900"
         MinWidth="1024" MinHeight="560"
@@ -41,10 +42,10 @@
                                 Background="{StaticResource BrandAccentGradient}"/>
 
                         <!-- اسم النظام -->
-                        <TextBlock Text="BRQOSH"
-                                   FontSize="26" FontWeight="Black" Foreground="White"/>
+                        <controls:BrandLogo MarkHeight="64" NameSize="16" HorizontalAlignment="Center"/>
                         <TextBlock Text="نظام تخطيط موارد المؤسسة"
-                                   FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+                                   FontSize="11.5" Foreground="#64748B" Margin="0,8,0,0"
+                                   HorizontalAlignment="Center"/>
 
                         <!-- اسم المنشأة -->
                         <TextBlock x:Name="CompanyNameText"

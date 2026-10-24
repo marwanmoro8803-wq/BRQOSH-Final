@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.DataMigrationPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -10,20 +11,19 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="ترحيل البيانات" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="نقل الدليل والعملاء والموردين والأرصدة الافتتاحية من نظام سابق"/>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Style="{StaticResource ToolbarPrimaryGroup}">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <TextBlock Text="تاريخ بدء التشغيل" VerticalAlignment="Center" Margin="0,0,8,0"
                                Foreground="{StaticResource TextSecondaryBrush}"/>
                     <DatePicker x:Name="OpeningDatePicker" Width="140" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <Button x:Name="ImportOpeningBtn" Content="استيراد الميزان الافتتاحي"
                             Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnImportOpening"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="ImportStockBtn" DockPanel.Dock="Right" Content="المخزون الافتتاحي"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Margin="0,0,8,0" Click="OnImportStock"/>
@@ -40,7 +40,7 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="ImportAccountsBtn" DockPanel.Dock="Right" Content="استيراد دليل الحسابات"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnImportAccounts"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,10" Padding="16,10">

@@ -19,14 +19,14 @@
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
-            <StackPanel Orientation="Horizontal">
+            <WrapPanel>
                 <TextBlock Text="المورد" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <ComboBox x:Name="SupplierCombo" Width="280" FontSize="14" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"
                           SelectionChanged="OnSupplierChanged"/>
                 <Button Content="عرض الكشف" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
                 <Button Content="تصدير PDF" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportPdf"/>
-            </StackPanel>
+            </WrapPanel>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">

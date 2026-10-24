@@ -21,7 +21,7 @@
 
         <!-- الفترة -->
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
-            <StackPanel Orientation="Horizontal">
+            <WrapPanel>
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <DatePicker x:Name="FromDate" Width="160" FontSize="14"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="16,0,8,0"/>
@@ -29,7 +29,7 @@
                 <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun" IsDefault="True"/>
                 <Button Content="PDF" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportPdf"/>
                 <Button Content="Excel" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportExcel"/>
-            </StackPanel>
+            </WrapPanel>
         </Border>
 
         <!-- الجدول -->

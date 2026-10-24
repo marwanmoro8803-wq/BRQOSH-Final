@@ -195,6 +195,7 @@ wix build $WxsPath `
     -arch x64 `
     -d PublishDir=$PublishDir `
     -d ProductVersion=$ProductVersion `
+    -d BrandIcon=(Join-Path $Root 'assets\brand\brqosh.ico') `
     -o $MsiOut
 
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $MsiOut)) {

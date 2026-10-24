@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.WageProtectionPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -10,23 +11,22 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="ملف حماية الأجور" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="إلزامي نظامًا — يُرفع للبنك فيودع الرواتب"/>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Style="{StaticResource ToolbarPrimaryGroup}">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="ExportBtn" Content="تصدير الملف" Style="{StaticResource PrimaryButton}"
                             Padding="18,9" Click="OnExport"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <ComboBox x:Name="RunBox" DockPanel.Dock="Right" Width="280" FontSize="14"
                           VerticalAlignment="Center" Margin="0,0,12,0" SelectionChanged="OnRunChanged"/>
                 <TextBlock DockPanel.Dock="Right" Text="دورة الرواتب" VerticalAlignment="Center"
                            Margin="0,0,10,0" Style="{StaticResource FieldLabel}"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,10" Padding="16,10">

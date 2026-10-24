@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.BomPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft"
              FontFamily="{StaticResource AppFont}">
     <Grid>
@@ -11,26 +12,25 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="قوائم المواد BOM" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="مكوّنات · منتج نهائي · أوامر إنتاج"/>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Style="{StaticResource ToolbarPrimaryGroup}">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="AddBomBtn" Content="＋ BOM جديد" Style="{StaticResource PrimaryButton}"
                             Padding="18,9" Click="OnAddBom"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="EditBtn" Content="تعديل" Padding="16,9" Margin="0,0,8,0" Click="OnEdit"/>
                     <Button x:Name="RenameBtn" Content="تعديل الاسم" Padding="16,9" Click="OnRename"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnDeactivate"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">

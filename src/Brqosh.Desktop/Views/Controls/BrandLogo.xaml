@@ -1,0 +1,24 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Controls.BrandLogo"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root"
+             FlowDirection="LeftToRight"
+             SnapsToDevicePixels="True"
+             AutomationProperties.Name="BRQOSH">
+    <!-- شعارُ BRQOSH: الدرعُ هندسةٌ (BrandMark.xaml) فيتلوّن بأيّ فرشاةٍ ويبقى حادّاً بأيّ مقاس، والاسمُ تحته.
+         الاتجاهُ LTR عمداً: اسمُ العلامة لاتينيٌّ ولا يُعكس في واجهةٍ عربيّة. -->
+    <StackPanel HorizontalAlignment="Center">
+        <Viewbox Height="{Binding MarkHeight, ElementName=Root}" Stretch="Uniform" HorizontalAlignment="Center">
+            <Path Data="{StaticResource BrqoshMarkGeometry}"
+                  Fill="{Binding MarkBrush, ElementName=Root}"
+                  Width="752" Height="1000" Stretch="Fill"/>
+        </Viewbox>
+        <TextBlock Text="B R Q O S H"
+                   Visibility="{Binding NameVisibility, ElementName=Root}"
+                   FontSize="{Binding NameSize, ElementName=Root}"
+                   FontWeight="Bold"
+                   Foreground="{Binding NameBrush, ElementName=Root}"
+                   HorizontalAlignment="Center"
+                   Margin="0,10,0,0"/>
+    </StackPanel>
+</UserControl>

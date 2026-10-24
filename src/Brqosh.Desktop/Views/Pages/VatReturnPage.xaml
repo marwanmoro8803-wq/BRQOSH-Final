@@ -20,14 +20,14 @@
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
-            <StackPanel Orientation="Horizontal">
+            <WrapPanel>
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <DatePicker x:Name="FromDate" Width="160" FontSize="14"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="16,0,8,0"/>
                 <DatePicker x:Name="ToDate" Width="160" FontSize="14"/>
                 <Button Content="عرض الإقرار" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
                 <Button Content="تصدير PDF" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportPdf"/>
-            </StackPanel>
+            </WrapPanel>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Padding="20">

@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.SalesQuotationsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -9,8 +10,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <brq:ToolbarDockPanel>
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <!-- (جاهزيّةُ الإطلاق · ح-١١٥ · order-to-cash-procure-to-pay-inventory#8) قبولٌ ورفضٌ وتحويلٌ إلى أمر بيع. -->
                     <Button x:Name="AcceptBtn" Content="قبول العرض" Style="{StaticResource SecondaryButton}"
                             Padding="16,9" Margin="0,0,8,0" Click="OnAccept"/>
@@ -20,12 +21,12 @@
                             Padding="16,9" Margin="0,0,8,0" Click="OnConvert"/>
                     <Button x:Name="AddBtn" Content="＋ عرض سعر"
                             Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
-                </StackPanel>
+                </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="عروض الأسعار" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="LIFECYCLE-31 · مبيعات مبكرة"/>
                 </StackPanel>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
         <TextBlock x:Name="StatusText" Grid.Row="1" Margin="4,10,4,0" TextWrapping="Wrap" Visibility="Collapsed"/>
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,12,0,0">

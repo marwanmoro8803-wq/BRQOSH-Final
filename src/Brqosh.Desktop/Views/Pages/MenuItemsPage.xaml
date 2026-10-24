@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.MenuItemsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -9,17 +10,16 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="قائمة الطعام والوصفات" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="بيع الطبق يصرف مكوناته — وبغير وصفة يبقى المخزون كما اشتُري"/>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Style="{StaticResource ToolbarPrimaryGroup}">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="AddBtn" Content="＋ صنف قائمة" Style="{StaticResource PrimaryButton}"
                             Padding="18,9" Click="OnAdd"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="IssueBtn" DockPanel.Dock="Right" Content="صرف مكونات المبيع"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnIssue"/>
@@ -28,7 +28,7 @@
                          Style="{StaticResource AppTextBox}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="عدد الحصص المباعة" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"

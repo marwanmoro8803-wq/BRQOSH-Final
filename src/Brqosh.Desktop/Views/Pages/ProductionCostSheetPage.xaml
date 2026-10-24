@@ -20,7 +20,7 @@
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
-            <StackPanel Orientation="Horizontal">
+            <WrapPanel>
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <DatePicker x:Name="FromDate" Width="140"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="12,0,8,0"/>
@@ -28,7 +28,7 @@
                 <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnRefresh"/>
                 <TextBlock x:Name="CountText" VerticalAlignment="Center" Margin="16,0,0,0"
                            Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
-            </StackPanel>
+            </WrapPanel>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,12,0,12">

@@ -1,6 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.EmployeesPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
@@ -9,24 +10,23 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
-            <DockPanel LastChildFill="False">
+            <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="سجل الموظفين" FontSize="16"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="هوية · جنسية · أجر · آيبان — والجنسية تحكم اشتراك التأمينات"/>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Style="{StaticResource ToolbarPrimaryGroup}">
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="AddBtn" Content="＋ موظف جديد" Style="{StaticResource PrimaryButton}"
                             Padding="18,9" Click="OnAdd"/>
-                </StackPanel>
+                </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="TerminateBtn" DockPanel.Dock="Right" Content="إنهاء خدمة"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnTerminate"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <CheckBox x:Name="ShowTerminatedBox" DockPanel.Dock="Right" VerticalAlignment="Center"
                           Content="إظهار من انتهت خدمتهم" Margin="0,0,12,0" Click="OnFilterChanged"/>
-            </DockPanel>
+            </brq:ToolbarDockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold"

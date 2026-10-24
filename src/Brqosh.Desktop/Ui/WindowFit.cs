@@ -62,7 +62,16 @@ public static class WindowFit
         if (window.WindowState == WindowState.Maximized)
             return;
 
-        var tooTall = window.ActualHeight > workArea.Height + 0.5;
+        // ‏(UI-AUDIT) ‏**نافذةٌ ارتفاعُها المصمَّم أقلُّ من محتواها** تُقصّ أسفلَها: الأزرارُ تركب على آخر الحقول أو تخرج.
+        // ‏الارتفاعُ ثابتٌ في XAML، والخطُّ والتكبيرُ ومنطقةُ الشاشة تتغيّر — فيُقاس المحتوى هنا ويُكبَّر الارتفاعُ بقدر ما ينقص،
+        // ‏وما جاوز مساحةَ العمل يُمرَّر (أدناه).
+        var overflow = ContentOverflow(window);
+        var wanted = window.ActualHeight + overflow;
+        var tooTall = wanted > workArea.Height + 0.5;
+        // ‏تكبُر النافذةُ إلى أقصى ما تسمح به مساحةُ العمل، وما زاد على ذلك يُمرَّر داخلها (أدناه) — فلا تبقى
+        // ‏نافذةٌ بـ٥٠٠ بكسل تمرّر محتواها وبقربها ١٨٠ بكسلاً فارغةً على الشاشة.
+        if (overflow > 1 && window.SizeToContent is SizeToContent.Manual or SizeToContent.Width)
+            window.Height = Math.Ceiling(Math.Min(wanted, workArea.Height));
         if (tooTall)
             TryScrollBody(window);
 
@@ -119,6 +128,28 @@ public static class WindowFit
         window.Content = null;
         window.Content = MakeScrollable(content);
         return true;
+    }
+
+    /// <summary>كم بكسلاً ينقص مساحةَ النافذة (العميل) ليظهر محتواها كاملاً بعرضها الحاليّ؟ صفرٌ إن اتّسعت أو كانت تمرّر نفسَها.</summary>
+    internal static double ContentOverflow(Window window)
+    {
+        if (window.Content is not FrameworkElement content
+            || VisualTreeHelper.GetParent(content) is not FrameworkElement client)
+            return 0;
+        return ContentOverflow(content, client.ActualWidth, client.ActualHeight);
+    }
+
+    internal static double ContentOverflow(FrameworkElement content, double clientWidth, double clientHeight)
+    {
+        if (clientWidth <= 0 || clientHeight <= 0 || content is ScrollViewer || ContainsScrollHost(content))
+            return 0;
+
+        content.Measure(new Size(clientWidth, double.PositiveInfinity));
+        var needed = content.DesiredSize.Height;
+        // ‏القياسُ بارتفاعٍ لا نهائيّ يُبقي ترتيبَ العناصر كما هو — يُعاد الترتيبُ بالحجم الحقيقيّ كي لا يتغيّر شيءٌ على الشاشة.
+        content.Measure(new Size(clientWidth, clientHeight));
+        content.Arrange(new Rect(0, 0, clientWidth, clientHeight));
+        return Math.Max(0, needed - clientHeight);
     }
 
     /// <summary>العنصرُ يجب أن يكون منفصلاً عن أبيه قبل النداء (يُعاد تركيبه هنا).</summary>

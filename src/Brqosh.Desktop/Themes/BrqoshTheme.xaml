@@ -3,6 +3,11 @@
                     xmlns:sys="clr-namespace:System;assembly=mscorlib"
                     xmlns:ui="clr-namespace:Brqosh.Desktop.Ui">
 
+    <!-- هندسةُ شعار BRQOSH (مولَّدة) — داخل الثيم فيراها كلُّ من يحمّل الثيمَ: التطبيقُ والاختباراتُ والمسبار. -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="BrandMark.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
     <!-- ═══════════════════════════════════════════════
          لوحة الألوان — هوية BRQOSH
     ═══════════════════════════════════════════════ -->

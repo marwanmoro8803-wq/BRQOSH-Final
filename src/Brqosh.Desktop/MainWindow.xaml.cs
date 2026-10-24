@@ -53,6 +53,11 @@ public partial class MainWindow : Window
         // ‏(UI-AUDIT · P1) الصفحةُ الطويلة تُمرَّر، والجدولُ يبقى محدودَ الارتفاع.
         Ui.PageViewport.Attach(PageViewportScroll, PageHost);
 
+        // ‏لوحةُ المساعد تُطوى تلقائيّاً على النوافذ الضيّقة — كانت تُفتح دائماً فتترك الصفحةَ ٤٥٢ بكسلاً عند الحدّ الأدنى
+        // ‏وتُقصّ أزرارُ الأشرطة. فإذا اختار المستخدمُ فتحَها أو طيَّها بزرّها فاختيارُه هو المُتّبَع.
+        SizeChanged += (_, _) => ApplyAiPanelPolicy();
+        Loaded += (_, _) => ApplyAiPanelPolicy();
+
         // ‏(ح-١٢٠) ‏**وضعُ القراءة يُرى في العنوان** — فلا يُحسب رفضُ الحفظ عطلاً.
         if (Brqosh.Infrastructure.Licensing.ReadOnlyBooks.IsActive)
             Title += " — " + LocaleManager.T("للقراءة فقط (الترخيص منتهٍ)", "Read-only (licence expired)");
@@ -462,10 +467,29 @@ public partial class MainWindow : Window
         return pageKey;
     }
 
+    private bool _aiPanelChosenByUser;
+
     private void OnToggleAiPanel(object sender, RoutedEventArgs e)
     {
-        AiColumn.Width = AiColumn.Width.Value > 0 ? new GridLength(0) : new GridLength(300);
-        AiPanel.Visibility = AiColumn.Width.Value > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _aiPanelChosenByUser = true;
+        SetAiPanelOpen(AiColumn.Width.Value <= 0);
+    }
+
+    private void ApplyAiPanelPolicy()
+    {
+        if (_aiPanelChosenByUser || ActualWidth <= 0)
+            return;
+        var open = Ui.ShellLayout.AiPanelFits(ActualWidth);
+        if (open != AiColumn.Width.Value > 0)
+            SetAiPanelOpen(open);
+    }
+
+    private void SetAiPanelOpen(bool open)
+    {
+        AiColumn.Width = open ? new GridLength(Ui.ShellLayout.AiPanelWidth) : new GridLength(0);
+        AiPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        if (open)
+            _ = RefreshAiPanelAsync();
     }
 
     private void OnLocaleChanged()

@@ -30,6 +30,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- أيقونةُ البرنامج: تُدمَج في الملف التنفيذيّ وتصير أيقونةَ كلّ نافذةٍ وشريطِ المهامّ ومختصراتِ المُنصِّب. تُولَّد بـ tools/brand/build_brand.py. -->
+    <ApplicationIcon>..\..\assets\brand\brqosh.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
