@@ -38,9 +38,11 @@ public partial class DocumentPrintService
 
     public const int MaxTableRows = 3000;
 
-    private static bool IsNumberText(string s) =>
-        decimal.TryParse(s.Replace(",", "").Replace("(", "-").Replace(")", "").Trim(), System.Globalization.NumberStyles.Any,
-            System.Globalization.CultureInfo.InvariantCulture, out _);
+    // ‏شكلٌ لا تحويل: حاجزُ `CsvAmountTextIsTheOnlyFileParserTests` يمنع تحويلَ النصّ إلى رقمٍ خارج CsvAmountText، ولا حاجةَ هنا لقيمةٍ بل لمعرفة «أيُشبه رقماً».
+    private static readonly System.Text.RegularExpressions.Regex NumberShape =
+        new(@"^\(?-?[0-9,]+(\.[0-9]+)?\)?$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static bool IsNumberText(string s) => NumberShape.IsMatch(s.Trim());
 
     public async Task<PrintResult> ExportTrialBalanceAsync(
         long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
