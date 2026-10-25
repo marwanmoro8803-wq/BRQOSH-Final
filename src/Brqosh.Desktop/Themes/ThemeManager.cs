@@ -10,24 +10,69 @@ public static class ThemeManager
 
     public static event Action? Changed;
 
+    private static bool _watchingHighContrast;
+
     public static void Apply(bool dark)
     {
         IsDark = dark;
-        ApplyTo(System.Windows.Application.Current.Resources, dark);
+        ApplyTo(System.Windows.Application.Current.Resources, dark, SystemParameters.HighContrast);
         Changed?.Invoke();
+        WatchHighContrast();
+    }
+
+    /// <summary>من يشغّل «التباين العالي» أو يطفئه والبرنامج مفتوحٌ يرى الأثرَ فوراً بلا إعادة تشغيل.</summary>
+    private static void WatchHighContrast()
+    {
+        if (_watchingHighContrast)
+            return;
+        _watchingHighContrast = true;
+        SystemParameters.StaticPropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(SystemParameters.HighContrast))
+                System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() => Apply(IsDark)));
+        };
+    }
+
+    /// <summary>
+    /// (إمكانيّة الوصول) في «التباين العالي» تُستبدل ألوانُ اللوحة كلُّها بألوان النظام التي اختارها المستخدم (<c>Window</c> · <c>WindowText</c> · <c>Highlight</c> ·
+    /// <c>GrayText</c>): الأزواجُ الأمامية/الخلفية تبقى من أزواج النظام المضمونة التباين، والدلالةُ (نجاحٌ/خطر) لا تُحمل باللون وحده بل بنصّها.
+    /// </summary>
+    public static void ApplyHighContrast(ResourceDictionary r)
+    {
+        EnsureMutableBrushes(r);
+        var window = SystemColors.WindowColor;
+        var text = SystemColors.WindowTextColor;
+        var hi = SystemColors.HighlightColor;
+        var onHi = SystemColors.HighlightTextColor;
+        var gray = SystemColors.GrayTextColor;
+
+        foreach (var k in new[] { "Background", "Surface", "GlassSurface", "PrimarySoft", "RowAlt", "RowHover", "StatusBar", "Sidebar", "SidebarMid", "SidebarHover",
+                                  "SuccessSoft", "DangerSoft", "WarningSoft", "InfoSoft", "DisabledBackground" })
+            SetColor(r, k + "Color", k + "Brush", window);
+        foreach (var k in new[] { "TextPrimary", "TextSecondary", "StatusBarText", "SidebarText", "Border", "BorderLight", "RuleStrong", "ScrollThumb", "Success", "Danger", "Warning", "Info", "SuccessDark",
+                                  "AccentInk" })
+            SetColor(r, k + "Color", k + "Brush", text);
+        foreach (var k in new[] { "TextMuted", "SidebarMuted", "DisabledForeground" })
+            SetColor(r, k + "Color", k + "Brush", gray);
+        foreach (var k in new[] { "Primary", "PrimaryDark", "PrimaryLight", "Accent", "AccentDark", "ElectricCyan" })
+            SetColor(r, k + "Color", k + "Brush", hi);
+        SetColor(r, "OnPrimaryColor", "OnPrimaryBrush", onHi);
+        UpdateSidebarGradient(r, window, window, window);
     }
 
     /// <summary>
     /// يطبّق اللوحة على قاموس موارد بعينه — يفصل الثيم عن <c>Application.Current</c>
     /// ليصير قابلاً للقياس في اختبار بلا تشغيل التطبيق (CEEF-222).
     /// </summary>
-    public static void ApplyTo(ResourceDictionary r, bool dark)
+    public static void ApplyTo(ResourceDictionary r, bool dark, bool highContrast = false)
     {
         EnsureMutableBrushes(r);
         if (dark)
             ApplyLuxuryDark(r);
         else
             ApplyLuxuryLight(r);
+        if (highContrast)
+            ApplyHighContrast(r);
     }
 
     public static void Toggle() => Apply(!IsDark);
@@ -123,9 +168,11 @@ public static class ThemeManager
     }
 
     /// <summary>يحدّث لون الفرشاة المشتركة — كل العناصر المرتبطة تتحدّث فوراً.</summary>
-    private static void SetColor(ResourceDictionary r, string colorKey, string brushKey, string hex)
+    private static void SetColor(ResourceDictionary r, string colorKey, string brushKey, string hex) =>
+        SetColor(r, colorKey, brushKey, ParseColor(hex));
+
+    private static void SetColor(ResourceDictionary r, string colorKey, string brushKey, Color color)
     {
-        var color = ParseColor(hex);
         r[colorKey] = color;
         if (r[brushKey] is SolidColorBrush brush)
         {
@@ -138,16 +185,19 @@ public static class ThemeManager
             r[brushKey] = new SolidColorBrush(color);
     }
 
-    private static void UpdateSidebarGradient(ResourceDictionary r, string top, string mid, string bottom)
+    private static void UpdateSidebarGradient(ResourceDictionary r, string top, string mid, string bottom) =>
+        UpdateSidebarGradient(r, ParseColor(top), ParseColor(mid), ParseColor(bottom));
+
+    private static void UpdateSidebarGradient(ResourceDictionary r, Color top, Color mid, Color bottom)
     {
         var brush = new LinearGradientBrush
         {
             StartPoint = new Point(0, 0),
             EndPoint = new Point(0, 1),
         };
-        brush.GradientStops.Add(new GradientStop(ParseColor(top), 0));
-        brush.GradientStops.Add(new GradientStop(ParseColor(mid), 0.55));
-        brush.GradientStops.Add(new GradientStop(ParseColor(bottom), 1));
+        brush.GradientStops.Add(new GradientStop(top, 0));
+        brush.GradientStops.Add(new GradientStop(mid, 0.55));
+        brush.GradientStops.Add(new GradientStop(bottom, 1));
         r["SidebarGradientBrush"] = brush;
     }
 
