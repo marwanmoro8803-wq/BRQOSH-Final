@@ -8,12 +8,32 @@
     <!-- شعارُ BRQOSH: الدرعُ هندسةٌ (BrandMark.xaml) فيتلوّن بأيّ فرشاةٍ ويبقى حادّاً بأيّ مقاس، والاسمُ تحته.
          الاتجاهُ LTR عمداً: اسمُ العلامة لاتينيٌّ ولا يُعكس في واجهةٍ عربيّة. -->
     <StackPanel HorizontalAlignment="Center">
-        <Viewbox Height="{Binding MarkHeight, ElementName=Root}" Stretch="Uniform" HorizontalAlignment="Center">
-            <Path Data="{StaticResource BrqoshMarkGeometry}"
-                  Fill="{Binding MarkBrush, ElementName=Root}"
-                  Width="752" Height="1000" Stretch="Fill"/>
+        <Viewbox x:Name="MarkBox" Height="{Binding MarkHeight, ElementName=Root}" Stretch="Uniform" HorizontalAlignment="Center"
+                 RenderTransformOrigin="0.5,0.5">
+            <Viewbox.RenderTransform>
+                <ScaleTransform x:Name="MarkScale" ScaleX="1" ScaleY="1"/>
+            </Viewbox.RenderTransform>
+            <Grid Width="752" Height="1000">
+                <Path Data="{StaticResource BrqoshMarkGeometry}"
+                      Fill="{Binding MarkBrush, ElementName=Root}"
+                      Width="752" Height="1000" Stretch="Fill"/>
+                <!-- لمعةٌ تمرّ على الدرع بين حينٍ وآخر (تُفعَّل بـAnimate فقط): فرشاةُ تدرّجٍ شفّافةٌ تُزاح عبر الدرع نفسِه. -->
+                <Path x:Name="Shine" Data="{StaticResource BrqoshMarkGeometry}" Width="752" Height="1000" Stretch="Fill"
+                      IsHitTestVisible="False" Opacity="0">
+                    <Path.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.35">
+                            <LinearGradientBrush.RelativeTransform>
+                                <TranslateTransform x:Name="ShineShift" X="-1.4"/>
+                            </LinearGradientBrush.RelativeTransform>
+                            <GradientStop Color="#00FFFFFF" Offset="0.30"/>
+                            <GradientStop Color="#B3FFFFFF" Offset="0.50"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.70"/>
+                        </LinearGradientBrush>
+                    </Path.Fill>
+                </Path>
+            </Grid>
         </Viewbox>
-        <TextBlock Text="B R Q O S H"
+        <TextBlock x:Name="NameText" Text="B R Q O S H"
                    Visibility="{Binding NameVisibility, ElementName=Root}"
                    FontSize="{Binding NameSize, ElementName=Root}"
                    FontWeight="Bold"

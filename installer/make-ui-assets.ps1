@@ -9,7 +9,8 @@
     والصورتان بألوان الهويّة (كحليّ #0B3150 وذهبيّ #C9A227) وبدرع BRQOSH من assets\brand.
 #>
 param(
-    [Parameter(Mandatory)][string]$OutDir
+    [Parameter(Mandatory)][string]$OutDir,
+    [string]$ProductVersion = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,6 +39,11 @@ $eula = Get-Content -Path (Join-Path $Root 'assets\legal\eula.txt') -Encoding ut
 $rtf = New-Object System.Text.StringBuilder
 [void]$rtf.AppendLine('{\rtf1\ansi\ansicpg1256\deff0\deflang1025{\fonttbl{\f0\fnil\fcharset178 Segoe UI;}}')
 [void]$rtf.AppendLine('\viewkind4\uc1\f0\fs20')
+if ($ProductVersion) {
+    # ‏سطرُ إصدار البرنامج في أعلى الاتفاقيّة بالمُنصِّب (للمُنصِّب فقط؛ eula.txt لا يتغيّر مع كلّ إصدار فلا يُعاد قبولُه بلا سبب).
+    $line = "إصدار البرنامج $ProductVersion · Software version $ProductVersion"
+    [void]$rtf.AppendLine("\pard\rtlpar\qr\b $(ConvertTo-RtfText $line)\b0\par\pard\par")
+}
 $arabic = [regex]'[؀-ۿ]'
 foreach ($line in $eula) {
     if ([string]::IsNullOrWhiteSpace($line)) { [void]$rtf.AppendLine('\pard\par'); continue }

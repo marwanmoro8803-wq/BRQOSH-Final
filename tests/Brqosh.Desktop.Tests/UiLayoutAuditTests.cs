@@ -31,6 +31,7 @@ public class UiLayoutAuditTests
             ["Views/ForgotPasswordWindow.xaml"] = (2, "PasswordBox/نصٌّ ظاهر/زرُّ الإظهار — حقلٌ واحدٌ بوجهين"),
             ["Views/LoginWindow.xaml"] = (4, "ثلاثةُ حقول كلمة مرور بوجهين، و«تذكّرني» يميناً و«نسيت» يساراً"),
             ["Views/Pages/CompanySettingsPage.xaml"] = (1, "صورةُ الشعار أو نصُّ «لا يوجد شعار»"),
+            ["Views/Controls/BrandLogo.xaml"] = (1, "لمعةُ الشعار فوق الدرع نفسِه — طبقةٌ لا تلتقط النقر"),
         };
 
     [Fact]

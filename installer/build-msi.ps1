@@ -52,16 +52,29 @@ function Invoke-BrqoshSign {
     if (-not $script:SignTool) {
         $script:SignTool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
                            Sort-Object FullName -Descending | Select-Object -First 1 | ForEach-Object FullName
-        if (-not $script:SignTool) {
-            Write-Host "التوقيعُ مضبوطٌ ($($script:Signing.Mode)) ولا signtool — أُسقط البناء." -ForegroundColor Red
+    }
+
+    if ($script:SignTool) {
+        $signArgs = @($script:Signing.Args)
+        & $script:SignTool sign @signArgs @targets
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "توقيعُ «$What» أخفق (exit=$LASTEXITCODE)." -ForegroundColor Red
             exit 1
         }
     }
-
-    $signArgs = @($script:Signing.Args)
-    & $script:SignTool sign @signArgs @targets
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "توقيعُ «$What» أخفق (exit=$LASTEXITCODE)." -ForegroundColor Red
+    elseif ($script:Signing.Mode -eq 'CertificateStore') {
+        # ‏بلا signtool (لا حزمةَ SDK على الجهاز): التوقيعُ بـSet-AuthenticodeSignature المضمَّن في ويندوز — يوقّع PE وMSI بالشهادة نفسِها من المخزن.
+        $thumbprint = ($env:BRQOSH_SIGNING_THUMBPRINT -replace '\s', '').ToUpperInvariant()
+        $cert = Get-ChildItem Cert:\CurrentUser\My, Cert:\LocalMachine\My -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
+        if (-not $cert) { Write-Host "الشهادةُ $thumbprint غيرُ موجودةٍ في المخزن — أُسقط البناء." -ForegroundColor Red; exit 1 }
+        $stamp = if ($env:BRQOSH_SIGNING_TIMESTAMP) { $env:BRQOSH_SIGNING_TIMESTAMP } else { 'http://timestamp.digicert.com' }
+        foreach ($t in $targets) {
+            $r = Set-AuthenticodeSignature -FilePath $t -Certificate $cert -HashAlgorithm SHA256 -TimestampServer $stamp
+            if (-not $r.SignerCertificate) { Write-Host "توقيعُ $(Split-Path $t -Leaf) أخفق: $($r.StatusMessage)" -ForegroundColor Red; exit 1 }
+        }
+    }
+    else {
+        Write-Host "التوقيعُ مضبوطٌ ($($script:Signing.Mode)) ولا signtool — أُسقط البناء." -ForegroundColor Red
         exit 1
     }
 
@@ -69,7 +82,11 @@ function Invoke-BrqoshSign {
     # ‏ويُفحص **كلُّ** هدفٍ لا أوّلُه — فتوقيعٌ جزئيٌّ يُقرأ نجاحاً، وهو أسوأُ من لا توقيع.
     foreach ($target in $targets) {
         $sig = Get-AuthenticodeSignature $target
-        if ($sig.Status -ne 'Valid') {
+        # ‏شهادةٌ ذاتيّةُ التوقيع (BRQOSH_SIGNING_SELFSIGNED=1) تُثبت سلامةَ الملفّ لا هويّةَ الناشر: يُقبل «غيرُ موثوق الجذر» لها وحدَها، وبشرط أن يطابق الموقِّعُ بصمتَنا.
+        $selfSignedOk = $env:BRQOSH_SIGNING_SELFSIGNED -eq '1' -and $sig.SignerCertificate -and
+                        $sig.SignerCertificate.Thumbprint -eq (($env:BRQOSH_SIGNING_THUMBPRINT -replace '\s', '').ToUpperInvariant()) -and
+                        $sig.StatusMessage -match 'not trusted|untrusted|root'
+        if ($sig.Status -ne 'Valid' -and -not $selfSignedOk) {
             Write-Host "توقيعُ $(Split-Path $target -Leaf): $($sig.Status) — أُسقط البناء." -ForegroundColor Red
             exit 1
         }
@@ -197,7 +214,7 @@ if (-not (Test-Path $BrandIconPath)) { throw "أيقونةُ البرنامج غ
 
 # ‏(واجهةُ التنصيب) ‏أصولُ الواجهة تُولَّد من مصدرٍ واحد (eula.txt وشعارُ الهويّة) قبل البناء.
 $UiDir = Join-Path $Root 'dist\installer-ui'
-& (Join-Path $PSScriptRoot 'make-ui-assets.ps1') -OutDir $UiDir
+& (Join-Path $PSScriptRoot 'make-ui-assets.ps1') -OutDir $UiDir -ProductVersion $ProductVersion
 if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { throw "make-ui-assets.ps1 أخفق (exit=$LASTEXITCODE)." }
 $UiWxs = Join-Path $PSScriptRoot 'ui.wxs'
 
@@ -274,7 +291,13 @@ Write-Host "تحقّقُ ICE: صفرُ أخطاء · $($iceWarn.Count) تحذي�
 #
 # ‏وضبطُ `BRQOSH_SIGNING_THUMBPRINT` (رمزٌ أو HSM) أو `BRQOSH_SIGNING_PFX` يُشغّله (ح-١٢٨). وغيابُهما **يُعلَن** ولا يُبتلع:
 # ‏حزمةٌ غيرُ موقّعةٍ تخرج ومعها سطرٌ يقول إنّها كذلك، فلا تُشحن على أنّها موقّعة.
+# ‏(اللغة) ‏نسخةٌ إنجليزيّةُ الواجهة من الحزمة نفسِها: ‏خيارُ اللغة = أيُّ ملفٍّ تفتح؛ لا مُشغِّلَ إضافيّ (مُشغِّلٌ غيرُ موقَّع كشفه Defender وحذفه).
+# ‏ترميزُ الحزمة مثبَّتٌ على 1256 في brqosh.wxs فلا يسقط البناءُ على نصوص الحوارات العربيّة.
+$MsiEn = Join-Path $Root "dist\BRQOSH-Setup-en.msi"
+Invoke-BrqoshWixBuild 'en-US' $MsiEn
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $MsiEn)) { Write-Host "بناءُ الحزمة الإنجليزيّة أخفق." -ForegroundColor Red; exit 1 }
 Invoke-BrqoshSign -Paths @($MsiOut) -What "الحزمة"
+Invoke-BrqoshSign -Paths @($MsiEn) -What "الحزمة الإنجليزيّة"
 if ($script:Signing.Mode -eq 'None') {
     Write-Host "غيرُ موقَّعة — لا BRQOSH_SIGNING_THUMBPRINT ولا BRQOSH_SIGNING_PFX. (ن-١٢ · تبعيّةٌ خارجيّة: شهادةُ توقيع كود)" -ForegroundColor Yellow
 }

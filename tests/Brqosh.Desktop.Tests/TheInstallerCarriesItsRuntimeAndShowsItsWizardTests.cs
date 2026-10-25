@@ -61,6 +61,42 @@ public class TheInstallerCarriesItsRuntimeAndShowsItsWizardTests
     }
 
     [Fact]
+    public void TheEnglishPackageAndTheLaunchCheckboxAreBuilt_WithoutAnUnsignedLauncherExe()
+    {
+        // ‏خيارُ اللغة = ملفٌّ إنجليزيٌّ بجوار العربيّ؛ مُشغِّلٌ غيرُ موقَّع كشفه Defender فحذفه فلا يُبنى.
+        var build = File.ReadAllText(Path.Combine(Root(), "installer", "build-msi.ps1"));
+        Assert.Contains("BRQOSH-Setup-en.msi", build, StringComparison.Ordinal);
+        Assert.DoesNotContain("csc.exe", build, StringComparison.Ordinal);
+
+        var ui = File.ReadAllText(Path.Combine(Root(), "installer", "ui.wxs"));
+        Assert.Contains("WIXUI_EXITDIALOGOPTIONALCHECKBOX", ui, StringComparison.Ordinal);
+        Assert.Contains("LaunchApplication", ui, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheAppDeclaresItselfToWindows_ManifestDpiAndDisplayName()
+    {
+        var manifest = File.ReadAllText(Path.Combine(Root(), "src", "Brqosh.Desktop", "app.manifest"));
+        Assert.Contains("asInvoker", manifest, StringComparison.Ordinal);   // ‏لا صلاحيّاتِ مسؤولٍ للتشغيل
+        Assert.Contains("PerMonitorV2", manifest, StringComparison.Ordinal);
+        Assert.Contains("8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a", manifest, StringComparison.Ordinal);   // ‏Windows 10/11
+
+        var project = File.ReadAllText(Path.Combine(Root(), "src", "Brqosh.Desktop", "Brqosh.Desktop.csproj"));
+        Assert.Contains("<ApplicationManifest>app.manifest</ApplicationManifest>", project, StringComparison.Ordinal);
+        Assert.Contains("<AssemblyTitle>BRQOSH ERP</AssemblyTitle>", project, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheLogoAnimatesWhereItIsTheHero_LoginAndSetupWizard()
+    {
+        var root = Path.Combine(Root(), "src", "Brqosh.Desktop", "Views");
+        Assert.Contains("Animate=\"True\"", File.ReadAllText(Path.Combine(root, "LoginWindow.xaml")), StringComparison.Ordinal);
+        Assert.Contains("Animate=\"True\"", File.ReadAllText(Path.Combine(root, "SetupWizardWindow.xaml")), StringComparison.Ordinal);
+        // ‏وتُحترم «تقليل الحركة» في ويندوز.
+        Assert.Contains("SystemParameters.ClientAreaAnimation", File.ReadAllText(Path.Combine(root, "Controls", "BrandLogo.xaml.cs")), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheRemoveFlowAsksAboutDataWithKeepAsTheDefault()
     {
         var ui = Doc("ui.wxs");

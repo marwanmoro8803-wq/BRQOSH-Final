@@ -16,6 +16,11 @@
     <!-- مجلّدُ البيانات: ‏`USERDATAPATH` قابلٌ للتجاوز (للاختبار) وإلا فمجلّدُ APPDATA للمستخدم الجاري. -->
     <SetProperty Id="USERDATAPATH" Value="[AppDataFolder]BRQOSH" Before="CostFinalize" Sequence="both" Condition="NOT USERDATAPATH" />
 
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="شغّل BRQOSH الآن / Launch BRQOSH now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[INSTALLFOLDER]Brqosh.Desktop.exe" />
+    <CustomAction Id="LaunchApplication" DllEntry="WixShellExec" BinaryRef="Wix4UtilCA_X64" Impersonate="yes" Return="ignore" />
+
     <UI Id="BrqoshInstallDir">
       <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
 
@@ -49,6 +54,10 @@
           <Publish Event="SpawnDialog" Value="CancelDlg" />
         </Control>
       </Dialog>
+
+      <!-- صفحةُ النهاية: «شغّل BRQOSH الآن» مؤشَّرٌ سلفاً، بصلاحيّة المستخدم (لا مسؤول) فيفتح معالجَ الإعداد الأوّل. -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed" />
 
       <!-- «إزالة» ⟵ سؤالُ البيانات ⟵ التأكيد؛ والرجوعُ من التأكيد يعود إلى سؤال البيانات. -->
       <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="UninstallDataDlg" Order="3" />

@@ -50,6 +50,8 @@ $releaseDir = Join-Path $Root 'dist\release'
 New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 $named = Join-Path $releaseDir "BRQOSH-Setup-$version.msi"
 Copy-Item $msi $named -Force
+# ‏(اللغة) ‏النسخةُ الإنجليزيّةُ الواجهة بجوار العربيّة؛ القناةُ تنشر العربيّة (أصلُ السوق).
+Copy-Item (Join-Path $Root 'dist\BRQOSH-Setup-en.msi') (Join-Path $releaseDir "BRQOSH-Setup-$version-en.msi") -Force
 
 $publisher = Join-Path $Root 'tools\UpdatePublisher\UpdatePublisher.csproj'
 # ‏(الإصدارُ يتحرّك مع كلّ تعديل) ‏أداةُ النشر تُبنى بالأساس 1.0.0 صراحةً: رقمُها يقرأ من version.txt فصار يساوي الإصدارَ المنشور فيرى التحقّقُ «UpToDate» بدل «يوجد تحديث».
