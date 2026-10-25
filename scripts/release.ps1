@@ -52,10 +52,11 @@ $named = Join-Path $releaseDir "BRQOSH-Setup-$version.msi"
 Copy-Item $msi $named -Force
 
 $publisher = Join-Path $Root 'tools\UpdatePublisher\UpdatePublisher.csproj'
-& dotnet run --project $publisher -c Release -- publish $named $version $UpdateKey $Channel --notes $notes
+# ‏(الإصدارُ يتحرّك مع كلّ تعديل) ‏أداةُ النشر تُبنى بالأساس 1.0.0 صراحةً: رقمُها يقرأ من version.txt فصار يساوي الإصدارَ المنشور فيرى التحقّقُ «UpToDate» بدل «يوجد تحديث».
+& dotnet run --project $publisher -c Release -p:BrqoshBuildNumber=0 -- publish $named $version $UpdateKey $Channel --notes $notes
 if ($LASTEXITCODE -ne 0) { throw "النشرُ إلى القناة أخفق (exit=$LASTEXITCODE)." }
 
-& dotnet run --project $publisher -c Release --no-build -- verify (Join-Path $Channel 'manifest.json') $version
+& dotnet run --project $publisher -c Release --no-build -p:BrqoshBuildNumber=0 -- verify (Join-Path $Channel 'manifest.json') $version
 if ($LASTEXITCODE -ne 0) { throw "القناةُ المنشورة لا تجتاز تحقّقَ العميل (exit=$LASTEXITCODE)." }
 
 if ($Ship) {
