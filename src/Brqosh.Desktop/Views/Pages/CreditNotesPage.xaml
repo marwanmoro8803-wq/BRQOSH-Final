@@ -27,9 +27,11 @@
                     <Button Content="عرض القيد" Padding="16,9" Margin="0,0,8,0" Click="OnViewJournal"/>
                     <Button Content="طباعة PDF" Padding="16,9" Margin="0,0,8,0" Click="OnPrintPdf"/>
                     <Button x:Name="PrevBtn" Content="→" Padding="12,9" Margin="0,0,6,0"
-                            ToolTip="الصفحة السابقة" Click="OnPrev"/>
+                            ToolTip="الصفحة السابقة" Click="OnPrev"
+                            AutomationProperties.Name="الصفحة السابقة"/>
                     <Button x:Name="NextBtn" Content="←" Padding="12,9"
-                            ToolTip="الصفحة التالية" Click="OnNext"/>
+                            ToolTip="الصفحة التالية" Click="OnNext"
+                            AutomationProperties.Name="الصفحة التالية"/>
                 </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="CancelNoteBtn" DockPanel.Dock="Right" Content="إلغاء"

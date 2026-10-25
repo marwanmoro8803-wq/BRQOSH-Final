@@ -100,6 +100,7 @@ public partial class App : System.Windows.Application
         Ui.UiLocalizationHost.Register();
         // ‏(UI-AUDIT · P1) كلُّ نافذةٍ تُحصر في مساحة العمل، وجسمُها يُمرَّر إن لم يتّسع.
         Ui.WindowFit.Register();
+        Themes.ThemeDefaults.Register();   // لونُ النصّ الافتراضيّ يتبع الثيم (كان أسودَ على الداكن)
         Ui.GridExport.Register();   // تصدير أيّ جدول إلى Excel بنقرةٍ يمنى
 
         // (CEEF-231 · ط5-٦) ‏**والعطلُ يُكتب على القرص قبل أن يُعرض.**

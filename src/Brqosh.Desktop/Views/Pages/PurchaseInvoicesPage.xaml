@@ -32,9 +32,11 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="PrevBtn" Content="→" Padding="12,9" Margin="0,0,6,0"
-                            ToolTip="الصفحة السابقة" Click="OnPrev"/>
+                            ToolTip="الصفحة السابقة" Click="OnPrev"
+                            AutomationProperties.Name="الصفحة السابقة"/>
                     <Button x:Name="NextBtn" Content="←" Padding="12,9"
-                            ToolTip="الصفحة التالية" Click="OnNext"/>
+                            ToolTip="الصفحة التالية" Click="OnNext"
+                            AutomationProperties.Name="الصفحة التالية"/>
                 </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button DockPanel.Dock="Right" x:Name="CancelInvoiceBtn" Content="إلغاء"

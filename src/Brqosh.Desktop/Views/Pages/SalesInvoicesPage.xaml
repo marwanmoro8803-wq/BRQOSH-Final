@@ -52,11 +52,13 @@
                     <Button x:Name="PrevBtn" Content="→"
                             Padding="12,9" Margin="0,0,6,0"
                             ToolTip="الصفحة السابقة"
-                            Click="OnPrev"/>
+                            Click="OnPrev"
+                            AutomationProperties.Name="الصفحة السابقة"/>
                     <Button x:Name="NextBtn" Content="←"
                             Padding="12,9"
                             ToolTip="الصفحة التالية"
-                            Click="OnNext"/>
+                            Click="OnNext"
+                            AutomationProperties.Name="الصفحة التالية"/>
                 </WrapPanel>
 
                 <!-- فاصل -->
