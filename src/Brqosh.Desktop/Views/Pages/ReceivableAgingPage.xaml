@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="أعمار ديون العملاء" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أعمار ديون العملاء" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="من عليه ومنذ متى — والعمر من تاريخ المستند"/>
                 </StackPanel>

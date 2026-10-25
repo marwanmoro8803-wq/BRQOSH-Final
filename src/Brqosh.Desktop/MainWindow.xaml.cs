@@ -90,6 +90,8 @@ public partial class MainWindow : Window
                 FocusNavSearch();
                 e.Handled = true;
             }
+            else if (HandlePageShortcut(e))
+                e.Handled = true;
         };
         PreviewMouseDown += (_, _) => AppServices.TouchSession();
 
@@ -798,6 +800,44 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// اختصاراتُ الصفحة الجارية (Ctrl+N إضافة · Ctrl+F/F3 بحث · F5 إعادة تحميل) — تُستثنى حالةُ كتابةٍ داخل حقلٍ لا يخصّها
+    /// (F5 وCtrl+N لا يتعارضان مع التحرير)؛ والمنطقُ في <see cref="PageShortcuts"/> ليُقاس بلا نافذة.
+    /// </summary>
+    private bool HandlePageShortcut(KeyEventArgs e)
+    {
+        var ctrl = Keyboard.Modifiers == ModifierKeys.Control;
+        if (PageHost.Content is not DependencyObject page)
+            return false;
+
+        if (ctrl && e.Key == Key.N)
+        {
+            var add = PageShortcuts.FindAddButton(page);
+            if (add is null)
+                return false;
+            add.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+            return true;
+        }
+
+        if ((ctrl && e.Key == Key.F) || (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.F3))
+        {
+            var box = PageShortcuts.FindSearchBox(page);
+            if (box is null)
+                return false;
+            box.Focus();
+            box.SelectAll();
+            return true;
+        }
+
+        if (Keyboard.Modifiers == ModifierKeys.None && e.Key == Key.F5)
+        {
+            Navigate(_activePageKey, NavTitleFor(_activePageKey));
+            return true;
+        }
+
+        return false;
+    }
+
     private void FocusNavSearch()
     {
         NavSearchBox.Focus();
@@ -865,9 +905,11 @@ public partial class MainWindow : Window
         {
             case "company_settings":
                 PageHost.Content = new Views.Pages.CompanySettingsPage(_setup, this);
+                Motion.FadeIn(PageHost);
                 return;
             case "organizations":
                 PageHost.Content = new Views.Pages.OrganizationsPage(this);
+                Motion.FadeIn(PageHost);
                 return;
         }
 
@@ -875,6 +917,7 @@ public partial class MainWindow : Window
         if (page is not null)
         {
             PageHost.Content = page;
+            Motion.FadeIn(PageHost);
             return;
         }
 

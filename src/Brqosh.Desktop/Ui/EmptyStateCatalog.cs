@@ -85,6 +85,11 @@ public static class EmptyStateCatalog
 
     public static EmptyStateSpec Resolve(string? gridName, string? pageKey = null)
     {
+        // ‏اسمُ الشبكة العامّ «Grid» يشترك فيه عشراتُ الصفحات فنصُّه «لا توجد سجلات» لا يغلب نصَّ الصفحة الخاصّ بها (أوامر بيع · أنشطة CRM…).
+        var generic = string.Equals(gridName, "Grid", StringComparison.OrdinalIgnoreCase);
+        if (generic && !string.IsNullOrEmpty(pageKey) && ByPageKey.TryGetValue(pageKey, out var specific))
+            return specific;
+
         if (!string.IsNullOrEmpty(gridName) && ByGridName.TryGetValue(gridName, out var byGrid))
             return byGrid;
 

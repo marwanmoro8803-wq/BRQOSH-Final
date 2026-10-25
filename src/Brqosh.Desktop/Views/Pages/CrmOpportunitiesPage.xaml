@@ -13,7 +13,7 @@
                 <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="＋ فرصة"
                         Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="فرص البيع" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="فرص البيع" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="CRM · Pipeline"/>
                 </StackPanel>
             </brq:ToolbarDockPanel>

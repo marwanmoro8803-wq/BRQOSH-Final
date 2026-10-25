@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="ميزان المراجعة" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="ميزان المراجعة" FontSize="17"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="مجاميع وأرصدة · قيود مرحّلة فقط"/>
             </StackPanel>

@@ -17,7 +17,7 @@
                             Padding="18,9" Click="OnAdd"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="العملاء المحتملون" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="العملاء المحتملون" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="CRM · Leads"/>
                 </StackPanel>
             </brq:ToolbarDockPanel>

@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="قائمة التدفقات النقدية" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="قائمة التدفقات النقدية" FontSize="17"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="تشغيل · استثمار · تمويل — طريقة غير مباشرة"/>
             </StackPanel>

@@ -12,7 +12,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="كشف حساب مورد" FontSize="18"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="كشف حساب مورد" FontSize="17"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="فواتير مشتريات · مدفوعات · رصيد AP"/>
             </StackPanel>

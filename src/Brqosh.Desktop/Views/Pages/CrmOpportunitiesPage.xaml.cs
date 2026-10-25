@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,13 +33,15 @@ public partial class CrmOpportunitiesPage : UserControl
             .OrderByDescending(o => o.CreatedAtUtc)
             .Take(200)
             .ToListAsync();
-        Grid.ItemsSource = rows.Select(o => new OppRow(
+        var view = rows.Select(o => new OppRow(
             o.Id,
             o.Title,
             o.CustomerId is long cid && customers.TryGetValue(cid, out var n) ? n : "—",
             o.Amount,
             StageLabel(o.Stage),
             o.ExpectedCloseDate?.ToString("yyyy-MM-dd") ?? "—")).ToList();
+        Grid.ItemsSource = view;
+        UiTestAutomation.PublishGridCount(Grid, view.Count, pageKey: "crm_opportunities");
     }
 
     private static string StageLabel(CrmOpportunityStage stage) => stage switch

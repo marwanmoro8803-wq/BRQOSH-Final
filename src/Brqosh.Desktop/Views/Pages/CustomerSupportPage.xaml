@@ -12,7 +12,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="18"/>
+                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="17"/>
                 <TextBlock x:Name="SubtitleText" Style="{StaticResource PageSubtitleText}"/>
             </StackPanel>
         </Border>

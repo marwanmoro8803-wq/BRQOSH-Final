@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Automation;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
@@ -46,6 +47,7 @@ public partial class SalesQuotationsPage : UserControl
                 x.q.Status))
             .ToListAsync();
         Grid.ItemsSource = rows;
+        UiTestAutomation.PublishGridCount(Grid, rows.Count, pageKey: "sales_quotations");
     }
 
     private static string StatusLabel(SalesQuotationStatus status) => status switch

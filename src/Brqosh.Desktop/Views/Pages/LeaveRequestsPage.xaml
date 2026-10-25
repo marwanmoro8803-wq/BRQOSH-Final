@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الإجازات والغياب" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الإجازات والغياب" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="رصيد الإجازات التزام يتراكم كل يوم — ويدفع نقدا عند انتهاء الخدمة"/>
                 </StackPanel>

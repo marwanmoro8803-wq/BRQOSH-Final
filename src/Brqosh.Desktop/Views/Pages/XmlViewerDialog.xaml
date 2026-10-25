@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" x:Name="TitleText" Style="{StaticResource PageTitleText}"
-                   FontSize="16" Margin="0,0,0,10"/>
+                   FontSize="17" Margin="0,0,0,10"/>
 
         <Border Grid.Row="1" Style="{StaticResource ContentCard}">
             <TextBox x:Name="ContentBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"

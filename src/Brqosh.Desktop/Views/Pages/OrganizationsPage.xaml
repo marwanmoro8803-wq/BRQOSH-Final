@@ -13,7 +13,7 @@
                 <Button x:Name="ProvisionBtn" DockPanel.Dock="Right" Content="＋ منشأة جديدة"
                         Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnProvision"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="المنشآت" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="المنشآت" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="قائمة الشركات النشطة"/>
                 </StackPanel>
             </brq:ToolbarDockPanel>

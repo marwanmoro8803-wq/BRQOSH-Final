@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Automation;
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -41,6 +42,7 @@ public partial class OrganizationsPage : UserControl
                 ModeLabel(c.OperationalMode)))
             .ToListAsync();
         Grid.ItemsSource = rows;
+        UiTestAutomation.PublishGridCount(Grid, rows.Count, pageKey: "organizations");
     }
 
     private static string ProfileLabel(BusinessProfile profile) => profile switch

@@ -41,7 +41,7 @@
                     <DatePicker x:Name="ToDate" Width="140"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطابقة بنكية" FontSize="16"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطابقة بنكية" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="كشف البنك مقابل دفتر الأستاذ — مطابقة يدوية أو تلقائية."/>
                 </StackPanel>

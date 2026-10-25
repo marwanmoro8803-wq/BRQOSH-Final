@@ -1,3 +1,4 @@
+using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Ui;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,12 +30,14 @@ public partial class CrmActivitiesPage : UserControl
             .OrderByDescending(a => a.CreatedAtUtc)
             .Take(200)
             .ToListAsync();
-        Grid.ItemsSource = rows.Select(a => new ActivityRow(
+        var view = rows.Select(a => new ActivityRow(
             a.Id,
             TypeLabel(a.ActivityType),
             a.Subject,
             a.DueAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "—",
             a.Notes.Length > 80 ? a.Notes[..80] + "…" : a.Notes)).ToList();
+        Grid.ItemsSource = view;
+        UiTestAutomation.PublishGridCount(Grid, view.Count, pageKey: "crm_activities");
     }
 
     private static string TypeLabel(CrmActivityType type) => type switch
