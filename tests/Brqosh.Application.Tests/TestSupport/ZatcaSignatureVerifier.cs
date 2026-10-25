@@ -206,12 +206,18 @@ public static class ZatcaSignatureVerifier
         stream.CopyTo(ms);
 
         using var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(certB64));
-        using var ecdsa = cert.GetECDsaPublicKey();
-        if (ecdsa is null)
-            return false;
+        // ‏(موانعُ الإطلاق) ‏شهادةٌ على secp256k1 لا يقرؤها CNG في ويندوز (يرمي أو يُعيد null) — يُتحقَّق منها بالمسار المستقلّ (BouncyCastle).
+        ECDsa? ecdsa;
+        try { ecdsa = cert.GetECDsaPublicKey(); }
+        catch (Exception ex) when (ex is CryptographicException or PlatformNotSupportedException) { ecdsa = null; }
 
-        return ecdsa.VerifyData(
-            ms.ToArray(), Convert.FromBase64String(signatureValue), HashAlgorithmName.SHA256);
+        if (ecdsa is null)
+            return Brqosh.Infrastructure.Zatca.ZatcaSecp256k1.VerifyP1363(
+                ms.ToArray(), Convert.FromBase64String(signatureValue), cert.PublicKey.ExportSubjectPublicKeyInfo());
+
+        using (ecdsa)
+            return ecdsa.VerifyData(
+                ms.ToArray(), Convert.FromBase64String(signatureValue), HashAlgorithmName.SHA256);
     }
 
     // ── تحميلُ المستند الكامل ────────────────────────────────────────────────

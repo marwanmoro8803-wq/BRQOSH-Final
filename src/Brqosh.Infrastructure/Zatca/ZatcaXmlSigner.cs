@@ -45,12 +45,26 @@ public static class ZatcaXmlSigner
     public static ZatcaSignResult SignWithResult(byte[] xmlBytes, string certPath, string keyPath)
     {
         // ‏(security-licensing-tenancy#3) ‏المفتاحُ يُفكّ تشفيرُه إلى الذاكرة وحدَها — والملفُّ القديمُ الصريحُ يُشفَّر في مكانه.
-        var cert = X509Certificate2.CreateFromPem(File.ReadAllText(certPath), ZatcaKeyFile.ReadPem(keyPath));
+        var certPem = File.ReadAllText(certPath);
+        var keyPem = ZatcaKeyFile.ReadPem(keyPath);
 
-        // ZATCA يتطلب EC P-256 حصراً
-        var ecdsa = cert.GetECDsaPrivateKey()
-            ?? throw new ZatcaSigningException(
-                "الشهادة لا تحتوي مفتاح EC — ZATCA يتطلب EC P-256 (secp256r1) حصراً. تحقق من ملف المفتاح الخاص.");
+        // ‏(موانعُ الإطلاق) ‏مفتاحُ الختم على secp256k1 (ما تُلزم به الهيئة) يُوقَّع به عبر BouncyCastle لأنّ CNG لا يدعمه؛ ومفتاحٌ قديمٌ على
+        // ‏P-256 يبقى يُوقَّع بالمسار القديم فلا يُكسر تنصيبٌ قائم. والشهادةُ تُقرأ بلا مفتاحٍ خاصّ في الحالتين الأولى.
+        X509Certificate2 cert;
+        Func<byte[], byte[]> signData;
+        if (ZatcaSecp256k1.IsSecp256k1Key(keyPem))
+        {
+            cert = X509Certificate2.CreateFromPem(certPem);
+            signData = data => ZatcaSecp256k1.SignP1363(data, keyPem);
+        }
+        else
+        {
+            cert = X509Certificate2.CreateFromPem(certPem, keyPem);
+            var ecdsa = cert.GetECDsaPrivateKey()
+                ?? throw new ZatcaSigningException(
+                    "الشهادة لا تحتوي مفتاح EC — ZATCA يتطلب مفتاحاً على secp256k1. تحقق من ملف المفتاح الخاص.");
+            signData = data => ecdsa.SignData(data, HashAlgorithmName.SHA256);
+        }
 
         var signingTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -106,8 +120,7 @@ public static class ZatcaXmlSigner
         var signedInfoCanonical = CanonicalizeInDocument(doc, "ds:SignedInfo");
 
         // 6. التوقيع، ثمّ إسكانُ قيمته — وهي خارج SignedInfo فلا تُبطلها.
-        var signatureB64 = Convert.ToBase64String(
-            ecdsa.SignData(signedInfoCanonical, HashAlgorithmName.SHA256));
+        var signatureB64 = Convert.ToBase64String(signData(signedInfoCanonical));
         doc.Descendants(DsNs + "SignatureValue").First().Value = signatureB64;
 
         using var signedStream = new MemoryStream();

@@ -55,13 +55,9 @@ public class ZatcaCsidTests
         var material = new ZatcaCsidOnboardingService()
             .GenerateKeyPairAndCsr(1, "شركة تجريبية", "310123456700003");
 
-        using var key = ECDsa.Create();
-        key.ImportFromPem(ZatcaKeyFile.ReadPem(material.PrivateKeyPath));
-
-        var oid = key.ExportParameters(includePrivateParameters: false).Curve.Oid.Value;
-
-        // ‏1.2.840.10045.3.1.7 = nistP256 (secp256r1) · 1.3.132.0.10 = secp256k1
-        Assert.Equal("1.2.840.10045.3.1.7", oid);
+        // ‏(موانعُ الإطلاق) ‏صار المنحنى secp256k1 — دليلُ الهيئة التقنيّ يأمر `openssl ecparam -name secp256k1` (انظر
+        // ‏`TheStampKeyIsOnTheCurveTheAuthorityRequiresTests`). والمفتاحُ يُقرأ بـBouncyCastle لأنّ CNG لا يدعم المنحنى.
+        Assert.True(ZatcaSecp256k1.IsSecp256k1Key(ZatcaKeyFile.ReadPem(material.PrivateKeyPath)));
     }
 
     /// <summary>

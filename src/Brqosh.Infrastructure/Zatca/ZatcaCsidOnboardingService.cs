@@ -80,30 +80,38 @@ public class ZatcaCsidOnboardingService
         var dir = GetCertDirectory(companyId);
         Directory.CreateDirectory(dir);
 
-        // ZATCA + ZatcaXmlSigner يتطلبان EC P-256 (secp256r1) — ZATCA-001
-        var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        // ‏(موانعُ الإطلاق) ‏**المنحنى secp256k1** — دليلُ الهيئة التقنيّ يأمر `openssl ecparam -name secp256k1`، وCNG في ويندوز لا يدعمه
+        // ‏فالتوليدُ والـCSR بـBouncyCastle (`ZatcaSecp256k1`). كان `nistP256` بتعليلٍ لا يسنده نصٌّ منشور، وطلبُ CSID به يُرفض.
+        var keyPem = ZatcaSecp256k1.GenerateKeyPem();
         // ‏(ح-١٣٧) مفتاحُ التجديد يُكتب جانباً: المفتاحُ الحاليُّ يوقّع الفواتيرَ حتى تقبل الهيئةُ الجديد.
         var privateKeyPath = Path.Combine(dir, forRenewal ? RenewingKeyFile : "private.key");
         // ‏(security-licensing-tenancy#3) ‏مشفَّراً للجهاز — لا يمسّ القرصَ PEM صريحٌ قطّ.
-        ZatcaKeyFile.Write(privateKeyPath, ecdsa.ExportECPrivateKeyPem());
+        ZatcaKeyFile.Write(privateKeyPath, keyPem);
 
         // ‏معرّفُ وحدة الإصدار (EGS) كما تتوقّعه الهيئة: 1-اسم الحلّ|2-إصدارُه|3-معرّفٌ فريد.
         var serial = $"1-{SanitizeDn(solutionName)}|2-1.0|3-{Guid.NewGuid()}";
 
-        var subject = new X500DistinguishedName(
-            $"CN={SanitizeDn(organizationName)}, OU={SanitizeDn(registeredAddress)}, O={SanitizeDn(organizationName)}, C=SA");
-
-        var request = new CertificateRequest(subject, ecdsa, HashAlgorithmName.SHA256);
+        // ‏ترتيبُ RDN في ASN.1 من الأعلى: C ثمّ O ثمّ OU ثمّ CN (وهو ما يُقرأ نصّاً CN=…,OU=…,O=…,C=SA).
+        var organization = SanitizeDn(organizationName);
+        (string Oid, string Value)[] subject =
+        [
+            ("2.5.4.6", "SA"),
+            ("2.5.4.10", organization),
+            ("2.5.4.11", SanitizeDn(registeredAddress)),
+            ("2.5.4.3", organization),
+        ];
 
         // KeyUsage: digitalSignature
-        request.CertificateExtensions.Add(
-            new X509Extension(new Oid("2.5.29.15"), new byte[] { 0x03, 0x02, 0x07, 0x80 }, critical: false));
+        var extensions = new List<(string Oid, bool Critical, byte[] Value)>
+        {
+            ("2.5.29.15", false, new byte[] { 0x03, 0x02, 0x07, 0x80 }),
+        };
+        var template = BuildCertificateTemplateExtension(environment);
+        extensions.Add((template.Oid!.Value!, template.Critical, template.RawData));
+        var san = BuildZatcaSubjectAltName(serial, vatNumber, invoiceType, registeredAddress, businessCategory);
+        extensions.Add((san.Oid!.Value!, san.Critical, san.RawData));
 
-        request.CertificateExtensions.Add(BuildCertificateTemplateExtension(environment));
-        request.CertificateExtensions.Add(BuildZatcaSubjectAltName(
-            serial, vatNumber, invoiceType, registeredAddress, businessCategory));
-
-        var csrDer = request.CreateSigningRequest();
+        var csrDer = ZatcaSecp256k1.CreateCsr(keyPem, subject, extensions);
         var csrPem = PemEncode("CERTIFICATE REQUEST", csrDer);
         var csrPath = Path.Combine(dir, forRenewal ? "request.renewing.csr" : "request.csr");
         File.WriteAllText(csrPath, csrPem);
