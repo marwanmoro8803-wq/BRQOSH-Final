@@ -83,7 +83,7 @@ public class DialogLocalizationTests
     [Fact]
     public void TheUntranslatableRemainder_IsDeclaredAndDoesNotGrow()
     {
-        const int DeclaredCeiling = 75;
+        const int DeclaredCeiling = 76;   // ‏+1 مراجَع: حوارُ «تنصيبٌ جديد» في App.ResolveInstallation يُترجَم عند النداء بـLocaleManager.T (فهو مترجَمٌ فعلاً) ولا يُطابَق حرفاً.
 
         var count = DialogCalls().Count(c => !IsPlainLiteral(c));
 

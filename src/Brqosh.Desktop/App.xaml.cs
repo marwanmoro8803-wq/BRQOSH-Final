@@ -54,6 +54,46 @@ public partial class App : System.Windows.Application
             LocaleManager.T("BRQOSH — خطأ", "BRQOSH — Error"), MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
+    /// <summary>
+    /// يقرّر مصيرَ البيانات السابقة لهذا التنصيب — <c>false</c> إن أُغلق الحوارُ بما يوجب الإنهاء.
+    /// </summary>
+    private static bool ResolveInstallation()
+    {
+        try
+        {
+            var root = BrqoshDataRoot.Path();
+            var exe = Environment.ProcessPath ?? System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var stamp = InstallationStamp.Current(exe, AppVersion.Full);
+
+            switch (InstallationStamp.Judge(root, stamp, AppVersion.Display))
+            {
+                case InstallationStamp.Verdict.Continue:
+                case InstallationStamp.Verdict.Upgrade:
+                    InstallationStamp.Remember(root, stamp, AppVersion.Display);
+                    return true;
+            }
+
+            var keep = UiDialog.Show(
+                LocaleManager.T(
+                    "هذا تنصيبٌ جديدٌ للبرنامج، ووُجدت على هذا الجهاز بياناتُ تنصيبٍ سابق.\n\nنعم: متابعةُ البيانات السابقة.\nلا: بدءُ تنصيبٍ جديدٍ فارغٍ — تُحفظ البياناتُ السابقةُ في مجلّدٍ منفصلٍ ولا تُحذف.",
+                    "This is a new installation and data from a previous installation was found on this device.\n\nYes: continue with the previous data.\nNo: start a new, empty installation — the previous data is kept in a separate folder and is not deleted."),
+                LocaleManager.T("BRQOSH — تنصيبٌ جديد", "BRQOSH — New installation"),
+                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes);
+
+            if (keep != MessageBoxResult.Yes)
+                InstallationStamp.StartFresh(root);
+
+            InstallationStamp.Remember(root, stamp, AppVersion.Display);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // ‏تعذّرُ الفحص أو النقل لا يُسقط الإقلاعَ — يُسجَّل السببُ ويُتابَع بما هو قائم (لا مسحَ صامتٌ في أيّ حال).
+            Brqosh.Infrastructure.Operations.CrashLog.Write(ex, "App.ResolveInstallation");
+            return true;
+        }
+    }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -138,6 +178,14 @@ public partial class App : System.Windows.Application
                 return;
             }
             if (!EulaAcceptance.IsAccepted(eula) && new Views.EulaWindow(eula).ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+
+            // ‏(التنصيبُ الجديد يبدأ فارغاً) ‏تنصيبٌ جديدٌ على جذرِ بياناتٍ قديم لا يتخطّى معالجَ الإعداد بصمت: يُسأل المستخدمُ إن كان يتابع
+            // ‏بياناتِه أم يبدأ فارغاً (والسابقةُ تُنقل ولا تُحذف). الترقيةُ العاديّةُ (إصدارٌ أحدث) تُتابَع بلا سؤال.
+            if (!ResolveInstallation())
             {
                 Shutdown();
                 return;
