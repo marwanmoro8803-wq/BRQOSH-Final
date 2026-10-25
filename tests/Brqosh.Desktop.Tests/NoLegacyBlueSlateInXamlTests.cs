@@ -57,4 +57,19 @@ public class NoLegacyBlueSlateInXamlTests
         Assert.True(scanned > 150, $"فُحص {scanned} ملفّاً فقط — تغيّر موضعُ الواجهة؟");
         Assert.True(hits.Count == 0, "ألوانٌ قديمة في XAML — استعمل مفتاحاً من الثيم:\n" + string.Join("\n", hits.Distinct()));
     }
+
+    /// <summary>
+    /// <b>النافذةُ الرئيسةُ تبقى حيّةً عبر تبديل الثيم، فمراجعُها الثابتة تبقى بلون الفاتح.</b> قِيس: فرشُ القاموس المدموج مجمَّدة، و<see cref="Brqosh.Desktop.Themes.ThemeManager"/>
+    /// يستبدلها بنسخةٍ جديدةٍ في المستوى الأعلى — فما التقطه <c>StaticResource</c> قبل التبديل يبقى قديماً (ترويسةٌ فاتحةٌ فوق تطبيقٍ داكن). الصفحاتُ تُعاد
+    /// عند كلّ تبديل فتلتقط الجديد؛ أمّا <c>MainWindow</c> فلا. فكلُّ فرشاةٍ فيها <c>DynamicResource</c>.
+    /// </summary>
+    [Fact]
+    public void TheMainWindow_ReadsEveryBrushDynamically()
+    {
+        var path = Path.Combine(FindRepoRoot(), "src", "Brqosh.Desktop", "MainWindow.xaml");
+        var text = new Regex("<!--.*?-->", RegexOptions.Singleline).Replace(File.ReadAllText(path), string.Empty);
+        var hits = Regex.Matches(text, @"\{StaticResource (\w*Brush|\w*Gradient)\}").Select(m => m.Value).Distinct().ToList();
+
+        Assert.True(hits.Count == 0, "مراجعُ ثابتةٌ لفرشٍ في MainWindow.xaml (تبقى بلون الثيم القديم): " + string.Join("، ", hits));
+    }
 }

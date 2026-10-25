@@ -100,11 +100,11 @@
     <DataTemplate x:Key="CurrencyFlagItem">
         <StackPanel Orientation="Horizontal" FlowDirection="LeftToRight">
             <Border Width="30" Height="22" Margin="0,0,10,0" CornerRadius="2" ClipToBounds="True"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
                 <Image Source="{Binding Converter={StaticResource CurrencyFlag}}" Stretch="UniformToFill"/>
             </Border>
             <TextBlock Text="{Binding}" FontWeight="SemiBold" Width="48" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding Converter={StaticResource CurrencyCountry}}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Converter={StaticResource CurrencyCountry}}" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
         </StackPanel>
     </DataTemplate>
 
@@ -653,11 +653,11 @@
                 <ControlTemplate TargetType="CheckBox">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Border x:Name="Indicator" Width="18" Height="18" CornerRadius="2"
-                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1.5"
-                                Background="{StaticResource SurfaceBrush}" VerticalAlignment="Center">
+                                BorderBrush="{DynamicResource RuleStrongBrush}" BorderThickness="1.5"
+                                Background="{DynamicResource SurfaceBrush}" VerticalAlignment="Center">
                             <Path x:Name="Check" Width="10" Height="7"
                                   Data="M 0,3.5 L 3.5,7 L 10,0.5"
-                                  Stroke="White" StrokeThickness="1.8" StrokeLineJoin="Round"
+                                  Stroke="{DynamicResource OnPrimaryBrush}" StrokeThickness="1.8" StrokeLineJoin="Round"
                                   Visibility="Collapsed"
                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -761,11 +761,11 @@
                     <Border Background="{TemplateBinding Background}" CornerRadius="3">
                         <Grid>
                             <Path x:Name="EyeOpen" Width="18" Height="18" Stretch="Uniform"
-                                  Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.6"
+                                  Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.6"
                                   Data="M2,12 C4.5,7 8,4.5 12,4.5 C16,4.5 19.5,7 22,12 C19.5,17 16,19.5 12,19.5 C8,19.5 4.5,17 2,12 Z M12,15.5 C13.933,15.5 15.5,13.933 15.5,12 C15.5,10.067 13.933,8.5 12,8.5 C10.067,8.5 8.5,10.067 8.5,12 C8.5,13.933 10.067,15.5 12,15.5 Z"
                                   Visibility="Visible"/>
                             <Path x:Name="EyeClosed" Width="18" Height="18" Stretch="Uniform"
-                                  Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.6"
+                                  Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.6"
                                   Data="M3,3 L21,21 M10.5,10.7 C10.2,11.1 10,11.5 10,12 C10,13.933 11.567,15.5 13.5,15.5 C13.9,15.5 14.3,15.4 14.7,15.2 M6.2,6.7 C4.4,8.1 3,10 2,12 C4.5,17 8,19.5 12,19.5 C13.8,19.5 15.5,19 17,18.1 M9.9,5.5 C10.6,5.3 11.3,5.2 12,5.2 C16,5.2 19.5,7.7 22,12 C21.3,13.3 20.4,14.5 19.3,15.4"
                                   Visibility="Collapsed"/>
                         </Grid>
@@ -1006,8 +1006,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="CardBorder"
-                            Background="{StaticResource SurfaceBrush}"
-                            BorderBrush="{StaticResource BorderBrush}"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="2"
                             CornerRadius="3"
                             Padding="22"

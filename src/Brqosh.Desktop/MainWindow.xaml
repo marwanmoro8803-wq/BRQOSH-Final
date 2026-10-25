@@ -9,7 +9,7 @@
         WindowState="Maximized"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -27,7 +27,7 @@
             <!-- ══════════════════════════════════════
                  الشريط الجانبي
             ══════════════════════════════════════ -->
-            <Border Grid.Column="0" Background="{StaticResource SidebarGradientBrush}">
+            <Border Grid.Column="0" Background="{DynamicResource SidebarBrush}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -39,7 +39,7 @@
                     <StackPanel Grid.Row="0" Margin="18,20,18,10">
                         <!-- خط تمييز علوي بلون العلامة -->
                         <Border Height="3" CornerRadius="1" Margin="0,0,0,14"
-                                Background="{StaticResource BrandAccentGradient}"/>
+                                Background="{DynamicResource AccentBrush}"/>
 
                         <!-- اسم النظام -->
                         <controls:BrandLogo MarkHeight="48" NameSize="15" HorizontalAlignment="Center"/>
@@ -105,8 +105,8 @@
                 </Grid.RowDefinitions>
 
                 <!-- ترويسة الصفحة -->
-                <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
+                <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
                         BorderThickness="0,0,0,1"
                         Padding="28,16"
                         Effect="{StaticResource CardShadow}">
@@ -120,13 +120,13 @@
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
                             <TextBlock x:Name="PageCrumb"
                                        AutomationProperties.AutomationId="PageCrumb"
-                                       FontSize="11.5" Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="11.5" Foreground="{DynamicResource TextMutedBrush}"
                                        Margin="0,0,0,2"/>
                             <TextBlock x:Name="PageTitle"
                                        AutomationProperties.AutomationId="PageTitle"
                                        Text="لوحة التحكم"
                                        FontSize="20" FontWeight="Bold"
-                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
                         </StackPanel>
 
                         <!-- أدوات الترويسة -->
@@ -134,7 +134,7 @@
                                     VerticalAlignment="Center">
 
                             <TextBlock Text="المنشأة" FontSize="12"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox x:Name="CompanyCombo" Width="200" MinHeight="36"
                                       Style="{StaticResource AppComboBox}"
@@ -143,7 +143,7 @@
                                       Margin="0,0,16,0"/>
 
                             <TextBlock Text="الفرع" FontSize="12"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox x:Name="BranchCombo" Width="180" MinHeight="36"
                                       Style="{StaticResource AppComboBox}"
@@ -175,15 +175,15 @@
 
                             <!-- التاريخ الهجري/الميلادي -->
                             <TextBlock x:Name="DateText"
-                                       FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" Margin="0,0,18,0"/>
 
                             <!-- شارة المستخدم -->
-                            <Border Background="{StaticResource PrimarySoftBrush}"
+                            <Border Background="{DynamicResource PrimarySoftBrush}"
                                     CornerRadius="3" Padding="12,6">
                                 <TextBlock x:Name="HeaderUserText"
                                            FontSize="12.5" FontWeight="SemiBold"
-                                           Foreground="{StaticResource PrimaryDarkBrush}"/>
+                                           Foreground="{DynamicResource PrimaryDarkBrush}"/>
                             </Border>
                         </StackPanel>
                     </Grid>
@@ -216,11 +216,11 @@
                     <StackPanel Grid.Row="0" Margin="0,0,0,12">
                         <TextBlock Text="BRQOSH AI"
                                    FontSize="14" FontWeight="Bold"
-                                   Foreground="{StaticResource ElectricCyanBrush}"/>
+                                   Foreground="{DynamicResource ElectricCyanBrush}"/>
                         <TextBlock x:Name="AiSubtitleText"
                                    Text="مساعد مالي ذكي"
                                    FontSize="11"
-                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
                                    Margin="0,4,0,0"/>
                     </StackPanel>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -228,13 +228,13 @@
                             <TextBlock Text="رؤى فورية"
                                        x:Name="AiInsightsLabel"
                                        FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,0,0,8"/>
                             <StackPanel x:Name="AiInsightHost"/>
                             <TextBlock Text="المحادثة"
                                        x:Name="AiChatLabel"
                                        FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,12,0,8"/>
                             <StackPanel x:Name="AiChatHost"/>
                         </StackPanel>
@@ -267,7 +267,7 @@
         <!-- ══════════════════════════════════════
              شريط الحالة السفلي
         ══════════════════════════════════════ -->
-        <Border Grid.Row="1" Background="{StaticResource StatusBarBrush}"
+        <Border Grid.Row="1" Background="{DynamicResource StatusBarBrush}"
                 Padding="20,5">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -279,11 +279,11 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border x:Name="StatusDbDot" Width="6" Height="6" CornerRadius="3"
-                            Background="{StaticResource SuccessBrush}"
+                            Background="{DynamicResource SuccessBrush}"
                             VerticalAlignment="Center" Margin="0,0,7,0"/>
                     <TextBlock x:Name="StatusDbText"
                                Text="قاعدة البيانات: متصل"
-                               FontSize="11" Foreground="{StaticResource StatusBarTextBrush}"
+                               FontSize="11" Foreground="{DynamicResource StatusBarTextBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
@@ -293,7 +293,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="StatusSessionText"
                                Text="الجلسة نشطة"
-                               FontSize="11" Foreground="{StaticResource StatusBarTextBrush}"
+                               FontSize="11" Foreground="{DynamicResource StatusBarTextBrush}"
                                VerticalAlignment="Center" Margin="16,0,0,0"/>
 
                     <!-- ‏(CEEF-237 · ت-٤) شارةُ آخرِ نسخةٍ احتياطيّة — تُرى ولا تُطلَب.

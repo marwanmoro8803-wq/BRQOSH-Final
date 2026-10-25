@@ -36,7 +36,7 @@
                         Style="{StaticResource SoftDangerButton}" Padding="16,9"
                         Click="OnReverse"/>
                 <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
-                        CornerRadius="20" Padding="12,5" VerticalAlignment="Center">
+                        CornerRadius="3" Padding="12,5" VerticalAlignment="Center">
                     <TextBlock x:Name="CountText" FontSize="12.5" FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryDarkBrush}"/>
                 </Border>

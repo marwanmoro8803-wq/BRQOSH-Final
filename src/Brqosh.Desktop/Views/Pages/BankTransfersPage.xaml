@@ -27,7 +27,7 @@
                         Padding="16,9" Margin="8,0,0,0" DockPanel.Dock="Right" Click="OnReverseTransfer"/>
                 <Button Content="عرض القيد" Padding="16,9" DockPanel.Dock="Right" Click="OnViewJournal"/>
                 <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
-                        CornerRadius="20" Padding="12,5" VerticalAlignment="Center">
+                        CornerRadius="3" Padding="12,5" VerticalAlignment="Center">
                     <TextBlock x:Name="CountText" FontSize="12.5" FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryDarkBrush}"/>
                 </Border>

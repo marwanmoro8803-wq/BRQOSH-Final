@@ -31,7 +31,7 @@
                 <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="320"
                          DockPanel.Dock="Left" VerticalAlignment="Center"
                          TextChanged="OnSearchChanged" ToolTip="بحث بالاسم أو الرقم الضريبي"/>
-                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="16,0,0,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="العملاء" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="AR · أرصدة · B2B/B2C"/>

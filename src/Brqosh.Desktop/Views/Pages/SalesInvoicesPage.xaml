@@ -73,7 +73,7 @@
                 <!-- عداد النتائج (يسار الشريط = يمين الشاشة في RTL) -->
                 <Border DockPanel.Dock="Left"
                         Background="{StaticResource PrimarySoftBrush}"
-                        CornerRadius="20" Padding="12,5"
+                        CornerRadius="3" Padding="12,5"
                         VerticalAlignment="Center">
                     <TextBlock x:Name="CountText"
                                FontSize="12.5" FontWeight="SemiBold"
