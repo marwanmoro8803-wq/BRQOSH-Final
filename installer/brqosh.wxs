@@ -22,6 +22,18 @@
     <Property Id="ARPURLINFOABOUT" Value="https://brqosh.com" />
     <Property Id="ARPHELPLINK" Value="https://brqosh.com/contact" />
     <Property Id="ARPCONTACT" Value="support@brqosh.com" />
+    <!--
+      (الإزالةُ بواجهةٍ حقيقيّة) ‏**الإزالةُ من «التطبيقات» تُجرى بـ`msiexec /x` — وهي بواجهةٍ «أساسيّة» (UILevel=3) لا يُشغَّل فيها تسلسلُ واجهة المُنصِّب أصلاً**،
+      ‏فلا تظهر صفحاتُنا ولا سؤالُ «هل تحذف بياناتك؟» مهما أضفنا إلى InstallUISequence (قيس ذلك في سجلّ الإزالة: `Preselected=1` وUILevel=3 والتسلسلُ التنفيذيّ وحدَه).
+      ‏فيُخفى زرُّ «إزالة» المباشر وتبقى «تغيير» التي تفتح `msiexec /i` بالواجهة الكاملة: معالجُ الصيانة ← «إزالة» ← سؤالُ البيانات ← التأكيد ← التقدّم.
+      ‏و`msiexec /x /qn` للإدارة والنشر الجماعيّ يبقى يعمل (الخاصّيّة تؤثّر في «التطبيقات» وحدَها).
+    -->
+    <!-- ‏**تُضبط في تسلسل التنفيذ وحدَه لا في جدول Property**: حوارُ الصيانة في WixUI يُعطّل زرَّ «إزالة» إن رأى `ARPNOREMOVE=1` (قيس: «لا يمكن إزالة BRQOSH ERP»)،
+         وهو يعمل في تسلسل الواجهة فلا يراها، أمّا تسجيلُ المنتج في «التطبيقات» فيراها فيُكتب `NoRemove=1`. -->
+    <SetProperty Id="ARPNOREMOVE" Value="1" Before="CostFinalize" Sequence="execute" />
+    <!-- ‏وWiX يضع `ARPNOMODIFY=1` من تلقاء نفسه (قُرئ في جدول Property للحزمة وفي سجلّ «برامج وميزات»: NoModify=1) فيُخفي «تغيير» أيضاً ولا يبقى في «التطبيقات» ما يُزيل —
+         فيُفرَّغ قبل تسجيل المنتج ليظهر «تغيير». -->
+    <SetProperty Id="ARPNOMODIFY" Value="" Before="CostFinalize" Sequence="execute" />
     <!-- ‏ما يظهر في «التطبيقات المُثبَّتة»: وصفُ المنتج ونوعُ استخدامه. -->
     <Property Id="ARPCOMMENTS" Value="BRQOSH ERP - نظام محاسبة وإدارة أعمال للمنشآت (استخدام مهني)" />
 

@@ -111,6 +111,25 @@ public class TheInstallerCarriesItsRuntimeAndShowsItsWizardTests
     }
 
     [Fact]
+    public void AppsShowsChangeNotARemoveThatSkipsTheWizard_AndTheWizardKeepsItsRemoveButton()
+    {
+        // ‏قيس على جهازٍ حقيقيّ: «إزالة» في «التطبيقات» = `msiexec /x` بواجهةٍ أساسيّة (UILevel=3) لا تُشغّل صفحاتِنا فلا يُسأل المستخدمُ عن بياناته؛
+        // ‏فيُخفى زرُّ الإزالة المباشر (NoRemove) ويظهر «تغيير» (يفتح الواجهةَ الكاملة). ‏وضبطُ ARPNOREMOVE في **تسلسل التنفيذ** لا في جدول Property،
+        // ‏لأنّ حوارَ الصيانة يعطّل زرَّ «إزالة» إن رآه (رُئي: «لا يمكن إزالة BRQOSH ERP»).
+        var package = Doc("brqosh.wxs");
+        Assert.DoesNotContain(package.Descendants(Wix + "Property"), p => (string?)p.Attribute("Id") == "ARPNOREMOVE");
+
+        var noRemove = package.Descendants(Wix + "SetProperty").Single(s => (string?)s.Attribute("Id") == "ARPNOREMOVE");
+        Assert.Equal("1", (string?)noRemove.Attribute("Value"));
+        Assert.Equal("execute", (string?)noRemove.Attribute("Sequence"));
+
+        // ‏وWiX يضع ARPNOMODIFY=1 تلقائيّاً فيُفرَّغ، وإلا لم يبقَ في «التطبيقات» ما يُزيل البرنامجَ.
+        var noModify = package.Descendants(Wix + "SetProperty").Single(s => (string?)s.Attribute("Id") == "ARPNOMODIFY");
+        Assert.Equal("", (string?)noModify.Attribute("Value"));
+        Assert.Equal("execute", (string?)noModify.Attribute("Sequence"));
+    }
+
+    [Fact]
     public void TheRemoveFlowAsksAboutDataWithKeepAsTheDefault()
     {
         var ui = Doc("ui.wxs");
