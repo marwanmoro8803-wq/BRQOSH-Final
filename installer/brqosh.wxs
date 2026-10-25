@@ -17,6 +17,8 @@
 
     <!-- أيقونةُ «التطبيقات المُثبَّتة»؛ أمّا المختصراتُ فتأخذ أيقونةَ الملف التنفيذيّ المدمَجة (ApplicationIcon). -->
     <Icon Id="BrqoshIcon.ico" SourceFile="$(var.BrandIcon)" />
+    <!-- أيقونةُ اختصار «إزالة BRQOSH»: أيقونةُ التطبيق وفي ركنها سلّةُ مهملات. -->
+    <Icon Id="BrqoshUninstall.ico" SourceFile="$(var.UninstallIcon)" />
     <Property Id="ARPPRODUCTICON" Value="BrqoshIcon.ico" />
     <!-- (brqosh.com) ‏روابطُ «برامج وميزات»: الموقعُ ومساعدةُ الدعم وجهةُ الاتّصال. -->
     <Property Id="ARPURLINFOABOUT" Value="https://brqosh.com" />
@@ -142,6 +144,17 @@
                 Description="نظام محاسبة BRQOSH"
                 Target="[INSTALLFOLDER]Brqosh.Desktop.exe"
                 WorkingDirectory="INSTALLFOLDER" />
+      <!--
+        (أداةُ الإزالة) ‏اختصارٌ في قائمة ابدأ «إزالة BRQOSH» يفتح معالجَ الإزالة مباشرةً بواجهته الكاملة (شعارٌ، سؤالُ «هل تحذف بياناتك؟»، تأكيدٌ، تقدّمٌ):
+        ‏`msiexec /i {ProductCode} REMOVE=ALL` — قيس على جهازٍ حقيقيّ أنّه يبدأ بـ UninstallDataDlg، بخلاف `msiexec /x` الذي واجهتُه أساسيّةٌ لا تعرض صفحاتنا.
+        ‏اختصارٌ لا ملفٌّ تنفيذيٌّ: مُشغِّلٌ غيرُ موقَّع كشفه Defender وحذفه.
+      -->
+      <Shortcut Id="UninstallShortcutLink"
+                Name="إزالة BRQOSH (Uninstall)"
+                Description="إزالة BRQOSH بواجهةٍ كاملة مع سؤالك عن بياناتك — Uninstall BRQOSH"
+                Target="[SystemFolder]msiexec.exe"
+                Arguments="/i [ProductCode] REMOVE=ALL"
+                Icon="BrqoshUninstall.ico" />
       <RemoveFolder Id="CleanupStartMenu" On="uninstall" />
       <RegistryValue Root="HKCU" Key="Software\BRQOSH" Name="installed" Type="integer" Value="1" KeyPath="yes" />
     </Component>

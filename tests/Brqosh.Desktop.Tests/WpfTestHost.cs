@@ -32,7 +32,14 @@ internal static class WpfTestHost
     /// وأنّ وضعَ إغلاقه صريح — فلا يُسقطه إغلاقُ آخر نافذة.</para>
     /// </summary>
     [System.Runtime.CompilerServices.ModuleInitializer]
-    internal static void ClaimTheApplicationBeforeAnyTest() => _ = Instance.Value;
+    internal static void ClaimTheApplicationBeforeAnyTest()
+    {
+        // ‏تفضيلاتُ الدخول لكلّ تشغيلٍ للاختبارات في ملفٍّ مؤقّت — فلا يكتب أيُّ اختبارٍ (ولا نافذةُ دخولٍ تُبنى فيه) في %APPDATA%\BRQOSH الحقيقيّ،
+        // ‏وقد كان اسمُ «demo» يعود إلى شاشة دخول المالك بعد كلّ تشغيل.
+        Brqosh.Desktop.Security.LoginPreferencesStore.FilePathOverride =
+            System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brq-tests-" + Environment.ProcessId, "login-prefs.json");
+        _ = Instance.Value;
+    }
 
     /// <summary>خيطُ الواجهة المشترك — يبدأ عند أوّل استعمال ويبقى إلى نهاية التشغيل.</summary>
     internal static Dispatcher Dispatcher => Instance.Value;

@@ -211,6 +211,8 @@ Invoke-BrqoshSign -Paths $PayloadBinaries -What "الحمولة"
 # مراجعةُ الإصدار 1.0.1: التعبيرُ لا يُقيَّم داخل وسيطِ أمرٍ أصليّ — -d BrandIcon=(Join-Path ...) كان يصل إلى wix فارغاً فلا MSI. فالمسارُ يُحسب قبل النداء.
 $BrandIconPath = Join-Path $Root 'assets\brand\brqosh.ico'
 if (-not (Test-Path $BrandIconPath)) { throw "أيقونةُ البرنامج غير موجودة: $BrandIconPath" }
+$UninstallIconPath = Join-Path $Root 'assets\brand\brqosh-uninstall.ico'
+if (-not (Test-Path $UninstallIconPath)) { throw "أيقونةُ الإزالة غير موجودة: $UninstallIconPath — شغّل tools\brand\build_brand.py" }
 
 # ‏(واجهةُ التنصيب) ‏أصولُ الواجهة تُولَّد من مصدرٍ واحد (eula.txt وشعارُ الهويّة) قبل البناء.
 $UiDir = Join-Path $Root 'dist\installer-ui'
@@ -227,6 +229,7 @@ function Invoke-BrqoshWixBuild([string]$Culture, [string]$Out) {
         -d "PublishDir=$PublishDir" `
         -d "ProductVersion=$ProductVersion" `
         -d "BrandIcon=$BrandIconPath" `
+        -d "UninstallIcon=$UninstallIconPath" `
         -d "LicenseRtf=$(Join-Path $UiDir 'license.rtf')" `
         -d "BannerBmp=$(Join-Path $UiDir 'banner.bmp')" `
         -d "DialogBmp=$(Join-Path $UiDir 'dialog.bmp')" `

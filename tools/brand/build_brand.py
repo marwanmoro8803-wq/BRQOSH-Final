@@ -12,6 +12,7 @@
   assets/brand/brqosh-logo-horizontal.svg / .png        الأفقيّ على الأبيض
   assets/brand/brqosh-app-icon.svg / -1024.png          أيقونةُ التطبيق
   assets/brand/brqosh.ico                               أيقونةُ البرنامج والمُنصِّب (٦ مقاسات)
+  assets/brand/brqosh-uninstall.ico                     أيقونةُ «إزالة BRQOSH» (الأيقونة نفسُها بشارة سلّة مهملات)
   src/Brqosh.Desktop/Themes/BrandMark.xaml              هندسةُ الدرع لـWPF (تتلوّن بأيّ فرشاة)
 
 يحتاج Pillow وfonttools.
@@ -209,6 +210,25 @@ def icon_image(polys, size):
     return base.resize((size, size), Image.LANCZOS)
 
 
+def uninstall_icon_image(polys, size):
+    """أيقونةُ «إزالة BRQOSH»: أيقونةُ التطبيق نفسُها وفي ركنها شارةٌ دائريّةٌ داكنةٌ بسلّةِ مهملات كريميّة — فيعرف المستخدمُ أنّها الإزالةُ لا البرنامج."""
+    ss = 4
+    base = icon_image(polys, size * ss).convert("RGBA")
+    s = size * ss
+    d = ImageDraw.Draw(base)
+    r = int(s * 0.27)
+    cx, cy = s - r - int(s * 0.03), s - r - int(s * 0.03)
+    d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=INK, outline=CREAM, width=max(2, int(s * 0.012)))
+    u = r / 10.0
+    # ‏السلّة: غطاءٌ ومقبضٌ وجسمٌ بخطوطٍ رأسيّة
+    d.rectangle((cx - 6 * u, cy - 5.2 * u, cx + 6 * u, cy - 3.8 * u), fill=CREAM)
+    d.rectangle((cx - 2 * u, cy - 6.6 * u, cx + 2 * u, cy - 5.2 * u), fill=CREAM)
+    d.polygon([(cx - 5 * u, cy - 3 * u), (cx + 5 * u, cy - 3 * u), (cx + 4 * u, cy + 6 * u), (cx - 4 * u, cy + 6 * u)], fill=CREAM)
+    for dx in (-2 * u, 0, 2 * u):
+        d.rectangle((cx + dx - 0.3 * u, cy - 1.8 * u, cx + dx + 0.3 * u, cy + 4.8 * u), fill=INK)
+    return base.resize((size, size), Image.LANCZOS)
+
+
 def installer_dialog(polys):
     """صورةُ الترحيب 493×312 لمعالج MSI: لوحةٌ بنّيّةٌ يساراً (164px — هي ما يعرضه WixUI) بدرعٍ كريميّ و«BRQOSH» تحته، والباقي أبيض."""
     W, H, panel = 493, 312, 164
@@ -312,6 +332,8 @@ def main():
     icon_image(polys, 1024).save(os.path.join(BRAND, "brqosh-app-icon-1024.png"))
     sizes = [256, 128, 64, 48, 32, 16]
     icon_image(polys, 256).save(os.path.join(BRAND, "brqosh.ico"), format="ICO", sizes=[(s, s) for s in sizes])
+    uninstall_icon_image(polys, 256).save(os.path.join(BRAND, "brqosh-uninstall.ico"), format="ICO", sizes=[(s, s) for s in sizes])
+    uninstall_icon_image(polys, 512).save(os.path.join(BRAND, "brqosh-uninstall-512.png"))
 
     os.makedirs(os.path.join(BRAND, "installer"), exist_ok=True)
     installer_dialog(polys).save(os.path.join(BRAND, "installer", "dialog.bmp"))

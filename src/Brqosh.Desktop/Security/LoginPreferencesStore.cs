@@ -13,8 +13,11 @@ public static class LoginPreferencesStore
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
+    /// <summary>مسارٌ بديلٌ للاختبارات فقط: بدونه كانت الاختباراتُ تكتب «demo» في ملفّ المستخدم الحقيقيّ كلَّ مرّة فيظهر اسمٌ لم يدخل به أحد.</summary>
+    internal static string? FilePathOverride { get; set; }
+
     private static string FilePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "login-prefs.json");
+        FilePathOverride ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "login-prefs.json");
 
     public static LoginPreferences Load()
     {

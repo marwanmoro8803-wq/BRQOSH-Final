@@ -197,10 +197,31 @@ public class LoginPreferencesStoreTests
     [Fact]
     public void Save_and_load_roundtrip()
     {
-        LoginPreferencesStore.Save(new LoginPreferences { RememberMe = true, Username = "demo" });
-        var loaded = LoginPreferencesStore.Load();
-        Assert.True(loaded.RememberMe);
-        Assert.Equal("demo", loaded.Username);
+        // ‏في مجلّدٍ مؤقّت: الكتابةُ في %APPDATA%\BRQOSH الحقيقيّ كانت تترك «demo» محفوظاً في شاشة دخول المالك بعد كلّ تشغيلٍ للاختبارات.
+        var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "brq-loginprefs-" + Guid.NewGuid().ToString("N")[..8], "login-prefs.json");
+        var previous = LoginPreferencesStore.FilePathOverride;
+        LoginPreferencesStore.FilePathOverride = temp;
+        try
+        {
+            LoginPreferencesStore.Save(new LoginPreferences { RememberMe = true, Username = "demo" });
+            var loaded = LoginPreferencesStore.Load();
+            Assert.True(loaded.RememberMe);
+            Assert.Equal("demo", loaded.Username);
+        }
+        finally
+        {
+            LoginPreferencesStore.FilePathOverride = previous;
+            try { System.IO.Directory.Delete(System.IO.Path.GetDirectoryName(temp)!, true); } catch (System.IO.IOException) { }
+        }
+    }
+
+    [Fact]
+    public void TheTestsNeverLeaveTheirNameInTheRealProfile()
+    {
+        // ‏حارسٌ: إن وُجد ملفُّ تفضيلات المستخدم الحقيقيّ بعد الاختبارات فلا يجوز أن يحمل اسمَ الاختبار.
+        var real = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BRQOSH", "login-prefs.json");
+        if (!System.IO.File.Exists(real)) return;
+        Assert.DoesNotContain("\"demo\"", System.IO.File.ReadAllText(real), StringComparison.Ordinal);
     }
 }
 

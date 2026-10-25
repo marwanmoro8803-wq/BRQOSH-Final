@@ -130,6 +130,19 @@ public class TheInstallerCarriesItsRuntimeAndShowsItsWizardTests
     }
 
     [Fact]
+    public void TheStartMenuCarriesAnUninstallToolThatOpensTheFullRemovalWizard()
+    {
+        // ‏«أداةُ الإزالة» اختصارٌ لا ملفٌّ تنفيذيّ (Defender حذف المُشغِّلَ غيرَ الموقَّع): `msiexec /i {ProductCode} REMOVE=ALL` يبدأ بصفحة سؤال البيانات بواجهةٍ كاملة،
+        // ‏أمّا `/x` فواجهتُه أساسيّةٌ لا تعرض صفحاتِنا (قيس).
+        var shortcut = Doc("brqosh.wxs").Descendants(Wix + "Shortcut").Single(s => (string?)s.Attribute("Id") == "UninstallShortcutLink");
+        Assert.Equal("[SystemFolder]msiexec.exe", (string?)shortcut.Attribute("Target"));
+        Assert.Equal("/i [ProductCode] REMOVE=ALL", (string?)shortcut.Attribute("Arguments"));
+        Assert.Equal("BrqoshUninstall.ico", (string?)shortcut.Attribute("Icon"));
+        Assert.Contains("Uninstall", (string?)shortcut.Attribute("Name"), StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(Root(), "assets", "brand", "brqosh-uninstall.ico")));
+    }
+
+    [Fact]
     public void TheRemoveFlowAsksAboutDataWithKeepAsTheDefault()
     {
         var ui = Doc("ui.wxs");
