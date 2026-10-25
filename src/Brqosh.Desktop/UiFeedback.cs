@@ -44,10 +44,10 @@ internal static class UiFeedback
     // (CEEF-229) ‏التوست يحمل عمى الحوارات نفسَه: نصٌّ عربيٌّ يُكتب في عنصرٍ يُنشأ في
     // ‏الكود، فلا يمرّ به XamlUiLocalizer ولا يشكو أحد. فالترجمةُ عند الاستدعاء، بالسجلّ
     // ‏نفسِه الذي يقرؤه UiDialog.
-    public static void ShowSuccess(string message) => ShowToast(Localize(message), "#059669");
-    public static void ShowInfo(string message) => ShowToast(Localize(message), "#2563EB");
-    public static void ShowWarning(string message) => ShowToast(Localize(message), "#D97706");
-    public static void ShowError(string message) => ShowToast(Localize(message), "#DC2626");
+    public static void ShowSuccess(string message) => ShowToast(Localize(message), "#2E6B45");
+    public static void ShowInfo(string message) => ShowToast(Localize(message), "#2F5F86");
+    public static void ShowWarning(string message) => ShowToast(Localize(message), "#8C5A0B");
+    public static void ShowError(string message) => ShowToast(Localize(message), "#B3261E");
 
     private static string Localize(string message) =>
         LocaleManager.IsEnglish && !string.IsNullOrEmpty(message)

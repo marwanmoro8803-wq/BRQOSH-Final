@@ -42,21 +42,21 @@
                                     Background="{StaticResource AccentBrush}"
                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="فوترة إلكترونية متوافقة مع هيئة الزكاة والضريبة"
-                                       FontSize="13" Foreground="#E2E8F0" VerticalAlignment="Center"/>
+                                       FontSize="13" Foreground="#E9DCC9" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Border Width="6" Height="6" CornerRadius="3"
                                     Background="{StaticResource AccentBrush}"
                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="تقارير مالية احترافية وتحليل الأداء"
-                                       FontSize="13" Foreground="#E2E8F0" VerticalAlignment="Center"/>
+                                       FontSize="13" Foreground="#E9DCC9" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Width="6" Height="6" CornerRadius="3"
                                     Background="{StaticResource AccentBrush}"
                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="إدارة المخزون والمستودعات المتعددة"
-                                       FontSize="13" Foreground="#E2E8F0" VerticalAlignment="Center"/>
+                                       FontSize="13" Foreground="#E9DCC9" VerticalAlignment="Center"/>
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

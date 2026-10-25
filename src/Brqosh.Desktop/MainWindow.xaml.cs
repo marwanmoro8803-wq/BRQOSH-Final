@@ -81,7 +81,16 @@ public partial class MainWindow : Window
         ProfileBadge.Text = ProfileLabel(setup.Profile);
 
         PreviewMouseMove += (_, _) => AppServices.TouchSession();
-        PreviewKeyDown += (_, _) => AppServices.TouchSession();
+        PreviewKeyDown += (_, e) =>
+        {
+            AppServices.TouchSession();
+            // ‏Ctrl+K: إلى بحث القائمة من أيّ شاشة — لا فأرة بين الفكرة والصفحة.
+            if (e.Key == Key.K && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                FocusNavSearch();
+                e.Handled = true;
+            }
+        };
         PreviewMouseDown += (_, _) => AppServices.TouchSession();
 
         _idleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
@@ -540,6 +549,8 @@ public partial class MainWindow : Window
             "اسأل عن هذه الشاشة، الترحيل، ZATCA، VAT، الذمم...",
             "Ask about this screen, posting, ZATCA, VAT, AR/AP...");
         AiSendBtn.Content = LocaleManager.T("إرسال", "Send");
+        NavSearchBox.Tag = LocaleManager.T("ابحث في القوائم…  Ctrl+K", "Search menu…  Ctrl+K");
+        AutomationProperties.SetName(NavSearchBox, LocaleManager.T("بحث في القوائم", "Search menu"));
     }
 
     private void BuildAiPanelShell()
@@ -645,10 +656,33 @@ public partial class MainWindow : Window
         _ => LocaleManager.T("محاسبة عامة", "General accounting"),
     };
 
+    /// <summary>
+    /// (دفتر الحبر والنحاس) مجموعةٌ في القائمة: رأسٌ يُطوى وجسمٌ يضمّ أزرارَها. العشرون مجموعةً كانت تُعرض كلُّها دفعةً واحدة
+    /// (مئةُ بندٍ تقريباً)، فصار المفتوحُ منها مجموعةَ الصفحة الجارية وما يختاره المستخدم، والبحثُ يفتح كلَّ ما يطابق.
+    /// </summary>
+    private sealed class NavGroupView
+    {
+        public required string Key { get; init; }
+        public required string TitleAr { get; init; }
+        public required System.Windows.Controls.Primitives.ToggleButton Header { get; init; }
+        public required StackPanel Body { get; init; }
+        public required List<(NavPage Page, string Title, Button Button)> Items { get; init; }
+    }
+
+    private readonly List<NavGroupView> _navGroups = [];
+    private readonly Dictionary<string, NavGroupView> _navGroupOfPage = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _openNavGroups = new(StringComparer.Ordinal);
+
+    /// <summary>أدواتُ التدقيق الآليّ (FlaUI/pywinauto) تعثر على الأزرار بمعرّفها، والمطويُّ يغيب من شجرة الأتمتة — فيبقى كلُّه مفتوحاً.</summary>
+    private static bool KeepNavOpenForAutomation =>
+        string.Equals(Environment.GetEnvironmentVariable("BRQOSH_UITEST"), "1", StringComparison.Ordinal);
+
     private void BuildNavigation()
     {
         NavPanel.Children.Clear();
         _navButtons.Clear();
+        _navGroups.Clear();
+        _navGroupOfPage.Clear();
         foreach (var group in NavigationCatalog.ForProfile(_setup.Profile, _licensedModules))
         {
             var visiblePages = group.Pages
@@ -657,11 +691,16 @@ public partial class MainWindow : Window
             if (visiblePages.Count == 0)
                 continue;
 
-            NavPanel.Children.Add(new TextBlock
+            var header = new System.Windows.Controls.Primitives.ToggleButton
             {
-                Text = LocaleManager.T(group.TitleAr, NavigationCatalog.GroupTitleEn(group.TitleAr)).ToUpperInvariant(),
-                Style = (Style)FindResource("NavGroupHeader"),
-            });
+                Style = (Style)FindResource("NavGroupToggle"),
+                Content = LocaleManager.T(group.TitleAr, NavigationCatalog.GroupTitleEn(group.TitleAr)).ToUpperInvariant(),
+            };
+            AutomationProperties.SetName(header, LocaleManager.T(group.TitleAr, NavigationCatalog.GroupTitleEn(group.TitleAr)));
+            AutomationProperties.SetAutomationId(header, $"NavGroup_{group.Module}_{_navGroups.Count}");
+            var body = new StackPanel();
+            var items = new List<(NavPage, string, Button)>();
+            var view = new NavGroupView { Key = group.TitleAr, TitleAr = group.TitleAr, Header = header, Body = body, Items = items };
 
             foreach (var page in visiblePages)
             {
@@ -675,10 +714,94 @@ public partial class MainWindow : Window
                 AutomationProperties.SetName(button, localizedTitle);
                 AutomationProperties.SetAutomationId(button, $"Nav_{page.Key}");
                 button.Click += (_, _) => Navigate(page.Key, localizedTitle);
-                NavPanel.Children.Add(button);
+                body.Children.Add(button);
+                items.Add((page, localizedTitle, button));
                 _navButtons[page.Key] = button;
+                _navGroupOfPage[page.Key] = view;
             }
+
+            header.Click += (_, _) =>
+            {
+                if (header.IsChecked == true) _openNavGroups.Add(view.Key); else _openNavGroups.Remove(view.Key);
+                ApplyNavFilter();
+            };
+            NavPanel.Children.Add(header);
+            NavPanel.Children.Add(body);
+            _navGroups.Add(view);
         }
+
+        // ‏أوّلُ بناء: تُفتح مجموعةُ الصفحة الجارية (واللوحةُ التنفيذيّة أوّلاً) فلا تبدأ القائمةُ مطويّةً كلُّها.
+        if (_openNavGroups.Count == 0)
+        {
+            if (_navGroupOfPage.TryGetValue(_activePageKey, out var active))
+                _openNavGroups.Add(active.Key);
+            if (_navGroups.Count > 0)
+                _openNavGroups.Add(_navGroups[0].Key);
+        }
+
+        ApplyNavFilter();
+    }
+
+    /// <summary>يطبّق حالةَ الطيّ ونصَّ البحث معاً: البحثُ يفتح المطابقَ ويخفي ما سواه، وفراغُه يعيد حالةَ الطيّ.</summary>
+    private void ApplyNavFilter()
+    {
+        var query = NavSearchBox.Text.Trim();
+        var searching = query.Length > 0;
+        foreach (var group in _navGroups)
+        {
+            var matches = 0;
+            foreach (var (page, title, button) in group.Items)
+            {
+                var hit = !searching
+                    || title.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+                    || page.TitleAr.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+                    || NavigationCatalog.PageTitleEn(page.Key).Contains(query, StringComparison.OrdinalIgnoreCase);
+                button.Visibility = hit ? Visibility.Visible : Visibility.Collapsed;
+                if (hit) matches++;
+            }
+
+            var open = searching || KeepNavOpenForAutomation || _openNavGroups.Contains(group.Key);
+            group.Header.IsChecked = open;
+            group.Header.Visibility = matches > 0 ? Visibility.Visible : Visibility.Collapsed;
+            group.Header.IsEnabled = !searching;
+            group.Body.Visibility = matches > 0 && open ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void OnNavSearchChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!IsLoaded && _navGroups.Count == 0)
+            return;
+        ApplyNavFilter();
+    }
+
+    private void OnNavSearchKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Escape:
+                NavSearchBox.Clear();
+                e.Handled = true;
+                break;
+            case Key.Enter:
+                // ‏Enter يفتح أوّل مطابقٍ ظاهر — مسارٌ بلا فأرة من Ctrl+K إلى الشاشة.
+                var first = _navGroups
+                    .SelectMany(g => g.Items)
+                    .FirstOrDefault(i => i.Button.Visibility == Visibility.Visible);
+                if (first.Button is not null)
+                {
+                    NavSearchBox.Clear();
+                    Navigate(first.Page.Key, first.Title);
+                }
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void FocusNavSearch()
+    {
+        NavSearchBox.Focus();
+        NavSearchBox.SelectAll();
     }
 
     private void SetActiveNav(string pageKey)
@@ -690,6 +813,19 @@ public partial class MainWindow : Window
 
         if (_navButtons.TryGetValue(pageKey, out var current))
             current.Style = (Style)FindResource("NavItemActive");
+
+        // ‏فتحُ شاشةٍ من خارج القائمة (روابط اللوحة) يبسط مجموعتَها فيرى المستخدم أين هو.
+        if (_navGroupOfPage.TryGetValue(pageKey, out var group) && _openNavGroups.Add(group.Key))
+            ApplyNavFilter();
+    }
+
+    /// <summary>مسار التنقل في الترويسة: «المنشأة › المجموعة» بدل النصّ الثابت «الصفحة الحالية».</summary>
+    private void UpdateBreadcrumb(string pageKey)
+    {
+        var company = string.IsNullOrWhiteSpace(CompanyNameText.Text) ? "BRQOSH" : CompanyNameText.Text;
+        PageCrumb.Text = _navGroupOfPage.TryGetValue(pageKey, out var group)
+            ? $"{company}  ›  {LocaleManager.T(group.TitleAr, NavigationCatalog.GroupTitleEn(group.TitleAr))}"
+            : company;
     }
 
     private void Navigate(string pageKey, string title)
@@ -718,6 +854,7 @@ public partial class MainWindow : Window
         }
 
         PageTitle.Text = title;
+        UpdateBreadcrumb(pageKey);
         SetActiveNav(pageKey);
         if (AiColumn.Width.Value > 0)
             _ = RefreshAiPanelAsync();

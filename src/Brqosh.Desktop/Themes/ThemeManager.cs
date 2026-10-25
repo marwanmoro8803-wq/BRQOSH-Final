@@ -66,6 +66,14 @@ public static class ThemeManager
         SetColor(r, "DangerColor", "DangerBrush", "#E8907F");
         SetColor(r, "WarningColor", "WarningBrush", "#E0B24F");
         SetColor(r, "InfoColor", "InfoBrush", "#86B2D6");
+        SetColor(r, "SuccessSoftColor", "SuccessSoftBrush", "#1F2E24");
+        SetColor(r, "DangerSoftColor", "DangerSoftBrush", "#3A2220");
+        SetColor(r, "WarningSoftColor", "WarningSoftBrush", "#38301B");
+        SetColor(r, "InfoSoftColor", "InfoSoftBrush", "#1E2B36");
+        SetColor(r, "SuccessDarkColor", "SuccessDarkBrush", "#8BD0A6");
+        SetColor(r, "DisabledBackgroundColor", "DisabledBackgroundBrush", "#26211A");
+        SetColor(r, "DisabledForegroundColor", "DisabledForegroundBrush", "#7C7364");
+        SetColor(r, "ScrollThumbColor", "ScrollThumbBrush", "#4A4030");
         UpdateSidebarGradient(r, "#0D0B08", "#0D0B08", "#0D0B08");   // ‏مصمَتٌ: لا تدرّج
     }
 
@@ -103,6 +111,14 @@ public static class ThemeManager
         SetColor(r, "DangerColor", "DangerBrush", "#B3261E");
         SetColor(r, "WarningColor", "WarningBrush", "#8C5A0B");
         SetColor(r, "InfoColor", "InfoBrush", "#2F5F86");
+        SetColor(r, "SuccessSoftColor", "SuccessSoftBrush", "#E4EEDF");
+        SetColor(r, "DangerSoftColor", "DangerSoftBrush", "#F6E1DC");
+        SetColor(r, "WarningSoftColor", "WarningSoftBrush", "#F5E6C4");
+        SetColor(r, "InfoSoftColor", "InfoSoftBrush", "#DFE9F0");
+        SetColor(r, "SuccessDarkColor", "SuccessDarkBrush", "#25573A");
+        SetColor(r, "DisabledBackgroundColor", "DisabledBackgroundBrush", "#EAE3D3");
+        SetColor(r, "DisabledForegroundColor", "DisabledForegroundBrush", "#8A8171");
+        SetColor(r, "ScrollThumbColor", "ScrollThumbBrush", "#CFC5B0");
         UpdateSidebarGradient(r, "#2B1E12", "#2B1E12", "#2B1E12");   // ‏مصمَتٌ: لا تدرّج
     }
 

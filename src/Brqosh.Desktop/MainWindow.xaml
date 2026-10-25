@@ -36,28 +36,28 @@
                     </Grid.RowDefinitions>
 
                     <!-- الشعار والهوية -->
-                    <StackPanel Grid.Row="0" Margin="20,26,20,16">
-                        <!-- خط تمييز علوي بتدرج العلامة التجارية -->
-                        <Border Height="3" CornerRadius="2" Margin="0,0,0,18"
+                    <StackPanel Grid.Row="0" Margin="18,20,18,10">
+                        <!-- خط تمييز علوي بلون العلامة -->
+                        <Border Height="3" CornerRadius="1" Margin="0,0,0,14"
                                 Background="{StaticResource BrandAccentGradient}"/>
 
                         <!-- اسم النظام -->
-                        <controls:BrandLogo MarkHeight="64" NameSize="16" HorizontalAlignment="Center"/>
+                        <controls:BrandLogo MarkHeight="48" NameSize="15" HorizontalAlignment="Center"/>
                         <TextBlock Text="نظام تخطيط موارد المؤسسة"
-                                   FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,8,0,0"
+                                   FontSize="11.5" Foreground="{DynamicResource SidebarMutedBrush}" Margin="0,6,0,0"
                                    HorizontalAlignment="Center"/>
 
-                        <!-- اسم المنشأة -->
+                        <!-- اسم المنشأة ونمط العمل في سطرين: نصٌّ لا شارةٌ كبسولية -->
                         <TextBlock x:Name="CompanyNameText"
-                                   FontSize="12.5" Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource SidebarTextBrush}"
                                    Margin="0,12,0,0" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="ProfileBadge"
+                                   FontSize="11.5" Foreground="{DynamicResource SidebarMutedBrush}" Margin="0,2,0,0"/>
 
-                        <!-- شارة نمط العمل -->
-                        <Border Background="{StaticResource AccentBrush}" CornerRadius="20"
-                                Padding="10,4" HorizontalAlignment="Right" Margin="0,10,0,0">
-                            <TextBlock x:Name="ProfileBadge"
-                                       FontSize="11" FontWeight="Bold" Foreground="#141413"/>
-                        </Border>
+                        <!-- بحثٌ في القائمة — Ctrl+K -->
+                        <TextBox x:Name="NavSearchBox" Style="{StaticResource NavSearchBox}" Margin="0,12,0,0"
+                                 AutomationProperties.AutomationId="NavSearch"
+                                 TextChanged="OnNavSearchChanged" PreviewKeyDown="OnNavSearchKeyDown"/>
                     </StackPanel>
 
                     <!-- قائمة التنقل -->
@@ -68,8 +68,8 @@
                     </ScrollViewer>
 
                     <!-- بطاقة المستخدم السفلية -->
-                    <Border Grid.Row="2" Background="#1E293B"
-                            CornerRadius="12" Margin="12,0,12,16" Padding="14,12">
+                    <Border Grid.Row="2" Background="{DynamicResource SidebarHoverBrush}"
+                            CornerRadius="4" Margin="12,0,12,14" Padding="12,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -77,16 +77,16 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                 <TextBlock x:Name="UserNameText"
-                                           FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                                           FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource SidebarTextBrush}"/>
                                 <TextBlock x:Name="UserRoleText"
-                                           FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                                           FontSize="11" Foreground="{DynamicResource SidebarMutedBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <Border Grid.Column="1" Width="38" Height="38" CornerRadius="19"
-                                    Background="{StaticResource PrimaryBrush}"
+                            <Border Grid.Column="1" Width="34" Height="34" CornerRadius="17"
+                                    Background="{DynamicResource AccentBrush}"
                                     VerticalAlignment="Center">
                                 <TextBlock x:Name="UserInitialText"
-                                           Text="م" FontSize="15" FontWeight="Bold"
-                                           Foreground="White"
+                                           Text="م" FontSize="14" FontWeight="Bold"
+                                           Foreground="#141413"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"/>
                             </Border>
@@ -118,8 +118,9 @@
 
                         <!-- مسار التنقل والعنوان -->
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock Text="الصفحة الحالية"
-                                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                            <TextBlock x:Name="PageCrumb"
+                                       AutomationProperties.AutomationId="PageCrumb"
+                                       FontSize="11.5" Foreground="{StaticResource TextMutedBrush}"
                                        Margin="0,0,0,2"/>
                             <TextBlock x:Name="PageTitle"
                                        AutomationProperties.AutomationId="PageTitle"

@@ -26,7 +26,7 @@
             <TextBlock Text="معرّف الجهاز" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="MachineIdBox" Style="{StaticResource AppTextBox}"
                      IsReadOnly="True" Margin="0,0,0,16"
-                     Background="#F8FAFC"/>
+                     Background="#FFFDF8"/>
 
             <!-- اسم المنشأة -->
             <TextBlock Text="اسم المنشأة" Style="{StaticResource FieldLabel}"/>
@@ -36,7 +36,7 @@
               «صحّح» الاسمَ ليطابق ترخيصَه نجح تفعيلُه ثمّ رُفض في الإقلاع التالي بلا سبب.
             -->
             <TextBox x:Name="CompanyBox" Style="{StaticResource AppTextBox}"
-                     IsReadOnly="True" Background="#F8FAFC"
+                     IsReadOnly="True" Background="#FFFDF8"
                      Margin="0,0,0,16"/>
 
             <!-- مفتاح الترخيص -->
