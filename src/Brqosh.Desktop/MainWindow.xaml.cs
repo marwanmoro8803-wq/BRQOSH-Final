@@ -56,6 +56,7 @@ public partial class MainWindow : Window
         // ‏لوحةُ المساعد تُطوى تلقائيّاً على النوافذ الضيّقة — كانت تُفتح دائماً فتترك الصفحةَ ٤٥٢ بكسلاً عند الحدّ الأدنى
         // ‏وتُقصّ أزرارُ الأشرطة. فإذا اختار المستخدمُ فتحَها أو طيَّها بزرّها فاختيارُه هو المُتّبَع.
         SizeChanged += (_, _) => ApplyAiPanelPolicy();
+        PageHeader.SizeChanged += (_, e) => ApplyHeaderFit(e.NewSize.Width);
         Loaded += (_, _) => ApplyAiPanelPolicy();
 
         // ‏(ح-١٢٠) ‏**وضعُ القراءة يُرى في العنوان** — فلا يُحسب رفضُ الحفظ عطلاً.
@@ -462,6 +463,18 @@ public partial class MainWindow : Window
             English = LocaleManager.IsEnglish,
             Compact = DensityManager.IsCompact,
         });
+
+    private void ApplyHeaderFit(double width)
+    {
+        var tier = HeaderFit.For(width);
+        var labels = tier.ShowLabelsAndDate ? Visibility.Visible : Visibility.Collapsed;
+        CompanyLabel.Visibility = labels;
+        BranchLabel.Visibility = labels;
+        DateText.Visibility = labels;
+        HeaderUserBadge.Visibility = tier.ShowUserBadge ? Visibility.Visible : Visibility.Collapsed;
+        CompanyCombo.Width = tier.CompanyWidth;
+        BranchCombo.Width = tier.BranchWidth;
+    }
 
     private void OnDensityChanged() =>
         Dispatcher.Invoke(() =>

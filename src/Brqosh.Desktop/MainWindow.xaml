@@ -105,7 +105,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- ترويسة الصفحة -->
-                <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                <Border x:Name="PageHeader" Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
                         BorderBrush="{DynamicResource BorderBrush}"
                         BorderThickness="0,0,0,1"
                         Padding="28,16"
@@ -133,7 +133,7 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal"
                                     VerticalAlignment="Center">
 
-                            <TextBlock Text="المنشأة" FontSize="12"
+                            <TextBlock x:Name="CompanyLabel" Text="المنشأة" FontSize="12"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox x:Name="CompanyCombo" Width="200" MinHeight="36"
@@ -142,7 +142,7 @@
                                       SelectionChanged="OnCompanyChanged"
                                       Margin="0,0,16,0"/>
 
-                            <TextBlock Text="الفرع" FontSize="12"
+                            <TextBlock x:Name="BranchLabel" Text="الفرع" FontSize="12"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox x:Name="BranchCombo" Width="180" MinHeight="36"
@@ -179,7 +179,7 @@
                                        VerticalAlignment="Center" Margin="0,0,18,0"/>
 
                             <!-- شارة المستخدم -->
-                            <Border Background="{DynamicResource PrimarySoftBrush}"
+                            <Border x:Name="HeaderUserBadge" Background="{DynamicResource PrimarySoftBrush}"
                                     CornerRadius="3" Padding="12,6">
                                 <TextBlock x:Name="HeaderUserText"
                                            FontSize="12.5" FontWeight="SemiBold"
