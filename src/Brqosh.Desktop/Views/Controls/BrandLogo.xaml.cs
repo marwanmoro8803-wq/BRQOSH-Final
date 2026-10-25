@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 
 namespace Brqosh.Desktop.Views.Controls;
 
@@ -64,7 +65,7 @@ public partial class BrandLogo : UserControl
         // ‏اللمعةُ: تظهر وتُزاح من يسار الدرع إلى يمينه خلال ١٫٢ ث ثمّ تختفي وتنتظر؛ وتتكرّر كلَّ ٦ ث.
         var shine = new Storyboard { RepeatBehavior = RepeatBehavior.Forever, Duration = TimeSpan.FromSeconds(6) };
         AddTo(shine, new DoubleAnimation(-1.4, 1.4, TimeSpan.FromMilliseconds(1200)) { BeginTime = TimeSpan.FromMilliseconds(1600), EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } },
-              ShineShift, TranslateTransform.XProperty);
+              Shine, "(Shape.Fill).(Brush.RelativeTransform).(TranslateTransform.X)");
         var fade = new DoubleAnimationUsingKeyFrames { BeginTime = TimeSpan.FromMilliseconds(1600) };
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, TimeSpan.FromMilliseconds(100)));
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, TimeSpan.FromMilliseconds(1100)));
@@ -72,6 +73,14 @@ public partial class BrandLogo : UserControl
         AddTo(shine, fade, Shine, OpacityProperty);
         shine.Begin(this, true);
         Resources[ShineKey] = shine;
+    }
+
+    /// <summary>بمسارٍ نصّيٍّ من العنصر نفسِه: تحريكُ تحويلِ فرشاةٍ مباشرةً لا يصل إلى النسخة المرسومة، فيبقى الشريطُ خارج الدرع.</summary>
+    private static void AddTo(Storyboard board, Timeline animation, DependencyObject target, string path)
+    {
+        Storyboard.SetTarget(animation, target);
+        Storyboard.SetTargetProperty(animation, new PropertyPath(path));
+        board.Children.Add(animation);
     }
 
     private static void AddTo(Storyboard board, Timeline animation, DependencyObject target, DependencyProperty property)
