@@ -34,7 +34,7 @@ internal sealed class BrandedMessageWindow : Window
         FlowDirection = LocaleManager.Flow;
         FontFamily = (FontFamily)(TryFind("AppFont") ?? new FontFamily("Segoe UI"));
         Background = Brush("SurfaceBrush", "#FFFFFF");
-        BorderBrush = Brush("PrimaryBrush", "#0F3D5E");
+        BorderBrush = Brush("PrimaryBrush", "#6B4420");
         BorderThickness = new Thickness(1);
         Title = string.IsNullOrWhiteSpace(caption) ? "BRQOSH" : caption;
         _cancelResult = CancelResultFor(buttons);
@@ -43,7 +43,7 @@ internal sealed class BrandedMessageWindow : Window
         var root = new DockPanel();
 
         // الشريط الكحليّ: الدرعُ الذهبيّ + عنوان الرسالة. يسحب النافذة.
-        var header = new Border { Background = Brush("PrimaryBrush", "#0F3D5E"), Height = 44, Cursor = Cursors.SizeAll };
+        var header = new Border { Background = Brush("PrimaryBrush", "#6B4420"), Height = 44, Cursor = Cursors.SizeAll };
         header.MouseLeftButtonDown += (_, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
         var headerRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(14, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center };
         if (TryFind("BrqoshMarkGeometry") is Geometry mark)
@@ -141,7 +141,7 @@ internal sealed class BrandedMessageWindow : Window
     {
         MessageBoxImage.Error => Brush("DangerBrush", "#C0392B"),
         MessageBoxImage.Warning => new SolidColorBrush(Color.FromRgb(0xC9, 0xA2, 0x27)),
-        MessageBoxImage.Question => Brush("PrimaryBrush", "#0F3D5E"),
+        MessageBoxImage.Question => Brush("PrimaryBrush", "#6B4420"),
         _ => Brush("InfoBrush", "#2A6F9E"),
     };
 

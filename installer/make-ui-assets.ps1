@@ -58,39 +58,12 @@ foreach ($line in $eula) {
 [System.IO.File]::WriteAllText((Join-Path $OutDir 'license.rtf'), $rtf.ToString(), [System.Text.Encoding]::ASCII)
 
 # ── ٢) صورتا الواجهة ───────────────────────────────────────────────────────────
-Add-Type -AssemblyName System.Drawing
-$navy = [System.Drawing.ColorTranslator]::FromHtml('#0B3150')
-$gold = [System.Drawing.ColorTranslator]::FromHtml('#C9A227')
-$mark = [System.Drawing.Image]::FromFile((Join-Path $Root 'assets\brand\brqosh-mark-gold.png'))
-
-function New-Canvas([int]$w, [int]$h) {
-    $bmp = New-Object System.Drawing.Bitmap $w, $h, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
-    $g = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.SmoothingMode = 'AntiAlias'; $g.InterpolationMode = 'HighQualityBicubic'; $g.TextRenderingHint = 'AntiAliasGridFit'
-    return @($bmp, $g)
+# ‏تُولَّدان مع بقيّة الهويّة بـtools/brand/build_brand.py (درعٌ كريميّ على بنّيّ #8B5A2B كما في تصميم المالك) — لا رسمَ هنا فلا تنحرف النسختان.
+$brand = Join-Path $Root 'assets\brand\installer'
+foreach ($f in 'banner.bmp', 'dialog.bmp') {
+    $src = Join-Path $brand $f
+    if (-not (Test-Path $src)) { throw "صورةُ المُنصِّب غير موجودة: $src — شغّل tools\brand\build_brand.py" }
+    Copy-Item $src (Join-Path $OutDir $f) -Force
 }
-
-# لافتةُ الأعلى 493×58: بيضاءُ بخطٍّ كحليٍّ وذهبيٍّ سفليّ ودرعٍ عند الطرف.
-$bmp, $g = New-Canvas 493 58
-$g.Clear([System.Drawing.Color]::White)
-$g.FillRectangle((New-Object System.Drawing.SolidBrush $navy), 0, 54, 493, 3)
-$g.FillRectangle((New-Object System.Drawing.SolidBrush $gold), 0, 57, 493, 1)
-$g.DrawImage($mark, 440, 6, 34, 42)
-$bmp.Save((Join-Path $OutDir 'banner.bmp'), [System.Drawing.Imaging.ImageFormat]::Bmp)
-$g.Dispose(); $bmp.Dispose()
-
-# صورةُ الترحيب 493×312: لوحةٌ كحليّةٌ يساراً (164 بكسل — هي ما يعرضه WixUI) والباقي أبيض.
-$bmp, $g = New-Canvas 493 312
-$g.Clear([System.Drawing.Color]::White)
-$g.FillRectangle((New-Object System.Drawing.SolidBrush $navy), 0, 0, 164, 312)
-$g.FillRectangle((New-Object System.Drawing.SolidBrush $gold), 160, 0, 4, 312)
-$g.DrawImage($mark, 42, 72, 80, 100)
-$font = New-Object System.Drawing.Font 'Segoe UI', 15, ([System.Drawing.FontStyle]::Bold)
-$fmt = New-Object System.Drawing.StringFormat; $fmt.Alignment = 'Center'
-$g.DrawString('BRQOSH', $font, [System.Drawing.Brushes]::White, (New-Object System.Drawing.RectangleF 0, 188, 164, 30), $fmt)
-$small = New-Object System.Drawing.Font 'Segoe UI', 8
-$g.DrawString('ERP', $small, (New-Object System.Drawing.SolidBrush $gold), (New-Object System.Drawing.RectangleF 0, 216, 164, 18), $fmt)
-$bmp.Save((Join-Path $OutDir 'dialog.bmp'), [System.Drawing.Imaging.ImageFormat]::Bmp)
-$g.Dispose(); $bmp.Dispose(); $mark.Dispose()
 
 Write-Host "أصولُ واجهة المُنصِّب في $OutDir" -ForegroundColor DarkGray

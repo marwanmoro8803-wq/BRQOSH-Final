@@ -34,10 +34,10 @@ public class ThePrintPaletteIsReadableTests
     [InlineData(PrintTheme.Muted, White)]
     [InlineData(PrintTheme.Muted, PrintTheme.Tint)]
     [InlineData(PrintTheme.Muted, PrintTheme.Zebra)]
-    [InlineData(PrintTheme.Navy, White)]
-    [InlineData(PrintTheme.Navy, PrintTheme.Tint)]
-    [InlineData(PrintTheme.Navy, PrintTheme.Zebra)]
-    [InlineData(White, PrintTheme.Navy)]
+    [InlineData(PrintTheme.Brand, White)]
+    [InlineData(PrintTheme.Brand, PrintTheme.Tint)]
+    [InlineData(PrintTheme.Brand, PrintTheme.Zebra)]
+    [InlineData(White, PrintTheme.Brand)]
     public void EveryPrintedTextColour_IsReadableOnItsBackground(string text, string background)
     {
         var ratio = Ratio(text, background);
@@ -46,10 +46,10 @@ public class ThePrintPaletteIsReadableTests
     }
 
     [Fact]
-    public void TheGold_IsNeverUsedAsTextOnWhite()
+    public void TheAccent_IsNeverUsedAsTextOnWhite()
     {
-        // ‏الذهبيُّ خطُّ تمييزٍ فقط (نسبته على الأبيض دون 3) — فلا يجوز أن يحمل نصّاً. يقاس بمصدر المولِّدات.
-        Assert.True(Ratio(PrintTheme.Gold, White) < 3.0, "إن صار الذهبيُّ مقروءاً فراجع هذا الحارس.");
+        // ‏البرونزيُّ الفاتح خطُّ تمييزٍ فقط (نسبته على الأبيض دون 4.5 فلا يصلح لنصٍّ عاديّ) — فلا يجوز أن يحمل نصّاً. يقاس بمصدر المولِّدات.
+        Assert.True(Ratio(PrintTheme.Accent, White) < 4.5, "إن صار لونُ التمييز مقروءاً فراجع هذا الحارس.");
 
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "src")))
@@ -59,8 +59,8 @@ public class ThePrintPaletteIsReadableTests
         foreach (var file in Directory.GetFiles(reporting, "*.cs"))
         {
             var source = File.ReadAllText(file);
-            Assert.DoesNotContain("FontColor(PrintTheme.Gold)", source, StringComparison.Ordinal);
-            Assert.DoesNotContain("FontColor(Gold)", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("FontColor(PrintTheme.Accent)", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("FontColor(Accent)", source, StringComparison.Ordinal);
         }
     }
 }

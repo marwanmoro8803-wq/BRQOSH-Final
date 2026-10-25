@@ -110,13 +110,13 @@ public static class VoucherPdfGenerator
     {
         container.Card().Column(col =>
         {
-            col.Item().Background(PrintTheme.Navy).PaddingVertical(5).AlignCenter()
+            col.Item().Background(PrintTheme.Brand).PaddingVertical(5).AlignCenter()
                 .Text(PrintLang.T("المبلغ")).Bold().FontSize(10).FontColor("#FFFFFF");
             col.Item().PaddingVertical(14).AlignCenter().Text(text =>
             {
                 text.Span(PrintText.Ltr(amount.ToString("N2", CultureInfo.InvariantCulture)))
-                    .Bold().FontSize(21).FontColor(PrintTheme.Navy);
-                text.Span("  " + CurrencyCatalog.Short(currencyCode, english: PrintLang.English)).Bold().FontSize(13).FontColor(PrintTheme.Navy);
+                    .Bold().FontSize(21).FontColor(PrintTheme.Brand);
+                text.Span("  " + CurrencyCatalog.Short(currencyCode, english: PrintLang.English)).Bold().FontSize(13).FontColor(PrintTheme.Brand);
             });
         });
     }

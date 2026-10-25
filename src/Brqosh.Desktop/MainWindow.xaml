@@ -44,19 +44,19 @@
                         <!-- اسم النظام -->
                         <controls:BrandLogo MarkHeight="64" NameSize="16" HorizontalAlignment="Center"/>
                         <TextBlock Text="نظام تخطيط موارد المؤسسة"
-                                   FontSize="11.5" Foreground="#64748B" Margin="0,8,0,0"
+                                   FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,8,0,0"
                                    HorizontalAlignment="Center"/>
 
                         <!-- اسم المنشأة -->
                         <TextBlock x:Name="CompanyNameText"
-                                   FontSize="12.5" Foreground="#94A3B8"
+                                   FontSize="12.5" Foreground="{StaticResource TextMutedBrush}"
                                    Margin="0,12,0,0" TextWrapping="Wrap"/>
 
                         <!-- شارة نمط العمل -->
                         <Border Background="{StaticResource AccentBrush}" CornerRadius="20"
                                 Padding="10,4" HorizontalAlignment="Right" Margin="0,10,0,0">
                             <TextBlock x:Name="ProfileBadge"
-                                       FontSize="11" FontWeight="Bold" Foreground="#1C1917"/>
+                                       FontSize="11" FontWeight="Bold" Foreground="#141413"/>
                         </Border>
                     </StackPanel>
 
@@ -79,7 +79,7 @@
                                 <TextBlock x:Name="UserNameText"
                                            FontSize="13" FontWeight="SemiBold" Foreground="White"/>
                                 <TextBlock x:Name="UserRoleText"
-                                           FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                           FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Border Grid.Column="1" Width="38" Height="38" CornerRadius="19"
                                     Background="{StaticResource PrimaryBrush}"

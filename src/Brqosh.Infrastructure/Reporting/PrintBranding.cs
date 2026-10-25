@@ -102,7 +102,7 @@ public sealed record PrintBranding(
 
                 void Info() => row.RelativeItem().PaddingHorizontal(12).Column(info =>
                 {
-                    info.Item().AlignStart().Text(PrimaryName).Bold().FontSize(17).FontColor(PrintTheme.Navy)
+                    info.Item().AlignStart().Text(PrimaryName).Bold().FontSize(17).FontColor(PrintTheme.Brand)
                         .FontFamily(EffectiveFontFamily);
                     if (!English && !string.IsNullOrWhiteSpace(CompanyNameEn))
                         info.Item().AlignStart().Text(CompanyNameEn).FontSize(9).FontColor(PrintTheme.Muted)
@@ -137,8 +137,8 @@ public sealed record PrintBranding(
                 }
             });
 
-            col.Item().PaddingTop(8).LineHorizontal(3).LineColor(PrintTheme.Navy);
-            col.Item().PaddingTop(1.5f).LineHorizontal(1).LineColor(PrintTheme.Gold);
+            col.Item().PaddingTop(8).LineHorizontal(3).LineColor(PrintTheme.Brand);
+            col.Item().PaddingTop(1.5f).LineHorizontal(1).LineColor(PrintTheme.Accent);
         });
     }
 

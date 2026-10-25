@@ -206,8 +206,31 @@ public class UiResponsiveLayoutTests
         static List<double> Numbers(string s) =>
             Regex.Matches(s, @"-?\d+(?:\.\d+)?").Select(m => double.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture)).ToList();
 
+        // ‏المسارُ يستعمل M/L/H/V/Z المطلقة (تصميمُ المالك)؛ والمولِّد يفرده نقاطاً صريحةً (x,y) لكلّ أمر — فيُقارن بعد التفريد نفسِه.
+        static List<double> Points(string d)
+        {
+            var result = new List<double>();
+            double x = 0, y = 0;
+            var tokens = Regex.Matches(d, @"[MHVLZ]|-?\d+(?:\.\d+)?").Select(m => m.Value).ToList();
+            string cmd = "";
+            for (var i = 0; i < tokens.Count;)
+            {
+                if ("MHVLZ".Contains(tokens[i])) { cmd = tokens[i++]; continue; }
+                double D(int k) => double.Parse(tokens[k], System.Globalization.CultureInfo.InvariantCulture);
+                switch (cmd)
+                {
+                    case "M": case "L": x = D(i); y = D(i + 1); i += 2; cmd = "L"; break;
+                    case "H": x = D(i); i++; break;
+                    case "V": y = D(i); i++; break;
+                    default: throw new InvalidOperationException("أمرُ مسارٍ غيرُ مدعوم: " + cmd);
+                }
+                result.Add(x); result.Add(y);
+            }
+            return result;
+        }
+
         var figures = Regex.Match(xaml, @"Figures=""([^""]+)""").Groups[1].Value;
-        Assert.Equal(Numbers(path), Numbers(figures));
+        Assert.Equal(Points(path), Numbers(figures));
         Assert.Equal(7, Regex.Matches(path, "Z").Count);
     }
 

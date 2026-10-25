@@ -12,8 +12,8 @@ namespace Brqosh.Desktop.Views.Controls;
 /// </summary>
 public partial class BrandLogo : UserControl
 {
-    private static readonly Brush DefaultMark = Freeze(new SolidColorBrush(Color.FromRgb(0xC9, 0xA2, 0x27)));
-    private static readonly Brush DefaultName = Freeze(new SolidColorBrush(Colors.White));
+    private static readonly Brush DefaultMark = Freeze(new SolidColorBrush(Color.FromRgb(0xF7, 0xEF, 0xE4)));
+    private static readonly Brush DefaultName = Freeze(new SolidColorBrush(Color.FromRgb(0xF7, 0xEF, 0xE4)));
 
     public static readonly DependencyProperty MarkBrushProperty =
         DependencyProperty.Register(nameof(MarkBrush), typeof(Brush), typeof(BrandLogo), new PropertyMetadata(DefaultMark));
@@ -43,8 +43,29 @@ public partial class BrandLogo : UserControl
     public BrandLogo()
     {
         InitializeComponent();
-        Loaded += (_, _) => StartAnimation();
+        Loaded += (_, _) => { ApplyProportions(); StartAnimation(); };
+        SizeChanged += (_, _) => ApplyProportions();
         Unloaded += (_, _) => { if (Resources[ShineKey] is Storyboard board) { board.Stop(this); Resources.Remove(ShineKey); } };
+    }
+
+    /// <summary>
+    /// نسبُ التصميم العموديّ (الدرع 400 ← ارتفاعُ حرف الاسم 61.6 وفجوةٌ 40 قبله، وشريطٌ 120×6 بعده بفجوة 14): تُحسب من ارتفاع الدرع فيبقى الشعارُ هو نفسَه بأيّ مقاس.
+    /// </summary>
+    private void ApplyProportions()
+    {
+        var mh = MarkHeight;
+        if (mh <= 0 || NameText.Data is not Geometry wordmark)
+            return;
+
+        var bounds = wordmark.Bounds;
+        const double capHeight = 70.0;                 // ارتفاعُ الحرف الكبير في الهندسة المولَّدة (انظر BrandWordmark.xaml)
+        var scale = (mh * 0.154) / capHeight;
+        NameText.Width = bounds.Width * scale;
+        NameText.Height = bounds.Height * scale;
+        NameText.Margin = new Thickness(0, mh * 0.13, 0, 0);
+        NameBar.Width = mh * 0.30;
+        NameBar.Height = Math.Max(1.5, mh * 0.015);
+        NameBar.Margin = new Thickness(0, mh * 0.05, 0, 0);
     }
 
     /// <summary>حركةُ الشعار: دخولٌ هادئ (تكبيرٌ وظهور) ثمّ لمعةٌ تمرّ على الدرع كلَّ بضع ثوانٍ. تُحترم «تقليل الحركة» في ويندوز.</summary>
@@ -60,6 +81,7 @@ public partial class BrandLogo : UserControl
         AddTo(enter, new DoubleAnimation(0.82, 1, TimeSpan.FromMilliseconds(800)) { EasingFunction = ease }, MarkScale, ScaleTransform.ScaleYProperty);
         AddTo(enter, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(650)), MarkBox, OpacityProperty);
         AddTo(enter, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(600)) { BeginTime = TimeSpan.FromMilliseconds(350) }, NameText, OpacityProperty);
+        AddTo(enter, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(600)) { BeginTime = TimeSpan.FromMilliseconds(500) }, NameBar, OpacityProperty);
         enter.Begin(this);
 
         // ‏اللمعةُ: تظهر وتُزاح من يسار الدرع إلى يمينه خلال ١٫٢ ث ثمّ تختفي وتنتظر؛ وتتكرّر كلَّ ٦ ث.

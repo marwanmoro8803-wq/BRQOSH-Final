@@ -460,7 +460,7 @@ public static class SalesInvoicePdfGenerator
     // ── لبنات التخطيط ──────────────────────────────────────────────────────
 
     private const string BorderColour = PrintTheme.Line;
-    private const string HeaderFill = PrintTheme.Navy;
+    private const string HeaderFill = PrintTheme.Brand;
     private const string RowFill = PrintTheme.Zebra;
     private const string BoxTitleFill = PrintTheme.Tint;
     private const string NoticeColour = "#B91C1C";
@@ -473,9 +473,9 @@ public static class SalesInvoicePdfGenerator
         {
             if (!string.IsNullOrWhiteSpace(title))
             {
-                col.Item().Background(BoxTitleFill).BorderBottom(1.5f).BorderColor(PrintTheme.Gold)
+                col.Item().Background(BoxTitleFill).BorderBottom(1.5f).BorderColor(PrintTheme.Accent)
                     .PaddingVertical(4).PaddingHorizontal(8)
-                    .Text(title).Bold().FontSize(9.5f).FontColor(PrintTheme.Navy);
+                    .Text(title).Bold().FontSize(9.5f).FontColor(PrintTheme.Brand);
             }
 
             foreach (var (label, value) in rows)
@@ -568,7 +568,7 @@ public static class SalesInvoicePdfGenerator
     {
         var item = col.Item();
         if (emphasis)
-            item = item.Background(PrintTheme.Navy);
+            item = item.Background(PrintTheme.Brand);
         if (!first)
             item = item.BorderTop(0.5f).BorderColor(BorderColour);
 

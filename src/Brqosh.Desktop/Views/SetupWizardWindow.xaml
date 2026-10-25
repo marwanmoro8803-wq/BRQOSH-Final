@@ -14,7 +14,7 @@
 
             <StackPanel Margin="0,0,0,8">
                 <controls:BrandLogo MarkHeight="96" NameSize="20" Animate="True" HorizontalAlignment="Center" Margin="0,0,0,18"
-                                    MarkBrush="{StaticResource PrimaryBrush}" NameBrush="{StaticResource TextPrimaryBrush}"/>
+                                    MarkBrush="{StaticResource PrimaryLightBrush}" NameBrush="{StaticResource PrimaryLightBrush}"/>
                 <TextBlock Text="مرحباً بك في BRQOSH"
                            FontSize="30" FontWeight="Bold"
                            Foreground="{StaticResource TextPrimaryBrush}"/>

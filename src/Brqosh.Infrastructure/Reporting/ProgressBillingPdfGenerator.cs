@@ -147,7 +147,7 @@ public static class ProgressBillingPdfGenerator
                 .Element(c => PrintTheme.LabelValue(c, "صافي الذمة (قبل الضريبة)", Money(data.NetBillableAmount), labelWidth: 128));
             col.Item().BorderTop(0.5f).BorderColor(PrintTheme.Line)
                 .Element(c => PrintTheme.LabelValue(c, vatLabel, Money(data.VatAmount), labelWidth: 128));
-            col.Item().Background(PrintTheme.Navy).PaddingVertical(6).PaddingHorizontal(10).Row(row =>
+            col.Item().Background(PrintTheme.Brand).PaddingVertical(6).PaddingHorizontal(10).Row(row =>
             {
                 row.RelativeItem().AlignLeft().Text(Money(data.GrandTotal)).Bold().FontSize(11).FontColor("#FFFFFF");
                 row.ConstantItem(10);

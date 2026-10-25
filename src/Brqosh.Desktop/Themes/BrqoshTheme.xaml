@@ -6,32 +6,33 @@
     <!-- هندسةُ شعار BRQOSH (مولَّدة) — داخل الثيم فيراها كلُّ من يحمّل الثيمَ: التطبيقُ والاختباراتُ والمسبار. -->
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="BrandMark.xaml"/>
+        <ResourceDictionary Source="BrandWordmark.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
     <!-- ═══════════════════════════════════════════════
          لوحة الألوان — هوية BRQOSH
     ═══════════════════════════════════════════════ -->
-    <Color x:Key="PrimaryColor">#0F3D5E</Color>
-    <Color x:Key="ElectricCyanColor">#0F3D5E</Color>
+    <Color x:Key="PrimaryColor">#6B4420</Color>
+    <Color x:Key="ElectricCyanColor">#6B4420</Color>
     <Color x:Key="GlassSurfaceColor">#EFEADF</Color>
-    <Color x:Key="PrimaryDarkColor">#0A2C45</Color>
-    <Color x:Key="PrimaryLightColor">#2B5F86</Color>
+    <Color x:Key="PrimaryDarkColor">#4E3016</Color>
+    <Color x:Key="PrimaryLightColor">#8B5A2B</Color>
     <Color x:Key="OnPrimaryColor">#FFFFFF</Color>
-    <Color x:Key="AccentInkColor">#846510</Color>
+    <Color x:Key="AccentInkColor">#7A4F23</Color>
     <Color x:Key="RuleStrongColor">#8F8676</Color>
-    <Color x:Key="SidebarTextColor">#C9D6E2</Color>
-    <Color x:Key="SidebarMutedColor">#9FB3C6</Color>
-    <Color x:Key="PrimarySoftColor">#DDE6EE</Color>
-    <Color x:Key="AccentColor">#C9A227</Color>
-    <Color x:Key="AccentDarkColor">#A8861C</Color>
+    <Color x:Key="SidebarTextColor">#E9DCC9</Color>
+    <Color x:Key="SidebarMutedColor">#BDA98C</Color>
+    <Color x:Key="PrimarySoftColor">#EFE3D2</Color>
+    <Color x:Key="AccentColor">#B07A3B</Color>
+    <Color x:Key="AccentDarkColor">#8B5A2B</Color>
     <Color x:Key="SurfaceColor">#FFFDF8</Color>
-    <Color x:Key="BackgroundColor">#F5F1E8</Color>
-    <Color x:Key="SidebarColor">#0B3150</Color>
-    <Color x:Key="SidebarMidColor">#0B3150</Color>
-    <Color x:Key="SidebarHoverColor">#123E60</Color>
-    <Color x:Key="TextPrimaryColor">#14212D</Color>
-    <Color x:Key="TextSecondaryColor">#38444F</Color>
-    <Color x:Key="TextMutedColor">#56606A</Color>
+    <Color x:Key="BackgroundColor">#F7F3EA</Color>
+    <Color x:Key="SidebarColor">#2B1E12</Color>
+    <Color x:Key="SidebarMidColor">#2B1E12</Color>
+    <Color x:Key="SidebarHoverColor">#3A2A1A</Color>
+    <Color x:Key="TextPrimaryColor">#141413</Color>
+    <Color x:Key="TextSecondaryColor">#3E382F</Color>
+    <Color x:Key="TextMutedColor">#5A5348</Color>
     <Color x:Key="BorderColor">#DDD6C6</Color>
     <Color x:Key="BorderLightColor">#ECE6D8</Color>
     <Color x:Key="SuccessColor">#2E6B45</Color>
@@ -39,10 +40,10 @@
     <Color x:Key="InfoColor">#2F5F86</Color>
     <Color x:Key="WarningColor">#8C5A0B</Color>
     <Color x:Key="StatusBarColor">#ECE6D9</Color>
-    <Color x:Key="StatusBarTextColor">#38444F</Color>
+    <Color x:Key="StatusBarTextColor">#3E382F</Color>
     <!-- (CEEF-222) ألوان الجداول — كانت مثبَّتة نصّاً داخل الأنماط فلا تتبع الثيم. -->
     <Color x:Key="RowAltColor">#F9F6EF</Color>
-    <Color x:Key="RowHoverColor">#E9EEF3</Color>
+    <Color x:Key="RowHoverColor">#F0E6D6</Color>
 
     <SolidColorBrush x:Key="PrimaryBrush"       Color="{StaticResource PrimaryColor}"/>
     <SolidColorBrush x:Key="ElectricCyanBrush" Color="{StaticResource ElectricCyanColor}"/>
@@ -87,8 +88,8 @@
 
     <!-- تدرجات -->
     <LinearGradientBrush x:Key="SidebarGradientBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#0B3150" Offset="0"/>
-        <GradientStop Color="#0B3150" Offset="1"/>
+        <GradientStop Color="#2B1E12" Offset="0"/>
+        <GradientStop Color="#2B1E12" Offset="1"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="BrandAccentGradient" StartPoint="0,0" EndPoint="1,0">
@@ -97,14 +98,14 @@
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="HeroPanelGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#0B3150" Offset="0"/>
-        <GradientStop Color="#0B3150" Offset="1"/>
+        <GradientStop Color="#2B1E12" Offset="0"/>
+        <GradientStop Color="#2B1E12" Offset="1"/>
     </LinearGradientBrush>
 
     <!-- ظلال -->
-    <DropShadowEffect x:Key="CardShadow"     BlurRadius="20" ShadowDepth="3" Opacity="0" Color="#0B2A42"/>
-    <DropShadowEffect x:Key="ElevatedShadow" BlurRadius="32" ShadowDepth="6" Opacity="0" Color="#0B2A42"/>
-    <DropShadowEffect x:Key="HeroShadow"     BlurRadius="48" ShadowDepth="8" Opacity="0" Color="#0B2A42"/>
+    <DropShadowEffect x:Key="CardShadow"     BlurRadius="20" ShadowDepth="3" Opacity="0" Color="#2B1E12"/>
+    <DropShadowEffect x:Key="ElevatedShadow" BlurRadius="32" ShadowDepth="6" Opacity="0" Color="#2B1E12"/>
+    <DropShadowEffect x:Key="HeroShadow"     BlurRadius="48" ShadowDepth="8" Opacity="0" Color="#2B1E12"/>
 
     <!-- UI UX Pro Max — حركة وتركيز لوحة المفاتيح -->
     <sys:Double x:Key="MotionDurationFast">150</sys:Double>
@@ -340,7 +341,7 @@
                             <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource SurfaceBrush}"/>
                             <Setter TargetName="Bd" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0F3D5E"/>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#6B4420"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -380,7 +381,7 @@
                             <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource SurfaceBrush}"/>
                             <Setter TargetName="Bd" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#0F3D5E"/>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.15" Color="#6B4420"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>

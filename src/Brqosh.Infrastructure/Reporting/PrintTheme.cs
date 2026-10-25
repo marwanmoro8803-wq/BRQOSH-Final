@@ -4,27 +4,27 @@ using QuestPDF.Infrastructure;
 namespace Brqosh.Infrastructure.Reporting;
 
 /// <summary>
-/// هويّةُ المطبوعات البصريّة في مكانٍ واحد: كحليٌّ للعناوين والأرقام، وذهبيٌّ خطَّ تمييزٍ لا أكثر،
+/// هويّةُ المطبوعات البصريّة في مكانٍ واحد: بنيٌّ برونزيٌّ داكنٌ (لونُ شعار المالك) للعناوين والأرقام، وبرونزيٌّ فاتحٌ خطَّ تمييزٍ لا أكثر،
 /// ورماديٌّ هادئٌ للحدود. <b>كلُّ مستندٍ يبني على هذه المكوّنات</b> فيتّسق الشكلُ من السند إلى الفاتورة
 /// إلى القوائم المالية، ويتغيّر اللونُ بسطرٍ واحدٍ لا بتتبّع خمسة عشر مولِّداً.
 ///
-/// <para>الألوانُ عاليةُ التباين على الورق الأبيض وعلى الطباعة بالأبيض والأسود (الكحليُّ داكنٌ فيبقى مقروءاً
-/// رماديّاً، والذهبيُّ لا يحمل معنىً بمفرده).</para>
+/// <para>الألوانُ عاليةُ التباين على الورق الأبيض وعلى الطباعة بالأبيض والأسود (البنيُّ الداكنُ يبقى مقروءاً
+/// رماديّاً، والبرونزيُّ الفاتحُ لا يحمل معنىً بمفرده).</para>
 /// </summary>
 public static class PrintTheme
 {
-    public const string Navy = "#0F3D5E";
-    public const string Gold = "#C9A227";
-    public const string Ink = "#1B2733";
-    public const string Muted = "#5B6B7A";
-    public const string Line = "#C9D3DD";
-    public const string Tint = "#EAF1F7";
-    public const string Zebra = "#F6F9FC";
+    public const string Brand = "#6B4420";
+    public const string Accent = "#B07A3B";
+    public const string Ink = "#141413";
+    public const string Muted = "#5A5348";
+    public const string Line = "#D8CDBA";
+    public const string Tint = "#F3EADB";
+    public const string Zebra = "#FAF6EE";
 
     /// <summary>شارةُ نوع المستند: كتلةٌ كحليّةٌ بنصٍّ أبيض — أوّلُ ما تراه العين.</summary>
     public static void TitleBadge(IContainer container, string title, float fontSize = 13)
     {
-        container.Background(Navy).PaddingVertical(9).PaddingHorizontal(14).AlignCenter().AlignMiddle()
+        container.Background(Brand).PaddingVertical(9).PaddingHorizontal(14).AlignCenter().AlignMiddle()
             .Text(PrintLang.T(title)).Bold().FontSize(fontSize).FontColor("#FFFFFF");
     }
 
@@ -35,8 +35,8 @@ public static class PrintTheme
     /// <summary>عنوانُ بطاقةٍ على شريطٍ فاتحٍ بخطٍّ ذهبيٍّ سفليّ.</summary>
     public static void CardTitle(IContainer container, string title)
     {
-        container.Background(Tint).BorderBottom(1.5f).BorderColor(Gold).PaddingVertical(5).PaddingHorizontal(10)
-            .AlignStart().Text(PrintLang.T(title)).Bold().FontSize(10).FontColor(Navy);
+        container.Background(Tint).BorderBottom(1.5f).BorderColor(Accent).PaddingVertical(5).PaddingHorizontal(10)
+            .AlignStart().Text(PrintLang.T(title)).Bold().FontSize(10).FontColor(Brand);
     }
 
     /// <summary>سطرُ «اسم : قيمة» داخل بطاقة — الاسمُ رماديٌّ والقيمةُ داكنةٌ فتُقرأ القيمةُ أوّلاً.</summary>
@@ -81,10 +81,10 @@ public static class PrintTheme
             return;
 
         var band = container.Background(Tint);
-        (PrintLang.English ? band.BorderLeft(3) : band.BorderRight(3)).BorderColor(Gold).PaddingVertical(7).PaddingHorizontal(10)
+        (PrintLang.English ? band.BorderLeft(3) : band.BorderRight(3)).BorderColor(Accent).PaddingVertical(7).PaddingHorizontal(10)
             .AlignStart().Text(text =>
             {
-                text.Span(PrintLang.T("المبلغ كتابةً: ")).Bold().FontSize(9).FontColor(Navy);
+                text.Span(PrintLang.T("المبلغ كتابةً: ")).Bold().FontSize(9).FontColor(Brand);
                 text.Span(words).FontSize(9).FontColor(Ink);
             });
     }
@@ -131,7 +131,7 @@ public static class PrintTheme
             table.Header(h =>
             {
                 foreach (var column in columns)
-                    h.Cell().Background(Navy).Border(0.5f).BorderColor(Line).PaddingVertical(5).PaddingHorizontal(5)
+                    h.Cell().Background(Brand).Border(0.5f).BorderColor(Line).PaddingVertical(5).PaddingHorizontal(5)
                         .AlignCenter().Text(PrintLang.T(column.Header)).Bold().FontSize(9).FontColor("#FFFFFF");
             });
 
@@ -163,9 +163,9 @@ public static class PrintTheme
             {
                 var last = i == items.Count - 1;
                 var cell = row.RelativeItem();
-                var box = last ? cell.Background(Navy) : cell.Background(Tint);
+                var box = last ? cell.Background(Brand) : cell.Background(Tint);
                 var labelColor = last ? "#FFFFFF" : Muted;
-                var valueColor = last ? "#FFFFFF" : Navy;
+                var valueColor = last ? "#FFFFFF" : Brand;
                 box.PaddingVertical(7).PaddingHorizontal(9).Column(col =>
                 {
                     col.Item().AlignStart().Text(PrintLang.T(items[i].Label)).FontSize(8.5f).FontColor(labelColor);

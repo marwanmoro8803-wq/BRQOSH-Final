@@ -13,12 +13,12 @@
             <Viewbox.RenderTransform>
                 <ScaleTransform x:Name="MarkScale" ScaleX="1" ScaleY="1"/>
             </Viewbox.RenderTransform>
-            <Grid Width="752" Height="1000">
+            <Grid Width="751" Height="1000">
                 <Path Data="{StaticResource BrqoshMarkGeometry}"
                       Fill="{Binding MarkBrush, ElementName=Root}"
-                      Width="752" Height="1000" Stretch="Fill"/>
+                      Width="751" Height="1000" Stretch="Fill"/>
                 <!-- لمعةٌ تمرّ على الدرع بين حينٍ وآخر (تُفعَّل بـAnimate فقط): فرشاةُ تدرّجٍ شفّافةٌ تُزاح عبر الدرع نفسِه. -->
-                <Path x:Name="Shine" Data="{StaticResource BrqoshMarkGeometry}" Width="752" Height="1000" Stretch="Fill"
+                <Path x:Name="Shine" Data="{StaticResource BrqoshMarkGeometry}" Width="751" Height="1000" Stretch="Fill"
                       IsHitTestVisible="False" Opacity="0">
                     <Path.Fill>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.35">
@@ -33,12 +33,11 @@
                 </Path>
             </Grid>
         </Viewbox>
-        <TextBlock x:Name="NameText" Text="B R Q O S H"
-                   Visibility="{Binding NameVisibility, ElementName=Root}"
-                   FontSize="{Binding NameSize, ElementName=Root}"
-                   FontWeight="Bold"
-                   Foreground="{Binding NameBrush, ElementName=Root}"
-                   HorizontalAlignment="Center"
-                   Margin="0,10,0,0"/>
+        <!-- الاسمُ «BRQOSH» هندسةٌ مخطَّطة (BrandWordmark.xaml) بتباعد 0.12em كما في تصميم المالك، وتحته شريطٌ؛ المقاساتُ تتبع ارتفاعَ الدرع (انظر ApplyProportions). -->
+        <Path x:Name="NameText" Data="{StaticResource BrqoshWordmarkGeometry}" Stretch="Fill"
+              Visibility="{Binding NameVisibility, ElementName=Root}"
+              Fill="{Binding NameBrush, ElementName=Root}" HorizontalAlignment="Center"/>
+        <Rectangle x:Name="NameBar" Visibility="{Binding NameVisibility, ElementName=Root}"
+                   Fill="{Binding NameBrush, ElementName=Root}" HorizontalAlignment="Center"/>
     </StackPanel>
 </UserControl>

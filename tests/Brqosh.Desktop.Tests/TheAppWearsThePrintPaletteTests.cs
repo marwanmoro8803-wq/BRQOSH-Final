@@ -38,10 +38,10 @@ public class TheAppWearsThePrintPaletteTests
     }
 
     [Fact]
-    public void TheLightPrimaryIsThePrintNavy()
+    public void TheLightPrimaryIsThePrintBrand()
     {
         var theme = File.ReadAllText(Path.Combine(Root(), "Themes", "ThemeManager.cs"));
-        Assert.Contains("\"PrimaryBrush\", \"#0F3D5E\"", theme, StringComparison.Ordinal);   // = PrintTheme.Navy
-        Assert.Contains("\"#C9A227\"", theme, StringComparison.Ordinal);                      // = PrintTheme.Gold
+        Assert.Contains("\"PrimaryBrush\", \"#6B4420\"", theme, StringComparison.Ordinal);   // = PrintTheme.Brand
+        Assert.Contains("\"#B07A3B\"", theme, StringComparison.Ordinal);                      // = PrintTheme.Accent
     }
 }

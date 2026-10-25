@@ -35,75 +35,75 @@ public static class ThemeManager
     /// <summary>«مِسطرة» الداكنة — حبرُ الليل على ورقٍ كحليّ؛ القيمُ من مواصفة التصميم وتحرسها اختباراتُ التباين.</summary>
     private static void ApplyLuxuryDark(ResourceDictionary r)
     {
-        SetColor(r, "BackgroundColor", "BackgroundBrush", "#0A141D");
-        SetColor(r, "SurfaceColor", "SurfaceBrush", "#101C27");
-        SetColor(r, "GlassSurfaceColor", "GlassSurfaceBrush", "#162433");
-        SetColor(r, "PrimaryColor", "PrimaryBrush", "#86B2D6");
-        SetColor(r, "PrimaryDarkColor", "PrimaryDarkBrush", "#A9CBE6");
-        SetColor(r, "PrimaryLightColor", "PrimaryLightBrush", "#5E8FB8");
-        SetColor(r, "OnPrimaryColor", "OnPrimaryBrush", "#0A141D");
-        SetColor(r, "PrimarySoftColor", "PrimarySoftBrush", "#1E3550");
-        SetColor(r, "AccentColor", "AccentBrush", "#D9B54A");
-        SetColor(r, "AccentDarkColor", "AccentDarkBrush", "#E6C565");
-        SetColor(r, "AccentInkColor", "AccentInkBrush", "#D9B54A");
-        SetColor(r, "ElectricCyanColor", "ElectricCyanBrush", "#86B2D6");
+        SetColor(r, "BackgroundColor", "BackgroundBrush", "#14110D");
+        SetColor(r, "SurfaceColor", "SurfaceBrush", "#1D1913");
+        SetColor(r, "GlassSurfaceColor", "GlassSurfaceBrush", "#262018");
+        SetColor(r, "PrimaryColor", "PrimaryBrush", "#D9A566");
+        SetColor(r, "PrimaryDarkColor", "PrimaryDarkBrush", "#E8BE86");
+        SetColor(r, "PrimaryLightColor", "PrimaryLightBrush", "#B07A3B");
+        SetColor(r, "OnPrimaryColor", "OnPrimaryBrush", "#14110D");
+        SetColor(r, "PrimarySoftColor", "PrimarySoftBrush", "#3A2B1A");
+        SetColor(r, "AccentColor", "AccentBrush", "#E0B070");
+        SetColor(r, "AccentDarkColor", "AccentDarkBrush", "#EBC58E");
+        SetColor(r, "AccentInkColor", "AccentInkBrush", "#E0B070");
+        SetColor(r, "ElectricCyanColor", "ElectricCyanBrush", "#D9A566");
         SetColor(r, "TextPrimaryColor", "TextPrimaryBrush", "#EEE8DA");
         SetColor(r, "TextSecondaryColor", "TextSecondaryBrush", "#C9C0AE");
         SetColor(r, "TextMutedColor", "TextMutedBrush", "#A39C8C");
-        SetColor(r, "BorderColor", "BorderBrush", "#24384C");
-        SetColor(r, "BorderLightColor", "BorderLightBrush", "#172634");
-        SetColor(r, "RuleStrongColor", "RuleStrongBrush", "#5E6B78");
-        SetColor(r, "StatusBarColor", "StatusBarBrush", "#060E15");
-        SetColor(r, "StatusBarTextColor", "StatusBarTextBrush", "#A7B4C1");
-        SetColor(r, "SidebarColor", "SidebarBrush", "#060E15");
-        SetColor(r, "SidebarMidColor", "SidebarMidBrush", "#060E15");
-        SetColor(r, "SidebarHoverColor", "SidebarHoverBrush", "#0F1F2D");
-        SetColor(r, "SidebarTextColor", "SidebarTextBrush", "#C9D6E2");
-        SetColor(r, "SidebarMutedColor", "SidebarMutedBrush", "#9FB3C6");
-        SetColor(r, "RowAltColor", "RowAltBrush", "#0D1922");
-        SetColor(r, "RowHoverColor", "RowHoverBrush", "#1A2B3C");
+        SetColor(r, "BorderColor", "BorderBrush", "#3A3024");
+        SetColor(r, "BorderLightColor", "BorderLightBrush", "#2A2319");
+        SetColor(r, "RuleStrongColor", "RuleStrongBrush", "#6E6455");
+        SetColor(r, "StatusBarColor", "StatusBarBrush", "#0D0B08");
+        SetColor(r, "StatusBarTextColor", "StatusBarTextBrush", "#BDB3A2");
+        SetColor(r, "SidebarColor", "SidebarBrush", "#0D0B08");
+        SetColor(r, "SidebarMidColor", "SidebarMidBrush", "#0D0B08");
+        SetColor(r, "SidebarHoverColor", "SidebarHoverBrush", "#1D1710");
+        SetColor(r, "SidebarTextColor", "SidebarTextBrush", "#E9DCC9");
+        SetColor(r, "SidebarMutedColor", "SidebarMutedBrush", "#BDA98C");
+        SetColor(r, "RowAltColor", "RowAltBrush", "#19150F");
+        SetColor(r, "RowHoverColor", "RowHoverBrush", "#2A2318");
         SetColor(r, "SuccessColor", "SuccessBrush", "#6FBF8E");
         SetColor(r, "DangerColor", "DangerBrush", "#E8907F");
         SetColor(r, "WarningColor", "WarningBrush", "#E0B24F");
         SetColor(r, "InfoColor", "InfoBrush", "#86B2D6");
-        UpdateSidebarGradient(r, "#060E15", "#060E15", "#060E15");   // ‏مصمَتٌ: لا تدرّج
+        UpdateSidebarGradient(r, "#0D0B08", "#0D0B08", "#0D0B08");   // ‏مصمَتٌ: لا تدرّج
     }
 
-    /// <summary>«مِسطرة» الفاتحة — ورقٌ دافئ وحبرٌ أزرقُ داكن؛ الكحليّ #0F3D5E (حبر) والذهبيّ #C9A227 (ختم) كما في المطبوعات.</summary>
+    /// <summary>«مِسطرة» الفاتحة — ورقٌ دافئ وحبرٌ داكن؛ البنّيّ البرونزيّ #6B4420 (حبر) و#B07A3B (ختم) من هويّة المالك وكما في المطبوعات.</summary>
     private static void ApplyLuxuryLight(ResourceDictionary r)
     {
-        SetColor(r, "BackgroundColor", "BackgroundBrush", "#F5F1E8");
+        SetColor(r, "BackgroundColor", "BackgroundBrush", "#F7F3EA");
         SetColor(r, "SurfaceColor", "SurfaceBrush", "#FFFDF8");
         SetColor(r, "GlassSurfaceColor", "GlassSurfaceBrush", "#EFEADF");
-        SetColor(r, "PrimaryColor", "PrimaryBrush", "#0F3D5E");
-        SetColor(r, "PrimaryDarkColor", "PrimaryDarkBrush", "#0A2C45");
-        SetColor(r, "PrimaryLightColor", "PrimaryLightBrush", "#2B5F86");
+        SetColor(r, "PrimaryColor", "PrimaryBrush", "#6B4420");
+        SetColor(r, "PrimaryDarkColor", "PrimaryDarkBrush", "#4E3016");
+        SetColor(r, "PrimaryLightColor", "PrimaryLightBrush", "#8B5A2B");
         SetColor(r, "OnPrimaryColor", "OnPrimaryBrush", "#FFFFFF");
-        SetColor(r, "PrimarySoftColor", "PrimarySoftBrush", "#DDE6EE");
-        SetColor(r, "AccentColor", "AccentBrush", "#C9A227");
-        SetColor(r, "AccentDarkColor", "AccentDarkBrush", "#A8861C");
-        SetColor(r, "AccentInkColor", "AccentInkBrush", "#846510");
-        SetColor(r, "ElectricCyanColor", "ElectricCyanBrush", "#0F3D5E");
-        SetColor(r, "TextPrimaryColor", "TextPrimaryBrush", "#14212D");
-        SetColor(r, "TextSecondaryColor", "TextSecondaryBrush", "#38444F");
-        SetColor(r, "TextMutedColor", "TextMutedBrush", "#56606A");
+        SetColor(r, "PrimarySoftColor", "PrimarySoftBrush", "#EFE3D2");
+        SetColor(r, "AccentColor", "AccentBrush", "#B07A3B");
+        SetColor(r, "AccentDarkColor", "AccentDarkBrush", "#8B5A2B");
+        SetColor(r, "AccentInkColor", "AccentInkBrush", "#7A4F23");
+        SetColor(r, "ElectricCyanColor", "ElectricCyanBrush", "#6B4420");
+        SetColor(r, "TextPrimaryColor", "TextPrimaryBrush", "#141413");
+        SetColor(r, "TextSecondaryColor", "TextSecondaryBrush", "#3E382F");
+        SetColor(r, "TextMutedColor", "TextMutedBrush", "#5A5348");
         SetColor(r, "BorderColor", "BorderBrush", "#DDD6C6");
         SetColor(r, "BorderLightColor", "BorderLightBrush", "#ECE6D8");
         SetColor(r, "RuleStrongColor", "RuleStrongBrush", "#8F8676");
         SetColor(r, "StatusBarColor", "StatusBarBrush", "#ECE6D9");
-        SetColor(r, "StatusBarTextColor", "StatusBarTextBrush", "#38444F");
-        SetColor(r, "SidebarColor", "SidebarBrush", "#0B3150");
-        SetColor(r, "SidebarMidColor", "SidebarMidBrush", "#0B3150");
-        SetColor(r, "SidebarHoverColor", "SidebarHoverBrush", "#123E60");
-        SetColor(r, "SidebarTextColor", "SidebarTextBrush", "#C9D6E2");
-        SetColor(r, "SidebarMutedColor", "SidebarMutedBrush", "#9FB3C6");
+        SetColor(r, "StatusBarTextColor", "StatusBarTextBrush", "#3E382F");
+        SetColor(r, "SidebarColor", "SidebarBrush", "#2B1E12");
+        SetColor(r, "SidebarMidColor", "SidebarMidBrush", "#2B1E12");
+        SetColor(r, "SidebarHoverColor", "SidebarHoverBrush", "#3A2A1A");
+        SetColor(r, "SidebarTextColor", "SidebarTextBrush", "#E9DCC9");
+        SetColor(r, "SidebarMutedColor", "SidebarMutedBrush", "#BDA98C");
         SetColor(r, "RowAltColor", "RowAltBrush", "#F9F6EF");
-        SetColor(r, "RowHoverColor", "RowHoverBrush", "#E9EEF3");
+        SetColor(r, "RowHoverColor", "RowHoverBrush", "#F0E6D6");
         SetColor(r, "SuccessColor", "SuccessBrush", "#2E6B45");
         SetColor(r, "DangerColor", "DangerBrush", "#B3261E");
         SetColor(r, "WarningColor", "WarningBrush", "#8C5A0B");
         SetColor(r, "InfoColor", "InfoBrush", "#2F5F86");
-        UpdateSidebarGradient(r, "#0B3150", "#0B3150", "#0B3150");   // ‏مصمَتٌ: لا تدرّج
+        UpdateSidebarGradient(r, "#2B1E12", "#2B1E12", "#2B1E12");   // ‏مصمَتٌ: لا تدرّج
     }
 
     /// <summary>يحدّث لون الفرشاة المشتركة — كل العناصر المرتبطة تتحدّث فوراً.</summary>
