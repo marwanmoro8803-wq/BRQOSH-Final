@@ -52,6 +52,15 @@ public class TheInstallerCarriesItsRuntimeAndShowsItsWizardTests
     }
 
     [Fact]
+    public void TheLicenceRtfEscapesArabicLettersWithTheirNumber()
+    {
+        // ‏`"\u$signed?"` يُقرأ في PowerShell 7 متغيّراً اسمُه «signed?» فيخرج `\u` بلا رقمٍ وتضيع الحروفُ العربيّة من الاتفاقيّة.
+        var assets = File.ReadAllText(Path.Combine(Root(), "installer", "make-ui-assets.ps1"));
+        Assert.Contains("\\u${signed}?", assets, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\u$signed?", assets, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheRemoveFlowAsksAboutDataWithKeepAsTheDefault()
     {
         var ui = Doc("ui.wxs");

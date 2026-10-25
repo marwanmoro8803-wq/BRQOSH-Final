@@ -202,17 +202,21 @@ if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { throw "make-ui-assets.ps
 $UiWxs = Join-Path $PSScriptRoot 'ui.wxs'
 
 # ‏`-culture ar-SA`: نصوصُ حوارات WixUI بالعربيّة؛ وحوارُ الإزالةُ ثنائيُّ اللغة.
-wix build $WxsPath $UiWxs `
-    -arch x64 `
-    -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
-    -culture ar-SA `
-    -d "PublishDir=$PublishDir" `
-    -d "ProductVersion=$ProductVersion" `
-    -d "BrandIcon=$BrandIconPath" `
-    -d "LicenseRtf=$(Join-Path $UiDir 'license.rtf')" `
-    -d "BannerBmp=$(Join-Path $UiDir 'banner.bmp')" `
-    -d "DialogBmp=$(Join-Path $UiDir 'dialog.bmp')" `
-    -o $MsiOut
+function Invoke-BrqoshWixBuild([string]$Culture, [string]$Out) {
+    wix build $WxsPath $UiWxs `
+        -arch x64 `
+        -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
+        -culture $Culture `
+        -d "PublishDir=$PublishDir" `
+        -d "ProductVersion=$ProductVersion" `
+        -d "BrandIcon=$BrandIconPath" `
+        -d "LicenseRtf=$(Join-Path $UiDir 'license.rtf')" `
+        -d "BannerBmp=$(Join-Path $UiDir 'banner.bmp')" `
+        -d "DialogBmp=$(Join-Path $UiDir 'dialog.bmp')" `
+        -o $Out
+}
+
+Invoke-BrqoshWixBuild 'ar-SA' $MsiOut
 
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $MsiOut)) {
     Write-Host "wix build أخفق (exit=$LASTEXITCODE) — لا حزمة." -ForegroundColor Red
@@ -276,4 +280,5 @@ if ($script:Signing.Mode -eq 'None') {
 }
 
 Write-Host "MSI: $MsiOut" -ForegroundColor Green
+
 Write-Host "‏لتسجيل هذا الإصدار مشحوناً: أضف '$ProductVersion' إلى installer\shipped-versions.txt" -ForegroundColor DarkGray

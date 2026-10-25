@@ -12,6 +12,7 @@
            Version="$(var.ProductVersion)"
            UpgradeCode="E2D301B7-5EA4-4B64-990C-69A7E30CD174"
            Scope="perMachine"
+           Codepage="1256"
            Compressed="yes">
 
     <!-- أيقونةُ «التطبيقات المُثبَّتة»؛ أمّا المختصراتُ فتأخذ أيقونةَ الملف التنفيذيّ المدمَجة (ApplicationIcon). -->

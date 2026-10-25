@@ -26,7 +26,8 @@ function ConvertTo-RtfText([string]$text) {
         elseif ($ch -eq '}') { [void]$sb.Append('\}') }
         elseif ($code -gt 127) {
             $signed = if ($code -gt 32767) { $code - 65536 } else { $code }
-            [void]$sb.Append("\u$signed?")
+            # ‏`${signed}` بأقواس: في PowerShell 7 يُقرأ `$signed?` متغيّراً اسمُه «signed?» فيخرج `\u` بلا رقم وتضيع الحروفُ العربيّة.
+            [void]$sb.Append("\u${signed}?")
         }
         else { [void]$sb.Append($ch) }
     }
