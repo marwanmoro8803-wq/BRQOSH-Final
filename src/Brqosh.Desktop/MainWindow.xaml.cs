@@ -65,6 +65,7 @@ public partial class MainWindow : Window
         // ‏(أسئلةُ المالك 2026-10-24) ‏المظهرُ واللغةُ من تفضيلات المستخدم المحفوظة — كان يبدأ داكناً عربيّاً دائماً.
         var uiPrefs = UiPreferencesStore.Load();
         ThemeManager.Apply(uiPrefs.Dark);
+        DensityManager.Apply(uiPrefs.Compact);
         if (uiPrefs.English)
         {
             LocaleManager.Set(true);
@@ -75,6 +76,8 @@ public partial class MainWindow : Window
         KeyboardNavigationHelper.ApplyShellHeader(BranchCombo, ThemeToggleBtn);
         LocaleManager.Changed += OnLocaleChanged;
         ThemeManager.Changed += OnThemeChanged;
+        DensityManager.Changed += OnDensityChanged;
+        Closed += (_, _) => DensityManager.Changed -= OnDensityChanged;
         BuildAiPanelShell();
         _ = RefreshAiPanelAsync();
         CompanyNameText.Text = setup.CompanyName;
@@ -453,7 +456,19 @@ public partial class MainWindow : Window
 
     /// <summary>يحفظ المظهرَ واللغةَ الجاريين — أياً كان من غيّرهما (زرُّ الترويسة أو صفحةُ التفضيلات).</summary>
     private static void SaveUiPreferences() =>
-        UiPreferencesStore.Save(new UiPreferences { Dark = ThemeManager.IsDark, English = LocaleManager.IsEnglish });
+        UiPreferencesStore.Save(new UiPreferences
+        {
+            Dark = ThemeManager.IsDark,
+            English = LocaleManager.IsEnglish,
+            Compact = DensityManager.IsCompact,
+        });
+
+    private void OnDensityChanged() =>
+        Dispatcher.Invoke(() =>
+        {
+            SaveUiPreferences();
+            RefreshActivePage();
+        });
 
     private void RefreshActivePage()
     {

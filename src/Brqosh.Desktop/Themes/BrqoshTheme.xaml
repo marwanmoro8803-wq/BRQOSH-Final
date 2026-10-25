@@ -141,6 +141,8 @@
     <!-- UI UX Pro Max — حركة وتركيز لوحة المفاتيح -->
     <sys:Double x:Key="MotionDurationFast">150</sys:Double>
     <sys:Double x:Key="MotionDurationNormal">200</sys:Double>
+    <!-- كثافةُ الجداول: يبدّلها DensityManager (مريح ٤٠ · مضغوط ٣٢)؛ نمطُ DataGrid يقرؤها DynamicResource. -->
+    <sys:Double x:Key="GridRowHeight">40</sys:Double>
 
     <Style x:Key="AppFocusVisual">
         <Setter Property="Control.Template">
@@ -1300,7 +1302,7 @@
         <Setter Property="GridLinesVisibility"     Value="Horizontal"/>
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BorderLightBrush}"/>
         <Setter Property="HeadersVisibility"       Value="Column"/>
-        <Setter Property="RowHeight"               Value="40"/>
+        <Setter Property="RowHeight"               Value="{DynamicResource GridRowHeight}"/>
         <Setter Property="FontFamily"              Value="{StaticResource AppFont}"/>
         <Setter Property="FontSize"                Value="14"/>
         <Setter Property="Foreground"              Value="{DynamicResource TextPrimaryBrush}"/>
@@ -1381,7 +1383,7 @@
     </Style>
 
     <Style TargetType="DataGridRow">
-        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="MinHeight" Value="{DynamicResource GridRowHeight}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource RowHoverBrush}"/>

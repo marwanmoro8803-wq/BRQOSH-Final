@@ -66,6 +66,18 @@ public partial class PreferencesPage : UserControl
                 "يُطبَّق فوراً ويُحفظ لمستخدم ويندوز هذا فيعود عند كل تشغيل. ألوان النصوص والخلفيات تتبدّل معاً.",
                 "Applies immediately and is remembered for this Windows user on every start. Text and background colours switch together.");
 
+            DensityLabel.Text = LocaleManager.T("كثافة الجداول", "Table density");
+            DensityBox.ItemsSource = new[]
+            {
+                new Choice(false, LocaleManager.T("مريحة", "Comfortable")),
+                new Choice(true, LocaleManager.T("مضغوطة", "Compact")),
+            };
+            DensityBox.DisplayMemberPath = nameof(Choice.Label);
+            DensityBox.SelectedItem = ((IEnumerable<Choice>)DensityBox.ItemsSource).First(c => c.Value == DensityManager.IsCompact);
+            DensityHint.Text = LocaleManager.T(
+                "المضغوطة تُظهر صفوفاً أكثر في الشاشة (٣٢ بدل ٤٠ بكسل) — يُطبَّق فوراً ويُحفظ لك.",
+                "Compact shows more rows on screen (32 instead of 40 pixels) — applies immediately and is remembered for you.");
+
             LanguageLabel.Text = LocaleManager.T("لغة الواجهة", "Interface language");
             LanguageBox.ItemsSource = new[]
             {
@@ -152,6 +164,15 @@ public partial class PreferencesPage : UserControl
 
         // ‏ThemeManager.Apply يُطلق Changed فتُعيد النافذةُ الرئيسةُ رسمَ الصفحة (وهذه منها) وتحفظ الاختيار.
         ThemeManager.Apply(choice.Value);
+    }
+
+    private void OnDensityChosen(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || DensityBox.SelectedItem is not Choice choice || choice.Value == DensityManager.IsCompact)
+            return;
+
+        // ‏DensityManager.Apply يُطلق Changed فتحفظ النافذةُ الرئيسةُ الاختيارَ وتُعيد بناءَ الصفحة (وهذه منها).
+        DensityManager.Apply(choice.Value);
     }
 
     private void OnLanguageChosen(object sender, SelectionChangedEventArgs e)

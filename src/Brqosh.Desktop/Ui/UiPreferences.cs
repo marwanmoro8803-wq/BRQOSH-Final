@@ -11,6 +11,9 @@ public sealed class UiPreferences
 
     /// <summary>الإنجليزيّةُ؟ — وإلّا فالعربيّة (الأصل).</summary>
     public bool English { get; set; }
+
+    /// <summary>كثافةُ الجداول المضغوطة؟ — وإلّا المريحةُ (الأصل).</summary>
+    public bool Compact { get; set; }
 }
 
 /// <summary>

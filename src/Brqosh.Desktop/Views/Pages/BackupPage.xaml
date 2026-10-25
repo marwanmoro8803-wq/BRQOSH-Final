@@ -87,7 +87,7 @@
                 <StackPanel>
                     <TextBlock Text="الاستعادة" Style="{StaticResource FieldLabel}" FontWeight="Bold" Margin="0,0,0,10"/>
                     <TextBlock Style="{StaticResource FieldLabel}" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Foreground="#B00020"
+                               Foreground="{DynamicResource DangerBrush}"
                                Text="الاستعادة تمحو كلّ ما في القاعدة الحالية وتضع مكانَه محتوى النسخة. لا رجعة فيها. أغلِق التطبيق على بقية الأجهزة قبل البدء."/>
                     <Button x:Name="RestoreBtn" Content="استعادة من ملفّ..." Click="OnRestore" MinWidth="180"
                             HorizontalAlignment="Right"/>

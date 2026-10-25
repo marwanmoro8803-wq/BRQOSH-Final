@@ -365,7 +365,7 @@ public static class ExecutiveDashboardBuilder
         grid.RowDefinitions.Add(new RowDefinition());
         grid.RowDefinitions.Add(new RowDefinition());
 
-        void AddMetric(int col, int row, string labelAr, string labelEn, decimal value, string color)
+        void AddMetric(int col, int row, string labelAr, string labelEn, decimal value, string brushKey)
         {
             var sp = new StackPanel { Margin = new Thickness(8) };
             sp.Children.Add(new TextBlock
@@ -374,24 +374,26 @@ public static class ExecutiveDashboardBuilder
                 FontSize = 11,
                 Foreground = UiResources.BrushOf(host, "TextMutedBrush"),
             });
-            sp.Children.Add(new TextBlock
+            var amount = new TextBlock
             {
                 Text = CurrencyLabel.Format(value),
                 Style = UiResources.StyleOf(host, "TabularText"),
                 FontSize = 20,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)!),
                 Margin = new Thickness(0, 4, 0, 0),
-            });
+            };
+            // ‏من مفاتيح الثيم (تنقلب في الداكن وتحرسها اختباراتُ التباين) لا ألوانٍ مثبّتة كانت زرقاءَ وذهبيّةً قديمة.
+            amount.SetResourceReference(TextBlock.ForegroundProperty, brushKey);
+            sp.Children.Add(amount);
             Grid.SetColumn(sp, col);
             Grid.SetRow(sp, row);
             grid.Children.Add(sp);
         }
 
-        AddMetric(0, 0, "الإيرادات", "Revenue", revenue, "#5BA4D6");
-        AddMetric(1, 0, "المصروفات", "Expenses", expenses, "#F87171");
-        AddMetric(0, 1, "صافي الربح", "Net Profit", net, "#D4AF37");
-        AddMetric(1, 1, "رأس المال العامل", "Working Capital", wc, "#34D399");
+        AddMetric(0, 0, "الإيرادات", "Revenue", revenue, "InfoBrush");
+        AddMetric(1, 0, "المصروفات", "Expenses", expenses, "DangerBrush");
+        AddMetric(0, 1, "صافي الربح", "Net Profit", net, "AccentInkBrush");
+        AddMetric(1, 1, "رأس المال العامل", "Working Capital", wc, "SuccessBrush");
 
         var wrap = new StackPanel();
         wrap.Children.Add(new TextBlock

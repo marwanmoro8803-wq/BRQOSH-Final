@@ -180,7 +180,7 @@
 
                             <!-- شارة المستخدم -->
                             <Border Background="{StaticResource PrimarySoftBrush}"
-                                    CornerRadius="20" Padding="14,7">
+                                    CornerRadius="3" Padding="12,6">
                                 <TextBlock x:Name="HeaderUserText"
                                            FontSize="12.5" FontWeight="SemiBold"
                                            Foreground="{StaticResource PrimaryDarkBrush}"/>
@@ -287,7 +287,7 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Border Grid.Column="1" Width="1" Background="#1E293B"
+                <Border Grid.Column="1" Width="1" Background="{DynamicResource BorderBrush}"
                         Margin="16,3"/>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
@@ -299,17 +299,17 @@
                     <!-- ‏(CEEF-237 · ت-٤) شارةُ آخرِ نسخةٍ احتياطيّة — تُرى ولا تُطلَب.
                          ‏كان النسخُ زرّاً لا يُذكّر أحداً بنفسه، فتمرّ أسابيعُ بلا نسخة. -->
                     <Border x:Name="StatusBackupBadge" Visibility="Collapsed"
-                            Background="#7F1D1D" CornerRadius="3" Padding="7,1"
+                            Background="{DynamicResource DangerBrush}" CornerRadius="3" Padding="7,1"
                             Margin="16,0,0,0" VerticalAlignment="Center"
                             ToolTip="اضغط لفتح شاشة النسخ الاحتياطي">
                         <TextBlock x:Name="StatusBackupText" FontSize="11"
-                                   Foreground="#FEE2E2" VerticalAlignment="Center"/>
+                                   Foreground="{DynamicResource OnPrimaryBrush}" VerticalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
                 <TextBlock Grid.Column="3"
                            Text="BRQOSH ERP"
-                           FontSize="11" Foreground="#334155"
+                           FontSize="11" Foreground="{DynamicResource StatusBarTextBrush}"
                            VerticalAlignment="Center"/>
             </Grid>
         </Border>
