@@ -85,8 +85,6 @@ public class EveryCurrencyHasAFlagTests
                 if (data[i + 1] > 70 && data[i + 1] < 160 && data[i + 2] < 60 && data[i] < 90) green++;
             }
 
-        Assert.True(green > 150, $"علمُ السعوديّة لا يظهر في قائمة العملة ({green} نقطة خضراء).");
-
         var dir = Environment.GetEnvironmentVariable("BRQOSH_RENDER_DIR");
         if (!string.IsNullOrWhiteSpace(dir))
         {
@@ -96,5 +94,7 @@ public class EveryCurrencyHasAFlagTests
             using var file = File.Create(Path.Combine(dir, "currency-picker.png"));
             encoder.Save(file);
         }
+
+        Assert.True(green > 150, $"علمُ السعوديّة لا يظهر في قائمة العملة ({green} نقطة خضراء).");
     }
 }

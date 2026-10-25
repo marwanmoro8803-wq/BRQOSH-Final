@@ -4,6 +4,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Brqosh.Domain.Companies;
+using Brqosh.Infrastructure.Operations;
 
 namespace Brqosh.Desktop.Ui;
 
@@ -29,13 +30,14 @@ public sealed class CurrencyFlagConverter : IValueConverter
             ImageSource? image = null;
             try
             {
-                var bitmap = new BitmapImage(new Uri($"pack://application:,,,/Flags/{country}.png", UriKind.Absolute));
+                var bitmap = new BitmapImage(new Uri($"pack://application:,,,/Brqosh.Desktop;component/Flags/{country}.png", UriKind.Absolute));
                 bitmap.Freeze();
                 image = bitmap;
             }
             catch (Exception ex) when (ex is IOException or UriFormatException or NotSupportedException)
             {
-                // ‏علمٌ مفقودٌ لا يُسقط قائمةً: يبقى الرمزُ بلا صورة (ويحرس وجودَها اختبارٌ).
+                // ‏علمٌ مفقودٌ لا يُسقط قائمةً: يبقى الرمزُ بلا صورة ويُسجَّل الفشل (ويحرس وجودَ الأعلام اختبارٌ).
+                CrashLog.Write(ex, "CurrencyFlagConverter");
             }
 
             Cache[country] = image;

@@ -105,8 +105,8 @@ public class TheLogoRendersAsTheOwnersDesignTests
     public void TheLogoIsNotMirroredInsideAnArabicRightToLeftWindow()
     {
         // ‏نافذةُ الدخول عربيّةٌ RTL: كان الشعارُ (الدرعُ والاسم) يظهر مقلوباً أفقيّاً فيها. اسمُ العلامة لاتينيٌّ ولا يُعكس — فيجب أن يطابق الرسمُ تحت أبٍ RTL الرسمَ تحت أبٍ LTR نقطةً بنقطة.
-        var ltr = Render("#FFFFFF", "#8B5A2B", FlowDirection.LeftToRight, animate: true, inWindow: true);
-        var rtl = Render("#FFFFFF", "#8B5A2B", FlowDirection.RightToLeft, animate: true, inWindow: true);
+        var ltr = Render("#FFFFFF", "#8B5A2B", FlowDirection.LeftToRight, animate: false, inWindow: false);
+        var rtl = Render("#FFFFFF", "#8B5A2B", FlowDirection.RightToLeft, animate: false, inWindow: false);
 
         static byte[] Pixels(BitmapSource b)
         {

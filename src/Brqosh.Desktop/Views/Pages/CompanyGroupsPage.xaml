@@ -27,7 +27,13 @@
                     <TextBlock Text="الاسم" VerticalAlignment="Center" Margin="12,0,8,0"/>
                     <TextBox x:Name="NameBox" Width="220" Style="{StaticResource AppTextBox}"/>
                     <TextBlock Text="عملة التقرير" VerticalAlignment="Center" Margin="12,0,8,0"/>
+                    <DockPanel>
+                    <Border DockPanel.Dock="Left" Width="30" Height="22" Margin="0,0,8,0" CornerRadius="2" ClipToBounds="True" VerticalAlignment="Center"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" ToolTip="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyCountry}}">
+                        <Image Source="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyFlag}}" Stretch="UniformToFill"/>
+                    </Border>
                     <TextBox x:Name="CurrencyBox" Width="60" MaxLength="3" Style="{StaticResource AppTextBox}" Text="SAR"/>
+                </DockPanel>
                     <Button x:Name="AddBtn" Content="إضافة مجموعة" Style="{StaticResource PrimaryButton}" Padding="16,7" Margin="16,0,0,0" Click="OnAdd"/>
                 </WrapPanel>
                 <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" Margin="0,8,0,0" Visibility="Collapsed"/>
