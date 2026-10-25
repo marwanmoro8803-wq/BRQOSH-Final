@@ -195,11 +195,23 @@ Invoke-BrqoshSign -Paths $PayloadBinaries -What "الحمولة"
 $BrandIconPath = Join-Path $Root 'assets\brand\brqosh.ico'
 if (-not (Test-Path $BrandIconPath)) { throw "أيقونةُ البرنامج غير موجودة: $BrandIconPath" }
 
-wix build $WxsPath `
+# ‏(واجهةُ التنصيب) ‏أصولُ الواجهة تُولَّد من مصدرٍ واحد (eula.txt وشعارُ الهويّة) قبل البناء.
+$UiDir = Join-Path $Root 'dist\installer-ui'
+& (Join-Path $PSScriptRoot 'make-ui-assets.ps1') -OutDir $UiDir
+if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { throw "make-ui-assets.ps1 أخفق (exit=$LASTEXITCODE)." }
+$UiWxs = Join-Path $PSScriptRoot 'ui.wxs'
+
+# ‏`-culture ar-SA`: نصوصُ حوارات WixUI بالعربيّة؛ وحوارُ الإزالةُ ثنائيُّ اللغة.
+wix build $WxsPath $UiWxs `
     -arch x64 `
+    -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext `
+    -culture ar-SA `
     -d "PublishDir=$PublishDir" `
     -d "ProductVersion=$ProductVersion" `
     -d "BrandIcon=$BrandIconPath" `
+    -d "LicenseRtf=$(Join-Path $UiDir 'license.rtf')" `
+    -d "BannerBmp=$(Join-Path $UiDir 'banner.bmp')" `
+    -d "DialogBmp=$(Join-Path $UiDir 'dialog.bmp')" `
     -o $MsiOut
 
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $MsiOut)) {

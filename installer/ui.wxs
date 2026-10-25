@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  (واجهةُ التنصيب والإزالة) ‏مجموعةُ واجهةٍ على `WixUI_InstallDir` مع حوارٍ إضافيٍّ عند الإزالة: «هل تحذف بياناتِك أيضاً؟».
+
+  ‏**القاعدةُ أمان**: الافتراضُ **إبقاءُ البيانات** — بياناتُ المحاسبة لا تُحذف لأنّ مستخدماً أزال البرنامج (وإعادةُ التنصيب تجدها). والحذفُ
+  ‏اختيارٌ صريحٌ بمربّعٍ غيرِ مؤشَّرٍ ينفّذه إجراءٌ مؤجَّلٌ بصلاحيّة النظام على مجلّد البيانات وحدَه (`%APPDATA%\BRQOSH` للمستخدم الذي يُزيل).
+  ‏ولا يمسّ **قاعدةَ PostgreSQL على الخادم** (هي لدى مدير القاعدة)، ولا بياناتِ مستخدمي ويندوز الآخرين.
+  ‏والإزالةُ الصامتةُ `msiexec /x /qn` تُبقي البياناتِ ما لم يُمرَّر `REMOVEDATA=1` صراحةً.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <Fragment>
+    <Property Id="REMOVEDATA" Secure="yes" />
+
+    <!-- مجلّدُ البيانات: ‏`USERDATAPATH` قابلٌ للتجاوز (للاختبار) وإلا فمجلّدُ APPDATA للمستخدم الجاري. -->
+    <SetProperty Id="USERDATAPATH" Value="[AppDataFolder]BRQOSH" Before="CostFinalize" Sequence="both" Condition="NOT USERDATAPATH" />
+
+    <UI Id="BrqoshInstallDir">
+      <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+      <Dialog Id="UninstallDataDlg" Width="370" Height="270" Title="BRQOSH — إزالة / Remove">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+        <Control Id="Title" Type="Text" X="15" Y="8" Width="280" Height="30" Transparent="yes" NoPrefix="yes"
+                 Text="{\WixUI_Font_Title}إزالة BRQOSH / Remove BRQOSH" />
+
+        <Control Id="Question" Type="Text" X="20" Y="56" Width="330" Height="40" Transparent="yes" NoPrefix="yes"
+                 Text="سيُزال البرنامجُ من هذا الجهاز. هل تريد حذفَ بياناتِك أيضاً؟&#10;The program will be removed from this computer. Do you also want to delete your data?" />
+
+        <Control Id="RemoveDataCheck" Type="CheckBox" X="20" Y="104" Width="330" Height="34" Property="REMOVEDATA" CheckBoxValue="1"
+                 Text="احذف كلَّ البيانات (المنشأة والحسابات والإعدادات والنسخ الاحتياطي) / Delete all my data (company, accounts, settings, backups)" />
+
+        <Control Id="KeepNote" Type="Text" X="36" Y="144" Width="314" Height="52" Transparent="yes" NoPrefix="yes"
+                 Text="غيرُ مؤشَّر (الافتراضيّ): تبقى بياناتُك فتجدها إن أعدتَ التنصيب. المؤشَّر: يُحذف مجلّدُ بياناتِ هذا المستخدم نهائيّاً ولا يُسترجع.&#10;Unchecked (default): your data stays and is found again if you reinstall. Checked: this user's data folder is deleted permanently." />
+
+        <Control Id="ServerNote" Type="Text" X="20" Y="200" Width="330" Height="30" Transparent="yes" NoPrefix="yes"
+                 Text="قاعدةُ PostgreSQL على الخادم لا تُمسّ — يحذفها مديرُ القاعدة.&#10;The PostgreSQL database on the server is not touched." />
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="MaintenanceTypeDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <!-- «إزالة» ⟵ سؤالُ البيانات ⟵ التأكيد؛ والرجوعُ من التأكيد يعود إلى سؤال البيانات. -->
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="UninstallDataDlg" Order="3" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="UninstallDataDlg" Order="3"
+               Condition="WixUI_InstallMode = &quot;Remove&quot;" />
+    </UI>
+
+    <!--
+      حذفُ البيانات: إجراءٌ مؤجَّلٌ بلا انتحال (يعمل بصلاحيّة النظام فيصل إلى مجلّد المستخدم) على `cmd /c rmdir /s /q` للمسار وحدَه، لا يُنفَّذ
+      إلا عند الإزالةِ الكاملة وبـREMOVEDATA=1، و`Return="ignore"` فلا يُفشل الإزالةَ ملفٌّ محجوز. ‏**ويُنفَّذ قبل حذف الملفّات**
+      ‏وبعد إغلاق البرنامج.
+    -->
+    <SetProperty Id="RemoveUserDataCmd" Sequence="execute" Before="RemoveUserDataCmd"
+                 Value="&quot;[SystemFolder]cmd.exe&quot; /c rmdir /s /q &quot;[USERDATAPATH]&quot;"
+                 Condition="REMOVE=&quot;ALL&quot; AND REMOVEDATA=&quot;1&quot; AND USERDATAPATH" />
+    <CustomAction Id="RemoveUserDataCmd" DllEntry="WixQuietExec" BinaryRef="Wix4UtilCA_X64" Execute="deferred" Return="ignore" Impersonate="no" />
+    <InstallExecuteSequence>
+      <Custom Action="RemoveUserDataCmd" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot; AND REMOVEDATA=&quot;1&quot; AND USERDATAPATH" />
+    </InstallExecuteSequence>
+  </Fragment>
+</Wix>

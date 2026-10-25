@@ -4,7 +4,9 @@
   Build: installer\build-msi.ps1
   Requires: WiX Toolset v4+ (wix CLI)
 -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <Package Name="BRQOSH ERP"
            Manufacturer="BRQOSH"
            Version="$(var.ProductVersion)"
@@ -49,33 +51,20 @@
     <MediaTemplate EmbedCab="yes" />
 
     <!--
-      (CEEF-234 · T-07 · ح-٦٢) فحصُ .NET 9 Desktop Runtime قبل التثبيت — **الإصدارُ 9 بعينه**.
-
-      ما كان: DirectorySearch على المجلّد الأب ...\Microsoft.WindowsDesktop.App — **وهو موجودٌ لأيّ
-      إصدار**، فجهازٌ عليه 6 أو 8 وحدَه يُنصَّب عليه «بنجاح» ثمّ لا يفتح التطبيق. والتعليقُ السابق كان
-      يصف فحصَ سجلٍّ لم يُنفَّذ، والرسالةُ تقول «9 أو أحدث» و10 وحدَه لا يُشغّله (runtimeconfig يطلب
-      9.0 بتقدّمٍ ثانويٍّ افتراضيّ).
-
-      والآن: ملفٌّ في مجلّد الإصدار (PresentationFramework.dll) بإصدار ملفٍّ بين 9.0.0.0 و9.65535…،
-      بعمقٍ ١ تحت الأب — فلا يُرضيه إلا 9.x، ولا يُقارَن رقمُ رقعةٍ بعينه (9.0.17 وما بعدها سواء).
-
-      ⚠ **FileSearch بلا Id — عمداً.** بـId يُولِّد WiX صفَّ DrLocator للملفّ **بلا عمق** فيُبحث
-      عنه في الأب وحدَه **فلا يُوجد أبداً ويُرفض كلُّ جهاز**؛ وبلا Id يُدمج التوقيعُ في صفّ العمق.
-      قِيس بتشغيل AppSearch في جلسةٍ لا تُثبِّت: 9 ⟵ 9.0.17 · 6 ⟵ 6.0.36 · 8 و10 ⟵ لا شيء.
-      ويحرسه TheInstallerRequiresTheRuntimeItRunsOnTests.
+      (التنصيبُ يحمل كلَّ ما يلزمه) ‏**وقتُ التشغيل .NET 10 مضمَّنٌ في الحزمة** (نشرٌ self-contained) — لا شرطَ مسبقاً ولا تنزيلاً ولا إنترنت. كان
+      ‏المُنصِّبُ يرفض الجهازَ الذي ليس عليه «.NET 10 Desktop Runtime» ويطلب من العميل تنزيلَه بنفسه (ح-٦٢/ح-١٣٨)؛ فصار الشرطُ بلا معنى
+      ‏وحُذف مع اختبارِه، وحلّ محلَّه اختبارٌ يثبت أنّ النشرَ self-contained وأنّ المُنصِّبَ لا يشترط وقتَ تشغيلٍ خارجيّاً.
+      ‏معاينةُ PDF تحتاج WebView2 (مضمَّنٌ في ويندوز 11)؛ وغيابُه على ويندوز 10 يُقابله «فتح خارجياً» لا عطل.
     -->
-    <!--
-      (ح-١٣٨ · `installer-deployment-ops#6`) ‏**ومنذ الترحيل إلى .NET 10 (LTS)** صار الحدُّ 10.x — والقاعدةُ نفسُها:
-      الإصدارُ الذي تُبنى عليه التجميعةُ بعينه، ويحرسه الاختبارُ نفسُه بقراءة TargetFramework.
-    -->
-    <Property Id="DOTNETDESKTOP10" Secure="yes">
-      <DirectorySearch Id="DotNetDesktopAppDir" Path="[ProgramFiles64Folder]dotnet\shared\Microsoft.WindowsDesktop.App" Depth="1">
-        <FileSearch Name="PresentationFramework.dll" MinVersion="10.0.0.0" MaxVersion="10.65535.65535.65535" />
-      </DirectorySearch>
-    </Property>
 
-    <Launch Condition="DOTNETDESKTOP10"
-        Message="يتطلّب BRQOSH .NET Desktop Runtime 10 (الإصدارُ 10 بعينه — 8 أو 9 لا تكفي). نزّله من https://dotnet.microsoft.com/download/dotnet/10.0 ثم أعد المحاولة." />
+    <!-- واجهةُ التنصيب: ترحيبٌ ← اتفاقيّةُ الترخيص ← مجلّدُ التثبيت ← تأكيدٌ ← تقدّمٌ ← إنهاء، وفي الإزالة سؤالُ «حذفِ البيانات؟» (ui.wxs). -->
+    <UIRef Id="BrqoshInstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseRtf)" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.BannerBmp)" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.DialogBmp)" />
+
+    <!-- يُغلق البرنامجُ إن كان يعمل قبل التثبيت/الإزالة/الترقية فلا تبقى ملفّاتٌ محجوزة. -->
+    <util:CloseApplication Id="CloseBrqosh" Target="Brqosh.Desktop.exe" CloseMessage="yes" RebootPrompt="no" Description="يُغلَق BRQOSH قبل المتابعة." />
 
     <Feature Id="MainFeature" Title="BRQOSH ERP" Level="1">
       <ComponentGroupRef Id="PublishComponents" />

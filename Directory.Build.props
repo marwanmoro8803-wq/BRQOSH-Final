@@ -31,6 +31,8 @@
   -->
   <PropertyGroup>
     <BrqoshVersionPrefix>1.0</BrqoshVersionPrefix>
+    <!-- ‏(الإصدارُ يتحرّك مع كلّ تغيير) ‏رقمُ البناء من `version.txt` في الجذر — يُرفع مع كلّ إصلاحٍ أو تعديل، ويحرسه TheVersionMovesWithEveryChangeTests. -->
+    <BrqoshBuildNumber Condition="'$(BrqoshBuildNumber)' == '' And Exists('$(MSBuildThisFileDirectory)version.txt')">$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)version.txt').Trim())</BrqoshBuildNumber>
     <BrqoshBuildNumber Condition="'$(BrqoshBuildNumber)' == ''">0</BrqoshBuildNumber>
     <BrqoshVersion>$(BrqoshVersionPrefix).$(BrqoshBuildNumber)</BrqoshVersion>
 

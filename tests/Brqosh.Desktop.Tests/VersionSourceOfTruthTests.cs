@@ -100,7 +100,11 @@ public class VersionSourceOfTruthTests
         Assert.Equal("$(BrqoshVersionPrefix).$(BrqoshBuildNumber)", composed.Groups[1].Value.Trim());
 
         // ‏وأنّ التركيبَ يُنتج رقماً صالحاً فعلاً — لا مجرّد نصٍّ يبدو صحيحاً.
-        var effective = $"{prefix.Groups[1].Value}.{build.Groups[1].Value.Trim()}";
+        // ‏(الإصدارُ يتحرّك مع كلّ تعديل) ‏رقمُ البناء يُقرأ من version.txt في الجذر — فيُقاس الرقمُ الفعليّ منه.
+        var buildText = build.Groups[1].Value.Trim();
+        if (buildText.Contains("version.txt", StringComparison.Ordinal))
+            buildText = File.ReadAllText(Path.Combine(Path.GetDirectoryName(root)!, "version.txt")).Trim();
+        var effective = $"{prefix.Groups[1].Value}.{buildText}";
         Assert.True(System.Version.TryParse(effective, out var parsed),
             $"التركيبُ لا يُنتج رقماً صالحاً: «{effective}».");
         Assert.True(parsed!.Build >= 0,

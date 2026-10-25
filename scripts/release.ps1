@@ -17,7 +17,7 @@
     pwsh scripts/release.ps1 -BuildNumber 12 -UpdateKey "$env:APPDATA\BRQOSH\vendor-signing\update-private.pem" -Channel D:\brqosh-channel
 #>
 param(
-    [Parameter(Mandatory)][int]$BuildNumber,
+    [int]$BuildNumber = 0,
     [Parameter(Mandatory)][string]$UpdateKey,
     [Parameter(Mandatory)][string]$Channel,
     [switch]$Ship
@@ -27,6 +27,7 @@ $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'release-lib.ps1')
 
+if ($BuildNumber -le 0) { $BuildNumber = [int](Get-Content (Join-Path (Split-Path -Parent $PSScriptRoot) 'version.txt') -Raw).Trim() }   # ‏الافتراضُ: رقمُ version.txt
 $prefix = Get-BrqoshVersionPrefix -Props (Join-Path $Root 'Directory.Build.props')
 $version = Get-BrqoshReleaseVersion -Prefix $prefix -BuildNumber $BuildNumber
 $notes = Get-BrqoshReleaseNotes -Changelog (Join-Path $Root 'CHANGELOG.md') -Version $version
