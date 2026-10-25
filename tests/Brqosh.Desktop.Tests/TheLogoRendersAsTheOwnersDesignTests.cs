@@ -15,24 +15,37 @@ namespace Brqosh.Desktop.Tests;
 /// </summary>
 public class TheLogoRendersAsTheOwnersDesignTests
 {
-    private static BitmapSource Render(string surfaceHex, string inkHex)
+    private static BitmapSource Render(string surfaceHex, string inkHex, FlowDirection parentFlow = FlowDirection.LeftToRight, bool animate = false, bool inWindow = false)
     {
         return WpfTestHost.Invoke(() =>
         {
             // ‏الفرشُ تُبنى على خيط الواجهة نفسِه — Freezable لا يعبر الخيوط.
             var surface = new SolidColorBrush((Color)ColorConverter.ConvertFromString(surfaceHex));
             var ink = new SolidColorBrush((Color)ColorConverter.ConvertFromString(inkHex));
-            var logo = new BrandLogo { MarkHeight = 300, MarkBrush = ink, NameBrush = ink, HorizontalAlignment = HorizontalAlignment.Center };
-            var host = new Border { Background = surface, Width = 480, Height = 640, Child = logo, Padding = new Thickness(0, 30, 0, 0) };
-            host.Measure(new Size(480, 640));
-            host.Arrange(new Rect(0, 0, 480, 640));
-            host.UpdateLayout();
-            PumpFrames();
+            var logo = new BrandLogo { MarkHeight = 300, MarkBrush = ink, NameBrush = ink, HorizontalAlignment = HorizontalAlignment.Center, Animate = animate };
+            var host = new Border { Background = surface, Width = 480, Height = 640, Child = logo, Padding = new Thickness(0, 30, 0, 0), FlowDirection = parentFlow };
+            Window? window = null;
+            if (inWindow)
+            {
+                // ‏كما في نافذة الدخول الحقيقيّة: نافذةٌ RTL تُعرض فعلاً (فيُطلَق Loaded وحركةُ الدخول) والشعارُ فيها.
+                window = new Window { Content = host, Width = 520, Height = 700, ShowInTaskbar = false, WindowStartupLocation = WindowStartupLocation.Manual, Left = -4000, Top = 0, FlowDirection = parentFlow };
+                host.FlowDirection = FlowDirection.LeftToRight;
+                window.Show();
+                for (var i = 0; i < 40; i++) { PumpFrames(); Thread.Sleep(50); }   // ‏حتى تنتهي حركةُ الدخول (٠٫٨ ث)
+            }
+            else
+            {
+                host.Measure(new Size(480, 640));
+                host.Arrange(new Rect(0, 0, 480, 640));
+                host.UpdateLayout();
+                PumpFrames();
+            }
             host.UpdateLayout();
 
             var bitmap = new RenderTargetBitmap(480, 640, 96, 96, PixelFormats.Pbgra32);
             bitmap.Render(host);
             bitmap.Freeze();
+            window?.Close();
             return (BitmapSource)bitmap;
         });
     }
@@ -86,5 +99,28 @@ public class TheLogoRendersAsTheOwnersDesignTests
             using var file = File.Create(Path.Combine(dir, $"logo-{name}.png"));
             encoder.Save(file);
         }
+    }
+
+    [Fact]
+    public void TheLogoIsNotMirroredInsideAnArabicRightToLeftWindow()
+    {
+        // ‏نافذةُ الدخول عربيّةٌ RTL: كان الشعارُ (الدرعُ والاسم) يظهر مقلوباً أفقيّاً فيها. اسمُ العلامة لاتينيٌّ ولا يُعكس — فيجب أن يطابق الرسمُ تحت أبٍ RTL الرسمَ تحت أبٍ LTR نقطةً بنقطة.
+        var ltr = Render("#FFFFFF", "#8B5A2B", FlowDirection.LeftToRight, animate: true, inWindow: true);
+        var rtl = Render("#FFFFFF", "#8B5A2B", FlowDirection.RightToLeft, animate: true, inWindow: true);
+
+        static byte[] Pixels(BitmapSource b)
+        {
+            var data = new byte[b.PixelWidth * 4 * b.PixelHeight];
+            b.CopyPixels(data, b.PixelWidth * 4, 0);
+            return data;
+        }
+
+        var a = Pixels(ltr);
+        var c = Pixels(rtl);
+        var differing = 0;
+        for (var i = 0; i < a.Length; i += 4)
+            if (Math.Abs(a[i] - c[i]) > 24 || Math.Abs(a[i + 1] - c[i + 1]) > 24 || Math.Abs(a[i + 2] - c[i + 2]) > 24) differing++;
+
+        Assert.True(differing < 400, $"الشعارُ تحت RTL يختلف عن LTR في {differing} نقطة — مقلوب؟");
     }
 }

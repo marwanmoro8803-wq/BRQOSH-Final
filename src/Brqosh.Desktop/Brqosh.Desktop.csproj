@@ -38,6 +38,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- (علمُ كلّ عملة) أعلامُ الدول مضمَّنةٌ مورداً: pack://application:,,,/Flags/sa.png — تُولَّد بـ tools/brand/currency_flags.py. -->
+    <Resource Include="..\..\assets\flags\*.png" Link="Flags\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- (CEEF-229 · م0-١٦) دلالة إعادة الدخول في UiBusyGuard تُقاس مباشرةً. -->
     <InternalsVisibleTo Include="Brqosh.Desktop.Tests" />
   </ItemGroup>

@@ -145,10 +145,10 @@
                                FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة العرض (ISO) *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="BaseCurrencyBox" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
+                    <ComboBox x:Name="BaseCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة القياس المحاسبي (ISO) *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="FunctionalCurrencyBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="FunctionalCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
                     <TextBlock x:Name="CurrencyHintText"
                                FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 

@@ -77,6 +77,20 @@
     <SolidColorBrush x:Key="RowAltBrush"        Color="{StaticResource RowAltColor}"/>
     <SolidColorBrush x:Key="RowHoverBrush"      Color="{StaticResource RowHoverColor}"/>
 
+    <!-- علمُ كلّ عملة: [علم] SAR SA — لقوائم اختيار العملة (ItemTemplate). الاتجاهُ LTR: رموزٌ لاتينيّة. -->
+    <ui:CurrencyFlagConverter x:Key="CurrencyFlag"/>
+    <ui:CurrencyCountryConverter x:Key="CurrencyCountry"/>
+    <DataTemplate x:Key="CurrencyFlagItem">
+        <StackPanel Orientation="Horizontal" FlowDirection="LeftToRight">
+            <Border Width="30" Height="22" Margin="0,0,10,0" CornerRadius="2" ClipToBounds="True"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" VerticalAlignment="Center">
+                <Image Source="{Binding Converter={StaticResource CurrencyFlag}}" Stretch="UniformToFill"/>
+            </Border>
+            <TextBlock Text="{Binding}" FontWeight="SemiBold" Width="48" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Converter={StaticResource CurrencyCountry}}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center"/>
+        </StackPanel>
+    </DataTemplate>
+
     <FontFamily x:Key="AppFont">Segoe UI, Tahoma, Arial</FontFamily>
     <FontFamily x:Key="FigureFont">Bahnschrift, Segoe UI, Tahoma</FontFamily>
     <FontFamily x:Key="DisplayFont">Sakkal Majalla, Segoe UI, Tahoma</FontFamily>

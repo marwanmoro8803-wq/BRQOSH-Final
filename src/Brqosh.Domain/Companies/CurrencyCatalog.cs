@@ -7,7 +7,7 @@ namespace Brqosh.Domain.Companies;
 /// أياً كانت العملة المختارة — فمنشأةٌ بالدولار كانت ترى مبالغَها بالريال. <b>والآن</b> القائمةُ معروفةٌ تُرفض خارجَها،
 /// ويُشتقّ الرمزُ المكتوبُ من العملة نفسِها.</para>
 /// </summary>
-public static class CurrencyCatalog
+public static partial class CurrencyCatalog
 {
     /// <summary>رموزُ ISO 4217 الجاريةُ — ما ليس فيها لا يُقبل عملةً لمنشأة.</summary>
     private static readonly HashSet<string> Known = new(StringComparer.Ordinal)
@@ -39,6 +39,10 @@ public static class CurrencyCatalog
             .Concat(Known.Except(["SAR", "AED", "KWD", "BHD", "QAR", "OMR", "EGP", "JOD", "USD", "EUR", "GBP"])
                 .OrderBy(c => c, StringComparer.Ordinal))
             .ToList();
+
+    /// <summary>رمزُ الدولة (ISO 3166) الممثِّلة للعملة — فارغٌ لما ليس في الكتالوج. اليورو «EU».</summary>
+    public static string CountryCode(string? code) =>
+        code is not null && Countries.TryGetValue(code.Trim().ToUpperInvariant(), out var country) ? country : "";
 
     public static bool IsKnown(string? code) =>
         code is not null && Known.Contains(code.Trim().ToUpperInvariant());
