@@ -872,8 +872,8 @@
                     <Border x:Name="NavBorder" Background="Transparent" CornerRadius="3"
                             Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
                         <Grid>
-                            <Border x:Name="ActiveBar" Width="3" HorizontalAlignment="Right"
-                                    CornerRadius="2" Background="Transparent" Margin="0,6"/>
+                            <Border x:Name="ActiveBar" Width="3" HorizontalAlignment="Left"
+                                    CornerRadius="1.5" Background="Transparent" Margin="-16,-11,0,-11"/>
                             <ContentPresenter Margin="0,0,10,0"
                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center"/>
@@ -898,8 +898,8 @@
                     <Border x:Name="NavBorder" Background="{DynamicResource SidebarHoverBrush}" CornerRadius="3"
                             Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}">
                         <Grid>
-                            <Border Width="3" HorizontalAlignment="Right" CornerRadius="2"
-                                    Background="{DynamicResource AccentBrush}" Margin="0,6"/>
+                            <Border Width="3" HorizontalAlignment="Left" CornerRadius="1.5"
+                                    Background="{DynamicResource AccentBrush}" Margin="-16,-11,0,-11"/>
                             <ContentPresenter Margin="0,0,10,0"
                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="Center"/>
