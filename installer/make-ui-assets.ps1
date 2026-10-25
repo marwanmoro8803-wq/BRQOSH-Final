@@ -41,8 +41,9 @@ $rtf = New-Object System.Text.StringBuilder
 [void]$rtf.AppendLine('\viewkind4\uc1\f0\fs20')
 if ($ProductVersion) {
     # ‏سطرُ إصدار البرنامج في أعلى الاتفاقيّة بالمُنصِّب (للمُنصِّب فقط؛ eula.txt لا يتغيّر مع كلّ إصدار فلا يُعاد قبولُه بلا سبب).
-    $line = "إصدار البرنامج $ProductVersion · Software version $ProductVersion"
-    [void]$rtf.AppendLine("\pard\rtlpar\qr\b $(ConvertTo-RtfText $line)\b0\par\pard\par")
+    $line = "إصدار البرنامج $ProductVersion"
+    [void]$rtf.AppendLine("\pard\rtlpar\qr\b $(ConvertTo-RtfText $line)\b0\par")
+    [void]$rtf.AppendLine("\pard\ltrpar\ql\b Software version $ProductVersion\b0\par\pard\par")
 }
 $arabic = [regex]'[؀-ۿ]'
 foreach ($line in $eula) {
@@ -51,7 +52,7 @@ foreach ($line in $eula) {
     $dir = if ($arabic.IsMatch($line)) { '\rtlpar\qr' } else { '\ltrpar\ql' }
     $weight = if ($isHeading) { '\b' } else { '' }
     $off = if ($isHeading) { '\b0' } else { '' }
-    [void]$rtf.AppendLine("\pard$dir$weight $(ConvertTo-RtfText $line)$off\par")
+    [void]$rtf.AppendLine("\pard\rtlpar\qr\b $(ConvertTo-RtfText $line)\b0\par")
 }
 [void]$rtf.AppendLine('}')
 [System.IO.File]::WriteAllText((Join-Path $OutDir 'license.rtf'), $rtf.ToString(), [System.Text.Encoding]::ASCII)

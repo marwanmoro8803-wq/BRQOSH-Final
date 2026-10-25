@@ -97,6 +97,20 @@ public class TheInstallerCarriesItsRuntimeAndShowsItsWizardTests
     }
 
     [Fact]
+    public void RemovingFromWindowsApps_AlsoAsksAboutTheData()
+    {
+        // ‏«إزالة» في إعدادات ويندوز = `msiexec /x` فتتخطّى MaintenanceTypeDlg؛ فسؤالُ البيانات يُعرض من تسلسل واجهة التنصيب نفسِه لا من زرٍّ فيها.
+        var show = Doc("ui.wxs").Descendants(Wix + "Show").Single(s => (string?)s.Attribute("Dialog") == "UninstallDataDlg");
+        var condition = (string)show.Attribute("Condition")!;
+        Assert.Contains("REMOVE=\"ALL\"", condition, StringComparison.Ordinal);
+        Assert.Contains("Installed", condition, StringComparison.Ordinal);
+        Assert.Equal("InstallUISequence", show.Parent!.Name.LocalName);
+
+        var mode = Doc("ui.wxs").Descendants(Wix + "SetProperty").Single(s => (string?)s.Attribute("Id") == "WixUI_InstallMode");
+        Assert.Equal("Remove", (string?)mode.Attribute("Value"));
+    }
+
+    [Fact]
     public void TheRemoveFlowAsksAboutDataWithKeepAsTheDefault()
     {
         var ui = Doc("ui.wxs");

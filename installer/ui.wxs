@@ -16,7 +16,7 @@
     <!-- مجلّدُ البيانات: ‏`USERDATAPATH` قابلٌ للتجاوز (للاختبار) وإلا فمجلّدُ APPDATA للمستخدم الجاري. -->
     <SetProperty Id="USERDATAPATH" Value="[AppDataFolder]BRQOSH" Before="CostFinalize" Sequence="both" Condition="NOT USERDATAPATH" />
 
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="شغّل BRQOSH الآن / Launch BRQOSH now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="شغّل البرنامج الآن — Launch BRQOSH now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <Property Id="WixShellExecTarget" Value="[INSTALLFOLDER]Brqosh.Desktop.exe" />
     <CustomAction Id="LaunchApplication" DllEntry="WixShellExec" BinaryRef="Wix4UtilCA_X64" Impersonate="yes" Return="ignore" />
@@ -64,6 +64,18 @@
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="UninstallDataDlg" Order="3"
                Condition="WixUI_InstallMode = &quot;Remove&quot;" />
     </UI>
+
+    <!--
+      (الإزالةُ من «التطبيقات» تمرّ بسؤال البيانات) ‏**كشفها اختبارُ جهازٍ نظيف**: «إزالة» في إعدادات ويندوز تشغّل `msiexec /x` فتتخطّى `MaintenanceTypeDlg`
+      ‏ويظهر صندوقُ نظامٍ إنجليزيٌّ «Are you sure...» بلا سؤال البيانات — فلا يُسأل المستخدمُ إلا إن فتح الحزمةَ نفسَها. ‏الآن تظهر UninstallDataDlg أوّلاً
+      ‏في كلّ إزالةٍ كاملةٍ، ويُضبط `WixUI_InstallMode=Remove` قبلها فتعرض صفحةُ التأكيد «إزالة» لا «تثبيت».
+    -->
+    <SetProperty Id="WixUI_InstallMode" Value="Remove" Before="UninstallDataDlg" Sequence="ui"
+                 Condition="Installed AND REMOVE=&quot;ALL&quot; AND NOT RESUME AND NOT PATCH" />
+    <InstallUISequence>
+      <Show Dialog="UninstallDataDlg" After="CostFinalize"
+            Condition="Installed AND REMOVE=&quot;ALL&quot; AND NOT RESUME AND NOT PATCH" />
+    </InstallUISequence>
 
     <!--
       حذفُ البيانات: إجراءٌ مؤجَّلٌ بلا انتحال (يعمل بصلاحيّة النظام فيصل إلى مجلّد المستخدم) على `cmd /c rmdir /s /q` للمسار وحدَه، لا يُنفَّذ

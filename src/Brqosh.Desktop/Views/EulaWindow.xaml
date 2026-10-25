@@ -20,8 +20,10 @@
                     <Button x:Name="DeclineButton" Content="لا أوافق" Style="{StaticResource SecondaryButton}" Padding="24,8" Click="OnDecline"/>
                 </StackPanel>
             </StackPanel>
-            <TextBox x:Name="TextBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                     Style="{StaticResource AppTextBox}" FontSize="13"/>
+            <!-- الاتفاقيّةُ فقراتٌ لكلٍّ اتجاهُها: العربيّةُ RTL والإنجليزيّةُ LTR — في TextBox واحدٍ يُقلب ترتيبُ الجمل الإنجليزيّة وتقع علاماتُ ترقيمها في الجهة الخطأ. -->
+            <RichTextBox x:Name="EulaBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto"
+                         Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                         Padding="12" FontSize="13"/>
         </DockPanel>
     </Border>
 </Window>
