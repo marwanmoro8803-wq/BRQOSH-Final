@@ -1607,6 +1607,63 @@
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
+    <!-- بطاقةُ المستخدم أسفل القائمة الجانبيّة زرٌّ يفتح قائمةَ المستخدم (الإعدادات والدعم): تظليلٌ نحاسيٌّ عند المرور والتركيز. -->
+    <Style x:Key="UserCardButton" TargetType="Button">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource AppFocusVisual}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{DynamicResource SidebarHoverBrush}" CornerRadius="4"
+                            BorderBrush="Transparent" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- رأسُ قسمٍ داخل قائمة المستخدم: نصٌّ لا يُنقر ولا يُظلَّل (عنصرُ قائمةٍ معطَّلٌ بقالبٍ بلا تفاعل). -->
+    <Style x:Key="UserMenuSectionHeader" TargetType="MenuItem">
+        <Setter Property="IsEnabled" Value="False"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <TextBlock Text="{TemplateBinding Header}" Margin="14,10,14,3" FontSize="11" FontWeight="Bold"
+                               Foreground="{DynamicResource TextMutedBrush}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- عنوانُ خانة «الإعدادات» أعلى قائمة المستخدم: أكبرُ من رؤوس الأقسام وبخطٍّ نحاسيٍّ تحته. -->
+    <Style x:Key="UserMenuTitle" TargetType="MenuItem">
+        <Setter Property="IsEnabled" Value="False"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,2" Margin="14,10,14,2" Padding="0,0,0,6">
+                        <TextBlock Text="{TemplateBinding Header}" FontSize="14" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ═══ Luxury Ecosystem — Glass · Charts · AI · Executive ═══ -->
     <Style x:Key="TabularText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FigureFont}"/>

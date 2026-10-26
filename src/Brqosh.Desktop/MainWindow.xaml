@@ -68,21 +68,28 @@
                         <StackPanel x:Name="NavPanel"/>
                     </ScrollViewer>
 
-                    <!-- بطاقة المستخدم السفلية -->
-                    <Border Grid.Row="2" Background="{DynamicResource SidebarHoverBrush}"
-                            CornerRadius="4" Margin="12,0,12,14" Padding="12,10">
+                    <!-- بطاقة المستخدم السفلية — زرٌّ يفتح قائمةَ المستخدم: «الإعدادات» كلُّها في خانةٍ واحدة ثمّ الدعم -->
+                    <Button x:Name="UserCardButton" Grid.Row="2" Style="{StaticResource UserCardButton}"
+                            Margin="12,0,12,14" Padding="12,10"
+                            AutomationProperties.AutomationId="UserMenuButton"
+                            AutomationProperties.Name="قائمة المستخدم"
+                            ToolTip="الإعدادات والدعم"
+                            Click="OnUserCardClick">
                         <Grid>
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Name="UserNameText"
+                            <Path Grid.Column="0" Data="M0,4 L4,0 L8,4" Stroke="{DynamicResource SidebarMutedBrush}" StrokeThickness="1.6"
+                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                <TextBlock x:Name="UserNameText" HorizontalAlignment="Left"
                                            FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource SidebarTextBrush}"/>
-                                <TextBlock x:Name="UserRoleText"
+                                <TextBlock x:Name="UserRoleText" HorizontalAlignment="Left"
                                            FontSize="11" Foreground="{DynamicResource SidebarMutedBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <Border Grid.Column="1" Width="34" Height="34" CornerRadius="17"
+                            <Border Grid.Column="2" Width="34" Height="34" CornerRadius="17"
                                     Background="{DynamicResource AccentBrush}"
                                     VerticalAlignment="Center">
                                 <TextBlock x:Name="UserInitialText"
@@ -92,7 +99,7 @@
                                            VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
-                    </Border>
+                    </Button>
                 </Grid>
             </Border>
 
@@ -193,7 +200,8 @@
 
                             <!-- شارة المستخدم -->
                             <Border x:Name="HeaderUserBadge" Background="{DynamicResource PrimarySoftBrush}"
-                                    CornerRadius="3" Padding="12,6">
+                                    CornerRadius="3" Padding="12,6" Cursor="Hand" ToolTip="الإعدادات والدعم"
+                                    MouseLeftButtonUp="OnHeaderUserBadgeClick">
                                 <TextBlock x:Name="HeaderUserText"
                                            FontSize="12.5" FontWeight="SemiBold"
                                            Foreground="{DynamicResource PrimaryDarkBrush}"/>

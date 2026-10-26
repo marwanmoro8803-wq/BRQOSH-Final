@@ -713,11 +713,16 @@ public partial class MainWindow : Window
         _navButtons.Clear();
         _navGroups.Clear();
         _navGroupOfPage.Clear();
+        var menuPages = new Dictionary<string, NavPage>(StringComparer.Ordinal);
         foreach (var group in NavigationCatalog.ForProfile(_setup.Profile, _licensedModules))
         {
-            var visiblePages = group.Pages
+            var allowedPages = group.Pages
                 .Where(page => PermissionService.CanAccess(AppServices.CurrentUser, page.Key))
                 .ToList();
+            // (طلبُ المالك 2026-10-26) صفحاتُ الإعدادات والدعم تنتقل من القائمة الجانبيّة إلى قائمة المستخدم — بالصلاحيّة والترخيص نفسَيهما.
+            foreach (var page in allowedPages.Where(p => NavigationCatalog.IsInUserMenu(p.Key)))
+                menuPages[page.Key] = page;
+            var visiblePages = allowedPages.Where(p => !NavigationCatalog.IsInUserMenu(p.Key)).ToList();
             if (visiblePages.Count == 0)
                 continue;
 
@@ -760,6 +765,8 @@ public partial class MainWindow : Window
             _navGroups.Add(view);
         }
 
+        BuildUserMenuModel(menuPages);
+
         // ‏أوّلُ بناء: تُفتح مجموعةُ الصفحة الجارية (واللوحةُ التنفيذيّة أوّلاً) فلا تبدأ القائمةُ مطويّةً كلُّها.
         if (_openNavGroups.Count == 0)
         {
@@ -773,6 +780,144 @@ public partial class MainWindow : Window
     }
 
     /// <summary>يطبّق حالةَ الطيّ ونصَّ البحث معاً: البحثُ يفتح المطابقَ ويخفي ما سواه، وفراغُه يعيد حالةَ الطيّ.</summary>
+    private const string SettingsGroupKey = "__settings";
+
+    private readonly List<(SettingsSection Section, List<(NavPage Page, string Title)> Items)> _settingsMenu = [];
+    private (NavPage Page, string Title)? _supportMenuItem;
+
+    /// <summary>
+    /// نموذجُ قائمة المستخدم من الصفحات المسموحة: أقسامُ الإعدادات بترتيب الكتالوج، ثمّ «الدعم والشكاوى». ولأنّ هذه الصفحاتِ خرجت من القائمة الجانبيّة فتُبنى لها
+    /// مجموعةٌ مخفيّةٌ تظهر <b>وقتَ البحث وحده</b> (Ctrl+K) فلا يضيع الوصولُ إليها بالكتابة.
+    /// </summary>
+    private void BuildUserMenuModel(Dictionary<string, NavPage> menuPages)
+    {
+        _settingsMenu.Clear();
+        _supportMenuItem = null;
+
+        string TitleOf(NavPage page) => LocaleManager.T(page.TitleAr, NavigationCatalog.PageTitleEn(page.Key));
+
+        foreach (var section in NavigationCatalog.SettingsSections)
+        {
+            var items = section.Keys
+                .Where(menuPages.ContainsKey)
+                .Select(k => (Page: menuPages[k], Title: TitleOf(menuPages[k])))
+                .ToList();
+            if (items.Count > 0)
+                _settingsMenu.Add((section, items));
+        }
+
+        if (menuPages.TryGetValue(NavigationCatalog.SupportKey, out var support))
+            _supportMenuItem = (support, TitleOf(support));
+
+        var searchable = _settingsMenu.SelectMany(m => m.Items).ToList();
+        if (_supportMenuItem is { } sup)
+            searchable.Add(sup);
+        if (searchable.Count == 0)
+            return;
+
+        var groupTitle = LocaleManager.T("الإعدادات", NavigationCatalog.GroupTitleEn("الإعدادات"));
+        var header = new System.Windows.Controls.Primitives.ToggleButton
+        {
+            Style = (Style)FindResource("NavGroupToggle"),
+            Content = groupTitle.ToUpperInvariant(),
+            Visibility = Visibility.Collapsed,
+        };
+        AutomationProperties.SetName(header, groupTitle);
+        var body = new StackPanel { Visibility = Visibility.Collapsed };
+        var view = new NavGroupView
+        {
+            Key = SettingsGroupKey,
+            TitleAr = "الإعدادات",
+            Header = header,
+            Body = body,
+            Items = [],
+        };
+        foreach (var (page, title) in searchable)
+        {
+            var button = new Button
+            {
+                Style = (Style)FindResource("NavItem"),
+                Content = NavIconFactory.BuildContent(this, page.Key, title),
+                Tag = page,
+                Visibility = Visibility.Collapsed,
+            };
+            AutomationProperties.SetName(button, title);
+            AutomationProperties.SetAutomationId(button, $"Nav_{page.Key}");
+            var captured = title;
+            var key = page.Key;
+            button.Click += (_, _) => { NavSearchBox.Clear(); Navigate(key, captured); };
+            body.Children.Add(button);
+            view.Items.Add((page, title, button));
+            _navButtons[page.Key] = button;
+            _navGroupOfPage[page.Key] = view;
+        }
+
+        NavPanel.Children.Add(header);
+        NavPanel.Children.Add(body);
+        _navGroups.Add(view);
+    }
+
+    private void OnUserCardClick(object sender, RoutedEventArgs e) =>
+        OpenUserMenu(UserCardButton, System.Windows.Controls.Primitives.PlacementMode.Top);
+
+    private void OnHeaderUserBadgeClick(object sender, MouseButtonEventArgs e)
+    {
+        OpenUserMenu(HeaderUserBadge, System.Windows.Controls.Primitives.PlacementMode.Bottom);
+        e.Handled = true;
+    }
+
+    /// <summary>قائمةُ المستخدم: «الإعدادات» في خانةٍ واحدةٍ بأقسامها، ثمّ «الدعم والشكاوى». تُبنى عند الفتح فتتبع اللغةَ والصلاحيّةَ الجاريتين.</summary>
+    internal ContextMenu BuildUserMenu()
+    {
+        var menu = new ContextMenu { MinWidth = 260, FlowDirection = FlowDirection };
+        if (_settingsMenu.Count > 0)
+        {
+            menu.Items.Add(new MenuItem
+            {
+                Header = LocaleManager.T("الإعدادات", NavigationCatalog.GroupTitleEn("الإعدادات")),
+                Style = (Style)FindResource("UserMenuTitle"),
+            });
+            foreach (var (section, items) in _settingsMenu)
+            {
+                menu.Items.Add(new MenuItem
+                {
+                    Header = LocaleManager.T(section.TitleAr, section.TitleEn),
+                    Style = (Style)FindResource("UserMenuSectionHeader"),
+                });
+                foreach (var (page, title) in items)
+                    menu.Items.Add(MenuEntry(page, title));
+            }
+        }
+
+        if (_supportMenuItem is { } support)
+        {
+            if (menu.Items.Count > 0)
+                menu.Items.Add(new Separator());
+            menu.Items.Add(MenuEntry(support.Page, support.Title));
+        }
+
+        return menu;
+    }
+
+    private MenuItem MenuEntry(NavPage page, string title)
+    {
+        var item = new MenuItem { Header = title, Tag = page.Key };
+        AutomationProperties.SetAutomationId(item, $"UserMenu_{page.Key}");
+        var key = page.Key;
+        item.Click += (_, _) => Navigate(key, title);
+        return item;
+    }
+
+    private void OpenUserMenu(FrameworkElement target, System.Windows.Controls.Primitives.PlacementMode placement)
+    {
+        var menu = BuildUserMenu();
+        if (menu.Items.Count == 0)
+            return;
+        menu.PlacementTarget = target;
+        menu.Placement = placement;
+        menu.IsOpen = true;
+    }
+
     private void ApplyNavFilter()
     {
         var query = NavSearchBox.Text.Trim();
@@ -790,7 +935,10 @@ public partial class MainWindow : Window
                 if (hit) matches++;
             }
 
-            var open = searching || KeepNavOpenForAutomation || _openNavGroups.Contains(group.Key);
+            var isSettings = group.Key == SettingsGroupKey;
+            var open = isSettings
+                ? searching || KeepNavOpenForAutomation
+                : searching || KeepNavOpenForAutomation || _openNavGroups.Contains(group.Key);
             group.Header.IsChecked = open;
             group.Header.Visibility = matches > 0 ? Visibility.Visible : Visibility.Collapsed;
             group.Header.IsEnabled = !searching;

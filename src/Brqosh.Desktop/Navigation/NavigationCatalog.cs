@@ -9,6 +9,9 @@ namespace Brqosh.Desktop.Navigation;
 public record NavPage(string Key, string TitleAr, ModuleKey? Requires = null);
 public record NavGroup(string TitleAr, ModuleKey Module, IReadOnlyList<NavPage> Pages);
 
+/// <summary>قسمٌ في «الإعدادات» (قائمة المستخدم): عنوانٌ بلغتين ومفاتيحُ صفحاتٍ من <see cref="NavigationCatalog.Groups"/> — لا نسخةَ ثانيةٌ من الصفحات.</summary>
+public record SettingsSection(string TitleAr, string TitleEn, IReadOnlyList<string> Keys);
+
 /// <summary>
 /// قوائم التنقل حسب الوحدة — تُعرض فقط قوائم الوحدات المفعّلة لنظام العمل المختار.
 /// أيقونات التنقل: اختصارات Monogram عبر <see cref="NavIconFactory"/> (بدون emoji).
@@ -208,6 +211,26 @@ public static class NavigationCatalog
         ]),
     ];
 
+    /// <summary>
+    /// (طلبُ المالك 2026-10-26) <b>كلُّ ما يخصّ الإعدادات في خانةٍ واحدة</b> تُفتح من قائمة المستخدم أسفل القائمة الجانبيّة — وتُخرَج هذه الصفحاتُ من القائمة الجانبيّة.
+    /// الأقسامُ بيانات: صفحةٌ جديدةٌ للإعدادات تُضاف هنا بمفتاحها فتظهر في القائمة؛ وتبقى الصفحاتُ في <see cref="Groups"/> فيبقى حجبُ الترخيص والصلاحيات كما هو.
+    /// </summary>
+    public static IReadOnlyList<SettingsSection> SettingsSections { get; } =
+    [
+        new("المنشأة", "Company", ["company_settings", "organizations", "company_groups", "branches"]),
+        new("الامتثال والرواتب", "Compliance & payroll", ["zatca_settings", "gosi_policy"]),
+        new("المستخدمون والنظام", "Users & system", ["users", "backup", "data_migration", "diagnostics", "pricing_plans"]),
+        new("البرنامج", "Program", ["preferences"]),
+    ];
+
+    /// <summary>«الدعم والشكاوى» بند مستقلٌّ في قائمة المستخدم (متاحٌ لكلّ دور) — ليس إعداداً.</summary>
+    public const string SupportKey = "customer_support";
+
+    /// <summary>مفتاحُ كلِّ صفحةٍ تنتقل من القائمة الجانبيّة إلى قائمة المستخدم.</summary>
+    public static bool IsInUserMenu(string pageKey) =>
+        string.Equals(pageKey, SupportKey, StringComparison.Ordinal)
+        || SettingsSections.Any(s => s.Keys.Contains(pageKey, StringComparer.Ordinal));
+
     /// <param name="licensed">
     /// ‏(ح-١٦٤ · security-licensing-tenancy#2) الوحداتُ التي يمنحها الترخيص — و<c>null</c> لا يحصر.
     /// ‏فالقائمةُ لنظام العمل <b>وللترخيص معاً</b> (<see cref="ModuleCatalog.RestrictToLicense"/>).
@@ -361,6 +384,7 @@ public static class NavigationCatalog
     private static readonly Dictionary<string, string> GroupTitlesEn = new()
     {
         ["المركز التنفيذي"] = "Executive",
+        ["الإعدادات"] = "Settings",
         ["المحاسبة العامة"] = "General Ledger",
         ["المشاريع والمقاولات"] = "Projects & Construction",
         ["الإنتاج والتصنيع"] = "Manufacturing",

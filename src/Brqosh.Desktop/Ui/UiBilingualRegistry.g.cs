@@ -6,6 +6,8 @@ public static partial class UiBilingualRegistry
 {
     public static IReadOnlyDictionary<string, string> Map { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        ["الإعدادات والدعم"] = "Settings & support",
+        ["قائمة المستخدم"] = "User menu",
         ["(المستودع الافتراضي)"] = "(Default warehouse)",
         ["1 — توليد المفتاح و CSR"] = "1 — Generate key and CSR",
         ["12 حرفاً على الأقل مع حرف كبير وصغير ورقم ورمز خاص."] = "At least 12 characters, with upper and lower case, a digit and a symbol.",
