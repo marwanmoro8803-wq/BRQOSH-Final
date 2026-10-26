@@ -17,7 +17,7 @@
         </Border>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel MaxWidth="760" HorizontalAlignment="Left">
+            <StackPanel Style="{StaticResource SettingsColumn}">
 
                 <!-- المظهر واللغة — يُحفظان لمستخدم ويندوز هذا ويعودان عند كلّ تشغيل. -->
                 <Border Style="{StaticResource ContentCard}" Padding="28" Margin="0,0,0,12">

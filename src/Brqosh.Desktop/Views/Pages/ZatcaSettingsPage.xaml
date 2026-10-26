@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,0,24" MaxWidth="720">
+        <StackPanel Style="{StaticResource SettingsColumn}" Margin="0,0,0,24">
             <Border Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock Text="إعدادات الفوترة الإلكترونية (ZATCA)" Style="{StaticResource PageTitleText}"/>

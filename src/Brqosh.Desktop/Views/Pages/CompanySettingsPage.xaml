@@ -16,7 +16,7 @@
             </StackPanel>
         </Border>
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Border Style="{StaticResource ContentCard}" Padding="32" MaxWidth="720" HorizontalAlignment="Left" Margin="0,0,0,12">
+            <Border Style="{StaticResource ContentCard}" Padding="32" MaxWidth="{StaticResource SettingsColumnWidth}" HorizontalAlignment="Center" Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock Text="الهوية والطباعة" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
 

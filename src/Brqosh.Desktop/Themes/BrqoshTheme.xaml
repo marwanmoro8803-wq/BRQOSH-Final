@@ -1600,6 +1600,13 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
     </Style>
 
+    <!-- قالبُ صفحات الإعدادات: عمودٌ واحدٌ بعرضٍ واحدٍ في وسط الصفحة (كان ٧٢٠ و٧٦٠ و٨٨٠ مرّةً يميناً ومرّةً يساراً) — قِيس بتصوير الصفحات الحقيقيّة. -->
+    <sys:Double x:Key="SettingsColumnWidth">760</sys:Double>
+    <Style x:Key="SettingsColumn" TargetType="StackPanel">
+        <Setter Property="MaxWidth" Value="{StaticResource SettingsColumnWidth}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
     <!-- ═══ Luxury Ecosystem — Glass · Charts · AI · Executive ═══ -->
     <Style x:Key="TabularText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FigureFont}"/>

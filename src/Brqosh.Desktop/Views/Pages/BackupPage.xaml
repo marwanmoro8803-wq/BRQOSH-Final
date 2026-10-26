@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24" MaxWidth="880" HorizontalAlignment="Right">
+        <StackPanel Style="{StaticResource SettingsColumn}" Margin="24">
 
             <TextBlock Text="النسخ الاحتياطي والاستعادة" Style="{StaticResource PageTitleText}"/>
             <TextBlock Style="{StaticResource FieldLabel}" TextWrapping="Wrap" Margin="0,4,0,20"
