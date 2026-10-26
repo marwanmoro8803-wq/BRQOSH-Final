@@ -21,6 +21,8 @@
     <Color x:Key="AccentInkColor">#7A4F23</Color>
     <Color x:Key="RuleStrongColor">#8F8676</Color>
     <Color x:Key="SidebarTextColor">#E9DCC9</Color>
+    <!-- لونُ شعار العلامة على القائمة الجانبيّة — كريميُّ المالك ثابتٌ في الثيمين، ويصير لونَ النصّ في «التباين العالي» فلا يختفي على خلفيّةٍ بيضاء. -->
+    <Color x:Key="BrandMarkColor">#F7EFE4</Color>
     <Color x:Key="SidebarMutedColor">#BDA98C</Color>
     <Color x:Key="PrimarySoftColor">#EFE3D2</Color>
     <Color x:Key="AccentColor">#B07A3B</Color>
@@ -63,6 +65,7 @@
     <SolidColorBrush x:Key="AccentInkBrush"     Color="{StaticResource AccentInkColor}"/>
     <SolidColorBrush x:Key="RuleStrongBrush"    Color="{StaticResource RuleStrongColor}"/>
     <SolidColorBrush x:Key="SidebarTextBrush"   Color="{StaticResource SidebarTextColor}"/>
+    <SolidColorBrush x:Key="BrandMarkBrush"     Color="{StaticResource BrandMarkColor}"/>
     <SolidColorBrush x:Key="SidebarMutedBrush"  Color="{StaticResource SidebarMutedColor}"/>
     <SolidColorBrush x:Key="PrimarySoftBrush"   Color="{StaticResource PrimarySoftColor}"/>
     <SolidColorBrush x:Key="AccentBrush"        Color="{StaticResource AccentColor}"/>

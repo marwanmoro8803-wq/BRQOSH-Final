@@ -49,7 +49,7 @@ public static class ThemeManager
         foreach (var k in new[] { "Background", "Surface", "GlassSurface", "PrimarySoft", "RowAlt", "RowHover", "StatusBar", "Sidebar", "SidebarMid", "SidebarHover",
                                   "SuccessSoft", "DangerSoft", "WarningSoft", "InfoSoft", "DisabledBackground" })
             SetColor(r, k + "Color", k + "Brush", window);
-        foreach (var k in new[] { "TextPrimary", "TextSecondary", "StatusBarText", "SidebarText", "Border", "BorderLight", "RuleStrong", "ScrollThumb", "Success", "Danger", "Warning", "Info", "SuccessDark",
+        foreach (var k in new[] { "TextPrimary", "TextSecondary", "StatusBarText", "SidebarText", "BrandMark", "Border", "BorderLight", "RuleStrong", "ScrollThumb", "Success", "Danger", "Warning", "Info", "SuccessDark",
                                   "AccentInk" })
             SetColor(r, k + "Color", k + "Brush", text);
         foreach (var k in new[] { "TextMuted", "SidebarMuted", "DisabledForeground" })
@@ -104,6 +104,7 @@ public static class ThemeManager
         SetColor(r, "SidebarMidColor", "SidebarMidBrush", "#0D0B08");
         SetColor(r, "SidebarHoverColor", "SidebarHoverBrush", "#1D1710");
         SetColor(r, "SidebarTextColor", "SidebarTextBrush", "#E9DCC9");
+        SetColor(r, "BrandMarkColor", "BrandMarkBrush", "#F7EFE4");
         SetColor(r, "SidebarMutedColor", "SidebarMutedBrush", "#BDA98C");
         SetColor(r, "RowAltColor", "RowAltBrush", "#19150F");
         SetColor(r, "RowHoverColor", "RowHoverBrush", "#2A2318");
@@ -149,6 +150,7 @@ public static class ThemeManager
         SetColor(r, "SidebarMidColor", "SidebarMidBrush", "#2B1E12");
         SetColor(r, "SidebarHoverColor", "SidebarHoverBrush", "#3A2A1A");
         SetColor(r, "SidebarTextColor", "SidebarTextBrush", "#E9DCC9");
+        SetColor(r, "BrandMarkColor", "BrandMarkBrush", "#F7EFE4");
         SetColor(r, "SidebarMutedColor", "SidebarMutedBrush", "#BDA98C");
         SetColor(r, "RowAltColor", "RowAltBrush", "#F9F6EF");
         SetColor(r, "RowHoverColor", "RowHoverBrush", "#F0E6D6");

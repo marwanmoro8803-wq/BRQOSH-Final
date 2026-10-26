@@ -42,7 +42,8 @@
                                 Background="{DynamicResource AccentBrush}"/>
 
                         <!-- اسم النظام -->
-                        <controls:BrandLogo MarkHeight="48" NameSize="15" HorizontalAlignment="Center"/>
+                        <controls:BrandLogo MarkHeight="48" NameSize="15" HorizontalAlignment="Center"
+                                            MarkBrush="{DynamicResource BrandMarkBrush}" NameBrush="{DynamicResource BrandMarkBrush}"/>
                         <TextBlock Text="نظام تخطيط موارد المؤسسة"
                                    FontSize="11.5" Foreground="{DynamicResource SidebarMutedBrush}" Margin="0,6,0,0"
                                    HorizontalAlignment="Center"/>
