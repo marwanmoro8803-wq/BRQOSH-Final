@@ -13,6 +13,16 @@
                    TextWrapping="Wrap" Margin="0,0,0,12"
                    Visibility="Collapsed"/>
 
+        <CheckBox x:Name="AutoDatabaseBox"
+                  Content="إعدادٌ تلقائيّ (موصى به) — قاعدة بيانات مدمجة على هذا الجهاز بلا أيّ إدخال"
+                  IsChecked="True" Visibility="Collapsed"
+                  Margin="0,0,0,12"
+                  Checked="OnDatabaseModeChanged" Unchecked="OnDatabaseModeChanged"/>
+        <TextBlock x:Name="AutoDatabaseHint"
+                   Text="يُجهَّز كلّ شيء داخليّاً: الخادم وكلمة المرور (عشوائيّة محميّة) والقاعدة. للمنشآت التي لها خادمٌ خاصّ: ألغِ التأشير وأدخل بياناته."
+                   FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                   TextWrapping="Wrap" Margin="0,0,0,12" Visibility="Collapsed"/>
+
         <CheckBox x:Name="UseSqliteBox"
                   Content="قاعدة محلية مؤقتة (SQLite) — للتطوير والتجربة فقط"
                   Margin="0,0,0,12"

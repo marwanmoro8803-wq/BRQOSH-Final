@@ -29,6 +29,9 @@ public partial class DatabaseConnectionPanel : UserControl
     /// <summary>هل يلزم PostgreSQL — إنتاجاً أو باختيار المستخدم.</summary>
     public bool RequiresPostgres => _isProduction || UseSqliteBox.IsChecked != true;
 
+    /// <summary>(إعدادُ القاعدة التلقائيّ) هل اختار المستخدمُ القاعدةَ المدمجةَ — وهي الافتراضُ متى شُحنت.</summary>
+    public bool UseEmbedded => EmbeddedPostgres.IsAvailable && AutoDatabaseBox.IsChecked == true;
+
     /// <summary>
     /// يُهيّئ اللوحة: يخفي خيارَ SQLite في الإنتاج، ويملأ الحقولَ من ملفٍّ قائمٍ إن وُجد.
     /// وملفٌّ لا يُفكّ يُعرض سببُه هنا ولا يُسقط الشاشة — <b>فهذه الشاشةُ نفسُها هي علاجُه</b>.
@@ -87,6 +90,12 @@ public partial class DatabaseConnectionPanel : UserControl
             UseSqliteBox.IsChecked = !isProduction;
         }
 
+        // ‏(إعدادُ القاعدة التلقائيّ) ‏خادمٌ مدمجٌ مشحونٌ ولا اتصالَ قائماً ⟵ الإعدادُ التلقائيُّ هو الافتراض. واتصالٌ قائمٌ يبقى كما هو.
+        var hasExisting = _existingPostgres is not null;
+        AutoDatabaseBox.Visibility = AutoDatabaseHint.Visibility =
+            EmbeddedPostgres.IsAvailable ? Visibility.Visible : Visibility.Collapsed;
+        AutoDatabaseBox.IsChecked = EmbeddedPostgres.IsAvailable && !hasExisting;
+
         ApplyDatabaseMode();
     }
 
@@ -96,7 +105,9 @@ public partial class DatabaseConnectionPanel : UserControl
     {
         if (PostgresPanel is null || UseSqliteBox is null)
             return;
-        PostgresPanel.Visibility = UseSqliteBox.IsChecked == true ? Visibility.Collapsed : Visibility.Visible;
+        var auto = AutoDatabaseBox?.IsChecked == true && EmbeddedPostgres.IsAvailable;
+        UseSqliteBox.IsEnabled = !auto;
+        PostgresPanel.Visibility = UseSqliteBox.IsChecked == true || auto ? Visibility.Collapsed : Visibility.Visible;
     }
 
     /// <summary>
@@ -240,6 +251,14 @@ public partial class DatabaseConnectionPanel : UserControl
     /// </summary>
     public async Task<string?> ValidateProbeAndSaveAsync()
     {
+        if (UseEmbedded)
+        {
+            ShowStatus(LocaleManager.T("جارٍ تجهيز قاعدة البيانات…", "Preparing the database…"), ok: null);
+            var outcome = await EmbeddedPostgres.ProvisionAsync();
+            ShowStatus(outcome.Message, outcome.Ok);
+            return outcome.Ok ? null : outcome.Message;
+        }
+
         if (!RequiresPostgres)
         {
             // (CEEF-236 · م-٢٣) ‏**«لم أكتب شيئاً» لا يجوز أن يُقرأ «حُفظ».**

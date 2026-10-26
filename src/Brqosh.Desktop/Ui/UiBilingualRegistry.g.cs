@@ -7,6 +7,8 @@ public static partial class UiBilingualRegistry
     public static IReadOnlyDictionary<string, string> Map { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["الإعدادات والدعم"] = "Settings & support",
+        ["إعدادٌ تلقائيّ (موصى به) — قاعدة بيانات مدمجة على هذا الجهاز بلا أيّ إدخال"] = "Automatic setup (recommended) — a built-in database on this computer, no input needed",
+        ["يُجهَّز كلّ شيء داخليّاً: الخادم وكلمة المرور (عشوائيّة محميّة) والقاعدة. للمنشآت التي لها خادمٌ خاصّ: ألغِ التأشير وأدخل بياناته."] = "Everything is prepared internally: the server, a random protected password and the database. For companies with their own server: untick this and enter its details.",
         ["قائمة المستخدم"] = "User menu",
         ["(المستودع الافتراضي)"] = "(Default warehouse)",
         ["1 — توليد المفتاح و CSR"] = "1 — Generate key and CSR",

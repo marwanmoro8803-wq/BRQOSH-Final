@@ -191,6 +191,28 @@ foreach ($f in $PgNotices) { Copy-Item (Join-Path (Split-Path $PgBin -Parent) $f
 Copy-Item (Join-Path $env:SystemRoot 'System32\vcruntime140.dll') $PgToolsDir -Force
 Write-Host "أدوات النسخ: $pgVersion ⟵ $PgToolsDir" -ForegroundColor Cyan
 
+# ‏(إعدادُ القاعدة التلقائيّ) ‏**خادمُ PostgreSQL مُصغَّرٌ يُشحن تحت `pgserver`** ليُهيّئه البرنامجُ ويُشغّله بنفسه (`EmbeddedPostgres`) فلا يُطلب من
+# ‏المستخدم تثبيتُ خادمٍ ولا مستخدمٌ ولا كلمةُ مرور. من تثبيت PostgreSQL على جهاز البناء (ترخيصُه يسمح بإعادة التوزيع): `bin` بلا مكتبات pgAdmin
+# ‏(wx*)، و`lib` بلا ملفّات `.lib`، و`share` بلا `locale`/`doc` (الرسائلُ إنجليزيّةٌ من الخادم؛ والواجهةُ عربيّة من التطبيق). والإشعاراتُ مع الثنائيّات.
+$PgRoot = Split-Path $PgBin -Parent
+$PgServerDir = Join-Path $PublishDir "pgserver"
+if (Test-Path $PgServerDir) { Remove-Item $PgServerDir -Recurse -Force }
+New-Item -ItemType Directory -Force (Join-Path $PgServerDir "bin") | Out-Null
+foreach ($exe in 'postgres.exe', 'initdb.exe', 'pg_ctl.exe') {
+    if (-not (Test-Path (Join-Path $PgBin $exe))) { Write-Host "الخادمُ المدمج ناقص: $exe في $PgBin" -ForegroundColor Red; exit 1 }
+}
+Get-ChildItem $PgBin -File | Where-Object { $_.Extension -in '.exe', '.dll' -and $_.Name -notlike 'wx*' -and $_.Name -notin 'pgAdmin4.exe', 'stackbuilder.exe' } |
+    Where-Object { $_.Name -in 'postgres.exe', 'initdb.exe', 'pg_ctl.exe' -or $_.Extension -eq '.dll' } |
+    ForEach-Object { Copy-Item $_.FullName (Join-Path $PgServerDir "bin") -Force }
+Copy-Item (Join-Path $env:SystemRoot 'System32cruntime140.dll') (Join-Path $PgServerDir "bin") -Force
+Copy-Item (Join-Path $env:SystemRoot 'System32cruntime140_1.dll') (Join-Path $PgServerDir "bin") -Force -ErrorAction SilentlyContinue
+robocopy (Join-Path $PgRoot 'lib') (Join-Path $PgServerDir 'lib') /E /XF *.lib /NFL /NDL /NJH /NJS /NP | Out-Null
+robocopy (Join-Path $PgRoot 'share') (Join-Path $PgServerDir 'share') /E /XD locale doc /NFL /NDL /NJH /NJS /NP | Out-Null
+if ($LASTEXITCODE -ge 8) { Write-Host "نسخُ ملفّات الخادم المدمج أخفق (robocopy=$LASTEXITCODE)." -ForegroundColor Red; exit 1 }
+$global:LASTEXITCODE = 0
+foreach ($f in $PgNotices) { Copy-Item (Join-Path $PgRoot $f) $PgServerDir -Force }
+Write-Host ("الخادمُ المدمج: {0:N0} م.ب ⟵ {1}" -f ((Get-ChildItem $PgServerDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB), $PgServerDir) -ForegroundColor Cyan
+
 # (CEEF-236 · ر-ك · م-٣٢) ‏**‏-arch x64 — والحزمةُ كانت تُبنى ٣٢-بت بالافتراض.**
 #
 # ‏`wix build` يبني x86 ما لم يُقَل غيرُه، **وحزمةٌ ٣٢-بت يُعيد MSI فيها توجيهَ

@@ -94,6 +94,13 @@ public partial class App : System.Windows.Application
         }
     }
 
+    /// <summary>(إعدادُ القاعدة التلقائيّ) عند الخروج يُوقَف الخادمُ المدمجُ إيقافاً سريعاً آمناً — لا يبقى عملٌ خلفيٌّ بعد إغلاق البرنامج.</summary>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        Brqosh.Infrastructure.Persistence.EmbeddedPostgres.Stop();
+        base.OnExit(e);
+    }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -229,6 +236,10 @@ public partial class App : System.Windows.Application
                 string? problem;
                 try
                 {
+                    // ‏(إعدادُ القاعدة التلقائيّ) ‏القاعدةُ المدمجةُ تُشغَّل قبل قراءة الاتصال — لا أثرَ لها إن لم تكن معدّة.
+                    var embedded = await Brqosh.Infrastructure.Persistence.EmbeddedPostgres.EnsureRunningAsync();
+                    if (!embedded.Ok)
+                        throw new InvalidOperationException(embedded.Message);
                     AppServices.LoadDatabaseConfig();
                     await AppServices.EnsureDatabaseReachableAsync();
                     // (CEEF-236 · م-٢٩) ‏**والسؤالُ يُطرح على كلّ تركيبٍ قائم، لا على المُصلَح وحدَه.**
