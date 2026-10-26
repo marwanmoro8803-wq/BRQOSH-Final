@@ -204,8 +204,8 @@ foreach ($exe in 'postgres.exe', 'initdb.exe', 'pg_ctl.exe') {
 Get-ChildItem $PgBin -File | Where-Object { $_.Extension -in '.exe', '.dll' -and $_.Name -notlike 'wx*' -and $_.Name -notin 'pgAdmin4.exe', 'stackbuilder.exe' } |
     Where-Object { $_.Name -in 'postgres.exe', 'initdb.exe', 'pg_ctl.exe' -or $_.Extension -eq '.dll' } |
     ForEach-Object { Copy-Item $_.FullName (Join-Path $PgServerDir "bin") -Force }
-Copy-Item (Join-Path $env:SystemRoot 'System32cruntime140.dll') (Join-Path $PgServerDir "bin") -Force
-Copy-Item (Join-Path $env:SystemRoot 'System32cruntime140_1.dll') (Join-Path $PgServerDir "bin") -Force -ErrorAction SilentlyContinue
+Copy-Item (Join-Path $env:SystemRoot 'System32\vcruntime140.dll') (Join-Path $PgServerDir "bin") -Force
+Copy-Item (Join-Path $env:SystemRoot 'System32\vcruntime140_1.dll') (Join-Path $PgServerDir "bin") -Force -ErrorAction SilentlyContinue
 robocopy (Join-Path $PgRoot 'lib') (Join-Path $PgServerDir 'lib') /E /XF *.lib /NFL /NDL /NJH /NJS /NP | Out-Null
 robocopy (Join-Path $PgRoot 'share') (Join-Path $PgServerDir 'share') /E /XD locale doc /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { Write-Host "نسخُ ملفّات الخادم المدمج أخفق (robocopy=$LASTEXITCODE)." -ForegroundColor Red; exit 1 }
