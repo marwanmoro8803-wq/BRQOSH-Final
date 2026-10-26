@@ -1538,6 +1538,8 @@
 
     <Style x:Key="KpiValueText" TargetType="TextBlock">
         <Setter Property="FontFamily"  Value="{StaticResource FigureFont}"/>
+        <!-- الأرقامُ لاتينيّةٌ بخطّ الأرقام: استبدالُ الأرقام العربيّ يحوّل «.» إلى «٫» وهو غائبٌ عن الخطّ فيظهر مربّعاً (قِيس على شاشةٍ حقيقيّة). -->
+        <Setter Property="NumberSubstitution.Substitution" Value="European"/>
         <Setter Property="FontSize"    Value="26"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
         <Setter Property="Foreground"  Value="{DynamicResource TextPrimaryBrush}"/>
@@ -1587,6 +1589,7 @@
     <Style x:Key="TabularText" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource FigureFont}"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <Setter Property="NumberSubstitution.Substitution" Value="European"/>
     </Style>
 
     <Style x:Key="GlassPanel" TargetType="Border">
