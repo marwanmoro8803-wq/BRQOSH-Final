@@ -228,6 +228,10 @@ Write-Host ("الخادمُ المدمج: {0:N0} م.ب ⟵ {1}" -f ((Get-ChildIt
 $PayloadBinaries = @(Get-ChildItem $PublishDir -File |
     Where-Object { $_.Name -like 'Brqosh.*' -and $_.Extension -in '.exe', '.dll' } |
     ForEach-Object FullName)
+# ‏برنامجُ الإزالة المستقلّ (شعارٌ وسلّةُ مهملات) يُبنى من `installer/uninstaller` ويُشحن مع الحمولة ويُوقَّع معها.
+& (Join-Path $PSScriptRoot 'uninstaller\build-uninstaller.ps1') -OutDir $PublishDir | Out-Null
+if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { Write-Host "بناء برنامج الإزالة أخفق." -ForegroundColor Red; exit 1 }
+$PayloadBinaries += (Join-Path $PublishDir 'BRQOSH-Uninstall.exe')
 Invoke-BrqoshSign -Paths $PayloadBinaries -What "الحمولة"
 
 # مراجعةُ الإصدار 1.0.1: التعبيرُ لا يُقيَّم داخل وسيطِ أمرٍ أصليّ — -d BrandIcon=(Join-Path ...) كان يصل إلى wix فارغاً فلا MSI. فالمسارُ يُحسب قبل النداء.

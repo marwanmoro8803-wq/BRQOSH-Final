@@ -39,8 +39,24 @@ public static class EmbeddedPostgres
         // ‏`BRQOSH_PGSERVER` للقياس وحدَه: يُشير إلى مجلّد خادمٍ آخر (تثبيتِ PostgreSQL مثلاً) دون شحنه.
         var overridden = Environment.GetEnvironmentVariable("BRQOSH_PGSERVER");
         var root = !string.IsNullOrWhiteSpace(overridden) ? overridden : System.IO.Path.Combine(AppContext.BaseDirectory, "pgserver");
-        return File.Exists(System.IO.Path.Combine(root, "bin", "postgres.exe")) ? root : null;
+        return File.Exists(System.IO.Path.Combine(root, "bin", "postgres.exe")) ? AsciiPath(root) : null;
     }
+
+    /// <summary>
+    /// ‏PostgreSQL على ويندوز يفشل («Permission denied» مضلِّلة) حين يكون مسارُ ثنائيّاتِه بحروفٍ غيرِ لاتينيّة — كنسخةٍ محمولةٍ فُكَّت في مجلّدٍ عربيّ
+    /// ‏(قِيس). فيُستعمل المسارُ القصيرُ (8.3) ASCII إن وُجد؛ وتحت «Program Files» لا يلزم شيء.
+    /// </summary>
+    private static string AsciiPath(string path)
+    {
+        if (path.All(c => c < 128) || !OperatingSystem.IsWindows())
+            return path;
+        var buffer = new System.Text.StringBuilder(520);
+        var length = GetShortPathName(path, buffer, buffer.Capacity);
+        return length > 0 && length < buffer.Capacity ? buffer.ToString() : path;
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+    private static extern int GetShortPathName(string longPath, System.Text.StringBuilder shortPath, int bufferLength);
 
     public static bool IsAvailable => BundleRoot() is not null;
 
