@@ -167,4 +167,20 @@ public class AssistantBilingualTests : IDisposable
             $"فحوص جودة بيانات غير ثنائية ({broken.Count} من {report.Findings.Count}):\n  - " +
             string.Join("\n  - ", broken));
     }
+
+    /// <summary>عنوانُ تنبيهِ جودة البيانات في لوحة التحكم لا يحمل رمزاً خاماً بحروفٍ كبيرةٍ وشرطةٍ سفليّة («BRANCH_HQ_MISSING») — قِيس على نافذةٍ حقيقيّة.</summary>
+    [Fact]
+    public async Task InsightTitles_NeverCarryARawQualityCode()
+    {
+        var company = await SeedAsync();
+
+        var report = await Engine().AnalyzeAsync(company.Id, new DateOnly(2026, 7, 25));
+
+        var raw = new System.Text.RegularExpressions.Regex("[A-Z]{3,}_[A-Z_]+");
+        var offenders = report.Insights
+            .Where(x => raw.IsMatch(x.TitleAr) || raw.IsMatch(x.TitleEn))
+            .Select(x => $"{x.TitleAr} | {x.TitleEn}")
+            .ToList();
+        Assert.True(offenders.Count == 0, "عناوينُ تحمل رمزاً خاماً: " + string.Join(" ¦ ", offenders));
+    }
 }

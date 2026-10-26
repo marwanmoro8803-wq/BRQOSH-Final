@@ -257,9 +257,9 @@ public class FinancialIntelligenceService(
                 "DQ_" + f.Code,
                 "Risk",
                 f.Severity,
-                "جودة بيانات: " + f.Code,
+                "تنبيه جودة بيانات",
                 f.MessageAr,
-                "Data quality: " + f.Code,
+                "Data quality alert",
                 f.MessageEn));
         }
     }

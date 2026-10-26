@@ -38,6 +38,8 @@ public class EveryHostHasAProductionCallerTests
          "‏مُضيفُ التنبيهات — بلا وصلٍ تختفي رسائلُ النجاح والتحذير بلا أثر."),
         ("src/Brqosh.Desktop/Ui/WindowFit.cs", "Register",
          "‏حاصرُ النوافذ في مساحة العمل (UI-AUDIT) — بلا تسجيلٍ تعود الحواراتُ مقصوصةً على شاشة 1366×768."),
+        ("src/Brqosh.Desktop/Themes/ThemeDefaults.cs", "Register",
+         "‏لونُ النصّ الافتراضيّ للنوافذ يتبع الثيم — بلا تسجيلٍ تعود تسمياتُ الحقول سوداءَ على الخلفيّة الداكنة (تباين ١٫٢:١)."),
     ];
 
     private static string RepoRoot()
