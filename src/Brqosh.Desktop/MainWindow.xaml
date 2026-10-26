@@ -136,45 +136,55 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal"
                                     VerticalAlignment="Center">
 
-                            <TextBlock x:Name="CompanyLabel" Text="المنشأة" FontSize="12"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <ComboBox x:Name="CompanyCombo" Width="200" MinHeight="36"
-                                      Style="{StaticResource AppComboBox}"
-                                      DisplayMemberPath="Display" SelectedValuePath="Id"
-                                      SelectionChanged="OnCompanyChanged"
-                                      Margin="0,0,16,0"/>
+                            <!-- (دفتر الحبر والنحاس) المنشأةُ والفرعُ عنصرٌ واحدٌ بإطارٍ واحدٍ وفاصلٍ بينهما — كانا قائمتين متباعدتين بتسميتين. المعرّفاتُ والأحداثُ كما هي. -->
+                            <Border BorderBrush="{DynamicResource RuleStrongBrush}" BorderThickness="1" CornerRadius="3"
+                                    Background="{DynamicResource SurfaceBrush}" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="CompanyLabel" Text="المنشأة" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center" Margin="12,0,6,0"/>
+                                    <ComboBox x:Name="CompanyCombo" Width="200" MinHeight="34"
+                                              Style="{StaticResource AppComboBox}"
+                                              BorderThickness="0" Background="Transparent"
+                                              DisplayMemberPath="Display" SelectedValuePath="Id"
+                                              AutomationProperties.Name="المنشأة"
+                                              SelectionChanged="OnCompanyChanged"/>
+                                    <Border Width="1" Margin="2,6" Background="{DynamicResource RuleStrongBrush}"/>
+                                    <TextBlock x:Name="BranchLabel" Text="الفرع" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center" Margin="12,0,6,0"/>
+                                    <ComboBox x:Name="BranchCombo" Width="180" MinHeight="34"
+                                              Style="{StaticResource AppComboBox}"
+                                              BorderThickness="0" Background="Transparent"
+                                              DisplayMemberPath="Display" SelectedValuePath="Id"
+                                              AutomationProperties.Name="الفرع"
+                                              SelectionChanged="OnBranchChanged"/>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock x:Name="BranchLabel" Text="الفرع" FontSize="12"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <ComboBox x:Name="BranchCombo" Width="180" MinHeight="36"
-                                      Style="{StaticResource AppComboBox}"
-                                      DisplayMemberPath="Display" SelectedValuePath="Id"
-                                      SelectionChanged="OnBranchChanged"
-                                      Margin="0,0,16,0"/>
-
-                            <!-- زر الوضع الداكن -->
-                            <Button x:Name="LanguageToggleBtn" Content="EN"
-                                    ToolTip="تبديل اللغة / Switch language"
-                                    Style="{StaticResource GhostButton}"
-                                    MinWidth="44" MinHeight="36"
-                                    Margin="0,0,8,0"
-                                    Click="OnToggleLanguage"/>
-
-                            <Button x:Name="AiToggleBtn" Content="AI"
-                                    ToolTip="إظهار/إخفاء المساعد الذكي"
-                                    Style="{StaticResource GhostButton}"
-                                    MinWidth="44" MinHeight="36"
-                                    Margin="0,0,8,0"
-                                    Click="OnToggleAiPanel"/>
-
-                            <Button x:Name="ThemeToggleBtn" Content="داكن"
-                                    ToolTip="تبديل المظهر"
-                                    Style="{StaticResource GhostButton}"
-                                    MinWidth="52" MinHeight="36"
-                                    Margin="0,0,8,0"
-                                    Click="OnToggleTheme"/>
+                            <!-- اللغةُ والمساعدُ والمظهرُ في مجموعةٍ واحدةٍ بإطارٍ واحد -->
+                            <Border BorderBrush="{DynamicResource RuleStrongBrush}" BorderThickness="1" CornerRadius="3"
+                                    Background="{DynamicResource SurfaceBrush}" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="LanguageToggleBtn" Content="EN"
+                                            ToolTip="تبديل اللغة / Switch language"
+                                            Style="{StaticResource GhostButton}"
+                                            BorderThickness="0" MinWidth="44" MinHeight="34"
+                                            Click="OnToggleLanguage"/>
+                                    <Border Width="1" Margin="0,6" Background="{DynamicResource RuleStrongBrush}"/>
+                                    <Button x:Name="AiToggleBtn" Content="AI"
+                                            ToolTip="إظهار/إخفاء المساعد الذكي"
+                                            Style="{StaticResource GhostButton}"
+                                            BorderThickness="0" MinWidth="44" MinHeight="34"
+                                            Click="OnToggleAiPanel"/>
+                                    <Border Width="1" Margin="0,6" Background="{DynamicResource RuleStrongBrush}"/>
+                                    <Button x:Name="ThemeToggleBtn" Content="داكن"
+                                            ToolTip="تبديل المظهر"
+                                            Style="{StaticResource GhostButton}"
+                                            BorderThickness="0" MinWidth="52" MinHeight="34"
+                                            Click="OnToggleTheme"/>
+                                </StackPanel>
+                            </Border>
 
                             <!-- التاريخ الهجري/الميلادي -->
                             <TextBlock x:Name="DateText"

@@ -106,21 +106,34 @@ public static class EmptyStateHelper
                 return b;
         }
 
-        var badge = new Border
+        // ‏(«دفتر الحبر والنحاس») ‏الرسمُ دفترٌ مفتوحٌ بصفحتين وسطورٍ مسطَّرة وخطٍّ نحاسيٍّ تحت «العنوان» — هندسةٌ بالفرشاة لا حروفٌ في مربّع،
+        // ‏وألوانُه مراجعُ ديناميكيّةٌ فتتبع الثيمَ؛ والرمزُ الحرفيُّ (CL · FV …) يبقى صغيراً على الصفحة اليسرى ليُعرف الجدول.
+        var art = new Canvas { Width = 72, Height = 56, HorizontalAlignment = HorizontalAlignment.Center };
+        var book = new System.Windows.Shapes.Path
         {
-            Style = UiResources.StyleOf(host, "KpiMonogramBadge"),
-            Background = UiResources.BrushOf(host, "PrimarySoftBrush"),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Child = new TextBlock
-            {
-                Text = spec.Monogram,
-                FontSize = 11,
-                FontWeight = FontWeights.Bold,
-                Foreground = UiResources.BrushOf(host, "PrimaryDarkBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
+            Data = Geometry.Parse("M2,4 H34 V52 H2 Z M38,4 H70 V52 H38 Z M8,14 H28 M8,22 H28 M8,30 H28 M44,14 H64 M44,22 H64 M44,30 H58"),
+            StrokeThickness = 1.5,
+            StrokeLineJoin = PenLineJoin.Miter,
+            Width = 72,
+            Height = 56,
         };
+        book.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "RuleStrongBrush");
+        var rule = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M44,40 H58"),
+            StrokeThickness = 3,
+            StrokeStartLineCap = PenLineCap.Flat,
+            StrokeEndLineCap = PenLineCap.Flat,
+        };
+        rule.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "AccentBrush");
+        var tag = new TextBlock { Text = spec.Monogram, FontSize = 9, FontWeight = FontWeights.Bold, Width = 32, TextAlignment = TextAlignment.Center };
+        tag.SetResourceReference(TextBlock.ForegroundProperty, "PrimaryDarkBrush");
+        Canvas.SetLeft(tag, 2);
+        Canvas.SetTop(tag, 36);
+        art.Children.Add(book);
+        art.Children.Add(rule);
+        art.Children.Add(tag);
+        var badge = new Border { Child = art, HorizontalAlignment = HorizontalAlignment.Center };
 
         var overlay = new Border
         {

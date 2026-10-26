@@ -448,8 +448,8 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
-                    <Border x:Name="Bd" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource RuleStrongBrush}"
-                            BorderThickness="1" CornerRadius="3">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
                         <Path x:Name="Arrow" Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.6"
                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     </Border>
@@ -511,6 +511,8 @@
                 <ControlTemplate TargetType="ComboBox">
                     <Grid SnapsToDevicePixels="True">
                         <ToggleButton x:Name="Toggle" Style="{StaticResource AppComboToggle}"
+                                      Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"
                                       IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
                         <ContentPresenter x:Name="Content" IsHitTestVisible="False" Margin="{TemplateBinding Padding}"
                                           Content="{TemplateBinding SelectionBoxItem}"
