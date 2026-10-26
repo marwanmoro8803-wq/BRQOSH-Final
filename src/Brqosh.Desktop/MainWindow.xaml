@@ -122,11 +122,13 @@
                             <TextBlock x:Name="PageCrumb"
                                        AutomationProperties.AutomationId="PageCrumb"
                                        FontSize="11.5" Foreground="{DynamicResource TextMutedBrush}"
+                                       TextTrimming="CharacterEllipsis"
                                        Margin="0,0,0,2"/>
                             <TextBlock x:Name="PageTitle"
                                        AutomationProperties.AutomationId="PageTitle"
                                        Text="لوحة التحكم"
                                        FontSize="20" FontWeight="Bold"
+                                       TextTrimming="CharacterEllipsis"
                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
                         </StackPanel>
 

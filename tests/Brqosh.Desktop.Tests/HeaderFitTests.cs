@@ -39,4 +39,26 @@ public class HeaderFitTests
         Assert.False(narrow.ShowUserBadge);
         Assert.True(narrow.CompanyWidth < wide.CompanyWidth);
     }
+
+    /// <summary>
+    /// عند تكبير ويندوز ١٥٠٪ على لابتوب 1366×768 تضيق الترويسةُ إلى ≈٦٤٠ فكان مسارُ التنقّل «المبيعات والعملاء» يُقصّ بحدّ العمود قصّاً صلباً
+    /// (قِيس على النافذة الحقيقيّة)؛ فعنوانُ الصفحة ومسارُها يُقطعان بنقاطٍ لا قصّاً.
+    /// </summary>
+    [Fact]
+    public void TheHeaderTitleAndCrumb_TrimWithAnEllipsis()
+    {
+        var root = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !System.IO.File.Exists(System.IO.Path.Combine(root.FullName, "Brqosh.sln")))
+            root = root.Parent;
+        Assert.NotNull(root);
+        var xaml = System.IO.File.ReadAllText(System.IO.Path.Combine(root!.FullName, "src", "Brqosh.Desktop", "MainWindow.xaml"));
+
+        foreach (var name in new[] { "PageCrumb", "PageTitle" })
+        {
+            var start = xaml.IndexOf($"x:Name=\"{name}\"", StringComparison.Ordinal);
+            Assert.True(start > 0, name);
+            var end = xaml.IndexOf("/>", start, StringComparison.Ordinal);
+            Assert.Contains("TextTrimming=\"CharacterEllipsis\"", xaml[start..end], StringComparison.Ordinal);
+        }
+    }
 }
