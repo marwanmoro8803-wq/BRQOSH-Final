@@ -25,17 +25,6 @@ public static class NavigationCatalog
             new("dashboard", "لوحة التحكم"),
         ]),
 
-        new("المحاسبة العامة", ModuleKey.GeneralLedger,
-        [
-            new("chart_of_accounts", "دليل الحسابات"),
-            new("journal_entries", "القيود اليومية"),
-            new("cost_centers", "مراكز التكلفة"),
-            new("branch_profitability", "ربحية الفروع"),
-            new("budget_variance", "الموازنة والانحراف"),
-            new("cost_center_statement", "كشف مراكز التكلفة"),
-            new("fiscal_periods", "الفترات المالية"),
-        ]),
-
         new("المشاريع والمقاولات", ModuleKey.ProjectsConstruction,
         [
             new("projects", "المشاريع"),
@@ -60,89 +49,6 @@ public static class NavigationCatalog
             new("pos_session", "شاشة البيع"),
             new("pos_shifts", "الورديات"),
             new("pos_reports", "تقارير نقاط البيع"),
-        ]),
-
-        new("المبيعات والعملاء", ModuleKey.Sales,
-        [
-            new("customers", "العملاء"),
-            new("customer_statement", "كشف حساب عميل"),
-            new("receivable_aging", "أعمار ديون العملاء"),
-            new("sales_quotations", "عروض الأسعار"),
-            new("sales_orders", "أوامر البيع"),
-            new("sales_invoices", "فواتير المبيعات"),
-            new("recurring_plans", "الفوترة الدورية"),
-            new("sales_returns", "مردودات المبيعات"),
-        ]),
-
-        new("إدارة علاقات العملاء", ModuleKey.Crm,
-        [
-            new("crm_leads", "العملاء المحتملون"),
-            new("crm_opportunities", "فرص البيع"),
-            new("crm_activities", "أنشطة CRM"),
-        ]),
-
-        new("المشتريات والموردون", ModuleKey.Purchasing,
-        [
-            new("suppliers", "الموردون"),
-            new("supplier_statement", "كشف حساب مورد"),
-            new("payable_aging", "أعمار ديون الموردين"),
-            new("purchase_requests", "طلبات الشراء"),
-            new("purchase_orders", "أوامر الشراء"),
-            new("goods_receipts", "أذونات استلام البضاعة", ModuleKey.Inventory),
-            new("purchase_invoices", "فواتير المشتريات"),
-            new("debit_notes", "إشعارات المدين (مشتريات)"),
-        ]),
-
-        new("المخزون والمستودعات", ModuleKey.Inventory,
-        [
-            new("products", "الأصناف والمنتجات"),
-            new("stock_batches", "الدفعات والصلاحية"),
-            new("units_of_measure", "وحدات القياس"),
-            new("warehouses", "المستودعات"),
-            new("stock_movements", "حركات المخزون"),
-            new("stock_count", "الجرد"),
-            new("landed_cost", "التكلفة الإضافية"),
-        ]),
-
-        new("الخزينة والبنوك", ModuleKey.Treasury,
-        [
-            new("receipt_vouchers", "سندات القبض"),
-            new("payment_vouchers", "سندات الصرف"),
-            new("bank_accounts", "الحسابات البنكية"),
-            new("bank_transfers", "التحويلات البنكية"),
-            new("exchange_rates", "أسعار الصرف"),
-            new("cheques", "الشيكات"),
-            new("bank_reconciliation", "التسوية البنكية"),
-            new("fx_revaluation", "إعادة تقييم العملات"),
-            new("monetary_revaluation", "إعادة تقييم الذمم بالعملات"),
-            new("bank_statements", "كشوف الحسابات البنكية"),
-            new("cash_position", "حركة النقد والمركز النقدي"),
-            new("cash_flow_forecast", "التدفق النقدي المتوقع"),
-        ]),
-
-        new("الفوترة الإلكترونية", ModuleKey.Zatca,
-        [
-            new("zatca_invoices", "سجل الفواتير الإلكترونية"),
-            new("zatca_settings", "إعدادات هيئة الزكاة"),
-        ]),
-
-        new("التقارير المالية", ModuleKey.Reports,
-        [
-            new("trial_balance", "ميزان المراجعة"),
-            new("income_statement", "قائمة الدخل"),
-            new("balance_sheet", "قائمة المركز المالي"),
-            new("cash_flow_statement", "قائمة التدفقات النقدية"),
-            new("consolidated_trial_balance", "ميزان مراجعة موحّد"),
-            new("consolidated_income_statement", "قائمة دخل موحّدة"),
-            new("consolidated_balance_sheet", "مركز مالي موحّد"),
-            new("intercompany_elimination", "إزالة المعاملات بين الشركات"),
-            new("vat_return", "إقرار ضريبة القيمة المضافة"),
-            new("general_ledger_report", "دفتر الأستاذ العام"),
-        ]),
-
-        new("الأصول الثابتة", ModuleKey.FixedAssets,
-        [
-            new("fixed_assets", "سجل الأصول"),
         ]),
 
         new("العقارات والإيجارات", ModuleKey.RealEstate,
@@ -174,18 +80,112 @@ public static class NavigationCatalog
             new("shipments", "البوالص والتحصيل"),
         ]),
 
+        new("المبيعات والعملاء", ModuleKey.Sales,
+        [
+            new("customers", "العملاء"),
+            new("sales_quotations", "عروض الأسعار"),
+            new("sales_orders", "أوامر البيع"),
+            new("sales_invoices", "فواتير المبيعات"),
+            new("sales_returns", "مردودات المبيعات"),
+            new("recurring_plans", "الفوترة الدورية"),
+            new("customer_statement", "كشف حساب عميل"),
+            new("receivable_aging", "أعمار ديون العملاء"),
+        ]),
+
+        new("إدارة علاقات العملاء", ModuleKey.Crm,
+        [
+            new("crm_leads", "العملاء المحتملون"),
+            new("crm_opportunities", "فرص البيع"),
+            new("crm_activities", "أنشطة CRM"),
+        ]),
+
+        new("المشتريات والموردون", ModuleKey.Purchasing,
+        [
+            new("suppliers", "الموردون"),
+            new("purchase_requests", "طلبات الشراء"),
+            new("purchase_orders", "أوامر الشراء"),
+            new("goods_receipts", "أذونات استلام البضاعة", ModuleKey.Inventory),
+            new("purchase_invoices", "فواتير المشتريات"),
+            new("debit_notes", "إشعارات المدين (مشتريات)"),
+            new("supplier_statement", "كشف حساب مورد"),
+            new("payable_aging", "أعمار ديون الموردين"),
+        ]),
+
+        new("المخزون والمستودعات", ModuleKey.Inventory,
+        [
+            new("products", "الأصناف والمنتجات"),
+            new("units_of_measure", "وحدات القياس"),
+            new("warehouses", "المستودعات"),
+            new("stock_movements", "حركات المخزون"),
+            new("stock_batches", "الدفعات والصلاحية"),
+            new("stock_count", "الجرد"),
+            new("landed_cost", "التكلفة الإضافية"),
+        ]),
+
+        new("الخزينة والبنوك", ModuleKey.Treasury,
+        [
+            new("bank_accounts", "الحسابات البنكية"),
+            new("receipt_vouchers", "سندات القبض"),
+            new("payment_vouchers", "سندات الصرف"),
+            new("cheques", "الشيكات"),
+            new("bank_transfers", "التحويلات البنكية"),
+            new("bank_statements", "كشوف الحسابات البنكية"),
+            new("bank_reconciliation", "التسوية البنكية"),
+            new("cash_position", "حركة النقد والمركز النقدي"),
+            new("cash_flow_forecast", "التدفق النقدي المتوقع"),
+            new("exchange_rates", "أسعار الصرف"),
+            new("fx_revaluation", "إعادة تقييم العملات"),
+            new("monetary_revaluation", "إعادة تقييم الذمم بالعملات"),
+        ]),
+
+        new("المحاسبة العامة", ModuleKey.GeneralLedger,
+        [
+            new("chart_of_accounts", "دليل الحسابات"),
+            new("journal_entries", "القيود اليومية"),
+            new("fiscal_periods", "الفترات المالية"),
+            new("cost_centers", "مراكز التكلفة"),
+            new("budget_variance", "الموازنة والانحراف"),
+            new("cost_center_statement", "كشف مراكز التكلفة"),
+            new("branch_profitability", "ربحية الفروع"),
+        ]),
+
+        new("الأصول الثابتة", ModuleKey.FixedAssets,
+        [
+            new("fixed_assets", "سجل الأصول"),
+        ]),
+
         new("الرواتب", ModuleKey.Payroll,
         [
             new("employees", "سجل الموظفين"),
-            new("gosi_policy", "نسب التأمينات"),
             new("payroll", "دورات الرواتب"),
             new("payslips", "قسائم الرواتب"),
             new("employee_advances", "سلف الموظفين"),
             new("leave_requests", "الإجازات والغياب"),
             new("wage_protection", "ملف حماية الأجور"),
+            new("gosi_policy", "نسب التأمينات"),
         ]),
 
-        new("الأمان والتدقيق", ModuleKey.GeneralLedger,
+        new("الفوترة الإلكترونية", ModuleKey.Zatca,
+        [
+            new("zatca_invoices", "سجل الفواتير الإلكترونية"),
+            new("zatca_settings", "إعدادات هيئة الزكاة"),
+        ]),
+
+        new("التقارير المالية", ModuleKey.Reports,
+        [
+            new("trial_balance", "ميزان المراجعة"),
+            new("general_ledger_report", "دفتر الأستاذ العام"),
+            new("income_statement", "قائمة الدخل"),
+            new("balance_sheet", "قائمة المركز المالي"),
+            new("cash_flow_statement", "قائمة التدفقات النقدية"),
+            new("vat_return", "إقرار ضريبة القيمة المضافة"),
+            new("consolidated_trial_balance", "ميزان مراجعة موحّد"),
+            new("consolidated_income_statement", "قائمة دخل موحّدة"),
+            new("consolidated_balance_sheet", "مركز مالي موحّد"),
+            new("intercompany_elimination", "إزالة المعاملات بين الشركات"),
+        ]),
+
+        new("الرقابة والتدقيق", ModuleKey.GeneralLedger,
         [
             new("company_settings", "إعدادات المنشأة"),
             new("organizations", "المنشآت"),
@@ -202,8 +202,8 @@ public static class NavigationCatalog
             new("pricing_plans", "الباقات والتسعير"),
         ]),
 
-        // ‏(أسئلةُ المالك 2026-10-24) ‏صفحتان لكلّ دور: تفضيلاتُ المستخدم (المظهر واللغة وعن البرنامج) والدعم والشكاوى —
-        // ‏كان الدعمُ للمدير وحده بين صفحات الأمان، فلا يرفع المحاسبُ أو الصرّافُ مشكلةً من البرنامج.
+        // (طلبُ المالك 2026-10-26) صفحتا «تفضيلات البرنامج» و«الدعم والشكاوى» تُعرضان في قائمة المستخدم لا في الشريط الجانبيّ؛
+        // وتبقيان هنا في الكتالوج ليبقى حجبُ الصلاحيّة والترخيص ونظامِ العمل عليهما كما كان.
         new("البرنامج", ModuleKey.GeneralLedger,
         [
             new("preferences", "تفضيلات البرنامج"),
@@ -217,10 +217,10 @@ public static class NavigationCatalog
     /// </summary>
     public static IReadOnlyList<SettingsSection> SettingsSections { get; } =
     [
-        new("المنشأة", "Company", ["company_settings", "organizations", "company_groups", "branches"]),
+        new("تفضيلاتي", "My preferences", ["preferences"]),
+        new("المنشأة", "Company", ["company_settings", "branches", "organizations", "company_groups"]),
         new("الامتثال والرواتب", "Compliance & payroll", ["zatca_settings", "gosi_policy"]),
         new("المستخدمون والنظام", "Users & system", ["users", "backup", "data_migration", "diagnostics", "pricing_plans"]),
-        new("البرنامج", "Program", ["preferences"]),
     ];
 
     /// <summary>«الدعم والشكاوى» بند مستقلٌّ في قائمة المستخدم (متاحٌ لكلّ دور) — ليس إعداداً.</summary>
@@ -402,7 +402,7 @@ public static class NavigationCatalog
         ["التقارير المالية"] = "Financial Reports",
         ["الأصول الثابتة"] = "Fixed Assets",
         ["الرواتب"] = "Payroll",
-        ["الأمان والتدقيق"] = "Security & Audit",
+        ["الرقابة والتدقيق"] = "Oversight & Audit",
         ["البرنامج"] = "Program",
     };
 }

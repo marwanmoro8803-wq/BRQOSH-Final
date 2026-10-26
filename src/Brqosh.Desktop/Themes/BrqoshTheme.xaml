@@ -934,32 +934,24 @@
                 <ControlTemplate TargetType="ToggleButton">
                     <Border x:Name="Bd" Background="Transparent" CornerRadius="3" Padding="{TemplateBinding Padding}"
                             Margin="{TemplateBinding Margin}">
+                        <!-- السهمُ في حافّة البداية قبل العنوان (كالمستكشفات الاحترافيّة): مطويٌّ ◂ في العربيّة و▸ في الإنجليزيّة، مفتوحٌ ▾ فيهما — الدورانُ نفسُه -90° لأنّ الاتجاه يعكسه FlowDirection. -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                            <Path x:Name="Chevron" Grid.Column="1" Data="M0,0 L4,4 L8,0" Stroke="{TemplateBinding Foreground}"
-                                  StrokeThickness="1.6" VerticalAlignment="Center" Margin="8,0,0,0" RenderTransformOrigin="0.5,0.5">
+                            <Path x:Name="Chevron" Grid.Column="0" Data="M0,0 L4,4 L8,0" Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="1.6" VerticalAlignment="Center" Margin="0,0,10,0" RenderTransformOrigin="0.5,0.5">
                             </Path>
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="False">
                             <Setter TargetName="Chevron" Property="RenderTransform">
-                                <Setter.Value><RotateTransform Angle="90"/></Setter.Value>
-                            </Setter>
-                        </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsChecked" Value="False"/>
-                                <Condition Property="FlowDirection" Value="LeftToRight"/>
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="Chevron" Property="RenderTransform">
                                 <Setter.Value><RotateTransform Angle="-90"/></Setter.Value>
                             </Setter>
-                        </MultiTrigger>
+                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarHoverBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}"/>
@@ -1642,6 +1634,23 @@
                 <ControlTemplate TargetType="MenuItem">
                     <TextBlock Text="{TemplateBinding Header}" Margin="14,10,14,3" FontSize="11" FontWeight="Bold"
                                Foreground="{DynamicResource TextMutedBrush}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- بطاقةُ الحساب في رأس قائمة المستخدم: صورةٌ واسمٌ ودورٌ على خلفيّةٍ خفيفةٍ وخطٍّ فاصلٍ تحتها؛ لا تُنقر. -->
+    <Style x:Key="UserMenuProfileCard" TargetType="MenuItem">
+        <Setter Property="IsEnabled" Value="False"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border Background="{DynamicResource RowAltBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                            Padding="14,12" Margin="-1,-1,-1,0" CornerRadius="3,3,0,0">
+                        <ContentPresenter ContentSource="Header"/>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

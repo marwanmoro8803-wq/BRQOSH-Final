@@ -755,11 +755,17 @@ public partial class MainWindow : Window
                 _navGroupOfPage[page.Key] = view;
             }
 
-            header.Click += (_, _) =>
+            // ‏Checked/Unchecked لا Click: نمطُ Toggle في UIA (قارئُ الشاشة) يقلب IsChecked دون أن يرفع Click، فكان الرأسُ يتبدّل ولا يُطوى الجسم.
+            void OnGroupToggled()
             {
+                if (_applyingNavFilter)
+                    return;
                 if (header.IsChecked == true) _openNavGroups.Add(view.Key); else _openNavGroups.Remove(view.Key);
                 ApplyNavFilter();
-            };
+            }
+
+            header.Checked += (_, _) => OnGroupToggled();
+            header.Unchecked += (_, _) => OnGroupToggled();
             NavPanel.Children.Add(header);
             NavPanel.Children.Add(body);
             _navGroups.Add(view);
@@ -870,6 +876,7 @@ public partial class MainWindow : Window
     internal ContextMenu BuildUserMenu()
     {
         var menu = new ContextMenu { MinWidth = 260, FlowDirection = FlowDirection };
+        menu.Items.Add(new MenuItem { Header = BuildUserMenuProfile(), Style = (Style)FindResource("UserMenuProfileCard") });
         if (_settingsMenu.Count > 0)
         {
             menu.Items.Add(new MenuItem
@@ -899,6 +906,40 @@ public partial class MainWindow : Window
         return menu;
     }
 
+    /// <summary>رأسُ القائمة: صورةُ الحرف الأوّل والاسمُ والدور — كما في القوائم الاحترافيّة، فيعرف المستخدمُ بأيّ حسابٍ يعمل قبل أن يختار.</summary>
+    private UIElement BuildUserMenuProfile()
+    {
+        var grid = new Grid { FlowDirection = FlowDirection };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), VerticalAlignment = VerticalAlignment.Center };
+        avatar.SetResourceReference(Border.BackgroundProperty, "AccentBrush");
+        avatar.Child = new TextBlock
+        {
+            Text = UserInitialText.Text,
+            FontWeight = FontWeights.Bold,
+            FontSize = 14,
+            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x14, 0x14, 0x13)),   // ‏حبرُ المالك الثابتُ فوق النحاس في الثيمين
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var name = new TextBlock { Text = UserNameText.Text, FontSize = 13, FontWeight = FontWeights.SemiBold };
+        name.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+        var role = new TextBlock { Text = UserRoleText.Text, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) };
+        role.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+        var texts = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        texts.Children.Add(name);
+        texts.Children.Add(role);
+
+        Grid.SetColumn(avatar, 0);
+        Grid.SetColumn(texts, 1);
+        grid.Children.Add(avatar);
+        grid.Children.Add(texts);
+        return grid;
+    }
+
     private MenuItem MenuEntry(NavPage page, string title)
     {
         var item = new MenuItem { Header = title, Tag = page.Key };
@@ -918,7 +959,24 @@ public partial class MainWindow : Window
         menu.IsOpen = true;
     }
 
+    private bool _applyingNavFilter;
+
     private void ApplyNavFilter()
+    {
+        if (_applyingNavFilter)
+            return;
+        _applyingNavFilter = true;
+        try
+        {
+            ApplyNavFilterCore();
+        }
+        finally
+        {
+            _applyingNavFilter = false;
+        }
+    }
+
+    private void ApplyNavFilterCore()
     {
         var query = NavSearchBox.Text.Trim();
         var searching = query.Length > 0;
@@ -939,10 +997,12 @@ public partial class MainWindow : Window
             var open = isSettings
                 ? searching || KeepNavOpenForAutomation
                 : searching || KeepNavOpenForAutomation || _openNavGroups.Contains(group.Key);
+            // ‏مجموعةُ «الإعدادات» مرآةٌ للبحث وحده — ظهورُ رأسها في الشريط الجانبيّ كان تكراراً لقائمة المستخدم (قِيس بالتصوير).
+            var showGroup = isSettings ? (searching || KeepNavOpenForAutomation) && matches > 0 : matches > 0;
             group.Header.IsChecked = open;
-            group.Header.Visibility = matches > 0 ? Visibility.Visible : Visibility.Collapsed;
+            group.Header.Visibility = showGroup ? Visibility.Visible : Visibility.Collapsed;
             group.Header.IsEnabled = !searching;
-            group.Body.Visibility = matches > 0 && open ? Visibility.Visible : Visibility.Collapsed;
+            group.Body.Visibility = showGroup && open ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
