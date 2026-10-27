@@ -196,25 +196,24 @@ public static class AiAssistantPanelBuilder
         };
     }
 
+    /// <summary>
+    /// (1.0.32) الخياراتُ الأربعةُ تتبع الشاشةَ المفتوحة (<see cref="PageAssistantPrompts"/>) — كانت أربعةً ثابتةً على كلّ صفحة.
+    /// الزرُّ يعرض <c>Label</c> بلغة الواجهة، والنقرُ يسأل <c>Question</c> فيظهر في المحادثة كسؤالٍ كاملٍ يجيب عنه المساعدُ ببيانات المنشأة.
+    /// </summary>
     public static void RenderQuickPrompts(
         FrameworkElement host,
         WrapPanel promptHost,
-        Func<string, Task> onSendAsync)
+        Func<string, Task> onSendAsync,
+        IReadOnlyList<AssistantPrompt> prompts)
     {
         promptHost.Children.Clear();
-        var prompts = new[]
-        {
-            LocaleManager.T("كيف أرحّل؟", "How to post?"),
-            LocaleManager.T("صلاحياتي", "My permissions"),
-            LocaleManager.T("التدفق النقدي", "Cash flow"),
-            LocaleManager.T("ZATCA / OTP", "ZATCA / OTP"),
-        };
-
         foreach (var prompt in prompts)
         {
+            var question = LocaleManager.T(prompt.QuestionAr, prompt.QuestionEn);
             var btn = new Button
             {
-                Content = prompt,
+                Content = LocaleManager.T(prompt.LabelAr, prompt.LabelEn),
+                ToolTip = question,
                 Margin = new Thickness(0, 0, 6, 6),
                 Padding = new Thickness(10, 4, 10, 4),
                 FontSize = 11,
@@ -226,7 +225,7 @@ public static class AiAssistantPanelBuilder
             {
                 if (!btn.IsEnabled) return;
                 btn.IsEnabled = false;
-                try { await onSendAsync(prompt); }
+                try { await onSendAsync(question); }
                 finally { btn.IsEnabled = true; }
             };
             promptHost.Children.Add(btn);

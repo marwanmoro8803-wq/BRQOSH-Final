@@ -217,6 +217,9 @@ public partial class App : System.Windows.Application
                 adminPassword = wizard.AdminPassword;
             }
 
+            // ‏(1.0.32) تهيئةٌ أولى (بعد معالج الإعداد): تظهر صفحةُ انتظارٍ بالشعار بدل الصمت حتى يُفتح البرنامج.
+            var firstRun = adminUsername is not null;
+
             // (CEEF-236 · م-١٣) ‏**ملفُّ اتصالٍ لا يُقرأ لم يعد يعني تركيباً ميّتاً.**
             //
             // ‏كان الإخفاقُ هنا يعرض رسالةً ثمّ `Shutdown()` — **والرسالةُ تصف علاجاً لا سبيلَ إليه**:
@@ -314,6 +317,14 @@ public partial class App : System.Windows.Application
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
+            Views.StartupSplashWindow? splash = null;
+            if (firstRun)
+            {
+                splash = new Views.StartupSplashWindow();
+                splash.Show();
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            }
+
             try
             {
                 // CEEF-200: التمهيد عبر DI scope (المصنع كان ينشئ الخدمة يدوياً — يكسر حارس DI،
@@ -323,6 +334,9 @@ public partial class App : System.Windows.Application
                     .InitializeAsync(setup!.CompanyName, setup.VatRegistrationNumber, setup.Profile,
                         adminUsername, adminPassword, setup.CountryTemplateId);
                 AppServices.CompanyId = result.CompanyId;
+
+                splash?.Close();   // ‏قبل نافذة مفتاح الاستعادة (حوارٌ) فلا تُحجب خلف صفحة الانتظار
+                splash = null;
 
                 // ‏(security-licensing-tenancy#7) ‏مفتاحُ استعادة المدير الأوّل يُعرض الآن مرّةً — ولا تُغلق نافذتُه قبل تأكيد حفظه.
                 if (result.RecoveryKey is { } recoveryKey)
@@ -349,6 +363,8 @@ public partial class App : System.Windows.Application
             }
             catch (Exception ex)
             {
+                splash?.Close();
+                splash = null;
                 var detail = ex.InnerException is null
                     ? ex.Message
                     : $"{ex.Message}\n—\n{ex.InnerException.Message}";
@@ -358,6 +374,9 @@ public partial class App : System.Windows.Application
                 Shutdown();
                 return;
             }
+
+            splash?.Close();   // ‏(إن لم يُغلَق في المسار السابق)
+            splash = null;
 
             // ‏(CEEF-237 · ت-١٢) رجوعُ الساعة يُسجَّل قبل حكم الصلاحية — **ولا يُوقف العمل**.
             // ‏فساعةٌ تُصحَّح بعد بطاريّةِ لوحةٍ فارغة تصرف عميلاً صادقاً عن دفاتره، والضررُ من
@@ -451,15 +470,30 @@ public partial class App : System.Windows.Application
 
             AppServices.CurrentUser = login.AuthenticatedUser;
 
+            // ‏(1.0.32) بناءُ النافذة الرئيسة (القوائم والصلاحيات والرؤى) يستغرق لحظاتٍ في أوّل تشغيل — صفحةُ الانتظار حتى تظهر.
+            Views.StartupSplashWindow? opening = null;
+            if (firstRun)
+            {
+                opening = new Views.StartupSplashWindow();
+                opening.SetStatus("جارٍ فتح البرنامج…", "Opening the program…");
+                opening.Show();
+                await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            }
+
             var main = new MainWindow(setup!);
             MainWindow = main;
             main.Closed += (_, _) => Shutdown();
             main.Show();
+            opening?.Close();
             main.Activate();
             main.Focus();
         }
         catch (Exception ex)
         {
+            // ‏(1.0.32) صفحةُ الانتظار لا تبقى فوق رسالة العطل ولا تُبقي العمليّةَ حيّةً.
+            foreach (var splashWindow in Windows.OfType<Views.StartupSplashWindow>().ToList())
+                splashWindow.Close();
+
             // ‏**والإغلاقُ في `finally` عمداً**: لو رمى عرضُ الحوار — وهو وارد؛ نفادُ
             // ‏الذاكرة يُفشل التخصيصَ الثاني كما أفشل الأوّل — لعادت الرميةُ إلى المعالج
             // ‏فطواها، **وعُدنا إلى العمليّة الخالدة بلا نافذة** وهي بعينها العلّة.

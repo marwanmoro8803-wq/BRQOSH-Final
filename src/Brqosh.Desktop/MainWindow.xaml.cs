@@ -600,8 +600,15 @@ public partial class MainWindow : Window
     /// **مرّة واحدة** بلغة الإقلاع ويبقى — «كيف أرحّل؟» و«صلاحياتي» في واجهة إنجليزية
     /// على الستّين صفحة كلّها. فُصل عن التوصيل ليُعاد عند كل تبديل لغة.
     /// </summary>
-    private void RenderAiQuickPrompts() =>
-        AiAssistantPanelBuilder.RenderQuickPrompts(this, AiQuickPromptsHost, OnAiQuestionAsync);
+    private void RenderAiQuickPrompts()
+    {
+        // ‏(1.0.32) الخياراتُ الأربعةُ من مجال الشاشة المفتوحة: مجموعتُها في الكتالوج وعنوانُها بلغتين.
+        var group = NavigationCatalog.Groups.FirstOrDefault(g => g.Pages.Any(p => p.Key == _activePageKey));
+        var titleAr = group?.Pages.FirstOrDefault(p => p.Key == _activePageKey)?.TitleAr;
+        string? titleEn = ProgramNavCatalog.TryGet(_activePageKey, out var nav) ? nav.TitleEn : null;
+        var prompts = PageAssistantPrompts.For(_activePageKey, group?.TitleAr, titleAr, titleEn);
+        AiAssistantPanelBuilder.RenderQuickPrompts(this, AiQuickPromptsHost, OnAiQuestionAsync, prompts);
+    }
 
     private async Task RefreshAiPanelAsync()
     {
@@ -1132,6 +1139,7 @@ public partial class MainWindow : Window
         PageTitle.Text = title;
         UpdateBreadcrumb(pageKey);
         SetActiveNav(pageKey);
+        RenderAiQuickPrompts();   // ‏الخياراتُ الأربعةُ تتبع الشاشة المفتوحة
         if (AiColumn.Width.Value > 0)
             _ = RefreshAiPanelAsync();
         // ‏(CEEF-230 · ط6-١) **الربطُ في `PageFactory` لا هنا** — فما داخلَ نافذةٍ لا

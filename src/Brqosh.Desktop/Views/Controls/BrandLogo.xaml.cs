@@ -35,14 +35,31 @@ public partial class BrandLogo : UserControl
         DependencyProperty.Register(nameof(NameVisibility), typeof(Visibility), typeof(BrandLogo),
             new PropertyMetadata(Visibility.Visible));
 
+    /// <summary>دورةُ اللمعة بالثواني (٦ افتراضاً؛ أقصرُ في صفحة الانتظار فيبدو الشعارُ يلمع باستمرار).</summary>
+    public static readonly DependencyProperty ShineSecondsProperty =
+        DependencyProperty.Register(nameof(ShineSeconds), typeof(double), typeof(BrandLogo), new PropertyMetadata(6d));
+
+    public double ShineSeconds { get => (double)GetValue(ShineSecondsProperty); set => SetValue(ShineSecondsProperty, value); }
+
     public static readonly DependencyProperty AnimateProperty =
         DependencyProperty.Register(nameof(Animate), typeof(bool), typeof(BrandLogo), new PropertyMetadata(false));
 
     private const string ShineKey = "ShineBoard";   // ‏في Resources لا حقلٌ: حارسُ الأسماء المعلَنة يعدّ كلَّ حقلٍ من نوع Freezable عنصراً مسمّى.
 
+    /// <summary>الشعارُ لاتينيٌّ دائماً: في اتجاه RTL يرسمه WPF معكوساً فيُقلب هنا مرّةً صريحة (انظر ملاحظة BrandLogo.xaml).</summary>
+    private void ApplyFlow() => FaceFlip.ScaleX = FlowDirection == FlowDirection.RightToLeft ? -1 : 1;
+
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == FlowDirectionProperty && FaceFlip is not null)
+            ApplyFlow();
+    }
+
     public BrandLogo()
     {
         InitializeComponent();
+        ApplyFlow();
         Loaded += (_, _) => { ApplyProportions(); StartAnimation(); };
         SizeChanged += (_, _) => ApplyProportions();
         Unloaded += (_, _) => { if (Resources[ShineKey] is Storyboard board) { board.Stop(this); Resources.Remove(ShineKey); } };
@@ -85,10 +102,12 @@ public partial class BrandLogo : UserControl
         enter.Begin(this);
 
         // ‏اللمعةُ: تظهر وتُزاح من يسار الدرع إلى يمينه خلال ١٫٢ ث ثمّ تختفي وتنتظر؛ وتتكرّر كلَّ ٦ ث.
-        var shine = new Storyboard { RepeatBehavior = RepeatBehavior.Forever, Duration = TimeSpan.FromSeconds(6) };
-        AddTo(shine, new DoubleAnimation(-1.4, 1.4, TimeSpan.FromMilliseconds(1200)) { BeginTime = TimeSpan.FromMilliseconds(1600), EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } },
+        var period = Math.Max(2, ShineSeconds);
+        var sweepStart = TimeSpan.FromMilliseconds(period >= 5 ? 1600 : 300);
+        var shine = new Storyboard { RepeatBehavior = RepeatBehavior.Forever, Duration = TimeSpan.FromSeconds(period) };
+        AddTo(shine, new DoubleAnimation(-1.4, 1.4, TimeSpan.FromMilliseconds(1200)) { BeginTime = sweepStart, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } },
               Shine, "(Shape.Fill).(Brush.RelativeTransform).(TranslateTransform.X)");
-        var fade = new DoubleAnimationUsingKeyFrames { BeginTime = TimeSpan.FromMilliseconds(1600) };
+        var fade = new DoubleAnimationUsingKeyFrames { BeginTime = sweepStart };
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, TimeSpan.FromMilliseconds(100)));
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(1, TimeSpan.FromMilliseconds(1100)));
         fade.KeyFrames.Add(new LinearDoubleKeyFrame(0, TimeSpan.FromMilliseconds(1200)));
