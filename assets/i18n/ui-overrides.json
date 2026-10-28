@@ -2154,5 +2154,13 @@
   "تعدّد العملات": "Multi-currency",
   "القوائم الموحّدة": "Consolidated statements",
   "الرواتب والتأمينات": "Payroll and social insurance",
-  "المشاريع والعقود": "Projects and contracts"
+  "المشاريع والعقود": "Projects and contracts",
+  "رمزُ التفعيل ناقص.": "The activation code is incomplete.",
+  "حدُّ المنشآت في رمز التفعيل يجب أن يكون ≥ 1.": "The company limit in the activation code must be at least 1.",
+  "بيئة التسجيل (Zatca:Onboarding:Environment) مطلوبة: sandbox أو simulation أو production.": "The onboarding environment (Zatca:Onboarding:Environment) is required: sandbox, simulation or production.",
+  "الرقم الضريبي للتسجيل يجب أن يكون 15 رقماً يبدأ وينتهي بـ3.": "The onboarding VAT number must be 15 digits starting and ending with 3.",
+  "السجل التجاري للتسجيل يجب أن يكون 10 أرقام.": "The onboarding commercial registration number must be 10 digits.",
+  "اسم المنشأة (Zatca:Onboarding:OrganizationName) مطلوب للتسجيل.": "The organization name (Zatca:Onboarding:OrganizationName) is required for onboarding.",
+  "العنوان المسجّل ونشاط المنشأة مطلوبان للتسجيل.": "The registered address and business category are required for onboarding.",
+  "نوع الفواتير (InvoiceType) أربعةُ أرقام من 0/1 — مثل 1100 (ضريبية ومبسّطة) أو 0100 (مبسّطة).": "The invoice type (InvoiceType) is four digits of 0/1 — e.g. 1100 (standard and simplified) or 0100 (simplified)."
 }

@@ -153,8 +153,9 @@ public partial class LicenseActivationWindow : Window
         ErrorText.Visibility = Visibility.Collapsed;
         try
         {
-            await using var db = AppServices.CreateDb();
-            var result = await new OfflineActivationService(db).ActivateAsync(code);
+            using var facade = new DesktopAccountingFacade();
+            var service = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<OfflineActivationService>(facade.GetService<IServiceProvider>());
+            var result = await service.ActivateAsync(code);
             if (result.Verdict != ActivationVerdict.Valid)
             {
                 ShowError(DescribeOffline(result.Verdict));
