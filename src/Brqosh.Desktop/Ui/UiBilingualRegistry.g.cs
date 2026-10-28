@@ -275,6 +275,7 @@ public static partial class UiBilingualRegistry
         ["إيقاف مؤقت"] = "Pause",
         ["ابدأ العمل الآن"] = "Start now",
         ["اترك المرفوض صفراً لسطر اعتمد كاملاً — والمعتمد يملأ المطالب."] = "Leave rejected at zero for a fully approved line — approved then fills the claimed amount.",
+        ["اتفاقية الترخيص"] = "Licence agreement",
         ["اتفاقية ترخيص المستخدم"] = "End-User Licence Agreement",
         ["احفظ هذا المفتاح في مكان آمن خارج هذا الجهاز. إن نسيت كلمة مرور المدير فهو الطريق الوحيد للعودة إلى الدفاتر، ولن يُعرض مرة أخرى."] = "Save this key somewhere safe, away from this computer. If the administrator password is forgotten it is the only way back into the books, and it will not be shown again.",
         ["اختبار الاتصال"] = "Test connection",

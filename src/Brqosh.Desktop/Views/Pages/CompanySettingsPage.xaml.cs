@@ -262,6 +262,37 @@ public partial class CompanySettingsPage : UserControl
             ? value
             : throw new InvalidOperationException("حد اعتماد القيد اليدوي رقم غير سالب.");
 
+    private static string? SaveLicenseAgreement(Company company)
+    {
+        try
+        {
+            var status = LicenseStatusResolver.Current(company.NameAr);
+            var customer = new LicenseAgreementParty(
+                string.IsNullOrWhiteSpace(company.RegistrationName) ? company.NameAr : company.RegistrationName!,
+                company.CommercialRegistrationNumber, company.VatRegistrationNumber, company.AddressAr);
+            return LicenseAgreementDocument.EnsureSaved(company.Id, customer, LicenseStore.Load()?.Code, status.PlanLabelAr);
+        }
+        catch (Exception)
+        {
+            return null; // ‏فشلُ إنشاء الاتفاقية لا يمنع حفظ الإعدادات.
+        }
+    }
+
+    private async void OnOpenLicenseAgreement(object sender, RoutedEventArgs e)
+    {
+        await using var db = AppServices.CreateDb();
+        var company = await db.Companies.SingleAsync(c => c.Id == AppServices.CompanyId);
+        var path = SaveLicenseAgreement(company);
+        if (path is null)
+        {
+            ErrorText.Text = LocaleManager.T(
+                "أدخل اسم المنشأة ورقمها الضريبي واحفظ — تُنشأ اتفاقية الترخيص تلقائياً.",
+                "Enter the company name and VAT number and save — the licence agreement is created automatically.");
+            ErrorText.Visibility = Visibility.Visible;
+            return;
+        }
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+    }
     private async void OnSave(object sender, RoutedEventArgs e)
     {
         try
@@ -308,6 +339,9 @@ public partial class CompanySettingsPage : UserControl
             if (GroupCombo.SelectedItem is GroupOption groupOpt)
                 company.AssignCompanyGroup(groupOpt.Id);
             await db.SaveChangesAsync();
+
+            // اتفاقية الترخيص تُحفظ تلقائياً بمجرّد توفّر اسم المنشأة ورقمها الضريبي.
+            SaveLicenseAgreement(company);
 
             // (CEEF-229 · م1-٢٢) ‏طريقةُ التكلفة **لا تُبدَّل بالسنّارة**: تمرّ بخدمةٍ تمنع
             // ‏التبديلَ وفي المستودعات بضاعة. وكان السطرُ هنا `company.SetCostingMethod(...)`

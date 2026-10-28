@@ -176,6 +176,7 @@
                 <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                            TextWrapping="Wrap" Visibility="Collapsed" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Content="اتفاقية الترخيص" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Padding="16,9" Click="OnOpenLicenseAgreement"/>
                     <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}"
                             AutomationProperties.AutomationId="CompanySettingsSave"
                             Padding="24,9" Click="OnSave"/>
