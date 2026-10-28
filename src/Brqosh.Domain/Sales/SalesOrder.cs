@@ -98,6 +98,15 @@ public class SalesOrder : ILineDocumentTotals
         Status = SalesOrderStatus.Invoiced;
     }
 
+    /// <summary>عند إلغاء الفاتورة الصادرة من الأمر يعود الأمر «مؤكداً» ويُفكّ ربطه بها ليُفوتر من جديد.</summary>
+    public void ReopenAfterInvoiceCancelled(long invoiceId)
+    {
+        if (Status != SalesOrderStatus.Invoiced || SalesInvoiceId != invoiceId)
+            throw new AccountingException("أمر البيع غير مرتبط بهذه الفاتورة.");
+        SalesInvoiceId = null;
+        Status = SalesOrderStatus.Confirmed;
+    }
+
     public void Cancel()
     {
         if (Status == SalesOrderStatus.Invoiced)

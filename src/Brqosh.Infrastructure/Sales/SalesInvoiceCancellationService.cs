@@ -86,6 +86,14 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
             }
 
             invoice.MarkCancelled(cancellationDate);
+
+            // ‏وأمرُ البيع الذي فُوتر بها يعود «مؤكداً» ليُفوتر من جديد — داخل المعاملة نفسها.
+            var salesOrders = await db.SalesOrders
+                .Where(o => o.CompanyId == companyId && o.SalesInvoiceId == invoiceId
+                    && o.Status == SalesOrderStatus.Invoiced)
+                .ToListAsync(token);
+            foreach (var order in salesOrders)
+                order.ReopenAfterInvoiceCancelled(invoiceId);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء فاتورة مبيعات",
