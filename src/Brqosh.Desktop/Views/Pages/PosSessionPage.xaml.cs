@@ -183,10 +183,6 @@ public partial class PosSessionPage : UserControl
         CardAmountBox.Visibility = SelectedPayment() == PosPaymentMethod.Mixed ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private static bool TryReadAmount(string? text, out decimal value) =>
-        decimal.TryParse(text?.Trim(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out value)
-        || decimal.TryParse(text?.Trim(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out value);
-
     private async void OnPay(object sender, RoutedEventArgs e)
     {
         // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
@@ -216,7 +212,7 @@ public partial class PosSessionPage : UserControl
             decimal? cardAmount = null;
             if (payment == PosPaymentMethod.Mixed)
             {
-                if (!TryReadAmount(CardAmountBox.Text, out var card) || card <= 0m)
+                if (!Brqosh.Desktop.Ui.NumericInput.TryParsePositive(CardAmountBox.Text, out var card))
                 {
                     UiDialog.Show("أدخل مبلغ البطاقة في الدفع المختلط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
                     CardAmountBox.Focus();

@@ -662,6 +662,8 @@ public static partial class UiBilingualRegistry
         ["السعر *"] = "Price",
         ["السكني معفى والتجاري خاضع بنسبة 15%. والحكم على استعمال الوحدة لا على نوع المبنى — فعمارة واحدة قد تضم محلاً تجاريًا وشققًا سكنية."] = "Residential is exempt and commercial is taxed at 15%. It is decided by how the unit is used, not by the building type — one building may hold a shop and flats alike.",
         ["السلة فارغة."] = "The cart is empty.",
+        ["مبلغ البطاقة"] = "Card amount",
+        ["أدخل مبلغ البطاقة في الدفع المختلط."] = "Enter the card amount for a mixed payment.",
         ["السلفة ذمة على الموظف لا مصروف راتب — وتسدد بالاستقطاع الشهري"] = "An advance is a receivable from the employee, not a payroll expense — it is repaid by monthly deduction",
         ["السنة *"] = "Year *",
         ["السنة غير صالحة."] = "The year is not valid.",
