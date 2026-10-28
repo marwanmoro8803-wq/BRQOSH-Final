@@ -284,7 +284,7 @@ public class PurchaseInvoice : IBranchScoped, ILineDocumentTotals
             }
             AddAccrualRelief(entry, grniRelief, grniAccount, priceVariance, varianceAccount);
             if (VatAmount > 0)
-                entry.AddLine(vatInputAccount, VatAmount, 0m, "ضريبة مدخلات قابلة للخصم 15%");
+                entry.AddLine(vatInputAccount, VatAmount, 0m, Tax.VatLineLabels.Input(Sales.SalesInvoice.SaudiVatRate));
             if (ReverseChargeVatAmount > 0)
             {
                 // ‏(tax-zatca#12) ‏**المستلمُ مورّدٌ لنفسه** (§6.3): مخرجاتٌ يحتسبها ومدخلاتٌ يخصمها في القيد نفسِه — فلا يُدفع شيءٌ

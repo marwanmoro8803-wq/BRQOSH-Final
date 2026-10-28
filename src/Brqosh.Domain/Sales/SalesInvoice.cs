@@ -303,7 +303,7 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         entry.AddLine(receivableAccount, this.GrandTotal(), 0m, "إجمالي الفاتورة شامل الضريبة");
         entry.AddLine(revenueAccount, 0m, Subtotal, "إيراد المبيعات");
         if (VatAmount > 0)
-            entry.AddLine(vatOutputAccount, 0m, VatAmount, "ضريبة القيمة المضافة 15%");
+            entry.AddLine(vatOutputAccount, 0m, VatAmount, Tax.VatLineLabels.Output(SaudiVatRate));
 
         if (cogsAmount > 0)
         {

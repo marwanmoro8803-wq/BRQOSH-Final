@@ -121,7 +121,7 @@ public class ProgressBilling : IBranchScoped
         }
 
         if (VatAmount > 0)
-            entry.AddLine(vatOutput, 0m, VatAmount, "ضريبة القيمة المضافة 15%");
+            entry.AddLine(vatOutput, 0m, VatAmount, Tax.VatLineLabels.Output(SaudiVatRate));
 
         Status = ProgressBillingStatus.Posted;
         return entry;
