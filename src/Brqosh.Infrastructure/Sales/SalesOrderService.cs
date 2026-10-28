@@ -124,21 +124,41 @@ public class SalesOrderService(BrqoshDbContext db)
             return invoice;
         });
 
-    public async Task<SalesOrder> CreateFromQuotationAsync(long companyId, long quotationId, CancellationToken ct = default)
+    /// <summary>يُعلِّم العروضَ المُرسَلة المتجاوزة صلاحيتَها «منتهية» — يُستدعى من مهمة دوريّة أو عند فتح الشاشة.</summary>
+    public async Task<int> ExpireOverdueQuotationsAsync(long companyId, DateOnly asOf, CancellationToken ct = default)
     {
+        var overdue = await db.SalesQuotations
+            .Where(q => q.CompanyId == companyId && q.Status == SalesQuotationStatus.Sent && q.ValidUntil < asOf)
+            .ToListAsync(ct);
+        foreach (var quote in overdue)
+            quote.MarkExpired(asOf);
+        if (overdue.Count > 0)
+            await db.SaveChangesAsync(ct);
+        return overdue.Count;
+    }
+
+    /// <param name="orderDate">تاريخُ الأمر (والصلاحيةُ تُقاس به) — اليومُ إن لم يُمرَّر.</param>
+    public async Task<SalesOrder> CreateFromQuotationAsync(long companyId, long quotationId,
+        DateOnly? orderDate = null, CancellationToken ct = default)
+    {
+        var date = orderDate ?? DateOnly.FromDateTime(DateTime.Today);
         SecurityContext.EnsureCanPost();
         var quote = await db.SalesQuotations
             .SingleAsync(q => q.CompanyId == companyId && q.Id == quotationId, ct);
 
         if (quote.Status is not (SalesQuotationStatus.Sent or SalesQuotationStatus.Accepted))
             throw new Domain.Accounting.AccountingException("يُحوَّل عرض سعر مُرسَل أو مقبول فقط.");
+        // ‏صلاحيةُ العرض تُطبَّق: المُرسَلُ الذي تجاوز تاريخَ صلاحيته لا يُحوَّل (والمقبولُ ضمنها يبقى قابلاً للتحويل).
+        if (quote.IsExpiredOn(date))
+            throw new Domain.Accounting.AccountingException(
+                $"انتهت صلاحية عرض السعر في {quote.ValidUntil:yyyy-MM-dd} — أصدر عرضاً جديداً أو اطلب قبول العميل قبل التحويل.");
         // ‏(ح-١١٥) ‏**العرضُ يُحوَّل مرّةً**: نقرتان على «تحويل» كانتا أمرَين مؤكَّدَين يُفوتَران مرّتين.
         // ‏والأمرُ الملغى لا يُحتسب — فيُعاد التحويلُ بعده.
         if (await db.SalesOrders.AnyAsync(o => o.CompanyId == companyId && o.SalesQuotationId == quotationId
                 && o.Status != SalesOrderStatus.Cancelled, ct))
             throw new Domain.Accounting.AccountingException("حُوِّل عرض السعر هذا إلى أمر بيع سلفاً.");
 
-        var order = SalesOrder.CreateDraft(companyId, quote.CustomerId, DateOnly.FromDateTime(DateTime.Today), quotationId);
+        var order = SalesOrder.CreateDraft(companyId, quote.CustomerId, date, quotationId);
         // ‏(م-٥ · ن-٥٢) **وهذا الموضعُ صار حيّاً بهذا التغيير نفسِه**: عرضُ السعر لم يكن
         // ‏يقبل فئةً ضريبيّةً أصلاً، فلم يكن ثَمّ ما يسقط. ومتى قبِلها وجب أن تعبر — وإلّا
         // ‏خُرق مبدأُ سجلّ السطر: «ولا تُتاح إلا حيث تُحوَّل».

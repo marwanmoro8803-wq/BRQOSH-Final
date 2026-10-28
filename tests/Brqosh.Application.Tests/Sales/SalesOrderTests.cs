@@ -87,7 +87,7 @@ public class SalesOrderTests : IDisposable
         quote.AddLine("بند", 3m, 10m);
         await new SalesQuotationService(_db).CreateAndSendAsync(quote);
 
-        var order = await new SalesOrderService(_db).CreateFromQuotationAsync(_companyId, quote.Id);
+        var order = await new SalesOrderService(_db).CreateFromQuotationAsync(_companyId, quote.Id, orderDate: new DateOnly(2026, 6, 10));
 
         Assert.Equal(SalesOrderStatus.Confirmed, order.Status);
         Assert.Single(order.Lines);

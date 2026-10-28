@@ -89,6 +89,16 @@ public class SalesQuotation : ILineDocumentTotals
         Status = SalesQuotationStatus.Accepted;
     }
 
+    /// <summary>العرضُ المُرسَل يسقط بعد تاريخ صلاحيته — والمقبولُ ضمنها يبقى قابلاً للتحويل.</summary>
+    public bool IsExpiredOn(DateOnly date) => Status == SalesQuotationStatus.Sent && date > ValidUntil;
+
+    public void MarkExpired(DateOnly asOf)
+    {
+        if (!IsExpiredOn(asOf))
+            throw new AccountingException("لا يُعلَّم منتهياً إلا عرضٌ مُرسَل تجاوز تاريخ صلاحيته.");
+        Status = SalesQuotationStatus.Expired;
+    }
+
     public void Reject()
     {
         if (Status != SalesQuotationStatus.Sent)

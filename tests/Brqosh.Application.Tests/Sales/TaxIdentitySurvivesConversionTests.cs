@@ -212,7 +212,7 @@ public class TaxIdentitySurvivesConversionTests : IDisposable
         var storedQuote = await _db.SalesQuotations.Include(q => q.Lines)
             .SingleAsync(q => q.Id == quote.Id);
 
-        var order = await new SalesOrderService(_db).CreateFromQuotationAsync(company.Id, quote.Id);
+        var order = await new SalesOrderService(_db).CreateFromQuotationAsync(company.Id, quote.Id, orderDate: new DateOnly(2026, 3, 10));
         var storedOrder = await _db.SalesOrders.Include(o => o.Lines).SingleAsync(o => o.Id == order.Id);
 
         AssertConversionKept(storedQuote.Lines, storedOrder.Lines, "عرضُ السعر ⟵ أمرُ البيع");
