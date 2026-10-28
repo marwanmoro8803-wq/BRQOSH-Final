@@ -188,6 +188,19 @@ public static class SaudiChartOfAccounts
         new("5220", "مصروف الإجازات", "Leave Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
+    /// <summary>
+    /// أدوارُ حساباتٍ يرحّل إليها النظامُ ولم تكن إلا أرقاماً حرفيّةً منثورةً في خدمات الترحيل — مصدرٌ واحدٌ لها هنا.
+    /// ليست «نظاميّةً» بالضرورة (لا يُشترط <c>IsSystem</c>)؛ وجدولُ أدوارٍ لكل شركة هو الخطوةُ التالية.
+    /// </summary>
+    public static class PostingRoleCodes
+    {
+        public const string Purchases = "5102";
+        public const string MiscellaneousExpenses = "5215";
+        public const string GosiExpense = "5203";
+        public const string SalariesPayable = "2108";
+        public const string GosiPayable = "2109";
+    }
+
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>
     public static class SystemCodes
     {

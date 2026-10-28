@@ -133,5 +133,5 @@ public sealed class BankStatementDifferencePostingService(BrqoshDbContext db)
         }, ct);
 
     internal static string DefaultOffsetCode(decimal signedAmount) =>
-        signedAmount > 0 ? "4106" : "5213";
+        signedAmount > 0 ? SaudiChartOfAccounts.SystemCodes.OtherIncome : SaudiChartOfAccounts.SystemCodes.BankCharges;
 }

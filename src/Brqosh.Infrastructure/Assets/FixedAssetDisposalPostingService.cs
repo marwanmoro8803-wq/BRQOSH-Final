@@ -77,9 +77,9 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             var cash = await db.Accounts.SingleAsync(
                 a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashOnHand, token);
             var otherIncome = await db.Accounts.SingleAsync(
-                a => a.CompanyId == asset.CompanyId && a.Code == "4106", token);
+                a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.OtherIncome, token);
             var miscExpense = await db.Accounts.SingleAsync(
-                a => a.CompanyId == asset.CompanyId && a.Code == "5215", token);
+                a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.PostingRoleCodes.MiscellaneousExpenses, token);
 
             // (CEEF-232 · ض-٤) ‏**ومنشأةٌ غير مسجَّلةٍ لا تُصدر ضريبةً أصلاً.**
             //

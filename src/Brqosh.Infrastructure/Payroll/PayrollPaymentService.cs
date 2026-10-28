@@ -28,8 +28,8 @@ public class PayrollPaymentService(BrqoshDbContext db)
     public const string GosiPrefix = "PayrollGosiPaid:";
     public const string EndOfServicePrefix = "EndOfServicePaid:";
 
-    private const string SalariesPayable = "2108";
-    private const string GosiPayable = "2109";
+    private const string SalariesPayable = SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable;
+    private const string GosiPayable = SaudiChartOfAccounts.PostingRoleCodes.GosiPayable;
 
     /// <summary>ما بقي من صافي رواتب الدورة بلا صرف.</summary>
     public Task<decimal> SalariesDueAsync(long companyId, long runId, CancellationToken ct = default) =>

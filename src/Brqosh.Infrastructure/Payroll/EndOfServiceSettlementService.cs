@@ -52,7 +52,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
     private const string ProvisionCode = "2202";
 
     /// <summary>رواتبُ مستحقّة — <b>مخرجُ المال الوحيد في الرواتب</b>.</summary>
-    private const string PayableCode = "2108";
+    private const string PayableCode = SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable;
 
     /// <summary>(CEEF-233 · ز-٥) مخصّصُ الإجازات ومصروفُها — لبدل الإجازة (المادة 111).</summary>
     private const string LeaveProvisionCode = "2203";

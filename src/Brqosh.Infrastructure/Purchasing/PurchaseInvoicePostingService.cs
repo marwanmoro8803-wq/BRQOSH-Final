@@ -163,7 +163,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
                 : null;
             var purchases = asset is not null
                 ? await db.Accounts.SingleAsync(a => a.Id == asset.GlAssetAccountId && a.CompanyId == invoice.CompanyId, ct)
-                : await SystemAccountAsync(invoice.CompanyId, project is null ? "5102" : ProjectCostAccountCode);
+                : await SystemAccountAsync(invoice.CompanyId, project is null ? SaudiChartOfAccounts.PostingRoleCodes.Purchases : ProjectCostAccountCode);
             var inventoryAccount = inventorySubtotal > 0
                 ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
                 : null;

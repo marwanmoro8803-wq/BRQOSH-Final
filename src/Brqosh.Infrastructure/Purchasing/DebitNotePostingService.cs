@@ -112,7 +112,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
                 }
             }
 
-            var purchases = await db.Accounts.SingleAsync(a => a.CompanyId == note.CompanyId && a.Code == "5102", token);
+            var purchases = await db.Accounts.SingleAsync(a => a.CompanyId == note.CompanyId && a.Code == SaudiChartOfAccounts.PostingRoleCodes.Purchases, token);
             var vatInput = await db.Accounts.SingleAsync(a =>
                 a.CompanyId == note.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.VatInput, token);
             var payable = await db.Accounts.SingleAsync(a =>

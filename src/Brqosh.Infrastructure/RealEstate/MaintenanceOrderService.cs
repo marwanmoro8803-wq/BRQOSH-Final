@@ -171,7 +171,7 @@ public class MaintenanceOrderService(BrqoshDbContext db)
     }
 
     /// <summary>حسابُ المشتريات غير المخزنيّة — يُدينه سطرُ فاتورة الشراء بلا صنف.</summary>
-    public const string NonInventoryPurchasesCode = "5102";
+    public const string NonInventoryPurchasesCode = SaudiChartOfAccounts.PostingRoleCodes.Purchases;
 
     /// <summary>
     /// (<c>sector-modules#11</c>) <b>فاتورةُ المورّد التي تكون سندَ الأمر</b> — مرحّلةٌ، صافيها تكلفةُ الأمر نفسُها، بلا صنفٍ مخزنيّ

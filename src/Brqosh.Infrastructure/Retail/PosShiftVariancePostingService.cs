@@ -36,7 +36,7 @@ public record PosShiftVarianceResult(decimal Expected, decimal Counted, decimal 
 public class PosShiftVariancePostingService(BrqoshDbContext db)
 {
     /// <summary>مصروفاتٌ متنوّعة — وعاءُ العجز.</summary>
-    private const string ShortageExpenseCode = "5215";
+    private const string ShortageExpenseCode = SaudiChartOfAccounts.PostingRoleCodes.MiscellaneousExpenses;
 
     public async Task<PosShiftVarianceResult> PostForShiftAsync(
         long companyId, long shiftId, string username, CancellationToken ct = default)

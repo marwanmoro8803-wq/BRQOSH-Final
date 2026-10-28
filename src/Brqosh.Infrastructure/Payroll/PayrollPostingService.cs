@@ -21,9 +21,9 @@ public class PayrollPostingService(BrqoshDbContext db)
             await BranchAssignmentHelper.EnsureAssignedAsync(run, db, ct: token);
 
             var salaries = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.SystemCodes.SalariesExpense, token);
-            var gosiExp = await AccountAsync(run.CompanyId, "5203", token);
-            var salariesPayable = await AccountAsync(run.CompanyId, "2108", token);
-            var gosiPayable = await AccountAsync(run.CompanyId, "2109", token);
+            var gosiExp = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.GosiExpense, token);
+            var salariesPayable = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable, token);
+            var gosiPayable = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.GosiPayable, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, run.CompanyId, run.PayDate, PostingDocumentKind.Payroll,
