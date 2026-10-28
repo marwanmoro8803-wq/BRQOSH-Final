@@ -107,6 +107,7 @@ public static class PageFactory
         ["pos_reports"] = () => new Views.Pages.PosReportsPage(),
         ["income_statement"] = () => new Views.Pages.IncomeStatementPage(),
         ["balance_sheet"] = () => new Views.Pages.BalanceSheetPage(),
+        ["equity_statement"] = () => new Views.Pages.EquityStatementPage(),
         ["cash_flow_statement"] = () => new Views.Pages.CashFlowStatementPage(),
         ["consolidated_trial_balance"] = () => new Views.Pages.ConsolidatedTrialBalancePage(),
         ["consolidated_income_statement"] = () => new Views.Pages.ConsolidatedIncomeStatementPage(),

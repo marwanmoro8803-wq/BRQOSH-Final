@@ -68,6 +68,7 @@ public static class PermissionService
         ["trial_balance"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["income_statement"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["balance_sheet"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
+        ["equity_statement"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["cash_flow_statement"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["consolidated_trial_balance"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["consolidated_income_statement"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],

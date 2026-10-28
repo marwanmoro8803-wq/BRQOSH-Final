@@ -52,6 +52,7 @@ TITLE_TO_KEY: dict[str, str] = {
     "ميزان المراجعة": "trial_balance",
     "قائمة الدخل": "income_statement",
     "قائمة المركز المالي": "balance_sheet",
+    "قائمة التغيّرات في حقوق الملكية": "equity_statement",
     "قائمة التدفقات النقدية": "cash_flow_statement",
     "ميزان مراجعة موحّد": "consolidated_trial_balance",
     "قائمة دخل موحّدة": "consolidated_income_statement",

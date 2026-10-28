@@ -90,6 +90,7 @@ internal static class NavKeyModuleMap
         ["trial_balance"] = ModuleKey.Reports,
         ["income_statement"] = ModuleKey.Reports,
         ["balance_sheet"] = ModuleKey.Reports,
+        ["equity_statement"] = ModuleKey.Reports,
         ["cash_flow_statement"] = ModuleKey.Reports,
         ["consolidated_trial_balance"] = ModuleKey.Reports,
         ["consolidated_income_statement"] = ModuleKey.Reports,

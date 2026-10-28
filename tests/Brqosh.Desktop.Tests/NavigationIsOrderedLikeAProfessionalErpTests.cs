@@ -44,7 +44,7 @@ public class NavigationIsOrderedLikeAProfessionalErpTests
         InOrder(Keys("المخزون والمستودعات"), "products", "warehouses", "stock_movements", "stock_count");
         InOrder(Keys("الخزينة والبنوك"), "bank_accounts", "receipt_vouchers", "payment_vouchers", "bank_statements", "bank_reconciliation", "cash_position", "exchange_rates");
         InOrder(Keys("المحاسبة العامة"), "chart_of_accounts", "journal_entries", "fiscal_periods", "cost_centers", "budget_variance");
-        InOrder(Keys("التقارير المالية"), "trial_balance", "income_statement", "balance_sheet", "cash_flow_statement", "vat_return");
+        InOrder(Keys("التقارير المالية"), "trial_balance", "income_statement", "balance_sheet", "equity_statement", "cash_flow_statement", "vat_return");
         InOrder(Keys("الرواتب"), "employees", "payroll", "payslips", "wage_protection");
     }
 

@@ -59,6 +59,7 @@ public static class NavIconGlyphs
         ["trial_balance"] = "TB",
         ["income_statement"] = "PL",
         ["balance_sheet"] = "BS",
+        ["equity_statement"] = "SCE",
         ["consolidated_trial_balance"] = "CTB",
         ["consolidated_income_statement"] = "CPL",
         ["consolidated_balance_sheet"] = "CBS",

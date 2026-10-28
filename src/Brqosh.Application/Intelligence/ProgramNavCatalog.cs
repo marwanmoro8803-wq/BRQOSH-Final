@@ -60,6 +60,7 @@ public static class ProgramNavCatalog
         ["trial_balance"] = new("ميزان المراجعة", "Trial Balance"),
         ["income_statement"] = new("قائمة الدخل", "Income Statement"),
         ["balance_sheet"] = new("قائمة المركز المالي", "Statement of Financial Position"),
+        ["equity_statement"] = new("قائمة التغيّرات في حقوق الملكية", "Statement of Changes in Equity"),
         ["cash_flow_statement"] = new("قائمة التدفقات النقدية", "Cash Flow Statement"),
         ["consolidated_trial_balance"] = new("ميزان مراجعة موحّد", "Consolidated Trial Balance"),
         ["consolidated_income_statement"] = new("قائمة دخل موحّدة", "Consolidated Income Statement"),

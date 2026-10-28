@@ -80,6 +80,49 @@ public partial class DocumentPrintService
         return new PrintResult(pdf, fileName);
     }
 
+    public async Task<PrintResult> ExportStatementOfChangesInEquityAsync(
+        long companyId, DateOnly fromDate, DateOnly toDate, string username, CancellationToken ct = default)
+    {
+        var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
+        var branding = PrintBranding.FromCompany(company, username);
+        var result = await new StatementOfChangesInEquityQuery(db).ExecuteAsync(companyId, fromDate, toDate, ct);
+        string L(string ar, string en) => branding.English ? en : ar;
+
+        PrintColumn[] columns =
+        [
+            new(L("رقم الحساب", "Account"), 0.8f),
+            new(L("المكوّن", "Component"), 1.8f),
+            new(L("رصيد أول الفترة", "Opening"), 1f, Numeric: true),
+            new(L("ربح/خسارة الفترة", "Profit or loss"), 1f, Numeric: true),
+            new(L("الدخل الشامل الآخر", "OCI"), 1f, Numeric: true),
+            new(L("معاملات مع الملّاك", "Transactions with owners"), 1f, Numeric: true),
+            new(L("تحويلات بين المكوّنات", "Transfers within equity"), 1f, Numeric: true),
+            new(L("رصيد آخر الفترة", "Closing"), 1f, Numeric: true),
+        ];
+        var rows = result.Components.Select(c => (IReadOnlyList<string>)
+        [
+            c.AccountCode, c.AccountNameAr,
+            PrintText.Money(c.Opening), PrintText.Money(c.ProfitOrLoss), PrintText.Money(c.OtherComprehensiveIncome),
+            PrintText.Money(c.TransactionsWithOwners), PrintText.Money(c.TransfersWithinEquity), PrintText.Money(c.Closing),
+        ]).ToList();
+        rows.Add(
+        [
+            "", L("الإجمالي", "Total"),
+            PrintText.Money(result.TotalOpening), PrintText.Money(result.TotalProfitOrLoss), PrintText.Money(result.TotalOtherComprehensiveIncome),
+            PrintText.Money(result.TotalTransactionsWithOwners), PrintText.Money(result.TotalTransfersWithinEquity), PrintText.Money(result.TotalClosing),
+        ]);
+        var summary = new List<(string Label, string Value)>
+        {
+            (L("إجمالي الدخل الشامل", "Total comprehensive income"), PrintText.Money(result.TotalComprehensiveIncome)),
+            (L("حقوق الملكية آخر الفترة", "Closing equity"), PrintText.Money(result.TotalClosing)),
+        };
+        var pdf = PrintReport.Table(branding, L("قائمة التغيّرات في حقوق الملكية", "Statement of Changes in Equity"),
+            $"{fromDate:yyyy-MM-dd} — {toDate:yyyy-MM-dd}", columns, rows, summary, landscape: true);
+        var fileName = $"brqosh-equity-{fromDate:yyyyMMdd}-{toDate:yyyyMMdd}.pdf";
+        await LogAsync(companyId, username, "StatementOfChangesInEquity", $"{fromDate:yyyy-MM-dd}..{toDate:yyyy-MM-dd}", ct);
+        return new PrintResult(pdf, fileName);
+    }
+
     public async Task<PrintResult> ExportGeneralLedgerAsync(
         long companyId, DateOnly fromDate, DateOnly toDate, string username,
         string? accountCodeFilter = null, CancellationToken ct = default)

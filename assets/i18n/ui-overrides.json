@@ -2101,5 +2101,14 @@
   "اختر دوراً.": "Select a role.",
   "إرجاع الحساب الافتراضي لهذا الدور؟": "Restore the default account for this role?",
   "لا توجد أدوار ترحيل": "No posting roles",
-  "تُنشأ الأدوار تلقائياً مع المنشأة.": "Roles are created with the company."
+  "تُنشأ الأدوار تلقائياً مع المنشأة.": "Roles are created with the company.",
+  "قائمة التغيّرات في حقوق الملكية": "Statement of Changes in Equity",
+  "حركة مكوّنات حقوق الملكية للفترة · IAS 1": "Movement of equity components for the period · IAS 1",
+  "المكوّن": "Component",
+  "رصيد أول الفترة": "Opening balance",
+  "ربح/خسارة الفترة": "Profit or loss for the period",
+  "الدخل الشامل الآخر": "Other comprehensive income",
+  "معاملات مع الملّاك": "Transactions with owners",
+  "تحويلات بين المكوّنات": "Transfers within equity",
+  "رصيد آخر الفترة": "Closing balance"
 }
