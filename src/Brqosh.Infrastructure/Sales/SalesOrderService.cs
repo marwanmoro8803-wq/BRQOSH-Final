@@ -192,7 +192,8 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
                 if (line.ProductId is not long productId || !draws.TryGetValue(productId, out var available))
                 {
                     invoice.AddLine(line.Description, take[index], line.UnitPrice, line.ProductId,
-                        line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
+                        line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason,
+                        discountPercent: line.DiscountPercent);
                     continue;
                 }
 
@@ -208,11 +209,37 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
                     var drawn = Math.Min(toDraw, draw.Quantity);
                     invoice.AddLine(line.Description, drawn, line.UnitPrice, line.ProductId,
                         line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason,
-                        batchNumber: draw.BatchNumber);
+                        batchNumber: draw.BatchNumber, discountPercent: line.DiscountPercent);
                     toDraw -= drawn;
                     if (drawn >= draw.Quantity) available.RemoveAt(0);
                     else available[0] = draw with { Quantity = draw.Quantity - drawn };
                 }
+            }
+
+            // ‏عملةُ الأمر وسعرُه، ونصيبُ الفاتورة من خصم المستند (والفاتورةُ المُكمِلةُ تأخذ الباقي فلا يضيع فرقُ تقريب).
+            if (order.CurrencyCode != "SAR" || order.ExchangeRate != 1m)
+                invoice.SetCurrency(order.CurrencyCode, order.ExchangeRate);
+            if (order.DocumentDiscountAmount > 0m)
+            {
+                var completes = take.Select((q, i) => remaining[i] - q).All(r => r <= 0m);
+                decimal share;
+                if (completes)
+                {
+                    var priorIds = invoicedLines.Select(l => l.SalesInvoiceId).Distinct().ToList();
+                    var prior = await db.SalesInvoices.AsNoTracking()
+                        .Where(i => priorIds.Contains(i.Id)).SumAsync(i => i.DocumentDiscountAmount, token);
+                    share = order.DocumentDiscountAmount - prior;
+                }
+                else
+                {
+                    var orderNet = order.Lines.Sum(l => l.LineTotal);
+                    var thisNet = order.Lines.Select((l, i) => l.Quantity == 0m ? 0m : take[i] * l.LineTotal / l.Quantity).Sum();
+                    share = orderNet == 0m ? 0m
+                        : Math.Round(order.DocumentDiscountAmount * thisNet / orderNet, 2, MidpointRounding.AwayFromZero);
+                }
+                share = Math.Clamp(share, 0m, invoice.Lines.Sum(l => l.LineTotal));
+                if (share > 0m)
+                    invoice.ApplyDocumentDiscount(share);
             }
 
             // ‏والكمّيةُ المفوترة تخرج من الحجز — قبل الترحيل، فلا يحجب حجزُ الأمر نفسِه بيعَه.

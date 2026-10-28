@@ -3886,6 +3886,20 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
         }
 
+        // ‏خصمُ أمر البيع وعملتُه — للأوامر القائمة صفرٌ وريالٌ بسعر واحد، كما كانت.
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("sales_orders", "DocumentDiscountAmount", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
+            await EnsurePgColumnAsync("sales_orders", "CurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
+            await EnsurePgColumnAsync("sales_orders", "ExchangeRate", "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnIfTableAsync("sales_orders", "DocumentDiscountAmount", "TEXT NOT NULL DEFAULT '0'", ct);
+            await EnsureSqliteColumnIfTableAsync("sales_orders", "CurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
+            await EnsureSqliteColumnIfTableAsync("sales_orders", "ExchangeRate", "TEXT NOT NULL DEFAULT '1'", ct);
+        }
+
         // ‏حجزُ المخزون لأوامر البيع — فارغٌ للقواعد القائمة (لا حجزَ لأوامرَ أُكِّدت قبله).
         if (isPg)
         {

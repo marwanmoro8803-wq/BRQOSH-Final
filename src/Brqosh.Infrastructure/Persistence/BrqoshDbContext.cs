@@ -1787,6 +1787,9 @@ public class BrqoshDbContext : DbContext
             entity.Property(o => o.Status).HasConversion<string>().HasMaxLength(16);
             entity.Property(o => o.Subtotal).HasPrecision(18, 2);
             entity.Property(o => o.VatAmount).HasPrecision(18, 2);
+            entity.Property(o => o.DocumentDiscountAmount).HasPrecision(18, 2);
+            entity.Property(o => o.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
+            entity.Property(o => o.ExchangeRate).HasPrecision(18, 6).HasDefaultValue(1m);
             entity.HasIndex(o => new { o.CompanyId, o.OrderNumber }).IsUnique();
             entity.HasIndex(o => o.CustomerId);
             entity.HasIndex(o => o.SalesQuotationId);

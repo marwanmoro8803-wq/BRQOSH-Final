@@ -27,6 +27,13 @@ public class SalesOrder : ILineDocumentTotals
     public long? SalesInvoiceId { get; private set; }
     public decimal Subtotal { get; private set; }
     public decimal VatAmount { get; private set; }
+
+    /// <summary>‏خصمُ المستند (مبلغاً بعملة الأمر) — يُوزَّع على فواتيره بنسبة صافي ما تُفوتره، والأخيرةُ تأخذ الباقي.</summary>
+    public decimal DocumentDiscountAmount { get; private set; }
+
+    /// <summary>‏عملةُ الأمر وسعرُ صرفه — تنتقلان إلى فواتيره.</summary>
+    public string CurrencyCode { get; private set; } = "SAR";
+    public decimal ExchangeRate { get; private set; } = 1m;
     public IReadOnlyList<SalesInvoiceLine> Lines => _lines.AsReadOnly();
 
     private SalesOrder() { }
@@ -48,9 +55,12 @@ public class SalesOrder : ILineDocumentTotals
 
     public void AddLine(string description, decimal quantity, decimal unitPrice, long? productId = null,
         Tax.VatCategory vatCategory = Tax.VatCategory.Standard,
-        string? taxExemptionReasonCode = null, string? taxExemptionReason = null)
+        string? taxExemptionReasonCode = null, string? taxExemptionReason = null, decimal discountPercent = 0m)
     {
         EnsureDraft();
+        if (discountPercent < 0m || discountPercent > 100m)
+            throw new AccountingException(
+                $"نسبة خصم السطر «{description}» يجب أن تكون بين 0 و100 — ووردت {discountPercent:N2}.");
         if (string.IsNullOrWhiteSpace(description))
             throw new AccountingException("وصف الصنف مطلوب.");
         if (quantity <= 0 || unitPrice < 0)
@@ -77,8 +87,34 @@ public class SalesOrder : ILineDocumentTotals
                 taxExemptionReason = reason.EnglishText;
         }
 
-        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim()));
+        _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
+            DiscountPercent: Math.Round(discountPercent, 4, MidpointRounding.AwayFromZero)));
         RecalculateTotals();
+    }
+
+    public void ApplyDocumentDiscount(decimal amount)
+    {
+        EnsureDraft();
+        if (amount < 0m)
+            throw new AccountingException("خصم المستند لا يكون سالباً.");
+        var linesNet = _lines.Sum(l => l.LineTotal);
+        if (amount > linesNet)
+            throw new AccountingException(
+                $"خصم المستند {amount:N2} يتجاوز صافي السطور {linesNet:N2} — وفاتورةٌ بوعاءٍ سالبٍ إشعارُ دائنٍ لا فاتورة.");
+        DocumentDiscountAmount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+        RecalculateTotals();
+    }
+
+    public void SetCurrency(string currencyCode, decimal exchangeRate, string? booksCurrencyCode = null)
+    {
+        EnsureDraft();
+        if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Trim().Length != 3)
+            throw new AccountingException("رمز العملة ثلاثةُ أحرفٍ بمعيار ISO 4217.");
+        if (exchangeRate <= 0m)
+            throw new AccountingException("سعرُ الصرف يجب أن يكون موجباً.");
+        BooksCurrency.Validate(currencyCode, exchangeRate, booksCurrencyCode);
+        CurrencyCode = currencyCode.Trim().ToUpperInvariant();
+        ExchangeRate = exchangeRate;
     }
 
     public void Confirm(string orderNumber)
@@ -142,6 +178,6 @@ public class SalesOrder : ILineDocumentTotals
 
     private void RecalculateTotals()
     {
-        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines);
+        (Subtotal, VatAmount) = LineDocumentTotalsCalculator.Compute(_lines, documentDiscount: DocumentDiscountAmount);
     }
 }
