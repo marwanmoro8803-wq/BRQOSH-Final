@@ -71,11 +71,6 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             db, invoice.CompanyId, invoice.InvoiceDate, PostingDocumentKind.SalesInvoice,
             documentKey: invoice.InvoiceNumber);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٩٥ · order-to-cash#13) **حدُّ ائتمان العميل** — قبل استهلاك الطبقات وتخصيص الرقم. والبيعُ
-        // ‏الآجلُ وحدَه: بيعُ نقطة البيع نقدٌ أو بطاقة يُقيَّد على الصندوق أو البنك ولا يمسّ الذمّة (`DebitAccountForSaleAsync`).
-        if (invoice.PosShiftId is null || invoice.PosPaymentMethod is null)
-            await EnsureWithinCreditLimitAsync(invoice, ct);
-
         var inv = new InventoryService(db);
 
 
@@ -97,6 +92,12 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
         // الاستهلاك الذي يُرمَّم منه عند الإلغاء. ولو خُصّص بعده لَسُجّل الاستهلاكُ
         // باسمٍ فارغ، فلا يجده الإلغاءُ ولا تعود الطبقات — عطلٌ صامتٌ تماماً.
         var invoiceNumber = await NextInvoiceNumberAsync(invoice.CompanyId, invoice.InvoiceDate);
+
+        // ‏(جاهزيّةُ الإطلاق · ح-٩٥ · order-to-cash#13) **حدُّ ائتمان العميل** — قبل استهلاك الطبقات، و**بعد** قفل التسلسل
+        // ‏الاستشاريّ (`NextInvoiceNumberAsync`): فحصٌ قبل القفل يدع فاتورتين متزامنتين تقرآن الرصيدَ نفسَه فتتجاوزان الحدَّ معاً.
+        // ‏والرفضُ هنا يُرجِع المعاملةَ كلَّها فلا يُستهلك الرقم. والبيعُ الآجلُ وحدَه: بيعُ نقطة البيع نقدٌ أو بطاقة لا يمسّ الذمّة.
+        if (invoice.PosShiftId is null || invoice.PosPaymentMethod is null)
+            await EnsureWithinCreditLimitAsync(invoice, ct);
 
         decimal cogsAmount = 0;
         var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
