@@ -31,6 +31,15 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
             if (invoice.JournalEntryId is not long entryId)
                 throw new AccountingException("الفاتورة بلا قيد محاسبي مرتبط.");
 
+            // ‏فاتورةٌ مُسدَّدةٌ (كلياً أو جزئياً) لا تُلغى وتخصيصاتُ الدفع قائمةٌ عليها — وإلّا بقيت معلّقةً على فاتورةٍ ملغاة.
+            var hasPaymentAllocations = await db.PaymentAllocationLines.AnyAsync(a =>
+                a.CompanyId == companyId
+                && a.DocumentType == Brqosh.Domain.Treasury.PaymentAllocationDocumentType.PurchaseInvoice
+                && a.DocumentId == invoiceId, token);
+            if (hasPaymentAllocations)
+                throw new AccountingException(
+                    "لا يُلغى فاتورة عليها مدفوعات مخصّصة — ألغِ تخصيص سند الصرف أو اعكسه أولاً، ثم أعد محاولة الإلغاء.");
+
             await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, cancellationDate);
 
             // ‏(ح-١٥٨) ‏**والأصلُ الذي اقتنته يُلغى اقتناؤه معها** — بشروط إلغائه نفسِها (لا إهلاكَ ولا استبعادَ ولا رسملة)،

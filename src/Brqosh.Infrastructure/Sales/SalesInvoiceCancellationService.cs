@@ -45,6 +45,15 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
                 throw new AccountingException(
                     "لا يُلغى فاتورة لها إشعار دائن مرحّل — عكس الإشعار أولاً أو استخدم إشعار دائن لتصحيح الفاتورة.");
 
+            // ‏فاتورةٌ مُسدَّدةٌ (كلياً أو جزئياً) لا تُلغى وتخصيصاتُ الدفع قائمةٌ عليها — وإلّا بقيت معلّقةً على فاتورةٍ ملغاة.
+            var hasPaymentAllocations = await db.PaymentAllocationLines.AnyAsync(a =>
+                a.CompanyId == companyId
+                && a.DocumentType == Brqosh.Domain.Treasury.PaymentAllocationDocumentType.SalesInvoice
+                && a.DocumentId == invoiceId, token);
+            if (hasPaymentAllocations)
+                throw new AccountingException(
+                    "لا يُلغى فاتورة عليها مقبوضات مخصّصة — ألغِ تخصيص سند القبض أو اعكسه أولاً، ثم أعد محاولة الإلغاء.");
+
             var posting = new JournalPostingService(db);
             await posting.EnsurePeriodOpenAsync(companyId, cancellationDate);
 
