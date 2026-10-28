@@ -6,6 +6,7 @@ using Brqosh.Domain.Sales;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -14,8 +15,7 @@ public partial class CustomersPage : UserControl
     public record CustomerRow(long Id, string NameAr, string VatRegistrationNumber,
         string Phone, string Address, string InvoiceKind, decimal Balance);
 
-    private List<Customer> _customers = [];
-    private IReadOnlyDictionary<long, decimal> _balances = new Dictionary<long, decimal>();
+    private readonly CustomersViewModel _vm = new();
     private readonly SearchDebouncer _searchDebouncer;
 
     public CustomersPage()
@@ -34,32 +34,11 @@ public partial class CustomersPage : UserControl
     private async Task ReloadAsync()
     {
         // (م2-٢٣) الموقوف يظهر عند طلبه.
-        var showInactive = ShowInactiveCheck.IsChecked == true;
-        var filter = SearchBox.Text.Trim();
-        await using var db = AppServices.CreateDb();
-        var query = db.Customers
-            .Where(c => c.CompanyId == AppServices.CompanyId && (c.IsActive || showInactive));
-        if (!string.IsNullOrEmpty(filter))
-            query = query.Where(c => c.NameAr.Contains(filter) || c.VatRegistrationNumber.Contains(filter));
-
-        _customers = await query.OrderBy(c => c.NameAr).Take(200).ToListAsync();
-        var total = await db.Customers.CountAsync(c => c.CompanyId == AppServices.CompanyId && (c.IsActive || showInactive));
-        _balances = await new Brqosh.Infrastructure.Sales.CustomerBalanceQuery(db)
-            .AllBalancesAsync(AppServices.CompanyId);
-        Render(filter);
-        var totalAr = _balances.Values.Sum();
+        await _vm.LoadAsync(SearchBox.Text.Trim(), ShowInactiveCheck.IsChecked == true);
+        CustomersGrid.ItemsSource = _vm.Rows;
+        UiTestAutomation.PublishGridCount(CustomersGrid, _vm.Rows.Count);
         CustomerSummaryText.Text =
-            $"عملاء نشطون: {total:N0} · معروض: {_customers.Count:N0} · إجمالي AR: {totalAr:N2} {CurrencyLabel.Short}";
-    }
-
-    private void Render(string filter)
-    {
-        var list = _customers.Select(c => new CustomerRow(
-            c.Id, c.NameAr, c.VatRegistrationNumber, c.Phone, c.Address,
-            c.SupportsStandardTaxInvoice ? "ضريبية (B2B)" : "مبسطة (B2C)",
-            _balances.GetValueOrDefault(c.Id))).ToList();
-        CustomersGrid.ItemsSource = list;
-        UiTestAutomation.PublishGridCount(CustomersGrid, list.Count);
+            $"عملاء نشطون: {_vm.TotalCount:N0} · معروض: {_vm.Rows.Count:N0} · إجمالي AR: {_vm.TotalBalance:N2} {CurrencyLabel.Short}";
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => _searchDebouncer.Trigger();
@@ -73,7 +52,8 @@ public partial class CustomersPage : UserControl
     private async void OnEdit(object sender, MouseButtonEventArgs e)
     {
         if (CustomersGrid.SelectedItem is not CustomerRow row) return;
-        var customer = _customers.Single(c => c.Id == row.Id);
+        var customer = _vm.Find(row.Id);
+        if (customer is null) return;
         if (new CustomerDialog(customer) { Owner = Window.GetWindow(this) }.ShowDialog() == true)
             await ReloadAsync();
     }
@@ -87,10 +67,7 @@ public partial class CustomersPage : UserControl
 
         try
         {
-            await using var db = AppServices.CreateDb();
-            var customer = await db.Customers.SingleAsync(c => c.Id == row.Id);
-            customer.Deactivate();
-            await db.SaveChangesAsync();
+            await _vm.DeactivateAsync(row.Id);
             await ReloadAsync();
         }
         catch (Exception ex)
@@ -131,10 +108,7 @@ public partial class CustomersPage : UserControl
 
         try
         {
-            await using var db = AppServices.CreateDb();
-            var entity = await db.Customers.SingleAsync(x => x.Id == row.Id);
-            entity.Reactivate();
-            await db.SaveChangesAsync();
+            await _vm.ReactivateAsync(row.Id);
             await ReloadAsync();
         }
         catch (Exception ex)
