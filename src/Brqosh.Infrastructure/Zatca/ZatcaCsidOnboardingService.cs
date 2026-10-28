@@ -70,7 +70,8 @@ public class ZatcaCsidOnboardingService
         long companyId, string organizationName, string vatNumber, string solutionName = "BRQOSH-ERP",
         ZatcaEnvironment environment = ZatcaEnvironment.Simulation,
         string invoiceType = "1100", string registeredAddress = "Riyadh", string businessCategory = "Software",
-        bool forRenewal = false)
+        bool forRenewal = false, string? organizationUnit = null, string? commonName = null,
+        string? certificateTemplate = null)
     {
         if (string.IsNullOrWhiteSpace(vatNumber) || vatNumber.Length != 15)
             throw new AccountingException("الرقم الضريبي (15 رقماً) مطلوب لتوليد CSR.");
@@ -83,36 +84,13 @@ public class ZatcaCsidOnboardingService
         // ‏(موانعُ الإطلاق) ‏**المنحنى secp256k1** — دليلُ الهيئة التقنيّ يأمر `openssl ecparam -name secp256k1`، وCNG في ويندوز لا يدعمه
         // ‏فالتوليدُ والـCSR بـBouncyCastle (`ZatcaSecp256k1`). كان `nistP256` بتعليلٍ لا يسنده نصٌّ منشور، وطلبُ CSID به يُرفض.
         var keyPem = ZatcaSecp256k1.GenerateKeyPem();
+        var (csrDer, csrPem) = BuildCsr(keyPem, organizationName, vatNumber, solutionName, environment, invoiceType,
+            registeredAddress, businessCategory, organizationUnit, commonName, certificateTemplate);
         // ‏(ح-١٣٧) مفتاحُ التجديد يُكتب جانباً: المفتاحُ الحاليُّ يوقّع الفواتيرَ حتى تقبل الهيئةُ الجديد.
         var privateKeyPath = Path.Combine(dir, forRenewal ? RenewingKeyFile : "private.key");
         // ‏(security-licensing-tenancy#3) ‏مشفَّراً للجهاز — لا يمسّ القرصَ PEM صريحٌ قطّ.
         ZatcaKeyFile.Write(privateKeyPath, keyPem);
 
-        // ‏معرّفُ وحدة الإصدار (EGS) كما تتوقّعه الهيئة: 1-اسم الحلّ|2-إصدارُه|3-معرّفٌ فريد.
-        var serial = $"1-{SanitizeDn(solutionName)}|2-1.0|3-{Guid.NewGuid()}";
-
-        // ‏ترتيبُ RDN في ASN.1 من الأعلى: C ثمّ O ثمّ OU ثمّ CN (وهو ما يُقرأ نصّاً CN=…,OU=…,O=…,C=SA).
-        var organization = SanitizeDn(organizationName);
-        (string Oid, string Value)[] subject =
-        [
-            ("2.5.4.6", "SA"),
-            ("2.5.4.10", organization),
-            ("2.5.4.11", SanitizeDn(registeredAddress)),
-            ("2.5.4.3", organization),
-        ];
-
-        // KeyUsage: digitalSignature
-        var extensions = new List<(string Oid, bool Critical, byte[] Value)>
-        {
-            ("2.5.29.15", false, new byte[] { 0x03, 0x02, 0x07, 0x80 }),
-        };
-        var template = BuildCertificateTemplateExtension(environment);
-        extensions.Add((template.Oid!.Value!, template.Critical, template.RawData));
-        var san = BuildZatcaSubjectAltName(serial, vatNumber, invoiceType, registeredAddress, businessCategory);
-        extensions.Add((san.Oid!.Value!, san.Critical, san.RawData));
-
-        var csrDer = ZatcaSecp256k1.CreateCsr(keyPem, subject, extensions);
-        var csrPem = PemEncode("CERTIFICATE REQUEST", csrDer);
         var csrPath = Path.Combine(dir, forRenewal ? "request.renewing.csr" : "request.csr");
         File.WriteAllText(csrPath, csrPem);
 
@@ -123,10 +101,51 @@ public class ZatcaCsidOnboardingService
             csrPem);
     }
 
-    /// <summary>امتدادُ قالبِ الشهادة (‏1.3.6.1.4.1.311.20.2‎) — قيمتُه UTF8String باسم القالب.</summary>
-    internal static X509Extension BuildCertificateTemplateExtension(ZatcaEnvironment environment)
+    /// <summary>
+    /// ‏‏(Phase 7) ‏<b>الـCSR من مفتاحٍ معطى — بلا قرص.</b> ‏OU فرعُ المنشأة (أو رقمُ الـTIN لمجموعة ضريبية)، وCN اسمُ وحدة الإصدار،
+    /// ‏والقالبُ بحسب البيئة (‏TSTZATCA للبيئة التجريبيّة للمطوّرين، PREZATCA للمحاكاة، ZATCA للإنتاج).
+    /// </summary>
+    public static (byte[] Der, string Pem) BuildCsr(
+        string keyPem, string organizationName, string vatNumber, string solutionName = "BRQOSH-ERP",
+        ZatcaEnvironment environment = ZatcaEnvironment.Simulation,
+        string invoiceType = "1100", string registeredAddress = "Riyadh", string businessCategory = "Software",
+        string? organizationUnit = null, string? commonName = null, string? certificateTemplate = null)
     {
-        var name = environment == ZatcaEnvironment.Production ? TemplateProduction : TemplateSimulation;
+        // ‏معرّفُ وحدة الإصدار (EGS) كما تتوقّعه الهيئة: 1-اسم الحلّ|2-إصدارُه|3-معرّفٌ فريد.
+        var serial = $"1-{SanitizeDn(solutionName)}|2-1.0|3-{Guid.NewGuid()}";
+
+        // ‏ترتيبُ RDN في ASN.1 من الأعلى: C ثمّ O ثمّ OU ثمّ CN (وهو ما يُقرأ نصّاً CN=…,OU=…,O=…,C=SA).
+        var organization = SanitizeDn(organizationName);
+        (string Oid, string Value)[] subject =
+        [
+            ("2.5.4.6", "SA"),
+            ("2.5.4.10", organization),
+            ("2.5.4.11", SanitizeDn(string.IsNullOrWhiteSpace(organizationUnit) ? registeredAddress : organizationUnit)),
+            ("2.5.4.3", string.IsNullOrWhiteSpace(commonName) ? organization : SanitizeDn(commonName)),
+        ];
+
+        // KeyUsage: digitalSignature
+        var extensions = new List<(string Oid, bool Critical, byte[] Value)>
+        {
+            ("2.5.29.15", false, new byte[] { 0x03, 0x02, 0x07, 0x80 }),
+        };
+        var template = certificateTemplate is null
+            ? BuildCertificateTemplateExtension(environment)
+            : BuildCertificateTemplateExtension(certificateTemplate);
+        extensions.Add((template.Oid!.Value!, template.Critical, template.RawData));
+        var san = BuildZatcaSubjectAltName(serial, vatNumber, invoiceType, registeredAddress, businessCategory);
+        extensions.Add((san.Oid!.Value!, san.Critical, san.RawData));
+
+        var csrDer = ZatcaSecp256k1.CreateCsr(keyPem, subject, extensions);
+        return (csrDer, PemEncode("CERTIFICATE REQUEST", csrDer));
+    }
+
+    /// <summary>امتدادُ قالبِ الشهادة (‏1.3.6.1.4.1.311.20.2‎) — قيمتُه UTF8String باسم القالب.</summary>
+    internal static X509Extension BuildCertificateTemplateExtension(ZatcaEnvironment environment) =>
+        BuildCertificateTemplateExtension(environment == ZatcaEnvironment.Production ? TemplateProduction : TemplateSimulation);
+
+    internal static X509Extension BuildCertificateTemplateExtension(string name)
+    {
         var writer = new System.Formats.Asn1.AsnWriter(System.Formats.Asn1.AsnEncodingRules.DER);
         writer.WriteCharacterString(System.Formats.Asn1.UniversalTagNumber.UTF8String, name);
         return new X509Extension(new Oid(CertificateTemplateOid), writer.Encode(), critical: false);
@@ -199,6 +218,47 @@ public class ZatcaCsidOnboardingService
         request.Headers.Authorization = BasicAuth(binarySecurityToken, secret);
 
         return await ParseCsidResponseAsync(await Client.SendAsync(request, ct), companyId, ct);
+    }
+
+    /// <summary>
+    /// ‏(Phase 7) ‏<b>فحصُ الامتثال</b> — <c>POST /compliance/invoices</c> بشهادة الامتثال لكلّ نوع مستندٍ أعلنه الـCSR؛
+    /// ‏ولا تصدر شهادةُ الإنتاج قبل اكتمالها (<c>Missing-ComplianceSteps</c>).
+    /// </summary>
+    public async Task<ZatcaComplianceCheck> CheckComplianceInvoiceAsync(
+        string apiBaseUrl, string binarySecurityToken, string secret,
+        string invoiceHashBase64, Guid uuid, byte[] signedXml, CancellationToken ct = default)
+    {
+        using var request = JsonPost(apiBaseUrl.TrimEnd('/') + "/compliance/invoices", new
+        {
+            invoiceHash = invoiceHashBase64,
+            uuid = uuid.ToString(),
+            invoice = Convert.ToBase64String(signedXml),
+        });
+        request.Headers.Authorization = BasicAuth(binarySecurityToken, secret);
+        request.Headers.Add("Accept-Language", "en");
+
+        using var response = await Client.SendAsync(request, ct);
+        var body = await response.Content.ReadAsStringAsync(ct);
+        string? status = null, outcome = null;
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("validationResults", out var vr) && vr.TryGetProperty("status", out var st))
+                status = st.GetString();
+            if (root.TryGetProperty("reportingStatus", out var rs) && rs.ValueKind == JsonValueKind.String)
+                outcome = rs.GetString();
+            else if (root.TryGetProperty("clearanceStatus", out var cs) && cs.ValueKind == JsonValueKind.String)
+                outcome = cs.GetString();
+        }
+        catch (JsonException)
+        {
+        }
+
+        var passed = response.IsSuccessStatusCode
+                     && (status is "PASS" or "WARNING")
+                     && (outcome is null or "REPORTED" or "CLEARED");
+        return new ZatcaComplianceCheck(passed, (int)response.StatusCode, status, outcome, Truncate(body, 600));
     }
 
     private const string RenewingKeyFile = "private.renewing.key";
@@ -314,6 +374,8 @@ public class ZatcaCsidOnboardingService
     private static string Truncate(string s, int max) =>
         s.Length <= max ? s : s[..max] + "…";
 }
+
+public record ZatcaComplianceCheck(bool Passed, int HttpStatus, string? ValidationStatus, string? Outcome, string Body);
 
 public record ZatcaKeyMaterial(
     string PrivateKeyPath,

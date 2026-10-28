@@ -44,3 +44,20 @@
 ## المطلوب من مروان
 
 أي خيار؟ وفي الخيار 1: أي جهاز يكون الخادم، وهل نُجري تسجيل CSID جديداً عليه (يحتاج OTP من بوابة فاتورة)؟
+
+
+## تسجيلُ الخادم — جاهزٌ بالإعداد (Phase 7)
+
+`ZatcaServerOnboarding` يُجري التسلسلَ كلَّه بلا تدخّلٍ في الكود: مفتاحٌ وCSR (OU = الفرع، CN = اسم وحدة الإصدار، القالبُ بحسب البيئة)
+← شهادةُ امتثال بـOTP ← فحوصُ الامتثال (`/compliance/invoices`) لكلّ نوعٍ أعلنه `InvoiceType` (1100 = ستّةُ مستندات، 0100 = ثلاثة)
+← شهادةُ إنتاج ← حفظُها في `ZatcaSettings` التي يقرؤها `ZatcaCentralSigner`. ويُشغَّل بـ`POST /zatca-signer/onboard` (بسرّ الموقِّع).
+
+| المفتاح (appsettings / متغيّر بيئة) | المعنى |
+| --- | --- |
+| `Zatca:Onboarding:Environment` / `BRQOSH_ZATCA_ENVIRONMENT` | `sandbox` (developer-portal، OTP ‏123345 المنشور) · `simulation` · `production` |
+| `…:Otp` / `BRQOSH_ZATCA_OTP` | OTP من بوّابة فاتورة — **الخطوةُ الوحيدةُ الباقية: «أدخِل OTP الحقيقيّ عند التسجيل»** |
+| `…:Vat`, `…:Cr`, `…:OrganizationName`, `…:Branch`, `…:Address`, `…:BusinessCategory` | حقولُ الـCSR والبائع |
+| `…:InvoiceType` (1100), `…:SolutionName` (BRQOSH-ERP), `…:CompanyId` (1), `…:ApiBaseUrl` (اختياريّ) | |
+
+بلا OTP في simulation/production يردّ `AwaitingOtp` ولا يُرسل شيئاً — لا يتوقّف عليه شيءٌ آخر. واختُبر التسلسلُ كاملاً أمام هيئةٍ مُحاكاة
+(`TheCentralSignerOnboardsEndToEndFromConfigurationTests`)؛ والبيئةُ التجريبيّةُ الحيّة تُجرَّب بالأمر نفسِه على جهازٍ يبلغ `gw-fatoora.zatca.gov.sa`.

@@ -320,6 +320,29 @@ app.MapPost(Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.Route, async (
         : Results.Problem(outcome.Error, statusCode: outcome.StatusCode);
 });
 
+// ‏(ADR 0003 · Phase 7) ‏**تسجيلُ خادم الختم من الإعداد** — Zatca:Onboarding:* أو BRQOSH_ZATCA_*؛ بالسرّ نفسِه. بلا OTP في بيئةٍ تشترطه
+// ‏يردّ awaiting_otp («enter real OTP on registration») بلا طلبٍ للهيئة؛ والبيئةُ التجريبيّة تأخذ رمزَها المنشور.
+app.MapPost("/zatca-signer/onboard", async (HttpRequest http, BrqoshDbContext db, CancellationToken ct) =>
+{
+    var expected = Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.ServerToken();
+    if (string.IsNullOrWhiteSpace(expected))
+        return Results.Problem("signer_not_configured", statusCode: StatusCodes.Status503ServiceUnavailable);
+    if (!SecretComparer.Equals(expected, http.Headers[Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.TokenHeader].ToString()))
+        return Results.Problem("signer_unauthorized", statusCode: StatusCodes.Status401Unauthorized);
+    try
+    {
+        var options = Brqosh.Infrastructure.Zatca.ZatcaOnboardingOptions.FromConfiguration(k => builder.Configuration[k]);
+        var result = await new Brqosh.Infrastructure.Zatca.ZatcaServerOnboarding(db).RunAsync(options, ct);
+        return result.Status == Brqosh.Infrastructure.Zatca.ZatcaOnboardingStatus.ComplianceFailed
+            ? Results.UnprocessableEntity(result)
+            : Results.Ok(result);
+    }
+    catch (AccountingException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = ServiceName, version = ServiceVersion }));
 
 app.MapGet("/health/live", () => Results.Ok(new
