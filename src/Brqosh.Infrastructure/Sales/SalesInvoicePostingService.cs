@@ -36,7 +36,7 @@ namespace Brqosh.Infrastructure.Sales;
 
 /// </summary>
 
-public class SalesInvoicePostingService(BrqoshDbContext db)
+public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.ISalesInvoicePostingService
 
 {
 

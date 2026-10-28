@@ -13,7 +13,7 @@ namespace Brqosh.Infrastructure.Sales;
 /// ‏إذنُ التسليم من أمر البيع: يصرف المخزونَ ويقيّد «تكلفة المبيعات / المخزون» (بحساب الصنف ← الفئة ← العامّ)،
 /// ‏ويُفرج عن الحجز. ‏والفاتورةُ اللاحقةُ تُفوتر المسلَّمَ بلا صرفٍ ثانٍ.
 /// </summary>
-public class DeliveryNoteService(BrqoshDbContext db)
+public class DeliveryNoteService(BrqoshDbContext db) : Brqosh.Application.Accounting.IDeliveryNoteService
 {
     /// <param name="quantities">كمّيةٌ لكلّ رقم سطر (من الصفر)، و<c>null</c> = كلُّ المتبقّي من الأصناف المخزنيّة.</param>
     public async Task<DeliveryNote> DeliverFromOrderAsync(long companyId, long orderId, DateOnly deliveryDate,

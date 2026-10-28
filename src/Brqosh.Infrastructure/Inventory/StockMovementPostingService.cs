@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Inventory;
 
 /// <summary>ترحيل حركات المخزون اليدوية مع القيود المحاسبية حيث يلزم.</summary>
-public class StockMovementPostingService(BrqoshDbContext db)
+public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.IStockMovementPostingService
 {
     public async Task<StockMovement> PostAsync(StockMovement movement)
     {

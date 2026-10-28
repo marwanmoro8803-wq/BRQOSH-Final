@@ -106,6 +106,17 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<DebitNotePostingService>();
         services.AddScoped<GoodsReceiptPostingService>();
         services.AddScoped<PaymentVoucherPostingService>();
+        services.AddScoped<Sales.DeliveryNoteService>();
+        // ‏عقودُ خدمات الترحيل (Application) — تُحلّ إلى التنفيذ نفسِه في النطاق.
+        services.AddScoped<Brqosh.Application.Accounting.ISalesInvoicePostingService>(sp => sp.GetRequiredService<Sales.SalesInvoicePostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.ICreditNotePostingService>(sp => sp.GetRequiredService<Sales.CreditNotePostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IPurchaseInvoicePostingService>(sp => sp.GetRequiredService<Purchasing.PurchaseInvoicePostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IDebitNotePostingService>(sp => sp.GetRequiredService<Purchasing.DebitNotePostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IGoodsReceiptPostingService>(sp => sp.GetRequiredService<Purchasing.GoodsReceiptPostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IReceiptVoucherPostingService>(sp => sp.GetRequiredService<Treasury.ReceiptVoucherPostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IPaymentVoucherPostingService>(sp => sp.GetRequiredService<Treasury.PaymentVoucherPostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IStockMovementPostingService>(sp => sp.GetRequiredService<Inventory.StockMovementPostingService>());
+        services.AddScoped<Brqosh.Application.Accounting.IDeliveryNoteService>(sp => sp.GetRequiredService<Sales.DeliveryNoteService>());
         services.AddScoped<ReceiptVoucherPostingService>();
         services.AddScoped<ChequePostingService>();
         services.AddScoped<BankStatementDifferencePostingService>();

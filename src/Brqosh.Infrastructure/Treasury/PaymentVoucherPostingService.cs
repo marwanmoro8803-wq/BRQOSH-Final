@@ -15,7 +15,7 @@ namespace Brqosh.Infrastructure.Treasury;
 /// <summary>
 /// ترحيل سند الصرف مع تخصيص اختياري على فواتير مشتريات.
 /// </summary>
-public class PaymentVoucherPostingService(BrqoshDbContext db)
+public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.IPaymentVoucherPostingService
 {
     public Task<PaymentVoucher> PostAsync(PaymentVoucher voucher) =>
         PostAsync(voucher, Array.Empty<(PaymentAllocationDocumentType, long, string, decimal)>());

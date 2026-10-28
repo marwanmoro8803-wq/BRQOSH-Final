@@ -17,7 +17,7 @@ namespace Brqosh.Infrastructure.Purchasing;
 /// ترحيل فاتورة المشتريات مع مطابقة ثلاثية اختيارية عند ربط أمر شراء.
 /// عند وجود GRN مرحّل لنفس الأمر: لا يُضاعَف إدخال المخزون (الاستلام سبق).
 /// </summary>
-public class PurchaseInvoicePostingService(BrqoshDbContext db)
+public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.IPurchaseInvoicePostingService
 {
     public async Task<PurchaseInvoice> PostAsync(PurchaseInvoice invoice)
     {

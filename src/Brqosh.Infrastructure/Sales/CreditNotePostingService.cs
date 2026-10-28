@@ -19,7 +19,7 @@ namespace Brqosh.Infrastructure.Sales;
 /// <summary>
 /// ترحيل إشعار الدائن: تحقق من المتبقي، قيد عكسي، وإرجاع مخزني للأصناف المخزنية.
 /// </summary>
-public class CreditNotePostingService(BrqoshDbContext db)
+public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.ICreditNotePostingService
 {
     public async Task<CreditNote> PostAsync(CreditNote note)
     {

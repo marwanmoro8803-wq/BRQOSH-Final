@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Purchasing;
 
 /// <summary>ترحيل إذن استلام بضاعة من أمر شراء معتمد — يحرّك المخزون فقط (بدون AP).</summary>
-public class GoodsReceiptPostingService(BrqoshDbContext db)
+public class GoodsReceiptPostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.IGoodsReceiptPostingService
 {
     public async Task<GoodsReceipt> PostAsync(GoodsReceipt receipt, CancellationToken ct = default)
     {

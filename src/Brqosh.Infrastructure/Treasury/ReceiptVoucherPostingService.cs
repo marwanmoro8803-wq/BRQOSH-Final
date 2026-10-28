@@ -14,7 +14,7 @@ namespace Brqosh.Infrastructure.Treasury;
 /// <summary>
 /// ترحيل سند القبض مع تخصيص اختياري على فواتير/مستخلصات.
 /// </summary>
-public class ReceiptVoucherPostingService(BrqoshDbContext db)
+public class ReceiptVoucherPostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.IReceiptVoucherPostingService
 {
     public Task<ReceiptVoucher> PostAsync(ReceiptVoucher voucher) =>
         PostAsync(voucher, Array.Empty<(PaymentAllocationDocumentType, long, string, decimal)>());

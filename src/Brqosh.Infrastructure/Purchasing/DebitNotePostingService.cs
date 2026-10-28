@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Purchasing;
 
-public class DebitNotePostingService(BrqoshDbContext db)
+public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Accounting.IDebitNotePostingService
 {
     public async Task<DebitNote> PostAsync(DebitNote note, CancellationToken ct = default, bool acceptBelowCost = false)
     {
