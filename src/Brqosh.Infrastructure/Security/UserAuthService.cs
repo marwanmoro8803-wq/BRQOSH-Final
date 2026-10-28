@@ -8,7 +8,17 @@ namespace Brqosh.Infrastructure.Security;
 
 public class UserAuthService(BrqoshDbContext db)
 {
-    private const int Pbkdf2Iterations = 100_000;
+    // ‏(Phase 7 · مراجعةٌ أمنيّة) ‏كان 100,000 — وتوصيةُ OWASP لـPBKDF2-HMAC-SHA256 ‏600,000. والتجزئاتُ القديمة تُقرأ بعددِها
+    // ‏المحفوظ وتُعاد تجزئتُها عند أوّل دخولٍ ناجح (NeedsRehash) — فلا مستخدمَ يُقفَل خارجاً.
+    internal const int Pbkdf2Iterations = 600_000;
+
+    /// <summary>‏تجزئةٌ قديمة (SHA-256 بلا ملح) أو PBKDF2 بعددٍ أقلّ من الحاليّ ⟵ تُعاد عند الدخول.</summary>
+    public static bool NeedsRehash(string storedHash)
+    {
+        if (!storedHash.StartsWith("pbkdf2:", StringComparison.Ordinal)) return true;
+        var parts = storedHash.Split(':');
+        return parts.Length != 4 || !int.TryParse(parts[1], out var iterations) || iterations < Pbkdf2Iterations;
+    }
 
     public static string HashPassword(string password)
     {
@@ -24,17 +34,28 @@ public class UserAuthService(BrqoshDbContext db)
         {
             var parts = storedHash.Split(':');
             if (parts.Length != 4) return false;
-            if (!int.TryParse(parts[1], out var iterations)) return false;
-            var salt = Convert.FromHexString(parts[2]);
-            var expected = Convert.FromHexString(parts[3]);
+            if (!int.TryParse(parts[1], out var iterations) || iterations < 1) return false;
+            byte[] salt, expected;
+            try
+            {
+                salt = Convert.FromHexString(parts[2]);
+                expected = Convert.FromHexString(parts[3]);
+            }
+            catch (FormatException)
+            {
+                return false; // ‏تجزئةٌ تالفةٌ في القاعدة تُرفض — لا تُسقط شاشةَ الدخول باستثناء.
+            }
+            if (expected.Length == 0) return false;
             var actual = Rfc2898DeriveBytes.Pbkdf2(
                 password, salt, iterations, HashAlgorithmName.SHA256, expected.Length);
             return CryptographicOperations.FixedTimeEquals(actual, expected);
         }
 
         // ترقية من SHA-256 القديم
-        var legacy = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password)));
-        return string.Equals(legacy, storedHash, StringComparison.OrdinalIgnoreCase);
+        // ‏(Phase 7) ‏مقارنةٌ بزمنٍ ثابت — كانت string.Equals تكشف بالتوقيت عددَ الرموز المتطابقة.
+        var legacy = Encoding.ASCII.GetBytes(Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(password))));
+        var stored = Encoding.ASCII.GetBytes(storedHash.ToUpperInvariant());
+        return CryptographicOperations.FixedTimeEquals(legacy, stored);
     }
 
     public async Task<AppUser?> AuthenticateAsync(long companyId, string username, string password, string? totpCode = null)
@@ -71,7 +92,7 @@ public class UserAuthService(BrqoshDbContext db)
             }
         }
 
-        if (!user.PasswordHash.StartsWith("pbkdf2:", StringComparison.Ordinal))
+        if (NeedsRehash(user.PasswordHash))
         {
             user.SetPasswordHash(HashPassword(password));
             await db.SaveChangesAsync();
