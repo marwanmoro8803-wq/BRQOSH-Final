@@ -15,7 +15,7 @@ namespace Brqosh.Infrastructure.Reporting;
 /// المشتريات وضريبة المدخلات القابلة للخصم، وصافي الضريبة (مستحقة أو مستردة)،
 /// ومطابقة تقريبية مع رصيد حساب 2107 (إن وُجدت حركة).
 ///
-/// (O-21، CEEF-219) الإقرار يعكس **وقائع الفترة** لا حالة المستند اليوم.
+/// الإقرار يعكس **وقائع الفترة** لا حالة المستند اليوم.
 /// كان يُرشّح على Status == Posted فقط: فاتورة صدرت في الربع الأول وأُلغيت في الثاني
 /// تصبح Cancelled فتختفي من إعادة تشغيل إقرار الربع الأول — بأرقام أقلّ مما قُدِّم
 /// للهيئة فعلاً، ومخالفة لقيدها الباقي في الأستاذ لتلك الفترة. وهو خطر فروقات
@@ -25,12 +25,12 @@ namespace Brqosh.Infrastructure.Reporting;
 /// الإلغاء كتسوية سالبة — تماماً كما يفعل إشعار الدائن.
 /// </summary>
 /// <summary>
-/// (CEEF-229 · A-15) وعاءٌ ضريبيّ واحد في الإقرار: فئةٌ ومبلغٌ خاضع وضريبة.
+/// وعاءٌ ضريبيّ واحد في الإقرار: فئةٌ ومبلغٌ خاضع وضريبة.
 /// </summary>
 public record VatReturnBucket(Brqosh.Domain.Tax.VatCategory Category, decimal TaxableAmount, decimal VatAmount);
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-١٦٥ · <c>tax-zatca#12</c>) خانةٌ واحدةٌ من نموذج الإقرار بأعمدته في البوّابة:
+/// خانةٌ واحدةٌ من نموذج الإقرار بأعمدته في البوّابة:
 /// <b>المبلغ</b> (مستنداتُ الفترة) و<b>التعديلات</b> (الإشعاراتُ وتسويةُ إلغاء ما صدر قبلها) والضريبةُ لكلٍّ منهما.
 /// </summary>
 public record VatReturnBoxLine(int Box, decimal Amount, decimal Adjustments, decimal VatAmount, decimal VatAdjustments);
@@ -49,29 +49,29 @@ public record VatReturnResult(
     decimal DebitNotesSubtotal,
     decimal DebitNotesVat,
     decimal DebitNotesDeductibleVat,
-    // (جاهزيّةُ الإطلاق · ح-٤١) ‏**الأبُ الذي تُعرض الأوعيةُ تحته** — صافي الوعاء من إجماليّات
+    // ‏**الأبُ الذي تُعرض الأوعيةُ تحته** — صافي الوعاء من إجماليّات
     // ‏المستندات المخزونة، **لا من الأوعية**. إلزاميٌّ بلا افتراضيّ كحدود ح-٤٠.
     decimal SalesBaseNet,
     decimal PurchasesBaseNet,
     decimal? GlVatNetPayableBalance = null,
-    // تسويات إلغاء مستندات صدرت في فترات سابقة وأُلغيت داخل هذه الفترة (CEEF-219).
+    // تسويات إلغاء مستندات صدرت في فترات سابقة وأُلغيت داخل هذه الفترة .
     decimal CancelledOutputVat = 0m,
     decimal CancelledInputVat = 0m,
     IReadOnlyList<VatReturnBucket>? SalesByCategory = null,
     IReadOnlyList<VatReturnBucket>? PurchasesByCategory = null,
-    // (CEEF-232 · ض-١) ضريبةٌ قُيّدت في الأستاذ بقيدٍ ليس مستنداً محسوباً ولا تسوية.
+    // ضريبةٌ قُيّدت في الأستاذ بقيدٍ ليس مستنداً محسوباً ولا تسوية.
     decimal JournalOutputVat = 0m,
     decimal JournalInputVat = 0m,
-    // (جاهزيّةُ الإطلاق · ح-١٦٥) ‏خاناتُ النموذج — من الأوعية نفسِها مقسومةً برمز الإعفاء؛ انظر `VatReturnBox`.
+    // ‏خاناتُ النموذج — من الأوعية نفسِها مقسومةً برمز الإعفاء؛ انظر `VatReturnBox`.
     IReadOnlyList<VatReturnBoxLine>? SalesBoxes = null,
     IReadOnlyList<VatReturnBoxLine>? PurchaseBoxes = null,
     // (sector-modules#6) ‏من `JournalOutputVat` ما بلغ خانةً — ضريبةُ العرابين (فاتورةُ دفعتها 386 في الخانة 1).
     decimal JournalOutputVatInBoxes = 0m,
-    // (جاهزيّةُ الإطلاق · tax-zatca#12) ‏ضريبةُ الاحتساب العكسيّ — مخرجاتٌ هنا ومدخلاتٌ في `DeductibleInputVat` معاً (الخانة 9).
+    // ‏ضريبةُ الاحتساب العكسيّ — مخرجاتٌ هنا ومدخلاتٌ في `DeductibleInputVat` معاً (الخانة 9).
     decimal ReverseChargeVat = 0m)
 {
     /// <summary>
-    /// (CEEF-229 · A-15) المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
+    /// المبيعات مفكَّكة حسب الفئة الضريبية — <b>صافيةً</b> من الإشعارات الدائنة.
     ///
     /// <para><b>لماذا:</b> نموذج الإقرار السعوديّ يفصل المبيعات الخاضعة بالنسبة الأساسية عن
     /// الصادرات الصفرية عن المبيعات المعفاة. وكان الإقرار يُخرج مجاميع كلّية فقط، رغم أن الفئة
@@ -87,7 +87,7 @@ public record VatReturnResult(
     /// الرسميّ هنا، فأرقامها تحتاج مراجعة النموذج نصّاً (م4-٤). إسنادُ رقم صندوقٍ بالتخمين أسوأ
     /// من عدم إسناده.</para>
     ///
-    /// <para>(جاهزيّةُ الإطلاق · ح-٤١) <b>وصارت بالريال، بعد خصم المستند، وتشمل كلَّ ما في
+    /// <para> <b>وصارت بالريال، بعد خصم المستند، وتشمل كلَّ ما في
     /// الصافي من المستندات</b> — الفواتيرَ والمستخلصاتِ ناقصاً الإشعاراتِ وتسويةَ إلغاء الفترات
     /// السابقة. <b>وهويّتُها</b>: ضريبتُها + <see cref="JournalOutputVat"/> == <see cref="NetOutputVat"/>،
     /// ووعاؤها == <see cref="SalesBaseNet"/>.</para>
@@ -97,7 +97,7 @@ public record VatReturnResult(
     /// <summary>المشتريات مفكَّكة حسب الفئة — صافيةً من الإشعارات المدينة. انظر <see cref="Sales"/>.</summary>
     public IReadOnlyList<VatReturnBucket> Purchases => PurchasesByCategory ?? [];
     /// <summary>
-    /// (CEEF-232 · ض-١) <b>ضريبةُ المخرجات — من المستندات <u>ومن الأستاذ معاً</u>.</b>
+    /// <b>ضريبةُ المخرجات — من المستندات <u>ومن الأستاذ معاً</u>.</b>
     ///
     /// <para><b>وكان الإقرارُ يقرأ المستنداتِ وحدَها.</b> فضريبةٌ قُيّدت على <c>2106</c>
     /// بقيدٍ لا يحمل أحدَ المستندات الخمسة <b>لا تبلغ الإقرار أبداً</b> — لا في فترتها
@@ -105,14 +105,14 @@ public record VatReturnResult(
     /// فيُقدَّم الإقرارُ ناقصاً بضريبةٍ حُصّلت فعلاً، وهي حالةُ المطالبة بالضريبة والغرامة
     /// معاً عند الفحص.</para>
     ///
-    /// <para>(جاهزيّةُ الإطلاق · ح-٤٠) <b>والمعادلةُ في <c>VatReturnNet</c> لا هنا</b> —
+    /// <para> <b>والمعادلةُ في <c>VatReturnNet</c> لا هنا</b> —
     /// مالكٌ واحدٌ للمطبوعة والشاشة، وكانت الشاشةُ تشتقّها بنفسها فتُسقط حدّين.</para>
     /// </summary>
     public decimal NetOutputVat => Brqosh.Application.Reporting.VatReturnNet.Output(
         OutputVat, ProgressBillingsVat, CreditNotesVat, CancelledOutputVat, JournalOutputVat, ReverseChargeVat);
 
     /// <summary>
-    /// (CEEF-232 · ض-١) والمدخلاتُ كذلك — <b>والاتجاهُ هنا في صالح المنشأة</b>: عماها عنه
+    /// والمدخلاتُ كذلك — <b>والاتجاهُ هنا في صالح المنشأة</b>: عماها عنه
     /// يجعلها تدفع ضريبةً خصمُها حقٌّ لها، <b>وهو عطلٌ لا يشتكي منه أحدٌ ويُكلّف مالاً كلَّ ربع</b>.
     /// </summary>
     public decimal NetDeductibleInputVat => Brqosh.Application.Reporting.VatReturnNet.Input(
@@ -120,7 +120,7 @@ public record VatReturnResult(
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
 
     /// <summary>
-    /// (CEEF-229 · م2-١٦) <b>غيابُ البيان ليس صفراً.</b>
+    /// <b>غيابُ البيان ليس صفراً.</b>
     ///
     /// <para>كان الرصيد <c>decimal</c> يسقط إلى صفر حين لا يوجد الحساب أو لا حركة عليه،
     /// فيصير الفرقُ مساوياً <b>لصافي الإقرار كاملاً دائماً</b>. ولا كاتب لحساب «صافي ضريبة
@@ -181,7 +181,7 @@ public class VatReturnQuery(BrqoshDbContext db)
             .Select(p => p.Id)
             .ToHashSetAsync();
 
-        // (CEEF-219) الشقّ الثاني: مستندات صدرت **قبل** هذه الفترة وأُلغيت **داخلها**.
+        // الشقّ الثاني: مستندات صدرت **قبل** هذه الفترة وأُلغيت **داخلها**.
         // أثر الإلغاء ينتمي لفترة الإلغاء — كما لو صدر إشعار دائن. بدون هذا الشقّ
         // تختفي الضريبة من كل الفترات: لا من فترة الإصدار (بقيت كما قُدِّمت) ولا من غيرها.
         //
@@ -216,7 +216,7 @@ public class VatReturnQuery(BrqoshDbContext db)
 
         var cancelledInputVat = cancelledPurchases.Sum(InputVatOf);
 
-        // (جاهزيّةُ الإطلاق · tax-zatca#12) ‏**الاحتسابُ العكسيُّ مخرجاتٌ ومدخلاتٌ معاً** (دليلُ الاستيراد §6.3): يُضاف إلى صافي
+        // ‏**الاحتسابُ العكسيُّ مخرجاتٌ ومدخلاتٌ معاً** (دليلُ الاستيراد §6.3): يُضاف إلى صافي
         // ‏المخرجات بقدر ما أُضيف إلى المدخلات، فلا يتغيّر الصافي — **والأستاذُ كذلك**: القيدُ يُدين المدخلاتِ ويُدائن المخرجات.
         var reverseChargeVat =
             purchases.Where(p => p.VatTreatment == PurchaseVatTreatment.ReverseCharge).Sum(p => p.ReverseChargeVatAmount)
@@ -226,9 +226,9 @@ public class VatReturnQuery(BrqoshDbContext db)
 
         var (journalOutputVat, journalInputVat) = await ReadJournalOnlyVatAsync(companyId, from, to);
 
-        // (CEEF-229 · A-15) التفكيك بالفئة — من السطور المحمَّلة أصلاً، بلا استعلام إضافيّ.
+        // التفكيك بالفئة — من السطور المحمَّلة أصلاً، بلا استعلام إضافيّ.
         //
-        // (جاهزيّةُ الإطلاق · ح-٤١ · tax-zatca#12) ‏**لكلّ مستندٍ أوعيتُه بخصمه وسعره — ثمّ
+        // ‏**لكلّ مستندٍ أوعيتُه بخصمه وسعره — ثمّ
         // ‏تُجمع.** وكانت السطورُ كلُّها تُصبّ خاماً في حسابٍ واحد: **بلا خصمِ مستندٍ وبعملة
         // ‏المستند**، والإجماليّاتُ بالريال بعد الخصم — فلا يمكن أن تتطابق. **وكان المستخلصُ
         // ‏وتسويةُ الإلغاء غائبَين**، وكلاهما في الصافي.
@@ -260,7 +260,7 @@ public class VatReturnQuery(BrqoshDbContext db)
                 p.Lines, 0m, p.ExchangeRate, TaxBaseOf(p), -1)),
         ]);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٦٥ · tax-zatca#12) ‏**وخاناتُ النموذج من الأوعية نفسِها** — كلُّ وعاءٍ يُقسم
+        // ‏ ‏**وخاناتُ النموذج من الأوعية نفسِها** — كلُّ وعاءٍ يُقسم
         // ‏على خاناته برمز إعفاء سطوره، فلا مصدرَ ثانٍ يفترق. ‏**ومستنداتُ الفترة «مبلغ»، وما يُصحّحها «تعديلات»**
         // ‏كأعمدة البوّابة: الإشعاراتُ وتسويةُ إلغاء ما صدر قبل الفترة (في الاتّجاهين).
         var depositParts = await DepositBoxPartsAsync(companyId, from, to);
@@ -333,7 +333,7 @@ public class VatReturnQuery(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>tax-zatca#12</c>) <b>وعاءُ فاتورة الشراء في الإقرار</b> — صافيها، <b>ولمستند التخليص قيمتُه الجمركيّة</b>:
+    /// <b>وعاءُ فاتورة الشراء في الإقرار</b> — صافيها، <b>ولمستند التخليص قيمتُه الجمركيّة</b>:
     /// فصافيه صفرٌ عمداً (المستحقُّ للجمارك الضريبةُ وحدَها) ووعاءُ الخانة 8 القيمةُ التي حُسبت عليها.
     /// </summary>
     private static decimal TaxBaseOf(PurchaseInvoice p) =>
@@ -355,7 +355,7 @@ public class VatReturnQuery(BrqoshDbContext db)
         };
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>العرابينُ في الخانة 1</b> — لها فاتورةُ دفعةٍ مقدّمة (386): القبضُ «مبلغ»
+    /// <b>العرابينُ في الخانة 1</b> — لها فاتورةُ دفعةٍ مقدّمة (386): القبضُ «مبلغ»
     /// بصافيه وضريبته، والإنزالُ على فاتورة المغادرة والردُّ «تعديلٌ» سالب؛ والمصادرةُ لا توريدَ جديداً فيها إلّا عربوناً قُبض قبل
     /// ح-٨١ بلا ضريبةٍ تُستخرج الآن. <b>والمبالغُ من قيودها</b> (<c>2105</c> و<c>2106</c>) — وهي التي يقرؤها الصافي من قبل.
     /// </summary>
@@ -412,7 +412,7 @@ public class VatReturnQuery(BrqoshDbContext db)
     private static int? PurchaseBox(SalesInvoiceLine line) => VatReturnBox.ForPurchase(line.VatCategory);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٦٥) <b>أوعيةُ المستند مقسومةً على خاناتها.</b>
+    /// <b>أوعيةُ المستند مقسومةً على خاناتها.</b>
     ///
     /// <para>الوعاءُ من <see cref="DocumentBuckets"/> بعينه — بخصمه وسعره وفلسِ تحويله — <b>ثمّ يُقسم على خانات سطوره
     /// بنسبة صافيها</b>: وهو مذهبُ <c>ComputeSubtotals</c> نفسِه في توزيع خصم المستند، والوعاءُ الصفريُّ وحدَه يقع في
@@ -476,7 +476,7 @@ public class VatReturnQuery(BrqoshDbContext db)
         })];
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٤١) <b>أوعيةُ مستندٍ واحدٍ بالريال — كما يحسبها المستندُ لنفسه.</b>
+    /// <b>أوعيةُ مستندٍ واحدٍ بالريال — كما يحسبها المستندُ لنفسه.</b>
     ///
     /// <para><b>بخصمه</b> (يُوزَّع على الأوعية بنسبها في <c>ComputeSubtotals</c>) <b>ثمّ
     /// بسعره</b> — الوعاءُ والضريبةُ كلٌّ على حدة، <b>كما يُحوِّل المستندُ إجماليَّه</b>
@@ -549,7 +549,7 @@ public class VatReturnQuery(BrqoshDbContext db)
                  .Select(g => new VatReturnBucket(g.Key, g.Sum(b => b.TaxableAmount), g.Sum(b => b.VatAmount)))];
 
     /// <summary>
-    /// (CEEF-232 · ض-١) بادئاتُ المستندات الخمسة التي يقرؤها الإقرارُ أصلاً.
+    /// بادئاتُ المستندات الخمسة التي يقرؤها الإقرارُ أصلاً.
     ///
     /// <para><b>وهي مفتاحُ ألّا يُحسب المستندُ مرّتين</b>: فاتورةُ المبيعات تُرحَّل قيداً
     /// على <c>2106</c> كذلك، <b>فقراءةُ الأستاذ بلا تمييزٍ تُضاعف ضريبةَ كلّ فاتورة</b> —
@@ -564,7 +564,7 @@ public class VatReturnQuery(BrqoshDbContext db)
     ];
 
     /// <summary>
-    /// (CEEF-232 · ض-١) <b>الضريبةُ التي قُيّدت في الأستاذ ولم يحملها مستندٌ محسوب.</b>
+    /// <b>الضريبةُ التي قُيّدت في الأستاذ ولم يحملها مستندٌ محسوب.</b>
     ///
     /// <para><b>والتمييزُ الحاكم — وبغيره ينكسر الإقرارُ في الاتجاه المقابل:</b> قيدُ
     /// <b>التسوية</b> ينقل الضريبةَ من <c>2106</c> إلى <c>2107</c> <b>وليس توريداً</b>.
@@ -602,7 +602,7 @@ public class VatReturnQuery(BrqoshDbContext db)
             .WhereReportable(companyId, from, to)
             .Where(e => e.SourceDocument == null
                         || !CountedDocumentPrefixes.Any(pfx => e.SourceDocument.StartsWith(pfx)))
-            // (CEEF-232 · ض-٣) ‏وزوجُ العكس يُستبعد **بطرفيه معاً** لا يُترك ليتقاصّ.
+            // ‏وزوجُ العكس يُستبعد **بطرفيه معاً** لا يُترك ليتقاصّ.
             // ‏فالأصلُ المعكوس حالتُه `Reversed`، والعكسُ يُشار إليه بـ`ReversalEntryId` —
             // ‏وهو سؤالُ «القائم» نفسُه، ومالكُه `StandingJournalEntries` (ح-٤٧).
             .WhereStanding(db.JournalEntries)
@@ -626,7 +626,7 @@ public class VatReturnQuery(BrqoshDbContext db)
             if (entry.TouchesNetVat)
                 continue;
 
-            // (CEEF-232 · ض-٣) ‏الحركةُ تُجمع **على مستوى القيد** ثمّ يُحكم عليها — لا سطراً سطراً.
+            // ‏الحركةُ تُجمع **على مستوى القيد** ثمّ يُحكم عليها — لا سطراً سطراً.
             var entryOutput = 0m;
             var entryInput = 0m;
             foreach (var line in entry.Lines)
@@ -637,7 +637,7 @@ public class VatReturnQuery(BrqoshDbContext db)
                     entryInput += line.Debit - line.Credit;
             }
 
-            // (CEEF-232 · ض-٣) ‏**والنقصُ لا يُقرأ توريداً سالباً — بل تسوية.**
+            // ‏**والنقصُ لا يُقرأ توريداً سالباً — بل تسوية.**
             //
             // ‏وهذا هو نصفُ البند الذي كاد يقلب نفعَه ضرراً: **حارسُ `2107` لم يكن يحرس شيئاً**،
             // ‏فلا كاتبَ لهذا الحساب في المستودع كلِّه (‏`SystemAccountCoverageTests`‏ يقولها نصّاً).
@@ -655,7 +655,7 @@ public class VatReturnQuery(BrqoshDbContext db)
             // ‏لا قيدٌ يدويّ — وهو مستندٌ محسوبٌ أصلاً.
             if (entryOutput > 0m) outputVat += entryOutput;
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٨١) ‏**ونقصٌ ثانٍ معلومٌ غيرُ السداد: ردُّ ضريبة العربون عند إنزاله.**
+            // ‏ ‏**ونقصٌ ثانٍ معلومٌ غيرُ السداد: ردُّ ضريبة العربون عند إنزاله.**
             //
             // ‏ضريبةُ العربون أُقرّت في شهر قبضه (نقطةُ استحقاق)، وفاتورةُ المغادرة تحمل ضريبةَ الإقامة كلِّها —
             // ‏فالإنزالُ يردّ ما أُقرّ سلفاً. **وإهمالُه (كما يُهمَل النقصُ عامّةً) يُقرّ ضريبةَ العربون مرّتين.**

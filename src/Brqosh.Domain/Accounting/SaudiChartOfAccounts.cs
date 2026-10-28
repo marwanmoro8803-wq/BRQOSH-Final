@@ -37,31 +37,31 @@ public static class SaudiChartOfAccounts
         new("1112", "عهد وسلف الموظفين", "Employee Advances & Custodies", AccountType.Asset, "11", IsGroup: false),
         new("1113", "أعمال تحت التنفيذ (مستخلصات غير مفوترة)", "Work in Progress - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1114", "محتجزات لدى العملاء", "Retention Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
-        // (CEEF-230 · ط4-٧) ‏تسويةُ إعادة تقييم الذمم بعملةٍ أجنبية — **حسابٌ مستقلٌّ
+        // ‏تسويةُ إعادة تقييم الذمم بعملةٍ أجنبية — **حسابٌ مستقلٌّ
         // ‏عن 1104 عمداً**. فالدفترُ المساعد يُبنى من المستندات بأسعار نشأتها، وإعادةُ
         // ‏التقييم تُحرّك الأستاذَ وحدَه — **فتقييمُ حساب الذمم نفسِه يكسر هـ-١ في كلّ
         // ‏إقفال**. والميزانيةُ تعرض 1104 + 1115 معاً، وهو اصطلاحُ الأنظمة الكبرى.
         new("1115", "تسوية إعادة تقييم ذمم مدينة بعملة أجنبية", "FX Revaluation Adjustment - Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
-        // (CEEF-230 · ط2-٥) ‏**سُلفةُ الموظف ذمّةٌ عليه لا مصروفُ راتب.**
+        // ‏**سُلفةُ الموظف ذمّةٌ عليه لا مصروفُ راتب.**
         //
         // ‏فبلا هذا الحساب يخرج المالُ ولا يُقيَّد إلا مصروفاً — **فيُضخَّم مصروفُ الرواتب
         // ‏بما سيُسترَدّ**، ويختفي الأصلُ من الميزانية. ثمّ يُستقطَع من الراتب فيُخفَّض
         // ‏المصروفُ في شهرٍ آخر، **فيتذبذب مصروفُ الرواتب بلا سببٍ تشغيليّ**.
         new("1116", "سُلَف الموظفين", "Employee Advances", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
-        // (CEEF-230 · ط3-٤ب) ‏**عهدةُ السائق أصلٌ لا مصروف حتى تُسوَّى.**
+        // ‏**عهدةُ السائق أصلٌ لا مصروف حتى تُسوَّى.**
         //
         // ‏فبلا هذا الحساب تُصرف العهدةُ كلُّها مصروفاً يومَ تسليمها — **فتُضخَّم تكلفةُ
         // ‏المسار بما سيعود**، ويختفي النقدُ العائد من الصندوق. **وهويّةُ هـ-٢٠ تُقاس
         // ‏على رصيده**: صفرُه بعد التسوية شرطُ صحّتها.
         new("1117", "عُهَد رحلات التوصيل", "Trip Cash Floats", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
-        // (جاهزيّةُ الإطلاق · ح-٨٢) ‏**ليلةُ الإقامة إيرادُ شهرها وإن لم تُفوتَر.** فالفاتورةُ يومَ المغادرة، وكانت ليالي
+        // ‏**ليلةُ الإقامة إيرادُ شهرها وإن لم تُفوتَر.** فالفاتورةُ يومَ المغادرة، وكانت ليالي
         // ‏المقيم آخرَ الشهر لا تبلغ الأستاذ — فيُقفل ديسمبرُ ناقصاً إيرادَ كلِّ نزيلٍ لم يغادر. **والمغادرةُ تُطلقه.**
         new("1118", "إيرادات إقامة مستحقة غير مفوترة", "Accrued Room Revenue - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
 
-        // (جاهزيّةُ الإطلاق · ح-٩٨ · `manufacturing#8`) ‏**إنتاجُ أوامر التصنيع تحت التشغيل — حسابُه لا أصلُ عقود المقاولات.**
+        // ‏**إنتاجُ أوامر التصنيع تحت التشغيل — حسابُه لا أصلُ عقود المقاولات.**
         // ‏كان أمرُ الإنتاج يمرّ بـ1113 «أعمال تحت التنفيذ (مستخلصات غير مفوترة)» — وهو أصلُ عقود المقاولات (ح-٨٠) — فتدخل حركةُ
         // ‏المصنع كشفَ حساب المقاولات. **ويُصفَّر بإكمال الأمر**: الصرفُ والتحميلُ والاستلامُ في لحظةٍ واحدة؛ والصرفُ الجزئيُّ
         // ‏قبل الإكمال بندُ `manufacturing#4`.
@@ -92,27 +92,27 @@ public static class SaudiChartOfAccounts
         new("2109", "التأمينات الاجتماعية المستحقة", "GOSI Payable", AccountType.Liability, "21", IsGroup: false),
         new("2110", "محتجزات مستحقة لمقاولي الباطن", "Retention Payable - Subcontractors", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
         new("2111", "الزكاة وضريبة الدخل المستحقة", "Zakat & Income Tax Payable", AccountType.Liability, "21", IsGroup: false),
-        // (CEEF-229 · م1-١٩ / I-5) بضاعةٌ استُلمت ولم تُفوتَر — التزامٌ قائمٌ بين الاستلام
+        // بضاعةٌ استُلمت ولم تُفوتَر — التزامٌ قائمٌ بين الاستلام
         // ‏والفاتورة. وبدونه تغيب البضاعةُ عن الميزانية أصلاً والتزاماً في تلك المدّة كلِّها.
         new("2112", "بضاعة مستلمة غير مفوترة", "Goods Received Not Invoiced", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
-        // (CEEF-230 · ط3-١) ‏تأميناتُ المستأجرين — **أمانةٌ لا إيراد**. وقيدُها إيراداً
+        // ‏تأميناتُ المستأجرين — **أمانةٌ لا إيراد**. وقيدُها إيراداً
         // ‏يُضخّم ربحَ المنشأة بمالٍ ليس لها وتردُّه، وهو من أشيع أخطاء المحاسبة العقارية.
         new("2113", "تأمينات مستأجرين محتفظ بها", "Tenant Security Deposits Held", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
-        // (CEEF-230 · ط3-٤) ‏ما يُحصَّل نيابةً عن التجّار — **أمانةٌ لا إيراد**. وقيدُه
+        // ‏ما يُحصَّل نيابةً عن التجّار — **أمانةٌ لا إيراد**. وقيدُه
         // ‏إيراداً يُضخّم إيرادَ شركة التوصيل عشرين ضعفاً: مليونٌ محصَّلٌ مقابل خمسين
         // ‏ألفاً أجرةً، **وتُدفع الزكاةُ على مالٍ يُردّ**.
         new("2114", "تحصيلٌ نيابةً عن التجّار (الدفع عند الاستلام)", "Cash on Delivery Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
-        // (CEEF-230 · ط4-٧) ‏ونظيرُه لجانب الموردين — يحرس هـ-٢ بالمنطق نفسِه.
+        // ‏ونظيرُه لجانب الموردين — يحرس هـ-٢ بالمنطق نفسِه.
         new("2115", "تسوية إعادة تقييم ذمم دائنة بعملة أجنبية", "FX Revaluation Adjustment - Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
-        // (CEEF-230 · ط3-٣د) ‏**الإكراميةُ مالُ العامل لا إيرادُ المطعم.**
+        // ‏**الإكراميةُ مالُ العامل لا إيرادُ المطعم.**
         //
         // ‏وبلا هذا الحساب لا يجد لها النظامُ إلا الإيرادَ موضعاً — **فتُدفع ضريبةُ قيمةٍ
         // ‏مضافةٍ وزكاةٌ على مالٍ ليس للمنشأة**، ويُعلَن إيرادٌ أكبرُ من الحقيقة، ثمّ
         // ‏يُوزَّع على النُّدُل فيُقيَّد مصروفاً: **فيتضخّم طرفا القائمة معاً**.
         new("2116", "إكراميات مستحقة للعاملين", "Tips Payable to Staff", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
-        // (جاهزيّةُ الإطلاق · ح-٧٩) ‏**الإيجارُ المقبوضُ مقدّماً التزامٌ حتى يُكتسب.** فاتورةُ ربعٍ أو سنةٍ مقدَّماً كانت إيراداً
+        // ‏**الإيجارُ المقبوضُ مقدّماً التزامٌ حتى يُكتسب.** فاتورةُ ربعٍ أو سنةٍ مقدَّماً كانت إيراداً
         // ‏كلُّها يومَها — فيُعلَن ربحُ أشهرٍ لم تمضِ وتُدفع عليه زكاة، ولا يظهر ما يُستحقّ للمستأجر إن أنهى العقد.
         new("2117", "إيرادات إيجار مقبوضة مقدّماً", "Unearned Rent Revenue", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
@@ -120,7 +120,7 @@ public static class SaudiChartOfAccounts
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
         new("2202", "مخصص مكافأة نهاية الخدمة", "End of Service Benefits Provision", AccountType.Liability, "22", IsGroup: false),
 
-        // (CEEF-233 · ز-٣) ‏مخصّصُ الإجازات — **التزامٌ يتراكم يوماً بيوم** (المادة 109)،
+        // ‏مخصّصُ الإجازات — **التزامٌ يتراكم يوماً بيوم** (المادة 109)،
         // ‏ويُدفع نقداً عند انتهاء الخدمة عمّا لم يُستعمل (المادة 111).
         new("2203", "مخصص الإجازات", "Leave Provision", AccountType.Liability, "22", IsGroup: false, IsSystem: true),
 
@@ -142,7 +142,7 @@ public static class SaudiChartOfAccounts
         new("4105", "إيرادات الخدمات", "Service Revenue", AccountType.Revenue, "4", IsGroup: false),
         new("4106", "إيرادات أخرى", "Other Income", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
         new("4107", "أرباح فروق عملة غير محققة", "Unrealized FX Gain", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
-        // (CEEF-230 · ط1-٤) ‏**المحقَّقُ غيرُ غير المحقَّق** — والفصلُ بينهما ليس تصنيفاً:
+        // ‏**المحقَّقُ غيرُ غير المحقَّق** — والفصلُ بينهما ليس تصنيفاً:
         // ‏المحقَّقُ ربحٌ وقع بسدادٍ فعليّ لا يعود، وغيرُ المحقَّق تقديرٌ يتغيّر بكلّ إعادة
         // ‏تقييم ويُعكس. **وخلطُهما يجعل الأرباحَ تبدو مستقرّةً وهي متقلّبة.**
         new("4108", "أرباح فروق عملة محققة", "Realized FX Gain", AccountType.Revenue, "4", IsGroup: false, IsSystem: true),
@@ -158,7 +158,7 @@ public static class SaudiChartOfAccounts
         new("5105", "مواد ومهمات المشاريع", "Project Materials & Supplies", AccountType.Expense, "51", IsGroup: false),
         new("5106", "أجور عمالة مباشرة", "Direct Labor", AccountType.Expense, "51", IsGroup: false),
         new("5107", "تكاليف صناعية غير مباشرة", "Manufacturing Overhead", AccountType.Expense, "51", IsGroup: false),
-        // (CEEF-229 · م1-١٩) فرقُ سعر الفاتورة عن سعر الاستلام. **غيرُ نظاميّ عمداً:**
+        // فرقُ سعر الفاتورة عن سعر الاستلام. **غيرُ نظاميّ عمداً:**
         // ‏الدورةُ العريضة تستلم وتُفوتر بالسعر نفسه فلا تُنتج فرقاً، وحارسُ تغطية الحسابات
         // ‏النظامية يشترط أن يستقبل كلُّ نظاميٍّ قيداً — فوسمُه نظامياً يُسقطه من أوّل يوم.
         new("5108", "فروق أسعار المشتريات", "Purchase Price Variance", AccountType.Expense, "51", IsGroup: false),
@@ -182,9 +182,9 @@ public static class SaudiChartOfAccounts
         new("5216", "مصروف الزكاة", "Zakat Expense", AccountType.Expense, "52", IsGroup: false),
         new("5217", "خسائر فروق عملة غير محققة", "Unrealized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         new("5218", "خسائر فروق عملة محققة", "Realized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
-        // (CEEF-230 · ط2-٣) ‏مصروفُ المكافأة — يقابل المخصّصَ 2202 الذي كان بلا كاتب.
+        // ‏مصروفُ المكافأة — يقابل المخصّصَ 2202 الذي كان بلا كاتب.
         new("5219", "مصروف مكافأة نهاية الخدمة", "End of Service Benefit Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
-        // (CEEF-233 · ز-٣) ‏مصروفُ الإجازات — يقابل المخصّصَ 2203.
+        // ‏مصروفُ الإجازات — يقابل المخصّصَ 2203.
         new("5220", "مصروف الإجازات", "Leave Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
@@ -224,7 +224,7 @@ public static class SaudiChartOfAccounts
         public const string GoodsReceivedNotInvoiced = "2112";
         public const string ChequesPayable = "2103";
         /// <summary>
-        /// (جاهزيّةُ الإطلاق · ح-٢٧) مصروفاتٌ مستحقّةٌ بلا فاتورةٍ بعد —
+        /// مصروفاتٌ مستحقّةٌ بلا فاتورةٍ بعد —
         /// <b>وليست ذمّةَ مورِّد</b>. والحسابُ في الدليل منذ نشأتِه <b>ولم يكتبه أحد</b>.
         /// </summary>
         public const string AccruedExpenses = "2104";
@@ -239,13 +239,13 @@ public static class SaudiChartOfAccounts
         public const string TranslationReserve = "3106";
         public const string RetentionReceivable = "1114";
 
-        // (CEEF-230 · ط4-٧) ‏حسابا تسوية إعادة التقييم — يحفظان هـ-١ وهـ-٢.
+        // ‏حسابا تسوية إعادة التقييم — يحفظان هـ-١ وهـ-٢.
         public const string FxAdjustmentReceivable = "1115";
 
-        /// <summary>(CEEF-230 · ط2-٥) سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.</summary>
+        /// <summary> سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.</summary>
         public const string EmployeeAdvances = "1116";
 
-        /// <summary>(CEEF-233 · ز-٣) مخصّصُ الإجازات ومصروفُها.</summary>
+        /// <summary> مخصّصُ الإجازات ومصروفُها.</summary>
         public const string LeaveProvision = "2203";
         public const string LeaveExpense = "5220";
         public const string FxAdjustmentPayable = "2115";
@@ -260,28 +260,28 @@ public static class SaudiChartOfAccounts
         public const string UnrealizedFxGain = "4107";
         public const string UnrealizedFxLoss = "5217";
 
-        /// <summary>(CEEF-230 · ط1-٤) فرقُ عملةٍ وقع بسدادٍ فعليّ — لا يُعكس ولا يُعاد تقديرُه.</summary>
+        /// <summary> فرقُ عملةٍ وقع بسدادٍ فعليّ — لا يُعكس ولا يُعاد تقديرُه.</summary>
         public const string RealizedFxGain = "4108";
         public const string RealizedFxLoss = "5218";
         public const string BankCharges = "5213";
         public const string OtherIncome = "4106";
 
-        // (CEEF-230 · ط3-١) ‏تأميناتُ المستأجرين المحتفظ بها.
+        // ‏تأميناتُ المستأجرين المحتفظ بها.
         public const string TenantSecurityDeposits = "2113";
 
-        // (CEEF-230 · ط3-٤) ‏تحصيلٌ نيابةً عن التجّار.
+        // ‏تحصيلٌ نيابةً عن التجّار.
         public const string CodPayable = "2114";
 
-        /// <summary>(CEEF-230 · ط3-٣د) إكرامياتٌ مستحقّةٌ للعاملين — التزامٌ لا إيراد.</summary>
+        /// <summary> إكرامياتٌ مستحقّةٌ للعاملين — التزامٌ لا إيراد.</summary>
         public const string TipsPayable = "2116";
 
-        /// <summary>(جاهزيّةُ الإطلاق · ح-٧٩) إيجارٌ مقبوضٌ مقدّماً — التزامٌ يُكتسب شهراً بشهر.</summary>
+        /// <summary> إيجارٌ مقبوضٌ مقدّماً — التزامٌ يُكتسب شهراً بشهر.</summary>
         public const string UnearnedRent = "2117";
 
-        /// <summary>(CEEF-230 · ط3-٤ب) عُهَدُ رحلات التوصيل — أصلٌ يُسوَّى مع السائق.</summary>
+        /// <summary> عُهَدُ رحلات التوصيل — أصلٌ يُسوَّى مع السائق.</summary>
         public const string TripCashFloat = "1117";
 
-        /// <summary>(جاهزيّةُ الإطلاق · ح-٨٢) إيرادُ ليالٍ مضت ولم تُفوتَر — أصلٌ تُطلقه فاتورةُ المغادرة.</summary>
+        /// <summary> إيرادُ ليالٍ مضت ولم تُفوتَر — أصلٌ تُطلقه فاتورةُ المغادرة.</summary>
         public const string AccruedRevenue = "1118";
     }
 

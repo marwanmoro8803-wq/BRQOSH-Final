@@ -38,7 +38,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.SalesInvoice, salesInvoiceId,
             invoice.InvoiceNumber, invoice.InvoiceDate, company, customer,
-            // (CEEF-230 · ط1-٤) ‏**المستندُ يخرج بعملته**: الوعاءُ والضريبةُ والإجماليُّ
+            // ‏**المستندُ يخرج بعملته**: الوعاءُ والضريبةُ والإجماليُّ
             // ‏بالعملة الأجنبية، والريالُ يُعلَن في عنصرٍ مستقلٍّ للضريبة وحدَها.
             // ‏وبسعرٍ واحدٍ يعود الجميعُ إلى ما كان حرفاً — فبصمةُ فاتورةٍ قائمة لا تتغيّر.
             invoice.ForeignSubtotal, invoice.ForeignVatAmount, invoice.ForeignGrandTotal,
@@ -50,7 +50,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>فواتيرُ الدفعات المقدّمة (386) التي تُسوّيها فاتورةُ المغادرة</b> — عرابينُ
+    /// <b>فواتيرُ الدفعات المقدّمة (386) التي تُسوّيها فاتورةُ المغادرة</b> — عرابينُ
     /// حجزها التي صدرت لها فاتورةٌ إلكترونيّة، برقمها وتاريخها ووقتها كما صدرت، ووعائها وضريبتها من قيدها.
     /// </summary>
     private async Task<IReadOnlyList<ZatcaUblInvoiceBuilder.PrepaymentReference>?> PrepaymentsSettledByAsync(SalesInvoice invoice)
@@ -94,7 +94,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>فاتورةُ الدفعة المقدّمة (386) عن عربون حجز</b> — يومَ قبضه، فهو نقطةُ
+    /// <b>فاتورةُ الدفعة المقدّمة (386) عن عربون حجز</b> — يومَ قبضه، فهو نقطةُ
     /// استحقاق الضريبة. رقمُها <c>DEP-</c> ورقمُ قيدها (فريدٌ ومتسلسل)، ومشتريها نزيلُ الحجز، وسطرُها صافي العربون بالنسبة الأساسيّة.
     /// </summary>
     public async Task<ZatcaEInvoiceDocument?> TryGenerateForPrepaymentAsync(long depositEntryId)
@@ -154,7 +154,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.CreditNote, creditNoteId,
             note.NoteNumber, note.NoteDate, company, customer,
-            // (جاهزيّةُ الإطلاق · ح-٣٥) ‏**والإشعارُ يخرج بعملتِه كفاتورتِه.**
+            // ‏**والإشعارُ يخرج بعملتِه كفاتورتِه.**
             //
             // ‏كان يُمرّر الريالَ ويُسقِط **العملةَ والسعرَ وضريبةَ الريال
             // ‏وخصمَ المستند** — **أربعةً ممّا تُمرّرُه الفاتورةُ أعلاه**.
@@ -202,7 +202,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>فاتورةُ ضريبةٍ عن بيع أصلٍ ثابت.</b>
+    /// <b>فاتورةُ ضريبةٍ عن بيع أصلٍ ثابت.</b>
     ///
     /// <para><b>وبيعُ أصلٍ توريدٌ خاضعٌ نظاماً</b>، وكان الاستبعادُ يُقيّد ضريبةَ المخرجات
     /// <b>بلا مستندٍ خلفَها</b>. والقياسُ على <see cref="TryGenerateForProgressBillingAsync"/>:
@@ -331,7 +331,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             billing.CompanyId, ZatcaDocumentType.BillingCancel, progressBillingId,
             cnNumber, billing.CancelledAt ?? billing.BillingDate, company, customer,
-            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**وسببُ الإلغاء يُكتب كما يُكتب
+            // ‏**وسببُ الإلغاء يُكتب كما يُكتب
             // ‏للفاتورة والإشعار** — وكان المستخلصُ وحدَه بلا سببٍ.
             // ‏**والسببُ حقلٌ يقرؤه المراجع** لا تزيينٌ: إلغاءٌ بلا سببٍ
             // ‏توريدٌ رُفِع من الإقرار بلا تفسير.
@@ -341,7 +341,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) <b>إشعارٌ دائنٌ بردّ عربون حجزٍ أُلغي</b> — يُشير إلى فاتورة دفعته (386)
+    /// <b>إشعارٌ دائنٌ بردّ عربون حجزٍ أُلغي</b> — يُشير إلى فاتورة دفعته (386)
     /// بمبلغها نفسِه، فتخرج ضريبتُها من فترة الردّ كما خرجت من الأستاذ. وعربونٌ بلا فاتورةِ دفعةٍ لا إشعارَ له.
     /// </summary>
     public async Task<ZatcaEInvoiceDocument?> TryGenerateRefundForPrepaymentAsync(long depositEntryId, DateOnly refundDate)
@@ -380,7 +380,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٦١) <b>إشعارٌ دائنٌ عند عكس استبعاد أصلٍ بيع بفاتورة</b> — بمبالغ الفاتورة نفسِها ومشتريها، ومرجعُه هي.
+    /// ‏ <b>إشعارٌ دائنٌ عند عكس استبعاد أصلٍ بيع بفاتورة</b> — بمبالغ الفاتورة نفسِها ومشتريها، ومرجعُه هي.
     /// ‏و<c>null</c> إن لم تكن للبيع فاتورةٌ إلكترونيّة أو كانت الفوترةُ معطَّلة — والمستدعي يقرّر.
     /// </summary>
     public async Task<ZatcaEInvoiceDocument?> TryGenerateCancellationForAssetDisposalAsync(
@@ -458,7 +458,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             note.CompanyId, ZatcaDocumentType.DebitNote, creditNoteId,
             dnNumber, note.CancelledAt ?? note.NoteDate, company, customer,
-            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**ومستندُ الإلغاء يحمل ما يحملُه
+            // ‏**ومستندُ الإلغاء يحمل ما يحملُه
             // ‏مصدرُه** — عملةً وسعراً وخصمَ مستندٍ وضريبةَ ريال.
             //
             // ‏وإلّا **خرجت سطورٌ لا تجمع إلى إجماليّها** متى كان ثَمّ خصمٌ
@@ -492,7 +492,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 d.SourceDocumentId == salesInvoiceId))
             return null;
 
-        // ‏(جاهزيّةُ الإطلاق · tax-zatca#8) ‏**فاتورةٌ قياسيّةٌ رفضت الهيئةُ اعتمادَها لم تصدر نظاماً** — فلا إشعارَ دائناً يُرسل عنها؛
+        // ‏ ‏**فاتورةٌ قياسيّةٌ رفضت الهيئةُ اعتمادَها لم تصدر نظاماً** — فلا إشعارَ دائناً يُرسل عنها؛
         // ‏إلغاؤها داخليٌّ بعكس قيدها، ثمّ تُصدر فاتورةٌ مصحَّحة. والمبسّطةُ المرفوضةُ وصلت المشتري فإلغاؤها إشعارٌ كما كان.
         if (await db.ZatcaEInvoiceDocuments.AnyAsync(d =>
                 d.CompanyId == invoice.CompanyId &&
@@ -515,7 +515,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         return await GenerateAsync(
             invoice.CompanyId, ZatcaDocumentType.InvoiceCancel, salesInvoiceId,
             cnNumber, invoice.CancelledAt ?? invoice.InvoiceDate, company, customer,
-            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**ومستندُ الإلغاء يحمل ما يحملُه
+            // ‏**ومستندُ الإلغاء يحمل ما يحملُه
             // ‏مصدرُه** — عملةً وسعراً وخصمَ مستندٍ وضريبةَ ريال.
             //
             // ‏وإلّا **خرجت سطورٌ لا تجمع إلى إجماليّها** متى كان ثَمّ خصمٌ
@@ -533,7 +533,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     private static readonly TimeSpan RiyadhOffset = TimeSpan.FromHours(3);
 
     /// <summary>
-    /// (CEEF-230 · ط1-١) ‏يحلّ رمزَ UN/ECE لكلّ سطر.
+    /// ‏يحلّ رمزَ UN/ECE لكلّ سطر.
     ///
     /// <para><b>ويُحلّ من الصنف حين لا يذكر السطرُ وحدةً</b> — وهي الحالةُ السائدة في كلّ
     /// قاعدةٍ قائمة. فالتصحيحُ يشمل ما مضى، لا ما يُدخَل من اليوم وحده.</para>
@@ -567,7 +567,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         string currencyCode = "SAR", decimal exchangeRate = 1m, decimal? vatAmountInSar = null,
         bool isPrepayment = false, IReadOnlyList<ZatcaUblInvoiceBuilder.PrepaymentReference>? prepayments = null)
     {
-        // (CEEF-229 · م2-١٣أ) **هويةُ البائع تُفحص قبل استهلاك أيّ عدّاد.**
+        // **هويةُ البائع تُفحص قبل استهلاك أيّ عدّاد.**
         //
         // كان الفحصُ الوحيد هنا هو الرقم الضريبيّ. و`Company.RegulatoryGaps()` يعرف تماماً ما
         // ينقص وبرسائل عربية جاهزة — لكنّه لم يكن يُقرأ إلا في شاشة الإعدادات **عرضاً**، وفي
@@ -590,7 +590,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 "لا يمكن إصدار فاتورة إلكترونية قبل إكمال بيانات المنشأة:\n- " + string.Join("\n- ", gaps)
                 + "\n\nأكمِلها من: الإعدادات ← بيانات المنشأة.");
 
-        // (CEEF-229 · م2-١٣ب) **بلا شهادةٍ لا يُصدَر مستند — لا يُصدَر غيرَ موقَّع بصمت.**
+        // **بلا شهادةٍ لا يُصدَر مستند — لا يُصدَر غيرَ موقَّع بصمت.**
         //
         // كان `TrySignWithResult` يُعيد null بلا شكوى حين لا يجد ملفَّ شهادةٍ أو مفتاح، فيسلك
         // المولّد فرعاً بديلاً صامتاً: مستندٌ بلا توقيع، ورمزُ QR من الطور الأوّل بلا ختمٍ
@@ -605,7 +605,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         // ولا يوجد في النظام مفهومُ «طورٍ أوّل» أصلاً: لا إعدادَ ولا حقل. فالانحدارُ الصامت
         // ليس وضعاً مشروعاً، ولا يملك المالكُ ما يخبره أيَّهما هو فيه.
         var zatcaSettings = await GetSettingsAsync(companyId);
-        // ‏(جاهزيّةُ الإطلاق · tax-zatca#16) ‏**وعلى جهازٍ غيرِ جهاز الختم فالسببُ الجهازُ لا الشهادة** — والرسالةُ القديمةُ تدعو إلى
+        // ‏ ‏**وعلى جهازٍ غيرِ جهاز الختم فالسببُ الجهازُ لا الشهادة** — والرسالةُ القديمةُ تدعو إلى
         // ‏معالج الشهادة، وهو هنا يكتب فوق إعدادات الجهاز الذي يختم فيتوقّف.
         if (zatcaSettings is not null && !ZatcaXmlSigner.CanSign(zatcaSettings)
             && ZatcaSettingsSecrets.IsSignedOnAnotherMachine(zatcaSettings))
@@ -617,7 +617,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 + "من إعدادات الفوترة الإلكترونية — فالمستند غير الموقَّع ترفضه الهيئة، "
                 + "ويكسر بصمتُه سلسلةَ الفواتير التالية.");
 
-        // (CEEF-229 · م1-١ب) **ومشترٍ ناقصُ الهوية لا تُصدَر له فاتورةٌ قياسية.**
+        // **ومشترٍ ناقصُ الهوية لا تُصدَر له فاتورةٌ قياسية.**
         //
         // حقولُ هوية المشتري أُضيفت في هذه الدفعة، والعملاءُ القائمون أعمدتُهم فارغة — فلا
         // يُطالبون بها إلا إن فُتحت شاشتُهم. فبلا هذا الحارس تبقى فواتيرُهم القياسية تخرج
@@ -634,7 +634,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 + string.Join("\n- ", buyerGaps)
                 + "\n\nأكمِلها من: العملاء ← تعديل العميل.");
 
-        // (CEEF-229 · م1-١ب/الشقّ الثاني) **وسطرٌ غيرُ خاضعٍ للنسبة الأساسية يقول سببَه.**
+        // **وسطرٌ غيرُ خاضعٍ للنسبة الأساسية يقول سببَه.**
         //
         // `BR-KSA-CL-06`: فئةٌ `Z` أو `E` أو `O` بلا رمز سبب إعفاء (BT-121) من قائمة السعودية
         // ترفضها الهيئة. وشاشةُ المبيعات تعرض الفئات الأربع منذ اليوم الأول، ولم يكن في
@@ -650,7 +650,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 + "\n\nأكمِلها من سطور المستند قبل الترحيل.");
 
 
-        // (CEEF-229 · Z-4) قفل استشاريّ قبل قراءة العدّاد — النمط نفسه في JournalEntryNumberGenerator.
+        // قفل استشاريّ قبل قراءة العدّاد — النمط نفسه في JournalEntryNumberGenerator.
         //
         // كان `MaxAsync + 1` بلا قفل وبلا فهرس فريد على `(CompanyId, Icv)`. فصندوقان في فرعين
         // يرحّلان في اللحظة نفسها والعدّاد عند 417: كلاهما يقرأ 417 ويكتب 418 **بنفس PIH**،
@@ -670,7 +670,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             .FirstOrDefaultAsync() ?? ZatcaHashHelper.GenesisPreviousInvoiceHash();
 
         var uuid = Guid.NewGuid();
-        // (CEEF-229 · م2-٢١) **لحظةُ الإصدار حقيقيةٌ، والمستندُ ورمزُه يقولانها معاً.**
+        // **لحظةُ الإصدار حقيقيةٌ، والمستندُ ورمزُه يقولانها معاً.**
         //
         // كان `IssueTime` ثابتاً `"12:00:00"` بلا إزاحة — تقرؤه الهيئةُ توقيتاً محلياً —
         // بينما يُبنى وسمُ QR الثالث من ظهرٍ **بتوقيت UTC** فيقول `12:00:00Z`، أي الثالثةَ
@@ -702,19 +702,19 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
             Seller: new ZatcaUblInvoiceBuilder.SellerIdentity(
                 company.RegistrationName, company.CommercialRegistrationNumber, company.NationalAddress),
 
-            // (CEEF-229 · م1-١ب) هويةُ المشتري للقياسية وحدها — والمبسّطة بلا مشترٍ معرَّف.
+            // هويةُ المشتري للقياسية وحدها — والمبسّطة بلا مشترٍ معرَّف.
             Buyer: customer.SupportsStandardTaxInvoice
                 ? new ZatcaUblInvoiceBuilder.BuyerIdentity(customer.RegistrationName, customer.NationalAddress)
                 : null,
 
-            // (CEEF-230 · ط1-٢) ‏خصمُ المستند — يخرج `AllowanceCharge` لكلّ وعاءٍ ضريبيّ.
+            // ‏خصمُ المستند — يخرج `AllowanceCharge` لكلّ وعاءٍ ضريبيّ.
             DocumentDiscount: documentDiscount,
 
-            // (CEEF-230 · ط1-١) ‏رمزُ الوحدة لكلّ سطر — من وحدة السطر إن ذُكرت، وإلا من
+            // ‏رمزُ الوحدة لكلّ سطر — من وحدة السطر إن ذُكرت، وإلا من
             // ‏وحدة الصنف النصّية عبر جدول المرادفات. **وما لا يُعرَف يخرج PCE مُعلَناً.**
             LineUnitCodes: await ResolveUnitCodesAsync(companyId, lines),
 
-            // (CEEF-230 · ط1-٤) ‏عملةُ المستند وسعرُها، والضريبةُ بالريال للإفصاح BT-111.
+            // ‏عملةُ المستند وسعرُها، والضريبةُ بالريال للإفصاح BT-111.
             CurrencyCode: currencyCode,
             ExchangeRate: exchangeRate,
             VatAmountInSar: vatAmountInSar,
@@ -750,7 +750,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         var signedPath = signedBytes is not null ? SaveXml(companyId, number, signedBytes, signed: true) : null;
         var xmlPath = SaveXml(companyId, number, xmlBytes, signed: false);
 
-        // ‏(CEEF-233 · ظ-١) **واللحظةُ المقروءةُ أعلاه تُمرَّر — فلا يقرؤها الكيانُ ثانيةً.**
+        // ‏ **واللحظةُ المقروءةُ أعلاه تُمرَّر — فلا يقرؤها الكيانُ ثانيةً.**
         // ‏وبها يستحيل أن يُعلن المستندُ لحظةً ويُسجّل أخرى، **بناءً لا بحارس**.
         var doc = ZatcaEInvoiceDocument.Create(
             companyId, docType, sourceId, number, uuid, icv, previousHash, invoiceHash,
@@ -763,7 +763,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
     private static string SaveXml(long companyId, string invoiceNumber, byte[] bytes, bool signed)
     {
-        // جذر البيانات الموحّد — يحترم BRQOSH_DATA_ROOT (CEEF-202/203).
+        // جذر البيانات الموحّد — يحترم BRQOSH_DATA_ROOT .
         var dir = Path.Combine(
             Persistence.BrqoshDataRoot.Path(), "zatca", companyId.ToString(), invoiceNumber);
         Directory.CreateDirectory(dir);
@@ -787,7 +787,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         if (!isCreditNote && !isDebitNote)
             return (null, null);
 
-        // (CEEF-229 · Z-3) الإرسال حسب **نوع المستند** لا بالتخمين، وبتصفية الشركة دائماً.
+        // الإرسال حسب **نوع المستند** لا بالتخمين، وبتصفية الشركة دائماً.
         //
         // كان الفرع الأول يبحث في `db.CreditNotes` بمعرّفٍ قد يكون معرّف **فاتورة** (مسار إلغاء
         // الفاتورة كان يُسجَّل بالنوع CreditNote نفسه). والتسلسلان مستقلّان ويبدآن من واحد،
@@ -820,7 +820,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
                 break;
             }
 
-            // (جاهزيّةُ الإطلاق · ح-٣٦) ‏**وإلغاءُ المستخلص مرجعُه مستخلصُه.**
+            // ‏**وإلغاءُ المستخلص مرجعُه مستخلصُه.**
             //
             // ‏كان `BillingCancel` **يسقط من هذا المبدل إلى `(null, null)`**،
             // ‏فيخرج مستندُ إلغاءٍ **بلا `BillingReference`** — **إشعارٌ دائنٌ لا
@@ -886,7 +886,7 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
     /// </summary>
     private async Task AcquireIcvLockAsync(long companyId, CancellationToken ct)
     {
-        // (CEEF-229 · م1-٦ / Z-4) **قفلٌ بلا معاملةٍ قفلٌ ميّت — ويُرفض صراحةً.**
+        // **قفلٌ بلا معاملةٍ قفلٌ ميّت — ويُرفض صراحةً.**
         //
         // `pg_advisory_xact_lock` مربوطٌ بالمعاملة: خارجَها تُنهي العبارةُ نفسُها المعاملةَ
         // الضمنية فيُحرَّر القفلُ فوراً، فيقرأ المتزاحمان العدّادَ نفسَه — **ويبقى ظاهرُ
