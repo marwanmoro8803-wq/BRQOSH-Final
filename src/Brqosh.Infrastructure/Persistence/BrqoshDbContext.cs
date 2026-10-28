@@ -125,6 +125,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<SalesQuotation> SalesQuotations => Set<SalesQuotation>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderInvoiceLine> SalesOrderInvoiceLines => Set<SalesOrderInvoiceLine>();
+    public DbSet<StockReservation> StockReservations => Set<StockReservation>();
     public DbSet<CrmLead> CrmLeads => Set<CrmLead>();
     public DbSet<CrmOpportunity> CrmOpportunities => Set<CrmOpportunity>();
     public DbSet<CrmActivity> CrmActivities => Set<CrmActivity>();
@@ -1739,6 +1740,17 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(q => q.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // ‏حجزُ المخزون لأوامر البيع المؤكَّدة.
+        modelBuilder.Entity<StockReservation>(entity =>
+        {
+            entity.ToTable("stock_reservations");
+            entity.Property(r => r.Quantity).HasPrecision(18, 4);
+            entity.Property(r => r.ReleasedQuantity).HasPrecision(18, 4);
+            entity.Ignore(r => r.OpenQuantity);
+            entity.HasIndex(r => new { r.CompanyId, r.ProductId });
+            entity.HasIndex(r => r.SalesOrderId);
         });
 
         // ‏ما فُوتر من كلّ سطر أمر بيع (الفوترة الجزئية).

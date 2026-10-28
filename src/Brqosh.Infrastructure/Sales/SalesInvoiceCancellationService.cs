@@ -109,6 +109,13 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
                     .Select(l => (long?)l.SalesInvoiceId)
                     .FirstOrDefaultAsync(token);
                 order.AfterInvoiceCancelled(latestStanding);
+
+                // ‏والكمّيةُ العائدةُ إلى الأمر تعود محجوزة.
+                var reservations = await db.StockReservations
+                    .Where(r => r.CompanyId == companyId && r.SalesOrderId == order.Id).ToListAsync(token);
+                foreach (var link in links.Where(l => l.SalesOrderId == order.Id))
+                    if (link.LineIndex < order.Lines.Count && order.Lines[link.LineIndex].ProductId is long pid)
+                        reservations.FirstOrDefault(r => r.ProductId == pid)?.Restore(link.Quantity);
             }
             await db.SaveChangesAsync(token);
 

@@ -2024,5 +2024,6 @@
   "فئة الصنف غير صالحة.": "The item category is invalid.",
   "حساب الصنف غير صالح.": "The item account is invalid.",
   "ربط سطر أمر البيع بالفاتورة غير صالح.": "The link between the sales order line and the invoice is invalid.",
-  "لا كمية متبقّية للفوترة في أمر البيع.": "There is no remaining quantity to invoice on the sales order."
+  "لا كمية متبقّية للفوترة في أمر البيع.": "There is no remaining quantity to invoice on the sales order.",
+  "حجز المخزون غير صالح.": "The stock reservation is invalid."
 }

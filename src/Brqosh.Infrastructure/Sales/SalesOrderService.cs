@@ -23,8 +23,41 @@ public class SalesOrderService(BrqoshDbContext db)
         order.Confirm(number);
         db.SalesOrders.Add(order);
         await db.SaveChangesAsync(ct);
+
+        // ‏حجزُ المخزون عند التأكيد — للأصناف المخزنيّة وحدها، سطرٌ لكلّ صنف.
+        var products = await new InventoryService(db).LoadProductsForLinesAsync(order.CompanyId, order.Lines.Select(l => l.ProductId));
+        foreach (var g in order.Lines
+                     .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
+                     .GroupBy(l => l.ProductId!.Value))
+            db.StockReservations.Add(StockReservation.Create(order.CompanyId, order.Id, g.Key, g.Sum(l => l.Quantity)));
+        await db.SaveChangesAsync(ct);
         return order;
     }
+
+    /// <summary>المحجوزُ المفتوح للصنف في المنشأة.</summary>
+    public async Task<decimal> ReservedQuantityAsync(long companyId, long productId, CancellationToken ct = default) =>
+        (await db.StockReservations.AsNoTracking()
+            .Where(r => r.CompanyId == companyId && r.ProductId == productId)
+            .Select(r => new { r.Quantity, r.ReleasedQuantity })
+            .ToListAsync(ct)).Sum(r => r.Quantity - r.ReleasedQuantity);
+
+    /// <summary>المتاحُ للبيع = الرصيد − المحجوز المفتوح.</summary>
+    public async Task<decimal> AvailableToSellAsync(long companyId, long productId, CancellationToken ct = default) =>
+        await new InventoryService(db).GetCompanyOnHandAsync(companyId, productId)
+        - await ReservedQuantityAsync(companyId, productId, ct);
+
+    /// <summary>إلغاءُ أمر بيعٍ غير مفوتر — ويُفرَج عن حجزه.</summary>
+    public async Task CancelAsync(long companyId, long orderId, CancellationToken ct = default) =>
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            SecurityContext.EnsureCanPost();
+            var order = await db.SalesOrders.SingleAsync(o => o.CompanyId == companyId && o.Id == orderId, token);
+            order.Cancel();
+            foreach (var r in await db.StockReservations.Where(r => r.CompanyId == companyId && r.SalesOrderId == orderId).ToListAsync(token))
+                r.Release(r.OpenQuantity);
+            await db.SaveChangesAsync(token);
+            return 0;
+        }, ct);
 
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٣٣) <b>الفاتورةُ تُؤرّخ يومَ صدورها لا يومَ الأمر،
@@ -56,7 +89,7 @@ public class SalesOrderService(BrqoshDbContext db)
     /// </summary>
     public async Task<SalesInvoice> CreatePartialInvoiceFromOrderAsync(long companyId, long orderId,
         DateOnly invoiceDate, IReadOnlyDictionary<int, decimal>? quantities, long? warehouseId = null,
-        CancellationToken ct = default) =>
+        CancellationToken ct = default, bool postNow = true) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             SecurityContext.EnsureCanPost();
@@ -153,7 +186,26 @@ public class SalesOrderService(BrqoshDbContext db)
                 }
             }
 
-            await new SalesInvoicePostingService(db).PostAsync(invoice);
+            // ‏‏`postNow: false` يحفظ الفاتورةَ مسودةً قابلةً للتعديل (خصم/ملاحظات) ثمّ تُرحَّل من مسارها المعتاد.
+            if (postNow)
+                await new SalesInvoicePostingService(db).PostAsync(invoice);
+            else
+            {
+                db.SalesInvoices.Add(invoice);
+                await db.SaveChangesAsync(token);
+            }
+
+            // ‏والكمّيةُ المفوترة تخرج من الحجز.
+            var reservations = await db.StockReservations
+                .Where(r => r.CompanyId == companyId && r.SalesOrderId == order.Id).ToListAsync(token);
+            for (var index = 0; index < take.Length; index++)
+                if (take[index] > 0m && order.Lines[index].ProductId is long reservedPid)
+                {
+                    var toRelease = take[index];
+                    foreach (var r in reservations.Where(r => r.ProductId == reservedPid))
+                        toRelease -= r.Release(toRelease);
+                }
+
             for (var index = 0; index < take.Length; index++)
                 if (take[index] > 0m)
                     db.SalesOrderInvoiceLines.Add(

@@ -3797,6 +3797,50 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
         }
 
+        // ‏حجزُ المخزون لأوامر البيع — فارغٌ للقواعد القائمة (لا حجزَ لأوامرَ أُكِّدت قبله).
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS stock_reservations (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "SalesOrderId" BIGINT NOT NULL,
+                    "ProductId" BIGINT NOT NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL,
+                    "ReleasedQuantity" NUMERIC(18,4) NOT NULL DEFAULT 0
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_stock_reservations_CompanyId_ProductId"
+                    ON stock_reservations ("CompanyId", "ProductId");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_stock_reservations_SalesOrderId"
+                    ON stock_reservations ("SalesOrderId");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS stock_reservations (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    SalesOrderId INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    Quantity TEXT NOT NULL,
+                    ReleasedQuantity TEXT NOT NULL DEFAULT '0'
+                );
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE INDEX IF NOT EXISTS IX_stock_reservations_CompanyId_ProductId
+                    ON stock_reservations (CompanyId, ProductId);
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE INDEX IF NOT EXISTS IX_stock_reservations_SalesOrderId
+                    ON stock_reservations (SalesOrderId);
+                """, ct);
+        }
+
         // ‏سطورُ فوترة أوامر البيع (الفوترة الجزئية) — فارغةٌ تعني أنّ الأوامرَ القائمة تُفوتر كاملةً كما كانت.
         if (isPg)
         {

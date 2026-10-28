@@ -4111,6 +4111,40 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("sales_quotations", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Sales.StockReservation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("ReleasedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<long>("SalesOrderId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalesOrderId");
+
+                    b.HasIndex("CompanyId", "ProductId");
+
+                    b.ToTable("stock_reservations", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Security.AppUser", b =>
                 {
                     b.Property<long>("Id")
