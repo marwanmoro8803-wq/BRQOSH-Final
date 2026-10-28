@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Domain.Zatca;
@@ -98,6 +99,7 @@ public partial class SalesInvoiceDialog : Window
 
     private readonly ObservableCollection<LineRow> _rows = [];
     private List<ProductOption> _products = [];
+    private readonly SalesInvoiceDialogViewModel _vm = new();
 
     public record ProductOption(long Id, string Display, decimal SalePrice, string NameAr);
 
@@ -153,13 +155,12 @@ public partial class SalesInvoiceDialog : Window
 
     private async Task LoadZatcaPanelAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var settings = await db.ZatcaSettings.FirstOrDefaultAsync(s => s.CompanyId == AppServices.CompanyId);
-        if (settings is { IsEnabled: true })
+        var environment = await _vm.LoadZatcaEnvironmentAsync();
+        if (environment is not null)
         {
             ZatcaStatusText.Text = LocaleManager.T(
-                $"مفعّل · البيئة: {settings.Environment}",
-                $"Enabled · Environment: {settings.Environment}");
+                $"مفعّل · البيئة: {environment}",
+                $"Enabled · Environment: {environment}");
             ZatcaHintText.Text = LocaleManager.T(
                 "UUID · QR · UBL XML — يُولَّد تلقائياً عند الترحيل.",
                 "UUID · QR · UBL XML — generated automatically on post.");
@@ -175,11 +176,7 @@ public partial class SalesInvoiceDialog : Window
 
     private async Task LoadProductsAsync()
     {
-        await using var db = AppServices.CreateDb();
-        _products = await db.Products.Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive)
-            .OrderBy(p => p.Code)
-            .Select(p => new ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
-            .ToListAsync();
+        _products = await _vm.LoadProductsAsync();
         ProductColumn.ItemsSource = _products;   // (م2-٢٠) بلا هذا يبقى العمود فارغاً
     }
 
@@ -199,12 +196,7 @@ public partial class SalesInvoiceDialog : Window
 
     private async Task LoadCustomersAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var customers = await db.Customers
-            .Where(c => c.CompanyId == AppServices.CompanyId && c.IsActive)
-            .OrderBy(c => c.NameAr)
-            .Select(c => new CustomerOption(c.Id, c.NameAr))
-            .ToListAsync();
+        var customers = await _vm.LoadCustomersAsync();
         CustomerCombo.ItemsSource = customers;
         // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
@@ -298,8 +290,7 @@ public partial class SalesInvoiceDialog : Window
                 AppServices.CompanyId, customerId,
                 DateOnly.FromDateTime(DatePickerBox.SelectedDate.Value));
 
-            using var facade = new DesktopAccountingFacade();
-            await facade.PostSalesInvoiceAsync(invoice);
+            await _vm.PostAsync(invoice);
 
             DialogResult = true;
             Close();

@@ -6,6 +6,7 @@ using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Sales;
 using Brqosh.Infrastructure.Security;
@@ -19,6 +20,7 @@ namespace Brqosh.Desktop.Views.Pages;
 public partial class SalesInvoicesPage : UserControl
 {
     private readonly PagingState _paging = new(100);
+    private readonly SalesInvoicesViewModel _vm = new();
 
     public record InvoiceRow(long Id, string? InvoiceNumber, DateOnly InvoiceDate, string CustomerName,
         decimal Subtotal, decimal VatAmount, decimal GrandTotal, string StatusAr, SalesInvoiceStatus Status,
@@ -38,56 +40,24 @@ public partial class SalesInvoicesPage : UserControl
 
     private async Task ReloadAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var baseQuery = db.SalesInvoices.Where(i => i.CompanyId == AppServices.CompanyId);
-        _paging.SetTotal(await baseQuery.CountAsync());
-
-        var invoices = await baseQuery
-            .OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id)
-            .Skip(_paging.Skip)
-            .Take(_paging.PageSize)
-            .ToListAsync();
-
-        var customerIds = invoices.Select(i => i.CustomerId).Distinct().ToList();
-        var customers = await db.Customers
-            .Where(c => customerIds.Contains(c.Id))
-            .ToDictionaryAsync(c => c.Id, c => c.NameAr);
-
-        var rows = invoices.Select(i => new InvoiceRow(
-            i.Id, i.InvoiceNumber, i.InvoiceDate,
-            customers.GetValueOrDefault(i.CustomerId, "—"),
-            i.Subtotal, i.VatAmount, i.GrandTotal(),
-            i.Status switch
-            {
-                SalesInvoiceStatus.Posted => LocaleManager.T("مرحّلة", "Posted"),
-                SalesInvoiceStatus.Cancelled => LocaleManager.T("ملغاة", "Cancelled"),
-                _ => LocaleManager.T("مسودة", "Draft"),
-            }, i.Status, i.JournalEntryId)).ToList();
-        InvoicesGrid.ItemsSource = rows;
-        UiTestAutomation.PublishGridCount(InvoicesGrid, rows.Count);
+        await _vm.LoadAsync(_paging);
+        InvoicesGrid.ItemsSource = _vm.Rows;
+        UiTestAutomation.PublishGridCount(InvoicesGrid, _vm.Rows.Count);
         CountText.Text = _paging.StatusText("الفواتير");
         PrevBtn.IsEnabled = _paging.CanPrev;
         NextBtn.IsEnabled = _paging.CanNext;
-        await RenderKpisAsync(baseQuery);
+        RenderKpis();
     }
 
-    private async Task RenderKpisAsync(IQueryable<SalesInvoice> baseQuery)
+    private void RenderKpis()
     {
-        var monthStart = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
-        var postedQuery = baseQuery.Where(i =>
-            i.Status == SalesInvoiceStatus.Posted && i.InvoiceDate >= monthStart);
-
-        var monthCount = await postedQuery.CountAsync();
-        var monthTotal = await postedQuery.SumGrandTotalAsync();
-        var vatTotal = await postedQuery.SumVatAsync();
-
         KpiGrid.Children.Clear();
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("فواتير الشهر", "Month invoices"), "INV", monthCount, "#2563EB", KpiValueKind.Count));
+            LocaleManager.T("فواتير الشهر", "Month invoices"), "INV", _vm.MonthCount, "#2563EB", KpiValueKind.Count));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("إيراد الشهر", "Month revenue"), "RV", monthTotal, "#2A6F9E", KpiValueKind.Currency));
+            LocaleManager.T("إيراد الشهر", "Month revenue"), "RV", _vm.MonthTotal, "#2A6F9E", KpiValueKind.Currency));
         KpiGrid.Children.Add(KpiMetricCardBuilder.Create(this,
-            LocaleManager.T("ضريبة الشهر", "Month VAT"), "VT", vatTotal, "#7C3AED", KpiValueKind.Currency));
+            LocaleManager.T("ضريبة الشهر", "Month VAT"), "VT", _vm.VatTotal, "#7C3AED", KpiValueKind.Currency));
     }
 
     private async void OnPrev(object sender, RoutedEventArgs e)
@@ -124,8 +94,7 @@ public partial class SalesInvoicesPage : UserControl
             return;
         }
 
-        await using var db = AppServices.CreateDb();
-        var invoice = await db.SalesInvoices.SingleOrDefaultAsync(i => i.Id == row.Id);
+        var invoice = await _vm.FindAsync(row.Id);
         if (invoice is null)
         {
             UiFeedback.ShowRecordMissing(LocaleManager.T("لم تعد هذه الفاتورة موجودة — حدّث الجدول وحاول مجدداً.", "This invoice no longer exists — refresh the list and try again."));
@@ -174,10 +143,7 @@ public partial class SalesInvoicesPage : UserControl
 
         try
         {
-            using var facade = new DesktopAccountingFacade();
-            var username = SecurityContext.ResolveUsername();
-            await facade.GetService<SalesInvoiceCancellationService>().CancelAsync(
-                AppServices.CompanyId, row.Id, cancelDate.Value, username);
+            await _vm.CancelAsync(row.Id, cancelDate.Value);
             await ReloadAsync();
             UiFeedback.ShowSuccess("تم إلغاء الفاتورة.");
         }
