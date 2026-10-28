@@ -261,5 +261,11 @@
   "رفضت الهيئة الطلب ({0}): {1}": "ZATCA rejected the request ({0}): {1}",
   "إشعارُ إلغاء بيع الأصل {0} صادرٌ مسبقاً.": "The cancellation note for the sale of asset {0} has already been issued.",
   "رفضت الهيئة المستند: {0}": "ZATCA rejected the document: {0}",
-  "عملةُ المستند ({0}) تخالف عملةَ الدفاتر ({1}) فلا يصحّ سعرُ الصرف ١ — أدخل السعرَ الفعليّ.": "The document currency ({0}) differs from the books currency ({1}), so an exchange rate of 1 is not valid — enter the actual rate."
+  "عملةُ المستند ({0}) تخالف عملةَ الدفاتر ({1}) فلا يصحّ سعرُ الصرف ١ — أدخل السعرَ الفعليّ.": "The document currency ({0}) differs from the books currency ({1}), so an exchange rate of 1 is not valid — enter the actual rate.",
+  "انتهت صلاحية عرض السعر في {0} — أصدر عرضاً جديداً أو اطلب قبول العميل قبل التحويل.": "The quotation expired on {0} — issue a new quotation or obtain the customer's acceptance before converting.",
+  "حساب الصنف/الفئة رقم {0} غير موجود في دليل حسابات المنشأة.": "Item/category account #{0} does not exist in the company's chart of accounts.",
+  "الحساب النظامي {0} غير موجود في دليل حسابات المنشأة — أضفه من شاشة دليل الحسابات ثم أعد الترحيل.": "System account {0} does not exist in the company's chart of accounts — add it from the chart of accounts screen, then post again.",
+  "لا تُقفل الفترة {0}: {1} سطر بنكي غير مسوّى — أكمل التسوية البنكية أولاً.": "Period {0} cannot be closed: {1} unreconciled bank line(s) — complete the bank reconciliation first.",
+  "لا تُقفل الفترة {0}: {1} قيد مسودة معلّق — رحّله أو احذفه أولاً.": "Period {0} cannot be closed: {1} pending draft entries — post or delete them first.",
+  "لا تُقفل الفترة {0}: تقييم المخزون {1} لا يطابق رصيد الحساب {2} ({3}).": "Period {0} cannot be closed: the inventory valuation {1} does not match the balance of account {2} ({3})."
 }

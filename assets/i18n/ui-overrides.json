@@ -2000,5 +2000,21 @@
   "يُعتمد طلب مُرسَل فقط.": "Only a submitted request can be approved.",
   "يُنشأ الفاتورة من أمر بيع مؤكد فقط.": "An invoice is created only from a confirmed sales order.",
   "يُنشأ الفاتورة من أمر شراء معتمد فقط.": "An invoice is created only from an approved purchase order.",
-  "مستندٌ بعملة الدفاتر نفسِها سعرُ صرفه ١.": "A document in the books currency has an exchange rate of 1."
+  "مستندٌ بعملة الدفاتر نفسِها سعرُ صرفه ١.": "A document in the books currency has an exchange rate of 1.",
+  "لا يُلغى فاتورة عليها مقبوضات مخصّصة — ألغِ تخصيص سند القبض أو اعكسه أولاً، ثم أعد محاولة الإلغاء.": "An invoice with allocated receipts cannot be cancelled — unallocate or reverse the receipt voucher first, then retry the cancellation.",
+  "لا يُلغى فاتورة عليها مدفوعات مخصّصة — ألغِ تخصيص سند الصرف أو اعكسه أولاً، ثم أعد محاولة الإلغاء.": "An invoice with allocated payments cannot be cancelled — unallocate or reverse the payment voucher first, then retry the cancellation.",
+  "الدفع المختلط يتطلب مبلغ البطاقة.": "Mixed payment requires the card amount.",
+  "الدفع المختلط يتطلب مبلغ البطاقة (أكبر من صفر).": "Mixed payment requires a card amount (greater than zero).",
+  "مبلغ البطاقة في الدفع المختلط يجب أن يكون أكبر من صفر وأقل من إجمالي الفاتورة.": "The card amount in a mixed payment must be greater than zero and less than the invoice total.",
+  "لا يُعلَّم منتهياً إلا عرضٌ مُرسَل تجاوز تاريخ صلاحيته.": "Only a sent quotation past its validity date can be marked expired.",
+  "أمر البيع غير مرتبط بهذه الفاتورة.": "The sales order is not linked to this invoice.",
+  "توزيع الإيراد على حسابات الأصناف لا يساوي إجمالي الفاتورة.": "The revenue split across item accounts does not equal the invoice subtotal.",
+  "توزيع تكلفة المبيعات على حسابات الأصناف لا يساوي التكلفة.": "The cost of sales split across item accounts does not equal the cost.",
+  "المبلغ الموجَّه إلى حساب الصنف يتجاوز سطر الحساب العامّ في القيد.": "The amount routed to the item account exceeds the general account line in the entry.",
+  "المنشأة غير صالحة.": "The company is invalid.",
+  "رمز الفئة مطلوب.": "The category code is required.",
+  "اسم الفئة مطلوب.": "The category name is required.",
+  "حساب الفئة غير صالح.": "The category account is invalid.",
+  "فئة الصنف غير صالحة.": "The item category is invalid.",
+  "حساب الصنف غير صالح.": "The item account is invalid."
 }
