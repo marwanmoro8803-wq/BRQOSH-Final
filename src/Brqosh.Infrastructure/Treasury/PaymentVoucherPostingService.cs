@@ -111,7 +111,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
             // (CEEF-231 · ط1-٢ج) ‏حسابُ خصم السداد — **ولا يُنشأ إلا حين يوجد خصم**،
             // ‏فقاعدةٌ لا تمنح خصماً لا يظهر فيها حسابٌ بلا حركة.
             var discountAccount = voucher.SettlementDiscount > 0m
-                ? await SystemAccountProvisioning.EnsureAsync(db, voucher.CompanyId, "5214", ct)
+                ? await SystemAccountProvisioning.EnsureAsync(db, voucher.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.PurchaseDiscountsEarned, ct)
                 : null;
 
             var entry = voucher.Post(voucherNumber, payable, cashOrBank,

@@ -199,6 +199,16 @@ public static class SaudiChartOfAccounts
         public const string GosiExpense = "5203";
         public const string SalariesPayable = "2108";
         public const string GosiPayable = "2109";
+        public const string SalesDiscounts = "4103";
+        public const string PurchaseDiscountsEarned = "5214";
+        public const string Allowances = "5202";
+        public const string EndOfServiceExpense = "5219";
+        public const string EndOfServiceProvision = "2202";
+        public const string MaintenanceExpense = "5206";
+        public const string DirectLabour = "5106";
+        public const string ManufacturingOverhead = "5107";
+        public const string ProjectCosts = "5105";
+        public const string DepreciationExpense = "5211";
     }
 
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>

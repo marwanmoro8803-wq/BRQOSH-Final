@@ -40,7 +40,7 @@ public record UnitMaintenanceCost(long? UnitId, string UnitLabel, int Orders, de
 public class MaintenanceOrderService(BrqoshDbContext db)
 {
     /// <summary>حسابُ الصيانة والإصلاحات.</summary>
-    public const string MaintenanceExpenseCode = "5206";
+    public const string MaintenanceExpenseCode = SaudiChartOfAccounts.PostingRoleCodes.MaintenanceExpense;
 
     /// <summary>
     /// يُرحّل أمرَ صيانةٍ منتهياً.

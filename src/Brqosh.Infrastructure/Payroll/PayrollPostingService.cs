@@ -31,7 +31,7 @@ public class PayrollPostingService(BrqoshDbContext db)
 
             // (CEEF-230 · ط2-٤) ‏حسابُ البدلات — يُنشأ من القالب إن غاب، فقواعدُ العملاء
             // ‏تحمله أصلاً (هو في الشجرة منذ البداية) لكنّه لم يكن يُستعمل.
-            var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, "5202", token);
+            var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.Allowances, token);
 
             // (CEEF-230 · ط2-٥) ‏حسابُ السُّلَف — ولا يُنشأ إلا حين يوجد استقطاع، فقاعدةٌ
             // ‏لا تُسلّف أحداً لا يظهر فيها حسابٌ بلا حركة.

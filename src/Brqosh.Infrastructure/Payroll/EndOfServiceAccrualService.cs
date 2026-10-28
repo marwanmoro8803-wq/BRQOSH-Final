@@ -33,7 +33,7 @@ public record EndOfServiceAccrualResult(int Employees, decimal Movement, long? J
 public class EndOfServiceAccrualService(BrqoshDbContext db)
 {
     /// <summary>حسابُ مصروف المكافأة — يُنشأ من القالب إن غاب.</summary>
-    private const string ExpenseCode = "5219";
+    private const string ExpenseCode = SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceExpense;
 
     public async Task<EndOfServiceAccrualResult> RunMonthlyAsync(
         long companyId, DateOnly asOf, string username, CancellationToken ct = default)
@@ -84,7 +84,7 @@ public class EndOfServiceAccrualService(BrqoshDbContext db)
                 return new EndOfServiceAccrualResult(employees.Count, 0m, null);
 
             var expense = await SystemAccountProvisioning.EnsureAsync(db, companyId, ExpenseCode, token);
-            var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, "2202", token);
+            var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision, token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, asOf, PostingDocumentKind.JournalEntry,
@@ -128,7 +128,7 @@ public class EndOfServiceAccrualService(BrqoshDbContext db)
             .Where(e => e.CompanyId == companyId && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate <= asOf)
             .SelectMany(e => e.Lines)
-            .Where(l => l.AccountCode == "2202")
+            .Where(l => l.AccountCode == SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision)
             .Select(l => new { l.Debit, l.Credit })
             .ToListAsync(ct);
 

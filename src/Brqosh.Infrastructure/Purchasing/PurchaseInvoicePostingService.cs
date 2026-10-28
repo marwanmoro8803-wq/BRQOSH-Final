@@ -474,7 +474,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
         await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code);
 
     /// <summary>تكاليفُ المشاريع — الحسابُ نفسُه الذي يُدينه حوارُ تكلفة المشروع (<c>ProjectCostService</c>).</summary>
-    internal const string ProjectCostAccountCode = "5105";
+    internal const string ProjectCostAccountCode = SaudiChartOfAccounts.PostingRoleCodes.ProjectCosts;
 
     /// <summary>
     /// (ح-١٤٤) المشروعُ الذي تُحمَّل عليه الفاتورة — <b>من المنشأة نفسِها، ولم يُكمَل ولم يُلغَ</b>.

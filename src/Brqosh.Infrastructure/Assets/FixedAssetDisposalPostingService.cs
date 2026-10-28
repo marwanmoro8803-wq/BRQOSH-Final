@@ -125,7 +125,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             if (catchUp > 0)
             {
                 var depExpense = await db.Accounts.SingleAsync(
-                    a => a.CompanyId == asset.CompanyId && a.Code == "5211", token);
+                    a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.PostingRoleCodes.DepreciationExpense, token);
                 var catchUpEntry = JournalEntry.CreateDraft(
                     asset.CompanyId, disposalDate, $"إهلاك {asset.NameAr} — حتى تاريخ الاستبعاد", sourceDoc);
                 catchUpEntry.AddLine(depExpense, catchUp, 0m, asset.NameAr);

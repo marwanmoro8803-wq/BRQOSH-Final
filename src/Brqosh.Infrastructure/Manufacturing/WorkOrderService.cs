@@ -200,13 +200,13 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
 
             if (labourCost > 0m)
             {
-                var directLabour = await AccountAsync(companyId, "5106", token);
+                var directLabour = await AccountAsync(companyId, SaudiChartOfAccounts.PostingRoleCodes.DirectLabour, token);
                 entry.AddLine(directLabour, 0m, labourCost, "تحميل أجور عمالة مباشرة");
             }
 
             if (overheadCost > 0m)
             {
-                var overhead = await AccountAsync(companyId, "5107", token);
+                var overhead = await AccountAsync(companyId, SaudiChartOfAccounts.PostingRoleCodes.ManufacturingOverhead, token);
                 entry.AddLine(overhead, 0m, overheadCost, "تحميل تكاليف صناعية غير مباشرة");
             }
 

@@ -46,17 +46,17 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
     public const string SourceDocumentPrefix = "EndOfServiceSettlement:";
 
     /// <summary>حسابُ مصروف المكافأة — نفسُه الذي يُحمَّل عند التخصيص.</summary>
-    private const string ExpenseCode = "5219";
+    private const string ExpenseCode = SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceExpense;
 
     /// <summary>حسابُ المخصّص.</summary>
-    private const string ProvisionCode = "2202";
+    private const string ProvisionCode = SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision;
 
     /// <summary>رواتبُ مستحقّة — <b>مخرجُ المال الوحيد في الرواتب</b>.</summary>
     private const string PayableCode = SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable;
 
     /// <summary>(CEEF-233 · ز-٥) مخصّصُ الإجازات ومصروفُها — لبدل الإجازة (المادة 111).</summary>
-    private const string LeaveProvisionCode = "2203";
-    private const string LeaveExpenseCode = "5220";
+    private const string LeaveProvisionCode = SaudiChartOfAccounts.SystemCodes.LeaveProvision;
+    private const string LeaveExpenseCode = SaudiChartOfAccounts.SystemCodes.LeaveExpense;
 
     public async Task<EndOfServiceSettlementResult> SettleAsync(
         long companyId, long employeeId, EndOfServiceReason reason,

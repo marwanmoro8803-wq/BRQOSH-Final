@@ -31,8 +31,8 @@ public sealed record MaterialUsageRow(
 /// </summary>
 public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
 {
-    private const string LabourAccount = "5106";
-    private const string OverheadAccount = "5107";
+    private const string LabourAccount = SaudiChartOfAccounts.PostingRoleCodes.DirectLabour;
+    private const string OverheadAccount = SaudiChartOfAccounts.PostingRoleCodes.ManufacturingOverhead;
 
     public async Task<IReadOnlyList<ProductionCostRow>> ExecuteAsync(
         long companyId, DateOnly from, DateOnly to, CancellationToken ct = default)
