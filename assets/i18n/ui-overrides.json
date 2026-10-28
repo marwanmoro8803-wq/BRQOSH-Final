@@ -2058,5 +2058,18 @@
   "تعذّر إلغاء الأمر.": "Could not cancel the order.",
   "إذن التسليم ملغى مسبقاً.": "The delivery note is already cancelled.",
   "إذن التسليم غير موجود.": "Delivery note not found.",
-  "لا يُلغى إذن تسليم فُوتر ما سلّمه — ألغِ الفاتورة أولاً.": "A delivery note whose quantity was invoiced cannot be cancelled — cancel the invoice first."
+  "لا يُلغى إذن تسليم فُوتر ما سلّمه — ألغِ الفاتورة أولاً.": "A delivery note whose quantity was invoiced cannot be cancelled — cancel the invoice first.",
+  "إذن تسليم": "Delivery note",
+  "إذن تسليم من أمر البيع": "Delivery note from sales order",
+  "عدّل الكمية المسلّمة، وأدخل رقم الدفعة للأصناف المتتبعة.": "Adjust the delivered quantity and enter the batch number for tracked items.",
+  "سطور التسليم": "Delivery lines",
+  "الكمية المسلّمة": "Delivered qty",
+  "متتبَّع": "Tracked",
+  "كمية غير صالحة.": "Invalid quantity.",
+  "أدخل رقم الدفعة للأصناف المتتبعة.": "Enter the batch number for tracked items.",
+  "أدخل كمية للتسليم.": "Enter a quantity to deliver.",
+  "تعذّر إنشاء إذن التسليم.": "Could not create the delivery note.",
+  "تم إنشاء إذن التسليم.": "Delivery note created.",
+  "يُسلَّم أمر مؤكد فقط.": "Only a confirmed order can be delivered.",
+  "نعم": "Yes"
 }

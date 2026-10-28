@@ -23,6 +23,7 @@ public partial class SalesOrdersPage : UserControl
                 (NewBtn, PermissionService.CanPost),
                 (InvoiceBtn, PermissionService.CanPostAccounting),
                 (CancelBtn, PermissionService.CanPostAccounting),
+                (DeliverBtn, PermissionService.CanPostAccounting),
                 (WarehousePanel, PermissionService.CanPostAccounting));
             await LoadWarehousesAsync();
             await ReloadAsync();
@@ -138,6 +139,29 @@ private async void OnCancelOrder(object sender, RoutedEventArgs e)
         catch (Exception ex)
         {
             UiDialog.Show("تعذّر إلغاء الأمر.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void OnDeliver(object sender, RoutedEventArgs e)
+    {
+        if (!PermissionService.CanPostAccounting(AppServices.CurrentUser)) return;
+        if (Grid.SelectedItem is not OrderRow row)
+        {
+            UiDialog.Show("اختر أمر بيع.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (row.RawStatus is not (SalesOrderStatus.Confirmed or SalesOrderStatus.PartInvoiced))
+        {
+            UiDialog.Show("يُسلَّم أمر مؤكد فقط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dialog = new DeliveryNoteDialog(row.Id, WarehouseCombo.SelectedValue as long?) { Owner = Window.GetWindow(this) };
+        if (dialog.ShowDialog() == true)
+        {
+            UiDialog.Show("تم إنشاء إذن التسليم.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            await ReloadAsync();
         }
     }
 }
