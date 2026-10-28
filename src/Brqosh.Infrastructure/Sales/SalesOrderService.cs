@@ -34,6 +34,29 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
         return order;
     }
 
+    /// <summary>‏المسلَّمُ غيرُ المفوتَر لكلّ سطر = ما سلّمته أذونُ التسليم − ما فوترته فواتيرُ «من التسليم» قائمة.</summary>
+    internal static async Task<decimal[]> DeliveredUninvoicedAsync(BrqoshDbContext db, long companyId, SalesOrder order, CancellationToken ct)
+    {
+        var delivered = await db.DeliveryNotes.AsNoTracking()
+            .Where(n => n.CompanyId == companyId && n.SalesOrderId == order.Id && n.Status == DeliveryNoteStatus.Posted)
+            .SelectMany(n => n.Lines)
+            .Select(l => new { l.OrderLineIndex, l.Quantity })
+            .ToListAsync(ct);
+        var result = new decimal[order.Lines.Count];
+        if (delivered.Count == 0) return result;
+        var links = await db.SalesOrderInvoiceLines.AsNoTracking()
+            .Where(l => l.CompanyId == companyId && l.SalesOrderId == order.Id && !l.IsCancelled)
+            .ToListAsync(ct);
+        var invoiceIds = links.Select(l => l.SalesInvoiceId).Distinct().ToList();
+        var fromDeliveryInvoices = (await db.SalesInvoices.AsNoTracking()
+            .Where(i => invoiceIds.Contains(i.Id) && i.StockIssuedByDelivery)
+            .Select(i => i.Id).ToListAsync(ct)).ToHashSet();
+        for (var i = 0; i < result.Length; i++)
+            result[i] = delivered.Where(d => d.OrderLineIndex == i).Sum(d => d.Quantity)
+                        - links.Where(l => l.LineIndex == i && fromDeliveryInvoices.Contains(l.SalesInvoiceId)).Sum(l => l.Quantity);
+        return result;
+    }
+
     /// <summary>المحجوزُ المفتوح للصنف في المنشأة.</summary>
     public async Task<decimal> ReservedQuantityAsync(long companyId, long productId, CancellationToken ct = default) =>
         (await db.StockReservations.AsNoTracking()
@@ -106,17 +129,21 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
                 .ToListAsync(token);
             var remaining = order.Lines.Select((l, i) =>
                 l.Quantity - invoicedLines.Where(x => x.LineIndex == i).Sum(x => x.Quantity)).ToList();
+            // ‏إن سُلِّم شيءٌ لم يُفوتر بعدُ فالفاتورةُ تُفوتره هو — ولا تصرف مخزوناً.
+            var deliveredUninvoiced = await DeliveredUninvoicedAsync(db, companyId, order, token);
+            var fromDelivery = deliveredUninvoiced.Any(q => q > 0m);
+            var cap = fromDelivery ? deliveredUninvoiced : remaining.ToArray();
             var take = new decimal[order.Lines.Count];
             if (quantities is null)
-                for (var i = 0; i < take.Length; i++) take[i] = remaining[i];
+                for (var i = 0; i < take.Length; i++) take[i] = cap[i];
             else
                 foreach (var (index, qty) in quantities)
                 {
                     if (index < 0 || index >= take.Length)
                         throw new Domain.Accounting.AccountingException($"سطر أمر البيع رقم {index + 1} غير موجود.");
-                    if (qty < 0m || qty > remaining[index])
+                    if (qty < 0m || qty > cap[index])
                         throw new Domain.Accounting.AccountingException(
-                            $"كمية السطر {index + 1} ({qty:N2}) تتجاوز المتبقّي للفوترة ({remaining[index]:N2}).");
+                            $"كمية السطر {index + 1} ({qty:N2}) تتجاوز المتبقّي للفوترة ({cap[index]:N2}).");
                     take[index] = qty;
                 }
             if (take.All(q => q <= 0m))
@@ -126,6 +153,8 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
             // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الفاتورةُ تُصرف من المستودع المختار** (والفارغُ
             // ‏الافتراضيّ)، **وتخصيصُ الدفعات أدناه من المستودع نفسِه** — وإلا خُصِّصت دفعةٌ من مستودعٍ غير الذي يُنقَص.
             invoice.SetWarehouse(warehouseId);
+            if (fromDelivery)
+                invoice.MarkStockIssuedByDelivery();
 
             // ‏(جاهزيّةُ الإطلاق · ح-١٠٤ · `order-to-cash-procure-to-pay-inventory#7`) ‏**الصنفُ المتتبَّعُ يُخصَّص له الأقدمُ
             // ‏انتهاءً عند التحويل** — وكان السطرُ يُبنى بلا دفعةٍ فيرفضه المَخنَقُ، فلا يُفوتَر دواءٌ ولا غذاءٌ من أمرِ بيع.
@@ -138,7 +167,7 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
                 .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable() && p.IsTracked)
                 .Select(l => l.ProductId!.Value).Distinct().ToList();
             var draws = new Dictionary<long, List<BatchDraw>>();
-            if (trackedIds.Count > 0)
+            if (trackedIds.Count > 0 && !fromDelivery)
             {
                 // ‏المستودعُ هو الذي يصرف منه `SalesInvoicePostingService` — وإلا خُصِّصت دفعةٌ من مستودعٍ غير الذي يُنقَص.
                 var warehouse = warehouseId is long chosen
@@ -198,7 +227,7 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
             // ‏والكمّيةُ المفوترة تخرج من الحجز.
             var reservations = await db.StockReservations
                 .Where(r => r.CompanyId == companyId && r.SalesOrderId == order.Id).ToListAsync(token);
-            for (var index = 0; index < take.Length; index++)
+            for (var index = 0; index < take.Length && !fromDelivery; index++)   // ‏المسلَّمُ أُفرج عن حجزه عند التسليم
                 if (take[index] > 0m && order.Lines[index].ProductId is long reservedPid)
                 {
                     var toRelease = take[index];

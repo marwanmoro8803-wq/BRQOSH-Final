@@ -269,5 +269,8 @@
   "لا تُقفل الفترة {0}: {1} قيد مسودة معلّق — رحّله أو احذفه أولاً.": "Period {0} cannot be closed: {1} pending draft entries — post or delete them first.",
   "لا تُقفل الفترة {0}: تقييم المخزون {1} لا يطابق رصيد الحساب {2} ({3}).": "Period {0} cannot be closed: the inventory valuation {1} does not match the balance of account {2} ({3}).",
   "سطر أمر البيع رقم {0} غير موجود.": "Sales order line {0} does not exist.",
-  "كمية السطر {0} ({1}) تتجاوز المتبقّي للفوترة ({2}).": "The quantity of line {0} ({1}) exceeds the remaining quantity to invoice ({2})."
+  "كمية السطر {0} ({1}) تتجاوز المتبقّي للفوترة ({2}).": "The quantity of line {0} ({1}) exceeds the remaining quantity to invoice ({2}).",
+  "سطر أمر البيع رقم {0} ليس صنفاً مخزنياً — لا يُسلَّم بإذن.": "Sales order line {0} is not a stock item — it cannot be delivered by a delivery note.",
+  "كمية السطر {0} ({1}) تتجاوز المتبقّي للتسليم ({2}).": "The quantity of line {0} ({1}) exceeds the remaining quantity to deliver ({2}).",
+  "رصيد '{0}' غير كافٍ للتسليم — المتوفر {1}.": "The balance of '{0}' is insufficient for delivery — available {1}."
 }

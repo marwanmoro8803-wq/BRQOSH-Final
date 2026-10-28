@@ -35,6 +35,15 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     /// <summary>القيد المحاسبي المتولد عند الترحيل.</summary>
     public long? JournalEntryId { get; private set; }
 
+    /// <summary>‏المخزونُ صُرف بإذن تسليمٍ سابق — فلا يصرفه ترحيلُ الفاتورة ولا يُقيِّد تكلفتَه ثانية.</summary>
+    public bool StockIssuedByDelivery { get; private set; }
+
+    public void MarkStockIssuedByDelivery()
+    {
+        EnsureDraft();
+        StockIssuedByDelivery = true;
+    }
+
     /// <summary>وردية POS إن وُجدت — لربط تقارير الورديات.</summary>
     public long? PosShiftId { get; private set; }
 

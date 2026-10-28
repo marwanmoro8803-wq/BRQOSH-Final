@@ -80,7 +80,8 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
         var stockLines = invoice.Lines
 
-            .Where(l => l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
+            .Where(l => !invoice.StockIssuedByDelivery   // ‏صرفه إذنُ التسليم
+                        && l.ProductId is long pid && products.TryGetValue(pid, out var p) && p.IsStockable())
 
             .Select(l => (l.ProductId!.Value, l.Quantity, l.BatchNumber, l.UnitCode))
 

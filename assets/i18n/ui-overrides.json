@@ -2025,5 +2025,12 @@
   "حساب الصنف غير صالح.": "The item account is invalid.",
   "ربط سطر أمر البيع بالفاتورة غير صالح.": "The link between the sales order line and the invoice is invalid.",
   "لا كمية متبقّية للفوترة في أمر البيع.": "There is no remaining quantity to invoice on the sales order.",
-  "حجز المخزون غير صالح.": "The stock reservation is invalid."
+  "حجز المخزون غير صالح.": "The stock reservation is invalid.",
+  "يُسلَّم من أمر بيع مؤكد فقط.": "Delivery is made only from a confirmed sales order.",
+  "سطر أمر البيع في إذن التسليم غير موجود.": "The sales order line in the delivery note does not exist.",
+  "لا كمية متبقّية للتسليم في أمر البيع.": "There is no remaining quantity to deliver on the sales order.",
+  "تسليم الأصناف المتتبَّعة بالدفعات بإذنٍ غير مدعوم بعد — فوترها مباشرة.": "Delivering batch-tracked items by delivery note is not supported yet — invoice them directly.",
+  "إذن التسليم يتطلب أمر بيع وعميلاً ومستودعاً.": "A delivery note requires a sales order, a customer and a warehouse.",
+  "رقم إذن التسليم مطلوب.": "The delivery note number is required.",
+  "سطر إذن التسليم غير صالح.": "The delivery note line is invalid."
 }

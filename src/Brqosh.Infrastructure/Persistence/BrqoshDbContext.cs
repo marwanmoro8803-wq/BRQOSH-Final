@@ -126,6 +126,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderInvoiceLine> SalesOrderInvoiceLines => Set<SalesOrderInvoiceLine>();
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+    public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();
     public DbSet<CrmLead> CrmLeads => Set<CrmLead>();
     public DbSet<CrmOpportunity> CrmOpportunities => Set<CrmOpportunity>();
     public DbSet<CrmActivity> CrmActivities => Set<CrmActivity>();
@@ -1740,6 +1741,23 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(q => q.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // ‏أذونُ التسليم من أوامر البيع.
+        modelBuilder.Entity<DeliveryNote>(entity =>
+        {
+            entity.ToTable("delivery_notes");
+            entity.Property(n => n.Number).HasMaxLength(32).IsRequired();
+            entity.Property(n => n.Status).HasConversion<string>().HasMaxLength(16);
+            entity.HasIndex(n => new { n.CompanyId, n.Number }).IsUnique();
+            entity.HasIndex(n => n.SalesOrderId);
+            entity.HasMany(n => n.Lines).WithOne().HasForeignKey(l => l.DeliveryNoteId);
+        });
+        modelBuilder.Entity<DeliveryNoteLine>(entity =>
+        {
+            entity.ToTable("delivery_note_lines");
+            entity.Property(l => l.Quantity).HasPrecision(18, 4);
+            entity.Property(l => l.UnitCost).HasPrecision(18, 4);
         });
 
         // ‏حجزُ المخزون لأوامر البيع المؤكَّدة.

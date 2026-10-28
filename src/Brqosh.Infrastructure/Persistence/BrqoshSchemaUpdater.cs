@@ -852,7 +852,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("purchase_invoices", "PurchaseOrderId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("sales_invoices", "PosShiftId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("sales_invoices", "PosPaymentMethod", "character varying(16) NULL", ct);
-        await EnsurePgColumnAsync("sales_invoices", "PosCardAmount", "NUMERIC(18,2) NULL", ct);   // ‏حصّة البطاقة في الدفع المختلط
+        await EnsurePgColumnAsync("sales_invoices", "PosCardAmount", "NUMERIC(18,2) NULL", ct);
+        await EnsurePgColumnAsync("sales_invoices", "StockIssuedByDelivery", "BOOLEAN NOT NULL DEFAULT false", ct);   // ‏صُرف بإذن تسليم   // ‏حصّة البطاقة في الدفع المختلط
         await EnsurePgColumnAsync("zatca_settings", "ComplianceRequestId", "character varying(64) NOT NULL DEFAULT ''", ct);
         await EnsurePgColumnAsync("zatca_settings", "CsidSecret", "character varying(512) NOT NULL DEFAULT ''", ct);
         await EnsurePgColumnAsync("zatca_settings", "SigningMachineId", "character varying(128) NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
@@ -974,6 +975,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("sales_invoices", "PosShiftId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("sales_invoices", "PosPaymentMethod", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("sales_invoices", "PosCardAmount", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("sales_invoices", "StockIssuedByDelivery", "INTEGER NOT NULL DEFAULT 0", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "ComplianceRequestId", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "CsidSecret", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "SigningMachineId", "TEXT NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
@@ -3808,6 +3810,79 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Factor TEXT NOT NULL DEFAULT '1',
                     IsActive INTEGER NOT NULL DEFAULT 1
                 );
+                """, ct);
+        }
+
+        // ‏أذونُ التسليم — جدولان جديدان فارغان.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS delivery_notes (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "SalesOrderId" BIGINT NOT NULL,
+                    "CustomerId" BIGINT NOT NULL,
+                    "WarehouseId" BIGINT NOT NULL,
+                    "DeliveryDate" DATE NOT NULL,
+                    "Number" character varying(32) NOT NULL,
+                    "Status" character varying(16) NOT NULL,
+                    "StockMovementId" BIGINT NULL,
+                    "JournalEntryId" BIGINT NULL,
+                    "CreatedAtUtc" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_delivery_notes_CompanyId_Number" ON delivery_notes ("CompanyId", "Number");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_delivery_notes_SalesOrderId" ON delivery_notes ("SalesOrderId");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS delivery_note_lines (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "DeliveryNoteId" BIGINT NOT NULL REFERENCES delivery_notes ("Id") ON DELETE CASCADE,
+                    "OrderLineIndex" INTEGER NOT NULL,
+                    "ProductId" BIGINT NOT NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL,
+                    "UnitCost" NUMERIC(18,4) NOT NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_delivery_note_lines_DeliveryNoteId" ON delivery_note_lines ("DeliveryNoteId");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS delivery_notes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    SalesOrderId INTEGER NOT NULL,
+                    CustomerId INTEGER NOT NULL,
+                    WarehouseId INTEGER NOT NULL,
+                    DeliveryDate TEXT NOT NULL,
+                    Number TEXT NOT NULL,
+                    Status TEXT NOT NULL,
+                    StockMovementId INTEGER NULL,
+                    JournalEntryId INTEGER NULL,
+                    CreatedAtUtc TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_delivery_notes_CompanyId_Number ON delivery_notes (CompanyId, Number);
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS delivery_note_lines (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    DeliveryNoteId INTEGER NOT NULL REFERENCES delivery_notes (Id) ON DELETE CASCADE,
+                    OrderLineIndex INTEGER NOT NULL,
+                    ProductId INTEGER NOT NULL,
+                    Quantity TEXT NOT NULL,
+                    UnitCost TEXT NOT NULL
+                );
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE INDEX IF NOT EXISTS IX_delivery_note_lines_DeliveryNoteId ON delivery_note_lines (DeliveryNoteId);
                 """, ct);
         }
 
