@@ -6,6 +6,7 @@ using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Purchasing;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -17,6 +18,7 @@ public partial class PurchaseInvoiceDialog : Window
 
     private readonly ObservableCollection<SalesInvoiceDialog.LineRow> _rows = [];
     private List<SalesInvoiceDialog.ProductOption> _products = [];
+    private readonly PurchaseInvoiceDialogViewModel _vm = new();
 
     public PurchaseInvoiceDialog()
     {
@@ -35,15 +37,8 @@ public partial class PurchaseInvoiceDialog : Window
     private async Task LoadProjectsAsync()
     {
         // ‏(جاهزيّةُ الإطلاق · ح-١٤٤ · ‏`sector-modules#9`) ‏المشاريعُ التي تقبل تكلفة — والأوّلُ «بلا مشروع».
-        await using var db = AppServices.CreateDb();
         var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, LocaleManager.T("(بلا مشروع)", "(No project)")) };
-        choices.AddRange(await db.ConstructionProjects
-            .Where(p => p.CompanyId == AppServices.CompanyId
-                        && p.Status != Domain.Construction.ConstructionProjectStatus.Completed
-                        && p.Status != Domain.Construction.ConstructionProjectStatus.Cancelled)
-            .OrderBy(p => p.Code)
-            .Select(p => new SalesInvoiceDialog.WarehouseOption(p.Id, p.Code + " — " + p.NameAr))
-            .ToListAsync());
+        choices.AddRange(await _vm.LoadProjectsAsync());
         ProjectCombo.ItemsSource = choices;
         ProjectCombo.SelectedIndex = 0;
     }
@@ -52,24 +47,15 @@ public partial class PurchaseInvoiceDialog : Window
     {
         // ‏(جاهزيّةُ الإطلاق · ح-١٥٨ · ‏`treasury-payroll-assets#12`) ‏الأصولُ التي تنتظر فاتورةَ مورّد — والأوّلُ «بلا أصل».
         AssetLabel.Text = LocaleManager.T("الأصل الثابت المشترى", "Fixed asset purchased");
-        await using var db = AppServices.CreateDb();
         var choices = new List<SalesInvoiceDialog.WarehouseOption> { new(null, LocaleManager.T("(بلا أصل)", "(No asset)")) };
-        choices.AddRange(await db.FixedAssets
-            .Where(a => a.CompanyId == AppServices.CompanyId && a.AwaitingInvoice && a.CancelledOn == null)
-            .OrderBy(a => a.Code)
-            .Select(a => new SalesInvoiceDialog.WarehouseOption(a.Id, a.Code + " — " + a.NameAr))
-            .ToListAsync());
+        choices.AddRange(await _vm.LoadAssetsAsync());
         AssetCombo.ItemsSource = choices;
         AssetCombo.SelectedIndex = 0;
     }
 
     private async Task LoadProductsAsync()
     {
-        await using var db = AppServices.CreateDb();
-        _products = await db.Products.Where(p => p.CompanyId == AppServices.CompanyId && p.IsActive)
-            .OrderBy(p => p.Code)
-            .Select(p => new SalesInvoiceDialog.ProductOption(p.Id, $"{p.Code} — {p.NameAr}", p.SalePrice, p.NameAr))
-            .ToListAsync();
+        _products = await _vm.LoadProductsAsync();
         ProductColumn.ItemsSource = _products;   // (م2-٢٠) بلا هذا يبقى العمود فارغاً
     }
 
@@ -89,14 +75,7 @@ public partial class PurchaseInvoiceDialog : Window
 
     private async Task LoadSuppliersAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var suppliers = await db.Suppliers
-            .Where(s => s.CompanyId == AppServices.CompanyId && s.IsActive)
-            .OrderBy(s => s.NameAr)
-            .ToListAsync();
-        SupplierCombo.ItemsSource = suppliers
-            .Select(s => new SupplierOption(s.Id, s.IsVatRegistered, s.NameAr))
-            .ToList();
+        SupplierCombo.ItemsSource = await _vm.LoadSuppliersAsync();
         // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
@@ -181,8 +160,7 @@ public partial class PurchaseInvoiceDialog : Window
                 ReferenceBox.Text,
                 DeductibleCheck.IsChecked == true);
 
-            using var facade = new DesktopAccountingFacade();
-            await facade.PostPurchaseInvoiceAsync(invoice);
+            await _vm.PostAsync(invoice);
 
             DialogResult = true;
             Close();
