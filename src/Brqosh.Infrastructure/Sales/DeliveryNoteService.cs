@@ -16,8 +16,10 @@ namespace Brqosh.Infrastructure.Sales;
 public class DeliveryNoteService(BrqoshDbContext db) : Brqosh.Application.Accounting.IDeliveryNoteService
 {
     /// <param name="quantities">كمّيةٌ لكلّ رقم سطر (من الصفر)، و<c>null</c> = كلُّ المتبقّي من الأصناف المخزنيّة.</param>
+    /// <param name="batchNumbers">‏رقمُ الدفعة لكلّ سطرٍ صنفُه متتبَّع — يُصرف منها ويُفحص رصيدُها وصلاحيتُها.</param>
     public async Task<DeliveryNote> DeliverFromOrderAsync(long companyId, long orderId, DateOnly deliveryDate,
-        IReadOnlyDictionary<int, decimal>? quantities = null, long? warehouseId = null, CancellationToken ct = default) =>
+        IReadOnlyDictionary<int, decimal>? quantities = null, long? warehouseId = null,
+        IReadOnlyDictionary<int, string>? batchNumbers = null, CancellationToken ct = default) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             SecurityContext.EnsureCanPost();
@@ -56,8 +58,6 @@ public class DeliveryNoteService(BrqoshDbContext db) : Brqosh.Application.Accoun
                 throw new AccountingException("سطر أمر البيع في إذن التسليم غير موجود.");
             if (take.All(q => q <= 0m))
                 throw new AccountingException("لا كمية متبقّية للتسليم في أمر البيع.");
-            if (take.Select((q, i) => (q, i)).Any(x => x.q > 0m && products[order.Lines[x.i].ProductId!.Value].IsTracked))
-                throw new AccountingException("تسليم الأصناف المتتبَّعة بالدفعات بإذنٍ غير مدعوم بعد — فوترها مباشرة.");
 
             var warehouse = warehouseId is long chosen
                 ? await db.Warehouses.SingleOrDefaultAsync(w => w.CompanyId == companyId && w.Id == chosen, token)
@@ -84,7 +84,9 @@ public class DeliveryNoteService(BrqoshDbContext db) : Brqosh.Application.Accoun
                 var (lineCost, unitCost) = await costing.ConsumeForIssueAsync(companyId, pid, warehouse.Id, take[i], source, token);
                 totalCost += lineCost;
                 costByProduct.Add((pid, lineCost));
-                issueLines.Add((pid, take[i], unitCost, null, null));
+                issueLines.Add((pid, take[i], unitCost,
+                    batchNumbers is not null && batchNumbers.TryGetValue(i, out var batch) && !string.IsNullOrWhiteSpace(batch) ? batch.Trim() : null,
+                    null));
                 note.AddLine(i, pid, take[i], unitCost);
             }
 
@@ -119,6 +121,58 @@ public class DeliveryNoteService(BrqoshDbContext db) : Brqosh.Application.Accoun
                     foreach (var r in reservations.Where(r => r.ProductId == order.Lines[i].ProductId))
                         toRelease -= r.Release(toRelease);
                 }
+
+            await db.SaveChangesAsync(token);
+            return note;
+        }, ct);
+
+    /// <summary>
+    /// ‏إلغاءُ إذن تسليمٍ لم تُفوتَر كمّيتُه: يعكس حركةَ المخزون (ويُرمّم طبقاتِ التكلفة بعينها) وقيدَ التكلفة،
+    /// ‏ويُعيد الكمّيةَ محجوزةً لأمرها. ‏وما فُوتر منه لا يُلغى قبل إلغاء فاتورته — وإلّا بقيت فاتورةٌ بلا صرف.
+    /// </summary>
+    public async Task<DeliveryNote> CancelAsync(long companyId, long deliveryNoteId, DateOnly cancellationDate,
+        CancellationToken ct = default) =>
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
+        {
+            SecurityContext.EnsureCanPost();
+            var note = await db.DeliveryNotes.Include(n => n.Lines)
+                .SingleOrDefaultAsync(n => n.CompanyId == companyId && n.Id == deliveryNoteId, token)
+                ?? throw new AccountingException("إذن التسليم غير موجود.");
+            await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "SOI", (int)(note.SalesOrderId % int.MaxValue));
+            await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, cancellationDate);
+            if (note.Status == DeliveryNoteStatus.Cancelled)
+                throw new AccountingException("إذن التسليم ملغى مسبقاً.");
+
+            var order = await db.SalesOrders.SingleAsync(o => o.CompanyId == companyId && o.Id == note.SalesOrderId, token);
+            var deliveredUninvoiced = await SalesOrderService.DeliveredUninvoicedAsync(db, companyId, order, token);
+            foreach (var g in note.Lines.GroupBy(l => l.OrderLineIndex))
+                if (g.Key >= deliveredUninvoiced.Length || deliveredUninvoiced[g.Key] < g.Sum(l => l.Quantity))
+                    throw new AccountingException("لا يُلغى إذن تسليم فُوتر ما سلّمه — ألغِ الفاتورة أولاً.");
+
+            if (note.JournalEntryId is long entryId)
+                await new JournalReversalService(db).ReverseAsync(
+                    companyId, entryId, cancellationDate, SecurityContext.CurrentUsername ?? "", fromSourceDocument: true, token);
+
+            if (note.StockMovementId is long movementId)
+            {
+                var movement = await db.StockMovements.SingleAsync(m => m.CompanyId == companyId && m.Id == movementId, token);
+                if (movement.Status == StockMovementStatus.Posted)
+                {
+                    await new InventoryService(db).ReverseDocumentMovementAsync(movement);
+                    movement.MarkCancelled();
+                }
+            }
+
+            note.Cancel();
+
+            // ‏والكمّيةُ العائدةُ إلى أمرٍ قائمٍ تعود محجوزة.
+            if (order.Status is SalesOrderStatus.Confirmed or SalesOrderStatus.PartInvoiced)
+            {
+                var reservations = await db.StockReservations
+                    .Where(r => r.CompanyId == companyId && r.SalesOrderId == order.Id).ToListAsync(token);
+                foreach (var line in note.Lines)
+                    reservations.FirstOrDefault(r => r.ProductId == line.ProductId)?.Restore(line.Quantity);
+            }
 
             await db.SaveChangesAsync(token);
             return note;

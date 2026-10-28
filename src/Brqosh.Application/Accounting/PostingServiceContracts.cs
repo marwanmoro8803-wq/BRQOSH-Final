@@ -51,5 +51,8 @@ public interface IStockMovementPostingService
 public interface IDeliveryNoteService
 {
     Task<DeliveryNote> DeliverFromOrderAsync(long companyId, long orderId, DateOnly deliveryDate,
-        IReadOnlyDictionary<int, decimal>? quantities = null, long? warehouseId = null, CancellationToken ct = default);
+        IReadOnlyDictionary<int, decimal>? quantities = null, long? warehouseId = null,
+        IReadOnlyDictionary<int, string>? batchNumbers = null, CancellationToken ct = default);
+
+    Task<DeliveryNote> CancelAsync(long companyId, long deliveryNoteId, DateOnly cancellationDate, CancellationToken ct = default);
 }

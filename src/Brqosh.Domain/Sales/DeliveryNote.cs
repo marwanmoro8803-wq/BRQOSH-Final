@@ -56,6 +56,13 @@ public class DeliveryNote
 
     public void LinkStockMovement(long movementId) => StockMovementId = movementId;
     public void LinkJournalEntry(long journalEntryId) => JournalEntryId = journalEntryId;
+
+    public void Cancel()
+    {
+        if (Status == DeliveryNoteStatus.Cancelled)
+            throw new AccountingException("إذن التسليم ملغى مسبقاً.");
+        Status = DeliveryNoteStatus.Cancelled;
+    }
 }
 
 public class DeliveryNoteLine

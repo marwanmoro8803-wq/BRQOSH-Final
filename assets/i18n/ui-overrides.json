@@ -2055,5 +2055,8 @@
   "اختر أمر بيع.": "Select a sales order.",
   "إلغاء الأمر": "Cancel order",
   "إلغاء أمر البيع المحدد؟": "Cancel the selected sales order?",
-  "تعذّر إلغاء الأمر.": "Could not cancel the order."
+  "تعذّر إلغاء الأمر.": "Could not cancel the order.",
+  "إذن التسليم ملغى مسبقاً.": "The delivery note is already cancelled.",
+  "إذن التسليم غير موجود.": "Delivery note not found.",
+  "لا يُلغى إذن تسليم فُوتر ما سلّمه — ألغِ الفاتورة أولاً.": "A delivery note whose quantity was invoiced cannot be cancelled — cancel the invoice first."
 }

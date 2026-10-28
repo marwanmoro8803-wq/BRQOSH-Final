@@ -86,6 +86,63 @@ public class DeliveryNoteFromSalesOrderTests : IDisposable
     }
 
     [Fact]
+    public async Task Cancelling_ReturnsStockAndReservation_ButNotOnceInvoiced()
+    {
+        var order = await OrderAsync(6m);
+        var inv = new Brqosh.Infrastructure.Inventory.InventoryService(_db);
+        var orders = new SalesOrderService(_db);
+        var notes = new DeliveryNoteService(_db);
+
+        var first = await notes.DeliverFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 7, 3),
+            new Dictionary<int, decimal> { [0] = 2m });
+        var cancelled = await notes.CancelAsync(_companyId, first.Id, new DateOnly(2026, 7, 3));
+        Assert.Equal(DeliveryNoteStatus.Cancelled, cancelled.Status);
+        Assert.Equal(10m, await inv.GetCompanyOnHandAsync(_companyId, _productId));
+        Assert.Equal(6m, await orders.ReservedQuantityAsync(_companyId, _productId));
+        await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(() =>
+            notes.CancelAsync(_companyId, first.Id, new DateOnly(2026, 7, 3)));
+
+        var second = await notes.DeliverFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 7, 4),
+            new Dictionary<int, decimal> { [0] = 6m });
+        Assert.Equal(4m, await inv.GetCompanyOnHandAsync(_companyId, _productId));
+        await orders.CreateInvoiceFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 7, 5));
+        await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(() =>
+            notes.CancelAsync(_companyId, second.Id, new DateOnly(2026, 7, 5)));
+    }
+
+    [Fact]
+    public async Task BatchTrackedProduct_IsDeliveredFromTheNamedBatch()
+    {
+        var company = await new DatabaseInitializer(_db).InitializeAsync("شركة دفعات", "310123456700003", BusinessProfile.Retail);
+        _companyId = company.Id;
+        await new BrqoshSchemaUpdater(_db).ApplyAsync();
+        var supplier = Supplier.Create(_companyId, "مورد", "312222222200003");
+        var customer = Customer.Create(_companyId, "عميل", "311111111100003");
+        var product = Product.Create(_companyId, "B001", "دواء", "علبة", ProductType.Stockable, 50m);
+        product.SetTracking(InventoryTracking.Batch, 0m);
+        _db.AddRange(supplier, customer, product);
+        await _db.SaveChangesAsync();
+
+        var purchase = PurchaseInvoice.CreateDraft(_companyId, supplier.Id, new DateOnly(2026, 7, 1), "SUP-B", true);
+        purchase.AddLine("دواء", 10m, 20m, product.Id, batchNumber: "L1", expiryDate: new DateOnly(2027, 1, 1));
+        await new PurchaseInvoicePostingService(_db).PostAsync(purchase);
+        var order = SalesOrder.CreateDraft(_companyId, customer.Id, new DateOnly(2026, 7, 2));
+        order.AddLine("دواء", 3m, 50m, product.Id);
+        order = await new SalesOrderService(_db).ConfirmAsync(order);
+        var notes = new DeliveryNoteService(_db);
+
+        await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(() =>
+            notes.DeliverFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 7, 3)));   // ‏بلا دفعة
+        var note = await notes.DeliverFromOrderAsync(_companyId, order.Id, new DateOnly(2026, 7, 3),
+            batchNumbers: new Dictionary<int, string> { [0] = "L1" });
+        Assert.Equal(3m, note.Lines.Single().Quantity);
+        Assert.Equal(7m, await new Brqosh.Infrastructure.Inventory.InventoryService(_db).GetCompanyOnHandAsync(_companyId, product.Id));
+
+        await notes.CancelAsync(_companyId, note.Id, new DateOnly(2026, 7, 4));
+        Assert.Equal(10m, await new Brqosh.Infrastructure.Inventory.InventoryService(_db).GetCompanyOnHandAsync(_companyId, product.Id));
+    }
+
+    [Fact]
     public async Task DeliveringMoreThanIsOpen_IsRefused()
     {
         var order = await OrderAsync(3m);
