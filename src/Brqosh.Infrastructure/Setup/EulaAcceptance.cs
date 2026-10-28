@@ -27,13 +27,17 @@ public static class EulaAcceptance
 
     /// <summary>هل قُبل هذا النصُّ بعينه؟ — وغيابُ النصّ نفسِه لا يُعدّ قبولاً.</summary>
     /// <remarks>سجلٌّ تالفٌ أو محجوزٌ أو ممنوعٌ يُعامَل «غيرَ مقبول» فتُعرض الاتّفاقيّةُ من جديد — <b>ولا يُسقط الإقلاعَ كلَّ مرّة</b>.</remarks>
-    public static bool IsAccepted(string text)
+    public static bool IsAccepted(string text) => IsAcceptedAt(ConsentPath(text), text) || IsAcceptedAt(RecordPath, text);
+
+    private static string ConsentPath(string text) => Path.Combine(BrqoshDataRoot.Path(), "eula-acceptance", Fingerprint(text) + ".json");
+
+    private static bool IsAcceptedAt(string path, string text)
     {
         try
         {
-            if (!File.Exists(RecordPath))
+            if (!File.Exists(path))
                 return false;
-            var record = JsonSerializer.Deserialize<Record>(File.ReadAllText(RecordPath));
+            var record = JsonSerializer.Deserialize<Record>(File.ReadAllText(path));
             return record is not null && string.Equals(record.TextSha256, Fingerprint(text), StringComparison.Ordinal);
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
@@ -45,8 +49,9 @@ public static class EulaAcceptance
     /// <summary>يسجّل قبولَ هذا النصّ.</summary>
     public static void Accept(string text)
     {
-        Directory.CreateDirectory(BrqoshDataRoot.Path());
-        File.WriteAllText(RecordPath, JsonSerializer.Serialize(
+        var path = ConsentPath(text);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, JsonSerializer.Serialize(
             new Record(Fingerprint(text), DateTime.UtcNow, Environment.UserName)));
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
+using Brqosh.Application.Setup;
 
 namespace Brqosh.Desktop.Tests;
 
@@ -20,5 +21,12 @@ internal static class TestEnvironmentInitializer
     {
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BRQOSH_ENV")))
             Environment.SetEnvironmentVariable("BRQOSH_ENV", "test");
+
+        // **القرارُ يُفرَض صراحةً** (٢٠٢٦-١٠-٢٧): الجهازُ المنصَّبُ عليه BRQOSH يحمل
+        // `BRQOSH_ENV=production` في نطاق الجهاز، وهو مصدرٌ رسميٌّ لا يخفضه متغيّرُ العمليّة —
+        // فتسقط اختباراتٌ لا علاقةَ لها بالجهاز الذي تشغّلها. و`Brqosh.Api.Tests` سبق إلى هذا
+        // الإصلاح نفسه (ن-٣٨)؛ فيُطبَّق هنا بالمثل.
+        AppEnvironmentConfig.SetTestDefault(AppEnvironment.Test);
+        AppEnvironmentConfig.ForceForTests(AppEnvironment.Test);
     }
 }

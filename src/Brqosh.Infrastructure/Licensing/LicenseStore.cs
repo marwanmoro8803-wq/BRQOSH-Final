@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Brqosh.Application.Setup;
 
 namespace Brqosh.Infrastructure.Licensing;
@@ -79,7 +79,7 @@ public static class LicenseService
     public static bool Validate(string companyName, string machineId, string licenseKey) => false;
 }
 
-public record LicenseState(string CompanyName, string MachineId, string? SignedLicenseJson);
+public record LicenseState(string CompanyName, string MachineId, string? SignedLicenseJson, string? Code = null);
 
 /// <summary>ملف ترخيص محلي — %APPDATA%\BRQOSH\license.json</summary>
 public static class LicenseStore
@@ -114,24 +114,9 @@ public static class LicenseStore
             string.Equals(Environment.GetEnvironmentVariable("BRQOSH_UITEST"), "1", StringComparison.Ordinal))
             return true;
 
-        var machineId = LicenseService.MachineId();
-        var stored = Load();
-
-        // ‏(CEEF-237 · ت-٥) ويُقبل المعرّفُ القديم كذلك — **هنا وحدَه**، حيث نتحدّث عن
-        // ‏هذا الجهاز بعينه. فترخيصٌ صدر قبل الترقية لا يتوقّف صباحَ التحديث.
-        if (stored?.SignedLicenseJson is not null &&
-            RsaLicenseValidator.TryValidate(companyName, machineId, stored.SignedLicenseJson, out _,
-                alsoAcceptMachineId: LicenseService.LegacyMachineId(), nowUtc: nowUtc))
-            return true;
-
-        if (AppEnvironmentConfig.IsProduction)
-            return false;
-
-        // فترة تجريبية في التطوير — 30 يوماً من إتمام الإعداد
-        if (setupCompletedUtc is DateTime completed)
-            return completed.AddDays(30) > DateTime.UtcNow;
-
-        return false;
+        // ‏(الترخيصُ الرقميّ) ‏الحالُ يُجمَع في موضعٍ واحد: مفتاحٌ رقميّ أو ملفٌّ موقَّع
+        // ‏أو تجربةُ سبعة أيام. التجربةُ في الإنتاج كما في التطوير — سلوكُ المنتج لا تجاوز.
+        return LicenseStatusResolver.Current(companyName, nowUtc).IsActive;
     }
 
     /// <summary>
@@ -141,20 +126,25 @@ public static class LicenseStore
     public static bool IsGenuineButExpiredFor(string companyName, DateTime? nowUtc = null)
     {
         var stored = Load();
+        var machineId = LicenseService.MachineId();
+        var effectiveNow = nowUtc ?? LicenseClock.EffectiveNowUtc();
+
+        // ‏مفتاحٌ رقميٌّ انقضت صلاحيتُه وسلامتُه وربطُه سليمان — ترخيصٌ منتهٍ لا تجربة.
+        if (stored?.Code is { } code
+            && NumericLicense.Decode(code, machineId, companyName, effectiveNow,
+                out _, out _, out _) == NumericLicenseVerdict.Expired)
+            return true;
+
         return stored?.SignedLicenseJson is not null
-               && RsaLicenseValidator.IsGenuineButExpired(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
+               && RsaLicenseValidator.IsGenuineButExpired(companyName, machineId, stored.SignedLicenseJson,
                    alsoAcceptMachineId: LicenseService.LegacyMachineId(), nowUtc: nowUtc);
     }
 
     /// <summary>(ح-١٢٠) تاريخُ انتهاء الترخيص الصالح المحفوظ — للإنذار قبله؛ و<c>null</c> إن لم يكن صالحاً.</summary>
     public static DateTime? ValidLicenseExpiresUtc(string companyName, DateTime? nowUtc = null)
     {
-        var stored = Load();
-        return stored?.SignedLicenseJson is not null
-               && RsaLicenseValidator.TryValidate(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
-                   out var payload, alsoAcceptMachineId: LicenseService.LegacyMachineId(), nowUtc: nowUtc)
-            ? payload!.ExpiresUtc
-            : null;
+        var status = LicenseStatusResolver.Current(companyName, nowUtc);
+        return status.Kind == LicenseKind.Licensed ? status.ExpiresUtc : null;
     }
 
     /// <summary>
@@ -164,8 +154,16 @@ public static class LicenseStore
     public static IReadOnlySet<Brqosh.Domain.Modules.ModuleKey>? LicensedModulesFor(string companyName)
     {
         var stored = Load();
+        var machineId = LicenseService.MachineId();
+
+        // ‏المفتاحُ الرقميُّ الصالح لا يحصر الوحدات — يمنحها كلَّها.
+        if (stored?.Code is { } code
+            && NumericLicense.Decode(code, machineId, companyName, DateTime.UtcNow,
+                out _, out _, out _) == NumericLicenseVerdict.Valid)
+            return null;
+
         return stored?.SignedLicenseJson is not null
-               && RsaLicenseValidator.TryReadGenuine(companyName, LicenseService.MachineId(), stored.SignedLicenseJson,
+               && RsaLicenseValidator.TryReadGenuine(companyName, machineId, stored.SignedLicenseJson,
                    out var payload, alsoAcceptMachineId: LicenseService.LegacyMachineId())
             ? LicensedModules.From(payload!.Features)
             : null;
@@ -174,5 +172,12 @@ public static class LicenseStore
     public static void SaveSignedLicense(string companyName, string signedLicenseJson)
     {
         Save(new LicenseState(companyName, LicenseService.MachineId(), signedLicenseJson));
+    }
+
+    /// <summary>يحفظ مفتاحَ الترخيص الرقميّ — الحُكمُ عليه يُعاد عند كلّ إقلاعٍ من المفتاح نفسِه.</summary>
+    public static void SaveCode(string companyName, string code)
+    {
+        var existing = Load();
+        Save(new LicenseState(companyName, LicenseService.MachineId(), existing?.SignedLicenseJson, code));
     }
 }

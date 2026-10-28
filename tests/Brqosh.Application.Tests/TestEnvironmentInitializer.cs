@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
+using Brqosh.Application.Setup;
 
 namespace Brqosh.Application.Tests;
 
@@ -20,5 +21,19 @@ internal static class TestEnvironmentInitializer
     {
         if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BRQOSH_ENV")))
             Environment.SetEnvironmentVariable("BRQOSH_ENV", "test");
+
+        // **القرارُ يُفرَض صراحةً** (٢٠٢٦-١٠-٢٧): متغيّرُ العمليّة وحدَه لا يكفي.
+        //
+        // `AppEnvironmentConfig.Decide` يُعطي الأولويّةَ **للمصدر الرسميّ على مستوى الجهاز**:
+        // متى قال «إنتاج» فلا شيءَ يخفضه — ولا حتى `BRQOSH_ENV=test` أعلاه. والمُنصِّبُ يضبط
+        // ذلك المصدرَ على كلّ جهازٍ نُصِّب عليه المنتَج.
+        //
+        // **وهذا ليس افتراضاً**: على جهازِ المالك (‏BRQOSH منصَّبٌ فيه) صار
+        // `BRQOSH_ENV=production` في نطاق الجهاز، فسقطت اختباراتُ الترخيص التي تفتح SQLite
+        // **98/100** بعد أن كانت 100/100 على جهازٍ غير منصَّب — لا لعيبِ كود، بل لأن الحزمةَ
+        // رهينةُ الجهازِ الذي تشغّله. و`Brqosh.Api.Tests` كان قد سبق إلى هذا الإصلاح نفسه
+        // (‏ن-٣٨) ووثّق العلّة؛ فيُطبَّق هنا بالمثل.
+        AppEnvironmentConfig.SetTestDefault(AppEnvironment.Test);
+        AppEnvironmentConfig.ForceForTests(AppEnvironment.Test);
     }
 }

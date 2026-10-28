@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -116,6 +116,7 @@ public partial class CompanySettingsPage : UserControl
             $"وحدات: {string.Join(" · ", config.Industry.Modules)} — ميزات: {string.Join(" · ", config.Industry.Features)}";
 
         MachineIdBox.Text = LicenseService.MachineId();
+        RenderLicenseStatus();
 
         var idx = company.CostingMethod == InventoryCostingMethod.Fifo ? 1 : 0;
         CostingMethodBox.SelectedIndex = idx;
@@ -388,5 +389,31 @@ public partial class CompanySettingsPage : UserControl
     {
         var dialog = new LicenseActivationWindow(NameBox.Text.Trim()) { Owner = Window.GetWindow(this) };
         dialog.ShowDialog();
+        RenderLicenseStatus();
+    }
+
+    /// <summary>(الترخيصُ الرقميّ) حالُ الترخيص: النوعُ والمدةُ وتاريخُ الانتهاء — بجوار معرّف الجهاز.</summary>
+    private void RenderLicenseStatus()
+    {
+        var licensedName = _setup.LicensedCompanyName ?? _setup.CompanyName;
+        var status = LicenseStatusResolver.Current(licensedName);
+        LicenseStatusText.Text = status.Kind switch
+        {
+            LicenseKind.Trial => LocaleManager.T(
+                $"الفترة التجريبية: باقٍ {status.DaysLeft} من 7 أيام · تنتهي {status.ExpiresUtc!.Value:yyyy-MM-dd}.",
+                $"Trial period: {status.DaysLeft} of 7 days left · ends {status.ExpiresUtc!.Value:yyyy-MM-dd}."),
+            LicenseKind.Licensed when status.Plan == LicensePlan.Lifetime => LocaleManager.T(
+                "الترخيص: دائم — لا ينتهي.",
+                "Licence: lifetime — never expires."),
+            LicenseKind.Licensed => LocaleManager.T(
+                $"الترخيص: {status.PlanLabelAr} · باقٍ {status.DaysLeft} يوماً · ينتهي {status.ExpiresUtc!.Value:yyyy-MM-dd}.",
+                $"Licence: {status.PlanLabelEn} · {status.DaysLeft} days left · ends {status.ExpiresUtc!.Value:yyyy-MM-dd}."),
+            LicenseKind.Expired => LocaleManager.T(
+                "انتهت صلاحية الترخيص — فعِّله من زر «تفعيل الترخيص» أدناه.",
+                "The licence has expired — activate it with the button below."),
+            _ => LocaleManager.T(
+                "لا ترخيص بعد — ابدأ من زر «تفعيل الترخيص» أدناه.",
+                "No licence yet — start with the button below."),
+        };
     }
 }

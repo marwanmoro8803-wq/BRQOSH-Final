@@ -54,7 +54,17 @@ public partial class EulaWindow : Window
 
     private void OnAccept(object sender, RoutedEventArgs e)
     {
-        EulaAcceptance.Accept(_text);
+        try
+        {
+            EulaAcceptance.Accept(_text);
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+        {
+            Brqosh.Desktop.Ui.UiDialog.Show(this,
+                "تعذّر حفظ الموافقة. تحقق من صلاحية الكتابة في مجلد بيانات البرنامج وأعد المحاولة.",
+                "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
         DialogResult = true;
     }
 

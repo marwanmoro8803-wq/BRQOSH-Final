@@ -61,6 +61,11 @@ public class OneShuraCouncilTests
             .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
                         && !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
             .Select(p => Path.GetRelativePath(root, p).Replace('\\', '/'))
+            // **النسخُ المؤقّتةُ ليست منافسين**: `.claude/worktrees/**` مسارُ تنفيذٍ يُنشئ نسخةً
+            // كاملةً من نفس المستودع لعملِ وكيلٍ متوازٍ — والمقصودُ بوحدانيّة المحرّك ألّا يكون
+            // في **المستودع** محرّكان حيّان، لا أن يمنع العملَ المتوازي. (٢٠٢٦-١٠-٢٧: بوّابةٌ
+            // سقطت على مخلفاتِ ورشتين مهجورتين، لا على عيبٍ في المنتج.)
+            .Where(p => !IsTransientCheckout(p))
             .OrderBy(p => p, StringComparer.Ordinal)
             .ToList();
 
@@ -70,6 +75,23 @@ public class OneShuraCouncilTests
 
         Assert.Equal(Canonical, projects[0]);
     }
+
+    /// <summary>مسارٌ نسبيٌّ بعُدّة '/'. تُستثنى منه نسخُ الورشات المؤقّتة ومرآة Git.</summary>
+    private static bool IsTransientCheckout(string relativePath) =>
+        relativePath.StartsWith(".claude/worktrees/", StringComparison.OrdinalIgnoreCase)
+        || relativePath.StartsWith(".git/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// <b>الاختبارُ الذاتيُّ للاستثناء</b>: نسخةٌ داخل ورشةٍ مؤقّتةٍ لا تُحسب، ونسخةٌ ثانيةٌ في
+    /// المستودع نفسِه تُحسب — وإلا لكان الاستثناءُ إطفاءً صامتاً للبوّابة.
+    /// </summary>
+    [Theory]
+    [InlineData(".claude/worktrees/agent-a/ShuraCouncil/ShuraCouncil.csproj", true)]
+    [InlineData(".git/worktrees/x/ShuraCouncil/ShuraCouncil.csproj", true)]
+    [InlineData("ShuraCouncil/ShuraCouncil.csproj", false)]
+    [InlineData("tools/ShuraCouncil/ShuraCouncil.csproj", false)]
+    public void TransientCheckoutsAreNotSecondCopies(string relativePath, bool transient) =>
+        Assert.Equal(transient, IsTransientCheckout(relativePath));
 
     /// <summary>
     /// <b>المُشغِّلُ يُسمّي مشروعاً واحداً ولا يختار.</b> اختيارٌ داخل المُشغِّل يعني أنّ

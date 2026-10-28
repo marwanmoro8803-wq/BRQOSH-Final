@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using Brqosh.Application.Setup;
 using Brqosh.Desktop.Views;
@@ -405,11 +405,25 @@ public partial class App : System.Windows.Application
             if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow))
             {
                 var license = new LicenseActivationWindow(licensedName);
-                if (license.ShowDialog() != true)
+                if (license.ShowDialog() == true)
+                {
+                    // ‏قُبل مفتاحٌ في النافذة — يُعاد القياس؛ فمفتاحٌ وُضع بلا قبولٍ لا يُفتح به شيء.
+                    if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow))
+                    {
+                        Shutdown();
+                        return;
+                    }
+                }
+                else
                 {
                     // ‏(جاهزيّةُ الإطلاق · ح-١٢٠ · ‏`commercial-readiness#6`) ‏**الترخيصُ الأصيلُ المنتهي يفتح الدفاترَ للقراءة**
                     // ‏ولا يُغلقها: المالكُ ملزَمٌ بحفظها وإتاحتها. والمزوَّرُ أو المنقولُ لا يُمنح القراءة (`IsGenuineButExpiredFor`).
-                    if (!LicenseStore.IsGenuineButExpiredFor(licensedName, effectiveNow)
+                    // ‏(الترخيصُ الرقميّ) ‏وانتهاءُ التجربة ليس ترخيصاً منتهياً — يُغلق ولا يفتح للقراءة.
+                    var expiredStatus = LicenseStatusResolver.Current(licensedName, effectiveNow);
+                    var genuineExpired = expiredStatus.Kind == LicenseKind.Expired
+                                         && expiredStatus.Plan != LicensePlan.Trial7
+                                         && LicenseStore.IsGenuineButExpiredFor(licensedName, effectiveNow);
+                    if (!genuineExpired
                         || UiDialog.Show(
                                "انتهت صلاحية الترخيص. هل تريد فتح الدفاتر للقراءة فقط؟ تُعرض وتُطبع وتُصدَّر، ولا يُضاف إليها شيء حتى يُجدَّد الترخيص.",
                                "BRQOSH — الترخيص منتهٍ", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
@@ -421,13 +435,16 @@ public partial class App : System.Windows.Application
                     ReadOnlyBooks.Enter();
                 }
             }
-            else if (LicenseStore.ValidLicenseExpiresUtc(licensedName, effectiveNow) is DateTime expires
-                     && LicenseExpiryNotice.DaysLeftToWarn(expires, effectiveNow) is not null)
+
+            // ‏(الترخيصُ الرقميّ) ‏**الإنذارُ يسمّي المدةَ ونوعَ الاشتراك** كما طلب المالك: يومان
+            // ‏للتجريبية وثلاثون للسنوية، والدائمُ لا يُنذر. والنصُّ يُبنى من `LicenseNotices`.
+            var startupStatus = LicenseStatusResolver.Current(licensedName, effectiveNow);
+            if (startupStatus.IsActive && LicenseNotices.ShouldWarn(startupStatus, effectiveNow))
             {
-                // ‏(ح-١٢٠) ‏**والإنذارُ قبل ثلاثين يوماً** — فلا يُفاجأ المالكُ بيومٍ لا يُرحِّل فيه. والنصُّ حرفيٌّ ليُترجَم
-                // ‏من السجلّ (`DialogLocalizationTests` يمنع نموَّ المركَّب)، وتاريخُ الانتهاء في نافذة التفعيل.
                 UiDialog.Show(
-                    "تقترب صلاحية الترخيص من الانتهاء (ثلاثون يوماً أو أقلّ). جدِّده قبل ذلك؛ وبعد انتهائه تُفتح الدفاتر للقراءة فقط.",
+                    LocaleManager.T(
+                        LicenseNotices.StartupMessageAr(startupStatus, effectiveNow) ?? "",
+                        LicenseNotices.StartupMessageEn(startupStatus, effectiveNow) ?? ""),
                     "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 

@@ -237,11 +237,36 @@ public class SupplyChainIsPinnedTests
             .Where(NotBuildOutput)
             .ToList();
 
+    /// <summary>
+    /// <b>ما ليس من شجرة العمل</b>: مخرجاتُ البناء، ومرآةُ Git، وحزمُ العُقَد — <b>ونسخُ
+    /// الورشات المؤقّتة تحت <c>.claude/worktrees/</c></b>. الأخيرةُ نسخةٌ كاملةٌ من نفس
+    /// المستودع يُنشئها تنفيذُ وكيلٍ متوازٍ؛ فعدُّ سيرِ عملها <b>يُضاعف العدّاد ولا يكشف
+    /// عيباً</b> — وهو ما وقع في ٢٠٢٦-١٠-٢٧: الحارسُ عدّ ٩ ملفّاتٍ بدل ٣ لأنّ ورشتين مهجورتين
+    /// بقيتا على القرص. <b>والنطاقُ المقصودُ شجرةُ العمل الحيّة</b>، فتُستثنى النسخُ المؤقّتةُ
+    /// ولا يضعف الفحصُ: أيُّ سيرِ عملٍ في هذه الشجرة — ولو تحت <c>tools/</c> — يبقى مشمولاً.
+    /// </summary>
     private static bool NotBuildOutput(string path) =>
         !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
         && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
         && !path.Contains($"{Path.DirectorySeparatorChar}.git{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-        && !path.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}", StringComparison.Ordinal);
+        && !path.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+        && !path.Contains(
+            $"{Path.DirectorySeparatorChar}.claude{Path.DirectorySeparatorChar}worktrees{Path.DirectorySeparatorChar}",
+            StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>اختبارٌ ذاتيٌّ للاستثناء: الورشةُ المؤقّتةُ خارجَ النطاق، وسيرُ عملٍ حقيقيٌّ داخله.</summary>
+    [Theory]
+    [InlineData("repo/.claude/worktrees/agent-a/.github/workflows/ci.yml", true)]
+    [InlineData("repo/.github/workflows/ci.yml", false)]
+    [InlineData("repo/tools/desktop-qa-army/.github/workflows/qa-audit.yml", false)]
+    public void TransientCheckouts_AreOutOfWorkflowScope(string relativePath, bool excluded)
+    {
+        string absolute = Path.Combine(
+            Path.GetTempPath(),
+            relativePath.Replace('/', Path.DirectorySeparatorChar));
+        // الدالّةُ تجيب «هل يبقى في النطاق؟» — فالمتوقَّعُ نفيُ الاستثناء.
+        Assert.Equal(!excluded, NotBuildOutput(absolute));
+    }
 
     private static string FindRepoRoot()
     {

@@ -1,4 +1,4 @@
-﻿using Brqosh.Application.Setup;
+using Brqosh.Application.Setup;
 using Brqosh.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -37,78 +37,35 @@ public class ProductionSchemaGuardTests : IDisposable
     /// <summary>
     /// (CEEF-228) الافتراض الآمن: غياب BRQOSH_ENV = إنتاج، لا تطوير.
     ///
-    /// الاختبار السابق كان يؤكد العكس - فيثبّت الثغرة بدل كشفها. المثبّت لا يضبط
+    /// الاختبار السابق كان يؤكد العكس - فيثبّت الثغرة بدل كشفها. المثبِّت لا يضبط
     /// المتغيّر واختصارات المستخدم تشغّل exe مباشرة، فكان كل تركيب حقيقيّ يعمل
     /// في وضع التطوير: رمز OTP يُعرض على الشاشة، وSQLite مقبولة، وتجاوز RBAC مفتوح.
+    ///
+    /// **ويُقاس على الدالّة النقيّة `Decide`** (٢٠٢٦-١٠-٢٧): الاختبارُ كان يقرأ الجهازَ
+    /// فيسقط على جهازٍ منصَّبٍ عليه المنتج — `BRQOSH_ENV=production` في نطاق الجهاز مصدرٌ
+    /// رسميٌّ لا يخفضه متغيّرُ العمليّة — فيقيس الجهازَ لا السياسة. والدالّةُ نقيّة: كلُّ
+    /// مدخلاتها معطاةٌ هنا، فتُقاس القاعدةُ نفسُها في كلّ بيئة.
     /// </summary>
     [Fact]
-    public void Production_IsSecureDefault_WhenNoEnvironmentDeclared()
-    {
-        var priorEnv = Environment.GetEnvironmentVariable("BRQOSH_ENV");
-        var priorTest = Environment.GetEnvironmentVariable("BRQOSH_TEST");
-        try
-        {
-            AppEnvironmentConfig.ForceForTests(null);
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", null);
-            Environment.SetEnvironmentVariable("BRQOSH_TEST", null);
-            AppEnvironmentConfig.ResetForTests();
-
-            Assert.Equal(AppEnvironment.Production, AppEnvironmentConfig.Current);
-            Assert.True(AppEnvironmentConfig.IsProduction);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", priorEnv);
-            Environment.SetEnvironmentVariable("BRQOSH_TEST", priorTest);
-            AppEnvironmentConfig.ResetForTests();
-        }
-    }
+    public void Production_IsSecureDefault_WhenNoEnvironmentDeclared() =>
+        Assert.Equal(AppEnvironment.Production, AppEnvironmentConfig.Decide(null, null, null));
 
     /// <summary>harness الاختبارات يُصرّح عن نفسه بـBRQOSH_TEST=1 فلا يقع في وضع الإنتاج.</summary>
     [Fact]
-    public void Test_IsResolved_WhenOnlyBrqoshTestIsSet()
-    {
-        var priorEnv = Environment.GetEnvironmentVariable("BRQOSH_ENV");
-        var priorTest = Environment.GetEnvironmentVariable("BRQOSH_TEST");
-        try
-        {
-            AppEnvironmentConfig.ForceForTests(null);
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", null);
-            Environment.SetEnvironmentVariable("BRQOSH_TEST", "1");
-            AppEnvironmentConfig.ResetForTests();
+    public void Test_IsResolved_WhenOnlyBrqoshTestIsSet() =>
+        Assert.Equal(AppEnvironment.Test, AppEnvironmentConfig.Decide(null, null, "1"));
 
-            Assert.Equal(AppEnvironment.Test, AppEnvironmentConfig.Current);
-            Assert.False(AppEnvironmentConfig.IsProduction);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", priorEnv);
-            Environment.SetEnvironmentVariable("BRQOSH_TEST", priorTest);
-            AppEnvironmentConfig.ResetForTests();
-        }
-    }
-
-    /// <summary>التصريح الصريح يغلب كل شيء - المطوّر يستطيع طلب وضع التطوير.</summary>
+    /// <summary>التصريح الصريح يغلب الافتراض — والمصدرُ الرسميُّ يغلب التصريح.</summary>
     [Fact]
     public void ExplicitEnvironmentVariable_Wins()
     {
-        var priorEnv = Environment.GetEnvironmentVariable("BRQOSH_ENV");
-        try
-        {
-            AppEnvironmentConfig.ForceForTests(null);
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", "development");
-            AppEnvironmentConfig.ResetForTests();
-            Assert.Equal(AppEnvironment.Development, AppEnvironmentConfig.Current);
+        Assert.Equal(AppEnvironment.Development, AppEnvironmentConfig.Decide(null, "development", null));
+        Assert.Equal(AppEnvironment.Production, AppEnvironmentConfig.Decide(null, "production", null));
 
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", "production");
-            AppEnvironmentConfig.ResetForTests();
-            Assert.Equal(AppEnvironment.Production, AppEnvironmentConfig.Current);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("BRQOSH_ENV", priorEnv);
-            AppEnvironmentConfig.ResetForTests();
-        }
+        // والمصدرُ الرسميُّ (نطاقُ الجهاز) يتقدّم على إعلان العمليّة:
+        Assert.Equal(
+            AppEnvironment.Production,
+            AppEnvironmentConfig.Decide(AppEnvironment.Production, "development", null));
     }
 }
 

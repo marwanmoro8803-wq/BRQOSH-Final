@@ -1,4 +1,4 @@
-﻿using Brqosh.Application.Setup;
+using Brqosh.Application.Setup;
 using System.Runtime.CompilerServices;
 
 namespace Brqosh.Api.Tests;
@@ -31,6 +31,7 @@ internal static class TestEnvironmentInitializer
         // ‏**فبلا هذا السطر تكون الحزمةُ رهينةَ جهازِ من يُشغّلها**: تمرّ عند من لم يُنصّب،
         // ‏وتسقط عند من نصّب — ومضيفُ الاختبار يطلب `BRQOSH_API_KEY` فلا يُبنى أصلاً.
         // ‏وقد رُصد هذا الاعتمادُ في مراجعةٍ خصميّةٍ قبل أن يقع.
+        AppEnvironmentConfig.SetTestDefault(AppEnvironment.Test);
         AppEnvironmentConfig.ForceForTests(AppEnvironment.Test);
     }
 }

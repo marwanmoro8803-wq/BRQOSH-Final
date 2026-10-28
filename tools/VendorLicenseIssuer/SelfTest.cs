@@ -1,6 +1,4 @@
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text.Json;
+using System.IO;
 
 namespace Brqosh.VendorIssuer;
 
@@ -9,106 +7,132 @@ public record SelfTestRow(string Name, bool Ok, string Detail);
 /// <summary>
 /// <b>الاختبارُ الذاتيّ — لأنّ نسخةَ قواعدٍ لا تُقاس تفارق أصلَها صامتة.</b>
 ///
-/// <para>هذه الأداةُ تحمل نسخةً من قواعد تحقّق المنتج (<c>LicenseCore.Validate</c>). ونسخةٌ
-/// كهذه لا تنكسر بضجيج: تظلّ تُصدر تراخيصَ تبدو سليمةً وتُرفض على أجهزة العملاء. فتُقاس
-/// هنا بمتّجهاتٍ <b>موجَبةٍ وسالبةٍ معاً</b> — والسالبةُ هي المهمّة: بوّابةٌ لا تَرفض شيئاً
+/// <para>هذه الأداةُ تحمل نسخةً من ترميز المنتج (<c>NumericLicense.cs</c>)، ونسخةٌ كهذه
+/// لا تنكسر بضجيج: تُصدر مفاتيحَ تبدو سليمةً وتُرفض على أجهزة العملاء. فتُقاس هنا
+/// بمتّجهاتٍ <b>موجَبةٍ وسالبةٍ معاً</b> — والسالبةُ هي المهمّة: بوّابةٌ لا تَرفض شيئاً
 /// عمياءُ وإن قالت «نجح».</para>
 ///
-/// <para>يعمل عند الإقلاع. وإن أخفق شيءٌ منه <b>يُمنع الإصدار</b> — لا يُعرض تحذيرٌ يُتجاوز.</para>
+/// <para>وإن أخفق فحصٌ واحدٌ <b>يُمنع الإصدار</b> — لا يُعرض تحذيرٌ يُتجاوز.</para>
 /// </summary>
 public static class SelfTest
 {
     private const string Company = "شركة برقوش للإنشاءات";
+    private const string OtherCompany = "منشأة أخرى";
     private const string Machine = "CF0304A7C4C4ABA1";
+    private const string OtherMachine = "0123456789ABCDEF";
+    private static readonly DateTime Now = new(2026, 6, 1, 9, 0, 0, DateTimeKind.Utc);
 
     public static List<SelfTestRow> RunAll()
     {
         var rows = new List<SelfTestRow>();
         void Row(string name, bool ok, string detail) => rows.Add(new SelfTestRow(name, ok, detail));
 
-        // ① مرساةُ الثقة المنسوخة: مفتاحٌ حقيقيٌّ، وبصمتُه هي البصمةُ المُعلَنة.
+        var annual = LicenseCodec.Encode(LicensePlan.Annual, new DateOnly(2026, 1, 10), Machine, Company);
+        var trial = LicenseCodec.Encode(LicensePlan.Trial7, new DateOnly(2026, 1, 1), Machine, Company);
+        var lifetime = LicenseCodec.Encode(LicensePlan.Lifetime, new DateOnly(2026, 1, 1), Machine, Company);
+
+        // ① ذهابٌ وعودة: الخطةُ وتاريخُ الانتهاء كما وُضعا.
+        var verdict = LicenseCodec.Decode(annual, Machine, Company, Now, out var plan, out var expires, out var issued);
+        Row("السنويّ يُفكّ إلى خطته وتاريخه",
+            verdict == NumericLicenseVerdict.Valid && plan == LicensePlan.Annual
+            && issued == new DateOnly(2026, 1, 10)
+            && expires == new DateTime(2027, 1, 10, 0, 0, 0, DateTimeKind.Utc),
+            $"{verdict} · {LicenseCodec.FormatDate(expires)}");
+
+        // ② التجريبيُّ سبعةُ أيام: صالحٌ في السادس، منتهٍ في الثامن.
+        var daySix = LicenseCodec.Decode(trial, Machine, Company,
+            new DateTime(2026, 1, 6, 23, 59, 0, DateTimeKind.Utc), out _, out _, out _);
+        var dayEight = LicenseCodec.Decode(trial, Machine, Company,
+            new DateTime(2026, 1, 8, 0, 0, 0, DateTimeKind.Utc), out _, out _, out _);
+        Row("التجريبيّ ينتهي بعد سبعة أيام بالتمام",
+            daySix == NumericLicenseVerdict.Valid && dayEight == NumericLicenseVerdict.Expired,
+            $"{daySix} / {dayEight}");
+
+        // ③ الدائمُ لا ينتهي.
+        Row("الدائمُ صالحٌ في 2099",
+            LicenseCodec.Decode(lifetime, Machine, Company, new DateTime(2099, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+                out var lifePlan, out var lifeExpires, out _) == NumericLicenseVerdict.Valid
+            && lifePlan == LicensePlan.Lifetime && lifeExpires == DateTime.MaxValue,
+            LicenseCodec.FormatDate(lifeExpires));
+
+        // ④–⑥ متّجهاتٌ سالبة: جهازٌ آخر، منشأةٌ أخرى، رقمٌ محرَّف.
+        Row("مفتاحُ جهازٍ آخر يُرفض",
+            LicenseCodec.Decode(annual, OtherMachine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.DeviceMismatch,
+            "DeviceMismatch");
+
+        Row("مفتاحُ منشأةٍ أخرى يُرفض",
+            LicenseCodec.Decode(annual, Machine, OtherCompany, Now, out _, out _, out _)
+            == NumericLicenseVerdict.BadIntegrity,
+            "BadIntegrity");
+
+        var last = annual[^1];
+        var tampered = annual[..^1] + (last == '9' ? '0' : (char)(last + 1));
+        Row("رقمٌ واحدٌ محرَّف يُكشف",
+            LicenseCodec.Decode(tampered, Machine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.BadIntegrity,
+            "BadIntegrity");
+
+        // ⑦–⑨ حقولٌ غير معروفةٍ أو تالفة.
+        var future = LicenseCodec.Encode(LicensePlan.Annual, DateOnly.FromDateTime(Now.AddDays(3)), Machine, Company);
+        Row("تاريخُ إصدارٍ مستقبليّ يُرفض",
+            LicenseCodec.Decode(future, Machine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.NotYetValid,
+            "NotYetValid");
+
+        var value = UInt128.Parse(annual);
+        var unknownVersion = (value + ((UInt128)1 << 81)).ToString().PadLeft(LicenseCodec.DigitCount, '0');
+        var unknownPlan = (value - ((UInt128)1 << 80)).ToString().PadLeft(LicenseCodec.DigitCount, '0');
+        Row("نسخةُ ترميزٍ unknown تُرفض",
+            LicenseCodec.Decode(unknownVersion, Machine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.UnknownVersion, "UnknownVersion");
+        Row("خطةٌ غير معروفة تُرفض",
+            LicenseCodec.Decode(unknownPlan, Machine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.UnknownPlan, "UnknownPlan");
+        Row("نصٌّ ليس ٢٥ رقماً يُرفض",
+            LicenseCodec.Decode("1234-5678", Machine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.Malformed, "Malformed");
+
+        // ⑩ العرضُ والطباعة.
+        var formatted = LicenseCodec.Format(annual);
+        Row("التنسيقُ خمسُ مجموعاتٍ والعودةُ منه تُطبّع",
+            formatted.Length == 29 && formatted.Count(c => c == '-') == 4
+            && LicenseCodec.Normalize(formatted) == annual,
+            formatted);
+
+        // ⑪ الأرقامُ العربيةُ تُقبل.
+        var arabic = new string(annual.Select(ch =>
+            ch is >= '0' and <= '9' ? (char)(ch - '0' + '\u0660') : ch).ToArray());
+        Row("الأرقامُ العربيةُ الهندية تُطبَّع",
+            LicenseCodec.Decode(arabic, Machine, Company, Now, out _, out _, out _)
+            == NumericLicenseVerdict.Valid, "Valid");
+
+        // ⑫ لا تسلسل: يومان متتاليان ليسا خطوةً صغيرة.
+        var nextDay = LicenseCodec.Encode(LicensePlan.Annual, new DateOnly(2026, 1, 11), Machine, Company);
+        var a = UInt128.Parse(annual);
+        var b = UInt128.Parse(nextDay);
+        var gap = a < b ? b - a : a - b;
+        Row("المفاتيحُ غيرُ متسلسلة", gap > 1_000_000, $"الفرق {gap}");
+
+        // ⑬ السجلُّ: صياغةُ السطر وقراءتُه — **بلا وسيطٍ على القرص**.
+        //
+        // ‏كان الفحص يُجرّب كتابةَ ملفٍّ في مجلّد الملفّات المؤقّتة، **فأوقف الإصدارَ على
+        // ‏جهازٍ منع فيه ويندوز الكتابةَ هناك** — وهو عطلٌ في المجلد المؤقّت لا في الترخيص.
+        // ‏والكتابةُ على القرص تُجرَّب عند الإصدار نفسِه، وفشلُها لا يمنع تسليم المفتاح.
         try
         {
-            using var anchor = RSA.Create();
-            anchor.ImportFromPem(TrustAnchor.PublicKeyPem);
-            var fp = LicenseCore.Fingerprint(anchor);
-            Row("مرساةُ الثقة المنسوخة تُستورد وبصمتُها معلنة",
-                anchor.KeySize >= 2048 && fp == TrustAnchor.ExpectedFingerprint,
-                $"KeySize={anchor.KeySize} · {fp[..16]}…");
+            var row = new IssueLedger.LedgerRow(annual, Company, Machine, LicensePlan.Annual,
+                "2026-01-10", "2027-01-10", DateTime.UtcNow);
+            var line = IssueLedger.Serialize(row);
+            var back = IssueLedger.Parse(line);
+            Row("سجلُّ الإصدار يُكتب ويُقرأ",
+                back is not null && back.Code == annual && back.Plan == LicensePlan.Annual
+                && back.Company == Company && back.MachineId == Machine,
+                back is null ? "سطرٌ لم يُقرأ" : "سطرٌ مطابق");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Row("مرساةُ الثقة المنسوخة تُستورد وبصمتُها معلنة", false, ex.Message);
-        }
-
-        using var ephemeral = RSA.Create(2048);
-        var ephemeralPublicPem = ephemeral.ExportSubjectPublicKeyInfoPem();
-        var payload = new LicensePayload(Company, Machine, "standard",
-            new DateTime(2099, 1, 1, 0, 0, 0, DateTimeKind.Utc), ["core"]);
-        var envelope = LicenseCore.BuildSignedEnvelope(payload, ephemeral, out var signedRaw);
-
-        // ② هُويّةُ البايتات: النصُّ الموقَّعُ هو النصُّ المكتوب — وهذا هو الفخُّ الأوّل في هذا العقد.
-        try
-        {
-            using var doc = JsonDocument.Parse(envelope);
-            var writtenRaw = doc.RootElement.GetProperty("payload").GetRawText();
-            Row("النصُّ الموقَّع هو عينُ النصّ المكتوب في الغلاف",
-                string.Equals(writtenRaw, signedRaw, StringComparison.Ordinal),
-                writtenRaw.Length == signedRaw.Length ? $"{signedRaw.Length} حرفاً" : "الطولان مختلفان");
-        }
-        catch (Exception ex)
-        {
-            Row("النصُّ الموقَّع هو عينُ النصّ المكتوب في الغلاف", false, ex.Message);
-        }
-
-        // ③ متّجهٌ موجَب.
-        Row("ترخيصٌ صحيحٌ يُقبل",
-            LicenseCore.Validate(Company, Machine, envelope, ephemeralPublicPem, out _) == LicenseVerdict.Valid,
-            "Valid");
-
-        // ④ متّجهاتٌ سالبةٌ مسمّاة — كلٌّ منها يُثبت أنّ بوّابةً بعينها لا تزال ترى.
-        void Negative(string name, LicenseVerdict expected, string company, string machine, string json, string anchor)
-        {
-            var actual = LicenseCore.Validate(company, machine, json, anchor, out _);
-            Row(name, actual == expected, $"{actual} (المنتظر {expected})");
-        }
-
-        Negative("اسمُ منشأةٍ مختلف يُرفض", LicenseVerdict.CompanyMismatch,
-            Company + "x", Machine, envelope, ephemeralPublicPem);
-        Negative("جهازٌ مختلف يُرفض", LicenseVerdict.MachineMismatch,
-            Company, "0000000000000000", envelope, ephemeralPublicPem);
-        Negative("مرساةُ ثقةٍ غائبة تُسمّى باسمها", LicenseVerdict.NoTrustAnchor,
-            Company, Machine, envelope, "");
-        Negative("توقيعٌ بمفتاحٍ آخر يُرفض", LicenseVerdict.BadSignature,
-            Company, Machine, envelope, TrustAnchor.PublicKeyPem);
-        Negative("حمولةٌ عُبث بها تُرفض", LicenseVerdict.BadSignature,
-            Company, Machine, envelope.Replace("\"standard\"", "\"Enterprise\""), ephemeralPublicPem);
-        Negative("غلافٌ بأسماءِ حقولٍ كبيرةِ الأحرف يُرفض شكلاً", LicenseVerdict.Malformed,
-            Company, Machine, envelope.Replace("\"payload\"", "\"Payload\""), ephemeralPublicPem);
-
-        var expired = LicenseCore.BuildSignedEnvelope(
-            payload with { ExpiresUtc = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc) }, ephemeral, out _);
-        Negative("ترخيصٌ منتهٍ يُرفض", LicenseVerdict.Expired, Company, Machine, expired, ephemeralPublicPem);
-
-        // ⑤ معرّفُ الجهاز غيرُ حسّاسٍ للحالة — كما في المنتج. سالبٌ لو انقلب.
-        Row("معرّفُ الجهاز بحروفٍ صغيرة يُقبل (كالمنتج)",
-            LicenseCore.Validate(Company, Machine.ToLowerInvariant(), envelope, ephemeralPublicPem, out _)
-                == LicenseVerdict.Valid,
-            "OrdinalIgnoreCase");
-
-        // ⑥ التقويم: على ويندوز عربيٍّ التقويمُ الافتراضيُّ هجريّ. تاريخٌ يُعرض بالهجريّ
-        //    يجعل المشغّلَ يظنّ ترخيصاً صالحاً حتى 2027 منتهياً.
-        var previous = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = new CultureInfo("ar-SA");
-            var shown = LicenseCore.FormatUtc(new DateTime(2027, 9, 4, 22, 44, 0, DateTimeKind.Utc));
-            Row("التاريخُ يُعرض ميلاديّاً ولو كانت الثقافةُ ar-SA",
-                shown.StartsWith("2027-09-04", StringComparison.Ordinal), shown);
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = previous;
+            Row("سجلُّ الإصدار يُكتب ويُقرأ", false, ex.Message);
         }
 
         return rows;

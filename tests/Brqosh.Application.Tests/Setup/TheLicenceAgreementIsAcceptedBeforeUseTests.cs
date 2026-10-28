@@ -44,7 +44,7 @@ public class TheLicenceAgreementIsAcceptedBeforeUseTests : IDisposable
     public void AnUnreadableRecord_AsksAgain_InsteadOfFailingStartup()
     {
         EulaAcceptance.Accept("النصّ");
-        var record = Path.Combine(_root, "eula-accepted.json");
+        var record = Path.Combine(_root, "eula-acceptance", EulaAcceptance.Fingerprint("النصّ") + ".json");
 
         using (new FileStream(record, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             Assert.False(EulaAcceptance.IsAccepted("النصّ"));
@@ -91,6 +91,32 @@ public class TheLicenceAgreementIsAcceptedBeforeUseTests : IDisposable
         Assert.Equal(passes, process.ExitCode == 0);
     }
 
+    [Fact]
+    public void AProtectedLegacyRecord_DoesNotBlockSavingNewAcceptance()
+    {
+        var legacy = Path.Combine(_root, "eula-accepted.json");
+        File.WriteAllText(legacy, "legacy data");
+        File.SetAttributes(legacy, FileAttributes.ReadOnly);
+        try
+        {
+            EulaAcceptance.Accept("new agreement");
+            Assert.True(EulaAcceptance.IsAccepted("new agreement"));
+            Assert.False(EulaAcceptance.IsAccepted("different agreement"));
+            Assert.Equal("legacy data", File.ReadAllText(legacy));
+        }
+        finally { File.SetAttributes(legacy, FileAttributes.Normal); }
+    }
+
+    [Fact]
+    public void ExistingLegacyAcceptance_IsStillRecognised()
+    {
+        File.WriteAllText(Path.Combine(_root, "eula-accepted.json"),
+            System.Text.Json.JsonSerializer.Serialize(new {
+                TextSha256 = EulaAcceptance.Fingerprint("legacy agreement"),
+                AcceptedAtUtc = DateTime.UtcNow, WindowsUser = "test" }));
+        Assert.True(EulaAcceptance.IsAccepted("legacy agreement"));
+        Assert.False(EulaAcceptance.IsAccepted("changed agreement"));
+    }
     private static string RepositoryRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

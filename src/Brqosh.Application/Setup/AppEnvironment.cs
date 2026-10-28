@@ -1,4 +1,4 @@
-﻿namespace Brqosh.Application.Setup;
+namespace Brqosh.Application.Setup;
 
 /// <summary>وضع تشغيل التطبيق — يتحكم في سلوك قاعدة البيانات والترخيص.</summary>
 public enum AppEnvironment
@@ -12,6 +12,7 @@ public static class AppEnvironmentConfig
 {
     private static AppEnvironment? _cached;
     private static AppEnvironment? _override;
+    private static AppEnvironment? _testDefault;
 
     public static AppEnvironment Current
     {
@@ -44,7 +45,38 @@ public static class AppEnvironmentConfig
         _cached = null;
     }
 
+    /// <summary>
+    /// <b>الافتراضُ الذي تعود إليه الاختباراتُ عند «إعادة الضبط»</b> (٢٠٢٦-١٠-٢٧).
+    ///
+    /// <para><b>ما كان:</b> <see cref="ResetForTests"/> يمسح التجاوزَ فيعود القرارُ إلى
+    /// <see cref="Resolve"/> — وهو يقرأ <b>المصدرَ الرسميَّ على مستوى الجهاز</b>. فكلُّ اختبارٍ
+    /// يُعيد الضبطَ في مُهيّئه (‏`ProductionSchemaGuardTests` مثلاً) كان <b>يُلغي وضعَ
+    /// الاختبار للتجميعة كلِّها</b> طالما أنّ المنتجَ منصَّبٌ على الجهاز: قِيس 1184 إخفاقاً في
+    /// مجموعة Application على جهازٍ يحمل `BRQOSH_ENV=production` في نطاق الجهاز.</para>
+    ///
+    /// <para><b>والقاعدة الآن:</b> «إعادة الضبط» تعني العودةَ إلى ما أعلنته التجميعةُ
+    /// (<see cref="AppEnvironment.Test"/>)، لا إلى قراءةِ الجهاز. ومن أراد قراءةَ الجهاز حقّاً
+    /// فبابُه الصريح <see cref="ForceRealForTests"/> — فتُقاس السياسةُ الحقيقيّة بطلبٍ لا
+    /// بأثرٍ جانبيّ.</para>
+    /// </summary>
+    public static void SetTestDefault(AppEnvironment environment)
+    {
+        _testDefault = environment;
+        _cached = null;
+    }
+
+    /// <summary>يعود إلى افتراض التجميعة المعلَن (<see cref="SetTestDefault"/>) لا إلى قراءة الجهاز.</summary>
     public static void ResetForTests()
+    {
+        _override = _testDefault;
+        _cached = null;
+    }
+
+    /// <summary>
+    /// **قراءةُ الجهاز الحقيقيّة** — للأدلّة التي تقيس السياسةَ ضدّ مصادرِ النظام فعلاً.
+    /// وتُعاد بعدها الحالةُ بـ<see cref="ResetForTests"/> في `finally`.
+    /// </summary>
+    public static void ForceRealForTests()
     {
         _override = null;
         _cached = null;

@@ -109,12 +109,23 @@ public partial class SetupWizardWindow : Window
         // (CEEF-236 · ت-٣) ‏الاتصالُ يُجرَّب قبل أن يُكتب — فلا يُحفظ ملفٌّ يُقلع التطبيقُ عليه إلى خطأ.
         StartButton.IsEnabled = false;
         string? connectionError;
+        // ‏(1.0.32) إعدادُ القاعدة المدمجة أوّلَ مرّة يستغرق عشرات الثواني (تهيئةُ مجلّد البيانات وتشغيلُ الخادم) — صفحةُ الانتظار بالشعار بدل نافذةٍ جامدة.
+        StartupSplashWindow? waiting = null;
+        if (ConnectionPanel.UseEmbedded && !Brqosh.Infrastructure.Persistence.EmbeddedPostgres.IsProvisioned)
+        {
+            waiting = new StartupSplashWindow { Owner = this };
+            waiting.SetStatus("جارٍ إعداد خادم قاعدة البيانات على هذا الجهاز…", "Setting up the database server on this computer…");
+            waiting.Show();
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
         try
         {
             connectionError = await ConnectionPanel.ValidateProbeAndSaveAsync();
         }
         finally
         {
+            waiting?.Close();
             StartButton.IsEnabled = true;
         }
 

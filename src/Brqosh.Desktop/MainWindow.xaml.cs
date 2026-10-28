@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.IO;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -133,8 +133,10 @@ public partial class MainWindow : Window
         // ‏كان الحكمُ عند الإقلاع وحدَه، فتطبيقٌ لا يُغلق يعمل بترخيصٍ انتهى أمس. ‏يُحفظ انتهاءُ الترخيص الصالح عند بدء الجلسة،
         // ‏ويُقارَن كلَّ ربع ساعةٍ بالوقت الفعّال (`LicenseClock`) — فإن بلغه دخلت الجلسةُ وضعَ القراءة، ولا تُغلق.
         var licensedName = setup.LicensedCompanyName ?? setup.CompanyName;
-        var licenseExpiresUtc = Brqosh.Infrastructure.Licensing.LicenseStore.ValidLicenseExpiresUtc(
-            licensedName, Brqosh.Infrastructure.Licensing.LicenseClock.EffectiveNowUtc());
+        // ‏(الترخيصُ الرقميّ) ‏انتهاءُ التجربة أو الترخيص — كلاهما يدخل الجلسةَ وضعَ القراءة
+        // ‏حين يبلغ الوقتُ الفعّال: الحالُ يُقرأ مرّةً عند فتح النافذة ويُقارَن كلَّ ربع ساعة.
+        var licenseStatus = Brqosh.Infrastructure.Licensing.LicenseStatusResolver.Current(licensedName);
+        var licenseExpiresUtc = licenseStatus.IsActive ? licenseStatus.ExpiresUtc : null;
         var licenseTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
         licenseTimer.Tick += (_, _) => EnterReadOnlyIfLicenseExpired(licenseExpiresUtc);
         licenseTimer.Start();

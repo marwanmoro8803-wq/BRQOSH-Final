@@ -41,7 +41,7 @@ public static class InstallationStamp
     /// <summary>ما لا يُنقل عند البدء الفارغ: ليست بياناتِ منشأة.</summary>
     private static readonly string[] Kept =
     [
-        "license.json", "clock-mark.dat", "eula-accepted.json", "ui-prefs.json", "logs", "vendor-signing", FileName,
+        "license.json", "clock-mark.dat", "eula-accepted.json", "eula-acceptance", "ui-prefs.json", "logs", "vendor-signing", FileName,
     ];
 
     /// <summary>بصمةُ هذا التنصيب: مسارُ التنفيذيّ + الإصدارُ + تاريخُ كتابته.</summary>

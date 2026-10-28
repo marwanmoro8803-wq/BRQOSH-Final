@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .PARAMETER BuildNumber
   ‏(م-١ · ن-٠١) ‏الحقلُ الثالث من رقم الإصدار. الافتراضُ `0` = بناءٌ محلّيّ لا يدّعي
@@ -8,12 +8,22 @@
   ‏`dotnet publish` بنفسه، فالخاصّيّةُ يجب أن تصله كمُعامل لا كأثرٍ جانبيّ — وقد
   ‏وقع ذلك فعلاً: نُشر بـ7 ثمّ أعاد `build-msi.ps1` النشرَ بـ0 فدهس الرقم.
 #>
-param([int]$BuildNumber = 0)
+# -NoRestore uses previously restored packages; it does not ignore missing dependencies.
+param([int]$BuildNumber = 0, [switch]$NoRestore, [string]$OutDir)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$OutDir = Join-Path $Root "dist\BRQOSH"
-$ZipPath = Join-Path $Root "dist\BRQOSH-portable.zip"
+
+# **وجهةُ النشر قابلةٌ للتخصيص** (٢٠٢٦-١٠-٢٧): شجرةُ النشر الافتراضيّة قد تكون مفتوحةً في
+# عمليّاتِ تطبيقٍ عاملة، فيُتعذّر مسحُها فيسقط كلُّ بناءِ مُنصِّب. والتخصيصُ يفتح بناءً
+# متوازياً أو تحقّقاً بلا إغلاقِ تشغيلِ المستخدم — **والافتراضُ لم يتغيّر بحرف.**
+if ([string]::IsNullOrWhiteSpace($OutDir)) {
+    $OutDir = Join-Path $Root "dist\BRQOSH"
+    $ZipPath = Join-Path $Root "dist\BRQOSH-portable.zip"
+} else {
+    $OutDir = [IO.Path]::GetFullPath($OutDir)
+    $ZipPath = Join-Path $Root ("dist\BRQOSH-portable-{0}.zip" -f $BuildNumber)
+}
 
 Write-Host "=== BRQOSH Publish ===" -ForegroundColor Cyan
 
@@ -27,9 +37,29 @@ Write-Host "=== BRQOSH Publish ===" -ForegroundColor Cyan
 if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 
 Write-Host "رقمُ البناء: $BuildNumber" -ForegroundColor DarkGray
-dotnet publish (Join-Path $Root "src\Brqosh.Desktop\Brqosh.Desktop.csproj") `
+$restoreArgs = @()
+if ($NoRestore) { $restoreArgs += '--no-restore' }
+
+# **هدفُ win-x64 يُستعاد إن غاب** (٢٠٢٦-١٠-٢٧): `dotnet build`/`dotnet test` بلا RID يعيد
+# كتابةَ `project.assets.json` **بلا** هدف `net10.0-windows/win-x64`، فيسقط النشرُ بعدها
+# بـ`NETSDK1047` — وقد وقع مرّتين في جلسةٍ واحدة، وكلُّ مرّةٍ تُقرأ كأنها عطلُ حزمة.
+# والاستعادةُ هنا **محلّيّة** (الحزمُ مستعادةٌ سابقاً) ولا تُلغي معنى `-NoRestore`: الذي
+# يمنع تنزيلَ حزمٍ لا يمنع تسجيلَ هدفٍ مفقود. وهذا يطابق ما يقوله السكربت نفسُه بعدها.
+$desktopProject = Join-Path $Root "src\Brqosh.Desktop\Brqosh.Desktop.csproj"
+$assetsFile = Join-Path $Root "src\Brqosh.Desktop\obj\project.assets.json"
+if ((Test-Path $assetsFile) -and
+    -not (Select-String -LiteralPath $assetsFile -Pattern '"net10.0-windows/win-x64"' -SimpleMatch -Quiet)) {
+    Write-Host "استعادةُ هدف win-x64 الغائب من assets …" -ForegroundColor DarkGray
+    dotnet restore $desktopProject -r win-x64 -m:1 -nr:false
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "restore -r win-x64 أخفق (exit=$LASTEXITCODE) — لا نشر." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+}
+
+dotnet publish $desktopProject `
     -c Release -r win-x64 --self-contained true `
-    -o $OutDir -p:PublishSingleFile=false -p:BrqoshBuildNumber=$BuildNumber -p:BrqoshShipped=true
+    -o $OutDir -p:PublishSingleFile=false -p:BrqoshBuildNumber=$BuildNumber -p:BrqoshShipped=true -m:1 -nr:false @restoreArgs
 # ‏(ح-٧٥) ‏`BrqoshShipped` يجعل الثنائيّةَ لا تعرف غيرَ الإنتاج — لا متغيّرُ بيئةٍ ولا ملفُّ علامةٍ ولا مسؤولٌ محلّيٌّ
 # ‏يخفضها إلى تطويرٍ يفتح `BRQOSH_UITEST` والفترةَ التجريبيّة. **وهذا السكربتُ وحدَه يمرّرها.**
 if ($LASTEXITCODE -ne 0) {

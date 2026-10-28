@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.RegularExpressions;
 using Brqosh.Desktop.Ui;
 
@@ -83,7 +83,10 @@ public class DialogLocalizationTests
     [Fact]
     public void TheUntranslatableRemainder_IsDeclaredAndDoesNotGrow()
     {
-        const int DeclaredCeiling = 76;   // ‏+1 مراجَع: حوارُ «تنصيبٌ جديد» في App.ResolveInstallation يُترجَم عند النداء بـLocaleManager.T (فهو مترجَمٌ فعلاً) ولا يُطابَق حرفاً.
+        const int DeclaredCeiling = 77;   // ‏+1 مراجَع: حوارُ «تنصيبٌ جديد» في App.ResolveInstallation يُترجَم عند النداء بـLocaleManager.T (فهو مترجَمٌ فعلاً) ولا يُطابَق حرفاً.
+        // ‏(الترخيصُ الرقميّ) +1 مراجَع: حوارُ إنذارِ انتهاء الاشتراك في App يُبنى من
+        // ‏LicenseNotices (المدةُ ونوعُ الاشتراك وتاريخُه متغيّرات) ويُمرَّر بـLocaleManager.T
+        // ‏بنسختيه — مترجَمٌ فعلاً، لكنّه غيرُ حرفيٍّ فلا يطابقه الماسحُ حرفاً.
 
         var count = DialogCalls().Count(c => !IsPlainLiteral(c));
 

@@ -1,131 +1,176 @@
 <Window x:Class="Brqosh.VendorIssuer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="BRQOSH — مُصدِّر التراخيص"
-        Height="820" Width="900"
+        Title="BRQOSH — ترخيص برقوش"
+        Height="920" Width="660" MinHeight="720" MinWidth="620"
         FlowDirection="RightToLeft"
+        FontFamily="{StaticResource AppFont}"
         Background="{StaticResource BackgroundBrush}"
         WindowStartupLocation="CenterScreen">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="22">
-        <StackPanel>
+    <Window.Resources>
+        <Style x:Key="ReadOnlyBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="Background" Value="#FCFAF4"/>
+        </Style>
+    </Window.Resources>
 
-            <TextBlock Text="مُصدِّر تراخيص برقوش" FontSize="22" FontWeight="Bold" Margin="0,0,0,2" />
-            <TextBlock Text="يوقّع تراخيصَ العملاء بمفتاح المورِّد الخاصّ — ويرفض أن يوقّع بمفتاحٍ لا يثق به المنتجُ المشحون."
-                       Style="{StaticResource LabelText}" Margin="0,0,0,16" TextWrapping="Wrap" />
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-            <!-- ①  حالةُ الأداة: الاختبارُ الذاتيّ والمفتاح -->
-            <Border Style="{StaticResource Card}">
+        <!-- الترويسة: الشعارُ واسمُ الأداة -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="24,14">
+            <DockPanel LastChildFill="False">
+                <!-- الاتجاه LTR عمداً: اسمُ العلامة لاتينيٌّ ولا يُعكس في واجهة عربيّة. -->
+                <StackPanel Orientation="Horizontal" FlowDirection="LeftToRight" DockPanel.Dock="Right"
+                            VerticalAlignment="Center">
+                    <Path Data="{StaticResource BrqoshMarkGeometry}" Fill="{StaticResource PrimaryBrush}"
+                          Width="22" Height="29" Stretch="Fill"/>
+                    <Path Data="{StaticResource BrqoshWordmarkGeometry}" Fill="{StaticResource PrimaryBrush}"
+                          Width="96" Height="14.4" Stretch="Fill" Margin="9,5,0,0"/>
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Left" Text="ترخيص برقوش" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"
+                           Margin="18,0,0,0"/>
+            </DockPanel>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,18,0,18">
+            <Border Style="{StaticResource Card}" MaxWidth="560" HorizontalAlignment="Center">
                 <StackPanel>
-                    <TextBlock Text="① حالةُ الأداة" Style="{StaticResource SectionTitle}" />
 
-                    <Border x:Name="SelfTestBanner" CornerRadius="6" Padding="12,9" Margin="0,0,0,12">
+                    <!-- رأسُ البطاقة — كرأس نافذة التفعيل نفسِه -->
+                    <Border Height="3" Width="44" Background="{StaticResource AccentBrush}"
+                            CornerRadius="2" HorizontalAlignment="Right" Margin="0,0,0,18"/>
+                    <TextBlock Text="ترخيص برقوش" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock Text="أصدر تراخيص عملائك — تجريبي ٧ أيام · سنوي · دائم — بمفتاحٍ رقميّ واحد."
+                               FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"
+                               TextWrapping="Wrap" Margin="0,6,0,0"/>
+
+                    <!-- حالةُ الفحص الذاتيّ -->
+                    <Border x:Name="SelfTestBanner" CornerRadius="2" Padding="12,9" Margin="0,18,0,12">
                         <StackPanel>
-                            <TextBlock x:Name="SelfTestSummary" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap" />
+                            <TextBlock x:Name="SelfTestSummary" FontWeight="SemiBold" Foreground="White"
+                                       TextWrapping="Wrap"/>
                             <TextBlock x:Name="SelfTestHint" Foreground="White" FontSize="12" TextWrapping="Wrap"
-                                       Opacity="0.9" Margin="0,3,0,0" />
+                                       Opacity="0.92" Margin="0,3,0,0"/>
                         </StackPanel>
                     </Border>
-
-                    <Expander x:Name="SelfTestExpander" Header="تفاصيلُ الاختبار الذاتيّ" Margin="0,0,0,12">
+                    <Expander x:Name="SelfTestExpander" Header="تفاصيل الفحص الذاتي" Margin="0,0,0,16">
                         <ItemsControl x:Name="SelfTestList" Margin="0,8,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Margin="0,2">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="26" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="24"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding Mark}" Foreground="{Binding Brush}"
-                                                   FontWeight="Bold" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Column="0" Text="{Binding Mark}"
+                                                   Foreground="{Binding Brush}" FontWeight="Bold"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextWrapping="Wrap"/>
                                         <TextBlock Grid.Column="2" Text="{Binding Detail}" FontSize="11"
-                                                   Foreground="{StaticResource TextMutedBrush}" Margin="10,0,0,0" />
+                                                   Foreground="{StaticResource TextMutedBrush}" Margin="10,0,0,0"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Expander>
 
-                    <TextBlock Text="المفتاحُ الخاصّ للمورِّد" Style="{StaticResource LabelText}" />
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="KeyPathBox" Grid.Column="0" IsReadOnly="True" FlowDirection="LeftToRight" />
-                        <Button Grid.Column="1" Content="اختر ملفَّ المفتاح…" Margin="8,0,0,0" Click="OnPickKey" />
-                    </Grid>
-                    <TextBlock x:Name="KeyStatusText" TextWrapping="Wrap" FontSize="12" />
-                </StackPanel>
-            </Border>
-
-            <!-- ②  بيانات العميل -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="② بيانات العميل" Style="{StaticResource SectionTitle}" />
-                    <TextBlock Text="انسخ الاسمَ والمعرّفَ من شاشة التفعيل عند العميل — ولا تُعِد كتابتَهما. اسمُ المنشأة يُقارَن حرفاً بحرف."
-                               Style="{StaticResource LabelText}" TextWrapping="Wrap" Margin="0,0,0,10" />
-
-                    <TextBlock Text="اسم المنشأة *" Style="{StaticResource LabelText}" />
-                    <TextBox x:Name="CompanyBox" TextChanged="OnInputChanged" Margin="0,0,0,4" />
+                    <!-- بياناتُ العميل -->
+                    <TextBlock Text="اسم المنشأة *" Style="{StaticResource LabelText}"/>
+                    <TextBox x:Name="CompanyBox" TextChanged="OnInputChanged" Margin="0,0,0,4"/>
                     <TextBlock x:Name="CompanyWarning" FontSize="11" Foreground="{StaticResource DangerBrush}"
-                               TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,8" />
+                               TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,10"/>
 
-                    <TextBlock Text="معرّف الجهاز *" Style="{StaticResource LabelText}" />
+                    <TextBlock Text="معرّف الجهاز *" Style="{StaticResource LabelText}"/>
                     <TextBox x:Name="MachineBox" TextChanged="OnInputChanged" FlowDirection="LeftToRight"
-                             FontFamily="Consolas" Margin="0,0,0,4" />
+                             FontFamily="{StaticResource FigureFont}" Margin="0,0,0,4"/>
                     <TextBlock x:Name="MachineWarning" FontSize="11" Foreground="{StaticResource DangerBrush}"
-                               TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,8" />
+                               TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,10"/>
 
                     <Grid Margin="0,4,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="المدّة (أيام) *" Style="{StaticResource LabelText}" />
-                            <TextBox x:Name="DaysBox" Text="365" TextChanged="OnInputChanged" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="الفئة" Style="{StaticResource LabelText}" />
-                            <ComboBox x:Name="TierBox" SelectedIndex="0" Padding="8,6">
-                                <ComboBoxItem Content="standard" />
-                                <ComboBoxItem Content="professional" />
-                                <ComboBoxItem Content="enterprise" />
+                            <TextBlock Text="نوع الاشتراك *" Style="{StaticResource LabelText}"/>
+                            <ComboBox x:Name="PlanBox" SelectionChanged="OnSelectionChanged" SelectedIndex="1">
+                                <ComboBoxItem Content="تجريبي — ٧ أيام" Tag="Trial7"/>
+                                <ComboBoxItem Content="سنوي — ٣٦٥ يوماً" Tag="Annual"/>
+                                <ComboBoxItem Content="دائم — بلا انتهاء" Tag="Lifetime"/>
                             </ComboBox>
                         </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="تاريخ الإصدار" Style="{StaticResource LabelText}"/>
+                            <DatePicker x:Name="IssueDatePicker" SelectedDateChanged="OnDateChanged"/>
+                        </StackPanel>
                     </Grid>
-                    <TextBlock x:Name="ExpiryPreview" Style="{StaticResource LabelText}" Margin="0,8,0,0" />
+
+                    <TextBlock Text="ملاحظات (اختياري)" Style="{StaticResource LabelText}" Margin="0,12,0,4"/>
+                    <TextBox x:Name="NotesBox"/>
+
+                    <TextBlock x:Name="ExpiryPreview" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
+
+                    <Button x:Name="IssueButton" Content="إصدار الترخيص" Style="{StaticResource PrimaryButton}"
+                            HorizontalAlignment="Stretch" Margin="0,16,0,0" Click="OnIssue"/>
+
+                    <TextBlock x:Name="IssueStatus" TextWrapping="Wrap" Margin="0,10,0,0" FontWeight="SemiBold"/>
+
+                    <!-- النتيجة -->
+                    <Border x:Name="ResultPanel" Visibility="Collapsed" Margin="0,14,0,0"
+                            Background="#FCFAF4" BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="2" Padding="16,14">
+                        <StackPanel>
+                            <TextBlock Text="مفتاح الترخيص" Style="{StaticResource LabelText}"/>
+                            <TextBox x:Name="CodeBox" IsReadOnly="True" FlowDirection="LeftToRight"
+                                     FontFamily="{StaticResource FigureFont}" FontSize="19"
+                                     TextAlignment="Center" Padding="8,10" Background="White"/>
+                            <TextBlock x:Name="ExpiryText" Style="{StaticResource LabelText}" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="DurationText" Style="{StaticResource LabelText}" Margin="0,4,0,0"/>
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Content="نسخ المفتاح" Click="OnCopy" Style="{StaticResource SecondaryButton}"/>
+                                <Button Content="حفظ بطاقة الترخيص…" Click="OnSaveCard"
+                                        Style="{StaticResource SecondaryButton}"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- آخرُ ما أُصدر -->
+                    <TextBlock Text="آخر ما أُصدر" Style="{StaticResource SectionTitle}" Margin="0,22,0,6"/>
+                    <ItemsControl x:Name="LedgerList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Code}" FontFamily="{StaticResource FigureFont}"
+                                               FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Company}" Margin="10,0,10,0"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Plan}" FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock x:Name="EmptyLedger" Text="لم يُصدر من هذا الجهاز شيءٌ بعد."
+                               Style="{StaticResource LabelText}" Margin="0,4,0,0"/>
+
+                    <TextBlock Text="المفتاح مربوطٌ بجهاز العميل ومنشأته — لا يعمل على غيرهما، ولا يُقبل بعد انتهائه. وسجلُّ الإصدار في %APPDATA%\BRQOSH\vendor-signing — احتفظ بنسخةٍ احتياطيّةٍ منه."
+                               Style="{StaticResource LabelText}" TextWrapping="Wrap" Margin="0,18,0,0"/>
                 </StackPanel>
             </Border>
-
-            <!-- ③  الإصدار -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="③ الإصدار" Style="{StaticResource SectionTitle}" />
-                    <Button x:Name="IssueButton" Content="أصدر الترخيص" Style="{StaticResource PrimaryButton}"
-                            HorizontalAlignment="Stretch" Click="OnIssue" />
-                    <TextBlock x:Name="IssueStatus" TextWrapping="Wrap" Margin="0,10,0,0" FontWeight="SemiBold" />
-
-                    <TextBox x:Name="ResultBox" Margin="0,10,0,0" Height="120" IsReadOnly="True"
-                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
-                             FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="11"
-                             Visibility="Collapsed" />
-
-                    <WrapPanel x:Name="ResultActions" Margin="0,10,0,0" Visibility="Collapsed">
-                        <Button Content="انسخ المفتاح" Click="OnCopy" Margin="0,0,8,8" />
-                        <Button Content="احفظ ملفَّ الترخيص…" Click="OnSaveEnvelope" Margin="0,0,8,8" />
-                        <Button Content="احفظ license.json جاهزاً…" Click="OnSaveStoreFile" Margin="0,0,8,8" />
-                    </WrapPanel>
-                </StackPanel>
-            </Border>
-
-            <TextBlock Text="المفتاحُ الخاصُّ هو المنتج. لا تنسخه إلى المستودع ولا إلى مجلّدٍ مشترك، واحتفظ بنسخةٍ احتياطيّةٍ خارج هذا الجهاز — ضياعُه يعني أنّ كلَّ ترخيصٍ جديدٍ يحتاج بناءً جديداً للمنتج، وذلك يُبطل كلَّ ترخيصٍ سابق."
-                       Style="{StaticResource LabelText}" TextWrapping="Wrap" Margin="2,0,2,10" />
-
-        </StackPanel>
-    </ScrollViewer>
+        </ScrollViewer>
+    </Grid>
 </Window>

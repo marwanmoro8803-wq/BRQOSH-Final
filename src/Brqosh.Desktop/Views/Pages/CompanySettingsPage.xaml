@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Brqosh.Desktop.Views.Pages.CompanySettingsPage"
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.CompanySettingsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
@@ -157,6 +157,9 @@
 
                     <TextBlock Text="معرّف الجهاز (للترخيص)" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="MachineIdBox" Style="{StaticResource AppTextBox}" IsReadOnly="True" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="LicenseStatusText"
+                               FontSize="12.5" TextWrapping="Wrap" Margin="0,4,0,16"
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
                 </StackPanel>
             </Border>
         </ScrollViewer>

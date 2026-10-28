@@ -1,14 +1,21 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     بناء MSI لـ BRQOSH باستخدام WiX Toolset v4+.
     يتطلب: wix (dotnet tool install --global wix)
 #>
-param([int]$BuildNumber = 0)
+param([int]$BuildNumber = 0, [switch]$NoRestore, [string]$PublishDir)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$PublishDir = Join-Path $Root "dist\BRQOSH"
+
+# **وجهةُ الحمولة قابلةٌ للتخصيص** للسبب نفسه (٢٠٢٦-١٠-٢٧): تشغيلٌ حيٌّ يفتح ملفّات
+# `dist\BRQOSH` فيمنع مسحَها. والافتراضُ `dist\BRQOSH` كما كان.
+if ([string]::IsNullOrWhiteSpace($PublishDir)) {
+    $PublishDir = Join-Path $Root "dist\BRQOSH"
+} else {
+    $PublishDir = [IO.Path]::GetFullPath($PublishDir)
+}
 $MsiOut = Join-Path $Root "dist\BRQOSH-Setup.msi"
 
 Write-Host "=== BRQOSH MSI Build ===" -ForegroundColor Cyan
@@ -101,7 +108,7 @@ function Invoke-BrqoshSign {
 # ‏ذاك السكربت بغير الصفر، و`$ErrorActionPreference = "Stop"` **لا يوقف برنامجاً
 # ‏أصليّاً فاشلاً**. فبلا هذا يمضي البناءُ فوق شجرةِ نشرٍ قديمة، فتخرج حزمةٌ
 # ‏خضراءُ الظاهر تحمل ثنائيّاتِ الأمس ورقمَ إصدارِ اليوم.
-& (Join-Path $Root "installer\publish.ps1") -BuildNumber $BuildNumber
+& (Join-Path $Root "installer\publish.ps1") -BuildNumber $BuildNumber -NoRestore:$NoRestore -OutDir $PublishDir
 if ($LASTEXITCODE -ne 0) {
     Write-Host "publish.ps1 أخفق (exit=$LASTEXITCODE) — لا MSI يُبنى." -ForegroundColor Red
     exit $LASTEXITCODE
@@ -233,6 +240,18 @@ $PayloadBinaries = @(Get-ChildItem $PublishDir -File |
 if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) { Write-Host "بناء برنامج الإزالة أخفق." -ForegroundColor Red; exit 1 }
 $PayloadBinaries += (Join-Path $PublishDir 'BRQOSH-Uninstall.exe')
 Invoke-BrqoshSign -Paths $PayloadBinaries -What "الحمولة"
+
+# Recreate the portable archive from the final payload: PostgreSQL, backup tools,
+# uninstaller and payload signatures are added after publish.ps1 creates its ZIP.
+# **ZIP الافتراضيُّ يبقى باسمه**؛ وبناءٌ إلى وجهةٍ مخصّصةٍ يكتب ZIP باسمه هو، فلا يدهس
+# حزمةً قد تكون قيدَ استعمالٍ من الشجرة الافتراضية.
+$PortableZip = if ($PublishDir -eq (Join-Path $Root 'dist\BRQOSH')) {
+    Join-Path $Root 'dist\BRQOSH-portable.zip'
+} else {
+    Join-Path $Root ("dist\BRQOSH-portable-{0}.zip" -f $BuildNumber)
+}
+Compress-Archive -Path $PublishDir -DestinationPath $PortableZip -Force
+
 
 # مراجعةُ الإصدار 1.0.1: التعبيرُ لا يُقيَّم داخل وسيطِ أمرٍ أصليّ — -d BrandIcon=(Join-Path ...) كان يصل إلى wix فارغاً فلا MSI. فالمسارُ يُحسب قبل النداء.
 $BrandIconPath = Join-Path $Root 'assets\brand\brqosh.ico'

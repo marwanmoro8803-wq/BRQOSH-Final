@@ -1,4 +1,4 @@
-﻿using Brqosh.Application.Setup;
+using Brqosh.Application.Setup;
 using Brqosh.Infrastructure.Licensing;
 using Brqosh.Infrastructure.Security;
 
@@ -52,17 +52,46 @@ public class ProductionBypassGuardTests : IDisposable
 
     /// <summary>
     /// <c>BRQOSH_UITEST=1</c> متغيّر على مستوى المستخدم — لا يحتاج صلاحية مسؤول Windows.
-    /// كان يُلغي فحص الترخيص كاملاً في أيّ وضع.
+    /// كان يُلغي فحص الترخيص كاملاً في أيّ وضع. وبعد (الترخيصُ الرقميّ) صارت
+    /// «الفترةُ التجريبية» سلوكَ المنتج في الإنتاج أيضاً — فالفرقُ بين الإنتاج وغيره
+    /// يُقاس هنا بعد انقضاء التجربة: التجاوزُ لا يفتحها.
     /// </summary>
     [Fact]
     public void UiTestEnvironmentVariable_DoesNotBypassLicence_InProduction()
     {
         Environment.SetEnvironmentVariable("BRQOSH_UITEST", "1");
         AppEnvironmentConfig.ForceForTests(AppEnvironment.Production);
+        TrialPeriod.StoreOverride = new ExpiredTrialStore();
 
-        // بلا ترخيص موقّع مخزَّن، وفي الإنتاج، لا فترة تجريبية ولا تجاوز.
-        Assert.False(LicenseStore.ValidateForCompany(
-            $"شركة-غير-مرخّصة-{Guid.NewGuid():N}", DateTime.UtcNow));
+        try
+        {
+            // بلا ترخيص، وبعد انقضاء التجربة، لا تجاوزَ في الإنتاج.
+            Assert.False(LicenseStore.ValidateForCompany(
+                $"شركة-غير-مرخّصة-{Guid.NewGuid():N}", DateTime.UtcNow));
+        }
+        finally
+        {
+            TrialPeriod.StoreOverride = null;
+        }
+    }
+
+    /// <summary>والفترةُ التجريبية نفسُها تعمل في الإنتاج — سلوكُ المنتج: سبعةُ أيامٍ ثمّ طلبُ ترخيص.</summary>
+    [Fact]
+    public void A_fresh_install_is_trialled_in_production_too()
+    {
+        Environment.SetEnvironmentVariable("BRQOSH_UITEST", "1");
+        AppEnvironmentConfig.ForceForTests(AppEnvironment.Production);
+        TrialPeriod.StoreOverride = new InMemoryTrialStore();
+
+        try
+        {
+            Assert.True(LicenseStore.ValidateForCompany(
+                $"شركة-جديدة-{Guid.NewGuid():N}", DateTime.UtcNow));
+        }
+        finally
+        {
+            TrialPeriod.StoreOverride = null;
+        }
     }
 
     /// <summary>وخارج الإنتاج يبقى التجاوز عاملاً — وإلا تعطّل مسح الواجهة الآلي.</summary>
@@ -71,9 +100,36 @@ public class ProductionBypassGuardTests : IDisposable
     {
         Environment.SetEnvironmentVariable("BRQOSH_UITEST", "1");
         AppEnvironmentConfig.ForceForTests(AppEnvironment.Development);
+        TrialPeriod.StoreOverride = new ExpiredTrialStore();
 
-        Assert.True(LicenseStore.ValidateForCompany(
-            $"شركة-غير-مرخّصة-{Guid.NewGuid():N}", DateTime.UtcNow));
+        try
+        {
+            Assert.True(LicenseStore.ValidateForCompany(
+                $"شركة-غير-مرخّصة-{Guid.NewGuid():N}", DateTime.UtcNow));
+        }
+        finally
+        {
+            TrialPeriod.StoreOverride = null;
+        }
+    }
+
+    private sealed class InMemoryTrialStore : TrialPeriod.ITrialStampStore
+    {
+        public TrialPeriod.TrialStampRecord? Record { get; set; }
+
+        public TrialPeriod.TrialStampRecord? Read() => Record;
+
+        public void Write(TrialPeriod.TrialStampRecord record) => Record = record;
+    }
+
+    private sealed class ExpiredTrialStore : TrialPeriod.ITrialStampStore
+    {
+        public TrialPeriod.TrialStampRecord? Read() =>
+            TrialPeriod.Stamp(DateTime.UtcNow.AddDays(-8));
+
+        public void Write(TrialPeriod.TrialStampRecord record)
+        {
+        }
     }
 
     /// (CEEF-229 · م2-١) <b>حُذف تجاوز RBAC من أصله</b> — فلم يعد الادعاء «ميتٌ في الإنتاج»

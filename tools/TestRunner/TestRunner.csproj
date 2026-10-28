@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    مشغّل اختباراتٍ في نفس العملية — بديلٌ لـ vstest حيث تمنع بيئةُ العمل
+    الأنابيبَ المسماة ومقابضَ العمليات، فيعجز testhost عن الاتصال.
+
+    لا يغني عن `dotnet test` في البيئات السليمة؛ هو أداةُ تحقّقٍ محليّة فقط.
+    يرجع إلى ملفّات xunit المنسوخة في حزمة xunit.runner.visualstudio 2.8.2
+    (بلا شبكة).
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>TestRunner</AssemblyName>
+    <RootNamespace>Brqosh.Tools.TestRunner</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- **إطارُ ASP.NET المشترك**: اختباراتُ `Brqosh.Api.Tests` تُحمّل تجميعاتِ
+         `Microsoft.AspNetCore.*` من الإطار المشترك لا من حزمٍ في مجلّدها؛ فمشغّلٌ بلا هذا
+         المرجع يفشل في الاكتشاف بـ`FileNotFoundException` — وهو عيبُ أداةٍ لا عيبُ اختبار. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <Reference Include="xunit.abstractions">
+      <HintPath>$(USERPROFILE)\.nuget\packages\xunit.runner.visualstudio\2.8.2\build\net6.0\xunit.abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.runner.utility">
+      <HintPath>$(USERPROFILE)\.nuget\packages\xunit.runner.visualstudio\2.8.2\build\net6.0\xunit.runner.utility.netcoreapp10.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
