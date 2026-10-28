@@ -38,12 +38,30 @@ public sealed class MonthEndCloseOrchestrator(BrqoshDbContext db, ITrialBalanceQ
             var totalCredit = rows.Sum(r => r.TotalCredit);
             var difference = totalDebit - totalCredit;
 
-            if (Math.Abs(difference) > 0.01m)
+            // ‏بوابةٌ حقيقية: لا فرقَ مسموحاً في الميزان — ولو هللة.
+            if (difference != 0m)
                 throw new AccountingException(
                     $"ميزان المراجعة غير متوازن للفترة {period.Code}: فرق {difference:N2}.");
 
             var unreconciled = await CountUnreconciledBankLinesAsync(
                 companyId, period.StartDate, period.EndDate, token);
+            if (unreconciled > 0)
+                throw new AccountingException(
+                    $"لا تُقفل الفترة {period.Code}: {unreconciled} سطر بنكي غير مسوّى — أكمل التسوية البنكية أولاً.");
+
+            var drafts = await db.JournalEntries.CountAsync(e => e.CompanyId == companyId
+                && e.Status == JournalEntryStatus.Draft
+                && e.EntryDate >= period.StartDate && e.EntryDate <= period.EndDate, token);
+            if (drafts > 0)
+                throw new AccountingException(
+                    $"لا تُقفل الفترة {period.Code}: {drafts} قيد مسودة معلّق — رحّله أو احذفه أولاً.");
+
+            // ‏مطابقةُ الدفتر المساعد للمخزون مع حسابه الرقابي شرطٌ للإقفال (حين تكون المقارنة دقيقة: FIFO وحسابٌ موجود).
+            var stock = await new Brqosh.Infrastructure.Reporting.InventoryGlReconciliationQuery(db)
+                .RunAsync(companyId, ct: token);
+            if (stock.Warning is null && !stock.IsReconciled)
+                throw new AccountingException(
+                    $"لا تُقفل الفترة {period.Code}: تقييم المخزون {stock.LayerValuation:N2} لا يطابق رصيد الحساب {stock.InventoryAccountCode} ({stock.GlBalance:N2}).");
 
             await new FiscalPeriodService(db).CloseAsync(companyId, periodId, username, token);
 
