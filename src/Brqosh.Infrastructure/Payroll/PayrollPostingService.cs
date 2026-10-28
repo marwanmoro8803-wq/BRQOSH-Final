@@ -21,9 +21,9 @@ public class PayrollPostingService(BrqoshDbContext db)
             await BranchAssignmentHelper.EnsureAssignedAsync(run, db, ct: token);
 
             var salaries = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.SystemCodes.SalariesExpense, token);
-            var gosiExp = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.GosiExpense, token);
-            var salariesPayable = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable, token);
-            var gosiPayable = await AccountAsync(run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.GosiPayable, token);
+            var gosiExp = await AccountAsync(run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.GosiExpense, token), token);
+            var salariesPayable = await AccountAsync(run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable, token), token);
+            var gosiPayable = await AccountAsync(run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.GosiPayable, token), token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, run.CompanyId, run.PayDate, PostingDocumentKind.Payroll,
@@ -31,7 +31,7 @@ public class PayrollPostingService(BrqoshDbContext db)
 
             // (CEEF-230 · ط2-٤) ‏حسابُ البدلات — يُنشأ من القالب إن غاب، فقواعدُ العملاء
             // ‏تحمله أصلاً (هو في الشجرة منذ البداية) لكنّه لم يكن يُستعمل.
-            var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.Allowances, token);
+            var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.Allowances, token), token);
 
             // (CEEF-230 · ط2-٥) ‏حسابُ السُّلَف — ولا يُنشأ إلا حين يوجد استقطاع، فقاعدةٌ
             // ‏لا تُسلّف أحداً لا يظهر فيها حسابٌ بلا حركة.
@@ -64,7 +64,7 @@ public class PayrollPostingService(BrqoshDbContext db)
             // ‏(جاهزيّةُ الإطلاق · ح-١٤٦ · ‏`sector-modules#9`) ‏**موظّفو المشاريع** — وحالةُ كلّ مشروعٍ تُسأل قبل القيد.
             var employeeProjects = await EmployeeProjectsAsync(run.CompanyId, employeeIds, token);
             var projectCostAccount = employeeProjects.Count > 0
-                ? await AccountAsync(run.CompanyId, Purchasing.PurchaseInvoicePostingService.ProjectCostAccountCode, token)
+                ? await AccountAsync(run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, Purchasing.PurchaseInvoicePostingService.ProjectCostAccountCode, token), token)
                 : null;
 
             var entry = run.Post(salaries, gosiExp, salariesPayable, gosiPayable, allowances, advances,

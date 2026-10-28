@@ -37,6 +37,8 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
     public async Task<IReadOnlyList<ProductionCostRow>> ExecuteAsync(
         long companyId, DateOnly from, DateOnly to, CancellationToken ct = default)
     {
+        var labourCode = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, LabourAccount, ct);
+        var overheadCode = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, OverheadAccount, ct);
         var orders = await db.WorkOrders
             .Where(w => w.CompanyId == companyId && w.Status == WorkOrderStatus.Completed)
             .Select(w => new { w.Id, w.OrderNumber, w.BomId, w.PlannedQuantity, w.ProducedQuantity })
@@ -90,8 +92,8 @@ public sealed class ProductionCostSheetQuery(BrqoshDbContext db)
             var order = orders.Single(o => o.Id == group.Key);
             var mine = group.Where(e => e.Kind is "WorkOrderComplete" or "WorkOrderIssue").SelectMany(e => e.Entry.Lines).ToList();
             var material = mine.Where(l => l.AccountCode == inventoryCode).Sum(l => l.Credit - l.Debit);
-            var labour = mine.Where(l => l.AccountCode == LabourAccount).Sum(l => l.Credit - l.Debit);
-            var overhead = mine.Where(l => l.AccountCode == OverheadAccount).Sum(l => l.Credit - l.Debit);
+            var labour = mine.Where(l => l.AccountCode == labourCode).Sum(l => l.Credit - l.Debit);
+            var overhead = mine.Where(l => l.AccountCode == overheadCode).Sum(l => l.Credit - l.Debit);
             var total = receipts.SelectMany(r => r.Lines).Where(l => l.AccountCode == wipCode).Sum(l => l.Credit - l.Debit);
             var entry = new { EntryDate = completedOn };
 

@@ -105,7 +105,7 @@ public class MaintenanceOrderService(BrqoshDbContext db)
             }
 
             var chargeAccount = asset is null
-                ? await SystemAccountProvisioning.EnsureAsync(db, companyId, MaintenanceExpenseCode, token)
+                ? await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, MaintenanceExpenseCode, token), token)
                 : await db.Accounts.SingleAsync(
                     a => a.Id == asset.GlAssetAccountId && a.CompanyId == companyId, token);
 
@@ -116,7 +116,7 @@ public class MaintenanceOrderService(BrqoshDbContext db)
 
             // ‏(ح-٤٨) البنكُ من مالكه لا من قيمةٍ افتراضيّة — انظر `BankGlAccountResolver.ResolveCodeAsync`.
             var cash = supplierInvoice is not null
-                ? await SystemAccountProvisioning.EnsureAsync(db, companyId, NonInventoryPurchasesCode, token)
+                ? await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, NonInventoryPurchasesCode, token), token)
                 : await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, token);
 
             await FinancialPostingSupport.ValidateAsync(

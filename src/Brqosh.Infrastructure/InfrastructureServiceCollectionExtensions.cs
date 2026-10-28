@@ -177,6 +177,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ProjectCostService>();
         services.AddScoped<WorkOrderService>();
         services.AddScoped<BillOfMaterialsService>();
+        services.AddScoped<Brqosh.Application.Accounting.IPostingRoleService, Accounting.PostingRoleService>();
         services.AddScoped<Brqosh.Application.Manufacturing.IWorkOrderService>(sp => sp.GetRequiredService<WorkOrderService>());
         services.AddScoped<Brqosh.Application.Manufacturing.IBillOfMaterialsService>(sp => sp.GetRequiredService<BillOfMaterialsService>());
         services.AddScoped<Brqosh.Application.Manufacturing.IWipQuery, WipQueryAdapter>();

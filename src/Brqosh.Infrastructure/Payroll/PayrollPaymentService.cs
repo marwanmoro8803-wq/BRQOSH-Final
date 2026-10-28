@@ -161,10 +161,11 @@ public class PayrollPaymentService(BrqoshDbContext db)
         if (run is null || run.Status != PayrollRunStatus.Posted || run.JournalEntryId is not long entryId)
             return 0m;
 
+        var code = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, accountCode, ct);
         var credited = (await db.JournalEntries
                 .Where(e => e.CompanyId == companyId && e.Id == entryId)
                 .SelectMany(e => e.Lines)
-                .Where(l => l.AccountCode == accountCode)
+                .Where(l => l.AccountCode == code)
                 .Select(l => new { l.Debit, l.Credit })
                 .ToListAsync(ct))
             .Sum(l => l.Credit - l.Debit);
@@ -181,20 +182,24 @@ public class PayrollPaymentService(BrqoshDbContext db)
         (await LinesAsync(companyId, key, accountCode, ct)).Sum(l => l.Debit - l.Credit);
 
     private async Task<List<(decimal Debit, decimal Credit)>> LinesAsync(
-        long companyId, string source, string accountCode, CancellationToken ct) =>
-        (await db.JournalEntries
+        long companyId, string source, string accountCode, CancellationToken ct)
+    {
+        var code = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, accountCode, ct);
+        return (await db.JournalEntries
             .WhereReportable(companyId)
             .Where(e => e.SourceDocument == source)
             .SelectMany(e => e.Lines)
-            .Where(l => l.AccountCode == accountCode)
+            .Where(l => l.AccountCode == code)
             .Select(l => new { l.Debit, l.Credit })
             .ToListAsync(ct))
         .Select(l => (l.Debit, l.Credit))
         .ToList();
+    }
 
     private async Task<JournalEntry> PayAsync(long companyId, DateOnly paidOn, ReceiptMethod method, long? bankAccountId,
         string payableCode, decimal due, string key, string description, string auditType, string auditKey, CancellationToken ct)
     {
+        payableCode = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, payableCode, ct);
         if (due <= 0m)
             throw new AccountingException("لا مستحقَّ قائماً — صُرف كلُّه أو لا ترحيلَ له.");
 

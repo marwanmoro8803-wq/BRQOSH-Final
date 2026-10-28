@@ -263,7 +263,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
         }
         if (total == 0m) return null;
 
-        var misc = await AccountAsync(movement.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.MiscellaneousExpenses);
+        var misc = await AccountAsync(movement.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, movement.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.MiscellaneousExpenses));
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockAdjustmentOut");
         entry.AddLine(misc, total, 0m, "نقص مخزون — جرد");

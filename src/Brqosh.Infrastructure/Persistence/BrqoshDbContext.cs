@@ -126,6 +126,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderInvoiceLine> SalesOrderInvoiceLines => Set<SalesOrderInvoiceLine>();
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
+    public DbSet<Brqosh.Domain.Accounting.PostingRoleAccount> PostingRoleAccounts => Set<Brqosh.Domain.Accounting.PostingRoleAccount>();
     public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();
     public DbSet<CrmLead> CrmLeads => Set<CrmLead>();
     public DbSet<CrmOpportunity> CrmOpportunities => Set<CrmOpportunity>();
@@ -1761,6 +1762,14 @@ public class BrqoshDbContext : DbContext
         });
 
         // ‏حجزُ المخزون لأوامر البيع المؤكَّدة.
+        modelBuilder.Entity<Brqosh.Domain.Accounting.PostingRoleAccount>(entity =>
+        {
+            entity.ToTable("posting_role_accounts");
+            entity.Property(r => r.Role).HasMaxLength(64).IsRequired();
+            entity.Property(r => r.AccountCode).HasMaxLength(16).IsRequired();
+            entity.HasIndex(r => new { r.CompanyId, r.Role }).IsUnique();
+        });
+
         modelBuilder.Entity<StockReservation>(entity =>
         {
             entity.ToTable("stock_reservations");

@@ -273,5 +273,8 @@
   "سطر أمر البيع رقم {0} ليس صنفاً مخزنياً — لا يُسلَّم بإذن.": "Sales order line {0} is not a stock item — it cannot be delivered by a delivery note.",
   "كمية السطر {0} ({1}) تتجاوز المتبقّي للتسليم ({2}).": "The quantity of line {0} ({1}) exceeds the remaining quantity to deliver ({2}).",
   "رصيد '{0}' غير كافٍ للتسليم — المتوفر {1}.": "The balance of '{0}' is insufficient for delivery — available {1}.",
-  "'{0}' محجوزٌ لأوامر بيع مؤكَّدة — المتاح للبيع {1}.": "'{0}' is reserved for confirmed sales orders — available to sell {1}."
+  "'{0}' محجوزٌ لأوامر بيع مؤكَّدة — المتاح للبيع {1}.": "'{0}' is reserved for confirmed sales orders — available to sell {1}.",
+  "دورُ الترحيل '{0}' غير معروف.": "Unknown posting role '{0}'.",
+  "الحساب {0} غير موجود في دليل حسابات المنشأة.": "Account {0} does not exist in the company chart of accounts.",
+  "الحساب {0} تجميعيٌّ أو موقوف — اختر حساباً تفصيليّاً نشطاً.": "Account {0} is a group or inactive account — choose an active detail account."
 }

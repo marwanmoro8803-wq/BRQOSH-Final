@@ -78,8 +78,9 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
                 a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.CashOnHand, token);
             var otherIncome = await db.Accounts.SingleAsync(
                 a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.OtherIncome, token);
+            var miscCode = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, asset.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.MiscellaneousExpenses, token);
             var miscExpense = await db.Accounts.SingleAsync(
-                a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.PostingRoleCodes.MiscellaneousExpenses, token);
+                a => a.CompanyId == asset.CompanyId && a.Code == miscCode, token);
 
             // (CEEF-232 · ض-٤) ‏**ومنشأةٌ غير مسجَّلةٍ لا تُصدر ضريبةً أصلاً.**
             //
@@ -124,8 +125,9 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             var catchUp = asset.ApplyDepreciationDue(lastDepreciated, disposalDate, throughRunDay: true);
             if (catchUp > 0)
             {
+                var depCode = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, asset.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.DepreciationExpense, token);
                 var depExpense = await db.Accounts.SingleAsync(
-                    a => a.CompanyId == asset.CompanyId && a.Code == SaudiChartOfAccounts.PostingRoleCodes.DepreciationExpense, token);
+                    a => a.CompanyId == asset.CompanyId && a.Code == depCode, token);
                 var catchUpEntry = JournalEntry.CreateDraft(
                     asset.CompanyId, disposalDate, $"إهلاك {asset.NameAr} — حتى تاريخ الاستبعاد", sourceDoc);
                 catchUpEntry.AddLine(depExpense, catchUp, 0m, asset.NameAr);

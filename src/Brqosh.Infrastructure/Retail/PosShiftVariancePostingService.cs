@@ -74,7 +74,7 @@ public class PosShiftVariancePostingService(BrqoshDbContext db)
                 db, companyId, SaudiChartOfAccounts.SystemCodes.CashOnHand, token);
             var counterpart = await SystemAccountProvisioning.EnsureAsync(
                 db, companyId,
-                difference < 0m ? ShortageExpenseCode : SaudiChartOfAccounts.SystemCodes.OtherIncome,
+                difference < 0m ? await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, ShortageExpenseCode, token) : SaudiChartOfAccounts.SystemCodes.OtherIncome,
                 token);
 
             await FinancialPostingSupport.ValidateAsync(

@@ -312,6 +312,35 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("opening_balance_items", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Accounting.PostingRoleAccount", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AccountCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Role")
+                        .IsUnique();
+
+                    b.ToTable("posting_role_accounts", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Assets.FixedAsset", b =>
                 {
                     b.Property<long>("Id")

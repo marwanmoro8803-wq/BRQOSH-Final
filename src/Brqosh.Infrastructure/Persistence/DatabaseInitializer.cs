@@ -166,5 +166,8 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
             await db.SaveChangesAsync();
             idByCode[seed.Code] = account.Id;
         }
+
+        // ‏حساباتُ أدوار الترحيل بأرقامها الافتراضيّة — تُعدَّل لاحقاً من الإعداد.
+        await Accounting.PostingRoleService.SeedDefaultsAsync(db, companyId);
     }
 }

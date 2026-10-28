@@ -3944,6 +3944,38 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
         }
 
+        // ‏حساباتُ أدوار الترحيل لكلّ منشأة — فارغةٌ للقواعد القائمة، فتُرحِّل الخدماتُ على الأرقام الافتراضيّة كما كانت.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS posting_role_accounts (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "Role" character varying(64) NOT NULL,
+                    "AccountCode" character varying(16) NOT NULL
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_posting_role_accounts_CompanyId_Role"
+                    ON posting_role_accounts ("CompanyId", "Role");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS posting_role_accounts (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    Role TEXT NOT NULL,
+                    AccountCode TEXT NOT NULL
+                );
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_posting_role_accounts_CompanyId_Role
+                    ON posting_role_accounts (CompanyId, Role);
+                """, ct);
+        }
+
         // ‏سطورُ فوترة أوامر البيع (الفوترة الجزئية) — فارغةٌ تعني أنّ الأوامرَ القائمة تُفوتر كاملةً كما كانت.
         if (isPg)
         {

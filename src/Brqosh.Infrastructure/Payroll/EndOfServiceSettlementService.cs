@@ -120,9 +120,9 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
             var leaveProvisioned = Math.Max(0m, Math.Min(leavePay, leaveProvisionAvailable));
             var leaveShortfall = Math.Round(leavePay - leaveProvisioned, 2, MidpointRounding.AwayFromZero);
 
-            var expense = await SystemAccountProvisioning.EnsureAsync(db, companyId, ExpenseCode, token);
-            var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, ProvisionCode, token);
-            var payable = await SystemAccountProvisioning.EnsureAsync(db, companyId, PayableCode, token);
+            var expense = await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, ExpenseCode, token), token);
+            var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, ProvisionCode, token), token);
+            var payable = await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, PayableCode, token), token);
             var leaveProvision = await SystemAccountProvisioning.EnsureAsync(
                 db, companyId, LeaveProvisionCode, token);
             var leaveExpense = await SystemAccountProvisioning.EnsureAsync(

@@ -83,8 +83,8 @@ public class EndOfServiceAccrualService(BrqoshDbContext db)
             if (movement == 0m)
                 return new EndOfServiceAccrualResult(employees.Count, 0m, null);
 
-            var expense = await SystemAccountProvisioning.EnsureAsync(db, companyId, ExpenseCode, token);
-            var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision, token);
+            var expense = await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, ExpenseCode, token), token);
+            var provision = await SystemAccountProvisioning.EnsureAsync(db, companyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision, token), token);
 
             await FinancialPostingSupport.ValidateAsync(
                 db, companyId, asOf, PostingDocumentKind.JournalEntry,
@@ -124,11 +124,12 @@ public class EndOfServiceAccrualService(BrqoshDbContext db)
     /// <summary>رصيدُ حساب المخصّص حتى تاريخ — بإشارةِ (مدين − دائن)، فهو دائنُ الطبيعة.</summary>
     private async Task<decimal> ProvisionBalanceAsync(long companyId, DateOnly asOf, CancellationToken ct)
     {
+        var provisionCode = await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, companyId, SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision, ct);
         var lines = await db.JournalEntries
             .Where(e => e.CompanyId == companyId && (e.Status == JournalEntryStatus.Posted || e.Status == JournalEntryStatus.Reversed)
                         && e.EntryDate <= asOf)
             .SelectMany(e => e.Lines)
-            .Where(l => l.AccountCode == SaudiChartOfAccounts.PostingRoleCodes.EndOfServiceProvision)
+            .Where(l => l.AccountCode == provisionCode)
             .Select(l => new { l.Debit, l.Credit })
             .ToListAsync(ct);
 

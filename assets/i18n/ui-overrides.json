@@ -2073,5 +2073,6 @@
   "يُسلَّم أمر مؤكد فقط.": "Only a confirmed order can be delivered.",
   "نعم": "Yes",
   "العميل": "Customer",
-  "خصم المستند": "Document discount"
+  "خصم المستند": "Document discount",
+  "رمز الحساب مطلوب.": "Account code is required."
 }
