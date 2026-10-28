@@ -80,7 +80,9 @@ public class WageProtectionFileBuilder(BrqoshDbContext db)
             // ‏أضافت `ط2-٥` استقطاعَ السُّلفة إلى `NetPay` **ولم تُضفه إلى هذا العمود**.
             // ‏فيخرج الملفُّ بمتطابقةٍ مكسورة — `الإجماليّ − الاستقطاعات ≠ الصافي` —
             // ‏**والجهةُ تفحصها فترفض الملفَّ كلَّه**، وسببُ الرفض لا يظهر في النظام.
-            var deductions = line.GosiEmployee + line.AdvanceDeduction;
+            // ‏(Phase 7) ‏**والغيابُ استقطاعٌ أيضاً**: الأساسيُّ والبدلاتُ هنا كاملةٌ قبل الغياب، و`NetPay` بعده —
+            // ‏فبلا خصم الغياب كانت `الإجماليّ − الاستقطاعات ≠ الصافي` لكلِّ موظّفٍ غاب يوماً.
+            var deductions = line.GosiEmployee + line.AdvanceDeduction + line.AbsenceDeduction;
 
             rows.AppendLine(string.Join(',',
                 employee.NationalId,
