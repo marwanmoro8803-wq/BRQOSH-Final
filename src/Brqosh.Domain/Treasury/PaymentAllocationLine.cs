@@ -24,6 +24,10 @@ public class PaymentAllocationLine : IBranchScoped
     public decimal Amount { get; private set; }
     public DateOnly AllocationDate { get; private set; }
 
+    /// <summary>عُكس التخصيص (بعكس سنده) — يبقى السطر للتاريخ ويُستبعد من كل الحسابات. لا حذف فعلي.</summary>
+    public bool IsReversed { get; private set; }
+    public DateTime? ReversedAt { get; private set; }
+
     private PaymentAllocationLine()
     {
         DocumentNumber = null!;
@@ -70,6 +74,13 @@ public class PaymentAllocationLine : IBranchScoped
         if (amount <= 0)
             throw new AccountingException("مبلغ التخصيص يجب أن يكون أكبر من صفر.");
     }
+    public void MarkReversed(DateTime reversedAtUtc)
+    {
+        if (IsReversed) return;
+        IsReversed = true;
+        ReversedAt = reversedAtUtc;
+    }
+
     public void AssignBranch(long branchId)
     {
         if (branchId <= 0) throw new AccountingException("الفرع غير صالح.");

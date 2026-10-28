@@ -74,7 +74,7 @@ public class PayableAgingQuery(BrqoshDbContext db)
             .ToListAsync(ct);
 
         var allocations = await db.PaymentAllocationLines.AsNoTracking()
-            .Where(a => a.CompanyId == companyId
+            .Where(a => a.CompanyId == companyId && !a.IsReversed
                         && a.DocumentType == PaymentAllocationDocumentType.PurchaseInvoice
                         && a.AllocationDate <= asOf)
             .ToListAsync(ct);

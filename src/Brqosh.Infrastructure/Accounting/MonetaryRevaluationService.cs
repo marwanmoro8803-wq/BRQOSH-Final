@@ -202,7 +202,7 @@ public class MonetaryRevaluationService(BrqoshDbContext db)
         long companyId, DateOnly asOf, CancellationToken ct = default)
     {
         var allocations = await db.PaymentAllocationLines.AsNoTracking()
-            .Where(a => a.CompanyId == companyId && a.AllocationDate <= asOf)
+            .Where(a => a.CompanyId == companyId && !a.IsReversed && a.AllocationDate <= asOf)
             .ToListAsync(ct);
 
         var salesAllocated = allocations

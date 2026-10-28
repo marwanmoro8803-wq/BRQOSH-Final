@@ -910,6 +910,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureBankStatementTablesAsync(isPg: true, ct);
         await EnsureMasterDataGovernanceColumnsAsync(isPg: true, ct);
         await ApplySoftDeleteColumnsAsync(isPg: true, ct);
+        await ApplyPaymentAllocationReversalColumnsAsync(isPg: true, ct);
         await EnsureDocumentTotalColumnsAsync(isPg: true, ct);
 
         // (CEEF-229 · م2-١٠ / D-5) ‏آخرَ شيء: يُكنَس ما أنشأه المُرقِّعُ سابقاً بأسماءٍ
@@ -1026,6 +1027,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureBankStatementTablesAsync(isPg: false, ct);
         await EnsureMasterDataGovernanceColumnsAsync(isPg: false, ct);
         await ApplySoftDeleteColumnsAsync(isPg: false, ct);
+        await ApplyPaymentAllocationReversalColumnsAsync(isPg: false, ct);
         await EnsureDocumentTotalColumnsAsync(isPg: false, ct);
         await EnsureSqliteColumnAsync("audit_log", "Reason", "TEXT NULL", ct);
         await EnsureV12LifecycleTablesAsync(isPg: false, ct);
@@ -1621,6 +1623,22 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         "customers", "suppliers", "products", "warehouses", "cost_centers",
         "accounts", "bank_accounts", "construction_projects", "bills_of_materials", "app_users",
     ];
+
+    /// <summary>عكسُ السند يَسِم سطر التخصيص معكوساً بدل حذفه — عمودان إضافيّان فقط، بلا حذف ولا تعبئة.
+    /// والسطورُ التي حُذفت سابقاً تبقى كما هي.</summary>
+    private async Task ApplyPaymentAllocationReversalColumnsAsync(bool isPg, CancellationToken ct)
+    {
+        if (isPg)
+        {
+            await EnsurePgColumnAsync("payment_allocation_lines", "IsReversed", "BOOLEAN NOT NULL DEFAULT false", ct);
+            await EnsurePgColumnAsync("payment_allocation_lines", "ReversedAt", "TIMESTAMPTZ NULL", ct);
+        }
+        else
+        {
+            await EnsureSqliteColumnAsync("payment_allocation_lines", "IsReversed", "INTEGER NOT NULL DEFAULT 0", ct);
+            await EnsureSqliteColumnAsync("payment_allocation_lines", "ReversedAt", "TEXT NULL", ct);
+        }
+    }
 
     private async Task ApplySoftDeleteColumnsAsync(bool isPg, CancellationToken ct)
     {

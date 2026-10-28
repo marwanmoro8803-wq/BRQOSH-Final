@@ -159,7 +159,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
         long companyId, PaymentAllocationDocumentType[] types, CancellationToken ct)
     {
         var rows = await db.PaymentAllocationLines
-            .Where(a => a.CompanyId == companyId && types.Contains(a.DocumentType))
+            .Where(a => a.CompanyId == companyId && !a.IsReversed && types.Contains(a.DocumentType))
             .GroupBy(a => new { a.DocumentType, a.DocumentId })
             .Select(g => new { g.Key.DocumentType, g.Key.DocumentId, Total = g.Sum(a => a.Amount) })
             .ToListAsync(ct);
@@ -370,8 +370,11 @@ public class PaymentAllocationService(BrqoshDbContext db)
         else
             return;
 
-        var rows = await query.ToListAsync(ct);
-        db.PaymentAllocationLines.RemoveRange(rows);
+        // ‏لا حذف فعلي: يُوسَم السطرُ معكوساً فيبقى تاريخُ التخصيص.
+        var rows = await query.Where(a => !a.IsReversed).ToListAsync(ct);
+        var now = DateTime.UtcNow;
+        foreach (var row in rows)
+            row.MarkReversed(now);
     }
 
     private async Task<decimal> RemainingAsync(
@@ -379,6 +382,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
     {
         var allocated = await db.PaymentAllocationLines
             .Where(a => a.CompanyId == companyId
+                        && !a.IsReversed
                         && a.DocumentType == type
                         && a.DocumentId == documentId)
             .SumAsync(a => (decimal?)a.Amount, ct) ?? 0m;

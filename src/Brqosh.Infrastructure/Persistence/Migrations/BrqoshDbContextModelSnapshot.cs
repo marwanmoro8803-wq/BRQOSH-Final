@@ -4489,11 +4489,19 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<bool>("IsReversed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<long?>("PaymentVoucherId")
                         .HasColumnType("bigint");
 
                     b.Property<long?>("ReceiptVoucherId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ReversedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

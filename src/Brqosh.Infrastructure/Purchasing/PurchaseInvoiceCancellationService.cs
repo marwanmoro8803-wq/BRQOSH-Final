@@ -33,7 +33,7 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
 
             // ‏فاتورةٌ مُسدَّدةٌ (كلياً أو جزئياً) لا تُلغى وتخصيصاتُ الدفع قائمةٌ عليها — وإلّا بقيت معلّقةً على فاتورةٍ ملغاة.
             var hasPaymentAllocations = await db.PaymentAllocationLines.AnyAsync(a =>
-                a.CompanyId == companyId
+                a.CompanyId == companyId && !a.IsReversed
                 && a.DocumentType == Brqosh.Domain.Treasury.PaymentAllocationDocumentType.PurchaseInvoice
                 && a.DocumentId == invoiceId, token);
             if (hasPaymentAllocations)

@@ -1859,6 +1859,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(a => a.DocumentNumber).HasMaxLength(64).IsRequired();
             entity.Property(a => a.Amount).HasPrecision(18, 2);
             entity.Property(a => a.DocumentType).HasConversion<string>().HasMaxLength(32);
+            entity.Property(a => a.IsReversed).HasDefaultValue(false);
             entity.HasIndex(a => new { a.CompanyId, a.DocumentType, a.DocumentId });
             entity.HasIndex(a => a.ReceiptVoucherId);
             entity.HasIndex(a => a.PaymentVoucherId);
