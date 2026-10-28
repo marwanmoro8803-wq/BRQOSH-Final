@@ -17,7 +17,7 @@
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="فواتير المبيعات" FontSize="17"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
-                               Text="بيع → ZATCA → ترحيل AR"/>
+                               Text="إصدار الفواتير وإرسالها لهيئة الزكاة وتسجيلها في ذمم العملاء"/>
                 </StackPanel>
                 <!-- المجموعة الأساسية: الإجراء الرئيسي -->
                 <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">

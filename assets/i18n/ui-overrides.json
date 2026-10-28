@@ -910,7 +910,7 @@
   "فرق العهدة": "Float variance",
   "فرقُ هذه الوردية مُقيَّدٌ مسبقاً.": "This shift's cash variance is already posted.",
   "فواتير · إشعارات · تحصيلات · رصيد AR": "Invoices · Notes · Collections · AR balance",
-  "فواتير مشتريات · مدفوعات · رصيد AP": "Purchase invoices · Payments · AP balance",
+  "فواتير المشتريات والمدفوعات والرصيد المستحق للمورد": "Purchase invoices, payments, and the balance owed to the supplier",
   "فوترة أجور كل الشحنات المستحقّة غير المفوترة لهذا التاجر؟": "Bill the freight of every due, unbilled shipment for this shipper?",
   "فوترة الأجور": "Bill Freight",
   "فوترة الأعمال · المحتجزات · الترحيل": "Work billing · Retentions · Posting",
