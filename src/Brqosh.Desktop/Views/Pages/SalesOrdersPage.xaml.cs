@@ -69,6 +69,7 @@ public partial class SalesOrdersPage : UserControl
     {
         SalesOrderStatus.Confirmed => LocaleManager.T("مؤكد", "Confirmed"),
         SalesOrderStatus.Invoiced => LocaleManager.T("مفوتر", "Invoiced"),
+        SalesOrderStatus.PartInvoiced => LocaleManager.T("مفوتر جزئياً", "Partly invoiced"),
         SalesOrderStatus.Cancelled => LocaleManager.T("ملغى", "Cancelled"),
         _ => LocaleManager.T("مسودة", "Draft"),
     };

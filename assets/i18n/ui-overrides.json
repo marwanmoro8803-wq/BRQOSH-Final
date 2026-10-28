@@ -1,4 +1,10 @@
 {
+  "مبلغ البطاقة": "Card amount",
+  "أدخل مبلغ البطاقة في الدفع المختلط.": "Enter the card amount for a mixed payment.",
+  "BRQOSH — تنصيبٌ جديد": "BRQOSH — New installation",
+  "إصدار الفواتير وإرسالها لهيئة الزكاة وتسجيلها في ذمم العملاء": "Issue invoices, submit them to ZATCA and record them in customer receivables",
+  "تعذّر حفظ الموافقة. تحقق من صلاحية الكتابة في مجلد بيانات البرنامج وأعد المحاولة.": "Could not save the consent. Check write permission on the program data folder and try again.",
+  "مفوتر جزئياً": "Partly invoiced",
   "الإعدادات والدعم": "Settings & support",
   "إعدادٌ تلقائيّ (موصى به) — قاعدة بيانات مدمجة على هذا الجهاز بلا أيّ إدخال": "Automatic setup (recommended) — a built-in database on this computer, no input needed",
   "يُجهَّز كلّ شيء داخليّاً: الخادم وكلمة المرور (عشوائيّة محميّة) والقاعدة. للمنشآت التي لها خادمٌ خاصّ: ألغِ التأشير وأدخل بياناته.": "Everything is prepared internally: the server, a random protected password and the database. For companies with their own server: untick this and enter its details.",
