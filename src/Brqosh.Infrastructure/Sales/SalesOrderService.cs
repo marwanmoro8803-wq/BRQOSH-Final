@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Sales;
 
-public class SalesOrderService(BrqoshDbContext db)
+public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.ISalesOrderService
 {
     public async Task<SalesOrder> ConfirmAsync(SalesOrder order, CancellationToken ct = default)
     {
