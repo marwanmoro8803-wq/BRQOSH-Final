@@ -192,7 +192,11 @@ public class WorkOrderService(BrqoshDbContext db)
             if (chargedNow > 0m)
                 entry.AddLine(wip, chargedNow, 0m, "تحميل WIP");
             if (!order.UsesActualIssues)
+            {
                 entry.AddLine(inventory, 0m, materialCost, "صرف مواد للإنتاج");
+                // ‏حسابُ مخزون كلّ خامة (الصنف ← الفئة ← العامّ).
+                await Brqosh.Infrastructure.Inventory.ItemAccountResolver.RerouteAsync(db, companyId, entry, inventory, LineValues(issueLines), a => a.Inventory, debitSide: false, token);
+            }
 
             if (labourCost > 0m)
             {
@@ -210,6 +214,10 @@ public class WorkOrderService(BrqoshDbContext db)
                 $"استلام منتج تام — {order.OrderNumber}", ReceiptSource(order.Id, completion));
             entry2.AddLine(inventory, totalProductionCost, 0m, "منتج تام");
             entry2.AddLine(wip, 0m, totalProductionCost, "إغلاق WIP");
+            // ‏المنتجُ التامّ والثانويُّ يدخلان حسابَ مخزونهما الخاصّ إن وُجد.
+            await Brqosh.Infrastructure.Inventory.ItemAccountResolver.RerouteAsync(db, companyId, entry2, inventory,
+                [(bom.FinishedProductId, totalProductionCost - byProductValue), .. LineValues(byProductLines)],
+                a => a.Inventory, debitSide: true, token);
 
             if (entry.Lines.Count > 0)
             {
@@ -296,6 +304,7 @@ public class WorkOrderService(BrqoshDbContext db)
                 $"صرف مواد لأمر إنتاج {order.OrderNumber}", IssueSource(order.Id, order.IssueCount + 1));
             entry.AddLine(wip, cost, 0m, "موادّ مصروفة للإنتاج تحت التشغيل");
             entry.AddLine(inventory, 0m, cost, "صرف مواد للإنتاج");
+            await Brqosh.Infrastructure.Inventory.ItemAccountResolver.RerouteAsync(db, companyId, entry, inventory, LineValues(lines), a => a.Inventory, debitSide: false, token);
             entry.Post(await new JournalEntryNumberGenerator(db).NextAsync(companyId, on));
             db.JournalEntries.Add(entry);
 
@@ -591,4 +600,8 @@ public class WorkOrderService(BrqoshDbContext db)
 
     private async Task<Account> AccountAsync(long companyId, string code, CancellationToken ct) =>
         await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code, ct);
+
+    private static IEnumerable<(long ProductId, decimal Amount)> LineValues(
+        IEnumerable<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)> lines) =>
+        lines.Select(l => (l.ProductId, Math.Round(l.Qty * l.UnitCost, 2, MidpointRounding.AwayFromZero)));
 }
