@@ -36,6 +36,7 @@ public partial class BrqoshDbContext : DbContext
     public DbSet<IntercompanyAccountMap> IntercompanyAccountMaps => Set<IntercompanyAccountMap>();
     public DbSet<BillingPlan> BillingPlans => Set<BillingPlan>();
     public DbSet<Brqosh.Domain.Licensing.LicenseActivation> LicenseActivations => Set<Brqosh.Domain.Licensing.LicenseActivation>();
+    public DbSet<Brqosh.Domain.Licensing.LicenseAgreement> LicenseAgreements => Set<Brqosh.Domain.Licensing.LicenseAgreement>();
     public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<Branch> Branches => Set<Branch>();

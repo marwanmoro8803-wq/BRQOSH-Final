@@ -76,6 +76,9 @@ public static class LeastPrivilegeDatabaseRole
             // ‏(Phase 7) ‏**ورموزُ التفعيل المستهلكة إضافةٌ فقط** — حذفُ سطرٍ كان يُعيد الرمزَ صالحاً.
             $"DO $$ BEGIN IF to_regclass('license_activations') IS NOT NULL THEN "
                 + $"REVOKE UPDATE, DELETE, TRUNCATE ON license_activations FROM {r}; END IF; END $$;",
+            // ‏(Phase 7) اتفاقيةُ الترخيص: لا حذفَ ولا إفراغ؛ والتعديلُ الوحيدُ (إرفاقُ PDF مرّةً) يحرسه زنادُ القاعدة.
+            $"DO $$ BEGIN IF to_regclass('license_agreements') IS NOT NULL THEN "
+                + $"REVOKE DELETE, TRUNCATE ON license_agreements FROM {r}; END IF; END $$;",
         ];
     }
 

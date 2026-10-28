@@ -1,4 +1,13 @@
 {
+  "بيانات المورّد (الطرف الأول) غير مُعدّة — أدخِل اسم المورّد في الإعدادات.": "Vendor (first party) details are not set — enter the vendor name in Settings.",
+  "الرقم الضريبي للمورّد يجب أن يكون 15 رقماً يبدأ وينتهي بـ3.": "The vendor VAT number must be 15 digits starting and ending with 3.",
+  "اسم الطرف الثاني مطلوب لاتفاقية الترخيص.": "The second party name is required for the licence agreement.",
+  "الرقم الضريبي للطرف الثاني يجب أن يكون 15 رقماً يبدأ وينتهي بـ3.": "The second party VAT number must be 15 digits starting and ending with 3.",
+  "نصّ الاتفاقية فارغ.": "The agreement text is empty.",
+  "اتفاقية الترخيص محفوظة ولا تُعدَّل — ملفّها مُرفقٌ مسبقاً.": "The licence agreement is saved and cannot be changed — its file is already attached.",
+  "لا ملفّ PDF لإرفاقه باتفاقية الترخيص.": "No PDF file to attach to the licence agreement.",
+  "لا تفعيلَ ترخيصٍ مسجَّلاً — فعِّل البرنامج أولاً ثمّ ولِّد الاتفاقية.": "No licence activation is recorded — activate the program first, then generate the agreement.",
+  "بيانات المورّد (الطرف الأول) غير مُعدّة — أدخِلها في الإعدادات.": "Vendor (first party) details are not set — enter them in Settings.",
   "العميل غير موجود.": "Customer not found.",
   "لا تُخفى بيانات موظف على رأس العمل — أنهِ خدمته أولاً.": "An active employee's personal data cannot be anonymized — end their service first.",
   "إيقاف الفئة المحددة؟": "Deactivate the selected category?",

@@ -111,6 +111,31 @@ public partial class BrqoshDbContext
             entity.HasIndex(a => a.Nonce).IsUnique();
         });
 
+        // ‏(Phase 7) اتفاقيةُ الترخيص — مربوطةٌ بالمنشأة وبسجلّ التفعيل؛ لا تُعدَّل ولا تُحذف (حارسٌ في القاعدة).
+        modelBuilder.Entity<Brqosh.Domain.Licensing.LicenseAgreement>(entity =>
+        {
+            entity.ToTable("license_agreements");
+            entity.Property(a => a.AgreementNumber).HasMaxLength(64).IsRequired();
+            entity.HasIndex(a => a.AgreementNumber).IsUnique();
+            entity.Property(a => a.Edition).HasMaxLength(32).IsRequired();
+            entity.Property(a => a.FirstPartyName).HasMaxLength(256).IsRequired();
+            entity.Property(a => a.FirstPartyVatNumber).HasMaxLength(15);
+            entity.Property(a => a.FirstPartyCommercialRegistration).HasMaxLength(20);
+            entity.Property(a => a.FirstPartyAddress).HasMaxLength(512);
+            entity.Property(a => a.SecondPartyName).HasMaxLength(256).IsRequired();
+            entity.Property(a => a.SecondPartyVatNumber).HasMaxLength(15).IsRequired();
+            entity.Property(a => a.SecondPartyCommercialRegistration).HasMaxLength(20);
+            entity.Property(a => a.SecondPartyAddress).HasMaxLength(512);
+            entity.Property(a => a.BodyText).IsRequired();
+            entity.Property(a => a.BodySha256).HasMaxLength(64).IsRequired();
+            entity.Property(a => a.PdfPath).HasMaxLength(1024);
+            entity.Property(a => a.CreatedBy).HasMaxLength(128).IsRequired();
+            entity.HasOne<Company>().WithMany().HasForeignKey(a => a.CompanyId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Brqosh.Domain.Licensing.LicenseActivation>().WithMany().HasForeignKey(a => a.LicenseActivationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(a => a.CompanyId);
+        });
+
         modelBuilder.Entity<TenantSubscription>(entity =>
         {
             entity.ToTable("tenant_subscriptions");
