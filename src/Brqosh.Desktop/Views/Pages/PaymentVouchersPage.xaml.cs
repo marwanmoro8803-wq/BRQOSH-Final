@@ -13,12 +13,14 @@ using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Automation;
 using Microsoft.Extensions.DependencyInjection;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 
 namespace Brqosh.Desktop.Views.Pages;
 
 public partial class PaymentVouchersPage : UserControl
 {
     private readonly PagingState _paging = new(100);
+    private readonly PaymentVouchersViewModel _vm = new();
 
     private static readonly WorkflowApproverSlot[] PaymentVoucherChain =
         [WorkflowApproverSlot.Finance, WorkflowApproverSlot.Administrator];
@@ -44,59 +46,19 @@ public partial class PaymentVouchersPage : UserControl
 
     private async Task ReloadAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var baseQuery = db.PaymentVouchers.Where(v => v.CompanyId == AppServices.CompanyId);
-        _paging.SetTotal(await baseQuery.CountAsync());
-
-        var vouchers = await baseQuery
-            .OrderByDescending(v => v.VoucherDate).ThenByDescending(v => v.Id)
-            .Skip(_paging.Skip)
-            .Take(_paging.PageSize)
-            .ToListAsync();
-
-        var supplierIds = vouchers.Select(v => v.SupplierId).Distinct().ToList();
-        var suppliers = await db.Suppliers
-            .Where(s => supplierIds.Contains(s.Id))
-            .ToDictionaryAsync(s => s.Id, s => s.NameAr);
-
-        var wfIds = vouchers.Where(v => v.WorkflowInstanceId.HasValue)
-            .Select(v => v.WorkflowInstanceId!.Value).ToList();
-        var workflows = wfIds.Count == 0
-            ? new Dictionary<long, WorkflowInstance>()
-            : await db.WorkflowInstances
-                .Include(w => w.Approvals)
-                .Where(w => wfIds.Contains(w.Id))
-                .ToDictionaryAsync(w => w.Id);
-
-        var total = await baseQuery
-            .Where(v => v.Status == PaymentVoucherStatus.Posted)
-            .SumAsync(v => (decimal?)v.Amount) ?? 0m;
-
-        var rows = vouchers.Select(v =>
-        {
-            workflows.TryGetValue(v.WorkflowInstanceId ?? 0, out var wf);
-            return new VoucherRow(
-                v.Id, v.VoucherNumber, v.VoucherDate,
-                suppliers.GetValueOrDefault(v.SupplierId, "—"),
-                v.Amount,
-                v.Method == ReceiptMethod.Cash ? "نقداً" : "بنك",
-                v.Reference, v.Description,
-                StatusLabel(v.Status), v.Status,
-                PipelineStepLabel(v.Status, wf), v.WorkflowInstanceId, v.JournalEntryId);
-        }).ToList();
-        VouchersGrid.ItemsSource = rows;
-        UiTestAutomation.PublishGridCount(VouchersGrid, rows.Count);
+        await _vm.LoadAsync(_paging);
+        VouchersGrid.ItemsSource = _vm.Rows;
+        UiTestAutomation.PublishGridCount(VouchersGrid, _vm.Rows.Count);
         CountText.Text = _paging.StatusText("السندات");
         PrevBtn.IsEnabled = _paging.CanPrev;
         NextBtn.IsEnabled = _paging.CanNext;
 
-        var postedCount = await baseQuery.CountAsync(v => v.Status == PaymentVoucherStatus.Posted);
         VoucherSummaryText.Text =
-            $"سندات: {_paging.TotalCount:N0} · مرحّل: {postedCount:N0} · إجمالي المدفوعات المرحّلة: {total:N2} {CurrencyLabel.Short}";
+            $"سندات: {_paging.TotalCount:N0} · مرحّل: {_vm.PostedCount:N0} · إجمالي المدفوعات المرحّلة: {_vm.PostedTotal:N2} {CurrencyLabel.Short}";
         UiTestAutomation.PublishSummary(VoucherSummaryText, VoucherSummaryText.Text);
     }
 
-    private static string StatusLabel(PaymentVoucherStatus status) => status switch
+    internal static string StatusLabel(PaymentVoucherStatus status) => status switch
     {
         PaymentVoucherStatus.Posted => LocaleManager.T("مرحّل", "Posted"),
         PaymentVoucherStatus.Reversed => LocaleManager.T("معكوس", "Reversed"),
@@ -105,7 +67,7 @@ public partial class PaymentVouchersPage : UserControl
         _ => LocaleManager.T("مسودة", "Draft"),
     };
 
-    private static string PipelineStepLabel(PaymentVoucherStatus status, WorkflowInstance? wf) => status switch
+    internal static string PipelineStepLabel(PaymentVoucherStatus status, WorkflowInstance? wf) => status switch
     {
         PaymentVoucherStatus.Draft => "—",
         PaymentVoucherStatus.Submitted => wf?.CurrentRequiredSlot(PaymentVoucherChain) switch
@@ -197,10 +159,7 @@ public partial class PaymentVouchersPage : UserControl
 
         try
         {
-            using var facade = new DesktopAccountingFacade();
-            var username = SecurityContext.ResolveUsername();
-            await facade.GetService<VoucherReversalService>().ReversePaymentAsync(
-                AppServices.CompanyId, row.Id, reversalDate.Value, username);
+            await _vm.ReverseAsync(row.Id, reversalDate.Value);
             await UiFeedback.RunSafeAsync(ReloadAsync);
         }
         catch (Exception ex)
@@ -219,10 +178,7 @@ public partial class PaymentVouchersPage : UserControl
             return;
         }
 
-        await using var db = AppServices.CreateDb();
-        var voucher = await db.PaymentVouchers.SingleAsync(v => v.Id == row.Id);
-        using var scope = AppServices.CreateInfrastructureScope();
-        await scope.ServiceProvider.GetRequiredService<PaymentVoucherWorkflowService>().SubmitAsync(voucher);
+        await _vm.SubmitAsync(row.Id);
         await UiFeedback.RunSafeAsync(ReloadAsync);
     }
 
@@ -236,8 +192,7 @@ public partial class PaymentVouchersPage : UserControl
             return;
         }
 
-        using var scope = AppServices.CreateInfrastructureScope();
-        await scope.ServiceProvider.GetRequiredService<PaymentVoucherWorkflowService>().ApproveAsync(row.Id);
+        await _vm.ApproveAsync(row.Id);
         await UiFeedback.RunSafeAsync(ReloadAsync);
     }
 
@@ -255,9 +210,7 @@ public partial class PaymentVouchersPage : UserControl
         if (string.IsNullOrWhiteSpace(reason))
             return;
 
-        using var scope = AppServices.CreateInfrastructureScope();
-        await scope.ServiceProvider.GetRequiredService<PaymentVoucherWorkflowService>()
-            .RejectAsync(row.Id, reason.Trim());
+        await _vm.RejectAsync(row.Id, reason.Trim());
         await UiFeedback.RunSafeAsync(ReloadAsync);
     }
 }

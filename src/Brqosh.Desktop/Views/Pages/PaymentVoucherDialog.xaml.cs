@@ -9,6 +9,7 @@ using Brqosh.Infrastructure.Purchasing;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -35,6 +36,7 @@ public partial class PaymentVoucherDialog : Window
     }
 
     private readonly ObservableCollection<AllocRow> _allocations = [];
+    private readonly PaymentVoucherDialogViewModel _vm = new();
 
     public PaymentVoucherDialog()
     {
@@ -51,25 +53,14 @@ public partial class PaymentVoucherDialog : Window
 
     private async Task LoadSuppliersAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var suppliers = await db.Suppliers
-            .Where(s => s.CompanyId == AppServices.CompanyId && s.IsActive)
-            .OrderBy(s => s.NameAr)
-            .Select(s => new SupplierOption(s.Id, s.NameAr))
-            .ToListAsync();
+        var suppliers = await _vm.LoadSuppliersAsync();
         SupplierCombo.ItemsSource = suppliers;
         // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private async Task LoadBanksAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var banks = await db.BankAccounts
-            .Where(b => b.CompanyId == AppServices.CompanyId && b.IsActive)
-            .OrderByDescending(b => b.IsDefault)
-            .ThenBy(b => b.Code)
-            .Select(b => new BankOption(b.Id, $"{b.Code} — {b.NameAr} ({b.BankName})"))
-            .ToListAsync();
+        var banks = await _vm.LoadBanksAsync();
         BankCombo.ItemsSource = banks;
         if (banks.Count > 0)
             BankCombo.SelectedIndex = 0;
@@ -92,24 +83,12 @@ public partial class PaymentVoucherDialog : Window
         if (SupplierCombo.SelectedValue is not long supplierId)
             return;
 
-        using var facade = new DesktopAccountingFacade();
-        var db = facade.Db;
-        var balance = await new SupplierBalanceQuery(db).ForSupplierAsync(AppServices.CompanyId, supplierId);
-        BalanceText.Text = $"الرصيد المستحق للمورد: {balance.Balance:N2}";
+        var (balance, open) = await _vm.LoadSupplierDocumentsAsync(supplierId);
+        BalanceText.Text = $"الرصيد المستحق للمورد: {balance:N2}";
 
         _allocations.Clear();
-        var open = await facade.GetService<PaymentAllocationService>().OpenPurchaseDocumentsAsync(AppServices.CompanyId, supplierId);
-        foreach (var d in open)
-        {
-            _allocations.Add(new AllocRow
-            {
-                DocumentType = d.DocumentType,
-                DocumentId = d.DocumentId,
-                DocumentNumber = d.DocumentNumber,
-                RemainingAmount = d.RemainingAmount,
-                AllocateAmount = 0m,
-            });
-        }
+        foreach (var row in open)
+            _allocations.Add(row);
         AllocSumText.Text = "مجموع التخصيص: 0.00";
     }
 
@@ -172,8 +151,7 @@ public partial class PaymentVoucherDialog : Window
             if (discount > 0m)
                 voucher.GrantSettlementDiscount(discount);
 
-            using var facade = new DesktopAccountingFacade();
-            await facade.PostPaymentVoucherAsync(voucher, allocLines);
+            await _vm.PostAsync(voucher, allocLines);
 
             DialogResult = true;
             Close();
