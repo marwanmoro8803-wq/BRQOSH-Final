@@ -294,6 +294,19 @@ app.Use(async (ctx, next) =>
 const string ServiceName = "Brqosh.Api";
 const string ServiceVersion = "v1";
 
+// ‏(ADR 0003) ‏**خادمُ الختم المركزيّ** — خارج /api فلا يرث مفاتيحَها، وبسرٍّ مشتركٍ لا غيره؛ وبلا سرٍّ مُعَدٍّ تُغلق.
+app.MapPost(Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.Route, async (
+    HttpRequest http, Brqosh.Infrastructure.Zatca.ZatcaSignRequest body, BrqoshDbContext db, CancellationToken ct) =>
+{
+    var outcome = await Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.HandleAsync(
+        new Brqosh.Infrastructure.Zatca.ZatcaCentralSigner(db), body,
+        http.Headers[Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.TokenHeader].ToString(),
+        Brqosh.Infrastructure.Zatca.ZatcaCentralSigning.ServerToken(), ct);
+    return outcome.Response is { } signed
+        ? Results.Ok(signed)
+        : Results.Problem(outcome.Error, statusCode: outcome.StatusCode);
+});
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = ServiceName, version = ServiceVersion }));
 
 app.MapGet("/health/live", () => Results.Ok(new

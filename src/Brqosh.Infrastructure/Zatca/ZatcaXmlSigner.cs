@@ -47,7 +47,12 @@ public static class ZatcaXmlSigner
         // ‏(security-licensing-tenancy#3) ‏المفتاحُ يُفكّ تشفيرُه إلى الذاكرة وحدَها — والملفُّ القديمُ الصريحُ يُشفَّر في مكانه.
         var certPem = File.ReadAllText(certPath);
         var keyPem = ZatcaKeyFile.ReadPem(keyPath);
+        return SignPemWithResult(xmlBytes, certPem, keyPem);
+    }
 
+    /// <summary>‏التوقيعُ بالشهادة والمفتاح نصّاً — يستعمله خادمُ الختم المركزيّ واختباراتُه (ADR 0003).</summary>
+    public static ZatcaSignResult SignPemWithResult(byte[] xmlBytes, string certPem, string keyPem)
+    {
         // ‏(موانعُ الإطلاق) ‏مفتاحُ الختم على secp256k1 (ما تُلزم به الهيئة) يُوقَّع به عبر BouncyCastle لأنّ CNG لا يدعمه؛ ومفتاحٌ قديمٌ على
         // ‏P-256 يبقى يُوقَّع بالمسار القديم فلا يُكسر تنصيبٌ قائم. والشهادةُ تُقرأ بلا مفتاحٍ خاصّ في الحالتين الأولى.
         X509Certificate2 cert;

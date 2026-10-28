@@ -605,13 +605,15 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
         // ولا يوجد في النظام مفهومُ «طورٍ أوّل» أصلاً: لا إعدادَ ولا حقل. فالانحدارُ الصامت
         // ليس وضعاً مشروعاً، ولا يملك المالكُ ما يخبره أيَّهما هو فيه.
         var zatcaSettings = await GetSettingsAsync(companyId);
+        // ‏(ADR 0003) ‏**ومحطّةٌ لها خادمُ ختمٍ لا تحتاج مفتاحاً** — الختمُ هناك، والتسلسلُ هنا تحت القفل.
+        var centralSigner = ZatcaCentralSigning.Current;
         // ‏ ‏**وعلى جهازٍ غيرِ جهاز الختم فالسببُ الجهازُ لا الشهادة** — والرسالةُ القديمةُ تدعو إلى
         // ‏معالج الشهادة، وهو هنا يكتب فوق إعدادات الجهاز الذي يختم فيتوقّف.
-        if (zatcaSettings is not null && !ZatcaXmlSigner.CanSign(zatcaSettings)
+        if (centralSigner is null && zatcaSettings is not null && !ZatcaXmlSigner.CanSign(zatcaSettings)
             && ZatcaSettingsSecrets.IsSignedOnAnotherMachine(zatcaSettings))
             throw new AccountingException(
                 "الفواتير الإلكترونية تُختم على الجهاز المسجَّل لدى الهيئة وحده — وهذا الجهاز غير مسجَّل. أصدِر الفاتورة من ذلك الجهاز؛ وتشغيلُ معالج الشهادة هنا ينقل الختم إليه ويوقف الجهاز الآخر.");
-        if (!ZatcaXmlSigner.CanSign(zatcaSettings))
+        if (centralSigner is null && !ZatcaXmlSigner.CanSign(zatcaSettings))
             throw new AccountingException(
                 "لا يمكن إصدار فاتورة إلكترونية بلا شهادة توقيع. أكمِل تسجيل الشهادة (CSID) "
                 + "من إعدادات الفوترة الإلكترونية — فالمستند غير الموقَّع ترفضه الهيئة، "
@@ -725,7 +727,9 @@ public class ZatcaEInvoiceGenerator(BrqoshDbContext db)
 
         var xmlBytes = ZatcaUblInvoiceBuilder.BuildXml(ublData);
         var settings = await GetSettingsAsync(companyId);
-        var signResult = ZatcaXmlSigner.TrySignWithResult(xmlBytes, settings);
+        var signResult = centralSigner is not null
+            ? await centralSigner.SignAsync(companyId, xmlBytes)
+            : ZatcaXmlSigner.TrySignWithResult(xmlBytes, settings);
 
         string qr;
         byte[]? signedBytes;
