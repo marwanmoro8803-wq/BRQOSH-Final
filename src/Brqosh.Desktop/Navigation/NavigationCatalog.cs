@@ -114,6 +114,7 @@ public static class NavigationCatalog
         new("المخزون والمستودعات", ModuleKey.Inventory,
         [
             new("products", "الأصناف والمنتجات"),
+            new("product_categories", "فئات الأصناف"),
             new("units_of_measure", "وحدات القياس"),
             new("warehouses", "المستودعات"),
             new("stock_movements", "حركات المخزون"),
@@ -310,6 +311,7 @@ public static class NavigationCatalog
         ["purchase_invoices"] = "Purchase Invoices",
         ["debit_notes"] = "Debit Notes",
         ["products"] = "Products",
+        ["product_categories"] = "Product categories",
         ["warehouses"] = "Warehouses",
         ["stock_movements"] = "Stock Movements",
         ["stock_count"] = "Stock Count",

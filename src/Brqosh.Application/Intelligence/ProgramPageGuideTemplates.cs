@@ -72,6 +72,7 @@ public static class ProgramPageGuideTemplates
             ["warehouses"] = (
                 "مستودعات: تعريف مواقع التخزين · ربط بحركات المخزون والجرد.",
                 "Warehouses: storage locations · linked to movements and stock count."),
+                ["product_categories"] = ("فئات الأصناف: تجميع الأصناف · حسابات الإيراد والمخزون والتكلفة الافتراضية لكل فئة.", "Product categories: group items · default revenue, inventory and COGS accounts per category."),
             ["stock_movements"] = (
                 "حركة مخزون: تحويل بين مستودعات أو تسوية · ترحيل يحدّث الأرصدة.",
                 "Stock movement: transfer between warehouses or adjustment · posting updates balances."),

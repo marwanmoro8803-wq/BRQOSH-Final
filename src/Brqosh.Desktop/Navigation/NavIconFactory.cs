@@ -41,6 +41,7 @@ public static class NavIconGlyphs
         ["purchase_invoices"] = "PI",
         ["debit_notes"] = "DN",
         ["products"] = "IT",
+        ["product_categories"] = "CT",
         ["warehouses"] = "WH",
         ["stock_movements"] = "MV",
         ["stock_count"] = "JD",

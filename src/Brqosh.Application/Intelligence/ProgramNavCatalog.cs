@@ -43,6 +43,7 @@ public static class ProgramNavCatalog
         ["debit_notes"] = new("إشعارات المدين (مشتريات)", "Debit Notes"),
         ["products"] = new("الأصناف والمنتجات", "Products"),
         ["warehouses"] = new("المستودعات", "Warehouses"),
+        ["product_categories"] = new("فئات الأصناف", "Product categories"),
         ["stock_movements"] = new("حركات المخزون", "Stock Movements"),
         ["stock_count"] = new("الجرد", "Stock Count"),
         ["landed_cost"] = new("التكلفة الإضافية", "Landed Cost"),

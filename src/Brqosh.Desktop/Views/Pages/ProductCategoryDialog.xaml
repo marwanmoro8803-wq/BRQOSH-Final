@@ -1,0 +1,25 @@
+<Window x:Class="Brqosh.Desktop.Views.Pages.ProductCategoryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="فئة جديدة" Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}" ResizeMode="NoResize">
+    <StackPanel Margin="28,24">
+        <TextBlock Text="إضافة فئة أصناف" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
+        <TextBlock Text="كود الفئة *" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="CodeBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14" AutomationProperties.Name="كود الفئة"/>
+        <TextBlock Text="اسم الفئة *" Style="{StaticResource FieldLabel}"/>
+        <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14" AutomationProperties.Name="اسم الفئة"/>
+        <TextBlock Text="حساب الإيراد" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="RevenueBox" DisplayMemberPath="Label" SelectedValuePath="Id" Margin="0,0,0,14" AutomationProperties.Name="حساب الإيراد"/>
+        <TextBlock Text="حساب المخزون" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="InventoryBox" DisplayMemberPath="Label" SelectedValuePath="Id" Margin="0,0,0,14" AutomationProperties.Name="حساب المخزون"/>
+        <TextBlock Text="حساب تكلفة المبيعات" Style="{StaticResource FieldLabel}"/>
+        <ComboBox x:Name="CogsBox" DisplayMemberPath="Label" SelectedValuePath="Id" Margin="0,0,0,4" AutomationProperties.Name="حساب تكلفة المبيعات"/>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,12,0,0" Visibility="Collapsed"/>
+        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+            <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
+            <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

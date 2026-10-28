@@ -48,6 +48,7 @@ public static class EmptyStateCatalog
         ["sales_orders"] = new("لا توجد أوامر بيع", "أنشئ أمر بيع جديداً.", "SO", "No sales orders", "Create a sales order."),
         ["purchase_invoices"] = new("لا توجد فواتير مشتريات", "أنشئ فاتورة مشتريات.", "FP", "No purchase invoices", "Create a purchase invoice."),
         ["warehouses"] = new("لا توجد مستودعات", "أضف مستودعاً.", "WH", "No warehouses", "Add a warehouse."),
+        ["product_categories"] = new("لا توجد فئات أصناف", "أضف فئة.", "CT", "No product categories", "Add a category."),
         ["users"] = new("لا يوجد مستخدمون", "أضف مستخدماً جديداً.", "US", "No users", "Add a user."),
         ["branches"] = new("لا توجد فروع", "أضف فرعاً جديداً.", "BR", "No branches", "Add a branch."),
         ["audit_log"] = new("لا توجد أحداث", "ستظهر عمليات التدقيق عند حدوثها.", "AU", "No events", "Audit events appear when posted."),

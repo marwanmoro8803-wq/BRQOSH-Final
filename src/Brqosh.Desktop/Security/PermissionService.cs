@@ -50,6 +50,7 @@ public static class PermissionService
         ["debit_notes"] = [UserRole.Administrator, UserRole.Accountant],
         ["products"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],
         ["warehouses"] = [UserRole.Administrator, UserRole.Accountant],
+        ["product_categories"] = [UserRole.Administrator, UserRole.Accountant],
         ["stock_movements"] = [UserRole.Administrator, UserRole.Accountant],
         ["stock_count"] = [UserRole.Administrator, UserRole.Accountant],
         ["landed_cost"] = [UserRole.Administrator, UserRole.Accountant],

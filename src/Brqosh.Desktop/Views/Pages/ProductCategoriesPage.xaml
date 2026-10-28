@@ -1,0 +1,46 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.ProductCategoriesPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
+             FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
+            <brq:ToolbarDockPanel>
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="فئات الأصناف" FontSize="{DynamicResource FontSize.Title}"/>
+                    <TextBlock Style="{StaticResource PageSubtitleText}"
+                               Text="تجميع الأصناف · حسابات الإيراد والمخزون والتكلفة"/>
+                </StackPanel>
+                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="AddBtn" Content="＋ فئة جديدة" Style="{StaticResource PrimaryButton}"
+                            Padding="18,9" Click="OnAdd"/>
+                </WrapPanel>
+                <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
+                <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
+                        Style="{StaticResource SoftDangerButton}" Padding="16,9"
+                        Click="OnDeactivate"/>
+            </brq:ToolbarDockPanel>
+        </Border>
+        <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
+            <TextBlock x:Name="CategorySummaryText" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+        </Border>
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+            <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
+                      MouseDoubleClick="OnEdit">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="100"/>
+                    <DataGridTextColumn Header="اسم الفئة" Binding="{Binding NameAr}" Width="*"/>
+                    <DataGridTextColumn Header="حساب الإيراد" Binding="{Binding Revenue}" Width="160"/>
+                    <DataGridTextColumn Header="حساب المخزون" Binding="{Binding Inventory}" Width="160"/>
+                    <DataGridTextColumn Header="حساب تكلفة المبيعات" Binding="{Binding Cogs}" Width="160"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</UserControl>
