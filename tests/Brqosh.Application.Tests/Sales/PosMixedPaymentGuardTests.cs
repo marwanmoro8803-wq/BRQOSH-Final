@@ -57,17 +57,17 @@ public class PosMixedPaymentGuardTests : IDisposable
         return shift;
     }
 
-    private SalesInvoice PosInvoice(long shiftId, PosPaymentMethod method)
+    private SalesInvoice PosInvoice(long shiftId, PosPaymentMethod method, decimal? cardAmount = null)
     {
         var invoice = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 9));
         invoice.AddLine("بيع تجزئة", 1m, 200m);
-        invoice.MarkPosSale(shiftId, method);
+        invoice.MarkPosSale(shiftId, method, cardAmount);
         return invoice;
     }
 
-    /// <summary>المختلط يُرفض برسالة واضحة بدل قيد خاطئ صامت.</summary>
+    /// <summary>المختلط بلا مبلغ بطاقة يُرفض برسالة واضحة بدل قيد خاطئ صامت.</summary>
     [Fact]
-    public async Task MixedPayment_IsRejected_WithActionableMessage()
+    public async Task MixedPayment_WithoutCardAmount_IsRejected()
     {
         var shift = await SetupAsync();
 
@@ -75,8 +75,35 @@ public class PosMixedPaymentGuardTests : IDisposable
             () => new SalesInvoicePostingService(_db).PostAsync(PosInvoice(shift.Id, PosPaymentMethod.Mixed)));
 
         Assert.Contains("المختلط", ex.Message);
-        Assert.Contains("فاتورتين", ex.Message);           // يوجّه للبديل التشغيلي
         Assert.Empty(await _db.JournalEntries.AsNoTracking().ToListAsync());   // لا قيد خاطئ
+    }
+
+    /// <summary>المختلط يقسم المدين: حصّة البطاقة للبنك والباقي للصندوق.</summary>
+    [Fact]
+    public async Task MixedPayment_SplitsCashAndCard()
+    {
+        var shift = await SetupAsync();
+
+        var invoice = PosInvoice(shift.Id, PosPaymentMethod.Mixed, cardAmount: 80m);
+        await new SalesInvoicePostingService(_db).PostAsync(invoice);
+
+        var entry = await _db.JournalEntries.AsNoTracking()
+            .Include(e => e.Lines)
+            .SingleAsync(e => e.Id == invoice.JournalEntryId);
+
+        Assert.Equal(entry.TotalDebit, entry.TotalCredit);
+        Assert.Equal(80m, entry.Lines.Where(l => l.AccountCode.StartsWith("1102")).Sum(l => l.Debit));
+        Assert.Equal(invoice.GrandTotal() - 80m, entry.Lines.Where(l => l.AccountCode.StartsWith("1101")).Sum(l => l.Debit));
+    }
+
+    /// <summary>عهدة الوردية تحسب حصّة النقد وحدها من المختلط.</summary>
+    [Fact]
+    public void Shift_CountsOnlyCashShareOfMixed()
+    {
+        var shift = PosShift.Open(1, "كاشير", 100m);
+        shift.RecordSale(230m, PosPaymentMethod.Mixed, 80m);
+        Assert.Equal(250m, shift.ExpectedCash);
+        Assert.Equal(230m, shift.TotalSales);
     }
 
     /// <summary>النقد والبطاقة يبقيان يعملان — الحارس لا يمنع المسارين الصحيحين.</summary>

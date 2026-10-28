@@ -3929,6 +3929,10 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.Property<long?>("JournalEntryId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal?>("PosCardAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("PosPaymentMethod")
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");

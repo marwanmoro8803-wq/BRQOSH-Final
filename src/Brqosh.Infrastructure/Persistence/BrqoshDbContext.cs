@@ -355,6 +355,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(i => i.InvoiceNumber).HasMaxLength(32);
             entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);
             entity.Property(i => i.PosPaymentMethod).HasConversion<string>().HasMaxLength(16);
+            entity.Property(i => i.PosCardAmount).HasPrecision(18, 2);
             entity.Property(i => i.BranchId);
             entity.Property(i => i.WarehouseId);   // ‏(ح-١١٠) مستودعُ الصرف — فارغُه الافتراضيّ
             entity.HasIndex(i => new { i.CompanyId, i.InvoiceDate });

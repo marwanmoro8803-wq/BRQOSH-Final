@@ -65,7 +65,7 @@ public class PosShift : IBranchScoped
     /// طريقة الدفع **إلزامية بلا قيمة افتراضية** عمداً — فالمترجم هو الحارس الذي يمنع
     /// إضافة مسار بيع جديد ينسى تصنيف النقد، وهو أقوى من أيّ مراجعة.
     /// </summary>
-    public void RecordSale(decimal amount, PosPaymentMethod paymentMethod)
+    public void RecordSale(decimal amount, PosPaymentMethod paymentMethod, decimal cardAmount = 0m)
     {
         if (Status != PosShiftStatus.Open)
             throw new AccountingException("الوردية مغلقة.");
@@ -74,6 +74,8 @@ public class PosShift : IBranchScoped
         TotalSales += rounded;
         if (paymentMethod == PosPaymentMethod.Cash)
             CashSales += rounded;
+        else if (paymentMethod == PosPaymentMethod.Mixed)
+            CashSales += rounded - Math.Round(cardAmount, 2, MidpointRounding.AwayFromZero);   // ‏حصّة النقد وحدها في الدرج
         TransactionCount++;
     }
 

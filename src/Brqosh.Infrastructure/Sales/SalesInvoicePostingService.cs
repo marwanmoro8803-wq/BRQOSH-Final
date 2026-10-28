@@ -186,8 +186,13 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             }
         }
 
+        (Account, decimal)? cardShare = null;
+        if (invoice.PosShiftId is not null && invoice.PosPaymentMethod == PosPaymentMethod.Mixed)
+            cardShare = (await BankGlAccountResolver.ResolveAsync(db, invoice.CompanyId),
+                invoice.PosCardAmount ?? throw new AccountingException("الدفع المختلط يتطلب مبلغ البطاقة."));
+
         var entry = invoice.Post(invoiceNumber, receivable, revenue, vatOutput, cogsAmount, cogs, inventory,
-            revenueSplit, cogsSplit);
+            revenueSplit, cogsSplit, cardShare);
 
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
         entry.Post(entryNumber);
@@ -309,10 +314,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             // المبلغ بين النقد والشبكة، وكان يُقيَّد بالكامل على الصندوق — فتخالف عهدة
             // الصندوق الدفترية الفعلية وتفشل مطابقة الوردية، ولا تظهر حصة الشبكة في البنك.
             // ترحيل قيد نعلم أنه خاطئ أسوأ من رفضه. البديل التشغيلي: فاتورتان منفصلتان.
-            if (method == PosPaymentMethod.Mixed)
-                throw new AccountingException(
-                    "الدفع المختلط غير مدعوم في الترحيل بعد — لا يمكن تحديد حصة النقد من حصة الشبكة. " +
-                    "أصدر فاتورتين منفصلتين (نقد وبطاقة) حتى يُضاف تفصيل المبلغين.");
+            // ‏الدفع المختلط: المدينُ الأوّل النقد، وحصّةُ البطاقة سطرٌ ثانٍ (انظر `secondDebit`).
 
             // (CEEF-229 · م2-١٥) بيعُ البطاقة يذهب إلى **حساب البنك نفسه** لا إلى الأب 1102.
             //

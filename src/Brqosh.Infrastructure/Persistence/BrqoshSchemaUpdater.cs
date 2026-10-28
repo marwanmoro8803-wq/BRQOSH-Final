@@ -852,6 +852,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("purchase_invoices", "PurchaseOrderId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("sales_invoices", "PosShiftId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("sales_invoices", "PosPaymentMethod", "character varying(16) NULL", ct);
+        await EnsurePgColumnAsync("sales_invoices", "PosCardAmount", "NUMERIC(18,2) NULL", ct);   // ‏حصّة البطاقة في الدفع المختلط
         await EnsurePgColumnAsync("zatca_settings", "ComplianceRequestId", "character varying(64) NOT NULL DEFAULT ''", ct);
         await EnsurePgColumnAsync("zatca_settings", "CsidSecret", "character varying(512) NOT NULL DEFAULT ''", ct);
         await EnsurePgColumnAsync("zatca_settings", "SigningMachineId", "character varying(128) NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
@@ -972,6 +973,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("purchase_invoices", "PurchaseOrderId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("sales_invoices", "PosShiftId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("sales_invoices", "PosPaymentMethod", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("sales_invoices", "PosCardAmount", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "ComplianceRequestId", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "CsidSecret", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("zatca_settings", "SigningMachineId", "TEXT NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)

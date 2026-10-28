@@ -22,7 +22,8 @@ public class PosSaleService(BrqoshDbContext db)
     public async Task<PosSaleResult> SellAsync(
         long companyId, long shiftId, long? customerId,
         IReadOnlyList<(long ProductId, decimal Qty)> lines, bool isVatRegistered,
-        PosPaymentMethod paymentMethod, string username, CancellationToken ct = default)
+        PosPaymentMethod paymentMethod, string username, CancellationToken ct = default,
+        decimal? cardAmount = null)
     {
         SecurityContext.EnsureCanPost();
         SalesInvoice invoice = null!;
@@ -72,7 +73,7 @@ public class PosSaleService(BrqoshDbContext db)
                     posReasonCode, posReasonText);
             }
 
-            invoice.MarkPosSale(shiftId, paymentMethod);
+            invoice.MarkPosSale(shiftId, paymentMethod, cardAmount);
             // ‏(جاهزيّةُ الإطلاق · ح-١١٤ · ‏`order-to-cash-procure-to-pay-inventory#12`) **ومستودعُ الوردية هو مستودعُ الصرف** — وفارغُه الافتراضيّ.
             invoice.SetWarehouse(shift.WarehouseId);
 
@@ -81,7 +82,7 @@ public class PosSaleService(BrqoshDbContext db)
             // ‏عادةً تُنسخ لا مساراً يُسلَك**: نسختْه نقطةُ البيع ونسيته الزيارةُ الطبّية
             // ‏وحسابُ النزيل والفوترةُ الدورية.
             await new Sales.SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
-            shift.RecordSale(invoice.GrandTotal(), paymentMethod);
+            shift.RecordSale(invoice.GrandTotal(), paymentMethod, invoice.PosCardAmount ?? 0m);
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "بيع POS",

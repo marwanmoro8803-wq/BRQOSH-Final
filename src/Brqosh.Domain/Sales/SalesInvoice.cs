@@ -40,6 +40,9 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
 
     public PosPaymentMethod? PosPaymentMethod { get; private set; }
 
+    /// <summary>حصّةُ البطاقة في الدفع المختلط — والباقي من الإجمالي نقد. فارغةٌ لغير المختلط.</summary>
+    public decimal? PosCardAmount { get; private set; }
+
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-١١٠ · <c>order-to-cash-procure-to-pay-inventory#12</c>) <b>المستودعُ الذي يُصرف منه البيع.</b> وفارغُه هو
     /// المستودعُ الافتراضيّ كما كانت كلُّ فاتورةٍ قبله؛ <b>والاستلامُ والجردُ والتحويلُ تختار أيَّ مستودع</b>، فالبيعُ وحدَه كان
@@ -284,7 +287,8 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     public JournalEntry Post(string invoiceNumber, Account receivableAccount, Account revenueAccount,
         Account vatOutputAccount, decimal cogsAmount = 0m, Account? cogsAccount = null, Account? inventoryAccount = null,
         IReadOnlyList<(Account Account, decimal Amount)>? revenueSplit = null,
-        IReadOnlyList<(Account Cogs, Account Inventory, decimal Amount)>? cogsSplit = null)
+        IReadOnlyList<(Account Cogs, Account Inventory, decimal Amount)>? cogsSplit = null,
+        (Account Account, decimal Amount)? secondDebit = null)
     {
         EnsureDraft();
         if (_lines.Count == 0)
@@ -302,7 +306,16 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
             $"فاتورة مبيعات رقم {invoiceNumber}",
             sourceDocument: $"SalesInvoice:{invoiceNumber}");
 
-        entry.AddLine(receivableAccount, this.GrandTotal(), 0m, "إجمالي الفاتورة شامل الضريبة");
+        if (secondDebit is { } split)
+        {
+            // ‏الدفع المختلط: حصّةُ البطاقة لحسابها، والباقي للحساب الأوّل (النقد).
+            if (split.Amount <= 0m || split.Amount >= this.GrandTotal())
+                throw new AccountingException("مبلغ البطاقة في الدفع المختلط يجب أن يكون أكبر من صفر وأقل من إجمالي الفاتورة.");
+            entry.AddLine(receivableAccount, this.GrandTotal() - split.Amount, 0m, "حصّة النقد من الدفع المختلط");
+            entry.AddLine(split.Account, split.Amount, 0m, "حصّة البطاقة من الدفع المختلط");
+        }
+        else
+            entry.AddLine(receivableAccount, this.GrandTotal(), 0m, "إجمالي الفاتورة شامل الضريبة");
         // ‏حساباتُ الصنف/الفئة: الإيرادُ موزَّعٌ على حساباته، ومجموعُه الإيرادُ نفسُه.
         if (revenueSplit is { Count: > 0 })
         {
@@ -361,8 +374,16 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         WarehouseId = warehouseId;
     }
 
-    public void MarkPosSale(long shiftId, PosPaymentMethod method)
+    public void MarkPosSale(long shiftId, PosPaymentMethod method, decimal? cardAmount = null)
     {
+        if (method == Retail.PosPaymentMethod.Mixed)
+        {
+            if (cardAmount is not > 0m)
+                throw new AccountingException("الدفع المختلط يتطلب مبلغ البطاقة (أكبر من صفر).");
+            PosCardAmount = Math.Round(cardAmount.Value, 2, MidpointRounding.AwayFromZero);
+        }
+        else
+            PosCardAmount = null;
         PosShiftId = shiftId;
         PosPaymentMethod = method;
     }
