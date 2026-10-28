@@ -39,7 +39,7 @@ public sealed class PersistingDomainEventPublisher : IDomainEventPublisher
         var payloadJson = JsonSerializer.Serialize(domainEvent, domainEvent.GetType(), JsonOptions);
         var stored = StoredDomainEvent.From(domainEvent, ExtractCompanyId(domainEvent), payloadJson);
 
-        // Outbox (ع-D2، CEEF-204): داخل معاملة جارية — اكتب الحدث في نفس السياق
+        // Outbox : داخل معاملة جارية — اكتب الحدث في نفس السياق
         // فيلتزم أو يرتدّ مع المستند، ولا تُرسل شيئاً للخارج قبل الالتزام.
         // الإرسال يتولاه OutboxDispatchHook بعد نجاح الـcommit.
         if (AmbientDbContext.Current is { } ambient)

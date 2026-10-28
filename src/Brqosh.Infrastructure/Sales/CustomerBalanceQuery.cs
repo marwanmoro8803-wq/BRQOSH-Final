@@ -45,7 +45,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · م0-٩) إشعارات الدائن التي تمسّ <b>الذمم</b> — دون إشعارات نقاط البيع.
+    /// إشعارات الدائن التي تمسّ <b>الذمم</b> — دون إشعارات نقاط البيع.
     ///
     /// <para>الفواتير كانت تستثني نقاط البيع (<c>PosShiftId == null</c>) والإشعاراتُ لا تستثنيها،
     /// فيُطرح من الذمم ما لم يُضَف إليها قط. و<c>CreditNotePostingService</c> يوجّه إشعار فاتورة
@@ -70,7 +70,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-232 · ج-١) <b>ما بلغ حسابَ الذمم من المستخلص — لا إجماليَّه.</b>
+    /// <b>ما بلغ حسابَ الذمم من المستخلص — لا إجماليَّه.</b>
     ///
     /// <para><b>والمستخلصُ يُرحَّل على حسابين:</b> الصافي وضريبتُه على <c>1104</c>،
     /// <b>والمحتجزُ على <c>1114</c></b> — وهو الصواب، فالمحتجزُ ضمانُ تنفيذٍ لا يُطالَب
@@ -99,7 +99,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         long CustomerId, long EntryId, DateOnly Date, string EntryNumber, decimal Amount);
 
     /// <summary>
-    /// (CEEF-232 · ج-١) <b>والمحتجزُ المُفرَج عنه يعود ذمّةً — وهذا هو الطرفُ الذي يُنسى.</b>
+    /// <b>والمحتجزُ المُفرَج عنه يعود ذمّةً — وهذا هو الطرفُ الذي يُنسى.</b>
     ///
     /// <para><b>فالإفراجُ يُحوّل <c>1114 ⟵ 1104</c> بقيدٍ لا مستندَ له</b>، ودفترُ العملاء
     /// يُبنى من المستندات. <b>فاستبعادُ المحتجز عند الفوترة بلا إدخاله عند الإفراج يكسر
@@ -129,7 +129,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-232 · ج-٢) <b>الإفراجاتُ مفردةً بتواريخها — لا مجموعاً واحداً.</b>
+    /// <b>الإفراجاتُ مفردةً بتواريخها — لا مجموعاً واحداً.</b>
     ///
     /// <para><b>والمجموعُ وحدَه لا يكفي لقارئَين اثنين:</b> <b>كشفُ الحساب</b> يحتاج سطراً
     /// بتاريخه وإلّا خالف رأسُه سطورَه، <b>وتقريرُ الأعمار</b> يحتاج تاريخاً ليُعمِّر عليه —
@@ -174,7 +174,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
         var releases = new List<RetentionReleaseDocument>();
         foreach (var entry in entries)
         {
-            // (CEEF-232 · ج-٢) ‏**والنوعُ يُقرأ من المصدر لا يُفترض من الحساب.**
+            // ‏**والنوعُ يُقرأ من المصدر لا يُفترض من الحساب.**
             // ‏فـ`RetentionReleaseService` يكتب البادئةَ نفسَها **لجانبَي العميل والمقاول
             // ‏من الباطن معاً** (`RetentionRelease:{projectId}:{(int)type}`). ‏وكان التمييزُ
             // ‏متروكاً لمُرشِّح سطر الذمم — **وهو ينجو بالصفر لا بالاستبعاد**: إفراجُ مقاولٍ
@@ -197,7 +197,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-232 · ح-٢) <b>وعربونُ الحجز المُنزَل يُنقص الذمّة — في الدفتر كما في الأستاذ.</b>
+    /// <b>وعربونُ الحجز المُنزَل يُنقص الذمّة — في الدفتر كما في الأستاذ.</b>
     ///
     /// <para><b>وهو الفخُّ نفسُه الذي وقع فيه المحتجز (ج-١):</b> الإنزالُ قيدٌ لا مستند
     /// (<c>مدين 2105 / دائن 1104</c>)، <b>ودفترُ العملاء يُبنى من المستندات</b>. فتنقص
@@ -268,7 +268,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
 
         var credited = await ArCreditNotes(db, companyId, customerId).SumGrandTotalAsync();
 
-        // (CEEF-230 · ط4-٠) ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق** — كما في
+        // ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق** — كما في
         // ‏<see cref="AllBalancesAsync"/>. **وكان هذا المسار وحدَه بلا الإصلاح**: يطرح
         // ‏`Amount` وهو بعملة السند، فسندٌ دولاريٌّ يُنقص ذمّةً رياليةً بعددٍ دولاريّ.
         //
@@ -285,7 +285,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                         && ReceivedChequeCreditStatuses.Contains(c.Status))
             .SumAsync(c => (decimal?)c.Amount) ?? 0m;
 
-        // ‏(CEEF-232 · ح-٢) ‏**والعربونُ المُنزَل سدادٌ** — يُنقص الذمّة كسند القبض.
+        // ‏ ‏**والعربونُ المُنزَل سدادٌ** — يُنقص الذمّة كسند القبض.
         received += (await AppliedDepositsByCustomerAsync(db, companyId, null, customerId))
             .GetValueOrDefault(customerId);
 
@@ -338,7 +338,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
             .Where(v => v.CompanyId == companyId && v.Status == ReceiptVoucherStatus.Posted
                         && (asOf == null || v.VoucherDate <= asOf))
             .GroupBy(v => v.CustomerId)
-            // (CEEF-230 · ط1-٤) ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق.**
+            // ‏**ما حُرِّر من الذمّة لا ما دخل الصندوق.**
             //
             // ‏كان يطرح `Amount` — وهو بعملة السند. فسندٌ دولاريٌّ يُنقص الذمّةَ الريالية
             // ‏بعددٍ دولاريّ، **وينفصل الدفترُ المساعد عن الأستاذ**. وأسقطته هـ-١ في أوّل
@@ -412,7 +412,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                 ReceivablePortionOf(b), 0m, b.JournalEntryId);
         }
 
-        // (CEEF-232 · ج-٢) ‏**والمُفرَج عنه سطرٌ في الكشف — وإلّا خالف الرأسُ سطورَه.**
+        // ‏**والمُفرَج عنه سطرٌ في الكشف — وإلّا خالف الرأسُ سطورَه.**
         //
         // ‏فالرصيدُ يضمّه (`ForCustomerAsync`)، **والكشفُ كان لا يعرفه**: عميلٌ أُفرج عن
         // ‏محتجزِه يُطالَب برقمٍ في رأس الكشف **لا يجد له في سطوره أصلاً**. وهي عينُ العلّة
@@ -432,7 +432,7 @@ public class CustomerBalanceQuery(BrqoshDbContext db)
                 rows.Add((on, item.DocumentNumber, StandingOpeningBalanceItems.ReversalStatementType, 0m, item.Amount));
         }
 
-        // (CEEF-229 · م0-٩) كشف الحساب يتبع الرصيد: إشعار نقطة البيع لا يمسّ الذمم فلا يظهر فيه.
+        // كشف الحساب يتبع الرصيد: إشعار نقطة البيع لا يمسّ الذمم فلا يظهر فيه.
         // وإلا اختلف الرصيد الجاري في الكشف عن الرصيد في رأسه — وهو أوّل ما يفحصه العميل.
         foreach (var n in await ArCreditNotes(db, companyId, customerId).ToListAsync())
             rows.Add((n.NoteDate, n.NoteNumber ?? "", "إشعار دائن", 0m, n.GrandTotal()));

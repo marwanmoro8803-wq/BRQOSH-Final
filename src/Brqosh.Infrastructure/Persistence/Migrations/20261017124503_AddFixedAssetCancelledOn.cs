@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٥٧ · <c>treasury-payroll-assets#10</c>) تاريخُ إلغاء اقتناء الأصل — فارغٌ للأصول القائمة.
+    /// ‏ تاريخُ إلغاء اقتناء الأصل — فارغٌ للأصول القائمة.
     /// ‏ومُطاوِعةٌ للتكرار كأخواتها.
     /// </summary>
     public partial class AddFixedAssetCancelledOn : Migration

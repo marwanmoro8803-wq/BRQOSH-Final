@@ -21,7 +21,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     private readonly List<SchemaStepFailure> _suppressed = [];
 
     /// <summary>
-    /// (CEEF-231 · ط5-١٠) <b>ما ابتُلع أثناء ترقية المخطّط — ولا يُبتلع بلا أثر.</b>
+    /// <b>ما ابتُلع أثناء ترقية المخطّط — ولا يُبتلع بلا أثر.</b>
     /// </summary>
     /// <remarks>
     /// <para><b>ما كان:</b> خمسةَ عشرَ موضعاً في هذا الملفّ تكتب DDL داخل
@@ -39,7 +39,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     public IReadOnlyList<SchemaStepFailure> SuppressedFailures => _suppressed;
 
     /// <summary>
-    /// (CEEF-231 · ط5-١٠) فشلُ آخرِ ترقيةٍ جرت في هذه العملية — <b>لتقرأه شاشةُ الحالة</b>.
+    /// فشلُ آخرِ ترقيةٍ جرت في هذه العملية — <b>لتقرأه شاشةُ الحالة</b>.
     /// </summary>
     /// <remarks>
     /// <b>وساكنٌ لأنّ المُرقِّع يُنشأ ويُرمى في كلّ نداء</b> — و<c>DatabaseSchemaService</c>
@@ -97,7 +97,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// المحرّك وحدَها تقول «relation does not exist» ولا تقول أيّ خطوةٍ طلبتها.
     /// </param>
     /// <summary>
-    /// (CEEF-231 · ط5-١٠) مَنفذُ قياسٍ للمُجمِّع — <b>وفرعُ الفشل لا يُبلَغ من الخارج</b>.
+    /// مَنفذُ قياسٍ للمُجمِّع — <b>وفرعُ الفشل لا يُبلَغ من الخارج</b>.
     /// </summary>
     /// <remarks>
     /// <b>وترقيةُ قاعدةٍ سليمةٍ لا تُفشل خطوة</b>، <b>وقاعدةٌ فارغةٌ تماماً تُسقط
@@ -109,7 +109,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         TrySchemaSqlAsync(step, sql, ct);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٢٧) يرفع وسمَ «نظاميّ» عن كلّ حسابٍ يقول القالبُ إنّه
+    /// يرفع وسمَ «نظاميّ» عن كلّ حسابٍ يقول القالبُ إنّه
     /// نظاميٌّ وقاعدةُ العميل تقول غيرَ ذلك.
     ///
     /// <para><b>والمصدرُ هو القالبُ نفسُه</b> لا قائمةٌ تُكتب بيد — فكلُّ ترقيةٍ لاحقةٍ
@@ -162,7 +162,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     {
         var isPg = db.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
 
-        // (O-21، CEEF-219) تاريخ إلغاء المستندات الضريبية على القواعد القائمة.
+        // تاريخ إلغاء المستندات الضريبية على القواعد القائمة.
         // NULL يعني «أُلغي قبل تفعيل الميزة» — يتصرّف كالسلوك السابق تماماً، فلا
         // تتغيّر أرقام إقرارات قديمة بأثر رجعيّ مفاجئ.
         //
@@ -174,10 +174,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ينشئها EnsureCreated من النموذج (فالعمود فيها أصلاً).
         await EnsureCancelledAtColumnsAsync(isPg, ct);
 
-        // (CEEF-229 · Z-10) هوية المنشأة النظامية — هنا للسبب نفسه المشروح أعلاه.
+        // هوية المنشأة النظامية — هنا للسبب نفسه المشروح أعلاه.
         await EnsureRegulatoryIdentityColumnsAsync(isPg, ct);
 
-        // (CEEF-230 · ط1-٣) تتبّعُ الدفعة — **هنا للسبب نفسه، وقد وقعتُ فيه**.
+        // تتبّعُ الدفعة — **هنا للسبب نفسه، وقد وقعتُ فيه**.
         //
         // ‏وُضع أوّلاً بعد ترقيعات المزوّد فسقط الإقلاع بـ
         // ‏`42703: column p1.BatchNumber does not exist` — والتحذيرُ مكتوبٌ فوقه بأربعة
@@ -185,7 +185,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏والذي منعه مسبارُ المخطّط في ثانية.
         await EnsureBatchTrackingAsync(isPg, ct);
 
-        // (CEEF-229 · م1-١ب الشقّ الثاني) سببُ الإعفاء — **قبل ترقيعات المزوّد للسبب نفسه
+        // سببُ الإعفاء — **قبل ترقيعات المزوّد للسبب نفسه
         // المشروح أعلاه**، لا بعدها مع الفئة الضريبية. وهو ما كشفه `SchemaCoverageProbe`:
         // وُضع أوّلاً مع `EnsureVatCategoryColumnsAsync` فسقط مسارُ الترقية بـ
         // `42703: column s1.TaxExemptionReason does not exist` — لأنّ ترقيعات المزوّد
@@ -197,41 +197,41 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏لأنّ نجاحاً كاذباً هنا يترك النموذجَ يقرأ نصّاً وقاعدةً تخزّن عدداً.
         await EnsureVatCategoryIsTextAsync(isPg, ct);
 
-        // (CEEF-229 · م2-٢٤) لحظةُ الترحيل — **قبل ترقيعات المزوّد** للسبب نفسه: تلك
+        // لحظةُ الترحيل — **قبل ترقيعات المزوّد** للسبب نفسه: تلك
         // الترقيعات تُجري استعلامات EF على المستندات، و EF يبني SELECT بكل أعمدة النموذج.
         await EnsurePostedAtColumnsAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏وصفةُ أمر الإنتاج — **قبل ترقيعات المزوّد للسبب نفسه**: بنودُها مملوكةٌ
+        // ‏ ‏وصفةُ أمر الإنتاج — **قبل ترقيعات المزوّد للسبب نفسه**: بنودُها مملوكةٌ
         // ‏للأمر فتُحمَّل معه في كلّ استعلام، و EF يبني SELECT بكلّ أعمدة النموذج.
         await EnsureWorkOrderRecipeSchemaAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٩٥) ‏حدُّ ائتمان العميل — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن العميل
+        // ‏ ‏حدُّ ائتمان العميل — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن العميل
         // ‏يبني SELECT بكلّ أعمدة النموذج.
         await EnsureCustomerCreditLimitColumnAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٩٧) ‏مستودعا أمر الإنتاج — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن الأمر
+        // ‏ ‏مستودعا أمر الإنتاج — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن الأمر
         // ‏يبني SELECT بكلّ أعمدة النموذج.
         await EnsureWorkOrderWarehouseColumnsAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١١٠) ‏مستودعُ فاتورة المبيعات — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن الفاتورة
+        // ‏ ‏مستودعُ فاتورة المبيعات — **قبل ترقيعات المزوّد للسبب نفسه**: كلُّ استعلامٍ عن الفاتورة
         // ‏يبني SELECT بكلّ أعمدة النموذج.
         await EnsureSalesInvoiceWarehouseColumnAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١١٤) ‏مستودعُ الوردية والخطة الدورية — **قبل ترقيعات المزوّد للسبب نفسه**.
+        // ‏ ‏مستودعُ الوردية والخطة الدورية — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePosShiftAndRecurringPlanWarehouseColumnsAsync(isPg, ct);
 
         // ‏(تقويةُ الـAPI · S-5) آخرُ خطوة TOTP قُبلت — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsureMfaLastAcceptedStepColumnAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٣٤) الذممُ المفتوحةُ عند بدء التشغيل.
+        // ‏ الذممُ المفتوحةُ عند بدء التشغيل.
         await EnsureOpeningBalanceItemsTableAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٣٨) فئتا مشتركي التأمينات وجدولُ النظام الجديد — بافتراضات النطاق لا أصفار.
+        // ‏ فئتا مشتركي التأمينات وجدولُ النظام الجديد — بافتراضات النطاق لا أصفار.
         await EnsureGosiContributorGroupColumnsAsync(isPg, ct);
         await EnsureBankStatementBalanceColumnsAsync(isPg, ct);   // ‏(ح-١٥٤)
         await EnsureReconciledBankLineAsync(isPg, ct);   // ‏(ح-١٥٥)
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١١١) ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
+        // ‏ ‏مستودعُ فاتورة المشتريات — **قبل ترقيعات المزوّد للسبب نفسه**.
         await EnsurePurchaseInvoiceWarehouseColumnAsync(isPg, ct);
 
         if (isPg)
@@ -239,7 +239,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         else
             await ApplySqlitePatchesAsync(ct);
 
-        // (جاهزيّةُ الإطلاق · ح-٢٧) ‏**وسمُ «حسابٍ نظاميّ» يلحق القواعدَ القائمة.**
+        // ‏**وسمُ «حسابٍ نظاميّ» يلحق القواعدَ القائمة.**
         //
         // ‏`DatabaseInitializer.SeedChartOfAccountsAsync` **يخرج مبكّراً إن وُجد حسابٌ
         // ‏واحد** — فالدليلُ يُزرع مرّةً عند التأسيس **ولا يُعاد مطابقتُه بالقالب أبداً**.
@@ -255,10 +255,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏بنفسها، فلا يُنسى تنصيبٌ قائم.
         await PromoteSystemAccountsAsync(isPg, ct);
 
-        // (CEEF-207) فئة الضريبة لأسطر المستندات — بعد اكتمال إنشاء الجداول أعلاه،
+        // فئة الضريبة لأسطر المستندات — بعد اكتمال إنشاء الجداول أعلاه،
         // فإضافة عمود إلى جدول لم يُنشأ بعد تفشل صراحةً (وهو الصواب: لا ابتلاع أخطاء).
         // الافتراضي Standard يحفظ سلوك كل المستندات القائمة.
-        // (CEEF-229 · م1-١٩) قيدُ استحقاق الاستلام — **قبل ترقيعات المزوّد**، فتلك تُجري
+        // قيدُ استحقاق الاستلام — **قبل ترقيعات المزوّد**، فتلك تُجري
         // ‏استعلامات EF على المستندات و EF يبني SELECT بكلّ أعمدة النموذج.
         if (await TableExistsAsync("goods_receipts", isPg, ct))
         {
@@ -270,11 +270,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
 
         await EnsureVatCategoryColumnsAsync(isPg, ct);
 
-        // (O-19، CEEF-212) أعمدة سلسلة تجزئة سجل التدقيق على القواعد القائمة.
+        // أعمدة سلسلة تجزئة سجل التدقيق على القواعد القائمة.
         // Sequence=0 يعني «ما قبل تفعيل السلسلة» — يتخطاه المدقّق ولا يعدّه كسراً.
         await EnsureAuditChainColumnsAsync(isPg, ct);
 
-        // (CEEF-228) المبيعات النقدية وحدها في ورديات نقطة البيع.
+        // المبيعات النقدية وحدها في ورديات نقطة البيع.
         // القيمة الافتراضية صفر على الورديات القديمة تعني «غير مُصنَّف» — ولا تُصلَح
         // بأثر رجعيّ عمداً: تصنيف مبيعات وردية مغلقة يحتاج بيانات لم تُحفظ حينها،
         // والافتراض الكاذب أسوأ من الصفر الصريح.
@@ -284,11 +284,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         // ‏تحدٍّ قديمٌ لم يُعدّ عليه شيءٌ **لم تقع عليه محاولاتٌ مسجَّلة**، لا أنّها ضاعت.
         await EnsureOtpAttemptColumnAsync(isPg, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏**وأوامرُ صدرت قبل الترقية تُجمَّد وصفتُها** — آخراً، فأعمدةُ تكاليف
+        // ‏ ‏**وأوامرُ صدرت قبل الترقية تُجمَّد وصفتُها** — آخراً، فأعمدةُ تكاليف
         // ‏التحويل على قائمة الموادّ (ح-١٣) قائمةٌ حينها على كلّ قاعدة.
         await FreezeOpenWorkOrderRecipesAsync(isPg, ct);
 
-        // (CEEF-231 · ط5-١٠) ‏**وما ابتُلع يُسجَّل ولا يُنسى.**
+        // ‏**وما ابتُلع يُسجَّل ولا يُنسى.**
         //
         // ‏والتسامحُ باقٍ — لا يُرمى شيءٌ هنا. **والصمتُ وحده ما زال**: كان فشلُ خطوةٍ
         // ‏لا يُميَّز عن نجاحها، **فتُقلع القاعدةُ ثمّ تسقط عند أوّل استعلامٍ يمسّ ما
@@ -558,7 +558,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("pos_shifts", "CashSales", "REAL NOT NULL DEFAULT 0", ct);
     }
 
-    /// <summary>جداول المستندات الضريبية التي تدخل الإقرار (CEEF-219).</summary>
+    /// <summary>جداول المستندات الضريبية التي تدخل الإقرار .</summary>
     private static readonly string[] CancellableTaxDocumentTables =
     [
         "sales_invoices", "credit_notes", "purchase_invoices",
@@ -582,7 +582,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// <summary>
     /// أعمدةُ سلسلة التدقيق على القواعد القائمة — <b>ومعها ترقيمُ ما قبل السلسلة وفهرسُه</b>.
     ///
-    /// <para>(CEEF-229) كان يُضيف الأعمدةَ الثلاثة ويقف. فبقيت الصفوفُ القديمة كلُّها
+    /// <para> كان يُضيف الأعمدةَ الثلاثة ويقف. فبقيت الصفوفُ القديمة كلُّها
     /// <c>Sequence = 0</c> بلا فهرسٍ فريد — بينما تحمله القاعدةُ الجديدة من النموذج.
     /// <b>فانقسم النظام قسمَين</b>: قاعدةٌ يمنع فيها الفهرسُ ازدواجَ الترتيب وقاعدةٌ لا يمنعه.</para>
     ///
@@ -824,11 +824,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// جداول أسطر المستندات التي تحمل فئة ضريبية (CEEF-207).
+    /// جداول أسطر المستندات التي تحمل فئة ضريبية .
     ///
     /// <para>(م-٥ · ن-٥١) <b>كانت ستّةً وهي تسعة.</b> نوعُ السطر <c>SalesInvoiceLine</c> يملكه
     /// تسعةُ مستندات، <b>وثلاثةٌ منها غابت عن هذه القائمة</b>: عرضُ السعر وطلبُ الشراء
-    /// وخطّةُ الفوترة الدوريّة. وهو درسُ «ثمانيةُ جداولٍ لا واحد» (CEEF-230) نفسُه، طُبِّق على
+    /// وخطّةُ الفوترة الدوريّة. وهو درسُ «ثمانيةُ جداولٍ لا واحد» نفسُه، طُبِّق على
     /// <c>BatchNumber</c> و<c>DiscountPercent</c> و<c>UnitCode</c> <b>ولم يُطبَّق هنا</b>.</para>
     ///
     /// <para><b>وهذه القائمةُ تقود ثلاثَ دوالّ لا واحدة</b> — يُقال صراحةً كي لا تُعدَّل ظنّاً
@@ -864,13 +864,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("zatca_settings", "SigningMachineId", "character varying(128) NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
         await EnsurePgColumnAsync("fixed_assets", "AcquisitionJournalEntryId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalJournalEntryId", "BIGINT NULL", ct);
-        // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل: المشتري ورقمُ فاتورته ومقابلُه وفئتُه وسببُها.
+        // بيعُ الأصل: المشتري ورقمُ فاتورته ومقابلُه وفئتُه وسببُها.
         await EnsurePgColumnAsync("fixed_assets", "DisposalBuyerCustomerId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalInvoiceNumber", "character varying(64) NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalProceeds", "NUMERIC(18,2) NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalVatCategory", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "DisposalVatExemptionCode", "character varying(64) NULL", ct);
-        // (جاهزيّةُ الإطلاق · ح-١٠٠) آخرُ يومٍ أُهلك قبل الدفاتر — لأصلٍ قائمٍ يُدخَل برصيده الافتتاحيّ.
+        // آخرُ يومٍ أُهلك قبل الدفاتر — لأصلٍ قائمٍ يُدخَل برصيده الافتتاحيّ.
         await EnsurePgColumnAsync("fixed_assets", "DepreciatedThrough", "DATE NULL", ct);
         await EnsurePgColumnAsync("fixed_assets", "CancelledOn", "DATE NULL", ct);   // ‏(ح-١٥٧)
         await EnsurePgColumnAsync("fixed_assets", "AwaitingInvoice", "BOOLEAN NOT NULL DEFAULT false", ct);   // ‏(ح-١٥٨)
@@ -899,11 +899,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("companies", "PrintFontFamily", "character varying(64) NOT NULL DEFAULT 'Tahoma'", ct);
         await EnsurePgColumnAsync("bank_accounts", "CurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
 
-        // (CEEF-232 · ل-١) ‏ربطُ فاتورة أجرة الشحن — **ولاغٍ افتراضاً**، فشحناتٌ سابقةٌ
+        // ‏ربطُ فاتورة أجرة الشحن — **ولاغٍ افتراضاً**، فشحناتٌ سابقةٌ
         // ‏لم تُفوتَر تبقى غيرَ مفوترة، ولا يُكذَب على الماضي بربطٍ لم يقع.
         await EnsurePgColumnAsync("shipments", "FreightInvoiceId", "BIGINT NULL", ct);
 
-        // (CEEF-232 · ع-١) ‏ربطُ العقار بأصلٍ ثابتٍ يُهلَك — **ولاغٍ افتراضاً**، فعقاراتٌ
+        // ‏ربطُ العقار بأصلٍ ثابتٍ يُهلَك — **ولاغٍ افتراضاً**، فعقاراتٌ
         // ‏قائمةٌ تبقى بلا قيمةٍ دفتريّة حتى يربطها المحاسبُ بعلمه.
         await EnsurePgColumnAsync("properties", "FixedAssetId", "BIGINT NULL", ct);
         await EnsurePgColumnAsync("construction_projects", "EstimatedTotalCost", "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
@@ -925,13 +925,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await ApplyPaymentAllocationReversalColumnsAsync(isPg: true, ct);
         await EnsureDocumentTotalColumnsAsync(isPg: true, ct);
 
-        // (CEEF-229 · م2-١٠ / D-5) ‏آخرَ شيء: يُكنَس ما أنشأه المُرقِّعُ سابقاً بأسماءٍ
+        // ‏آخرَ شيء: يُكنَس ما أنشأه المُرقِّعُ سابقاً بأسماءٍ
         // ‏تخالف النموذج، بعد أن صار يُسمّي بأسمائه فلا يعود يُنشئ تكراراً.
         await DropDuplicateUniqueIndexesAsync(ct);
         await EnsurePgColumnAsync("audit_log", "Reason", "character varying(512) NULL", ct);
         await EnsureV12LifecycleTablesAsync(isPg: true, ct);
 
-        // (CEEF-230 · ط1-٣) ‏النداءُ الثاني — على ما أعادت المرحلةُ السابقة بناءَه.
+        // ‏النداءُ الثاني — على ما أعادت المرحلةُ السابقة بناءَه.
         await EnsureBatchTrackingAsync(isPg: true, ct);
         await EnsureV14CrmTablesAsync(isPg: true, ct);
 
@@ -956,7 +956,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 ON subcontract_agreements ("CompanyId", "AgreementNumber");
             """, ct);
 
-        // (CEEF-229 · Z-4) الفهرس الفريد على عدّاد ZATCA — للقواعد القائمة كذلك.
+        // الفهرس الفريد على عدّاد ZATCA — للقواعد القائمة كذلك.
         await SafePgIndexAsync("""
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_zatca_einvoice_documents_CompanyId_Icv"
                 ON zatca_einvoice_documents ("CompanyId", "Icv");
@@ -986,13 +986,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("zatca_settings", "SigningMachineId", "TEXT NOT NULL DEFAULT ''", ct);   // ‏(tax-zatca#16)
         await EnsureSqliteColumnAsync("fixed_assets", "AcquisitionJournalEntryId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalJournalEntryId", "INTEGER NULL", ct);
-        // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل — انظر النظيرَ في مسار PostgreSQL أعلاه.
+        // بيعُ الأصل — انظر النظيرَ في مسار PostgreSQL أعلاه.
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalBuyerCustomerId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalInvoiceNumber", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalProceeds", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalVatCategory", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "DisposalVatExemptionCode", "TEXT NULL", ct);
-        // (جاهزيّةُ الإطلاق · ح-١٠٠) آخرُ يومٍ أُهلك قبل الدفاتر — انظر النظيرَ في مسار PostgreSQL أعلاه.
+        // آخرُ يومٍ أُهلك قبل الدفاتر — انظر النظيرَ في مسار PostgreSQL أعلاه.
         await EnsureSqliteColumnAsync("fixed_assets", "DepreciatedThrough", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("fixed_assets", "CancelledOn", "TEXT NULL", ct);   // ‏(ح-١٥٧)
         await EnsureSqliteColumnAsync("fixed_assets", "AwaitingInvoice", "INTEGER NOT NULL DEFAULT 0", ct);   // ‏(ح-١٥٨)
@@ -1055,7 +1055,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("audit_log", "Reason", "TEXT NULL", ct);
         await EnsureV12LifecycleTablesAsync(isPg: false, ct);
 
-        // (CEEF-230 · ط1-٣) ‏النداءُ الثاني — على ما أعادت المرحلةُ السابقة بناءَه.
+        // ‏النداءُ الثاني — على ما أعادت المرحلةُ السابقة بناءَه.
         await EnsureBatchTrackingAsync(isPg: false, ct);
         await EnsureV14CrmTablesAsync(isPg: false, ct);
 
@@ -1285,7 +1285,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · م2-١٠ / D-5) ‏<b>كنسُ قيدِ تفرّدٍ أُنشئ مرّتين.</b>
+    /// ‏<b>كنسُ قيدِ تفرّدٍ أُنشئ مرّتين.</b>
     ///
     /// <para>للمخطّط مصدران: النموذجُ يُنشئ <c>IX_…</c>، وكان المُرقِّعُ يُنشئ
     /// <c>ix_…_snake</c> على <b>الأعمدة نفسِها</b>. فقاعدةٌ مرّت بالاثنين تحمل الفهرسَ
@@ -1329,7 +1329,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٧٧ · <c>manufacturing#5</c>) <b>وصفةُ أمر الإنتاج — أعمدتُها وجدولُ بنودها.</b>
+    /// <b>وصفةُ أمر الإنتاج — أعمدتُها وجدولُ بنودها.</b>
     ///
     /// <para><b>والجدولُ بمفتاحيه باسمَي EF</b> كما تُنشئه الهجرة — وإلّا بقيت بنودُ أمرٍ محذوفٍ معلّقةً بلا أب،
     /// وتعثّرت هجرةٌ قادمةٌ تُسمّي القيدَ باسمه.</para>
@@ -1520,7 +1520,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-10) أعمدة هوية المنشأة النظامية — تُضاف للقواعد القائمة بنفس أسماء
+    /// أعمدة هوية المنشأة النظامية — تُضاف للقواعد القائمة بنفس أسماء
     /// النموذج، وإلا خرج المولّد بحقولٍ فارغة على كل تركيبٍ سابق.
     /// </summary>
     /// <para><b>قابلية العدم ليست تفصيلاً — إنها تتبع النموذج حرفاً بحرف.</b>
@@ -1544,7 +1544,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     ];
 
     /// <summary>
-    /// (CEEF-229 · Z-10) أعمدة هوية المنشأة النظامية على القواعد القائمة.
+    /// أعمدة هوية المنشأة النظامية على القواعد القائمة.
     ///
     /// <para><b>موضع الاستدعاء حاسم — في المرحلة المبكّرة قبل ترقيعات المزوّد،</b> للسبب نفسه
     /// المشروح عند <see cref="EnsureCancelledAtColumnsAsync"/>: تلك الترقيعات تُجري استعلامات EF
@@ -1559,13 +1559,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     {
         await EnsureRegulatoryColumnsOnAsync("companies", RegulatoryIdentityColumns, isPg, ct);
 
-        // (CEEF-229 · م1-١ب) وطرفُ المشتري يأخذ الشكلَ نفسه — الاسمُ المسجَّل والعنوانُ الوطنيّ.
+        // وطرفُ المشتري يأخذ الشكلَ نفسه — الاسمُ المسجَّل والعنوانُ الوطنيّ.
         // ورقمُ السجل التجاريّ لا يُطلب من المشتري: رقمُه الضريبيّ هو معرّفه.
         await EnsureRegulatoryColumnsOnAsync("customers", BuyerIdentityColumns, isPg, ct);
     }
 
     /// <summary>
-    /// (CEEF-229 · م1-١ب) أعمدةُ هوية المشتري — الشكلُ نفسه بلا رقم سجلٍّ تجاريّ.
+    /// أعمدةُ هوية المشتري — الشكلُ نفسه بلا رقم سجلٍّ تجاريّ.
     /// وقابليةُ العدم تتبع القاعدة نفسها المشروحة عند <see cref="RegulatoryIdentityColumns"/>.
     /// </summary>
     internal static readonly (string Column, string PgType, bool Nullable)[] BuyerIdentityColumns =
@@ -1601,7 +1601,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-10) مطابقة قابلية العدم على قاعدةٍ قائمة — <b>وإصلاح ما أفسدته نسخةٌ
+    /// مطابقة قابلية العدم على قاعدةٍ قائمة — <b>وإصلاح ما أفسدته نسخةٌ
     /// سابقة من هذا الترقيع نفسه</b>.
     ///
     /// <para><c>ADD COLUMN IF NOT EXISTS</c> لا يمسّ عموداً موجوداً، فتغييرُ نوعٍ في مصفوفة
@@ -1682,7 +1682,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else
                 await EnsureSqliteColumnAsync(table, "DeletedAtUtc", "TEXT NULL", ct);
 
-            // (CEEF-229 · م0-١٣) التعبئة أُوقفت — كانت خاملةً ثم صارت خطراً.
+            // التعبئة أُوقفت — كانت خاملةً ثم صارت خطراً.
             //
             // كانت تُنفّذ في **كل إقلاع**: UPDATE … SET DeletedAtUtc = NOW() WHERE IsActive = false.
             // وقد بقيت بلا أثر لأن كل دوال Deactivate() كانت تضبط الحقلين معاً. ولحظةَ فصلنا
@@ -1805,7 +1805,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
               """;
         await TrySchemaSqlAsync("EnsureDomainEventsTableAsync", sql, ct);
 
-        // أعمدة طابور Outbox على القواعد القائمة (ع-D2، CEEF-204).
+        // أعمدة طابور Outbox على القواعد القائمة .
         if (isPg)
         {
             await EnsurePgColumnAsync("domain_events", "DispatchedAtUtc", "TIMESTAMPTZ NULL", ct);
@@ -2201,13 +2201,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// <summary>
     /// ملء إجماليات المستندات التي أُنشئت قبل إضافة عمودَي Subtotal/VatAmount.
     ///
-    /// (CEEF-206) كان يحمّل **كل** الفواتير والإشعارات والأوامر بسطورها المملوكة إلى
+    /// كان يحمّل **كل** الفواتير والإشعارات والأوامر بسطورها المملوكة إلى
     /// الذاكرة في كل إقلاع ويجري تتبّع تغييرات عليها — يتناقض مع هدف «إقلاع أقل من
     /// 3 ثوانٍ» ويتحوّل إلى دقائق مع نمو البيانات. الآن يُرشَّح على ما يحتاج المعالجة
     /// فعلاً (إجمالي صفر مع وجود سطور)، فالحالة الشائعة استعلام يعود فارغاً.
     /// </summary>
     /// <summary>
-    /// (CEEF-229 · م2-١١ / D-4) إعادةُ حساب إجماليات المستندات التي لم تُحفظ إجمالياتُها قطّ —
+    /// إعادةُ حساب إجماليات المستندات التي لم تُحفظ إجمالياتُها قطّ —
     /// <b>داخل معاملةٍ واحدة، وبأثرِ تدقيقٍ يُسمّي كلّ مستندٍ لُمس وما تغيّر فيه.</b>
     ///
     /// <para><b>ما كان:</b> المسارُ يُعيد كتابةَ الإجماليات لكلّ مستندٍ إجمالُه صفرٌ وله أسطر —
@@ -2283,7 +2283,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     private const string BootstrapActor = "النظام (ترقية القاعدة)";
 
     /// <summary>
-    /// (CEEF-229) ‏<b>يقارن ما أصلحه الإقلاعُ بما يقوله القيدُ المرحَّل.</b>
+    /// ‏<b>يقارن ما أصلحه الإقلاعُ بما يقوله القيدُ المرحَّل.</b>
     ///
     /// <para>الإصلاحُ صار مُوثَّقاً في م2-١١، <b>وبقي أنّه لا ينظر إلى القيد</b>. فمستندٌ
     /// تغيّر أحدُ سطوره بعد الترحيل (بترقيعٍ أو هجرةٍ أو يدٍ في القاعدة) يُعاد حسابُه فيُنتج
@@ -2482,7 +2482,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     ON sales_quotations ("CompanyId", "QuotationNumber");
                 """, ct);
 
-            // (CEEF-229 · م2-٩) سطورُ عرض السعر — كان الأبُ يُنشأ وحده والابنُ منسيّاً.
+            // سطورُ عرض السعر — كان الأبُ يُنشأ وحده والابنُ منسيّاً.
             // ‏(م-٥ · ن-٥١) وVatCategory هنا **نصٌّ** كإخوته الثمانية. وكان INTEGER، وتعليقٌ
             // ‏في موضعه هذا يُسوّغ التفاوتَ بأنّ «المُرقِّعَ يتبع النموذجَ كما هو لا كما ينبغي
             // ‏أن يكون». **والمبدأُ صحيحٌ وقد بقي**: المُرقِّعُ ما زال يتبع النموذج — لكنّ
@@ -2526,8 +2526,8 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     ON sales_orders ("CompanyId", "OrderNumber");
                 """, ct);
 
-            // (CEEF-229 · م2-٩) سطورُ أمر البيع — الابنُ المنسيّ الثاني. وVatCategory نصٌّ هنا
-            // ‏لأنّ النموذج يُعلن HasConversion<string>() عليه (CEEF-207).
+            // سطورُ أمر البيع — الابنُ المنسيّ الثاني. وVatCategory نصٌّ هنا
+            // ‏لأنّ النموذج يُعلن HasConversion<string>() عليه .
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_order_lines (
                     "id" BIGSERIAL PRIMARY KEY,
@@ -2608,7 +2608,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     ON sales_quotations (CompanyId, QuotationNumber);
                 """, ct);
 
-            // (CEEF-229 · م2-٩) الابنُ المنسيّ — انظر تعليق فرع PostgreSQL.
+            // الابنُ المنسيّ — انظر تعليق فرع PostgreSQL.
             await SafeSqliteIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_quotation_lines (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2640,7 +2640,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     ON sales_orders (CompanyId, OrderNumber);
                 """, ct);
 
-            // (CEEF-229 · م2-٩) الابنُ المنسيّ — انظر تعليق فرع PostgreSQL.
+            // الابنُ المنسيّ — انظر تعليق فرع PostgreSQL.
             await SafeSqliteIndexAsync("""
                 CREATE TABLE IF NOT EXISTS sales_order_lines (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2658,7 +2658,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٣) <b>تتبّعُ الدفعة والصلاحية والرقم التسلسليّ — على قاعدةٍ قائمة.</b>
+    /// <b>تتبّعُ الدفعة والصلاحية والرقم التسلسليّ — على قاعدةٍ قائمة.</b>
     ///
     /// <para>جدولُ الدفعات جديد، وأربعةُ أعمدةٍ تُضاف إلى جداولَ قائمة. <b>وكلُّها تقبل
     /// العدم أو لها قيمةٌ افتراضية</b> — فالترقيةُ تمرّ على قاعدةٍ فيها ملايينُ الصفوف بلا
@@ -2670,7 +2670,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
     /// </summary>
     private async Task EnsureBatchTrackingAsync(bool isPg, CancellationToken ct)
     {
-        // (CEEF-230 · ط1-٣) ‏**ثمانيةُ جداولٍ لا واحد.** `SalesInvoiceLine` سجلٌّ
+        // ‏**ثمانيةُ جداولٍ لا واحد.** `SalesInvoiceLine` سجلٌّ
         // ‏**مشتركٌ** بين ثمانية مستندات: فاتورةُ المبيعات وأمرُها وعرضُ سعرها، وإشعارا
         // ‏الدائن والمدين، وفاتورةُ المشتريات وأمرُها وطلبُها. **فحقلٌ يُضاف لأجل البيع
         // ‏يظهر في الثمانية** — ويُنسى منها واحدٌ فيسقط إقلاعُ كلّ قاعدةِ عميلٍ قائم،
@@ -2700,11 +2700,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             if (isPg)
             {
                 await EnsurePgColumnAsync(table, "BatchNumber", "character varying(64) NULL", ct);
-                // (CEEF-230 · ط1-٢) ‏نسبةُ خصم السطر — على الثمانية أنفسِها، فالسجلُّ مشترك.
+                // ‏نسبةُ خصم السطر — على الثمانية أنفسِها، فالسجلُّ مشترك.
                 await EnsurePgColumnAsync(table, "DiscountPercent", "NUMERIC(9,4) NOT NULL DEFAULT 0", ct);
-                // (CEEF-230 · ط1-١) ‏وحدةُ السطر — على الثمانية أنفسِها للسبب نفسِه.
+                // ‏وحدةُ السطر — على الثمانية أنفسِها للسبب نفسِه.
                 await EnsurePgColumnAsync(table, "UnitCode", "character varying(16) NULL", ct);
-                // ‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏انتهاءُ الدفعة المشتراة — لفاتورة الشراء وحدَها.
+                // ‏ ‏انتهاءُ الدفعة المشتراة — لفاتورة الشراء وحدَها.
                 if (table == "purchase_invoice_lines")
                     await EnsurePgColumnAsync(table, "ExpiryDate", "DATE NULL", ct);
             }
@@ -2713,13 +2713,13 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync(table, "BatchNumber", "TEXT NULL", ct);
                 await EnsureSqliteColumnAsync(table, "DiscountPercent", "TEXT NOT NULL DEFAULT '0'", ct);
                 await EnsureSqliteColumnAsync(table, "UnitCode", "TEXT NULL", ct);
-                // ‏(جاهزيّةُ الإطلاق · ح-١٠٨) ‏انتهاءُ الدفعة المشتراة — لفاتورة الشراء وحدَها.
+                // ‏ ‏انتهاءُ الدفعة المشتراة — لفاتورة الشراء وحدَها.
                 if (table == "purchase_invoice_lines")
                     await EnsureSqliteColumnAsync(table, "ExpiryDate", "TEXT NULL", ct);
             }
         }
 
-        // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند على فاتورة المشتريات وسندِ الصرف.
+        // ‏مركزُ تكلفة المستند على فاتورة المشتريات وسندِ الصرف.
         foreach (var table in new[] { "purchase_invoices", "payment_vouchers" })
         {
             if (!await TableExistsAsync(table, isPg, ct)) continue;
@@ -2730,7 +2730,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync(table, "CostCenterId", "INTEGER NULL", ct);
         }
 
-        // (CEEF-230 · ط4-٥) ‏عملةُ المشتريات والسداد — **وكان جانبُ الموردين بلا عملةٍ
+        // ‏عملةُ المشتريات والسداد — **وكان جانبُ الموردين بلا عملةٍ
         // ‏إطلاقاً**: المستوردُ يُدخل فاتورةَ الدولار محوَّلةً بيده، فتضيع القيمةُ الأصلية
         // ‏ولا يُعرف عند السداد بأيّ سعرٍ نشأت الذمّة — **ولا يُحسب فرقُ عملةٍ محقَّق**.
         if (await TableExistsAsync("purchase_invoices", isPg, ct))
@@ -2777,7 +2777,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
                 await EnsurePgColumnAsync("payment_vouchers", "PayableRelieved",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
-                // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المكتسَب.
+                // ‏خصمُ السداد المكتسَب.
                 await EnsurePgColumnAsync("payment_vouchers", "SettlementDiscount",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
             }
@@ -2794,7 +2794,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
-        // (CEEF-230 · ط1-٤) ‏عملةُ سند القبض.
+        // ‏عملةُ سند القبض.
         if (await TableExistsAsync("receipt_vouchers", isPg, ct))
         {
             if (isPg)
@@ -2805,7 +2805,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "NUMERIC(18,6) NOT NULL DEFAULT 1", ct);
                 await EnsurePgColumnAsync("receipt_vouchers", "ReceivableRelieved",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
-                // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المسموح به.
+                // ‏خصمُ السداد المسموح به.
                 await EnsurePgColumnAsync("receipt_vouchers", "SettlementDiscount",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
             }
@@ -2822,7 +2822,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
-        // (CEEF-231 · O-32) ‏علامةُ «على مستوى المنشأة» — والافتراضُ `false`،
+        // ‏علامةُ «على مستوى المنشأة» — والافتراضُ `false`،
         // ‏فقيدٌ قائمٌ يبقى كما هو.
         if (await TableExistsAsync("journal_entries", isPg, ct))
         {
@@ -2834,7 +2834,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "INTEGER NOT NULL DEFAULT 0", ct);
         }
 
-        // (CEEF-231 · O-34) ‏مذكرةُ العملة على سطر القيد — **لاغيةٌ لكلّ سطرٍ قائم**،
+        // ‏مذكرةُ العملة على سطر القيد — **لاغيةٌ لكلّ سطرٍ قائم**،
         // ‏فالعمودُ يقبل الفراغ ولا افتراضَ له. **وافتراضُ 'SAR' هنا كذبٌ على الماضي**:
         // ‏يجعل قيوداً رُحّلت بلا مذكرةٍ تبدو موثَّقةً بعملةٍ لم يُدخلها أحد.
         if (await TableExistsAsync("journal_entry_lines", isPg, ct))
@@ -2862,7 +2862,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             {
                 await EnsurePgColumnAsync("sales_invoices", "DocumentDiscountAmount",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
-                // (CEEF-230 · ط1-٤) ‏عملةُ المستند — والافتراضُ ريالٌ بسعرِ واحد،
+                // ‏عملةُ المستند — والافتراضُ ريالٌ بسعرِ واحد،
                 // ‏فلا يتغيّر رقمٌ في فاتورةٍ قائمة.
                 await EnsurePgColumnAsync("sales_invoices", "CurrencyCode",
                     "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
@@ -2888,7 +2888,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
-        // (جاهزيّةُ الإطلاق · ح-٣٩) ‏**وعملةُ الإشعار المدين** — مرآةُ ح-٣٥.
+        // ‏**وعملةُ الإشعار المدين** — مرآةُ ح-٣٥.
         // ‏والافتراضُ ريالٌ بسعرِ واحد، **والأجنبيُّ يُعبّأ من الريال لكلّ إشعارٍ قائم**
         // ‏— وإلّا صيّرت `RecalculateTotals` الريالَ صفراً عند أوّل مسّ.
         if (await TableExistsAsync("debit_notes", isPg, ct))
@@ -2923,7 +2923,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             else await SafeSqliteIndexAsync(debitBackfill, ct);
         }
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل على قائمة الموادّ.**
+        // ‏ ‏**وتكاليفُ التحويل على قائمة الموادّ.**
         //
         // ‏معيارُ المخزون يقضي أن تشمل تكلفةُ التامّ الأجرَ المباشرَ ونصيباً من التكاليف
         // ‏الصناعيّة، **وكانت الموادَّ وحدَها**. **والافتراضُ صفرٌ** فلا تتغيّر تكلفةُ
@@ -2946,7 +2946,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**ووسمُ أنّ قيدَ تحصيل الدفع عند الاستلام وقع.**
+        // ‏ ‏**ووسمُ أنّ قيدَ تحصيل الدفع عند الاستلام وقع.**
         //
         // ‏`CodCollected` يُضبط **بالتسليم بلا قيد**، فلم يكن ثمّة ما يمنع تحصيلاً
         // ‏يُقيَّد مرّتين ولا توريداً يسبق التحصيل فيُخرج `2114` مديناً.
@@ -2965,7 +2965,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٠) ‏**وأسكنيٌّ عقدُ الإيجار أم تجاريّ.**
+        // ‏ ‏**وأسكنيٌّ عقدُ الإيجار أم تجاريّ.**
         //
         // ‏إيجارُ المسكن معفًى (المادة 30) والتجاريُّ خاضعٌ بـ١٥٪، **وكان يُفوتَر بـ١٥٪
         // ‏دائماً**. **والافتراضُ `false` (تجاريّ) عمداً**: هو سلوكُ ما مضى حرفاً،
@@ -2985,7 +2985,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             }
         }
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٦) ‏**وخصمُ المستند على الإشعار الدائن.**
+        // ‏ ‏**وخصمُ المستند على الإشعار الدائن.**
         //
         // ‏عمودُ `DiscountPercent` في `credit_note_lines` كان مُعرَّفاً في النموذج منذ ط1-٢
         // ‏**ولا يكتبه أحد** — فالسطرُ يُبنى بصفر. وأمّا خصمُ المستند فلم يكن له عمودٌ أصلاً.
@@ -2997,7 +2997,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsurePgColumnAsync("credit_notes", "DocumentDiscountAmount",
                     "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
 
-                // (جاهزيّةُ الإطلاق · ح-٣٥) ‏عملةُ الإشعار — **والافتراضُ ريالٌ
+                // ‏عملةُ الإشعار — **والافتراضُ ريالٌ
                 // ‏بسعرِ واحد، فلا يتغيّر رقمٌ في إشعارٍ قائم**.
                 await EnsurePgColumnAsync("credit_notes", "CurrencyCode",
                     "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
@@ -3023,7 +3023,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     "TEXT NOT NULL DEFAULT '0'", ct);
             }
 
-            // (جاهزيّةُ الإطلاق · ح-٣٥) ‏**وتعبئةُ الأجنبيّ من الريال لكلّ
+            // ‏**وتعبئةُ الأجنبيّ من الريال لكلّ
             // ‏إشعارٍ قائم** — **وتركُ الأجنبيّ صفراً يجعل `RecalculateTotals`
             // ‏تُصيّر الريالَ صفراً عند أوّل مسّ**، فيُفقَد مبلغٌ قائم.
             // ‏**وتعبئةٌ بقيمةٍ مساويةٍ لا تُغيّر معنىً** — بسعرِ واحدٍ هما رقمٌ واحد.
@@ -3033,7 +3033,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             if (isPg) await SafePgIndexAsync(creditBackfill, ct);
             else await SafeSqliteIndexAsync(creditBackfill, ct);
 
-            // (CEEF-230 · ط1-٤) ‏**وتعبئةُ الأجنبيّ من الريال لكلّ فاتورةٍ قائمة**: بسعرِ
+            // ‏**وتعبئةُ الأجنبيّ من الريال لكلّ فاتورةٍ قائمة**: بسعرِ
             // ‏واحدٍ هما رقمٌ واحد، وتركُ الأجنبيّ صفراً يجعل الفوترةَ تُصدر مستنداً
             // ‏بإجماليٍّ صفر. **وتعبئةٌ بقيمةٍ مساوية لا تُغيّر معنىً**، بخلاف تعبئةٍ تخترع.
             var backfill = isPg
@@ -3071,7 +3071,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("products", "Tracking", "TEXT NOT NULL DEFAULT 'None'", ct);
         }
 
-        // (CEEF-230 · ط3-٤) ‏البوالصُ والتحصيلُ نيابةً عن التجّار.
+        // ‏البوالصُ والتحصيلُ نيابةً عن التجّار.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3103,7 +3103,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_shipments_CompanyId_BranchId" ON shipments ("CompanyId", "BranchId");""", ct);
         }
 
-        // (CEEF-230 · ط3-٣ب) ‏الغرفُ والحجوزُ وحساباتُ النزلاء.
+        // ‏الغرفُ والحجوزُ وحساباتُ النزلاء.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3165,7 +3165,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_folio_charges_guest_folio_id_RoomNightDate" ON folio_charges (guest_folio_id, "RoomNightDate");""", ct);
         }
 
-        // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.
+        // ‏قائمةُ الطعام ووصفاتُها.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3192,7 +3192,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_items_CompanyId_Code" ON menu_items ("CompanyId", "Code");""", ct);
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_menu_item_components_menu_item_id_ProductId" ON menu_item_components (menu_item_id, "ProductId");""", ct);
 
-            // (CEEF-230 · ط3-٣ج) ‏**والقاعدةُ القائمة تُرقَّع**: الجدولُ أُنشئ قبل الربط،
+            // ‏**والقاعدةُ القائمة تُرقَّع**: الجدولُ أُنشئ قبل الربط،
             // ‏و<c>CREATE TABLE IF NOT EXISTS</c> لا يمسّ جدولاً موجوداً — **فالعمودُ لا يصل
             // ‏إلا بترقيعٍ صريح**.
             await EnsurePgColumnAsync("menu_items", "SaleProductId", "BIGINT NULL", ct);
@@ -3203,7 +3203,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("menu_items", "SaleProductId", "INTEGER NULL", ct);
         }
 
-        // (CEEF-230 · ط4-٣ج) ‏مهلةُ السداد — وبها يصير التنبّؤ تنبّؤاً.
+        // ‏مهلةُ السداد — وبها يصير التنبّؤ تنبّؤاً.
         if (isPg)
         {
             await EnsurePgColumnAsync("customers", "PaymentTermDays", "INTEGER NOT NULL DEFAULT 0", ct);
@@ -3215,7 +3215,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsureSqliteColumnAsync("suppliers", "PaymentTermDays", "INTEGER NOT NULL DEFAULT 0", ct);
         }
 
-        // (CEEF-230 · ط3-٤ج) ‏أثرُ تتبّع الشحنة — سندُ التسليم.
+        // ‏أثرُ تتبّع الشحنة — سندُ التسليم.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3233,7 +3233,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_shipment_events_shipment_id_OccurredOn" ON shipment_events (shipment_id, "OccurredOn");""", ct);
         }
 
-        // (CEEF-230 · ط3-١ب و ط3-٣د و ط3-٤ب) ‏الصيانةُ والإكرامياتُ ورحلاتُ التوصيل.
+        // ‏الصيانةُ والإكرامياتُ ورحلاتُ التوصيل.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3355,7 +3355,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("maintenance_orders", "PurchaseInvoiceId", "INTEGER NULL", ct);
         }
 
-        // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
+        // ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3397,7 +3397,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_insurance_claim_lines_claim_id" ON insurance_claim_lines (claim_id);""", ct);
         }
 
-        // (CEEF-230 · ط3-٢) ‏المرضى وشركاتُ التأمين والوثائقُ والزيارات.
+        // ‏المرضى وشركاتُ التأمين والوثائقُ والزيارات.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3489,7 +3489,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_visit_lines_visit_id" ON visit_lines (visit_id);""", ct);
         }
 
-        // (CEEF-231 · ط3-٢ج) ‏**رقمُ دفعة الدواء المصروف — على قاعدةٍ قائمةٍ كذلك.**
+        // ‏**رقمُ دفعة الدواء المصروف — على قاعدةٍ قائمةٍ كذلك.**
         //
         // ‏و`CREATE TABLE IF NOT EXISTS` أعلاه **لا يمسّ جدولاً موجوداً** — فقاعدةُ عميلٍ
         // ‏رُقّيت من نسخةٍ سابقة تبقى بلا العمود، **ويسقط إقلاعُها** لأنّ EF يبني SELECT
@@ -3502,7 +3502,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 await EnsureSqliteColumnAsync("visit_lines", "BatchNumber", "TEXT NULL", ct);
         }
 
-        // (CEEF-230 · ط3-١) ‏العقاراتُ والوحداتُ وعقودُ الإيجار.
+        // ‏العقاراتُ والوحداتُ وعقودُ الإيجار.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3564,7 +3564,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_lease_contracts_CompanyId_BranchId" ON lease_contracts ("CompanyId", "BranchId");""", ct);
         }
 
-        // (CEEF-230 · ط2) ‏سجلُّ الموظفين ونِسَبُ التأمينات.
+        // ‏سجلُّ الموظفين ونِسَبُ التأمينات.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3611,12 +3611,12 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await EnsurePgColumnAsync("payroll_lines", "OtherAllowance",
                 "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
 
-            // (CEEF-230 · ط2-٥) ‏قسطُ السُّلفة المُستقطَع — وبغيره يقبض الموظّفُ راتبَه
+            // ‏قسطُ السُّلفة المُستقطَع — وبغيره يقبض الموظّفُ راتبَه
             // ‏كاملاً وقد أخذ سُلفتَه.
             await EnsurePgColumnAsync("payroll_lines", "AdvanceDeduction",
                 "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
 
-            // (CEEF-233 · ز-٦) ‏خصمُ الغياب بلا أجر — **ويُنقص المصروف لا الصافيَ وحدَه**.
+            // ‏خصمُ الغياب بلا أجر — **ويُنقص المصروف لا الصافيَ وحدَه**.
             await EnsurePgColumnAsync("payroll_lines", "AbsenceDeduction",
                 "NUMERIC(18,2) NOT NULL DEFAULT 0", ct);
 
@@ -3640,7 +3640,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
             await SafePgIndexAsync("""CREATE UNIQUE INDEX IF NOT EXISTS "IX_employee_advances_CompanyId_AdvanceNumber" ON employee_advances ("CompanyId", "AdvanceNumber");""", ct);
             await SafePgIndexAsync("""CREATE INDEX IF NOT EXISTS "IX_employee_advances_CompanyId_EmployeeId_Status" ON employee_advances ("CompanyId", "EmployeeId", "Status");""", ct);
 
-            // (CEEF-233 · ز-٢) ‏طلباتُ الإجازة والغياب.
+            // ‏طلباتُ الإجازة والغياب.
             await SafePgIndexAsync("""
                 CREATE TABLE IF NOT EXISTS leave_requests (
                     "Id" BIGSERIAL PRIMARY KEY,
@@ -3672,7 +3672,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 "TEXT NOT NULL DEFAULT '0'", ct);
         }
 
-        // (CEEF-230 · ط1-٦) ‏الموازنة.
+        // ‏الموازنة.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3712,7 +3712,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
         }
 
-        // (CEEF-230 · ط1-٥) ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
+        // ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
         if (isPg)
         {
             await SafePgIndexAsync("""
@@ -3780,7 +3780,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
         }
 
-        // (CEEF-230 · ط1-١) ‏جدولُ وحدات القياس — يُبذَر للمنشآت الجديدة في التهيئة،
+        // ‏جدولُ وحدات القياس — يُبذَر للمنشآت الجديدة في التهيئة،
         // ‏ويُنشأ فارغاً هنا للقواعد القائمة. **وفارغٌ يعني «بلا تحويل»** وهو سلوكُ ما مضى،
         // ‏فلا يتغيّر رقمٌ حتى تُعرِّف المنشأةُ وحداتِها.
         if (isPg)

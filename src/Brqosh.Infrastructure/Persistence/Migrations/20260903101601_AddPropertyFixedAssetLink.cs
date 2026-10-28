@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-232 · ع-١) ‏ربطُ العقار بأصلٍ ثابتٍ يُهلَك.
+        /// ‏ربطُ العقار بأصلٍ ثابتٍ يُهلَك.
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b> — على سُنّة الهجرتين قبلها:
         /// المُرقِّعُ اليدويّ يُضيف العمودَ عند الإقلاع كذلك، <b>و<c>AddColumn</c> المولَّدُ

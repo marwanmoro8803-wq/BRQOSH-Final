@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط4-٥) عملةُ المشتريات والسداد.
+    /// عملةُ المشتريات والسداد.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يُضيف الأعمدةَ قبل تشغيل الهجرات.</para>
     ///

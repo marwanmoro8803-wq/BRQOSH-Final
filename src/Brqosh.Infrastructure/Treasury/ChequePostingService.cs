@@ -154,7 +154,7 @@ public class ChequePostingService(BrqoshDbContext db)
 
     private async Task PostAndLinkAsync(Cheque cheque, JournalEntry entry, bool linkPortfolio, CancellationToken ct, bool useSecondary = false)
     {
-        // (جاهزيّةُ الإطلاق · ح-٣٢) ‏**والحارسُ يقيس تاريخَ القيد نفسِه.**
+        // ‏**والحارسُ يقيس تاريخَ القيد نفسِه.**
         //
         // ‏هذا الموضعُ لا يمرّ بـ`JournalPostingService.PostAsync` — **يكتب في
         // ‏`JournalEntries` رأساً** فلا يبلغُه `PostingOrchestrator` الذي يفحص

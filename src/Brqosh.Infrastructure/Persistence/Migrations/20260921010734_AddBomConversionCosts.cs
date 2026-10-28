@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٣) تكاليفُ التحويل على قائمة الموادّ — الأجرُ المباشرُ
+    /// تكاليفُ التحويل على قائمة الموادّ — الأجرُ المباشرُ
     /// ونسبةُ تحميل التكاليف الصناعيّة.
     ///
     /// <para><b>ومعيارُ المخزون يقضي بها</b>: تكلفةُ المنتَج التامّ = الموادُّ + تكاليفُ

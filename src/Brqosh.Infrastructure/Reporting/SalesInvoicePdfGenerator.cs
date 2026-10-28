@@ -22,7 +22,7 @@ public static class SalesInvoicePdfGenerator
         decimal Price,
         decimal Total,
         VatCategory Category = VatCategory.Standard,
-        // (جاهزيّةُ الإطلاق · ح-٤٤) ‏خصمُ السطر مبلغاً — `Qty × Price − Discount = Total`.
+        // ‏خصمُ السطر مبلغاً — `Qty × Price − Discount = Total`.
         decimal Discount = 0m);
 
     public record InvoicePrintOptions(
@@ -32,23 +32,23 @@ public static class SalesInvoicePdfGenerator
         string? QrTlvBase64 = null,
         int? Icv = null,
         string? ComplianceStatus = null,
-        // (CEEF-227) الفاتورة الضريبية تلزمها بيانات المشتري لا اسمه وحده.
+        // الفاتورة الضريبية تلزمها بيانات المشتري لا اسمه وحده.
         string? PartyVatNumber = null,
         string? PartyAddress = null,
         string? NotesAr = null,
-        // (جاهزيّةُ الإطلاق · ح-٤٢) عدمٌ = مستندٌ بالريال.
+        // عدمٌ = مستندٌ بالريال.
         CurrencyDisclosure? Currency = null,
-        // (جاهزيّةُ الإطلاق · ح-٤٣ · ui-ux-i18n-printing#0) ‏**الإشعارُ يُسمّي ما يُصحّحه ولماذا.**
+        // ‏**الإشعارُ يُسمّي ما يُصحّحه ولماذا.**
         // ‏كان الإشعارُ الدائنُ المطبوعُ بلا رقم الفاتورة الأصليّة ولا السبب — وكلاهما في
         // ‏المستند وفي الـXML — **فلا يُطابقه مدقّقٌ بفاتورة، ولا يخصم به المشتري مدخلاتِه**.
         string? ReferenceDocumentNumber = null,
         string? ReasonAr = null,
-        // (جاهزيّةُ الإطلاق · ح-٥٣ · tax-zatca#9) ‏**مستندُ تخليصٍ لم يُعتمد يقول ذلك على الورقة** —
+        // ‏**مستندُ تخليصٍ لم يُعتمد يقول ذلك على الورقة** —
         // ‏يُملأ من `ZatcaHandOverCopy.MarkFor` وحدَه، ومعه يغيب الرمز.
         string? ClearanceNotice = null);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٤٢ · tax-zatca#14) <b>مستندٌ بعملةٍ أجنبيّة: رمزُها وسعرُها
+    /// <b>مستندٌ بعملةٍ أجنبيّة: رمزُها وسعرُها
     /// وإفصاحُه بالريال.</b>
     ///
     /// <para><b>وكانت المطبوعةُ تخلط عملتين في صفحةٍ واحدة</b>: السطورُ بعملة المستند
@@ -79,7 +79,7 @@ public static class SalesInvoicePdfGenerator
         decimal Subtotal,
         decimal Vat,
         decimal Total,
-        // (جاهزيّةُ الإطلاق · ح-٤٤) ‏**خصمُ المستند — إلزاميٌّ بلا افتراضيّ، ولا يُستنتَج.**
+        // ‏**خصمُ المستند — إلزاميٌّ بلا افتراضيّ، ولا يُستنتَج.**
         // ‏استنتاجُه `Σ السطور − الوعاء` كان سيُخرج قبل ح-٤٢ «خصماً» قدرُه −٢٬٧٥٠ لفاتورةٍ
         // ‏دولاريّة — **رقمٌ حسنُ الشكل مصنوعٌ من خلط عملتين**. فيُسمّيه كلُّ مُنتِج.
         decimal DocumentDiscount,
@@ -124,7 +124,7 @@ public static class SalesInvoicePdfGenerator
         // لها في أي نظام ضريبيّ، تُطبع في رأس عمود الضريبة على مستند يراه المدقّق.
         var mixed = lines.Select(l => l.Category).Distinct().Count() > 1;
 
-        // (جاهزيّةُ الإطلاق · ح-٤٤ · ui-ux-i18n-printing#2) ‏**خصمُ المستند يُوزَّع على السطور
+        // ‏**خصمُ المستند يُوزَّع على السطور
         // ‏للعرض**، فكلُّ عمودٍ يجمع إلى إجماليّه: `الكمّيّة × السعر − الخصم = الخاضع`،
         // ‏و`Σ الخاضع = الوعاء`، و`Σ الضريبة = الضريبة`، و`Σ الإجمالي = الإجمالي`. **وكان
         // ‏عمودُ الإجمالي يزيد على الإجماليّ المطبوع بقدر خصم المستند، والخصمُ لا يظهر**.
@@ -404,7 +404,7 @@ public static class SalesInvoicePdfGenerator
 
 
     /// <summary>
-    /// (CEEF-227) توزيع ضريبة الفاتورة على البنود بحصّة كلّ بند من الوعاء.
+    /// توزيع ضريبة الفاتورة على البنود بحصّة كلّ بند من الوعاء.
     ///
     /// **التقريب لكل سطر وحده لا يكفي:** ثلاثة بنود متساوية من 100 بضريبة 15.00
     /// تُعطي 5.00×3 = 15.00، لكن بنوداً بكسور تُعطي مجموعاً يخالف ذيل الفاتورة
@@ -602,7 +602,7 @@ public static class SalesInvoicePdfGenerator
         _ => "العميل",
     };
 
-    // (CEEF-229 · م0-١٠ · ح-٥٤) ‏الحالةُ بالعربيّة والمحاكاةُ مُعلَنة — **من `PrintedCompliance` وحدَه**،
+    // ‏الحالةُ بالعربيّة والمحاكاةُ مُعلَنة — **من `PrintedCompliance` وحدَه**،
     // ‏فلا يفترق سطرُ الفاتورة عن سطر المستخلص بتعديلٍ في أحدهما.
     private static string? BuildComplianceLine(InvoicePrintOptions options) =>
         PrintedCompliance.Line(options.Icv, options.ComplianceStatus);

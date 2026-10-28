@@ -42,7 +42,7 @@ public class ProgressBillingCancellationService(BrqoshDbContext db)
             billing.MarkCancelled(cancellationDate);
             await db.SaveChangesAsync(token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**وإلغاءُ المستخلص يُعيد العقدَ إلى ما اكتُسب** بتاريخ الإلغاء.
+            // ‏ ‏**وإلغاءُ المستخلص يُعيد العقدَ إلى ما اكتُسب** بتاريخ الإلغاء.
             await new ContractRevenueTrueUp(db).ApplyAsync(companyId, billing.ProjectId, cancellationDate, token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء مستخلص أعمال",
@@ -52,7 +52,7 @@ public class ProgressBillingCancellationService(BrqoshDbContext db)
                 companyId, "ProgressBilling", billing.Id, billing.BillingNumber ?? billing.Id.ToString(),
                 "إلغاء مستخلص أعمال"), token);
 
-            // (CEEF-229 · م1-٦ / Z-4) **التوليدُ داخل المعاملة — والإرسالُ خارجها.**
+            // **التوليدُ داخل المعاملة — والإرسالُ خارجها.**
             //
             // كان الاثنان بعد إغلاقها، فوقع عطلان:
             //

@@ -9,7 +9,7 @@ public static class SecurityContext
     private static readonly AsyncLocal<UserRole?> CurrentRoleSlot = new();
     private static readonly AsyncLocal<string?> CurrentUsernameSlot = new();
 
-    // (CEEF-229 · م2-١) حُذف `AutomatedTestBypass` — ولم يكن نقصَ اختبارٍ بل **تناقضاً مكتوباً**.
+    // حُذف `AutomatedTestBypass` — ولم يكن نقصَ اختبارٍ بل **تناقضاً مكتوباً**.
     //
     // كان متغيّر البيئة `BRQOSH_TEST=1` يُطفئ الحرّاس الأربعة كلَّها متى كان الدور معدوماً.
     // ونصَّ تعليقٌ في `TestEnvironmentInitializer` على أن الاختبارات **لا تضبطه** «لأنه يُطفئ

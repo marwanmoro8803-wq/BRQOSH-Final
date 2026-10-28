@@ -10,7 +10,7 @@ namespace Brqosh.Infrastructure.Workflow;
 public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflowEngine workflow)
 {
     /// <summary>
-    /// (CEEF-229 · م1-١٤) الرقمُ يُخصَّص داخل معاملة الكتابة لا في الشاشة — فقفلُ
+    /// الرقمُ يُخصَّص داخل معاملة الكتابة لا في الشاشة — فقفلُ
     /// التسلسل مربوطٌ بالمعاملة، وخارجَها يُحرَّر فوراً فلا يحمي شيئاً.
     /// </summary>
     public async Task<PurchaseRequest> SubmitAsync(PurchaseRequest request, CancellationToken ct = default)

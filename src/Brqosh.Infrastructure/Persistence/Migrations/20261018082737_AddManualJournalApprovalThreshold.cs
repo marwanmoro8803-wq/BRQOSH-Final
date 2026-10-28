@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>accounting-core#6</c>) حدُّ اعتماد القيد اليدويّ — **والمنشآتُ القائمةُ تأخذ افتراضَ المنتج ١٠٬٠٠٠**،
+    /// ‏ حدُّ اعتماد القيد اليدويّ — **والمنشآتُ القائمةُ تأخذ افتراضَ المنتج ١٠٬٠٠٠**،
     /// ‏لا صفرَ يُخضع كلَّ قيدٍ يدويٍّ للاعتماد فجأة (والمولِّدُ كتب صفراً). ومُطاوِعةٌ للتكرار كأخواتها.
     /// </summary>
     public partial class AddManualJournalApprovalThreshold : Migration

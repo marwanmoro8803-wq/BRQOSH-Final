@@ -54,7 +54,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
 
         foreach (var b in billings)
         {
-            // (CEEF-232 · ج-٤) ‏**والمستخلصُ يُخصَّص عليه بذمّتِه لا بإجماليّه.**
+            // ‏**والمستخلصُ يُخصَّص عليه بذمّتِه لا بإجماليّه.**
             //
             // ‏فالمحتجزُ يُرحَّل على `1114` لا على `1104` (`ProgressBilling.Post`)، **ولا
             // ‏يُطالَب به قبل انقضاء مدّته**. ‏وكانت شاشةُ التخصيص تعرض `GrandTotal`:
@@ -224,7 +224,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
             await AcquireDocumentLocksAsync(db.Database, companyId, lines, token);
             await ValidateAndAddCoreAsync(companyId, date, lines, receiptId, paymentId, isReceipt, token);
 
-            // (CEEF-229) ‏**الحفظُ داخل القفل، وإلا لم يحمِ القفلُ شيئاً.**
+            // ‏**الحفظُ داخل القفل، وإلا لم يحمِ القفلُ شيئاً.**
             //
             // ‏كانت الخدمةُ تُضيف إلى المتتبِّع ويحفظ المستدعي بعده. فأوّلُ صياغةٍ للقفل
             // ‏مرّت بلا أثر: يُؤخذ القفل، يُقرأ المتبقي، تُضاف السطور، **تُغلق المعاملةُ
@@ -243,7 +243,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
         long? receiptId, long? paymentId, bool isReceipt, CancellationToken ct)
     {
 
-        // (CEEF-229 · م1-١٦ / A-13) **ما خُصّص في هذه الدفعة يُطرح كذلك.**
+        // **ما خُصّص في هذه الدفعة يُطرح كذلك.**
         //
         // `RemainingAsync` يجمع بـ`SumAsync` — أي **استعلامٌ على القاعدة**. والسطورُ المضافةُ
         // قبل قليلٍ في الدفعة نفسها `Added` ولم تُحفَظ، فلا يراها الاستعلام. فسطران على
@@ -266,7 +266,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
             var key = (line.Type, line.DocumentId);
             if (takenInThisBatch.TryGetValue(key, out var alreadyTaken))
                 remaining -= alreadyTaken;
-            // (CEEF-206) بلا تفاوت: كل المبالغ مقرّبة لخانتين أصلاً، فالتفاوت 0.01 كان
+            // بلا تفاوت: كل المبالغ مقرّبة لخانتين أصلاً، فالتفاوت 0.01 كان
             // يسمح بتجاوز المتبقي بهللة لكل سطر — وتخصيصات متتابعة تُراكم الفارق حتى
             // يظهر مستند مسدَّداً بأكثر من قيمته في تقارير الذمم.
             if (line.Amount > remaining)
@@ -289,7 +289,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229) ‏<b>قفلُ التخصيص — لكلّ (منشأة · مستند).</b>
+    /// ‏<b>قفلُ التخصيص — لكلّ (منشأة · مستند).</b>
     ///
     /// <para>الخدمةُ تقرأ المتبقيَ بـ<c>SumAsync</c> ثمّ تكتب. وبلا قفلٍ يقرأ متزاحمان
     /// المتبقيَ نفسَه ويكتبان معاً، <b>فتُسدَّد الفاتورةُ بأكثر من قيمتها</b> ويصير رصيدُ
@@ -409,7 +409,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
                 (await db.SalesInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == documentId, ct)).GrandTotal(),
             PaymentAllocationDocumentType.PurchaseInvoice =>
                 (await db.PurchaseInvoices.SingleAsync(i => i.CompanyId == companyId && i.Id == documentId, ct)).GrandTotal(),
-            // (CEEF-232 · ج-٤) ‏والسقفُ هو الذمّةُ لا الإجماليّ — **وإلّا قُبِل تخصيصٌ يتجاوز ما على العميل**.
+            // ‏والسقفُ هو الذمّةُ لا الإجماليّ — **وإلّا قُبِل تخصيصٌ يتجاوز ما على العميل**.
             PaymentAllocationDocumentType.ProgressBilling =>
                 ReceivablePortionOf(await db.ProgressBillings
                     .SingleAsync(b => b.CompanyId == companyId && b.Id == documentId, ct)),
@@ -417,7 +417,7 @@ public class PaymentAllocationService(BrqoshDbContext db)
         };
 
     /// <summary>
-    /// (CEEF-232 · ج-٤) ما بلغ حسابَ الذمم من المستخلص — <b>ويُحسب بعد التحقّق لا داخله</b>.
+    /// ما بلغ حسابَ الذمم من المستخلص — <b>ويُحسب بعد التحقّق لا داخله</b>.
     /// </summary>
     /// <remarks>
     /// <b>و<c>NetBillableAmount</c> و<c>VatAmount</c> محسوبتان في النطاق لا عمودان في

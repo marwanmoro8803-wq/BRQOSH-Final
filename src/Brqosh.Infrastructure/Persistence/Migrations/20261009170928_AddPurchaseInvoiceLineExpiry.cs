@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٨ · order-to-cash-procure-to-pay-inventory#7) انتهاءُ الدفعة المشتراة على سطر فاتورة الشراء المباشرة — عمودٌ
+    /// انتهاءُ الدفعة المشتراة على سطر فاتورة الشراء المباشرة — عمودٌ
     /// يقبل الفراغ، وفارغُه سطرٌ بلا انتهاء كما كان كلُّ سطرٍ قبله؛ فلا تعبئةَ ولا تغيُّرَ لفاتورةٍ قائمة.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> على سُنّة الهجرات قبلها — <c>BrqoshSchemaUpdater</c> يُضيف العمودَ عند الإقلاع كذلك،

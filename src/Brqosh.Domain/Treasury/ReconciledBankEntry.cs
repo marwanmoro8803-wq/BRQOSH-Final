@@ -12,7 +12,7 @@ public class ReconciledBankEntry : IBranchScoped
     public long JournalEntryId { get; private set; }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٥٥ · <c>treasury-payroll-assets#13</c>) <b>سطرُ القيد المُسوّى</b> — والصفرُ تسويةُ القيد كلِّه
+    /// ‏ <b>سطرُ القيد المُسوّى</b> — والصفرُ تسويةُ القيد كلِّه
     /// ‏كما كانت قبلُ (السجلّاتُ القائمة). <b>وصفرٌ لا NULL عمداً</b>: فالفهرسُ الفريدُ يمنع التكرارَ للحالين — وNULLان لا يتصادمان.
     /// </summary>
     public long JournalLineId { get; private set; }

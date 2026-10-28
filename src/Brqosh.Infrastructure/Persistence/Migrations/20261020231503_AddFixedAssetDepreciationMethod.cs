@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>treasury-payroll-assets#11</c>) طريقةُ إهلاك الأصل — **والقائمُ «StraightLine»** لا سلسلةً فارغة (والمولِّدُ
+    /// ‏ طريقةُ إهلاك الأصل — **والقائمُ «StraightLine»** لا سلسلةً فارغة (والمولِّدُ
     /// ‏كتبها فارغة). ومُطاوِعةٌ للتكرار كأخواتها: المُرقِّعُ قد يكون أضافها قبلها.
     /// </summary>
     public partial class AddFixedAssetDepreciationMethod : Migration

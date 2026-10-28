@@ -38,7 +38,7 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     public decimal VatAmount { get; private set; }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٣٥) <b>والإشعارُ يحمل عملةَ فاتورتِه.</b>
+    /// <b>والإشعارُ يحمل عملةَ فاتورتِه.</b>
     ///
     /// <para><b>وكان بلا عملةٍ أصلاً</b> — وسطورُ الفاتورة الأجنبيّة <b>مُسعّرةٌ
     /// بالعملة الأجنبيّة</b> (<c>ForeignSubtotal</c> يُحسب منها، والريالُ يُشتقّ).
@@ -94,12 +94,12 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
 
 
     /// <summary>
-    /// تاريخ الإلغاء (O-21، CEEF-219). الإقرار الضريبي يعكس **وقائع الفترة**:
+    /// تاريخ الإلغاء . الإقرار الضريبي يعكس **وقائع الفترة**:
     /// المستند الملغى يبقى في إقرار فترة إصداره كما قُدِّم للهيئة، ويظهر أثر إلغائه
     /// في فترة الإلغاء. بدون هذا التاريخ لا سبيل لوضع الأثر في فترته الصحيحة.
     /// </summary>
     /// <summary>
-    /// (CEEF-229 · م2-٢٤) <b>لحظةُ الترحيل — لا تاريخُه وحده.</b>
+    /// <b>لحظةُ الترحيل — لا تاريخُه وحده.</b>
     ///
     /// <para>رمزُ الطور الأوّل إلزاميّ نظاماً على كلّ مسجَّلٍ في ضريبة القيمة المضافة، ويحمل
     /// وسماً زمنياً. وكان المسارُ المطبوع يختلق له <b>ظهرَ يوم الإصدار</b> لأنّ المستند لا
@@ -138,7 +138,7 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٦) <b>خصمُ المستند على الإشعار — وكان لا يُمثَّل أصلاً.</b>
+    /// <b>خصمُ المستند على الإشعار — وكان لا يُمثَّل أصلاً.</b>
     ///
     /// <para>الفاتورةُ تحمل خصمَ مستندٍ وخصمَ سطر، <b>والإشعارُ الدائنُ كان يُبنى منها بلا
     /// أيٍّ منهما</b>. فمرتجعٌ جزئيٌّ <b>يُعيد للعميل أكثرَ ممّا دفع</b> ويُنقص ضريبةَ
@@ -153,7 +153,7 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
     public decimal DocumentDiscountAmount { get; private set; }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٦) <b>حصّةُ المُرتجَع من خصم الفاتورة</b> — بنسبة صافيه إلى صافيها.
+    /// <b>حصّةُ المُرتجَع من خصم الفاتورة</b> — بنسبة صافيه إلى صافيها.
     ///
     /// <para><b>وفي النطاق لا في الحوار</b>: هذا حسابُ مالٍ يُقاس، ولو سكن شاشةَ WPF لَما
     /// قِيس إلّا بتشغيل التطبيق — <b>وما لا يُقاس يبيت</b>. ويلزم كلَّ مسارٍ يُنشئ إشعاراً،
@@ -213,7 +213,7 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
 
-        // (CEEF-229 · م1-١ب الشقّ الثاني) الرفضُ عند بناء السطر — أبكرُ موضعٍ ممكن.
+        // الرفضُ عند بناء السطر — أبكرُ موضعٍ ممكن.
         // فالفئةُ غيرُ الأساسية بلا سببٍ نظاميّ تُنتج مستنداً ترفضه الهيئة (BR-KSA-CL-06)،
         // ولا يُصلحه ملءُ البيانات بعد الترحيل: العدّادُ استُهلك والبصمةُ بُنيت عليه.
         if (Tax.VatExemptionReason.IsRequiredFor(vatCategory))
@@ -238,7 +238,7 @@ public class CreditNote : IBranchScoped, ILineDocumentTotals
 
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory,
             taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٢) ‏**والدفعةُ المرتجَعةُ تُسمّى** — تنسخها الشاشةُ من سطر الفاتورة، فيعود المرتجعُ إليها لا إلى أقدم ما بيع.
+            // ‏ ‏**والدفعةُ المرتجَعةُ تُسمّى** — تنسخها الشاشةُ من سطر الفاتورة، فيعود المرتجعُ إليها لا إلى أقدم ما بيع.
             BatchNumber: string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim(),
             DiscountPercent: discountPercent));
         RecalculateTotals();

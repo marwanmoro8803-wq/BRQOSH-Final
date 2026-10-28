@@ -11,7 +11,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-230 · ط3-٤ج) ‏أثرُ تتبّع الشحنة — <b>سندُ التسليم</b>.
+        /// ‏أثرُ تتبّع الشحنة — <b>سندُ التسليم</b>.
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b> كعادة هذا المستودع:
         /// المُرقِّعُ يُنشئ الجدولَ على القواعد القائمة، <b>و<c>CreateTable</c> المُولَّد

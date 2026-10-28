@@ -15,7 +15,7 @@ namespace Brqosh.Infrastructure.Retail;
 public record PosShiftVarianceResult(decimal Expected, decimal Counted, decimal Difference, long? JournalEntryId);
 
 /// <summary>
-/// (CEEF-232 · ن-١) <b>فرقُ نقدِ الوردية — يُحسب ويُعرض ولا يُقيَّد.</b>
+/// <b>فرقُ نقدِ الوردية — يُحسب ويُعرض ولا يُقيَّد.</b>
 ///
 /// <para><b>ما كان:</b> <c>PosShift</c> يحسب <c>ExpectedCash</c> و<c>CashDifference</c>،
 /// <b>والشاشةُ تعرضهما وتُجمّع «ورديات بعجز» في مؤشّر</b> — <c>PosShiftsPage.OnCloseShift</c>

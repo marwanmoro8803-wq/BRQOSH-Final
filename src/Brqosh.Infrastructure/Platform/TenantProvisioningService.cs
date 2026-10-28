@@ -12,7 +12,7 @@ namespace Brqosh.Infrastructure.Platform;
 public class TenantProvisioningService(BrqoshDbContext db) : ITenantProvisioningService
 {
     /// <summary>
-    /// (CEEF-229 · م2-١) <b>غياب <c>EnsureAdministrator</c> هنا مقصود — والتوثيق هو الإصلاح.</b>
+    /// <b>غياب <c>EnsureAdministrator</c> هنا مقصود — والتوثيق هو الإصلاح.</b>
     ///
     /// <para>رُفعت هذه الدالّة بوصفها «عمليةً حسّاسة بلا حارس»، ونظيرُها
     /// <c>OrganizationProvisioningService.ProvisionAsync</c> يفتتح فعلاً بـ

@@ -44,7 +44,7 @@ public class ProgressBillingPostingService(BrqoshDbContext db)
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);
-            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
             // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
             // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
             // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -55,7 +55,7 @@ public class ProgressBillingPostingService(BrqoshDbContext db)
             billing.LinkJournalEntry(entry.Id);
             await db.SaveChangesAsync(token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**والمستخلصُ يُعاد إلى موضعه من الإنجاز** — ما فُوتر فوق المكتسب التزامُ عقد، وما سبقه أصلُ عقد.
+            // ‏ ‏**والمستخلصُ يُعاد إلى موضعه من الإنجاز** — ما فُوتر فوق المكتسب التزامُ عقد، وما سبقه أصلُ عقد.
             await new ContractRevenueTrueUp(db).ApplyAsync(billing.CompanyId, billing.ProjectId, billing.BillingDate, token);
 
             await DomainEventHub.PublishAsync(new DocumentPostedEvent(

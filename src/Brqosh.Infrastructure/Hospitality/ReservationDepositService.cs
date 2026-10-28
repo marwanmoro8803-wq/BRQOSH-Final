@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Hospitality;
 
-/// <summary>(جاهزيّةُ الإطلاق · ح-٨٣) ما يُصنع بعربون حجزٍ أُلغي أو غاب صاحبُه.</summary>
+/// <summary> ما يُصنع بعربون حجزٍ أُلغي أو غاب صاحبُه.</summary>
 public enum DepositOutcome
 {
     /// <summary>يُردّ إلى النزيل — صافيه وضريبتُه.</summary>
@@ -20,7 +20,7 @@ public enum DepositOutcome
 }
 
 /// <summary>
-/// (CEEF-232 · ح-١) <b>عربونُ الحجز — مالٌ يُقبض قبل أن يُستحقّ.</b>
+/// <b>عربونُ الحجز — مالٌ يُقبض قبل أن يُستحقّ.</b>
 ///
 /// <para><b>ما كان:</b> <c>Reservation</c> بلا حقلِ عربون، و<c>FolioService</c> بلا مسارٍ
 /// له — <c>CheckInAsync</c> و<c>AccrueNightsAsync</c> و<c>AddChargeAsync</c>
@@ -93,7 +93,7 @@ public class ReservationDepositService(BrqoshDbContext db)
                 $"عربون حجز {reservation.ReservationNumber}",
                 sourceDocument: $"{TakenPrefix}{reservationId}");
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٨١ · `sector-modules#6`) ‏**والعربونُ نقطةُ استحقاقٍ للضريبة — يوم القبض.**
+            // ‏ ‏**والعربونُ نقطةُ استحقاقٍ للضريبة — يوم القبض.**
             //
             // ‏كان يُقيَّد كلُّه التزاماً في `2105` بلا ضريبة، **فتُستحقّ ضريبتُه يوم المغادرة لا يوم القبض**: عربونُ
             // ‏فبراير لإقامةِ مارس يغيب عن إقرار فبراير. ونظامُ الضريبة يجعل المقابلَ المقبوضَ مقدّماً نقطةَ استحقاق.
@@ -109,7 +109,7 @@ public class ReservationDepositService(BrqoshDbContext db)
             db.JournalEntries.Add(entry);
             await db.SaveChangesAsync(token);
 
-            // ‏(جاهزيّةُ الإطلاق · sector-modules#6) ‏**وللعربون فاتورةُ دفعةٍ مقدّمة (386) يومَ قبضه** — والتوليدُ داخل المعاملة
+            // ‏ ‏**وللعربون فاتورةُ دفعةٍ مقدّمة (386) يومَ قبضه** — والتوليدُ داخل المعاملة
             // ‏كعرف المستودع، والإرسالُ يتولّاه مسارُ المعلَّق. وعربونٌ بلا ضريبةٍ (منشأةٌ غيرُ مسجَّلة) لا فاتورةَ ضريبةٍ له.
             if (vat > 0m)
                 await ZatcaPostingOrchestrator.GenerateInsideTransactionAsync(
@@ -199,7 +199,7 @@ public class ReservationDepositService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٨٣) <b>حجزٌ أُلغي أو غاب صاحبُه — وعربونُه يُردّ أو يُصادَر.</b> وكان لا مسارَ له إلّا الإنزالُ عند
+    /// <b>حجزٌ أُلغي أو غاب صاحبُه — وعربونُه يُردّ أو يُصادَر.</b> وكان لا مسارَ له إلّا الإنزالُ عند
     /// المغادرة، فيبقى التزاماً خالداً في <c>2105</c>.
     ///
     /// <para><b>الردُّ</b>: مدين <c>2105</c> بالصافي و<c>2106</c> بالضريبة، دائن النقد بالإجمالي — والإقرارُ يقرأ ردَّ الضريبة
@@ -257,7 +257,7 @@ public class ReservationDepositService(BrqoshDbContext db)
         db.JournalEntries.Add(entry);
         await db.SaveChangesAsync(ct);
 
-        // ‏(جاهزيّةُ الإطلاق · sector-modules#6) ‏**والردُّ إشعارٌ دائنٌ لكلّ فاتورةِ دفعة (386)** — يُشير إليها بمبلغها. والمصادرةُ
+        // ‏ ‏**والردُّ إشعارٌ دائنٌ لكلّ فاتورةِ دفعة (386)** — يُشير إليها بمبلغها. والمصادرةُ
         // ‏لا إشعارَ لها: المصادَرُ مقابلُ توريدٍ خاضعٍ وفاتورتُه قائمة.
         if (refund)
         {

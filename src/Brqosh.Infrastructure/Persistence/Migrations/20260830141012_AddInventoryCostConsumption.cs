@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-229 · م0-٣) سجلُّ استهلاك طبقات التكلفة — مفتاحُ ترميمها عند الإلغاء.
+    /// سجلُّ استهلاك طبقات التكلفة — مفتاحُ ترميمها عند الإلغاء.
     ///
     /// <para><b>ومُطاوِعةٌ للتكرار</b> كسائر هجرات هذه الحملة: <c>BrqoshSchemaUpdater</c>
     /// يُنشئ الجداولَ قبل تشغيل الهجرات لإصلاح القواعد القديمة، فـ<c>CreateTable</c> تصطدم

@@ -12,7 +12,7 @@ namespace Brqosh.Infrastructure.Payroll;
 public record LeaveAccrualResult(int Employees, decimal Movement, long? JournalEntryId);
 
 /// <summary>
-/// (CEEF-233 · ز-٣) <b>تخصيصُ الإجازات — التزامٌ يتراكم كلَّ يومٍ ولم يكن في الدفاتر.</b>
+/// <b>تخصيصُ الإجازات — التزامٌ يتراكم كلَّ يومٍ ولم يكن في الدفاتر.</b>
 ///
 /// <para><b>ما كان:</b> لا كيانَ إجازاتٍ أصلاً، <b>فحسابُ <c>2203</c> لم يكن موجوداً</b>.
 /// والمنشأةُ تحمل رصيدَ إجازاتِ موظّفيها — <b>وهو دَينٌ نقديٌّ بنصّ المادة 111</b> يُدفع

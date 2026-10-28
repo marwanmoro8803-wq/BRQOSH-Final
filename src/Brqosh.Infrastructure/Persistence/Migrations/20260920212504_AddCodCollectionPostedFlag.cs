@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٢) وسمُ أنّ قيدَ تحصيل الدفع عند الاستلام وقع فعلاً.
+    /// وسمُ أنّ قيدَ تحصيل الدفع عند الاستلام وقع فعلاً.
     ///
     /// <para><b>وهو غيرُ <c>CodCollected</c></b>: ذاك يُضبط بالتسليم بلا قيد، وهذا يقول
     /// إنّ النقدَ دخل الدفترَ و<c>2114</c> دُوِّن. <b>وبغيره ثقبان</b>: تحصيلٌ يُقيَّد

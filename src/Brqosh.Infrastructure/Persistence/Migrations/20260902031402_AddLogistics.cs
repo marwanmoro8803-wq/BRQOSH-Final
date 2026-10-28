@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط3-٤) البوالص والتحصيل نيابةً عن التجّار.
+    /// البوالص والتحصيل نيابةً عن التجّار.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يُنشئ الجدول قبل تشغيل الهجرات.</para>
     /// </summary>

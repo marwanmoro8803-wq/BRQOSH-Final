@@ -35,7 +35,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
     public decimal VatAmount { get; private set; }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٣٩) <b>والإشعارُ المدينُ يحمل عملةَ فاتورتِه —
+    /// <b>والإشعارُ المدينُ يحمل عملةَ فاتورتِه —
     /// مرآةُ ح-٣٥ في المشتريات.</b>
     ///
     /// <para><b>وكان بلا عملةٍ أصلاً</b>، وسطورُ فاتورةِ الشراء الأجنبيّة
@@ -84,7 +84,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
     }
 
     /// <summary>
-    /// تاريخ الإلغاء (O-21، CEEF-219). الإقرار الضريبي يعكس **وقائع الفترة**:
+    /// تاريخ الإلغاء . الإقرار الضريبي يعكس **وقائع الفترة**:
     /// المستند الملغى يبقى في إقرار فترة إصداره كما قُدِّم للهيئة، ويظهر أثر إلغائه
     /// في فترة الإلغاء. بدون هذا التاريخ لا سبيل لوضع الأثر في فترته الصحيحة.
     /// </summary>
@@ -123,7 +123,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
         _lines.Add(new SalesInvoiceLine(description.Trim(), quantity, unitPrice, productId, vatCategory, taxExemptionReasonCode?.Trim(), taxExemptionReason?.Trim(),
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٥ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**والدفعةُ المرتجَعةُ تُسمّى** — فيخرج المرتجعُ إلى المورّد منها وحدَها لا من أقدم ما استُلم.
+            // ‏ ‏**والدفعةُ المرتجَعةُ تُسمّى** — فيخرج المرتجعُ إلى المورّد منها وحدَها لا من أقدم ما استُلم.
             BatchNumber: string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim()));
         RecalculateTotals();
     }
@@ -139,7 +139,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
     }
 
     /// <summary>
-    /// (CEEF-234) <paramref name="vatDeductible"/> يجب أن يطابق شرط الفاتورة الأصلية
+    /// <paramref name="vatDeductible"/> يجب أن يطابق شرط الفاتورة الأصلية
     /// (<see cref="PurchaseInvoice.VatDeductible"/>) — <b>لا قيمةً مستقلّة</b>.
     ///
     /// <para><b>والعطل الذي يمنعه:</b> فاتورةٌ من موردٍ غير مسجَّل لا تخصم ضريبتها أصلاً —
@@ -180,7 +180,7 @@ public class DebitNote : IBranchScoped, ILineDocumentTotals
             entry.AddLine(purchasesExpense ?? purchasesOrInventory, 0m, nonInv, "تخفيض مشتريات/مصروف");
         else if (nonInv < 0)
         {
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٧ · كشفه العمل) ‏**مرتجعٌ مُسعَّرٌ دون تكلفته: الفرقُ خسارةٌ تتحمّلها
+            // ‏ ‏**مرتجعٌ مُسعَّرٌ دون تكلفته: الفرقُ خسارةٌ تتحمّلها
             // ‏المنشأة — مدينٌ في «فروق أسعار المشتريات» 5108.** كانت الفروعُ تسكت عن `nonInv < 0`
             // ‏فيخرج القيدُ غيرَ متوازنٍ ويُرفض، فيستحيل أن يُدائن المورّدُ بأقلَّ من تكلفة ما يُرجَع.
             // ‏**دائنُ المخزون يبقى = الطبقاتِ المستهلكة** فلا ينفصل الأستاذُ عنها، ولا يُدان المخزون.

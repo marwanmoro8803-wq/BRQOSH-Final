@@ -29,7 +29,7 @@ public class AppUser : ISoftDeletable
     public long? MfaLastAcceptedStep { get; private set; }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>security-licensing-tenancy#7</c> · قرارُ المالك 2026-10-18) <b>تجزئةُ مفتاح الاستعادة</b> —
+    /// ‏ <b>تجزئةُ مفتاح الاستعادة</b> —
     /// ‏يُعرض المفتاحُ مرّةً ولا يُخزَّن إلّا مجزَّأً كأيّ كلمة مرور؛ وعدمٌ = لا استعادةَ لهذا المستخدم.
     /// </summary>
     public string? RecoveryKeyHash { get; private set; }

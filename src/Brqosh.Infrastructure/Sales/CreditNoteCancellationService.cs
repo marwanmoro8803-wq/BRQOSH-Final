@@ -48,7 +48,7 @@ public class CreditNoteCancellationService(BrqoshDbContext db)
                 .Where(m => m.CompanyId == companyId && m.SourceDocument == sourceDoc && m.Status == StockMovementStatus.Posted)
                 .ToListAsync(token);
 
-            // (CEEF-229 · م0-٣ب) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.** مرآةُ م0-٣.
+            // **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.** مرآةُ م0-٣.
             //
             // كان يُرحَّل `Issue` جديدٌ بتاريخ الإلغاء، **وهو يستهلك من رأس طابور FIFO**
             // — أقدمَ طبقةٍ وأرخصَها — ويترك طبقةَ المرتجع قائمة. فتُقلَب تكلفةُ البيعة
@@ -73,7 +73,7 @@ public class CreditNoteCancellationService(BrqoshDbContext db)
                 companyId, "CreditNote", note.Id, note.NoteNumber ?? note.Id.ToString(),
                 "إلغاء إشعار دائن"), token);
 
-            // (CEEF-229 · م1-٦ / Z-4) **التوليدُ داخل المعاملة — والإرسالُ خارجها.**
+            // **التوليدُ داخل المعاملة — والإرسالُ خارجها.**
             //
             // كان الاثنان بعد إغلاقها، فوقع عطلان:
             //

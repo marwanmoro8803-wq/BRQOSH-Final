@@ -112,7 +112,7 @@ public partial class DocumentPrintService
     {
         var company = await db.Companies.SingleAsync(c => c.Id == companyId, ct);
         var branding = PrintBranding.FromCompany(company, username);
-        // (CEEF-229 · م2-١٨) قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
+        // قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
         // الطرف كان موجوداً يوم صدور المستند، وحذفُه لاحقاً لا يُلغي المستند. وقراءةُ
         // المرشَّح كانت ترمي «Sequence contains no elements» بالإنجليزية داخل واجهةٍ
         // عربية، فتصير فاتورةٌ ضريبية سعودية **غير قابلة للطباعة أبداً** — وهي وثيقةٌ
@@ -193,7 +193,7 @@ public partial class DocumentPrintService
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٥٦ · ui-ux-i18n-printing#1) <b>ما يُطبع منه المستخلص — ويُقاس قبل أن يُرسَم</b>
+    /// <b>ما يُطبع منه المستخلص — ويُقاس قبل أن يُرسَم</b>
     /// (مذهبُ ح-٤٢). <b>وهو فاتورةٌ ضريبيّة</b>: نوعُها ونسبتُها وهويّةُ المشتري فيه.
     /// </summary>
     internal async Task<ProgressBillingPdfGenerator.BillingPrintData> ProgressBillingRequestAsync(
@@ -259,9 +259,9 @@ public partial class DocumentPrintService
             ZatcaDocumentType.SalesInvoice => await ExportSalesInvoiceAsync(companyId, doc.SourceDocumentId, username, ct),
             ZatcaDocumentType.CreditNote => await ExportCreditNoteAsync(companyId, doc.SourceDocumentId, username, ct),
             ZatcaDocumentType.ProgressBilling => await ExportProgressBillingAsync(companyId, doc.SourceDocumentId, username, ct),
-            // (جاهزيّةُ الإطلاق · ح-١٦) ‏وبيعُ الأصل الثابت — مستندٌ ضريبيٌّ يأخذه المشتري.
+            // ‏وبيعُ الأصل الثابت — مستندٌ ضريبيٌّ يأخذه المشتري.
             ZatcaDocumentType.AssetDisposal => await ExportAssetDisposalAsync(companyId, doc.SourceDocumentId, username, ct),
-            // (جاهزيّةُ الإطلاق · ح-١٩) ‏ومستنداتُ الإلغاء الثلاثة — **بأنفسها لا بمصادرها**.
+            // ‏ومستنداتُ الإلغاء الثلاثة — **بأنفسها لا بمصادرها**.
             ZatcaDocumentType.InvoiceCancel or ZatcaDocumentType.BillingCancel or ZatcaDocumentType.DebitNote
                 or ZatcaDocumentType.DisposalCancel
                 // ‏(sector-modules#6) ‏وفاتورةُ الدفعة المقدّمة — مصدرُها قيدٌ لا مستندٌ يُطبع، فتُطبع بنفسها.
@@ -272,7 +272,7 @@ public partial class DocumentPrintService
     }
 
     /// <summary>
-    /// (CEEF-230 · ط6-٢) <b>قسيمةُ راتبٍ واحدة — والمولِّدُ كان مبنيّاً بلا مستدعٍ واحد.</b>
+    /// <b>قسيمةُ راتبٍ واحدة — والمولِّدُ كان مبنيّاً بلا مستدعٍ واحد.</b>
     ///
     /// <para><c>PayslipPdfGenerator</c> بُني في <c>ط2-٦</c> <b>ولا شيءَ في المستودع
     /// يستدعيه</b>. فالقسيمةُ ميزةٌ موصوفةٌ ومختبَرةٌ <b>لا يستطيع المالكُ إخراجَها</b> —

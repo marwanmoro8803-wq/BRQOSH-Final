@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط2) سجلُّ الموظفين ونِسَبُ التأمينات، ومعرّفُ الموظّف على سطر الرواتب.
+    /// سجلُّ الموظفين ونِسَبُ التأمينات، ومعرّفُ الموظّف على سطر الرواتب.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يُنشئ الجدولين قبل تشغيل الهجرات.</para>
     ///

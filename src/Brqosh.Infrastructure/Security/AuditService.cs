@@ -13,9 +13,9 @@ public class AuditService(BrqoshDbContext db)
         var entry = AuditLogEntry.Record(
             companyId, username, action, entityType, entityKey, details, reason);
 
-        // (O-19، CEEF-212) اربط الإدخال بسلسلة الشركة قبل الحفظ.
+        // اربط الإدخال بسلسلة الشركة قبل الحفظ.
         //
-        // (CEEF-229) ‏**والمعاملةُ شرطُ حياة القفل، لا تحسيناً.**
+        // ‏**والمعاملةُ شرطُ حياة القفل، لا تحسيناً.**
         //
         // ‏القفلُ أدناه من نوع `xact`: خارج معاملةٍ صريحة يُحرَّر فورَ انتهاء أمره، فلا
         // ‏يحمي القراءةَ التي تليه. فكاتبان متزامنان يقرآن «الأخير» نفسَه ويبنيان عليه
@@ -39,7 +39,7 @@ public class AuditService(BrqoshDbContext db)
                 .Select(a => new { a.Sequence, a.EntryHash })
                 .FirstOrDefaultAsync(token);
 
-            // (CEEF-229) ‏ترتيبُ ما قبل السلسلة سالب، و«الأعلى + ١» عليه يُنتج صفراً —
+            // ‏ترتيبُ ما قبل السلسلة سالب، و«الأعلى + ١» عليه يُنتج صفراً —
             // ‏ترتيباً محجوزاً لغير المربوط. فالسلسلةُ تبدأ من ١ مهما كان ما قبلها.
             entry.ChainTo(
                 Math.Max(last?.Sequence ?? 0, 0) + 1,
@@ -55,7 +55,7 @@ public class AuditService(BrqoshDbContext db)
         if (!db.Database.IsNpgsql())
             return;
 
-        // (CEEF-229) ‏الشرطُ مُعلَنٌ هنا لا مفترَضاً في المستدعي.
+        // ‏الشرطُ مُعلَنٌ هنا لا مفترَضاً في المستدعي.
         //
         // ‏`pg_advisory_xact_lock` يُحرَّر بانتهاء المعاملة؛ وخارجَها يُحرَّر بانتهاء
         // ‏أمره — فيبقى الاسمُ «قفلاً» والفعلُ لا شيء. ولو نُزع الغلافُ المعامليّ من

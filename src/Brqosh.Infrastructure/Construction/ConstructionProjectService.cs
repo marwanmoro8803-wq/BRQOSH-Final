@@ -32,7 +32,7 @@ public class ConstructionProjectService(BrqoshDbContext db)
             estimatedTotalCost);
         await db.SaveChangesAsync(ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**ومراجعةُ التقدير أو قيمة العقد لحاقٌ تراكميّ** — يُقيَّد يومَ المراجعة.
+        // ‏ ‏**ومراجعةُ التقدير أو قيمة العقد لحاقٌ تراكميّ** — يُقيَّد يومَ المراجعة.
         await new ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, DateOnly.FromDateTime(DateTime.Today), ct);
     }
 

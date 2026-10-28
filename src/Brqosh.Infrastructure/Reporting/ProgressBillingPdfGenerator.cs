@@ -23,7 +23,7 @@ public static class ProgressBillingPdfGenerator
         decimal NetBillableAmount,
         decimal VatAmount,
         decimal GrandTotal,
-        // (جاهزيّةُ الإطلاق · ح-٥٦ · ui-ux-i18n-printing#1) ‏**المستخلصُ فاتورةٌ ضريبيّة** — نوعُها ونسبتُها
+        // ‏**المستخلصُ فاتورةٌ ضريبيّة** — نوعُها ونسبتُها
         // ‏وهويّةُ المشتري **إلزاميّةٌ بلا افتراضيّ**: يُسمّيها كلُّ مُنتِج، فلا تُطبع «15%» لأنّ أحداً نسيها.
         PrintDocumentKind Kind,
         decimal VatRate,
@@ -32,7 +32,7 @@ public static class ProgressBillingPdfGenerator
         string? QrTlvBase64 = null,
         int? Icv = null,
         string? ComplianceStatus = null,
-        // (جاهزيّةُ الإطلاق · ح-٥٣) ‏المستخلصُ لعميلٍ مسجَّلٍ يُخلَّص — وما لم يُعتمد يقول ذلك.
+        // ‏المستخلصُ لعميلٍ مسجَّلٍ يُخلَّص — وما لم يُعتمد يقول ذلك.
         string? ClearanceNotice = null,
         // ‏(أسئلةُ المالك 2026-10-24 · العملة) ‏عملةُ دفاتر المنشأة — يملؤها المولِّدُ من الترويسة.
         string CurrencyCode = "SAR");
@@ -157,7 +157,7 @@ public static class ProgressBillingPdfGenerator
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٥٦ · ui-ux-i18n-printing#1) <b>عنوانُ الورقة عنوانُ الفاتورة</b> — ثمّ «مستخلص
+    /// <b>عنوانُ الورقة عنوانُ الفاتورة</b> — ثمّ «مستخلص
     /// أعمال» وصفاً. <b>وكان «مستخلص أعمال» وحدَه</b> ومستندُه عند الهيئة فاتورةٌ تُخلَّص أو تُبلَّغ، فيأخذ
     /// المشتري ورقةً لا تقول إنّها فاتورةٌ ضريبيّة. والعنوانُ من <c>TitleFor</c> الفاتورةِ لا نصٌّ ثانٍ.
     /// </summary>
@@ -184,7 +184,7 @@ public static class ProgressBillingPdfGenerator
     internal static string VatLabel(decimal rate) =>
         $"ضريبة {PrintText.Ltr((rate * 100m).ToString("0.##", CultureInfo.InvariantCulture) + "%")}";
 
-    // (جاهزيّةُ الإطلاق · ح-٥٤) ‏**وكان يطبع اسمَ الحالة البرمجيّ** — «SimulatedLocally» و«ReadyToClear»
+    // ‏**وكان يطبع اسمَ الحالة البرمجيّ** — «SimulatedLocally» و«ReadyToClear»
     // ‏على ورقةٍ عربيّة، وقد أُصلح ذلك في الفاتورة منذ CEEF-229. ‏السطرُ الآن سطرُها نفسُه.
     private static string? BuildComplianceLine(BillingPrintData data) =>
         PrintedCompliance.Line(data.Icv, data.ComplianceStatus);

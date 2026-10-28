@@ -42,13 +42,13 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddDbContext<BrqoshDbContext>(options =>
         {
             if (usePostgres)
-                // (CEEF-231 · ط5-٧) ‏**والمساران معاً** — ودرسُ `ط4-٣`: إصلاحُ أحد
+                // ‏**والمساران معاً** — ودرسُ `ط4-٣`: إصلاحُ أحد
                 // ‏مسارَي شيءٍ واحدٍ يترك العطلَ حيّاً حيث يُستعمل الآخر.
                 options.UseNpgsql(connectionString, npgsql => npgsql.ExecutionStrategy(deps =>
                     new WriteSafeNpgsqlExecutionStrategy(deps, maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5))));
             else
                 options.UseSqlite(connectionString);
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏وحارسُ الفترة المقفلة عند الحفظ — كما في المصنع.
+            // ‏ ‏وحارسُ الفترة المقفلة عند الحفظ — كما في المصنع.
             options.AddInterceptors(new AuditLogImmutabilityInterceptor(), new ClosedPeriodPostingInterceptor(), new BooksCurrencyInterceptor(),
                 new ReadOnlyBooksInterceptor());
         });
@@ -62,10 +62,10 @@ public static class InfrastructureServiceCollectionExtensions
         // ‏حالاتُ استخدام أمر البيع بعقدٍ في Application — تُطلَب بالواجهة لا بـ`new`.
         services.AddScoped<Brqosh.Application.Sales.ISalesOrderService, Sales.SalesOrderService>();
 
-        // (CEEF-230 · ط6-٣) ‏خدمةُ الفوترة الدورية — تُطلَب من الشاشة، فتُسجَّل.
+        // ‏خدمةُ الفوترة الدورية — تُطلَب من الشاشة، فتُسجَّل.
         services.AddScoped<Sales.RecurringInvoiceService>();
 
-        // (CEEF-230 · ط6-٤) ‏خدماتُ القطاعات — تُطلَب من شاشاتها، فتُسجَّل.
+        // ‏خدماتُ القطاعات — تُطلَب من شاشاتها، فتُسجَّل.
         services.AddScoped<RealEstate.LeaseService>();
         services.AddScoped<RealEstate.SecurityDepositService>();
         services.AddScoped<Healthcare.VisitBillingService>();
@@ -77,16 +77,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Hospitality.FolioService>();
         services.AddScoped<Hospitality.KitchenIssueService>();
 
-        // (CEEF-230 · ط6-٥) ‏تخصيصُ مكافأة نهاية الخدمة — **ولم يكن مسجَّلاً في الحقن
+        // ‏تخصيصُ مكافأة نهاية الخدمة — **ولم يكن مسجَّلاً في الحقن
         // ‏أصلاً**: خدمةٌ مبنيّةٌ ومقيسةٌ في `ط2-٣` **لا يستطيع أحدٌ طلبَها**. فالمخصّصُ
         // ‏النظاميُّ لا يجري، والتزامٌ يتراكم لا يظهر في الميزانية.
         services.AddScoped<Payroll.EndOfServiceAccrualService>();
         services.AddScoped<Payroll.EndOfServiceSettlementService>();
 
-        // (جاهزيّةُ الإطلاق · ح-٨٤) ‏صرفُ الرواتب وسدادُ التأمينات ودفعُ مستحقّ نهاية الخدمة — وكان `2108` و`2109` لا يُدينهما شيء.
+        // ‏صرفُ الرواتب وسدادُ التأمينات ودفعُ مستحقّ نهاية الخدمة — وكان `2108` و`2109` لا يُدينهما شيء.
         services.AddScoped<Payroll.PayrollPaymentService>();
 
-        // (جاهزيّةُ الإطلاق · ح-٨٥) ‏**أربعٌ تطلبها الشاشاتُ بـ`GetService<T>` ولم تكن تُحَلّ** — ثلاثٌ تُبنى بـ`new` داخل محوِّلات
+        // ‏**أربعٌ تطلبها الشاشاتُ بـ`GetService<T>` ولم تكن تُحَلّ** — ثلاثٌ تُبنى بـ`new` داخل محوِّلات
         // ‏حالات الاستخدام وحدَها، ورابعةٌ مسجَّلةٌ بواجهتها لا بصنفها (`IDataMigrationService`)؛ فكان استيرادُ كشف البنك
         // ‏ومطابقتُه الآليّةُ وشاشةُ مركز النقد وشاشةُ ترحيل البيانات ترمي «No service for type».
         // ‏والحارسُ `EveryServiceTheDesktopAsksForResolvesTests` يقرأ الطلبَ من مصدر الشاشات ويُحلّه من هذه الحاوية.
@@ -98,7 +98,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<Payroll.LeaveAccrualService>();
         services.AddScoped<Payroll.LeaveBalanceQuery>();
 
-        // (CEEF-230 · ط4-٧) ‏إعادةُ تقييم الذمم بالعملات — إلزامُ المعيار 21.
+        // ‏إعادةُ تقييم الذمم بالعملات — إلزامُ المعيار 21.
         services.AddScoped<Accounting.MonetaryRevaluationService>();
         services.AddScoped<Logistics.CodSettlementService>();
         services.AddScoped<CreditNotePostingService>();
@@ -142,12 +142,12 @@ public static class InfrastructureServiceCollectionExtensions
         // CEEF-123 Tier P1: خزينة · POS · تدقيق
         services.AddScoped<BankAccountService>();
         services.AddScoped<Operations.BackupService>();
-        // (CEEF-231 · ط5-٤) ‏تكرارُ النسخة خارج الجهاز.
+        // ‏تكرارُ النسخة خارج الجهاز.
         services.AddScoped<Operations.OffsiteBackupService>();
         services.AddScoped<Operations.BackupScheduleService>();
-        // (CEEF-231 · ط5-٥) ‏فحصُ قناة التحديث.
+        // ‏فحصُ قناة التحديث.
         services.AddScoped<Operations.UpdateCheckService>();
-        // (CEEF-231 · ط5-١١) ‏تقليمُ ما يجوز — **ولا يمسّ سجلَّ التدقيق ولا المعلَّق في الطابور**.
+        // ‏تقليمُ ما يجوز — **ولا يمسّ سجلَّ التدقيق ولا المعلَّق في الطابور**.
         services.AddScoped<Operations.DataRetentionService>();
         services.AddScoped<BankTransferService>();
         services.AddScoped<Retail.PosSaleService>();
@@ -284,7 +284,7 @@ public static class InfrastructureServiceCollectionExtensions
     {
         DomainEventHub.Current = services.GetRequiredService<IDomainEventPublisher>();
 
-        // Outbox (ع-D2، CEEF-204): تفريغ الطابور بعد الالتزام حصراً.
+        // Outbox : تفريغ الطابور بعد الالتزام حصراً.
         // ‏ويُوصَل هنا لأن `UnitOfWork` ساكنٌ بلا حاوية حقن — نفسُ نمط `DomainEventHub`.
         OutboxDispatchHook.Wire((db, ct) =>
             new OutboxDispatcher(services.GetRequiredService<IWebhookDispatcher>())
@@ -385,7 +385,7 @@ file sealed class VatReturnQueryAdapter(BrqoshDbContext db) : IVatReturnQuery
         long companyId, DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
     {
         var r = await new VatReturnQuery(db).ExecuteAsync(companyId, fromDate, toDate);
-        // (CEEF-229 · م1-١٠) العبورُ في موضعٍ يُقاس — لا سطراً داخل مُحوِّلٍ لا يُرى.
+        // العبورُ في موضعٍ يُقاس — لا سطراً داخل مُحوِّلٍ لا يُرى.
         return VatReturnMapping.From(r);
     }
 }

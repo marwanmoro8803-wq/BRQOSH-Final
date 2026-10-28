@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-233 · ز) ‏جدولُ طلبات الإجازة، وخصمُ الغياب على سطر الراتب.
+        /// ‏جدولُ طلبات الإجازة، وخصمُ الغياب على سطر الراتب.
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b> — على سُنّة الهجرات قبلها:
         /// المُرقِّعُ اليدويّ (<c>BrqoshSchemaUpdater</c>) يُنشئ هذا الجدولَ ويُضيف العمودَ

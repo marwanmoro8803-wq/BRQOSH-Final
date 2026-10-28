@@ -15,7 +15,7 @@ public record StockBalanceRow(
     decimal UnitCost,
     decimal TotalValue,
     /// <summary>
-    /// (CEEF-229 · م2-١٧ب/ج) صنفٌ موقوفٌ — <b>أو مستودعٌ موقوف</b> — ما زالت بضاعتُه قائمة:
+    /// صنفٌ موقوفٌ — <b>أو مستودعٌ موقوف</b> — ما زالت بضاعتُه قائمة:
     /// يظهر ليُجرَد ويُصفَّى، وتَسِمه الشاشةُ «موقوف» فلا يُظنّ متاحاً للبيع.
     /// </summary>
     bool IsStopped = false);
@@ -27,7 +27,7 @@ public class StockBalanceQuery(BrqoshDbContext db)
         bool includeZeroBalances = false)
     {
         var inv = new InventoryService(db);
-        // (CEEF-229 · م2-١٧ب) **الإيقافُ لا يُخفي البضاعة.**
+        // **الإيقافُ لا يُخفي البضاعة.**
         //
         // كان المرشّحُ هنا `p.IsActive`، فيختفي الصنفُ الموقوف ومعه بضاعتُه من الدفتر
         // المساعد بينما يبقى ثمنُها في حساب المخزون 1107 — كسرُ الهوية هـ-٣ بمقدار القيمة

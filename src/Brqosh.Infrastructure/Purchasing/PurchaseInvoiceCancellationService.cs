@@ -64,7 +64,7 @@ public class PurchaseInvoiceCancellationService(BrqoshDbContext db)
                 var inv = new InventoryService(db);
                 foreach (var movement in receiptMovements)
                 {
-                    // (CEEF-229 · م0-٣ج) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+                    // **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
                     //
                     // الحركةُ الصادرة عبر `PostDocumentMovementAsync` **تُنقص الرصيدَ ولا
                     // تمسّ طبقةً** — فالتكلفةُ مسؤوليةُ المستدعي بالتصميم، وهذه الخدمةُ

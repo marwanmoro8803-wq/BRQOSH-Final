@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-231 · ط5-٨) ‏رموزُ تزامنٍ على التكلفة والطبقات والدفعات.
+        /// ‏رموزُ تزامنٍ على التكلفة والطبقات والدفعات.
         ///
         /// <para>‏<b>و<c>xmin</c> عمودٌ نظاميٌّ في PostgreSQL موجودٌ على كلّ جدول</b> —
         /// و<c>AddColumn</c> هنا <b>لا يُنتج DDL</b>: مولّدُ Npgsql يعرفه ويتجاهله.

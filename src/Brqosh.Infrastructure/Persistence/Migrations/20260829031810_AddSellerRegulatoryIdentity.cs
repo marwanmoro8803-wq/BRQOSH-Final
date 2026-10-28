@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-229 · م2-٩) <b>إعادةُ سلسلة الهجرات إلى مطابقة النموذج.</b>
+    /// <b>إعادةُ سلسلة الهجرات إلى مطابقة النموذج.</b>
     ///
     /// <para>تخلّفت اللقطة عن النموذج منذ ٢٥ يوليو، فعاش كلّ تعديلٍ لاحقٍ في
     /// <see cref="BrqoshSchemaUpdater"/> — DDL يدويّ يُشغَّل عند كلّ إقلاع — بدل هجرة.

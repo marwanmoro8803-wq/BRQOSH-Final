@@ -39,7 +39,7 @@ public class GoodsReceiptCancellationService(BrqoshDbContext db)
 
             await new JournalPostingService(db).EnsurePeriodOpenAsync(companyId, cancellationDate);
 
-            // (CEEF-229 · م1-١٩) **يُعكَس قيدُ الاستحقاق** — وإلا بقي التزامُ «بضاعة مستلمة
+            // **يُعكَس قيدُ الاستحقاق** — وإلا بقي التزامُ «بضاعة مستلمة
             // غير مفوترة» خالداً على الميزانية عن بضاعةٍ أُعيدت إلى المورد.
             //
             // **ويُرسى بالمعرّف لا بالمصدر:** عكسُ القيد ينسخ `SourceDocument` نفسَه، وهذه
@@ -76,7 +76,7 @@ public class GoodsReceiptCancellationService(BrqoshDbContext db)
                 var inv = new InventoryService(db);
                 foreach (var movement in movements)
                 {
-                    // (CEEF-229 · م0-٣ج) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+                    // **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
                     //
                     // الحركةُ الصادرة عبر `PostDocumentMovementAsync` **تُنقص الرصيدَ ولا
                     // تمسّ طبقةً** — فالتكلفةُ مسؤوليةُ المستدعي بالتصميم، وهذه الخدمةُ

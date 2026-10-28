@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-230 · ط3-٣ج) ‏ربطُ صنفِ القائمة بصنفِ البيع.
+        /// ‏ربطُ صنفِ القائمة بصنفِ البيع.
         ///
         /// <para>‏<b>والصياغةُ يدويّةٌ بـ<c>IF NOT EXISTS</c> لا مُولَّدة</b>: المُرقِّعُ
         /// اليدويّ يضيف العمودَ نفسَه على القواعد القائمة، <b>و<c>AddColumn</c> المُولَّد

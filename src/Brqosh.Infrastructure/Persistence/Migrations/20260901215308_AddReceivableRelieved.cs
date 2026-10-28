@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٤) ما حُرِّر من ذمّة العميل بعملة الدفاتر.
+    /// ما حُرِّر من ذمّة العميل بعملة الدفاتر.
     ///
     /// <para><b>ولا تعبئةَ فيها عمداً</b>: <c>0</c> يعني «سندٌ سابقٌ لهذه الدفعة»، ويُقرأ
     /// <c>Amount</c> مكانَه في الدفتر المساعد — وهو الصوابُ لكلّ سندٍ قديم، إذ كان كلُّ

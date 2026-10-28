@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-229 · م1-١ب الشقّ الثاني) رمزُ سبب الإعفاء ونصُّه على سطور المستندات.
+    /// رمزُ سبب الإعفاء ونصُّه على سطور المستندات.
     ///
     /// <para><b>ولماذا SQL خامّ لا <c>AddColumn</c>:</b> <c>BrqoshSchemaUpdater</c> يُضيف أعمدةً
     /// قبل تشغيل الهجرات لإصلاح القواعد القديمة، فتصطدم الهجرةُ بعمودٍ موجودٍ وترمي

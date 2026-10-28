@@ -31,12 +31,12 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
                 throw new AccountingException("لا يصدر إشعار مدين إلا على فاتورة مرحّلة.");
             if (invoice.SupplierId != note.SupplierId)
                 throw new AccountingException("مورد الإشعار لا يطابق فاتورة المشتريات.");
-            // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏**الإشعارُ يعكس ضريبةَ المورّد** — وفاتورةُ الاحتساب العكسيّ أو التخليص لا ضريبةَ مورّدٍ
+            // ‏ ‏**الإشعارُ يعكس ضريبةَ المورّد** — وفاتورةُ الاحتساب العكسيّ أو التخليص لا ضريبةَ مورّدٍ
             // ‏عليها: إشعارٌ عنها يُنقص مدخلاتٍ بلا مخرجاتٍ مقابلة أو يُدائن الجماركَ بقيمة بضاعة. فتُلغى وتُعاد بقيمتها الصحيحة.
             if (invoice.VatTreatment != PurchaseVatTreatment.Domestic)
                 throw new AccountingException(
                     "لا يصدر إشعار مدين على فاتورة احتساب عكسي أو ضريبة استيراد — ألغِها وأعد إدخالها بالقيمة الصحيحة.");
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٧ · ‏`found#7`) ‏**وعملةُ الإشعار عملةُ فاتورته وسعرُها** — وإلّا قورنت قيمةٌ بالدولار بطبقاتٍ بالريال.
+            // ‏ ‏**وعملةُ الإشعار عملةُ فاتورته وسعرُها** — وإلّا قورنت قيمةٌ بالدولار بطبقاتٍ بالريال.
             if (note.CurrencyCode != invoice.CurrencyCode || note.ExchangeRate != invoice.ExchangeRate)
                 throw new AccountingException(
                     $"عملةُ الإشعار ({note.CurrencyCode} @ {note.ExchangeRate}) لا تطابق فاتورته ({invoice.CurrencyCode} @ {invoice.ExchangeRate}).");
@@ -53,7 +53,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
                 throw new AccountingException(
                     $"قيمة الإشعار {note.GrandTotal():N2} تتجاوز المتبقي من الفاتورة {remaining:N2}.");
 
-            // (جاهزيّةُ الإطلاق · ح-٣١) ‏**الرقمُ يُولَد قبل أن يُستعمل مفتاحاً.**
+            // ‏**الرقمُ يُولَد قبل أن يُستعمل مفتاحاً.**
             //
             // ‏كان توليدُه بعد حلقةِ استهلاكِ الطبقات، والحلقةُ تُمرّر
             // ‏`$"DebitNote:{note.NoteNumber}"` — **و`NoteNumber` عدمٌ وقتَها**، لا يُسنَد
@@ -75,10 +75,10 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
             var issueLines = new List<(long WarehouseId, long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
             var costing = new InventoryCostingService(db);
             var defaultWarehouse = await inv.GetDefaultWarehouseAsync(note.CompanyId);
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٥ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يخرج من الدفعات التي دخل بها.**
+            // ‏ ‏**المتتبَّعُ يخرج من الدفعات التي دخل بها.**
             // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ متتبَّعٌ إلى مورّده أبداً.
             var received = await ReceivedBatchesStillHeldAsync(invoice, products, token);
-            // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المرتجعُ يخرج من المستودع الذي دخلت إليه بضاعةُ الفاتورة** —
+            // ‏ ‏**المرتجعُ يخرج من المستودع الذي دخلت إليه بضاعةُ الفاتورة** —
             // ‏المتتبَّعُ من مستودع دفعته، وغيرُ المتتبَّع من أوّل مستودعٍ استلمه، وإلا الافتراضيّ. وتغييرُ الافتراضيّ بعد الشراء لا يُحوِّله.
             var receiptWarehouses = await ReceiptWarehousesAsync(invoice, token);
             // ‏(ح-١٠٧) ‏**وتحت FIFO تُستهلك طبقاتُ هذه الفاتورة وإذوناتِها أوّلاً** — وكانت أقدمُ طبقات المستودع، فيُقاس فرقُ سعرٍ لم يقع.
@@ -123,7 +123,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
                     a.CompanyId == note.CompanyId && a.Code == SaudiChartOfAccounts.SystemCodes.Inventory, token)
                 : null;
 
-            // (جاهزيّةُ الإطلاق · ح-١٠٧) ‏**المرتجعُ المُسعَّر دون التكلفة يحتاج حسابَ الفرق** — يُوفَّر
+            // ‏**المرتجعُ المُسعَّر دون التكلفة يحتاج حسابَ الفرق** — يُوفَّر
             // ‏عند الحاجة فقط كي لا يُنشأ لمن لا يستعمله.
             note.RecalculateTotals();
             var credited = invoice.VatDeductible ? note.Subtotal : note.GrandTotal();
@@ -133,7 +133,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
                 throw new AccountingException(
                     $"يُدائَن المرتجعُ بـ{credited:N2} وتكلفتُه {inventoryReduction:N2} — والفرقُ {inventoryReduction - credited:N2} "
                     + "خسارةٌ في «فروق أسعار المشتريات». راجِع السعر، أو أكِّد المرتجعَ دون التكلفة إن كان مقصوداً.");
-            // ‏(جاهزيّةُ الإطلاق · found#7 · قرارُ المالك 2026-10-18) ‏**والتأكيدُ بالخسارة للمدير** — وكان يملكه كلُّ مرحِّل، فالحارسُ
+            // ‏ ‏**والتأكيدُ بالخسارة للمدير** — وكان يملكه كلُّ مرحِّل، فالحارسُ
             // ‏الوحيدُ على خطأ كتابة السعر يُرفع بخانةٍ يضعها من أخطأ. ولا دورَ «مدير قسم» في المنتج: المديرُ هو مديرُ النظام.
             if (inventoryReduction > credited && SecurityContext.CurrentRole != UserRole.Administrator)
                 throw new AccountingException(
@@ -151,7 +151,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);
-            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
             // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
             // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
             // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -244,7 +244,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٥) <b>ما استُلم من كلّ دفعةٍ ولا يزال يصلح للإرجاع</b> — من سطور حركات الاستلام نفسِها
+    /// <b>ما استُلم من كلّ دفعةٍ ولا يزال يصلح للإرجاع</b> — من سطور حركات الاستلام نفسِها
     /// (إذونُ استلام أمر الشراء الذي تُفوتَر به الفاتورة، وإدخالُ الفاتورة نفسِها)، <b>بترتيب الاستلام</b>، ناقصاً ما أرجعته
     /// الإشعاراتُ المرحَّلة سلفاً على أمر الشراء نفسِه (فالإذنُ يخدم فواتيرَ عدّة)، <b>ثمّ مقيَّداً بما بقي ماديّاً</b> من
     /// الدفعة في المستودع الذي يخرج منه المرتجع — <b>فبعضُها قد بيع</b>، وليس كالمرتجع من العميل الذي يعود فيه ما خرج.
@@ -316,7 +316,7 @@ public class DebitNotePostingService(BrqoshDbContext db) : Brqosh.Application.Ac
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٥) <b>يُقسّم كمّيةَ المرتجع على الدفعات المستلَمة</b> بترتيب الاستلام، وينقص ما خرج منها فلا
+    /// <b>يُقسّم كمّيةَ المرتجع على الدفعات المستلَمة</b> بترتيب الاستلام، وينقص ما خرج منها فلا
     /// يخرج من دفعةٍ أكثرُ ممّا بقي فيها ولو تكرّر الصنفُ في الإشعار. <b>والدفعةُ التي يسمّيها السطرُ يخرج منها وحدَها.</b>
     /// <b>وما استُلم قبل أن يُتتبَّع الصنفُ لا تُعرف دفعتُه — فيُرفض باسمه</b> ولا يُخمَّن. وما لا تغطّيه الدفعاتُ الباقيةُ
     /// يُرفض باسمه كذلك.

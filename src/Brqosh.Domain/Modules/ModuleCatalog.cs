@@ -11,7 +11,7 @@ public static class ModuleCatalog
         {
             [ModuleKey.GeneralLedger] = [],
             [ModuleKey.Sales] = [ModuleKey.GeneralLedger],
-            // ‏(جاهزيّةُ الإطلاق · ح-١١٩) ‏**والمشترياتُ لا تجرّ المخزون** — الخدماتُ والمصروفاتُ تُشترى بمورّدٍ وفاتورةٍ
+            // ‏ ‏**والمشترياتُ لا تجرّ المخزون** — الخدماتُ والمصروفاتُ تُشترى بمورّدٍ وفاتورةٍ
             // ‏وضريبةِ مدخلاتٍ بلا مستودع (سطرُ الفاتورة بلا صنفٍ يُرحَّل إلى المشتريات غير المخزنيّة). ومن يملك بضاعةً
             // ‏يُعلن المخزونَ في ملفّه، والهويّةُ «من يملك مخزوناً يملك مشتريات» تبقى محروسة.
             [ModuleKey.Purchasing] = [ModuleKey.GeneralLedger],
@@ -26,7 +26,7 @@ public static class ModuleCatalog
             [ModuleKey.ProjectsConstruction] = [ModuleKey.GeneralLedger, ModuleKey.Purchasing, ModuleKey.Treasury],
             [ModuleKey.Crm] = [ModuleKey.GeneralLedger, ModuleKey.Sales],
 
-            // (CEEF-230 · ط6-٤) ‏والقطاعاتُ الأربعة كلُّها تلزمها **المبيعات**: عقدُ الإيجار
+            // ‏والقطاعاتُ الأربعة كلُّها تلزمها **المبيعات**: عقدُ الإيجار
             // ‏والزيارةُ وحسابُ النزيل والبوليصة **تنتهي كلُّها إلى فاتورة**. ومَن ملك القطاعَ
             // ‏بلا مبيعاتٍ ملك جداولَ لا تُفوتِر.
             [ModuleKey.RealEstate] = [ModuleKey.GeneralLedger, ModuleKey.Sales],
@@ -41,7 +41,7 @@ public static class ModuleCatalog
     private static readonly IReadOnlyDictionary<BusinessProfile, ModuleKey[]> ProfileModules =
         new Dictionary<BusinessProfile, ModuleKey[]>
         {
-            // (CEEF-230 · ط0-١) ‏أُضيفت Zatca — **مَن يبيع في السعودية يُفوتِر إلكترونياً**.
+            // ‏أُضيفت Zatca — **مَن يبيع في السعودية يُفوتِر إلكترونياً**.
             //
             // ‏الملفُّ لا يُعلن `Sales` صراحةً، **لكنّه يُحلّ إليها بالتبعية** — فمنشأةُ
             // ‏«محاسبة عامة» تُصدر فواتيرَ مبيعات. وبلا `Zatca` تُصدَر **خارج نظام الهيئة**:
@@ -59,7 +59,7 @@ public static class ModuleCatalog
                 [ModuleKey.GeneralLedger, ModuleKey.ProjectsConstruction, ModuleKey.Crm, ModuleKey.Purchasing, ModuleKey.Inventory, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
             [BusinessProfile.Manufacturing] =
                 [ModuleKey.GeneralLedger, ModuleKey.Manufacturing, ModuleKey.Inventory, ModuleKey.Purchasing, ModuleKey.Crm, ModuleKey.Treasury, ModuleKey.Reports, ModuleKey.Zatca, ModuleKey.FixedAssets, ModuleKey.Payroll],
-            // (CEEF-229 · م2-١٩) أُضيفت Purchasing — كانت غائبة عن التجزئة والضيافة وحدهما
+            // أُضيفت Purchasing — كانت غائبة عن التجزئة والضيافة وحدهما
             // من بين كل الأنظمة التي تملك مخزوناً. ومتجرٌ يشتري بضاعته كما يشتريها مصنع:
             // بغيابها تختفي شاشات الموردين وأوامر الشراء وفواتير المشتريات من القائمة، فلا
             // تدخل بضاعةٌ إلى المستودع أصلاً (فيرفض أوّلُ بيعٍ بحارس «الرصيد غير كافٍ»)،
@@ -100,7 +100,7 @@ public static class ModuleCatalog
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٦٤ · security-licensing-tenancy#2) <b>وحداتُ نظام العمل التي يمنحها الترخيص.</b>
+    /// ‏ <b>وحداتُ نظام العمل التي يمنحها الترخيص.</b>
     ///
     /// <para>‏<paramref name="licensed"/> الفارغُ (<c>null</c>) = ترخيصٌ لا يحصر — ويبقى <paramref name="active"/> كما هو.
     /// ‏وإلّا بقي من <paramref name="active"/> ما منحه الترخيصُ <b>وتبعيّاتُه كلُّها باقية</b>: فنقاطُ البيع بلا مخزونٍ

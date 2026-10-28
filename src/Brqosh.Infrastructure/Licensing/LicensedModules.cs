@@ -3,7 +3,7 @@ using Brqosh.Domain.Modules;
 namespace Brqosh.Infrastructure.Licensing;
 
 /// <summary>
-/// ‏(جاهزيّةُ الإطلاق · ح-١٦٤ · security-licensing-tenancy#2) <b>الوحداتُ التي يمنحها ترخيصٌ موقَّع — من حقل <c>Features</c>.</b>
+/// ‏ <b>الوحداتُ التي يمنحها ترخيصٌ موقَّع — من حقل <c>Features</c>.</b>
 ///
 /// <para>‏<b>ما كان:</b> الحمولةُ تحمل <c>Tier</c> و<c>Features</c> تحت التوقيع، <b>ولا يقرؤهما أحد</b> — فأيُّ ترخيصٍ يفتح كلَّ وحدة.</para>
 ///

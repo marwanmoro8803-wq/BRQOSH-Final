@@ -14,13 +14,13 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
     public async Task<WorkOrder> ReleaseAsync(long companyId, long workOrderId, CancellationToken ct = default) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            // (CEEF-229 · م2-١) جارتاها في هذا الملف محروستان (CompleteAsync بـ EnsureCanPost
+            // جارتاها في هذا الملف محروستان (CompleteAsync بـ EnsureCanPost
             // و CancelAsync بـ EnsureCanCancelOrReverse) وهي وحدها سائبة — رغم أنها **تستهلك
             // رقماً من متسلسلة المستندات**، وفجوةُ الترقيم أثرٌ لا يُردم.
             SecurityContext.EnsureCanPost();
 
             var order = await db.WorkOrders.SingleAsync(w => w.CompanyId == companyId && w.Id == workOrderId, token);
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏**والوصفةُ تُجمَّد عند الإصدار** — فتُقرأ القائمةُ قبل حجز الرقم،
+            // ‏ ‏**والوصفةُ تُجمَّد عند الإصدار** — فتُقرأ القائمةُ قبل حجز الرقم،
             // ‏وقائمةٌ لا تُوجد تُسقط الإصدارَ قبل أن يُستهلك رقمٌ من المتسلسلة.
             var bom = await db.BillsOfMaterials.SingleAsync(b => b.CompanyId == companyId && b.Id == order.BomId, token);
             var number = await DocumentNumberGenerator.NextAsync(db, 
@@ -32,7 +32,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
         }, ct);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٣٤) <b>الإكمالُ يُؤرّخ يومَ وقوعه لا يومَ
+    /// <b>الإكمالُ يُؤرّخ يومَ وقوعه لا يومَ
     /// مسودّة الأمر.</b>
     ///
     /// <para>كانت <b>سبعةُ مواضعَ</b> تأخذ <c>order.OrderDate</c>: حركتا المخزون،
@@ -49,11 +49,11 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
     /// <b>فهذا نقلُ نمطٍ قائمٍ لا اختراع</b> — واختيارُ الوسيط الاختياريّ
     /// <b>يُبقي كلّ موضعِ نداءٍ قائماً ويُصحّح سلوكَه معاً</b>.</para>
     /// </summary>
-    /// <param name="outputBatchNumber">(جاهزيّةُ الإطلاق · ح-١٠١ · <c>manufacturing#6</c>) دفعةُ الإنتاج — <b>مطلوبةٌ لمنتجٍ تامٍّ
+    /// <param name="outputBatchNumber"> دفعةُ الإنتاج — <b>مطلوبةٌ لمنتجٍ تامٍّ
     /// متتبَّع</b> ومرفوضةٌ لغيره.</param>
     /// <param name="outputExpiry">صلاحيةُ دفعة الإنتاج إن كانت لها صلاحية.</param>
     /// <param name="outputSerials">
-    /// (جاهزيّةُ الإطلاق · ح-١٥٩ · <c>manufacturing#6</c>) <b>أرقامُ التامّ المتتبَّع تسلسليّاً</b> — رقمٌ لكلّ وحدةٍ منتَجة، بعددها
+    /// <b>أرقامُ التامّ المتتبَّع تسلسليّاً</b> — رقمٌ لكلّ وحدةٍ منتَجة، بعددها
     /// ومختلفةٌ لا تتكرّر؛ فيدخل كلُّ رقمٍ سطراً بوحدةٍ واحدة. وكان التامُّ التسلسليُّ يُكمَل وحدةً في المرّة.
     /// </param>
     public async Task<WorkOrder> CompleteAsync(long companyId, long workOrderId, decimal producedQuantity,
@@ -70,7 +70,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
             var completedOn = completionDate ?? DateOnly.FromDateTime(DateTime.Today);
             var bom = await db.BillsOfMaterials.SingleAsync(b => b.Id == order.BomId, token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٧ · ‏`manufacturing#5`) ‏**الوصفةُ وصفةُ الأمر يومَ صدوره — لا وصفةُ القائمة اليوم.**
+            // ‏ ‏**الوصفةُ وصفةُ الأمر يومَ صدوره — لا وصفةُ القائمة اليوم.**
             //
             // ‏كان هذا يقرأ `bom.Lines` و`bom.LabourCostPerUnit` و`bom.OverheadRatePercent` **وقتَ الإكمال**؛
             // ‏فقائمةٌ تُعدَّل بين الإصدار والإكمال **تُغيّر ما يُصرَف من المخزون وبكم يدخل التامُّ** لأمرٍ لم
@@ -83,7 +83,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
                     $"أمر الإنتاج {order.OrderNumber} صادرٌ بلا وصفةٍ مجمَّدة — ألغِه وأصدره من جديد.");
 
             var inv = new InventoryService(db);
-            // ‏(جاهزيّةُ الإطلاق · ح-٩٧ · ‏`manufacturing#7`) ‏**مستودعا الأمر — لا الافتراضيُّ أبداً.**
+            // ‏ ‏**مستودعا الأمر — لا الافتراضيُّ أبداً.**
             //
             // ‏كان هذا `GetDefaultWarehouseAsync` للصرف والاستلام معاً؛ فمصنعٌ يحفظ خاماته في غير الافتراضيّ **لا يُكمل أمراً**
             // ‏(الاستهلاكُ يطلب طبقاتِ الخامة في الافتراضيّ فلا يجدها)، والتامُّ يدخل الافتراضيَّ ولو كان له مستودع.
@@ -92,7 +92,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
             var materialsWarehouseId = await WarehouseForAsync(inv, companyId, order.MaterialsWarehouseId, "مستودع الموادّ", token);
             var outputWarehouseId = await WarehouseForAsync(inv, companyId, order.OutputWarehouseId, "مستودع الإنتاج", token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠١ · ‏`manufacturing#6`) ‏**التامُّ المتتبَّعُ يدخل بدفعته — ويُسأل عنها قبل أيّ صرف.**
+            // ‏ ‏**التامُّ المتتبَّعُ يدخل بدفعته — ويُسأل عنها قبل أيّ صرف.**
             // ‏وكان كلُّ أمرٍ لصنفٍ متتبَّعٍ — خامةً أو تامّاً — يُرفض عند المَخنَق «لا يحمل هذا السطرُ هويّةً»: فلا يمرّ أمرٌ واحد.
             var finished = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == bom.FinishedProductId, token);
             // ‏والفارغُ والمسافاتُ لا دفعة؛ والتشذيبُ في `StockMovement.AddLine` نفسِه (تشذيبٌ ثانٍ هنا لم يعضّ فأُزيل).
@@ -105,7 +105,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
                     $"المنتج التامّ «{finished.NameAr}» يُتتبَّع بالدفعة — أدخِل رقمَ دفعة الإنتاج لإكمال الأمر {order.OrderNumber}.");
             // ‏ودفعةٌ لتامٍّ لا يُتتبَّع يرفضها المَخنَقُ نفسُه باسمه (`ApplyBatchDeltaAsync`) — فلا حارسَ ثانٍ هنا.
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٤٧ · ‏`manufacturing#4`) ‏**أمرٌ صُرف له فعلاً يُكمَل بما صُرف — لا بالوصفة.**
+            // ‏ ‏**أمرٌ صُرف له فعلاً يُكمَل بما صُرف — لا بالوصفة.**
             // ‏فالموادُّ في الإنتاج تحت التشغيل منذ صرفها، ولا يُخصم من المخزون شيءٌ ثانٍ عند الإكمال؛ **والفرقُ عن الوصفة
             // ‏(هدرٌ أو وفر) يظهر في تكلفة الوحدة**. ‏وأمرٌ بلا صرفٍ يُخصم بالوصفة كما كان حرفاً.
             decimal materialCost;
@@ -125,7 +125,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
                     materialsWarehouseId, completedOn, token);
             }
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٣) ‏**وتكاليفُ التحويل تدخل التكلفة — وكانت الموادُّ وحدَها.**
+            // ‏ ‏**وتكاليفُ التحويل تدخل التكلفة — وكانت الموادُّ وحدَها.**
             //
             // ‏معيارُ المخزون يقضي أن تشمل تكلفةُ المنتَج التامّ **الأجرَ المباشرَ ونصيباً
             // ‏منهجيّاً من التكاليف الصناعيّة**. وبدونهما يدخل التامُّ المخزونَ بأقلَّ من
@@ -143,7 +143,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
             var conversionCost = labourCost + overheadCost;
             var totalProductionCost = materialCost + conversionCost;
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٤٩ · ‏`manufacturing#4`) ‏**المنتجُ الثانويّ يدخل المخزونَ بقيمته المعلنة، وتُطرح من تكلفة الرئيسيّ**
+            // ‏ ‏**المنتجُ الثانويّ يدخل المخزونَ بقيمته المعلنة، وتُطرح من تكلفة الرئيسيّ**
             // ‏(طريقةُ صافي القيمة القابلة للتحقّق للمنتج الثانويّ) — فلا تُحمَّل نخالةُ الطحين أو قصاصةُ الحديد على وحدة الرئيسيّ،
             // ‏ولا يدخل المخزونَ صنفٌ بلا قيمة. ‏والمجموعُ لا يتغيّر: ما يخرج من WIP يدخل المخزونَ كلُّه.
             var byProductLines = await ByProductLinesAsync(companyId, bom.FinishedProductId, byProducts, token);
@@ -170,7 +170,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
             var posting = new JournalPostingService(db);
             await posting.EnsurePeriodOpenAsync(companyId, completedOn);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٩٨ · ‏`manufacturing#8`) ‏**تحت التشغيل حسابُ المصنع — لا أصلُ عقود المقاولات (1113).**
+            // ‏ ‏**تحت التشغيل حسابُ المصنع — لا أصلُ عقود المقاولات (1113).**
             // ‏ويُنشأ من القالب لمنشأةٍ قائمةٍ لا تحمله، **وحسابٌ بالرمز نفسِه ليس أصلاً قابلاً للترحيل يُرفض باسمه** — فرمزٌ
             // ‏أنشأه المالكُ لغرضٍ آخر لا يُحمَّل بإنتاج المصنع صامتاً.
             var wip = await SystemAccountProvisioning.EnsureAsync(
@@ -248,7 +248,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٤٧ · <c>manufacturing#4</c>) <b>صرفُ موادّ فعليٌّ للأمر قبل إكماله</b> — بالكميّة التي خرجت.
+    /// <b>صرفُ موادّ فعليٌّ للأمر قبل إكماله</b> — بالكميّة التي خرجت.
     /// </summary>
     /// <remarks>
     /// يُخصم من مستودع موادّ الأمر بتكلفة المخزون، ويُدان الإنتاجُ تحت التشغيل (1119) ويُدان المخزون —
@@ -383,7 +383,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
 
         foreach (var (productId, qty) in wanted)
         {
-            // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**مفتاحُ الاستهلاك هو مفتاحُ الحركة بعينه** (`WorkOrder:{Id}`) — فيُرمّم الإلغاءُ ما استُهلك.
+            // ‏**مفتاحُ الاستهلاك هو مفتاحُ الحركة بعينه** (`WorkOrder:{Id}`) — فيُرمّم الإلغاءُ ما استُهلك.
             var (totalCost, componentUnitCost) = await costing.ConsumeForIssueAsync(
                 companyId, productId, materialsWarehouseId, qty, $"WorkOrder:{order.Id}", token);
             materialCost += totalCost;
@@ -441,7 +441,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠١) <b>هل منتجُ الأمر التامُّ متتبَّع</b> — فتسأل الشاشةُ عن دفعة الإنتاج قبل الإكمال.
+    /// <b>هل منتجُ الأمر التامُّ متتبَّع</b> — فتسأل الشاشةُ عن دفعة الإنتاج قبل الإكمال.
     /// </summary>
     public async Task<bool> OutputIsTrackedAsync(long companyId, long workOrderId, CancellationToken ct = default)
     {
@@ -527,7 +527,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
         if (movements.Count == 0)
             return;
 
-        // (جاهزيّةُ الإطلاق · ح-٣٠) ‏**يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+        // ‏**يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
         //
         // ‏كان الإلغاءُ يُرحّل حركتين مقابلتين: وارِداً مقابلَ صرف المواد، وصادراً مقابلَ
         // ‏استلام التامّ. **والرصيدُ يعود صحيحاً — والتكلفةُ لا تعود.**
@@ -541,7 +541,7 @@ public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufactu
         //
         // ‏**والمسارُ الصحيحُ قائمٌ وموثَّق**: `ReverseDocumentMovementAsync` — يُرمّم
         // ‏المستهلَكَ للصادر، ويُزيل الطبقةَ التي أنشأها المستندُ بعينها للوارد
-        // ‏(‏CEEF-229 · م0-٣ و م0-٣ب). **وخمسُ خدماتِ إلغاءٍ تستعمله، وهذه لم تكن منها** —
+        // ‏ . **وخمسُ خدماتِ إلغاءٍ تستعمله، وهذه لم تكن منها** —
         // ‏وتعليقُ `GoodsReceiptCancellationService` يقول نصّاً ما كان يقع هنا:
         // ‏«الطبقات 250 والرصيد 200».
         var inv = new InventoryService(db);

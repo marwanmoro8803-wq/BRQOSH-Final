@@ -46,7 +46,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
 
             if (movement.IsInbound)
             {
-                // (CEEF-229 · م0-٥ / I-NEW-2) ‏**المتوسطُ يُحسب لكلّ صنفٍ مرّةً، والطبقةُ لكلّ سطر.**
+                // ‏**المتوسطُ يُحسب لكلّ صنفٍ مرّةً، والطبقةُ لكلّ سطر.**
                 //
                 // ‏كان النداءُ لكلّ سطرٍ على حدة، وكلٌّ منها يقرأ الرصيدَ ليبني المتوسط —
                 // ‏**والرصيدُ لا يتقدّم**، لأنّ `ApplyMovementBalancesAsync` أدناه تُطبّق
@@ -91,7 +91,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
                 "SM", movement.MovementDate, movement.CompanyId,
                 db.StockMovements.Local.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber));
 
-            // (CEEF-231 · ط4-٤) ‏**والتحويلُ ينقل طبقاتِ التكلفة معه.**
+            // ‏**والتحويلُ ينقل طبقاتِ التكلفة معه.**
             //
             // ‏**ما كان:** التحويلُ يُحرّك الكمّياتِ **ولا يمسّ الطبقاتِ البتّة**. فمستودعٌ
             // ‏يُفرَّغ عن آخره تبقى طبقاتُه فيه كاملةً، **والمستقبِلُ يمتلئ بلا طبقةٍ واحدة**.
@@ -139,7 +139,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
                 movement.LinkJournalEntry(entry.Id);
             }
 
-            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
             // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
             // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
             // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -165,7 +165,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
 
     private async Task<JournalEntry?> BuildJournalEntryAsync(StockMovement movement, Account inventory, InventoryService inv)
     {
-        // (CEEF-229 · م2-٢١) حركةٌ قيمتُها صفر **لا قيدَ لها** — لا قيدٌ بأصفار.
+        // حركةٌ قيمتُها صفر **لا قيدَ لها** — لا قيدٌ بأصفار.
         //
         // كان القيد يُبنى دائماً، فيمرّ على `AddLine(inventory, 0m, 0m)` ويرمي «سطر القيد يجب
         // أن يحمل مبلغاً مديناً أو دائناً». وذلك يقع في **اليوم الأول** من حياة كل منشأة:
@@ -192,7 +192,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
     {
         if (movement.TotalValue == 0m) return null;
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٣٥) **بعد الميزان الافتتاحيّ تُدائَن 3107 لا الأرباحُ المبقاة**: الميزانُ أقام حقوقَ الملكية
+        // ‏ **بعد الميزان الافتتاحيّ تُدائَن 3107 لا الأرباحُ المبقاة**: الميزانُ أقام حقوقَ الملكية
         // ‏كاملةً، ورصيدُ المخزون فيه وقف في 3107 حتى تُفصّله الحركاتُ صنفاً صنفاً — فحركةٌ افتتاحيّةٌ بعده تفصيلٌ لرقمه لا ملكيّةٌ
         // ‏جديدة، ومُدائنةُ 3103 تُضاعف الملكيّةَ بقيمة المخزون وتُبقي 3107 مديناً أبداً. وقبل الميزان (أو بلا ميزان) كما كانت.
         var afterTheOpeningTrialBalance = await db.JournalEntries
@@ -215,7 +215,7 @@ public class StockMovementPostingService(BrqoshDbContext db) : Brqosh.Applicatio
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٢٣) <b>فائضُ الجرد ربحُ الفترة — لا إضافةٌ إلى حقوق الملكية.</b>
+    /// <b>فائضُ الجرد ربحُ الفترة — لا إضافةٌ إلى حقوق الملكية.</b>
     ///
     /// <para><b>وكان يُدائن الأرباحَ المبقاة مباشرةً</b>، <b>فلا يمرّ بقائمة الدخل أبداً</b>.
     /// والنقصُ يُقيَّد مصروفاً على <c>5215</c> — <b>فالمعالجتان غيرُ متماثلتين</b>:</para>

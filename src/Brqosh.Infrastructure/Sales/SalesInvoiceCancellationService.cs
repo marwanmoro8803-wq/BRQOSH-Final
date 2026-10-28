@@ -60,7 +60,7 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
             await new JournalReversalService(db).ReverseAsync(
                 companyId, entryId, cancellationDate, username, fromSourceDocument: true, token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٩) ‏**وفاتورةُ إيجارٍ مؤجَّلٍ يُعكس تأجيلُها واعترافاتُها معها** — وإلّا بقي المقبوضُ
+            // ‏ ‏**وفاتورةُ إيجارٍ مؤجَّلٍ يُعكس تأجيلُها واعترافاتُها معها** — وإلّا بقي المقبوضُ
             // ‏مقدّماً سالباً والإيرادُ يُكتسب عن فاتورةٍ لم تعد قائمة.
             await new LeaseRentRecognition(db).WithdrawForCancelledInvoiceAsync(
                 companyId, invoiceId, cancellationDate, username, token);
@@ -70,7 +70,7 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
                 .Where(m => m.CompanyId == companyId && m.SourceDocument == sourceDoc && m.Status == StockMovementStatus.Posted)
                 .ToListAsync(token);
 
-            // (CEEF-229 · م0-٣ / I-2) **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
+            // **يُعكَس الأصلُ — لا تُرحَّل حركةٌ مضادّة.**
             //
             // كان يُرحَّل `SalesReturn` جديدٌ **بتاريخ الإلغاء**، فتُنشأ طبقةُ تكلفةٍ في
             // **آخر طابور FIFO** وتبقى الطبقةُ الأصلية عند صفر. والكميةُ تعود صحيحةً
@@ -126,7 +126,7 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
                 companyId, "SalesInvoice", invoice.Id, invoice.InvoiceNumber ?? invoice.Id.ToString(),
                 "إلغاء فاتورة مبيعات"), token);
 
-            // (CEEF-210) التوليد داخل المعاملة (يكتب سجلات يجب أن ترتدّ مع الإلغاء)،
+            // التوليد داخل المعاملة (يكتب سجلات يجب أن ترتدّ مع الإلغاء)،
             // والإرسال بعدها. كان الإرسال هنا أيضاً — نداء شبكة داخل معاملة يطيل أقفال
             // القاعدة، وفشلُه يُفشل الإلغاء المحاسبي كله، وقد يبلغ إشعارُ الإلغاء الهيئةَ
             // ثم يرتدّ القيد محلياً فتتباعد سجلاتها عن الدفاتر. وهي سياسة المشروع نفسها

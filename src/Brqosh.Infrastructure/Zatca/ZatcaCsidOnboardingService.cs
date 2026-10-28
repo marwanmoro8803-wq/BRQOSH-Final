@@ -30,7 +30,7 @@ public class ZatcaCsidOnboardingService
         HandlerOverride is null ? Http : new HttpClient(HandlerOverride, disposeHandler: false) { Timeout = Http.Timeout };
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٣٦) <b>واجهاتُ الهيئة كلُّها تشترط <c>Accept-Version</c> — والتسجيلُ كان بلاها.</b>
+    /// <b>واجهاتُ الهيئة كلُّها تشترط <c>Accept-Version</c> — والتسجيلُ كان بلاها.</b>
     ///
     /// <para>أُضيفت الترويسةُ إلى الإرسال في CEEF-206 بعد أن رُفض الطلبُ رغم صحّة المسار والحمولة، <b>وبقي طلبا الشهادة
     /// (الامتثال والإنتاج) بلاها</b> — فالتسجيلُ الحيُّ يُرفض قبل أن يبلغ الإرسال. الترويسةُ تُبنى هنا مرّةً للطلبين.</para>
@@ -54,7 +54,7 @@ public class ZatcaCsidOnboardingService
     private const string TemplateSimulation = "PREZATCA-Code-Signing";
 
     /// <summary>
-    /// (CEEF-237 · ز-١) <b>‏CSR بامتدادَي الهيئة الإلزاميّين — وبدونهما يُرفض الطلبُ من أوّل خطوة.</b>
+    /// <b>‏CSR بامتدادَي الهيئة الإلزاميّين — وبدونهما يُرفض الطلبُ من أوّل خطوة.</b>
     ///
     /// <para>ما كان: الـCSR يحمل <c>KeyUsage</c> وحدَه. <b>ولا اسمَ بديلاً (SAN) ولا امتدادَ قالبِ
     /// شهادة</b> — وهما ما تقرأ منهما الهيئةُ الرقمَ الضريبيَّ ونوعَ الفاتورة وهويّةَ وحدة
@@ -204,7 +204,7 @@ public class ZatcaCsidOnboardingService
     private const string RenewingKeyFile = "private.renewing.key";
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٣٧ · <c>tax-zatca#10</c>) <b>تجديدُ شهادة الإنتاج قبل انتهائها — دون إعادة التسجيل من أوّله.</b>
+    /// <b>تجديدُ شهادة الإنتاج قبل انتهائها — دون إعادة التسجيل من أوّله.</b>
     ///
     /// <para>‏<c>PATCH /production/csids</c> بـCSR جديد ورمزِ OTP، ويُصادَق بالشهادة الحاليّة. <b>والمفتاحُ الجديدُ لا يحلّ
     /// محلَّ القديم إلّا بعد قبول الهيئة</b>: يُولَّد بـ<c>forRenewal</c> في ملفٍّ جانبيّ، فإن رُفض التجديدُ أو انقطع بقيت
@@ -280,7 +280,7 @@ public class ZatcaCsidOnboardingService
         new("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{user}:{password}")));
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٥) <b>جذرُ البيانات واحد — وكان هذا الموضعُ يبنيه بيده.</b>
+    /// <b>جذرُ البيانات واحد — وكان هذا الموضعُ يبنيه بيده.</b>
     ///
     /// <para>كان يركّب <c>%APPDATA%\BRQOSH</c> حرفيّاً، <b>فلا يرى <c>BRQOSH_DATA_ROOT</c></b> —
     /// بينما أرشيفُ فواتير XML يستعمل <see cref="Persistence.BrqoshDataRoot"/>. <b>فمفتاحُ

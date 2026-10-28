@@ -27,7 +27,7 @@ public static class ZatcaSettingsSecrets
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>tax-zatca#16</c>) <b>هل الختمُ مسجَّلٌ على جهازٍ غيرِ هذا؟</b> — فالفواتيرُ الإلكترونيّةُ تُصدَر منه وحدَه،
+    /// <b>هل الختمُ مسجَّلٌ على جهازٍ غيرِ هذا؟</b> — فالفواتيرُ الإلكترونيّةُ تُصدَر منه وحدَه،
     /// ومعالجُ الشهادة هنا ينقل الختمَ إلى هذا الجهاز فيتوقّف ذاك.
     /// </summary>
     public static bool IsSignedOnAnotherMachine(ZatcaSettings settings) =>

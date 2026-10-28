@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط3-١) العقاراتُ والوحداتُ وعقودُ الإيجار.
+    /// العقاراتُ والوحداتُ وعقودُ الإيجار.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يُنشئ الجداولَ قبل تشغيل الهجرات.</para>
     ///

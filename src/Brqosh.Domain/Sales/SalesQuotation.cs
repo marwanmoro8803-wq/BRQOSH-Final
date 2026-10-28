@@ -79,7 +79,7 @@ public class SalesQuotation : ILineDocumentTotals
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١١٥ · ‏`order-to-cash-procure-to-pay-inventory#8`) ‏**القبولُ والرفضُ من «مُرسَل» وحده** —
+    /// ‏ ‏**القبولُ والرفضُ من «مُرسَل» وحده** —
     /// ‏فالمرفوضُ لا يُقبَل، والمقبولُ لا يُرفَض، والمسودّةُ لم تصل العميلَ بعد.
     /// </summary>
     public void Accept()

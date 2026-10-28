@@ -72,7 +72,7 @@ public class PaymentVoucher : IBranchScoped
     }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٧) مركزُ تكلفة السند — يُختم على سطور المصروف في قيده.
+    /// مركزُ تكلفة السند — يُختم على سطور المصروف في قيده.
     /// </summary>
     public long? CostCenterId { get; private set; }
 
@@ -113,7 +113,7 @@ public class PaymentVoucher : IBranchScoped
 
     /// <summary>الترحيل: مدين الموردين، دائن الصندوق/البنك.</summary>
     /// <summary>
-    /// (CEEF-230 · ط4-٥) عملةُ السند — و<c>SAR</c> هي الأصل، و<see cref="Amount"/> بها.
+    /// عملةُ السند — و<c>SAR</c> هي الأصل، و<see cref="Amount"/> بها.
     /// </summary>
     public string CurrencyCode { get; private set; } = "SAR";
 
@@ -171,7 +171,7 @@ public class PaymentVoucher : IBranchScoped
     /// حرفاً يقلب الربحَ خسارةً في كلّ سدادٍ بالعملة.</b></para>
     /// </param>
     /// <summary>
-    /// (CEEF-231 · ط1-٢ج) <b>خصمُ السداد المبكر المكتسَب — والحسابُ 5214 كان بلا كاتب.</b>
+    /// <b>خصمُ السداد المبكر المكتسَب — والحسابُ 5214 كان بلا كاتب.</b>
     /// </summary>
     /// <remarks>
     /// <para><b>والإشارةُ معكوسةٌ عن جانب العملاء</b>: هناك نُعطي خصماً فيُقيَّد <b>مديناً</b>
@@ -212,7 +212,7 @@ public class PaymentVoucher : IBranchScoped
             $"سند صرف رقم {voucherNumber} — {Description}",
             sourceDocument: $"PaymentVoucher:{voucherNumber}");
 
-        // (CEEF-231 · ط1-٢ج) ‏**والخصمُ يُطفئ من الذمّة ما لم يخرج من الصندوق.**
+        // ‏**والخصمُ يُطفئ من الذمّة ما لم يخرج من الصندوق.**
         //
         // ‏فالمُحرَّرُ من الذمّة = النقدُ + الخصم، **والخصمُ دائنٌ على `5214`** — يُنقص
         // ‏المصروفَ لا يزيده. وبغيره تبقى قيمتُه ذمّةً على المنشأة تُدفع مرّةً أخرى.

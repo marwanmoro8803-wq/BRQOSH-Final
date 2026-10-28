@@ -27,7 +27,7 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
             return;
         }
 
-        // SQLite = تطوير/اختبار فقط، والهجرات مولَّدة لـ PostgreSQL حصراً (ح-2، CEEF-201).
+        // SQLite = تطوير/اختبار فقط، والهجرات مولَّدة لـ PostgreSQL حصراً .
         // تهيئته من النموذج مباشرة بدل تطبيق DDL بأنواع مزوّد آخر.
         if (db.Database.IsSqlite())
         {
@@ -42,7 +42,7 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
             return;
         }
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٥١ · ‏`security-licensing-tenancy#5`) ‏**دورُ التطبيق لا يُعرّف المخطّط** — فلا يُرقَّع ولا يُهاجَر بها؛
+        // ‏ ‏**دورُ التطبيق لا يُعرّف المخطّط** — فلا يُرقَّع ولا يُهاجَر بها؛
         // ‏المخطّطُ الحاليُّ يُقبَل، والناقصُ أو المتأخّرُ يُرفض باسمه: الترقيةُ عملُ المالك.
         if (!await Security.LeastPrivilegeDatabaseRole.CanChangeSchemaAsync(db, ct))
         {
@@ -135,7 +135,7 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
             }
             catch (Exception ex) when (IsIgnorableSchemaConflict(ex) || ex is InvalidOperationException)
             {
-                // ‏(CEEF-237 · ت-١١) **الابتلاعُ يُسجَّل — وكان صامتاً تماماً.**
+                // ‏ **الابتلاعُ يُسجَّل — وكان صامتاً تماماً.**
                 //
                 // ‏سقوطُ `MigrateAsync` هنا يعني أنّ هجرةً لم تُطبَّق ولم يُكتب صفُّ تاريخها،
                 // ‏**فتُعاد المحاولةُ عند كلّ إقلاعٍ إلى الأبد**، ولا تُطبَّق أيُّ هجرةٍ بعدها.
@@ -151,7 +151,7 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-٥١ · <c>data-upgrade-performance#7</c>) <b>محطّةٌ بإصدارٍ أقدمَ لا تعمل على
+    /// ‏ <b>محطّةٌ بإصدارٍ أقدمَ لا تعمل على
     /// قاعدةٍ رقّاها إصدارٌ أحدث.</b>
     ///
     /// <para>‏المحطّاتُ تتشارك قاعدةً واحدة، <b>و<c>MigrateAsync</c> يتجاهل هجرةً مسجَّلةً لا يعرفها</b> —

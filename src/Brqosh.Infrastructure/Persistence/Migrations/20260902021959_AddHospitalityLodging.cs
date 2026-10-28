@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط3-٣ب) الغرفُ والحجوزُ وحساباتُ النزلاء.
+    /// الغرفُ والحجوزُ وحساباتُ النزلاء.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يُنشئ الجداولَ قبل تشغيل الهجرات.</para>
     ///

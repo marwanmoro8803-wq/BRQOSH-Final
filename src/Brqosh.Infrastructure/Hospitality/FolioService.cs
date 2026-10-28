@@ -14,7 +14,7 @@ namespace Brqosh.Infrastructure.Hospitality;
 public record NightAccrualResult(int NightsPosted, int FoliosTouched, IReadOnlyList<string> Refusals);
 
 /// <summary>
-/// (CEEF-230 · ط3-٣ب) <b>حسابُ النزيل — الليالي تُقيَّد ليلةً بليلة، والحساب يُصفّى مرّةً.</b>
+/// <b>حسابُ النزيل — الليالي تُقيَّد ليلةً بليلة، والحساب يُصفّى مرّةً.</b>
 ///
 /// <para><b>وإيرادُ الغرفة يُستحقّ بمرور الليلة لا بالوصول</b>: نزيلٌ يصل في ٢٨ ديسمبر
 /// لعشر ليالٍ، <b>وقيدُ إيرادِ العشر يومَ وصوله يُدخل سبعَ ليالٍ من إيراد يناير في
@@ -134,7 +134,7 @@ public class FolioService(BrqoshDbContext db)
             {
                 await db.SaveChangesAsync(token);
 
-                // (جاهزيّةُ الإطلاق · ح-٨٢) ‏**والليلةُ تبلغ الأستاذَ في شهرها** — كانت تُقيَّد في حساب النزيل وحدَه، فيُقفل
+                // ‏**والليلةُ تبلغ الأستاذَ في شهرها** — كانت تُقيَّد في حساب النزيل وحدَه، فيُقفل
                 // ‏الشهرُ ناقصاً إيرادَ كلِّ مقيم. **وما أُضيف للتوّ وحدَه** — فتشغيلٌ ثانٍ لا يستحقّ الليلةَ مرّتين.
                 await new RoomNightAccrual(db).AccrueAsync(
                     reservation.CompanyId, folio.Id, reservation.ReservationNumber, added, token);
@@ -201,11 +201,11 @@ public class FolioService(BrqoshDbContext db)
 
             await new SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
 
-            // (جاهزيّةُ الإطلاق · ح-٨٢) ‏**والفاتورةُ تحمل الليالي كلَّها، فيُطلَق ما استُحقّ منها** — وإلّا اعتُرف بإيرادها
+            // ‏**والفاتورةُ تحمل الليالي كلَّها، فيُطلَق ما استُحقّ منها** — وإلّا اعتُرف بإيرادها
             // ‏مرّتين: في شهرها وفي شهر المغادرة.
             await new RoomNightAccrual(db).ReleaseAsync(companyId, folio.Id, on, token);
 
-            // (CEEF-232 · ح-١) ‏**والعربونُ يُنزَل هنا — داخلَ معاملة المغادرة نفسِها.**
+            // ‏**والعربونُ يُنزَل هنا — داخلَ معاملة المغادرة نفسِها.**
             //
             // ‏فمغادرةٌ تنجح وإنزالٌ يفشل **تترك النزيلَ مطالَباً بما دفعه** وتُبقي التزاماً
             // ‏في `2105` لنزيلٍ رحل. **والفاتورةُ تصدر بكامل الإقامة** — فالعربونُ ليس خصماً
@@ -220,7 +220,7 @@ public class FolioService(BrqoshDbContext db)
             return invoice.Id;
         }, ct);
 
-        // (CEEF-230 · ط6-٧) ‏**والمستندُ وُلِّد مع الترحيل، والإبلاغُ بعد الـcommit** —
+        // ‏**والمستندُ وُلِّد مع الترحيل، والإبلاغُ بعد الـcommit** —
         // ‏فاتورةُ المغادرة فاتورةُ ضريبةٍ كاملة، **والنزيلُ يغادر بها**.
         await ZatcaPostingOrchestrator.SubmitAfterCommitAsync(
             db, companyId, ZatcaDocumentType.SalesInvoice, invoiceId, ct);
@@ -229,7 +229,7 @@ public class FolioService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٨٣ · <c>sector-modules#5</c>) <b>يُلغي حجزاً قائماً — وعربونُه يُردّ أو يُصادَر.</b>
+    /// <b>يُلغي حجزاً قائماً — وعربونُه يُردّ أو يُصادَر.</b>
     ///
     /// <para><b>وكان لا خدمةَ ولا زرّ</b>: <c>Reservation.Cancel()</c> بلا مستدعٍ واحد، فحجزٌ أُلغي يبقى «محجوزاً»
     /// وعربونُه التزاماً خالداً في <c>2105</c>.</para>
@@ -239,7 +239,7 @@ public class FolioService(BrqoshDbContext db)
         CloseBookingAsync(companyId, reservationId, on, deposit, noShow: false, ct);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٨٣) <b>لم يحضر النزيل</b> — من يوم الوصول لا قبله؛ وعربونُه يُردّ أو يُصادَر.
+    /// <b>لم يحضر النزيل</b> — من يوم الوصول لا قبله؛ وعربونُه يُردّ أو يُصادَر.
     /// </summary>
     public Task MarkNoShowAsync(long companyId, long reservationId, DateOnly on, DepositOutcome deposit,
         CancellationToken ct = default) =>

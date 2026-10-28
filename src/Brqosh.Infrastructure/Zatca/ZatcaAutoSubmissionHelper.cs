@@ -33,7 +33,7 @@ public static class ZatcaAutoSubmissionHelper
                 doc.ComplianceStatus is ZatcaComplianceStatus.ReadyToReport
                     or ZatcaComplianceStatus.ReadyToClear)
             {
-                // (CEEF-229 · م2-١) المسار التلقائيّ لا يُعيد فحص الدور — الإذن مُنح عند
+                // المسار التلقائيّ لا يُعيد فحص الدور — الإذن مُنح عند
                 // الترحيل الذي استدعاه. انظر الشرح على الدالة نفسها.
                 return await new ZatcaSubmissionService(db).SubmitAsFollowUpToPostingAsync(doc.Id);
             }
@@ -42,13 +42,13 @@ public static class ZatcaAutoSubmissionHelper
         {
             // لا نُوقف ترحيل المستند المحاسبي بسبب فشل ZATCA.
             //
-            // (CEEF-210) كان الالتقاط مقصوراً على AccountingException، بينما SubmitAsync
+            // كان الالتقاط مقصوراً على AccountingException، بينما SubmitAsync
             // ينفّذ نداءً شبكياً يرمي HttpRequestException/TaskCanceledException عند الانقطاع
             // أو المهلة — فتتسرب بعد نجاح الـcommit وتُظهر للمستخدم «فشل ترحيل الفاتورة»
             // رغم أنها رُحّلت فعلاً، وإعادة المحاولة ترمي «الفاتورة مرحّلة».
             // المستند يبقى بحالته (ReadyToReport/ReadyToClear) فيلتقطه إرسال لاحق.
             //
-            // (CEEF-229 · م2-١) **لكنّ الابتلاع الصامت كان يُخفي أكثر من انقطاع الشبكة.**
+            // **لكنّ الابتلاع الصامت كان يُخفي أكثر من انقطاع الشبكة.**
             // رفضُ صلاحيةٍ كان يسقط هنا بلا أثر، فتبدو البيعة ناجحة تماماً بينما فاتورتها لن
             // تصل الهيئة أبداً — والفرق بين «الشبكة مقطوعة الآن» و«هذا المستخدم لا يستطيع
             // الإرسال أبداً» هو الفرق بين تأخيرٍ وخللٍ دائم. فصار السبب **يُسجَّل على المستند**:

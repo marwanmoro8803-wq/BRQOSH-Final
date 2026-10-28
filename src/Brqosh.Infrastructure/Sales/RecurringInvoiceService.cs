@@ -16,7 +16,7 @@ public record RecurringGenerationResult(
     IReadOnlyList<string> Refusals);
 
 /// <summary>
-/// (CEEF-230 · ط1-٥) <b>يُولّد فواتيرَ الخطط المستحقّة حتى تاريخٍ معلوم.</b>
+/// <b>يُولّد فواتيرَ الخطط المستحقّة حتى تاريخٍ معلوم.</b>
 ///
 /// <para><b>دفعةٌ يُطلقها المستخدم لا خدمةٌ خلفية</b> — ولا مُجدوِلَ عملٍ في هذا التطبيق
 /// إطلاقاً. وهو أصدقُ لتطبيقٍ مكتبيّ: خدمةٌ خلفيةٌ في تطبيقٍ مغلقٍ لا تعمل، وخطةٌ تعتمد
@@ -60,7 +60,7 @@ public class RecurringInvoiceService(BrqoshDbContext db)
         var advanced = 0;
         var refusals = new List<string>();
 
-        // (CEEF-230 · ط6-٧) ‏**ما وُلِّد يُجمع ليُبلَّغ بعد التشغيلة كلِّها** — لا داخل
+        // ‏**ما وُلِّد يُجمع ليُبلَّغ بعد التشغيلة كلِّها** — لا داخل
         // ‏معاملة الخطة: النداءُ الشبكيُّ لا يجري إلّا بعد الـcommit، **ولا داخل الـ`try`
         // ‏الذي يُسمّي المتعذِّر**: تعثُّرُ إبلاغٍ ليس تعذُّرَ توليد، وخلطُهما يُخبر
         // ‏المستخدمَ أنّ فاتورةً لم تُولَّد وهي في الدفاتر.
@@ -120,7 +120,7 @@ public class RecurringInvoiceService(BrqoshDbContext db)
                 throw new AccountingException("الخطة بلا سطور.");
 
             var invoice = SalesInvoice.CreateDraft(plan.CompanyId, plan.CustomerId, occurrence);
-            // ‏(جاهزيّةُ الإطلاق · ح-١١٤ · ‏`order-to-cash-procure-to-pay-inventory#12`) **وفاتورةُ الخطة تصرف من مستودع الخطة** — وفارغُه الافتراضيّ.
+            // ‏ **وفاتورةُ الخطة تصرف من مستودع الخطة** — وفارغُه الافتراضيّ.
             invoice.SetWarehouse(plan.WarehouseId);
             foreach (var line in plan.Lines)
                 invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
@@ -129,7 +129,7 @@ public class RecurringInvoiceService(BrqoshDbContext db)
 
             await new SalesInvoicePostingService(db).PostCoreAsync(invoice, token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٩) ‏**وفاتورةُ عقد إيجارٍ تُغطّي أكثرَ من شهرٍ يُؤجَّل ما زاد على شهرها الأوّل** — في
+            // ‏ ‏**وفاتورةُ عقد إيجارٍ تُغطّي أكثرَ من شهرٍ يُؤجَّل ما زاد على شهرها الأوّل** — في
             // ‏المعاملة نفسِها، فلا تُرى فاتورةٌ رُحّلت بلا تأجيلها. وخطّةٌ ليست لعقدٍ لا تُمسّ.
             await new LeaseRentRecognition(db).DeferAsync(plan, invoice, occurrence, token);
 

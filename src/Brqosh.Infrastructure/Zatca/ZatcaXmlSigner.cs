@@ -78,7 +78,7 @@ public static class ZatcaXmlSigner
         var issuerName = cert.IssuerName.Name ?? "CN=ZATCA";
         var serialNumber = DecimalSerialNumber(cert);
 
-        // (CEEF-229 · Z-2) **يُغرَس الهيكلُ أوّلاً، ثمّ يُقنَّن كلُّ شيءٍ من داخل المستند.**
+        // **يُغرَس الهيكلُ أوّلاً، ثمّ يُقنَّن كلُّ شيءٍ من داخل المستند.**
         //
         // كان الترتيبُ معكوساً: تُحسب البصمتان على عنصرَين **قائمَين بذاتهما** ثمّ يُغرَس
         // الناتج. والتقنينُ الشاملُ يُظهر كلَّ الفضاءات السارية عند القمّة، فالعنصرُ داخل
@@ -93,7 +93,7 @@ public static class ZatcaXmlSigner
         // ولا دورَ منطقيّاً في الغرس أوّلاً: بصمةُ `SignedProperties` تسكن `SignedInfo`،
         // و`SignedProperties` لا تحوي شيئاً منها. فتُملأ القيمتان في مكانهما بالترتيب.
         var certB64 = Convert.ToBase64String(cert.RawData);
-        // (CEEF-229 · Z-NEW) ويُقرأ من البايتات لا من نصٍّ مُفكَّك: `Encoding.UTF8.GetString`
+        // ويُقرأ من البايتات لا من نصٍّ مُفكَّك: `Encoding.UTF8.GetString`
         // على بايتاتٍ تبدأ بعلامة ترتيب البايتات يُنتج نصّاً يبدأ بـU+FEFF فيرمي المحلّل،
         // ومخرَجُ `ZatcaUblInvoiceBuilder` يحمل BOM دائماً. (درسٌ مُرحَّلٌ من `EmbedSignature`
         // المحذوفة — حُذفت لأنّ الغرسَ صار قبل التقنين لا بعده.)
@@ -127,7 +127,7 @@ public static class ZatcaXmlSigner
         doc.Save(signedStream, SaveOptions.DisableFormatting);
         var signed = signedStream.ToArray();
 
-        // (CEEF-229 · Z-9) المفتاح العام يُستخرج من الشهادة نفسها — لا من مصدرٍ آخر.
+        // المفتاح العام يُستخرج من الشهادة نفسها — لا من مصدرٍ آخر.
         var publicKeyDer = cert.PublicKey.ExportSubjectPublicKeyInfo();
 
         return new ZatcaSignResult(
@@ -136,7 +136,7 @@ public static class ZatcaXmlSigner
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٧) <b>توقيعُ جهةِ إصدار الشهادات على ختمنا — الوسم ٩.</b>
+    /// <b>توقيعُ جهةِ إصدار الشهادات على ختمنا — الوسم ٩.</b>
     ///
     /// <para>الشهادةُ نفسُها <c>SEQUENCE</c> من ثلاثة: <c>tbsCertificate</c> (وفيه مفتاحُنا
     /// العامّ)، ثمّ <c>signatureAlgorithm</c>، ثمّ <c>signatureValue</c>. <b>وذلك الأخيرُ هو
@@ -171,7 +171,7 @@ public static class ZatcaXmlSigner
     }
 
     /// <summary>
-    /// (CEEF-229 · م2-١٣ب) هل تكفي الإعدادات للتوقيع فعلاً؟
+    /// هل تكفي الإعدادات للتوقيع فعلاً؟
     ///
     /// <para>الشرطُ نفسه الذي يستعمله <see cref="TrySignWithResult"/> ليقرّر، مُستخرَجاً كي
     /// <b>يُسأل قبل استهلاك عدّاد</b>. فالفرقُ بين «لا شهادة» و«وُقّع» يجب أن يُعرف عند
@@ -231,7 +231,7 @@ public static class ZatcaXmlSigner
     /// هذا هو المتطلب الصريح في ZATCA SDK — الهاش يُحسب قبل إضافة التوقيع.
     /// </summary>
     /// <summary>
-    /// (CEEF-229 · Z-1) الهاش يستثني <b>ثلاثة</b> عقد لا واحدة.
+    /// الهاش يستثني <b>ثلاثة</b> عقد لا واحدة.
     ///
     /// <para>كان يُزيل <c>ext:UBLExtensions</c> وحدها، بينما معيار الهيئة يستثني ثلاثاً:
     /// كتلة الامتدادات، و<c>cac:Signature</c> في جسد الفاتورة، و<b>المرجع الإضافيّ الذي معرّفه
@@ -308,7 +308,7 @@ public static class ZatcaXmlSigner
             new XElement(DsNs + "Reference",
                 new XAttribute("Id", "invoiceSignedData"),
                 new XAttribute("URI", ""),
-                // (CEEF-229 · Z-1) الاستثناءات الثلاثة تُعلَن صراحةً — وإلا لم يستطع أيّ متحقّق
+                // الاستثناءات الثلاثة تُعلَن صراحةً — وإلا لم يستطع أيّ متحقّق
                 // إعادةَ إنتاج الهاش الذي حسبناه، فيُرفض التوقيع مهما صحّت الشهادة.
                 new XElement(DsNs + "Transforms",
                     XPathTransform("not(//ancestor-or-self::ext:UBLExtensions)"),
@@ -364,7 +364,7 @@ public static class ZatcaXmlSigner
 
 
     /// <summary>
-    /// (CEEF-229 · Z-2) تقنينٌ شاملٌ لعقدةٍ **من داخل مستندها** — لا منتزعةً.
+    /// تقنينٌ شاملٌ لعقدةٍ **من داخل مستندها** — لا منتزعةً.
     ///
     /// <para>هذا هو الفرقُ كلُّه: التقنينُ الشامل (inclusive C14N) يُصدِر عند قمّة المجموعة
     /// المُقنَّنة **كلَّ** إعلانات الفضاءات السارية عليها، بما ورثتْه من أجدادها. فعنصرٌ داخل
@@ -493,12 +493,12 @@ public static class ZatcaXmlSigner
 }
 
 /// <param name="PublicKeyDerBase64">
-/// (CEEF-229 · Z-9) المفتاح العام بترميز DER (SubjectPublicKeyInfo) — الوسم 8 في رمز
+/// المفتاح العام بترميز DER (SubjectPublicKeyInfo) — الوسم 8 في رمز
 /// المرحلة الثانية. كان غائباً، فيخرج الرمز بسبعة وسوم: توقيعٌ بلا مفتاحٍ يتحقّق به،
 /// وتطبيق «فاتورة» لا يستطيع إثبات صحّة الختم.
 /// </param>
 /// <param name="CertificateSignatureBase64">
-/// (جاهزيّةُ الإطلاق · ح-٧) توقيعُ جهةِ إصدار الشهادات على المفتاح العامّ — الوسمُ ٩.
+/// توقيعُ جهةِ إصدار الشهادات على المفتاح العامّ — الوسمُ ٩.
 /// <b>يُقرأ من حقل <c>signatureValue</c> في الشهادة</b>، فلا ينتظر شيئاً من الهيئة وقتَ
 /// الإصدار: وقّعته حين أصدرت الشهادة.
 /// </param>

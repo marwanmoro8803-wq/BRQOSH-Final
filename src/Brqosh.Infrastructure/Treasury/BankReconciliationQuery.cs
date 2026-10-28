@@ -27,7 +27,7 @@ public record BankReconciliationSummary(
     int ReconciledCount);
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-١٥٤ · <c>treasury-payroll-assets#13</c>) <b>مذكّرةُ التسوية</b>: رصيدُ البنك المعدَّل مقابلَ رصيد الدفتر المعدَّل.
+/// <b>مذكّرةُ التسوية</b>: رصيدُ البنك المعدَّل مقابلَ رصيد الدفتر المعدَّل.
 /// </summary>
 /// <param name="StatementClosing">الختاميُّ كما يقوله البنك.</param>
 /// <param name="BookBalance">رصيدُ حساب البنك في الدفتر حتى آخر يومٍ في الكشف.</param>
@@ -87,7 +87,7 @@ public class BankReconciliationQuery(BrqoshDbContext db)
         var wholeEntries = reconciled.Where(r => r.JournalLineId == 0).Select(r => r.JournalEntryId).ToHashSet();
         var reconciledLines = reconciled.Where(r => r.JournalLineId != 0).Select(r => r.JournalLineId).ToHashSet();
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٩٣ · treasury-payroll-assets#13) **سطورُ البنك وحدَها من القاعدة** — وكان يُحمّل كلَّ قيدٍ في الفترة بسطوره
+        // ‏ **سطورُ البنك وحدَها من القاعدة** — وكان يُحمّل كلَّ قيدٍ في الفترة بسطوره
         // ‏كلِّها (السطورُ مملوكةٌ تُحمَّل معه) ثمّ يُرشّح الحسابَ في الذاكرة: شاشةُ التسوية والمطابقةُ الآليّةُ تقرآن الدفترَ كلَّه لحسابٍ واحد.
         var lines = await db.JournalEntries
             .Where(e => e.CompanyId == companyId

@@ -83,7 +83,7 @@ public static class AppEnvironmentConfig
     }
 
     /// <summary>
-    /// (CEEF-228) يفشل إلى الأمان: غياب <c>BRQOSH_ENV</c> يعني <b>إنتاجاً</b> لا تطويراً.
+    /// يفشل إلى الأمان: غياب <c>BRQOSH_ENV</c> يعني <b>إنتاجاً</b> لا تطويراً.
     ///
     /// كان الافتراض <c>Development</c>، والمثبِّت (<c>installer/brqosh.wxs</c>) لا يضبط المتغير،
     /// واختصارا قائمة ابدأ وسطح المكتب يشيران إلى <c>Brqosh.Desktop.exe</c> مباشرةً — فكل
@@ -124,7 +124,7 @@ public static class AppEnvironmentConfig
         shipped ? AppEnvironment.Production : Decide(authoritative, processEnv, testFlag);
 
     /// <summary>
-    /// (CEEF-229 · م0-١٢) قرار البيئة — دالة نقيّة، كل مدخلاتها ظاهرة.
+    /// قرار البيئة — دالة نقيّة، كل مدخلاتها ظاهرة.
     ///
     /// <para>أُخرج القرار من قراءة النظام عمداً: سياسة «لا خفض» يجب أن تُختبَر بكل تركيباتها،
     /// واختبارٌ يكتب في سجلّ النظام أو مجلد التثبيت يحتاج صلاحية مسؤول ويُلوّث جهاز المطوّر —
@@ -155,7 +155,7 @@ public static class AppEnvironmentConfig
     }
 
     /// <summary>
-    /// (CEEF-229 · م0-١٢) البيئة من مصدرٍ <b>لا يملكه المستخدم</b>.
+    /// البيئة من مصدرٍ <b>لا يملكه المستخدم</b>.
     ///
     /// <para>إصلاح الموجة الأولى جعل الافتراض إنتاجاً، وبقي شقٌّ: المستخدم يستطيع أن
     /// <b>يخفض</b> تركيباً إنتاجياً بـ<c>setx BRQOSH_ENV development</c> — ولا يحتاج صلاحية

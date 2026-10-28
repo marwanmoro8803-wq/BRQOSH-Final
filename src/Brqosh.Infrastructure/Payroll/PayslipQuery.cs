@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Payroll;
 
 /// <summary>
-/// (CEEF-230 · ط2-٦) <b>قسائمُ دورةِ رواتبٍ — سطراً سطراً.</b>
+/// <b>قسائمُ دورةِ رواتبٍ — سطراً سطراً.</b>
 ///
 /// <para><b>وتُبنى من الدورة لا من سجلّ الموظفين</b>: القسيمةُ وثيقةُ شهرٍ بعينه، وأجرُ
 /// الموظّف قد تغيّر بعده. <b>فبناؤها من السجلّ الحاليّ يُعيد كتابة تاريخٍ مضى</b> —
@@ -51,7 +51,7 @@ public class PayslipQuery(BrqoshDbContext db)
                 employee?.Iban,
                 line.BasicSalary, line.HousingAllowance, line.TransportAllowance,
                 line.OtherAllowance, line.GosiEmployee,
-                // (جاهزيّةُ الإطلاق · ح-٢٤) ‏**الأرقامُ على السطر ولم تُمرَّر**،
+                // ‏**الأرقامُ على السطر ولم تُمرَّر**،
                 // ‏فتخرج القسيمةُ بصافٍِ يخالف ملفّ الأجور والقيد.
                 line.AbsenceDeduction, line.AdvanceDeduction);
         })];

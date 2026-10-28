@@ -17,7 +17,7 @@ public record PharmacyDispenseResult(
     IReadOnlyList<(long ProductId, decimal Quantity)> Dispensed);
 
 /// <summary>
-/// (CEEF-231 · ط3-٢ج) <b>صرفُ دواءِ الزيارة من المستودع — الرابطُ الغائب في كلّ مستوصف.</b>
+/// <b>صرفُ دواءِ الزيارة من المستودع — الرابطُ الغائب في كلّ مستوصف.</b>
 ///
 /// <para><b>ما كان:</b> <c>VisitLine.ProductId</c> <b>حقلٌ ميّت</b> — يُكتب ويُخزَّن
 /// <b>ولا يقرؤه أحدٌ في المستودع كلِّه</b>. فالمستوصفُ يصرف للمريض علبةَ دواءٍ بمئتين،

@@ -17,7 +17,7 @@ public class JournalEntryNumberGenerator(BrqoshDbContext db)
 
         var prefix = $"JV-{year}-";
 
-        // (CEEF-229 · م2-٤أ) **الأكبرُ تأخذه القاعدة — لا يُسحب الدفترُ كلُّه إلى الذاكرة.**
+        // **الأكبرُ تأخذه القاعدة — لا يُسحب الدفترُ كلُّه إلى الذاكرة.**
         //
         // كان هنا `ToListAsync()` ثمّ فرزٌ في الذاكرة: لإعطاء الرقم رقم ن تُنقل ن-١ سلسلة
         // من القاعدة إلى الذاكرة. وهذا مُثبَتٌ باعتراض الأمر الفعليّ: استعلامٌ بلا حدّ صفوف
@@ -72,7 +72,7 @@ public class JournalEntryNumberGenerator(BrqoshDbContext db)
 
         // قفل على مستوى المعاملة — يمنع race عند ترحيل متزامن.
         //
-        // (CEEF-203) حرج: يجب تمرير المعاملات كمصفوفة صريحة. التحميل الزائد
+        // حرج: يجب تمرير المعاملات كمصفوفة صريحة. التحميل الزائد
         // ExecuteSqlRawAsync(string, params object[]) كان يبتلع الـ CancellationToken
         // كمعامل SQL ثالث، فيرمي EF: "no store type mapping for CancellationToken" —
         // أي أن **كل ترحيل محاسبي على PostgreSQL كان يفشل**. لم تكشفه الاختبارات لأنها

@@ -87,14 +87,14 @@ public class BrqoshDbContext : DbContext
     public DbSet<PropertyUnit> PropertyUnits => Set<PropertyUnit>();
     public DbSet<LeaseContract> LeaseContracts => Set<LeaseContract>();
 
-    // (CEEF-230 · ط3-٢) ‏الصحّة.
+    // ‏الصحّة.
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<InsurancePayer> InsurancePayers => Set<InsurancePayer>();
     public DbSet<InsurancePolicy> InsurancePolicies => Set<InsurancePolicy>();
     public DbSet<Visit> Visits => Set<Visit>();
     public DbSet<Brqosh.Domain.Payroll.EmployeeAdvance> EmployeeAdvances =>
         Set<Brqosh.Domain.Payroll.EmployeeAdvance>();
-    // (CEEF-233 · ز-٢) ‏طلباتُ الإجازة والغياب — **والمستندُ الذي يُشتقّ منه الرصيدُ والخصم**.
+    // ‏طلباتُ الإجازة والغياب — **والمستندُ الذي يُشتقّ منه الرصيدُ والخصم**.
     public DbSet<Brqosh.Domain.Payroll.LeaveRequest> LeaveRequests =>
         Set<Brqosh.Domain.Payroll.LeaveRequest>();
     public DbSet<InsuranceClaim> InsuranceClaims => Set<InsuranceClaim>();
@@ -104,13 +104,13 @@ public class BrqoshDbContext : DbContext
     public DbSet<Domain.Logistics.DeliveryTrip> DeliveryTrips =>
         Set<Domain.Logistics.DeliveryTrip>();
 
-    // (CEEF-230 · ط3-٣) ‏الضيافة.
+    // ‏الضيافة.
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<GuestFolio> GuestFolios => Set<GuestFolio>();
 
-    // (CEEF-230 · ط3-٤) ‏اللوجستيات.
+    // ‏اللوجستيات.
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<GosiPolicy> GosiPolicies => Set<GosiPolicy>();
     public DbSet<RecurringInvoicePlan> RecurringInvoicePlans => Set<RecurringInvoicePlan>();
@@ -147,7 +147,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(c => c.PrintFontFamily).HasMaxLength(64).HasDefaultValue("Tahoma");
             entity.Property(c => c.VatRegistrationNumber).HasMaxLength(15);
 
-            // (CEEF-229 · Z-10) بيانات البائع النظامية — كائنٌ مملوك يُسطَّح في نفس الجدول
+            // بيانات البائع النظامية — كائنٌ مملوك يُسطَّح في نفس الجدول
             // فلا جدول جديد ولا انضمام: العنوان جزءٌ من هوية المنشأة لا كيانٌ مستقلّ بحياته.
             entity.Property(c => c.RegistrationName).HasMaxLength(256);
             entity.Property(c => c.CommercialRegistrationNumber).HasMaxLength(64);
@@ -264,7 +264,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(e => e.WorkflowInstanceId);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(16);
             entity.Property(e => e.BranchId);
-            // (CEEF-231 · O-32) ‏قيدٌ على مستوى المنشأة — **والافتراضُ `false`**، فلا
+            // ‏قيدٌ على مستوى المنشأة — **والافتراضُ `false`**، فلا
             // ‏يتغيّر حرفٌ في قيدٍ قائم.
             entity.Property(e => e.IsEntityLevel).HasDefaultValue(false);
             // فهرس الاستعلام الأساسي: قيود شركة خلال فترة — جاهز للـ partitioning لاحقاً
@@ -282,14 +282,14 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Description).HasMaxLength(512);
                 lines.Property(l => l.Debit).HasPrecision(18, 2);
                 lines.Property(l => l.Credit).HasPrecision(18, 2);
-                // (CEEF-231 · O-34) ‏**مذكرةُ العملة — والمبلغان أعلاه بالعملة الوظيفية دائماً.**
+                // ‏**مذكرةُ العملة — والمبلغان أعلاه بالعملة الوظيفية دائماً.**
                 // ‏فالدفترُ النظاميُّ بالريال، والمذكرةُ تحفظ أصلَ المعاملة وسعرَ ترجمتها.
                 // ‏**وكلُّها لاغيةٌ للسطر الريالي** — فلا يتغيّر حرفٌ في قيدٍ قائم.
                 lines.Property(l => l.CurrencyCode).HasMaxLength(3);
                 lines.Property(l => l.ExchangeRate).HasPrecision(18, 6);
                 lines.Property(l => l.ForeignAmount).HasPrecision(18, 2);
                 lines.HasIndex(l => l.AccountId);
-                // (CEEF-230 · ط1-٧) ‏فهرسٌ لمركز التكلفة — **وبلا مفتاحٍ أجنبيّ عمداً**:
+                // ‏فهرسٌ لمركز التكلفة — **وبلا مفتاحٍ أجنبيّ عمداً**:
                 // ‏المركزُ يُوقَف حذفاً ناعماً، والمفتاحُ إمّا يمنع إيقافَه أو يترك المرجعَ
                 // ‏معلّقاً بلا معنى. فالتحقّقُ في زمن الترحيل هو الطبقةُ الصحيحة،
                 // ‏والفهرسُ لأجل تقريرٍ يُجمّع به.
@@ -317,10 +317,10 @@ public class BrqoshDbContext : DbContext
             entity.Property(c => c.Phone).HasMaxLength(32);
             entity.Property(c => c.Address).HasMaxLength(512);
             entity.Property(c => c.ModifiedBy).HasMaxLength(128);
-            // ‏(جاهزيّةُ الإطلاق · ح-٩٥) حدُّ الائتمان — وفارغُه بلا حدّ.
+            // ‏ حدُّ الائتمان — وفارغُه بلا حدّ.
             entity.Property(c => c.CreditLimit).HasPrecision(18, 2);
 
-            // (CEEF-229 · م1-١ب) هوية المشتري النظامية — العروضُ تطابق أعمدة BrqoshSchemaUpdater
+            // هوية المشتري النظامية — العروضُ تطابق أعمدة BrqoshSchemaUpdater
             // حرفاً بحرف، فلا يختلف تركيبٌ جديد (EnsureCreated من النموذج) عن تركيبٍ مُرقَّع.
             // والنمطُ نفسه المُتَّبع في Company (Z-10): كائنٌ مملوك يُسطَّح في الجدول نفسه.
             entity.Property(c => c.RegistrationName).HasMaxLength(256);
@@ -347,10 +347,10 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<SalesInvoice>(entity =>
         {
             entity.ToTable("sales_invoices");
-            // (CEEF-230 · ط1-٢) ‏خصمُ المستند — يُوزَّع على الأوعية الضريبية عند الحساب.
+            // ‏خصمُ المستند — يُوزَّع على الأوعية الضريبية عند الحساب.
             entity.Property(i => i.DocumentDiscountAmount).HasPrecision(18, 2);
 
-            // (CEEF-230 · ط1-٤) ‏عملةُ المستند ومبالغُها — والريالُ يبقى في `Subtotal`
+            // ‏عملةُ المستند ومبالغُها — والريالُ يبقى في `Subtotal`
             // ‏و`VatAmount` فلا يتغيّر شيءٌ ممّا بُني عليهما.
             entity.Property(i => i.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
             entity.Property(i => i.ExchangeRate).HasPrecision(18, 6).HasDefaultValue(1m);
@@ -375,7 +375,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(i => i.Lines, lines =>
             {
                 lines.ToTable("sales_invoice_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -388,7 +388,7 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
-                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                // فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
@@ -408,18 +408,18 @@ public class BrqoshDbContext : DbContext
 
             entity.Property(n => n.Subtotal).HasPrecision(18, 2);
             entity.Property(n => n.VatAmount).HasPrecision(18, 2);
-            // ‏(جاهزيّةُ الإطلاق · ح-٣٥) عملةُ الإشعار — نظيرُ أعمدة الفاتورة.
+            // ‏ عملةُ الإشعار — نظيرُ أعمدة الفاتورة.
             entity.Property(n => n.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
             entity.Property(n => n.ExchangeRate).HasPrecision(18, 6);
             entity.Property(n => n.ForeignSubtotal).HasPrecision(18, 2);
             entity.Property(n => n.ForeignVatAmount).HasPrecision(18, 2);
-            // ‏(جاهزيّةُ الإطلاق · ح-٦) خصمُ المستند على الإشعار — نظيرُ عمود الفاتورة.
+            // ‏ خصمُ المستند على الإشعار — نظيرُ عمود الفاتورة.
             entity.Property(n => n.DocumentDiscountAmount).HasPrecision(18, 2);
 
             entity.OwnsMany(n => n.Lines, lines =>
             {
                 lines.ToTable("credit_note_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -432,7 +432,7 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
-                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                // فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
@@ -443,13 +443,13 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<ReceiptVoucher>(entity =>
         {
             entity.ToTable("receipt_vouchers");
-            // (CEEF-230 · ط1-٤) ‏عملةُ السند وسعرُها يوم التحصيل — ومن فرقِه عن
+            // ‏عملةُ السند وسعرُها يوم التحصيل — ومن فرقِه عن
             // ‏سعر يوم الفاتورة يقع الربحُ أو الخسارةُ المحقَّقة.
             entity.Property(v => v.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
             entity.Property(v => v.ExchangeRate).HasPrecision(18, 6).HasDefaultValue(1m);
             entity.Property(v => v.ReceivableRelieved).HasPrecision(18, 2);
 
-            // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المبكر — يُطفئ من الذمّة ما لم يدخل الصندوق.
+            // ‏خصمُ السداد المبكر — يُطفئ من الذمّة ما لم يدخل الصندوق.
             entity.Property(v => v.SettlementDiscount).HasPrecision(18, 2).HasDefaultValue(0m);
             entity.Property(v => v.VoucherNumber).HasMaxLength(32);
             entity.Property(v => v.Description).HasMaxLength(512).IsRequired();
@@ -481,7 +481,7 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<PurchaseInvoice>(entity =>
         {
-            // (CEEF-230 · ط4-٥) ‏عملةُ الفاتورة وسعرُها وأساسُها الأجنبيّ.
+            // ‏عملةُ الفاتورة وسعرُها وأساسُها الأجنبيّ.
             entity.Property(i => i.CurrencyCode).HasMaxLength(3);
             entity.Property(i => i.ExchangeRate).HasPrecision(18, 6);
             entity.Property(i => i.ForeignSubtotal).HasPrecision(18, 2);
@@ -503,7 +503,7 @@ public class BrqoshDbContext : DbContext
 
             entity.Property(i => i.Subtotal).HasPrecision(18, 2);
             entity.Property(i => i.VatAmount).HasPrecision(18, 2);
-            // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏معاملةُ الضريبة — «Domestic» لكلّ فاتورةٍ قائمة — وضريبةُ الاحتساب العكسيّ والقيمةُ الجمركيّة.
+            // ‏ ‏معاملةُ الضريبة — «Domestic» لكلّ فاتورةٍ قائمة — وضريبةُ الاحتساب العكسيّ والقيمةُ الجمركيّة.
             // ‏والافتراضُ في الكائن وفي DDL وحدَهما — لا `HasDefaultValue` (انظر accounting-core#6 أعلاه).
             entity.Property(i => i.VatTreatment).HasConversion<string>().HasMaxLength(24);
             entity.Property(i => i.ReverseChargeVatAmount).HasPrecision(18, 2);
@@ -512,10 +512,10 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(i => i.Lines, lines =>
             {
                 lines.ToTable("purchase_invoice_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
-                // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**انتهاءُ دفعة الشراء المباشر** — لفاتورة الشراء وحدَها.
+                // ‏ ‏**انتهاءُ دفعة الشراء المباشر** — لفاتورة الشراء وحدَها.
                 lines.Property(l => l.ExpiryDate);
                 lines.Property(l => l.DiscountPercent).HasPrecision(9, 4);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
@@ -526,7 +526,7 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
-                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                // فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
@@ -536,12 +536,12 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<PaymentVoucher>(entity =>
         {
-            // (CEEF-230 · ط4-٥) ‏عملةُ السند وما حُرِّر من الذمّة بعملة الدفاتر.
+            // ‏عملةُ السند وما حُرِّر من الذمّة بعملة الدفاتر.
             entity.Property(v => v.CurrencyCode).HasMaxLength(3);
             entity.Property(v => v.ExchangeRate).HasPrecision(18, 6);
             entity.Property(v => v.PayableRelieved).HasPrecision(18, 2);
 
-            // (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المكتسَب — يُطفئ من الذمّة ما لم يخرج من الصندوق.
+            // ‏خصمُ السداد المكتسَب — يُطفئ من الذمّة ما لم يخرج من الصندوق.
             entity.Property(v => v.SettlementDiscount).HasPrecision(18, 2).HasDefaultValue(0m);
 
             entity.ToTable("payment_vouchers");
@@ -561,7 +561,7 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
-            // (CEEF-231 · ط5-٨) ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
+            // ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
             //
             // ‏‏متوسّطُ التكلفة المرجّح يُقرأ ثمّ يُكتب في خمسة مسارات ترحيل. ‏**فترحيلان متزامنان يقرآن المتوسطَ نفسَه ويكتبان قيمتين**، والثاني يمحو ‏الأوّل — **فتُقيَّد تكلفةُ مبيعاتٍ بمتوسّطٍ لم يشهد شراءً وقع فعلاً**، ‏وينفصل الدفترُ المساعد عن الأستاذ فرقاً دائماً.
             //
@@ -581,7 +581,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(p => p.NameAr).HasMaxLength(256).IsRequired();
             entity.Property(p => p.Unit).HasMaxLength(32).IsRequired();
             entity.Property(p => p.Type).HasConversion<string>().HasMaxLength(16);
-            // (CEEF-230 · ط1-٣) ‏نصّاً لا رقماً — كبقيّة تعدادات هذا المخطّط، وليُقرأ في
+            // ‏نصّاً لا رقماً — كبقيّة تعدادات هذا المخطّط، وليُقرأ في
             // ‏القاعدة بلا جدولِ ترجمة. والافتراضُ `None` فلا يتغيّر صنفٌ قائم.
             entity.Property(p => p.Tracking).HasConversion<string>().HasMaxLength(16)
                 .HasDefaultValue(InventoryTracking.None);
@@ -630,10 +630,10 @@ public class BrqoshDbContext : DbContext
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط1-٣) ‏رصيدُ الدفعة — تفصيلٌ لرصيد المخزون تربطه به الهويّةُ هـ-٩.
+        // ‏رصيدُ الدفعة — تفصيلٌ لرصيد المخزون تربطه به الهويّةُ هـ-٩.
         modelBuilder.Entity<StockBatch>(entity =>
         {
-            // (CEEF-231 · ط5-٨) ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
+            // ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
             //
             // ‏‏`ApplyDelta` يقرأ الكمّيةَ ثمّ يكتبها. **فبيعان متزامنان من دفعةٍ ‏واحدة يُنقصانها مرّةً لا مرّتين** — فيبقى في الدفاتر دواءٌ خرج، ‏**ويُصرف من دفعةٍ فرغت**.
             //
@@ -662,7 +662,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(b => new { b.CompanyId, b.BranchId });
         });
 
-        // (CEEF-230 · ط1-١) ‏وحداتُ القياس — قالبٌ مبذورٌ لكلّ منشأة **قابلٌ للتعديل**.
+        // ‏وحداتُ القياس — قالبٌ مبذورٌ لكلّ منشأة **قابلٌ للتعديل**.
         // ‏فمعاملُ «العلبة» ليس ثابتاً كونياً: علبةُ هذا التاجر اثنتا عشرة وعلبةُ ذاك أربعٌ
         // ‏وعشرون. **وثابتٌ في الشيفرة يكذب على أحدهما**.
         modelBuilder.Entity<UnitOfMeasure>(entity =>
@@ -685,7 +685,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(c => new { c.CompanyId, c.Code }).IsUnique();
         });
 
-        // (CEEF-230 · ط3-١) ‏العقاراتُ والوحداتُ وعقودُ الإيجار.
+        // ‏العقاراتُ والوحداتُ وعقودُ الإيجار.
         modelBuilder.Entity<Property>(entity =>
         {
             entity.ToTable("properties");
@@ -729,7 +729,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(x => new { x.CompanyId, x.BranchId });
         });
 
-        // (CEEF-230 · ط3-٢) ‏المرضى والوثائقُ والزيارات.
+        // ‏المرضى والوثائقُ والزيارات.
         modelBuilder.Entity<Patient>(entity =>
         {
             entity.ToTable("patients");
@@ -794,14 +794,14 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
                 lines.Property(l => l.TaxExemptionReasonCode).HasMaxLength(32);
 
-                // (CEEF-231 · ط3-٢ج) ‏دفعةُ الدواء المصروف — الطولُ نفسُه في كلّ مستند.
+                // ‏دفعةُ الدواء المصروف — الطولُ نفسُه في كلّ مستند.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
             });
 
             entity.Navigation(v => v.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط2-٥) ‏سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.
+        // ‏سُلَفُ الموظفين — أصلٌ يُستردّ بالاستقطاع.
         modelBuilder.Entity<Brqosh.Domain.Payroll.EmployeeAdvance>(entity =>
         {
             entity.ToTable("employee_advances");
@@ -815,7 +815,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(a => new { a.CompanyId, a.EmployeeId, a.Status });
         });
 
-        // (CEEF-233 · ز-٢) ‏طلباتُ الإجازة.
+        // ‏طلباتُ الإجازة.
         modelBuilder.Entity<Brqosh.Domain.Payroll.LeaveRequest>(entity =>
         {
             entity.ToTable("leave_requests");
@@ -829,7 +829,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(r => new { r.CompanyId, r.EmployeeId, r.Status });
         });
 
-        // (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
+        // ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
         modelBuilder.Entity<InsuranceClaim>(entity =>
         {
             entity.ToTable("insurance_claims");
@@ -860,7 +860,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(c => c.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط3-١ب) ‏أوامرُ الصيانة وسطورُ تكلفتها.
+        // ‏أوامرُ الصيانة وسطورُ تكلفتها.
         modelBuilder.Entity<Domain.RealEstate.MaintenanceOrder>(entity =>
         {
             entity.ToTable("maintenance_orders");
@@ -887,7 +887,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(m => m.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط3-٣د) ‏أوعيةُ الإكراميات وتحصيلُها وتوزيعُها.
+        // ‏أوعيةُ الإكراميات وتحصيلُها وتوزيعُها.
         modelBuilder.Entity<TipPool>(entity =>
         {
             entity.ToTable("tip_pools");
@@ -922,7 +922,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(t => t.Distributions).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط3-٤ب) ‏رحلاتُ التوصيل وشحناتُها ومصاريفُها.
+        // ‏رحلاتُ التوصيل وشحناتُها ومصاريفُها.
         modelBuilder.Entity<Domain.Logistics.DeliveryTrip>(entity =>
         {
             entity.ToTable("delivery_trips");
@@ -964,7 +964,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(t => t.Expenses).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط3-٣) ‏قائمةُ الطعام ووصفاتُها.
+        // ‏قائمةُ الطعام ووصفاتُها.
         modelBuilder.Entity<MenuItem>(entity =>
         {
             entity.ToTable("menu_items");
@@ -995,7 +995,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(m => m.Components).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط3-٣ب) ‏الغرفُ والحجوزُ وحساباتُ النزلاء.
+        // ‏الغرفُ والحجوزُ وحساباتُ النزلاء.
         modelBuilder.Entity<Room>(entity =>
         {
             entity.ToTable("rooms");
@@ -1044,7 +1044,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(f => f.Charges).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط3-٤) ‏البوالص.
+        // ‏البوالص.
         modelBuilder.Entity<Shipment>(entity =>
         {
             entity.ToTable("shipments");
@@ -1064,7 +1064,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(s => new { s.CompanyId, s.ShipperCustomerId, s.CodCollected, s.CodRemitted });
             entity.HasIndex(s => new { s.CompanyId, s.Status });
             entity.HasIndex(s => new { s.CompanyId, s.BranchId });
-            // (CEEF-230 · ط3-٤ج) ‏أثرُ الشحنة — **سندُ التسليم لا زينةُ عرض**.
+            // ‏أثرُ الشحنة — **سندُ التسليم لا زينةُ عرض**.
             entity.OwnsMany(sh => sh.Events, ev =>
             {
                 ev.ToTable("shipment_events");
@@ -1080,7 +1080,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(sh => sh.Events).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط2-١) ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
+        // ‏سجلُّ الموظفين — وكان الاسمُ نصّاً حرّاً يُعاد كتابتُه شهرياً.
         modelBuilder.Entity<Employee>(entity =>
         {
             entity.ToTable("employees");
@@ -1109,7 +1109,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(e => new { e.CompanyId, e.BranchId });
         });
 
-        // (CEEF-230 · ط2-٢) ‏نِسَبُ التأمينات — لكلّ منشأةٍ نسختُها، فالمُنظِّم يُعدّلها.
+        // ‏نِسَبُ التأمينات — لكلّ منشأةٍ نسختُها، فالمُنظِّم يُعدّلها.
         modelBuilder.Entity<GosiPolicy>(entity =>
         {
             entity.ToTable("gosi_policies");
@@ -1126,7 +1126,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(g => g.CompanyId).IsUnique();
         });
 
-        // (CEEF-230 · ط1-٦) ‏الموازنة — حبّتُها شهريّةٌ بمفتاح الفترة المالية نفسِه.
+        // ‏الموازنة — حبّتُها شهريّةٌ بمفتاح الفترة المالية نفسِه.
         modelBuilder.Entity<Budget>(entity =>
         {
             entity.ToTable("budgets");
@@ -1151,7 +1151,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(b => b.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        // (CEEF-230 · ط1-٥) ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
+        // ‏خططُ الفوترة الدورية وأثرُ تكراراتها.
         modelBuilder.Entity<RecurringInvoicePlan>(entity =>
         {
             entity.ToTable("recurring_invoice_plans");
@@ -1208,7 +1208,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(b => new { b.CompanyId, b.WarehouseId, b.ProductId }).IsUnique();
             entity.HasIndex(b => b.ProductId);
 
-            // رمز تزامن (ع-D1، CEEF-205): تحديث الرصيد قراءة-ثم-كتابة بقيمة مطلقة،
+            // رمز تزامن : تحديث الرصيد قراءة-ثم-كتابة بقيمة مطلقة،
             // فترحيلان متزامنان لنفس الصنف يقرآن نفس الرصيد ويكتبان نفس القيمة —
             // آخر كاتب يمحو أثر الأول (ضياع تحديث صامت يفسد المخزون وتكلفة المبيعات).
             // xmin عمود نظام في PostgreSQL يتغيّر مع كل تحديث للصف، فيكشف التعارض
@@ -1250,7 +1250,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(d => new { d.CompanyId, d.DocumentType, d.SourceDocumentId }).IsUnique();
             entity.HasIndex(d => new { d.CompanyId, d.InvoiceNumber });
 
-            // (CEEF-229 · Z-4) شبكة الأمان في القاعدة لسلسلة العدّاد التسلسليّ.
+            // شبكة الأمان في القاعدة لسلسلة العدّاد التسلسليّ.
             //
             // القفل الاستشاريّ يمنع السباق على PostgreSQL، والفهرس يمنعه على أيّ مسار آخر —
             // كتابةٌ من أداة، أو مسارٌ ينسى القفل مستقبلاً. سلسلة سجلّ التدقيق أخذت الاثنين
@@ -1347,7 +1347,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(o => o.Lines, lines =>
             {
                 lines.ToTable("purchase_order_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -1360,7 +1360,7 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
-                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                // فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
 
@@ -1381,7 +1381,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(r => r.Lines, lines =>
             {
                 lines.ToTable("purchase_request_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -1444,7 +1444,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(g => g.Lines, lines =>
             {
                 lines.ToTable("goods_receipt_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Property(l => l.UnitCode).HasMaxLength(16);
@@ -1472,7 +1472,7 @@ public class BrqoshDbContext : DbContext
 
             entity.Property(n => n.Subtotal).HasPrecision(18, 2);
             entity.Property(n => n.VatAmount).HasPrecision(18, 2);
-            // ‏(جاهزيّةُ الإطلاق · ح-٣٩) عملةُ الإشعار المدين — نظيرُ أعمدة فاتورة الشراء.
+            // ‏ عملةُ الإشعار المدين — نظيرُ أعمدة فاتورة الشراء.
             entity.Property(n => n.CurrencyCode).HasMaxLength(3).IsRequired().HasDefaultValue("SAR");
             entity.Property(n => n.ExchangeRate).HasPrecision(18, 6);
             entity.Property(n => n.ForeignSubtotal).HasPrecision(18, 2);
@@ -1481,7 +1481,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(n => n.Lines, lines =>
             {
                 lines.ToTable("debit_note_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -1494,7 +1494,7 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
-                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                // فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(n => n.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -1574,7 +1574,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(b => b.Code).HasMaxLength(32).IsRequired();
             entity.Property(b => b.NameAr).HasMaxLength(256).IsRequired();
             entity.Property(b => b.OutputQuantity).HasPrecision(18, 4);
-            // ‏(جاهزيّةُ الإطلاق · ح-١٣) تكاليفُ التحويل — الأجرُ المباشرُ ونسبةُ التحميل.
+            // ‏ تكاليفُ التحويل — الأجرُ المباشرُ ونسبةُ التحميل.
             entity.Property(b => b.LabourCostPerUnit).HasPrecision(18, 2);
             entity.Property(b => b.OverheadRatePercent).HasPrecision(9, 4);
             entity.HasIndex(b => new { b.CompanyId, b.Code }).IsUnique();
@@ -1607,7 +1607,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(w => new { w.CompanyId, w.OrderNumber });
             entity.HasIndex(w => w.BomId);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٧) ‏وصفةُ الأمر المجمَّدة عند إصداره — بدقّة قائمة الموادّ نفسِها.
+            // ‏ ‏وصفةُ الأمر المجمَّدة عند إصداره — بدقّة قائمة الموادّ نفسِها.
             entity.Property(w => w.RecipeLabourCostPerUnit).HasPrecision(18, 2);
             entity.Property(w => w.RecipeOverheadRatePercent).HasPrecision(9, 4);
             entity.OwnsMany(w => w.Materials, materials =>
@@ -1669,7 +1669,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(a => a.Reason).HasMaxLength(512);
             entity.HasIndex(a => new { a.CompanyId, a.OccurredAtUtc });
 
-            // (O-19، CEEF-212) سلسلة تجزئة كاشفة للعبث.
+            // سلسلة تجزئة كاشفة للعبث.
             entity.Property(a => a.PreviousHash).HasMaxLength(64).IsRequired();
             entity.Property(a => a.EntryHash).HasMaxLength(64).IsRequired();
             // فريد: يمنع تفرّع السلسلة حتى لو أخفق القفل الاستشاري (SQLite مثلاً).
@@ -1679,14 +1679,14 @@ public class BrqoshDbContext : DbContext
         modelBuilder.Entity<FixedAsset>(entity =>
         {
             entity.ToTable("fixed_assets");
-            // ‏(جاهزيّةُ الإطلاق · treasury-payroll-assets#11) ‏طريقةُ الإهلاك — «StraightLine» لكلّ أصلٍ قائم، والافتراضُ في DDL وحدَه.
+            // ‏ ‏طريقةُ الإهلاك — «StraightLine» لكلّ أصلٍ قائم، والافتراضُ في DDL وحدَه.
             entity.Property(a => a.Method).HasColumnName("DepreciationMethod").HasConversion<string>().HasMaxLength(24);
             entity.Property(a => a.Code).HasMaxLength(32).IsRequired();
             entity.Property(a => a.NameAr).HasMaxLength(256).IsRequired();
             entity.Property(a => a.AcquisitionCost).HasPrecision(18, 2);
             entity.Property(a => a.SalvageValue).HasPrecision(18, 2);
             entity.Property(a => a.AccumulatedDepreciation).HasPrecision(18, 2);
-            // (جاهزيّةُ الإطلاق · ح-١٦) بيعُ الأصل — المشتري ورقمُ فاتورته ومقابلُه وفئتُه.
+            // بيعُ الأصل — المشتري ورقمُ فاتورته ومقابلُه وفئتُه.
             // ‏والأطوالُ هي أطوالُ قائمة السماح في `SchemaSqlGuard` نفسِها — فالنموذجُ
             // ‏والـDDL يلتقيان، ولو اختلفا أسقطا مسبارَ تغطية المخطّط بفارق نوع.
             entity.Property(a => a.DisposalInvoiceNumber).HasMaxLength(64);
@@ -1725,7 +1725,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(q => q.Lines, lines =>
             {
                 lines.ToTable("sales_quotation_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -1805,7 +1805,7 @@ public class BrqoshDbContext : DbContext
             entity.OwnsMany(o => o.Lines, lines =>
             {
                 lines.ToTable("sales_order_lines");
-                // (CEEF-230 · ط1-٣) ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
+                // ‏سقفُ الطول في النموذج لا في القاعدة وحدَها —
                 // ‏وإلا صار العمودُ `text` بلا حدّ، وكشفه مسبارُ المخطّط مخالفةَ نوع.
                 lines.Property(l => l.BatchNumber).HasMaxLength(64);
                 lines.Ignore(l => l.ExpiryDate); // (جاهزيّةُ الإطلاق · ح-١٠٨) ‏الانتهاءُ لفاتورة الشراء وحدَها
@@ -1818,7 +1818,7 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.Quantity).HasPrecision(18, 4);
                 lines.Property(l => l.UnitPrice).HasPrecision(18, 2);
                 lines.Property(l => l.ProductId);
-                // (CEEF-207) فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
+                // فئة الضريبة لكل سطر — نصّاً لقراءتها في القاعدة ولثبات القيم.
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(o => o.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -1882,7 +1882,7 @@ public class BrqoshDbContext : DbContext
 
         modelBuilder.Entity<InventoryCostLayer>(entity =>
         {
-            // (CEEF-231 · ط5-٨) ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
+            // ‏**رمزُ تزامنٍ — وهو صنفُ عطلِ `ع-D1` بعينه في موضعٍ آخر.**
             //
             // ‏‏`Consume` يقرأ `RemainingQuantity` ثمّ يكتبها. **فصرفان ‏متزامنان من الطبقة نفسِها يمرّان كلاهما** — يُستهلك أكثرُ ممّا فيها، ‏**وتخرج بضاعةٌ بتكلفةٍ لا وجودَ لها**.
             //
@@ -1906,7 +1906,7 @@ public class BrqoshDbContext : DbContext
             entity.HasIndex(l => new { l.CompanyId, l.ProductId, l.RemainingQuantity });
         });
 
-        // (CEEF-229 · م0-٣) سجلُّ الاستهلاك — مفتاحُه المستند، فالترميمُ يبدأ منه.
+        // سجلُّ الاستهلاك — مفتاحُه المستند، فالترميمُ يبدأ منه.
         modelBuilder.Entity<InventoryCostConsumption>(entity =>
         {
             entity.ToTable("inventory_cost_consumptions");
@@ -1946,7 +1946,7 @@ public class BrqoshDbContext : DbContext
             entity.Property(e => e.LastDispatchError).HasMaxLength(512);
             entity.HasIndex(e => e.EventId).IsUnique();
             entity.HasIndex(e => new { e.CompanyId, e.OccurredAtUtc });
-            // طابور Outbox: استعلام «غير المُرسَل» يجري بعد كل ترحيل (CEEF-204).
+            // طابور Outbox: استعلام «غير المُرسَل» يجري بعد كل ترحيل .
             entity.HasIndex(e => e.DispatchedAtUtc);
         });
 
@@ -1999,7 +1999,7 @@ public class BrqoshDbContext : DbContext
     }
 
     /// <summary>
-    /// (CEEF-231 · ط4-٢) <b>المَخنَقُ الوحيد لختم الفرع على القيود.</b>
+    /// <b>المَخنَقُ الوحيد لختم الفرع على القيود.</b>
     ///
     /// <para><b>ما كان:</b> <c>JournalEntry.BranchId</c> يُسنَد في <c>JournalPostingService</c>
     /// وثلاثِ خدماتِ خزينةٍ فقط — <b>وسبعٌ وثلاثون خدمةً تُضيف قيوداً في المستودع</b>.
@@ -2017,7 +2017,7 @@ public class BrqoshDbContext : DbContext
     /// </summary>
     private async Task StampJournalEntryBranchesAsync(CancellationToken ct)
     {
-        // (CEEF-231 · O-32) ‏**والمُعلَنُ على مستوى المنشأة يُتخطّى** — الإقفالُ السنويُّ
+        // ‏**والمُعلَنُ على مستوى المنشأة يُتخطّى** — الإقفالُ السنويُّ
         // ‏إجراءٌ على الشخصية الاعتبارية، **وفرعُ الجلسة صدفةٌ لا معنى**. فوسمُه يُسند
         // ‏حقوقَ ملكيةِ المنشأة كلِّها إلى الفرع الذي صادف أن يكون مختاراً حين ضُغط الزرّ.
         var unstamped = ChangeTracker.Entries<Brqosh.Domain.Accounting.JournalEntry>()

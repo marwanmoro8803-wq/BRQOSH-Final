@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٥) خططُ الفوترة الدورية وأثرُ تكراراتها.
+    /// خططُ الفوترة الدورية وأثرُ تكراراتها.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يُنشئ هذه الجداول قبل تشغيل الهجرات على
     /// قواعد العملاء، فـ<c>CreateTable</c> المولَّدة تصطدم بـ<c>42P07</c>.</para>

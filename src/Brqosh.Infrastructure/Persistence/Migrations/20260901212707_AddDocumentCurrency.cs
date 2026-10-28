@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٤) عملةُ المستند وسعرُ صرفها ومبالغُها الأجنبية.
+    /// عملةُ المستند وسعرُ صرفها ومبالغُها الأجنبية.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يسبقها على قواعد العملاء.</para>
     ///

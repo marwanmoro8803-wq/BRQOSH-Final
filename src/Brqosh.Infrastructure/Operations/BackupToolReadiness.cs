@@ -6,7 +6,7 @@ namespace Brqosh.Infrastructure.Operations;
 public sealed record BackupToolVerdict(bool Ready, string Message);
 
 /// <summary>
-/// ‏(جاهزيّةُ الإطلاق · ح-١٢٥ · ‏`installer-deployment-ops#10` · ‏`data-upgrade-performance#6`) <b>أدواتُ النسخ تُفحص قبل أوّل نسخة.</b>
+/// ‏ <b>أدواتُ النسخ تُفحص قبل أوّل نسخة.</b>
 ///
 /// <para>‏<see cref="BackupService"/> لا يسأل عن <c>pg_dump</c>/<c>pg_restore</c> إلّا لحظةَ النسخ (<see cref="PgToolLocator"/>)،
 /// ‏والمُنصِّبُ لا يشحنهما ولا يفحصهما — <b>فأوّلُ ما يُعرف غيابُهما أوّلُ ليلةٍ لا تُنسخ فيها الدفاتر</b>. والحكمُ هنا يُعرض في

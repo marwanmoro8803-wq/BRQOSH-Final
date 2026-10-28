@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-231 · ط3-٢ج) ‏رقمُ دفعة الدواء المصروف في الزيارة.
+        /// ‏رقمُ دفعة الدواء المصروف في الزيارة.
         ///
         /// <para>‏<b>والصياغةُ يدويّةٌ بـ<c>IF NOT EXISTS</c> لا مُولَّدة</b>: المُرقِّعُ
         /// اليدويّ (<c>BrqoshSchemaUpdater</c>) يضيف العمودَ نفسَه على القواعد القائمة،

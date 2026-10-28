@@ -21,7 +21,7 @@ public sealed class BankStatementDifferencePostingService(BrqoshDbContext db)
     private const string DifferenceSource = "BankStatementDifference";
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٨٩ · <c>treasury-payroll-assets#10</c>) <b>عكسُ قيد فرق سطر الكشف</b> — وكان لا يُعكس أبداً، ففرقٌ رُحِّل
+    /// <b>عكسُ قيد فرق سطر الكشف</b> — وكان لا يُعكس أبداً، ففرقٌ رُحِّل
     /// على حسابٍ خطأٍ يبقى. <b>يُعكس القيدُ القائمُ وحدَه، وتُلغى تسويتُه، ويُحرَّر السطرُ</b> فيُرحَّل من جديد أو يُطابَق؛
     /// <b>والسطرُ المطابَقُ لغير قيد فروقٍ يُرفض</b> — فقيدُ السند يُصحَّح بعكس السند وتخصيصاته لا من هنا.
     /// </summary>

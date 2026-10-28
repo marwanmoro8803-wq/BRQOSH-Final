@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٥٨ · <c>treasury-payroll-assets#12</c>) شراءُ الأصل من مورّدٍ بفاتورته: الفاتورةُ تُسمّي أصلَها،
+    /// ‏ شراءُ الأصل من مورّدٍ بفاتورته: الفاتورةُ تُسمّي أصلَها،
     /// ‏والأصلُ ينتظر فاتورتَه. ‏فارغٌ وخطأٌ للقائم — فلا يتغيّر معنى فاتورةٍ أو أصلٍ واحد. ‏ومُطاوِعةٌ للتكرار كأخواتها.
     /// </summary>
     public partial class AddAssetPurchaseInvoice : Migration

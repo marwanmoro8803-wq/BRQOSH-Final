@@ -29,18 +29,18 @@ public class PayrollPostingService(BrqoshDbContext db)
                 db, run.CompanyId, run.PayDate, PostingDocumentKind.Payroll,
                 accountIds: [salaries.Id, gosiExp.Id, salariesPayable.Id, gosiPayable.Id], ct: token);
 
-            // (CEEF-230 · ط2-٤) ‏حسابُ البدلات — يُنشأ من القالب إن غاب، فقواعدُ العملاء
+            // ‏حسابُ البدلات — يُنشأ من القالب إن غاب، فقواعدُ العملاء
             // ‏تحمله أصلاً (هو في الشجرة منذ البداية) لكنّه لم يكن يُستعمل.
             var allowances = await SystemAccountProvisioning.EnsureAsync(db, run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.Allowances, token), token);
 
-            // (CEEF-230 · ط2-٥) ‏حسابُ السُّلَف — ولا يُنشأ إلا حين يوجد استقطاع، فقاعدةٌ
+            // ‏حسابُ السُّلَف — ولا يُنشأ إلا حين يوجد استقطاع، فقاعدةٌ
             // ‏لا تُسلّف أحداً لا يظهر فيها حسابٌ بلا حركة.
             var advances = run.TotalAdvanceDeduction > 0m
                 ? await SystemAccountProvisioning.EnsureAsync(
                     db, run.CompanyId, SaudiChartOfAccounts.SystemCodes.EmployeeAdvances, token)
                 : null;
 
-            // (CEEF-232 · م-١) ‏**ومراكزُ تكلفةِ الموظّفين تُقرأ فيُفكَّك بها مصروفُ الأجر.**
+            // ‏**ومراكزُ تكلفةِ الموظّفين تُقرأ فيُفكَّك بها مصروفُ الأجر.**
             //
             // ‏وكان `Employee.CostCenterId` مُخزَّناً في المخطَّط **و`AssignCostCenter` بلا
             // ‏مستدعٍ واحد**، وقيدُ الرواتب سطرٌ مُجمَّعٌ بلا بُعد. **فالميزانُ سليمٌ وكلُّ
@@ -61,7 +61,7 @@ public class PayrollPostingService(BrqoshDbContext db)
                     .Select(e => new { e.Id, e.CostCenterId })
                     .ToDictionaryAsync(e => e.Id, e => e.CostCenterId, token);
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٤٦ · ‏`sector-modules#9`) ‏**موظّفو المشاريع** — وحالةُ كلّ مشروعٍ تُسأل قبل القيد.
+            // ‏ ‏**موظّفو المشاريع** — وحالةُ كلّ مشروعٍ تُسأل قبل القيد.
             var employeeProjects = await EmployeeProjectsAsync(run.CompanyId, employeeIds, token);
             var projectCostAccount = employeeProjects.Count > 0
                 ? await AccountAsync(run.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, run.CompanyId, Purchasing.PurchaseInvoicePostingService.ProjectCostAccountCode, token), token)
@@ -74,7 +74,7 @@ public class PayrollPostingService(BrqoshDbContext db)
 
             db.JournalEntries.Add(entry);
 
-            // (CEEF-230 · ط2-٠) ‏**لا تُضاف دورةٌ محفوظةٌ سلفاً.**
+            // ‏**لا تُضاف دورةٌ محفوظةٌ سلفاً.**
             //
             // ‏كانت تُضاف بلا شرط، **وشاشةُ الرواتب تحفظ المسودّةَ أوّلاً** ثمّ تُعيد
             // ‏تحميلَها وتُمرّرها هنا. فتُدرَج مرّةً ثانيةً بمعرّفٍ قائم ⟵ `23505`.
@@ -114,7 +114,7 @@ public class PayrollPostingService(BrqoshDbContext db)
                 db, run.CompanyId, "PayrollRun", run.PeriodCode,
                 reason: "ترحيل رواتب", details: $"صافي: {run.TotalNet:N2}", ct: token);
 
-            // (CEEF-231 · ط2-٧) ‏**والسُّلفةُ المسدَّدةُ تُقفَل هنا لا في شاشتها.**
+            // ‏**والسُّلفةُ المسدَّدةُ تُقفَل هنا لا في شاشتها.**
             //
             // ‏كان تحديثُ الحالات زرّاً في شاشة السُّلَف — **والزرُّ يُغلق الفجوةَ لمَن
             // ‏يتذكّره**. فسُلفةٌ سُدِّد آخرُ قسطها تبقى «قائمةً» في كلّ تقريرٍ يقرأ الحالة،

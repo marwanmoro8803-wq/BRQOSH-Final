@@ -67,7 +67,7 @@ public class SalesOrder : ILineDocumentTotals
             throw new AccountingException("الكمية يجب أن تكون موجبة والسعر لا يكون سالباً.");
         DocumentLineScale.EnsureUnitPriceHalala(unitPrice);
 
-        // (CEEF-229 · م1-١ب الشقّ الثاني) الرفضُ عند بناء السطر — أبكرُ موضعٍ ممكن.
+        // الرفضُ عند بناء السطر — أبكرُ موضعٍ ممكن.
         // فالفئةُ غيرُ الأساسية بلا سببٍ نظاميّ تُنتج مستنداً ترفضه الهيئة (BR-KSA-CL-06)،
         // ولا يُصلحه ملءُ البيانات بعد الترحيل: العدّادُ استُهلك والبصمةُ بُنيت عليه.
         if (Tax.VatExemptionReason.IsRequiredFor(vatCategory))

@@ -41,7 +41,7 @@ public class UserAuthService(BrqoshDbContext db)
     {
         var normalized = username.Trim().ToLowerInvariant();
 
-        // ‏(CEEF-237 · ت-٦) **القفلُ يُفرَض هنا لا في النافذة.**
+        // ‏ **القفلُ يُفرَض هنا لا في النافذة.**
         // ‏كان يُفرَض في LoginWindow وحدَها وفي ذاكرة العملية — فإعادةُ التشغيل تمحوه،
         // ‏وأيُّ مسارٍ آخر يستدعي هذه الخدمة لم يكن يمرّ بقفلٍ أصلاً.
         await new PersistentLoginLockout(db).ThrowIfLockedAsync(companyId, normalized);

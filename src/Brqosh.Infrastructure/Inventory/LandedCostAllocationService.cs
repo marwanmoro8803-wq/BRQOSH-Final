@@ -74,7 +74,7 @@ public class LandedCostAllocationService(BrqoshDbContext db)
 
             var inventory = await db.Accounts.SingleAsync(a =>
                 a.CompanyId == companyId && a.Code == SaudiChartOfAccounts.SystemCodes.Inventory, token);
-            // (جاهزيّةُ الإطلاق · ح-٢٧) ‏**التكلفةُ الإضافيّةُ غيرُ المدفوعة مصروفٌ مستحقّ
+            // ‏**التكلفةُ الإضافيّةُ غيرُ المدفوعة مصروفٌ مستحقّ
             // ‏لا ذمّةُ مورِّد.**
             //
             // ‏كانت تُدائن `2101` — **حسابَ مراقبة الموردين** — **بلا مورِّدٍ البتّة**.

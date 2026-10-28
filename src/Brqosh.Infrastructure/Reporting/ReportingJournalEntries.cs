@@ -27,7 +27,7 @@ public static class ReportingJournalEntries
 
     /// <summary>
     /// استبعاد قيود الإقفال السنوي — لقائمة الدخل التي تعرض أداء الفترة لا أثر إقفالها.
-    /// (ع-R2، CEEF-201): قيد الإقفال مؤرَّخ داخل السنة نفسها ويصفّر الإيرادات والمصروفات،
+    /// : قيد الإقفال مؤرَّخ داخل السنة نفسها ويصفّر الإيرادات والمصروفات،
     /// فإدراجه كان يجعل قائمة دخل أي سنة مقفلة تعود صفراً.
     /// </summary>
     public static IQueryable<JournalEntry> ExcludeYearEndClosing(this IQueryable<JournalEntry> query) =>

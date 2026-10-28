@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٦) خصمُ المستند على الإشعار الدائن.
+    /// خصمُ المستند على الإشعار الدائن.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — على سابقة <c>AddLineAndDocumentDiscount</c>:
     /// <c>BrqoshSchemaUpdater</c> يسبق الهجراتِ على قواعد العملاء القديمة، فـ<c>AddColumn</c>

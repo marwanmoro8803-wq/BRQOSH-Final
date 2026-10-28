@@ -34,7 +34,7 @@ public enum CoverageBasis
 public readonly record struct CoverageSplit(decimal PatientShare, decimal PayerShare, CoverageBasis Basis);
 
 /// <summary>
-/// (CEEF-230 · ط3-٢) <b>قسمةُ فاتورة الزيارة — وهي كلُّ الفرق بين عيادةٍ تُحصّل وعيادةٍ تخسر.</b>
+/// <b>قسمةُ فاتورة الزيارة — وهي كلُّ الفرق بين عيادةٍ تُحصّل وعيادةٍ تخسر.</b>
 ///
 /// <para><b>ما كان:</b> ملفُّ «الصحّة» أحدُ ثمانية ملفّاتِ عملٍ في شاشة التأسيس، <b>ولا
 /// مريضَ في النظام ولا زيارةَ ولا وثيقةَ تأمين</b>. فالعيادةُ تكتب فاتورةً واحدةً باسم

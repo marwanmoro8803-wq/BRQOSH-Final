@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠) أسكنيٌّ عقدُ الإيجار أم تجاريّ — والفرقُ ضريبةٌ لا وصف.
+    /// أسكنيٌّ عقدُ الإيجار أم تجاريّ — والفرقُ ضريبةٌ لا وصف.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — على سابقة <c>AddLineAndDocumentDiscount</c>:
     /// <c>BrqoshSchemaUpdater</c> يسبق الهجراتِ على قواعد العملاء القديمة، فـ<c>AddColumn</c>

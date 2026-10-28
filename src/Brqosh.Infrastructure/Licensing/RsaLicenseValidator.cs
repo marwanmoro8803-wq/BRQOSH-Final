@@ -15,7 +15,7 @@ public record LicensePayload(
 public record SignedLicense(LicensePayload Payload, string SignatureBase64);
 
 /// <summary>
-/// (CEEF-236 · ت-١) <b>حكمُ التحقّق — سببٌ مسمّىً لا «غير صالح».</b>
+/// <b>حكمُ التحقّق — سببٌ مسمّىً لا «غير صالح».</b>
 ///
 /// <para>كانت نافذةُ التفعيل تقول لكلّ إخفاقٍ «ترخيص غير صالح لهذا الجهاز أو اسم المنشأة» —
 /// <b>وحين كان السببُ غيابَ مفتاح الثقة في التركيب</b> أرسلت العميلَ يُراجع اسمَ منشأته.
@@ -94,7 +94,7 @@ public static class RsaLicenseValidator
 
     /// <summary>يُعيد <see cref="LicenseVerdict.Valid"/> مع الحمولة، أو أوّلَ سببٍ للرفض بالترتيب: الشكل، المنشأة، الجهاز، الصلاحية، مفتاح الثقة، التوقيع.</summary>
     /// <param name="alsoAcceptMachineId">
-    /// (CEEF-237 · ت-٥) معرّفٌ بديلٌ مقبولٌ لهذا الجهاز — يُمرَّر عند الانتقال من الصيغة
+    /// معرّفٌ بديلٌ مقبولٌ لهذا الجهاز — يُمرَّر عند الانتقال من الصيغة
     /// القديمة إلى <c>MachineGuid</c> ليبقى ترخيصٌ صدر سابقاً صالحاً. <b>افتراضُه العدم</b>،
     /// فالسلوكُ لا يتّسع إلا حيث يُطلَب ذلك صراحةً.
     /// </param>
@@ -103,7 +103,7 @@ public static class RsaLicenseValidator
         => Validate(companyName, machineId, licenseJson, out payload, alsoAcceptMachineId, ignoreExpiry: false, nowUtc);
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٢٠) <b>ترخيصٌ أصيلٌ انقضت صلاحيتُه</b> — منشأتُه وجهازُه وتوقيعُه صحيحة، وتاريخُه فات.
+    /// ‏ <b>ترخيصٌ أصيلٌ انقضت صلاحيتُه</b> — منشأتُه وجهازُه وتوقيعُه صحيحة، وتاريخُه فات.
     ///
     /// <para>‏وهو وحدَه ما يفتح الدفاترَ للقراءة. <b>ولا يكفي حكمُ <see cref="LicenseVerdict.Expired"/></b>: <c>Validate</c> يُصدره
     /// ‏قبل فحص التوقيع (ليُسمّي أوّلَ سببٍ للرفض)، فترخيصٌ مزوَّرٌ بتاريخٍ فائتٍ يُحكم «منتهياً» — ولو فُتح له لصار التزويرُ مفتاحاً.</para>
@@ -155,7 +155,7 @@ public static class RsaLicenseValidator
         }
         catch (InvalidOperationException)
         {
-            // (CEEF-236) ‏`GetString()` على عنصرٍ ليس نصّاً (‏`"signature": 12`‎) يرمي هذا لا
+            // ‏`GetString()` على عنصرٍ ليس نصّاً (‏`"signature": 12`‎) يرمي هذا لا
             // ‏`JsonException`. **ونصٌّ يلصقه المستخدم لا يجوز أن يُسقط نافذةً بمكدّس** — هو مُشوَّه،
             // ‏وهذا حكمُه.
             return LicenseVerdict.Malformed;
@@ -167,7 +167,7 @@ public static class RsaLicenseValidator
         if (!string.Equals(inner.CompanyName.Trim(), companyName.Trim(), StringComparison.Ordinal))
             return LicenseVerdict.CompanyMismatch;
 
-        // ‏(CEEF-237 · ت-٥) يُقبل المعرّفُ المطلوب، **أو معرّفٌ بديلٌ يُمرَّر صراحةً**.
+        // ‏ يُقبل المعرّفُ المطلوب، **أو معرّفٌ بديلٌ يُمرَّر صراحةً**.
         //
         // ‏وأوّلُ محاولةٍ هنا كانت تقبل ضمناً أيَّ معرّفٍ لهذا الجهاز — **فترخيصٌ مربوطٌ
         // ‏بهذا الجهاز صار يُقبل ولو سُئل عن جهازٍ آخر**. وأمسك ذلك اختبارٌ قائم

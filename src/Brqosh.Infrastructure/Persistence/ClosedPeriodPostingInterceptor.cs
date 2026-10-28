@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace Brqosh.Infrastructure.Persistence;
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٧٨ · <c>found#1</c>) <b>الدفترُ نفسُه يرفض قيداً يُرحَّل في فترةٍ مقفلة — بتاريخ القيد لا بالتاريخ
+/// <b>الدفترُ نفسُه يرفض قيداً يُرحَّل في فترةٍ مقفلة — بتاريخ القيد لا بالتاريخ
 /// الذي فحصته الخدمة.</b>
 ///
 /// <para><b>ما كان:</b> سبعٌ وثلاثون خدمةً تكتب في <c>JournalEntries</c> رأساً، وكلُّها تمرّ من

@@ -16,7 +16,7 @@ public record EndOfServiceSettlementResult(
     decimal UnusedLeaveDays = 0m, decimal LeavePay = 0m, decimal AdvanceRecovered = 0m);
 
 /// <summary>
-/// (CEEF-232 · ر-١) <b>تصفيةُ نهاية الخدمة — الطرفُ الذي يُبرئ المخصّص.</b>
+/// <b>تصفيةُ نهاية الخدمة — الطرفُ الذي يُبرئ المخصّص.</b>
 ///
 /// <para><b>ما كان:</b> <c>EndOfServiceAccrualService</c> يُصدِّر <b>دالّةً واحدة</b>:
 /// <c>RunMonthlyAsync</c>. فالمخصّصُ <c>2202</c> <b>يُبنى شهراً بشهرٍ ولا يُبرَأ أبداً</b> —
@@ -54,7 +54,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
     /// <summary>رواتبُ مستحقّة — <b>مخرجُ المال الوحيد في الرواتب</b>.</summary>
     private const string PayableCode = SaudiChartOfAccounts.PostingRoleCodes.SalariesPayable;
 
-    /// <summary>(CEEF-233 · ز-٥) مخصّصُ الإجازات ومصروفُها — لبدل الإجازة (المادة 111).</summary>
+    /// <summary> مخصّصُ الإجازات ومصروفُها — لبدل الإجازة (المادة 111).</summary>
     private const string LeaveProvisionCode = SaudiChartOfAccounts.SystemCodes.LeaveProvision;
     private const string LeaveExpenseCode = SaudiChartOfAccounts.SystemCodes.LeaveExpense;
 
@@ -93,7 +93,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
 
             var adjustment = Math.Round(provisioned - benefit, 2, MidpointRounding.AwayFromZero);
 
-            // (CEEF-233 · ز-٥) ‏**وبدلُ الإجازة يُدفع مع المكافأة — المادة 111.**
+            // ‏**وبدلُ الإجازة يُدفع مع المكافأة — المادة 111.**
             //
             // ‏**وهذا هو الشقُّ الذي كان مفقوداً**: مَن انتهت خدمتُه وله رصيدُ إجازاتٍ
             // ‏غيرُ مستعمل **يستحقّ أجرَه نقداً**، ولا يسقط بطول تركه. **وتصفيةٌ تُبرئ
@@ -159,7 +159,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
                 entry.AddLine(payable, 0m, leavePay, "بدل إجازة — المادة 111");
             }
 
-            // (جاهزيّةُ الإطلاق · ح-٨٧ · `treasury-payroll-assets#4`) ‏**والسُّلفةُ القائمةُ تُستردّ من المستحقّات** — وكانت تبقى
+            // ‏**والسُّلفةُ القائمةُ تُستردّ من المستحقّات** — وكانت تبقى
             // ‏ديناً على موظّفٍ رحل وتُدفع له مستحقّاتُه كاملة. **والاستردادُ لا يتجاوز ما يُستحقّ له** (المكافأة وبدل الإجازة):
             // ‏فما زاد يبقى قائماً في `1116` ديناً يُطالَب به لا يُخصم من شيءٍ لا وجودَ له.
             var advanceOwed = (await new EmployeeAdvanceService(db).BalancesAsync(companyId, employeeId, token))
@@ -198,7 +198,7 @@ public class EndOfServiceSettlementService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٩١ · <c>treasury-payroll-assets#10</c>) <b>عكسُ تصفية نهاية الخدمة</b> — وكانت لا تُعكس، فتصفيةٌ بسببٍ خطأٍ
+    /// <b>عكسُ تصفية نهاية الخدمة</b> — وكانت لا تُعكس، فتصفيةٌ بسببٍ خطأٍ
     /// (استقالةٌ قُيّدت فصلاً) تبقى. <b>والمدفوعُ يُرفض حتى يُعكس دفعُه</b> — وإلّا خرج المالُ ولا التزامَ يقابله؛ <b>والسُّلفةُ التي استردّتها
     /// تعود قائمة</b>؛ <b>ويُصفّى الموظّفُ من جديد</b>.
     /// </summary>

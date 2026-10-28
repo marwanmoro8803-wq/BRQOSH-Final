@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) الحجزُ الذي تُصفّيه فاتورةُ المغادرة — فارغٌ لكلّ فاتورةٍ قائمة.
+    /// ‏ الحجزُ الذي تُصفّيه فاتورةُ المغادرة — فارغٌ لكلّ فاتورةٍ قائمة.
     /// ‏ومُطاوِعةٌ للتكرار كأخواتها: المُرقِّعُ قد يكون أضاف العمودَ قبلها.
     /// </summary>
     public partial class AddSalesInvoiceSettlesReservation : Migration

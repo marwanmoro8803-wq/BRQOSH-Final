@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٢) خصمُ السطر وخصمُ المستند.
+    /// خصمُ السطر وخصمُ المستند.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يسبقها على قواعد العملاء، فـ<c>AddColumn</c>
     /// المولَّدة تصطدم بعمودٍ موجود. وثمانيةُ جداولٍ للنسبة الواحدة لأنّ

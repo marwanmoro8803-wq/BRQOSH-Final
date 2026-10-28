@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-231 · ط1-٢ج) ‏خصمُ السداد المبكر على السندين.
+        /// ‏خصمُ السداد المبكر على السندين.
         ///
         /// <para>‏<b>والصياغةُ يدويّةٌ بـ<c>IF NOT EXISTS</c> لا مُولَّدة</b>: المُرقِّعُ
         /// اليدويّ (<c>BrqoshSchemaUpdater</c>) يضيف العمودَين أنفسَهما على القواعد

@@ -27,7 +27,7 @@ public class PayrollReversalService(BrqoshDbContext db)
             if (run.JournalEntryId is not long entryId)
                 throw new AccountingException("الدورة بلا قيد محاسبي مرتبط.");
 
-            // (جاهزيّةُ الإطلاق · ح-٨٤) ‏**ولا تُعكس دورةٌ خرج مالُها** — فعكسُها يُعيد `2108` مديناً بما صُرف والمالُ خارجٌ،
+            // ‏**ولا تُعكس دورةٌ خرج مالُها** — فعكسُها يُعيد `2108` مديناً بما صُرف والمالُ خارجٌ،
             // ‏ويبقى الالتزامُ سالباً لا يُفسَّر. والصرفُ نفسُه بلا عكسٍ بعد (`treasury-payroll-assets#10`).
             if (await new PayrollPaymentService(db).AnyPaidAsync(companyId, runId, token))
                 throw new AccountingException("صُرفت رواتبُ الدورة أو سُدِّدت تأميناتُها — ولا تُعكس دورةٌ خرج مالُها.");
@@ -52,7 +52,7 @@ public class PayrollReversalService(BrqoshDbContext db)
             foreach (var projectId in projectCosts.Select(c => c.ProjectId).Distinct())
                 await new Construction.ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, reversalDate, token);
 
-            // (CEEF-231 · ط2-٧) ‏**والعكسُ يُعيد الدَّين.**
+            // ‏**والعكسُ يُعيد الدَّين.**
             //
             // ‏الاستقطاعُ الذي أقفل السُّلفةَ ارتدّ بارتداد الدورة — **وسُلفةٌ تبقى
             // ‏«مسدَّدة» بعد ارتداد سدادها دَينٌ سقط بلا قبض**. والاتّجاهان في كاتبٍ

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٧) مركزُ التكلفة على المستندات، وفهرسُه على سطر القيد.
+    /// مركزُ التكلفة على المستندات، وفهرسُه على سطر القيد.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يسبقها على قواعد العملاء.</para>
     ///

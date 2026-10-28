@@ -33,7 +33,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                 nullable: false,
                 defaultValue: 0L);
 
-            // ‏(CEEF-229) ترقيمُ الصفوف القائمة **قبل** الفهرس الفريد.
+            // ‏ ترقيمُ الصفوف القائمة **قبل** الفهرس الفريد.
             //
             // ‏العمودُ أعلاه يُضاف بصفرٍ لكلّ صفٍّ قائم، والفهرسُ أدناه فريدٌ على
             // ‏(CompanyId, Sequence) — فمنشأةٌ لها سطرا تدقيقٍ اثنان يتصادمان، وتسقط

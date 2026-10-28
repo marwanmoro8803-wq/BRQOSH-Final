@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace Brqosh.Infrastructure.Persistence;
 
 /// <summary>
-/// ‏(جاهزيّةُ الإطلاق · ح-١٢٠ · ‏`commercial-readiness#6`) <b>وضعُ القراءة فقط يُفرض عند الحفظ — لا في كلّ شاشة.</b>
+/// ‏ <b>وضعُ القراءة فقط يُفرض عند الحفظ — لا في كلّ شاشة.</b>
 ///
 /// <para>‏حين يكون <see cref="ReadOnlyBooks.IsActive"/> يُرفض كلُّ حفظٍ يُضيف أو يُعدّل أو يحذف شيئاً من الدفاتر. <b>والمستثنى
 /// ‏ما يلزم الدخولَ والمساءلةَ وحدَه</b>: سجلُّ التدقيق وسجلُّ الدخول ورموزُ التحقّق والمستخدمون (محاولاتُ الدخول وآخرُه) —

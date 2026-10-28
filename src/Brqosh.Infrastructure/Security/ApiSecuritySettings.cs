@@ -69,7 +69,7 @@ public static class ApiSecuritySettings
     public const string ApiRoleEnv = "BRQOSH_API_ROLE";
 
     /// <summary>
-    /// (CEEF-229 · م2-١) دور مستدعي API — <b>يضبطه الخادم، لا المستدعي</b>.
+    /// دور مستدعي API — <b>يضبطه الخادم، لا المستدعي</b>.
     ///
     /// <para><b>ما كان:</b> الوسيط يبدأ بـ<c>var role = UserRole.Administrator;</c> ثم يسمح
     /// لترويسة <c>X-Api-Role</c> بتغييره. أي أن الدور يُعلنه المستدعي، <b>وإغفالُ الترويسة

@@ -14,7 +14,7 @@ namespace Brqosh.Infrastructure.Logistics;
 public record ShipmentBillingResult(long? InvoiceId, int Shipments, decimal Freight);
 
 /// <summary>
-/// (CEEF-232 · ل-١) <b>أجرةُ الشحن — إيرادُ القطاع كلِّه، ولم تكن تبلغ الأستاذ أبداً.</b>
+/// <b>أجرةُ الشحن — إيرادُ القطاع كلِّه، ولم تكن تبلغ الأستاذ أبداً.</b>
 ///
 /// <para><b>ما كان:</b> <c>Shipment.FreightCharge</c> يُقرأ في موضعين لا ثالثَ لهما —
 /// <b>عرضٌ على الشاشة</b>، و<b>حسابُ ربحيّة الخطّ</b> في <c>DeliveryTripService</c>.

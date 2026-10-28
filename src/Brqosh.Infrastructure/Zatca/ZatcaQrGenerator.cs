@@ -40,7 +40,7 @@ public static class ZatcaQrGenerator
             (7, Convert.FromBase64String(ecdsaSignatureBase64)), // Phase 2: توقيع ECDSA (bytes خام)
         };
 
-        // (CEEF-229 · Z-9) الوسم 8 — المفتاح العام لختم التشفير.
+        // الوسم 8 — المفتاح العام لختم التشفير.
         //
         // كانت المصفوفة تنتهي عند 7: توقيعٌ ECDSA بلا مفتاحٍ يتحقّق به. فماسحُ «فاتورة» يفكّ
         // سبعة وسوم ولا يستطيع إثبات صحّة الختم، وفحصُ الامتثال على الفاتورة المبسّطة يفشل.
@@ -49,7 +49,7 @@ public static class ZatcaQrGenerator
         if (!string.IsNullOrWhiteSpace(publicKeyDerBase64))
             items = [.. items, ((byte)8, Convert.FromBase64String(publicKeyDerBase64))];
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٧) ‏**الوسمُ ٩ — توقيعُ جهةِ الإصدار على مفتاحنا العامّ.**
+        // ‏ ‏**الوسمُ ٩ — توقيعُ جهةِ الإصدار على مفتاحنا العامّ.**
         //
         // ‏وكان هنا سطرٌ يقول إنّه «يأتي مع CSID الإنتاجيّ» — **فصُنِّف انتظاراً لجهةٍ
         // ‏خارجيّة**. والمقيسُ أنّه في اليد: الشهادةُ الصادرةُ تحمل في حقل `signatureValue`
@@ -115,7 +115,7 @@ public static class ZatcaQrGenerator
             payload.WriteByte(tag);
 
             // ترميز طول TLV (BER):
-            // (CEEF-206) الفرع الطويل كان يكتب 0x81 ثم (byte)Length — فأي طول ≥ 256
+            // الفرع الطويل كان يكتب 0x81 ثم (byte)Length — فأي طول ≥ 256
             // يُقصّ إلى بايت واحد (300 تصير 44) وينتج رمزاً تالفاً بلا أي استثناء.
             // اسم بائع عربي طويل يتجاوز 255 بايتاً في UTF-8 يبلغ هذا الحد فعلاً.
             if (data.Length <= 127)
@@ -150,7 +150,7 @@ public static class ZatcaHashHelper
         Sha256Base64(Encoding.UTF8.GetBytes(text));
 
     /// <summary>
-    /// (CEEF-229 · م2-٢٢) <b>بصمةُ السابق لأوّل مستندٍ في حياة المنشأة — ثابتٌ تنصّ عليه الهيئة.</b>
+    /// <b>بصمةُ السابق لأوّل مستندٍ في حياة المنشأة — ثابتٌ تنصّ عليه الهيئة.</b>
     ///
     /// <para>المعيار يقول حرفياً: «For the first invoice, the previous invoice hash is
     /// <c>NWZlY2ViNjZ…</c>»، ثمّ يصفه بأنّه «the equivalent for base64 encoded SHA256 of "0"».

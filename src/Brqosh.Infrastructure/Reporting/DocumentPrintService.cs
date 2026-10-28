@@ -36,7 +36,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
         var (company, invoice, customerName, zatca) = await LoadSalesInvoiceAsync(companyId, invoiceId, ct);
         PrintPostedGuard.EnsureSalesInvoicePosted(invoice);
         var kind = ResolveSalesKind(invoice, zatca);
-        // (CEEF-229 · م2-١٨) قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
+        // قراءةٌ تتجاوز مرشّح الحذف الناعم عمداً — المستند تاريخيّ.
         // الطرف كان موجوداً يوم صدور المستند، وحذفُه لاحقاً لا يُلغي المستند. وقراءةُ
         // المرشَّح كانت ترمي «Sequence contains no elements» بالإنجليزية داخل واجهةٍ
         // عربية، فتصير فاتورةٌ ضريبية سعودية **غير قابلة للطباعة أبداً** — وهي وثيقةٌ
@@ -162,7 +162,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٤٢ · tax-zatca#14) <b>مبالغُ المستند المطبوعة — بعملةٍ واحدة.</b>
+    /// <b>مبالغُ المستند المطبوعة — بعملةٍ واحدة.</b>
     ///
     /// <para><b>وكانت كلُّ طباعةٍ تمرّر الإجماليّاتِ بالريال والسطورَ بعملة المستند</b> — خمسُ
     /// طباعاتٍ بالخطأ نفسِه (الفاتورتان والإشعاران ومستندُ الإلغاء). <b>والقاعدةُ هنا مرّةً واحدة</b>: مستندٌ أجنبيٌّ يُطبع بعملته
@@ -196,7 +196,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
                 l.Description, l.Quantity, l.UnitPrice, l.LineTotal, l.VatCategory, l.DiscountAmount))];
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>فاتورةُ بيع الأصل الثابت مطبوعةً — يأخذها المشتري.</b>
+    /// <b>فاتورةُ بيع الأصل الثابت مطبوعةً — يأخذها المشتري.</b>
     ///
     /// <para><b>ومستندٌ ضريبيٌّ لا يُطبع نصفُ مستند</b>: المشتري يطلب فاتورتَه ورقاً أو
     /// ملفّاً ليخصم مدخلاتِه، <b>وزرُّ الطباعة في شاشة المستندات كان سيرمي</b> على النوع
@@ -268,7 +268,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٩) <b>مستندُ الإلغاء يُطبع — وكان يرمي.</b>
+    /// <b>مستندُ الإلغاء يُطبع — وكان يرمي.</b>
     ///
     /// <para>ثلاثةُ أنواعٍ تُصدرها الهيئةُ عند الإلغاء (<c>InvoiceCancel</c> و
     /// <c>BillingCancel</c> و<c>DebitNote</c>) <b>لم يكن لها فرعٌ في مُوزِّع الطباعة</b>،
@@ -612,7 +612,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     }
 
     /// <summary>
-    /// (CEEF-226) رمز QR للمرحلة الأولى يُحسب عند الطباعة حين لا يوجد مستند ZATCA.
+    /// رمز QR للمرحلة الأولى يُحسب عند الطباعة حين لا يوجد مستند ZATCA.
     ///
     /// كان توليد الرمز مشروطاً بـ<c>ZatcaSettings.IsEnabled</c> كلّه — فمنشأةٌ لم تُفعّل
     /// تكامل المرحلة الثانية تطبع **فواتير ضريبية بلا باركود إطلاقاً**. وقد ثبت ذلك على
@@ -622,7 +622,7 @@ public partial class DocumentPrintService(BrqoshDbContext db, AuditService audit
     /// المضافة**، ولا يحتاج شهادة ولا CSID ولا اتصالاً بالهيئة — خمسة حقول تُحسب محلياً
     /// من بيانات الفاتورة نفسها. فربطه بتفعيل المرحلة الثانية خلطٌ بين مرحلتين مستقلّتين.
     ///
-    /// <para><b>(CEEF-229 · م2-٢٤) وطابعُه الزمنيّ صار لحظةَ الترحيل المسجَّلة.</b>
+    /// <para><b> وطابعُه الزمنيّ صار لحظةَ الترحيل المسجَّلة.</b>
     /// كان ظهرَ يوم الإصدار مختلقاً، فصار <c>PostedAtUtc</c> — والمشتري يمسح الرمزَ فيرى
     /// وقتَ شرائه. ويبقى الظهرُ للمستندات التي سبقت وسمَ اللحظة وحدها.</para>
     ///

@@ -4,7 +4,7 @@ using Brqosh.Infrastructure.Security;
 namespace Brqosh.Infrastructure.Licensing;
 
 /// <summary>
-/// (CEEF-237 · ت-١٢) <b>رجوعُ ساعة الجهاز يُكشف — وكانت الصلاحيةُ تُقاس بها وحدَها.</b>
+/// <b>رجوعُ ساعة الجهاز يُكشف — وكانت الصلاحيةُ تُقاس بها وحدَها.</b>
 ///
 /// <para><b>ما كان:</b> <c>if (inner.ExpiresUtc &lt; DateTime.UtcNow)</c> والموضعُ الوحيدُ
 /// الذي يُستدعى منه هو الإقلاع. <b>فمن أرجع ساعةَ جهازه مدّد ترخيصَه بلا حدّ</b> — وصار

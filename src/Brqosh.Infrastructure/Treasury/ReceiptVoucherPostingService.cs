@@ -20,7 +20,7 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
         PostAsync(voucher, Array.Empty<(PaymentAllocationDocumentType, long, string, decimal)>());
 
     /// <summary>
-    /// (CEEF-230 · ط1-٤) <b>يحسب ما يُحرَّر من الذمّة، ويُحضر حسابَي فرقِ العملة.</b>
+    /// <b>يحسب ما يُحرَّر من الذمّة، ويُحضر حسابَي فرقِ العملة.</b>
     ///
     /// <para><b>وسندٌ بالريال يُعيد <c>null</c></b> — فيسلك الترحيلُ مسارَه القديم حرفاً،
     /// ولا يتغيّر رقمٌ في قاعدةٍ قائمة.</para>
@@ -100,12 +100,12 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
                 db.ReceiptVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
                 "RV", voucher.VoucherDate, voucher.CompanyId);
 
-            // (CEEF-230 · ط1-٤) ‏**قيمةُ الذمّة كما نشأت** — بسعرِ يوم كلّ فاتورة، لا بسعر
+            // ‏**قيمةُ الذمّة كما نشأت** — بسعرِ يوم كلّ فاتورة، لا بسعر
             // ‏يوم التحصيل. ومن فرقِ السعرين يقع الربحُ أو الخسارةُ المحقَّقة.
             var (releasedReceivable, fxGain, fxLoss) =
                 await ResolveSettlementAsync(voucher, allocations, ct);
 
-            // (CEEF-231 · ط1-٢ج) ‏حسابُ خصم السداد — **ولا يُنشأ إلا حين يوجد خصم**،
+            // ‏حسابُ خصم السداد — **ولا يُنشأ إلا حين يوجد خصم**،
             // ‏فقاعدةٌ لا تمنح خصماً لا يظهر فيها حسابٌ بلا حركة.
             var discountAccount = voucher.SettlementDiscount > 0m
                 ? await SystemAccountProvisioning.EnsureAsync(db, voucher.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, voucher.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.SalesDiscounts, ct), ct)
@@ -117,7 +117,7 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);
-            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
             // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
             // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
             // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -150,7 +150,7 @@ public class ReceiptVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
 
     private async Task<Account> ResolveCashOrBankAccountAsync(long companyId, ReceiptMethod method, long? bankAccountId)
     {
-        // (CEEF-229 · م2-١٥) الحلّ من مكانٍ واحد — وكان السقوط هنا يُقيّد على الأب 1102
+        // الحلّ من مكانٍ واحد — وكان السقوط هنا يُقيّد على الأب 1102
         // بينما البنوك تُقيَّد على أبنائه، فينشقّ نقد البنوك. انظر BankGlAccountResolver.
         if (method == ReceiptMethod.Cash)
             return await db.Accounts.SingleAsync(

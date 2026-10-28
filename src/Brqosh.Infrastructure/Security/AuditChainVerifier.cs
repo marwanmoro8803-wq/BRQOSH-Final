@@ -14,7 +14,7 @@ public enum AuditChainBreakKind
     BrokenLink,
 
     /// <summary>
-    /// (CEEF-229) صفٌّ غيرُ مربوطٍ ظهر **بعد** بدء السلسلة — أتى من خارج التطبيق.
+    /// صفٌّ غيرُ مربوطٍ ظهر **بعد** بدء السلسلة — أتى من خارج التطبيق.
     /// `AuditService` هو الكاتبُ الوحيد وهو يربط دائماً، فلا سبيلَ إلى صفٍّ كهذا من الشفرة.
     /// </summary>
     UnchainedEntry,
@@ -35,7 +35,7 @@ public record AuditChainResult(long CompanyId, int EntriesChecked, IReadOnlyList
 }
 
 /// <summary>
-/// (O-19، CEEF-212) التحقق من سلامة سلسلة سجل التدقيق.
+/// التحقق من سلامة سلسلة سجل التدقيق.
 ///
 /// معترض EF يمنع التعديل والحذف داخل التطبيق، لكن الوصول المباشر للقاعدة يتجاوزه.
 /// هذا المدقّق يمشي على السلسلة ويكشف ثلاثة أنواع من العبث: تعديل محتوى، إبدال/إقحام
@@ -54,7 +54,7 @@ public sealed class AuditChainVerifier(BrqoshDbContext db)
         var expectedSequence = 1L;
         var expectedPrevious = AuditLogEntry.GenesisHash;
 
-        // (CEEF-229) ‏حدُّ الحقبة: أوّلُ صفٍّ مربوطٍ كُتب لهذه المنشأة.
+        // ‏حدُّ الحقبة: أوّلُ صفٍّ مربوطٍ كُتب لهذه المنشأة.
         // ‏كلُّ صفٍّ غيرِ مربوطٍ **مفتاحُه الأوّليّ أعلى منه** كُتب بعد بدء السلسلة —
         // ‏ولا سبيلَ إلى ذلك من الشفرة: `AuditService` هو الكاتبُ الوحيد وهو يربط دائماً.
         var firstChainedId = entries
@@ -64,7 +64,7 @@ public sealed class AuditChainVerifier(BrqoshDbContext db)
 
         foreach (var entry in entries)
         {
-            // ‏(CEEF-229) صفوفُ ما قبل السلسلة: تجزئتُها فارغة — لا سلسلةَ لها تُفحص.
+            // ‏ صفوفُ ما قبل السلسلة: تجزئتُها فارغة — لا سلسلةَ لها تُفحص.
             //
             // ‏وكان الشرطُ هنا `Sequence == 0` وحدَه، **بإعفاءٍ بلا تاريخِ انقضاء**: فصفٌّ
             // ‏يُدسّ اليوم بترتيبٍ صفر يمرّ على كاشف العبث إلى الأبد. كشفته طفرةٌ **لم

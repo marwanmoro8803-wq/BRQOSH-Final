@@ -21,7 +21,7 @@ public record IncomeStatementResult(
 public class IncomeStatementQuery(BrqoshDbContext db)
 {
     /// <param name="excludeYearEndClosing">
-    /// الافتراضي true: قائمة الدخل تعرض أداء الفترة، لا أثر قيد إقفالها (ع-R2، CEEF-201).
+    /// الافتراضي true: قائمة الدخل تعرض أداء الفترة، لا أثر قيد إقفالها .
     /// تمرّر الميزانية العمومية false عمداً لاحتساب الأرباح غير المقفلة: إدراج قيد الإقفال
     /// يجعل السنوات المقفلة تساوي صفراً فلا تُحتسب مرتين (مرة هنا ومرة في حساب حقوق الملكية).
     /// </param>

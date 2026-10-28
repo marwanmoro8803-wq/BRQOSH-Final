@@ -7,7 +7,7 @@ namespace Brqosh.Infrastructure.Sales;
 public record CollectableCustomer(long Id, string NameAr, decimal Balance, bool IsActive);
 
 /// <summary>
-/// (CEEF-229 · م2-٢٢) <b>مَن يُمكن تحصيلُه — لا مَن هو نشط.</b>
+/// <b>مَن يُمكن تحصيلُه — لا مَن هو نشط.</b>
 ///
 /// <para><b>العطل:</b> حوار سند القبض يبني قائمته بشرط <c>c.IsActive</c> وحده. وإيقافُ العميل
 /// لا يفحص شيئاً: يقرأ ويوقف ويحفظ، بلا استعلامٍ عن رصيدٍ أو فواتير — <b>رغم أن الصفحة نفسها

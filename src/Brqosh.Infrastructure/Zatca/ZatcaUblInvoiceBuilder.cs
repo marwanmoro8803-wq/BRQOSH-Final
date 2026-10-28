@@ -41,13 +41,13 @@ public static class ZatcaUblInvoiceBuilder
         BuyerIdentity? Buyer = null,
 
         /// <summary>
-        /// (CEEF-230 · ط1-٢) خصمُ المستند — يخرج <c>AllowanceCharge</c> لكلّ وعاءٍ ضريبيّ.
+        /// خصمُ المستند — يخرج <c>AllowanceCharge</c> لكلّ وعاءٍ ضريبيّ.
         /// و<c>Subtotal</c> أعلاه <b>بعده</b>، فـ<c>LineExtensionAmount</c> يساوي مجموعَهما.
         /// </summary>
         decimal DocumentDiscount = 0m,
 
         /// <summary>
-        /// (CEEF-230 · ط1-١) رمزُ UN/ECE لكلّ سطر، بترتيب <c>Lines</c> نفسِه.
+        /// رمزُ UN/ECE لكلّ سطر، بترتيب <c>Lines</c> نفسِه.
         ///
         /// <para><b>وكان ثابتاً <c>PCE</c> لكلّ سطرٍ في النظام</b> — فبيعُ خمسة كيلوجرامات
         /// يُبلَّغ للهيئة خمسَ قطع. <b>تصريحٌ مخالفٌ للواقع يمرّ على كلّ تصديقٍ بنيويّ</b>،
@@ -55,7 +55,7 @@ public static class ZatcaUblInvoiceBuilder
         /// </summary>
         IReadOnlyList<string>? LineUnitCodes = null,
 
-        /// <summary>(CEEF-230 · ط1-٤) عملةُ المستند — والمبالغُ أعلاه بها.</summary>
+        /// <summary> عملةُ المستند — والمبالغُ أعلاه بها.</summary>
         string CurrencyCode = "SAR",
 
         /// <summary>سعرُ الصرف إلى الريال يوم المستند.</summary>
@@ -69,7 +69,7 @@ public static class ZatcaUblInvoiceBuilder
         decimal? VatAmountInSar = null,
 
         /// <summary>
-        /// (جاهزيّةُ الإطلاق · ح-٨) <b>تاريخُ التوريد</b> — <c>cac:Delivery/cbc:ActualDeliveryDate</c>،
+        /// <b>تاريخُ التوريد</b> — <c>cac:Delivery/cbc:ActualDeliveryDate</c>،
         /// وتشترطه الهيئةُ في الفاتورة الضريبيّة (BR-KSA-11).
         ///
         /// <para><b>و<c>null</c> تعني «يوم الفاتورة»</b>، وهو الأصلُ في بيعٍ يقع عند الإصدار —
@@ -84,14 +84,14 @@ public static class ZatcaUblInvoiceBuilder
         IReadOnlyList<PrepaymentReference>? Prepayments = null);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · <c>sector-modules#6</c>) فاتورةُ دفعةٍ مقدّمةٍ (386) تُسوّى في الفاتورة النهائيّة — كما في معيار
+    /// فاتورةُ دفعةٍ مقدّمةٍ (386) تُسوّى في الفاتورة النهائيّة — كما في معيار
     /// XML (الإصدار 1.2، §9.5): رقمُها وتاريخُها ووقتُها (KSA-26/28/29) ووعاؤها وضريبتُها (KSA-31/32) بفئتها (KSA-33/34).
     /// </summary>
     public sealed record PrepaymentReference(
         string Id, DateOnly IssueDate, TimeOnly IssueTime, decimal TaxableAmount, decimal VatAmount);
 
 /// <summary>
-/// (CEEF-229 · Z-10) هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
+/// هوية البائع النظامية — السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ.
 /// كانت غائبة عن العقد كلياً، فيخرج طرف البائع باسمٍ ورقمٍ ضريبيّ فقط: مستندٌ يسقط في
 /// تصديق المخطّط قبل أن تُقرأ أرقامه.
 /// </summary>
@@ -101,7 +101,7 @@ public sealed record SellerIdentity(
     Brqosh.Domain.Companies.NationalAddress Address);
 
 /// <summary>
-/// (CEEF-229 · م1-١ب) هويةُ المشتري النظامية — للفاتورة <b>القياسية</b> وحدها.
+/// هويةُ المشتري النظامية — للفاتورة <b>القياسية</b> وحدها.
 ///
 /// <para>ولا رقمَ سجلٍّ تجاريّ فيها: معرّفُ المشتري هو رقمُه الضريبيّ. أمّا المبسّطة (B2C)
 /// فلا مشتريَ معرَّفاً فيها أصلاً — والكاشيرُ لا يسأل الزبونَ عن حيّه.</para>
@@ -125,12 +125,12 @@ public sealed record BuyerIdentity(
             El(Cbc, "IssueDate", data.InvoiceDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
             El(Cbc, "IssueTime", data.IssueTime.ToString("HH:mm:ss", CultureInfo.InvariantCulture)),
             InvoiceTypeCodeEl(typeCode, typeName),
-            // (CEEF-230 · ط1-٤) ‏عملةُ المستند تتغيّر، **وعملةُ الضريبة ريالٌ أبداً** —
+            // ‏عملةُ المستند تتغيّر، **وعملةُ الضريبة ريالٌ أبداً** —
             // ‏فالضريبةُ تُورَّد بالريال أيّاً كانت عملةُ الفاتورة (BR-KSA-EN16931-09).
             El(Cbc, "DocumentCurrencyCode", data.CurrencyCode),
             El(Cbc, "TaxCurrencyCode", "SAR"));
 
-        // (CEEF-229 · Z-6) ترتيب `xsd:sequence` في مخطّط UBL 2.1 مُلزِم — لا اصطلاح.
+        // ترتيب `xsd:sequence` في مخطّط UBL 2.1 مُلزِم — لا اصطلاح.
         //
         // متتالية Invoice تضع `cac:BillingReference` **قبل** `cac:AdditionalDocumentReference`،
         // ثم `cac:Signature` بعدهما وقبل طرفَي البائع والمشتري. وكان الترتيب معكوساً والتوقيع
@@ -150,7 +150,7 @@ public sealed record BuyerIdentity(
         if (!string.IsNullOrWhiteSpace(data.CustomerName) || !string.IsNullOrWhiteSpace(data.CustomerVat))
             AddCustomer(root, data.CustomerName, data.CustomerVat, data.Buyer);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٨) ‏**تاريخُ التوريد — وكان غائباً عن المستند كلِّه.**
+        // ‏ ‏**تاريخُ التوريد — وكان غائباً عن المستند كلِّه.**
         //
         // ‏الهيئةُ تشترط `cac:Delivery/cbc:ActualDeliveryDate` في الفاتورة الضريبيّة
         // ‏(BR-KSA-11)، **وهو يُحدّد الفترةَ التي تُقرَّر فيها الضريبة** — لا بيانٌ وصفيّ.
@@ -163,9 +163,9 @@ public sealed record BuyerIdentity(
         AddIssueReason(root, data);
 
         // cac:TaxSubtotal إلزاميّ لدى الهيئة (BR-CO-18/KSA): وعاء الضريبة + فئتها + نسبتها.
-        // كان غائباً تماماً فتُرفض الفاتورة في الفحص رغم صحة التوقيع (ع-Z2، CEEF-202).
+        // كان غائباً تماماً فتُرفض الفاتورة في الفحص رغم صحة التوقيع .
         //
-        // (CEEF-207) وعاء لكل فئة ضريبية حاضرة في الفاتورة، لا وعاء واحد بنسبة مسمّرة:
+        // وعاء لكل فئة ضريبية حاضرة في الفاتورة، لا وعاء واحد بنسبة مسمّرة:
         // فاتورة فيها سطر أساسيّ وآخر صفريّ تُنتج وعاءين — والنسبة المعلنة في كل وعاء
         // تطابق مبلغ ضريبته، فينتفي التناقض الذي كان يرفضه المدقّق (صفر مصنّف بنسبة 15).
         var subtotals = LineDocumentTotalsCalculator.ComputeSubtotals(
@@ -181,7 +181,7 @@ public sealed record BuyerIdentity(
                 new XElement(Cac + "TaxCategory",
                     El(Cbc, "ID", sub.Category.UblCode()),
                     El(Cbc, "Percent", (sub.Rate * 100m).ToString("0.00", CultureInfo.InvariantCulture)),
-                    // (CEEF-229 · م1-١ب) BR-KSA-CL-06: فئةٌ غير أساسية بلا سبب إعفاء تُرفض.
+                    // BR-KSA-CL-06: فئةٌ غير أساسية بلا سبب إعفاء تُرفض.
                     // والترتيبُ مُلزِم: ID ثمّ Percent ثمّ الرمز ثمّ النصّ ثمّ TaxScheme.
                     sub.Category == VatCategory.Standard || sub.ExemptionReasonCode is null
                         ? null
@@ -192,7 +192,7 @@ public sealed record BuyerIdentity(
                     new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
         }
 
-        // (CEEF-230 · ط1-٢) ‏**خصمُ المستند: عنصرٌ لكلّ وعاءٍ ضريبيّ لا عنصرٌ واحد.**
+        // ‏**خصمُ المستند: عنصرٌ لكلّ وعاءٍ ضريبيّ لا عنصرٌ واحد.**
         //
         // ‏لأنّ `cac:AllowanceCharge` على مستوى المستند يحمل `cac:TaxCategory` — فخصمٌ
         // ‏واحدٌ على فاتورةٍ فيها وعاءان لا يستطيع أن يُعلن فئتَه. **والتوزيعُ يصير
@@ -212,7 +212,7 @@ public sealed record BuyerIdentity(
                     new XElement(Cac + "TaxScheme", El(Cbc, "ID", "VAT")))));
         }
 
-        // (CEEF-230 · ط1-٤) ‏سعرُ الصرف ثمّ ضريبةٌ ثانيةٌ بالريال — **ولا يخرجان إلا عند
+        // ‏سعرُ الصرف ثمّ ضريبةٌ ثانيةٌ بالريال — **ولا يخرجان إلا عند
         // ‏اختلاف العملتين**. فمستندٌ بالريال يبقى حرفاً كما كان، ولا تتغيّر بصمةُ فاتورةٍ
         // ‏قائمة.
         if (data.CurrencyCode != "SAR")
@@ -260,7 +260,7 @@ public sealed record BuyerIdentity(
         foreach (var line in data.Lines)
         {
             var lineNet = line.LineTotal;
-            // (CEEF-207) نسبة السطر من فئته: الصفريّ والمعفى ينتجان ضريبة صفراً ونسبة 0.00،
+            // نسبة السطر من فئته: الصفريّ والمعفى ينتجان ضريبة صفراً ونسبة 0.00،
             // بدل ضرب كل سطر 15% ثم تصنيفه "O" بنسبة معلنة 15.00 — تناقض يرفضه المدقّق.
             var lineRate = line.VatCategory.RateFor(SalesInvoice.SaudiVatRate);
             var lineVat = Math.Round(lineNet * lineRate, 2, MidpointRounding.AwayFromZero);
@@ -272,7 +272,7 @@ public sealed record BuyerIdentity(
                         : UnitCatalog.FallbackUnCode)),
                 El(Cbc, "LineExtensionAmount", F(lineNet), ("currencyID", data.CurrencyCode)),
 
-                // (CEEF-230 · ط1-٢) ‏خصمُ السطر — و`BaseAmount` هو الإجماليُّ قبله، فيُقرأ
+                // ‏خصمُ السطر — و`BaseAmount` هو الإجماليُّ قبله، فيُقرأ
                 // ‏السعرُ المعلَن والخصمُ معاً بدل سعرٍ مخفَّضٍ يُخفي أنّ خصماً وقع.
                 line.DiscountAmount > 0m
                     ? new XElement(Cac + "AllowanceCharge",
@@ -284,7 +284,7 @@ public sealed record BuyerIdentity(
                         El(Cbc, "BaseAmount", F(line.GrossAmount), ("currencyID", data.CurrencyCode)))
                     : null,
 
-                // ‏(جاهزيّةُ الإطلاق · ح-٨) ‏**ومبلغُ السطر شاملَ الضريبة** — وكان الوعاءُ
+                // ‏ ‏**ومبلغُ السطر شاملَ الضريبة** — وكان الوعاءُ
                 // ‏يحمل الضريبةَ وحدَها. تشترطه الهيئةُ في كلّ سطر (BR-KSA-EN16931-11)
                 // ‏بقيمةٍ محدّدة: `LineExtensionAmount + TaxAmount`. **فليس حقلاً وصفيّاً
                 // ‏يُملأ بأيّ رقم**: قيمةٌ تخالف المجموعَ تُرفض كما يُرفض غيابُه.
@@ -355,7 +355,7 @@ public sealed record BuyerIdentity(
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-5) سبب إصدار الإشعار الدائن/المدين.
+    /// سبب إصدار الإشعار الدائن/المدين.
     ///
     /// <para>النطاق يفرض السبب ويحفظه: <c>CreditNote.Reason</c> إلزاميّ و<c>CreateDraft</c> يرفض
     /// الفارغ، والعمود <c>varchar(512) NOT NULL</c>. ثم لا يصل XML إطلاقاً — لا العقد يحمله ولا
@@ -368,7 +368,7 @@ public sealed record BuyerIdentity(
     /// وموضعه في المتتالية بعد طرفَي البائع والمشتري وقبل <c>cac:TaxTotal</c> — يحرسه ح-٣.</para>
     /// </summary>
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٨) تاريخُ التوريد — <c>cac:Delivery/cbc:ActualDeliveryDate</c>.
+    /// تاريخُ التوريد — <c>cac:Delivery/cbc:ActualDeliveryDate</c>.
     ///
     /// <para><b>ولا يُكتب في إشعارٍ دائنٍ أو مدين</b>: الإشعارُ يُصحّح فاتورةً سابقةً ولا
     /// يُوثّق توريداً جديداً، <b>ومرجعُه في <c>cac:BillingReference</c></b>.</para>
@@ -397,7 +397,7 @@ public sealed record BuyerIdentity(
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-6) العدّاد التسلسليّ يُكتب <c>cbc:UUID</c> مباشرةً تحت المرجع الإضافيّ.
+    /// العدّاد التسلسليّ يُكتب <c>cbc:UUID</c> مباشرةً تحت المرجع الإضافيّ.
     ///
     /// كان يُكتب مرفقاً ثنائياً (<c>EmbeddedDocumentBinaryObject</c> بـ<c>filename="icv.txt"</c>)
     /// كما يُكتب PIH وQR — لكنّ المرفق مخصَّص لهذين وحدهما، والعدّاد قيمةٌ نصّية لا مستند مرفق.
@@ -410,7 +410,7 @@ public sealed record BuyerIdentity(
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-6) <c>cac:Signature</c> في جسد الفاتورة — كان غائباً تماماً.
+    /// <c>cac:Signature</c> في جسد الفاتورة — كان غائباً تماماً.
     ///
     /// المخطّط يفرض إعلان التوقيع داخل المستند، مستقلاً عن كتلة <c>ds:Signature</c> التي
     /// تُغرَس في <c>ext:UBLExtensions</c>. غيابُه يُسقط المستند في تصديق المخطّط.
@@ -447,7 +447,7 @@ public sealed record BuyerIdentity(
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-10) طرف البائع كاملاً: السجل التجاريّ ثم الاسم ثم العنوان الوطنيّ ثم
+    /// طرف البائع كاملاً: السجل التجاريّ ثم الاسم ثم العنوان الوطنيّ ثم
     /// الرقم الضريبيّ ثم الاسم المسجَّل — <b>بهذا الترتيب</b>، فمتتالية <c>cac:Party</c> تفرضه.
     ///
     /// كان يخرج باسمٍ ورقمٍ ضريبيّ فقط. والحقول الناقصة تُتخطّى بدل أن تُكتب فارغة: عنصرٌ
@@ -502,7 +502,7 @@ public sealed record BuyerIdentity(
     }
 
     /// <summary>
-    /// (CEEF-229 · م1-١ب) طرفُ المشتري — وترتيبُ عناصره يتبع المتتالية كما في طرف البائع.
+    /// طرفُ المشتري — وترتيبُ عناصره يتبع المتتالية كما في طرف البائع.
     ///
     /// <para>كان يخرج باسمٍ ورقمٍ ضريبيّ فقط، بينما طرفُ البائع أخذ سجلَّه واسمَه المسجَّل
     /// وعنوانَه الوطنيّ في Z-10. <b>ولم يكشف اللاتماثلَ شيء</b> لأنّ المُصدِّق نفسه كان يفحص

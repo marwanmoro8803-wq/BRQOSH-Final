@@ -47,7 +47,7 @@ public class ProjectCostService(BrqoshDbContext db)
                 await db.SaveChangesAsync(token);
             }
 
-            // ‏(جاهزيّةُ الإطلاق · ح-٨٠) ‏**والتكلفةُ تُغيّر نسبةَ الإنجاز فيُسوّى إيرادُ العقد** — قُيّدت هنا أو جاءت من مستندٍ آخر.
+            // ‏ ‏**والتكلفةُ تُغيّر نسبةَ الإنجاز فيُسوّى إيرادُ العقد** — قُيّدت هنا أو جاءت من مستندٍ آخر.
             await new ContractRevenueTrueUp(db).ApplyAsync(companyId, projectId, costDate, token);
 
             await new AuditService(db).LogAsync(companyId, username, "تسجيل تكلفة مشروع",
@@ -58,7 +58,7 @@ public class ProjectCostService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٤٥ · <c>sector-modules#9</c>) <b>الحسابُ الدائنُ يُختار — لا الصندوقُ دائماً.</b>
+    /// <b>الحسابُ الدائنُ يُختار — لا الصندوقُ دائماً.</b>
     /// </summary>
     /// <remarks>
     /// كان الدائنُ «الصندوق» في كلّ تكلفةٍ يدويّة: تكلفةٌ دُفعت من البنك أو استُحقّت ولم تُدفع تُخرج

@@ -26,7 +26,7 @@ public record PayrollCandidate(
 }
 
 /// <summary>
-/// (CEEF-231 · ط2-٧) <b>دورةُ الرواتب تُبنى من سجلّ الموظفين — لا تُكتب بالأصابع.</b>
+/// <b>دورةُ الرواتب تُبنى من سجلّ الموظفين — لا تُكتب بالأصابع.</b>
 ///
 /// <para><b>وما كان:</b> الشاشةُ الوحيدةُ التي تُنشئ دورةَ رواتب كانت جدولاً فارغاً
 /// <b>يُكتب فيه اسمُ الموظّف نصّاً حرّاً</b>، وتُكتب حصّتا التأمينات بالأصابع. فكلُّ ما
@@ -58,7 +58,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     {
         var policy = await PolicyAsync(companyId, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٨٦) ‏**والمعاينةُ بشهر يوم الصرف لا بيومه** — والدورةُ تُبنى ممّن تُرشّحهم؛ فمغادرٌ في منتصف الشهر
+        // ‏ ‏**والمعاينةُ بشهر يوم الصرف لا بيومه** — والدورةُ تُبنى ممّن تُرشّحهم؛ فمغادرٌ في منتصف الشهر
         // ‏لا يُرشَّح لا يُصرف له شيء. **والمنتهيةُ خدمتُه غيرُ «نشط»** (`Terminate`) فيُقرأ بتاريخ انتهائه لا بعلَمه.
         var monthStart = new DateOnly(payDate.Year, payDate.Month, 1);
         var monthEnd = monthStart.AddMonths(1).AddDays(-1);
@@ -110,7 +110,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     {
         var policy = await PolicyAsync(companyId, ct);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٨٦) ‏**والمغادرُ في الشهر يُقرأ بتاريخ انتهاء خدمته** — `Terminate` يُطفئ علَمَ النشاط، فكان يسقط
+        // ‏ ‏**والمغادرُ في الشهر يُقرأ بتاريخ انتهاء خدمته** — `Terminate` يُطفئ علَمَ النشاط، فكان يسقط
         // ‏من الدورة قبل أن يُسأل عن تاريخه.
         var monthStart = new DateOnly(year, month, 1);
         var monthEnd = monthStart.AddMonths(1).AddDays(-1);
@@ -139,7 +139,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
         var run = PayrollRun.CreateDraft(companyId, year, month, payDate);
         var advances = new EmployeeAdvanceService(db);
 
-        // (CEEF-233 · ز-٦) ‏**وأيّامُ الغياب بلا أجرٍ تُقرأ هنا لا تُدخَل يدوياً.**
+        // ‏**وأيّامُ الغياب بلا أجرٍ تُقرأ هنا لا تُدخَل يدوياً.**
         //
         // ‏**وخصمٌ يُترك للمستخدم يُنسى**: الموظّفُ غاب شهراً بلا أجر ويقبض راتبَه كاملاً
         // ‏لأنّ أحداً لم يكتب الخصم. **والسجلُّ موجودٌ ومعتمَد** — فالقراءةُ منه أوثقُ من
@@ -192,7 +192,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-٤٩ · <c>treasury-payroll-assets#6</c>) <b>قسطُ السُّلفة لا يأخذ أكثرَ
+    /// ‏ <b>قسطُ السُّلفة لا يأخذ أكثرَ
     /// من نصف أجر الشهر — ولا يُسالب الصافي.</b> مالكٌ واحدٌ للقاعدة تستعمله المعاينةُ والبناء.
     ///
     /// <para>‏<b>وكان السقفُ «ما بقي بعد التأمينات» وحدَه</b> — فسُلفةٌ بقسطٍ كبيرٍ تأخذ الأجرَ كلَّه
@@ -237,7 +237,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-233 · ز-٦) فتراتُ الغياب بلا أجرٍ المعتمدةُ <b>التي تمسّ الشهر</b> لكلّ موظّف.
+    /// فتراتُ الغياب بلا أجرٍ المعتمدةُ <b>التي تمسّ الشهر</b> لكلّ موظّف.
     /// </summary>
     private async Task<ILookup<long, (DateOnly From, DateOnly To)>> UnpaidLeavePeriodsAsync(
         long companyId, DateOnly from, DateOnly to, CancellationToken ct)
@@ -254,7 +254,7 @@ public class PayrollRunBuilder(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-233 · ز-٦) أيّامُ الغياب بلا أجرٍ <b>الواقعةُ داخل المدّة</b> — والمدّةُ ما خدمه الموظّفُ من الشهر (ح-١١٧).
+    /// أيّامُ الغياب بلا أجرٍ <b>الواقعةُ داخل المدّة</b> — والمدّةُ ما خدمه الموظّفُ من الشهر (ح-١١٧).
     /// </summary>
     /// <remarks>
     /// <b>والتقاطعُ يُحسب لا مدّةُ الطلب كلُّها</b>: إجازةٌ بلا أجرٍ تمتدّ من ٢٥ مارس إلى

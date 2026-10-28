@@ -52,7 +52,7 @@ public class UserManagementService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-٥٠ · <c>security-licensing-tenancy#4</c> + <c>#8</c>) <b>تغييرُ الصلاحيّة
+    /// ‏ <b>تغييرُ الصلاحيّة
     /// يُنهي الجلسةَ ويُكتب في السلسلة.</b>
     ///
     /// <para>‏<b>والآليّةُ كانت قائمةً ولا يستدعيها أحد</b>: <see cref="AppUser.InvalidateSessions"/> يزيد
@@ -127,7 +127,7 @@ public class UserManagementService(BrqoshDbContext db)
     public async Task ResetPasswordAsync(
         long companyId, string username, string newPassword, CancellationToken ct = default)
     {
-        // (CEEF-229 · م2-١، S-7) كانت الدالّة العامّة **الوحيدة في هذا الصنف** بلا حارس،
+        // كانت الدالّة العامّة **الوحيدة في هذا الصنف** بلا حارس،
         // وأخواتها الثلاث (List · Create · Update) تفتتح بـ EnsureAdministrator. وهي تُعيد
         // تعيين كلمة مرور **أيّ** مستخدم بمن فيهم مدير النظام، بلا كلمة مرورٍ حالية ولا رمز —
         // أي بدائيّةُ تصعيد امتيازٍ صافية لمن بلغها. ولم يكن لها مستدعٍ في المستودع (شاشة

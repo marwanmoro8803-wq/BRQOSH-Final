@@ -10,7 +10,7 @@ namespace Brqosh.Infrastructure.Licensing;
 public static class LicenseService
 {
     /// <summary>
-    /// (CEEF-237 · ت-٥) <b>هويّةُ الجهاز صارت تصمد لتحديث ويندوز وتبديل الحساب.</b>
+    /// <b>هويّةُ الجهاز صارت تصمد لتحديث ويندوز وتبديل الحساب.</b>
     ///
     /// <para><b>ما كان:</b> <c>SHA256(MachineName|UserName|OSVersion)</c>. وثلاثتُها تتغيّر:
     /// <c>OSVersion</c> مع <b>كلّ تحديث ميزاتٍ سنويّ</b>، و<c>UserName</c> حين يفتح موظّفٌ
@@ -109,7 +109,7 @@ public static class LicenseStore
     /// <param name="nowUtc">(ح-١٢٧) الوقتُ الفعّال — <see cref="LicenseClock.EffectiveNowUtc()"/> عند الإقلاع؛ والفارغُ ساعةُ الجهاز.</param>
     public static bool ValidateForCompany(string companyName, DateTime? setupCompletedUtc = null, DateTime? nowUtc = null)
     {
-        // (CEEF-228) تجاوز الترخيص للتدقيق الآلي - معطّل قسرياً في الإنتاج.
+        // تجاوز الترخيص للتدقيق الآلي - معطّل قسرياً في الإنتاج.
         if (!AppEnvironmentConfig.IsProduction &&
             string.Equals(Environment.GetEnvironmentVariable("BRQOSH_UITEST"), "1", StringComparison.Ordinal))
             return true;

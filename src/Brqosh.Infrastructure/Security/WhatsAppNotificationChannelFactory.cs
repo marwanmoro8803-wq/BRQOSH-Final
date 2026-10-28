@@ -1,7 +1,7 @@
 ﻿namespace Brqosh.Infrastructure.Security;
 
 /// <summary>
-/// (CEEF-229 · م0-١١) اختيار قناة تسليم رمز التحقق.
+/// اختيار قناة تسليم رمز التحقق.
 ///
 /// <para>كان المصنع يعيد <see cref="InAppOtpNotificationChannel"/> <b>دائماً</b>، و
 /// <see cref="MetaWhatsAppNotificationChannel"/> مبنيّ كاملاً بلا مستدعٍ واحد. والنتيجة أن

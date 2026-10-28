@@ -115,7 +115,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٣ · accounting-core#7) <b>الموردون — وكان الترحيلُ لا يعرفهم.</b> كالعملاء: الاسمُ والرقمُ
+    /// ‏ <b>الموردون — وكان الترحيلُ لا يعرفهم.</b> كالعملاء: الاسمُ والرقمُ
     /// الضريبيّ، والمكرَّرُ بالاسم يُتخطّى بسببه، ورقمٌ ضريبيٌّ معيبٌ يُرفض بسطره لا يُسقط الملفّ.
     /// </summary>
     public async Task<DataMigrationResult> ImportSuppliersCsvAsync(
@@ -177,7 +177,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
     public const string OpeningClearingCode = "3107";
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٣ · accounting-core#7) <b>الميزانُ الافتتاحيّ — قيدٌ واحدٌ مرحَّلٌ أو لا شيء.</b>
+    /// ‏ <b>الميزانُ الافتتاحيّ — قيدٌ واحدٌ مرحَّلٌ أو لا شيء.</b>
     ///
     /// <para>‏كلُّ السطور تُفحص أوّلاً، <b>وسطرٌ معيبٌ واحدٌ يُسقط الميزانَ كلَّه</b> ويُعرض بسببه: نصفُ أرصدةٍ مرحَّلةٍ أسوأُ من
     /// لا أرصدة، إذ يُبنى عليها ولا يُرى ما نقص. <b>والذممُ لا تدخل حسابَي الرقابة</b> — فالدفترُ المساعدُ يُبنى من المستندات،
@@ -314,7 +314,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٥ · commercial-readiness#15) <b>الأصناف</b> — «Code,NameAr,Unit,Type,SalePrice»؛ والنوعُ
+    /// ‏ <b>الأصناف</b> — «Code,NameAr,Unit,Type,SalePrice»؛ والنوعُ
     /// <c>Stockable</c> أو <c>Service</c>، والمكرَّرُ بالكود يُتخطّى بسببه.
     /// </summary>
     public async Task<DataMigrationResult> ImportProductsCsvAsync(
@@ -370,7 +370,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٥) <b>المخزونُ الافتتاحيّ</b> — «ProductCode,Quantity,UnitCost» في المستودع الافتراضيّ بتاريخ بدء
+    /// ‏ <b>المخزونُ الافتتاحيّ</b> — «ProductCode,Quantity,UnitCost» في المستودع الافتراضيّ بتاريخ بدء
     /// التشغيل: حركةٌ افتتاحيّةٌ واحدة تُرحَّل بخدمة الحركات نفسِها (طبقاتُ التكلفة والقيد)، <b>وقيدُها يُدائن 3107</b> فيُفصّل رصيدَ
     /// المخزون الذي وقف فيه الميزان. كلُّها أو لا شيء، وبعد الميزان وحدَه.
     /// </summary>
@@ -467,7 +467,7 @@ public sealed class CsvDataMigrationService(BrqoshDbContext db) : IDataMigration
         ImportOpenItemsAsync(companyId, OpeningBalanceParty.Supplier, csvContent, ct);
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٣٤ · accounting-core#7) <b>الذممُ المفتوحةُ لكلّ عميلٍ ومورِّد — ويُفرَغ بها الحسابُ الوسيط.</b>
+    /// ‏ <b>الذممُ المفتوحةُ لكلّ عميلٍ ومورِّد — ويُفرَغ بها الحسابُ الوسيط.</b>
     ///
     /// <para>‏الميزانُ الافتتاحيُّ (ح-١٣٣) أوقف رصيدَي الذمم في 3107 لأنّ الدفترَ المساعدَ يُبنى من المستندات. وهنا تصير الذمّةُ
     /// مستندَها: <see cref="OpeningBalanceItem"/> برقم الفاتورة الأصليّ وتاريخها واستحقاقها، <b>يقرؤه الرصيدُ والكشفُ والأعمار</b>،

@@ -16,7 +16,7 @@ public record CodRemittanceResult(
     long JournalEntryId);
 
 /// <summary>
-/// (CEEF-230 · ط3-٤) <b>الدفعُ عند الاستلام — مالُ التجّار في يد الناقل.</b>
+/// <b>الدفعُ عند الاستلام — مالُ التجّار في يد الناقل.</b>
 ///
 /// <para><b>وهذا أخطرُ عطلٍ في هذا القطاع، وأثرُه عشرون ضعفاً:</b> شركةُ توصيلٍ تُحصّل
 /// مليونَ ريالٍ شهرياً نيابةً عن التجّار <b>وأجرتُها خمسون ألفاً</b>. فقيدُ المليون
@@ -61,7 +61,7 @@ public class CodSettlementService(BrqoshDbContext db)
                     + string.Join("، ", notCollected.Select(s => s.WaybillNumber))
                     + " — والتسليمُ هو ما يُحصّل، فسلِّمْها أوّلاً.");
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**وبوليصةٌ أُثبت تحصيلُها لا تُثبَت ثانية.**
+            // ‏ ‏**وبوليصةٌ أُثبت تحصيلُها لا تُثبَت ثانية.**
             //
             // ‏لم يكن ثمّة وسمٌ يقول «قيدُ التحصيل وقع» — `CodCollected` يُضبط **بالتسليم**
             // ‏لا بالقيد. **فاستدعاءٌ ثانٍ بالبوالص نفسِها يُقيّد مرّةً أخرى**: نقدٌ وهميٌّ
@@ -107,7 +107,7 @@ public class CodSettlementService(BrqoshDbContext db)
 
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            // ‏(جاهزيّةُ الإطلاق · ح-١٢) ‏**والمستحقُّ هو ما قُيِّد تحصيلُه، لا ما سُلِّم.**
+            // ‏ ‏**والمستحقُّ هو ما قُيِّد تحصيلُه، لا ما سُلِّم.**
             //
             // ‏كان الترشيحُ على `CodCollected` — وهو يُضبط **بالتسليم بلا قيد**. فبوليصةٌ
             // ‏سُلّمت ولم يُقيَّد تحصيلُها بعدُ كانت تدخل التوريد، **فيُمدَّن `2114` بما لم
@@ -148,7 +148,7 @@ public class CodSettlementService(BrqoshDbContext db)
         decimal amount, bool debitCash, string memo, string sourceDocument, string auditDetails,
         CancellationToken ct)
     {
-        // ‏(جاهزيّةُ الإطلاق · ح-٤٨ · `sector-modules#8`) ‏**التوريدُ من البنك بمالكه لا بقيمةٍ
+        // ‏ ‏**التوريدُ من البنك بمالكه لا بقيمةٍ
         // ‏افتراضيّة.** كان `RemitAsync` يأخذ `= CashAtBanks` — **الأبَ `1102`** — والشاشةُ لا
         // ‏تمرّر حساباً، فيُقيَّد كلُّ توريدٍ على الأب والكشفُ في الابن: عينُ انشقاق م2-١٥.
         var cash = await BankGlAccountResolver.ResolveCodeAsync(db, companyId, cashAccountCode, ct);

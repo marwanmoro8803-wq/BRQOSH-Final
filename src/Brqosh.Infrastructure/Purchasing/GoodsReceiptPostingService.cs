@@ -48,7 +48,7 @@ public class GoodsReceiptPostingService(BrqoshDbContext db) : Brqosh.Application
                 if (line.ProductId is not long pid)
                     continue;
 
-                // (CEEF-230 · ط1-١) ‏**التحويلُ هنا وحدَه** — عند حدود المستند.
+                // ‏**التحويلُ هنا وحدَه** — عند حدود المستند.
                 // ‏فما يدخل المخزونَ بوحدة الصنف أبداً، ولا يحمل رقمٌ أعمقَ من هذا الحدّ
                 // ‏وحدةً مختلفة. والتكلفةُ تُقسَم بالمعامل نفسِه: **كرتونٌ بمئة ريالٍ
                 // ‏اثنتا عشرة حبّةً بـ8.33** — وإلا صارت الحبّةُ بمئة والمخزونُ منتفخاً
@@ -62,7 +62,7 @@ public class GoodsReceiptPostingService(BrqoshDbContext db) : Brqosh.Application
 
                 stockLines.Add((pid, baseQty, baseCost, line.BatchNumber, line.ExpiryDate));
 
-                // (CEEF-229 · م1-١٩) **القيدُ يُرشَّح بما هو مخزنيّ — والحركةُ لا تُرشَّح.**
+                // **القيدُ يُرشَّح بما هو مخزنيّ — والحركةُ لا تُرشَّح.**
                 //
                 // الدفترُ المساعد (`StockBalanceQuery`) يجمع الأصنافَ المخزنية وحدها، ومتوسطُ
                 // التكلفة لا يُحسب لغيرها. فلو اشتُقّ المبلغُ من كلّ سطرٍ له صنف لَقُيّد
@@ -90,7 +90,7 @@ public class GoodsReceiptPostingService(BrqoshDbContext db) : Brqosh.Application
                 movementId = movement.Id;
             }
 
-            // (CEEF-229 · م1-١٩ / I-5) **استحقاقُ الاستلام — والقيدُ الذي لم يكن.**
+            // **استحقاقُ الاستلام — والقيدُ الذي لم يكن.**
             //
             // كان الاستلامُ عمليةَ دفترٍ مساعدٍ خالصة: يُحرّك المخزون ويضبط متوسطَ التكلفة
             // ولا يكتب قيداً. فبضاعةٌ تُستلم في 28 ديسمبر وتُفوتَر في 5 يناير **تغيب عن
@@ -118,7 +118,7 @@ public class GoodsReceiptPostingService(BrqoshDbContext db) : Brqosh.Application
             }
 
             receipt.MarkPosted(number, movementId);
-            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
             // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
             // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
             // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.

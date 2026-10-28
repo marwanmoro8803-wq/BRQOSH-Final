@@ -36,7 +36,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
             .Where(i => i.CompanyId == companyId && i.SupplierId == supplierId && i.Status == PurchaseInvoiceStatus.Posted)
             .SumGrandTotalAsync();
 
-        // (CEEF-229 · م0-٨) إشعارات المدين تخفّض المستحقّ للمورد.
+        // إشعارات المدين تخفّض المستحقّ للمورد.
         // كانت غائبة عن هذا الاستعلام كلياً بينما DebitNotePostingService يُمدِّن 2101 فعلاً،
         // فيفترق الدفتر المساعد عن الأستاذ بقيمة كل مرتجع مشتريات — ويُدفع للمورد زائداً.
         // والنمط كان قائماً على الجهة المقابلة: CustomerBalanceQuery يطرح الإشعارات الدائنة.
@@ -62,7 +62,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
     /// أرصدةُ الموردين كلِّهم.
     /// </summary>
     /// <param name="asOf">
-    /// (CEEF-231 · ط4-٣ب) <b>حتّى تاريخٍ معلوم</b> — و<c>null</c> يعني الآن.
+    /// <b>حتّى تاريخٍ معلوم</b> — و<c>null</c> يعني الآن.
     /// <b>ولا يُقاس عمرُ دَينٍ بميزانٍ من زمنٍ آخر</b>: تقريرُ أعمارٍ في ٣٠ يونيو تُقابَل
     /// خاناتُه برصيدِ اليوم فيُخرج فرقاً يُنسب إلى التقرير <b>وهو في المرجع</b>.
     /// <b>والدرسُ مأخوذٌ من جانب العملاء</b> حيث أخرجته طفرةٌ نجت.
@@ -81,7 +81,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
             .Where(v => v.CompanyId == companyId && v.Status == PaymentVoucherStatus.Posted
                         && (asOf == null || v.VoucherDate <= asOf))
             .GroupBy(v => v.SupplierId)
-            // (CEEF-230 · ط4-٥) ‏**ما حُرِّر من الذمّة لا ما خرج من الصندوق** — والدرسُ
+            // ‏**ما حُرِّر من الذمّة لا ما خرج من الصندوق** — والدرسُ
             // ‏مأخوذٌ من `ط1-٤` وممّا كشفه `ط4-٣`: هناك طُبّق الإصلاحُ على مسارٍ واحدٍ من
             // ‏اثنين، **فتناقض كشفُ الحساب مع اللوحة**. فيُطبَّق هنا على **المسارين معاً**
             // ‏في الحفظة نفسِها، ويحرسه قياسٌ يُقابلهما.
@@ -109,7 +109,7 @@ public class SupplierBalanceQuery(BrqoshDbContext db)
             .Select(g => new { SupplierId = g.Key, Total = g.Sum(i => i.Amount) })
             .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
 
-        // (CEEF-229 · م0-٨) إشعارات المدين — انظر التعليق في ForSupplierAsync.
+        // إشعارات المدين — انظر التعليق في ForSupplierAsync.
         var debited = (await db.DebitNotes
                 .Where(n => n.CompanyId == companyId && n.Status == DebitNoteStatus.Posted
                             && (asOf == null || n.NoteDate <= asOf))

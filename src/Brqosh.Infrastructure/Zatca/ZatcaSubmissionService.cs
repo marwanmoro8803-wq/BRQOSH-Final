@@ -39,7 +39,7 @@ public class ZatcaConfigurationValidator(BrqoshDbContext db)
         if (!certOk) warnings.Add("ملف الشهادة غير موجود.");
         if (!keyOk) warnings.Add("ملف المفتاح الخاص غير موجود.");
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٥٢ · `tax-zatca#10`) ‏**وصلاحيّةُ الشهادة اليومَ لا وجودُ ملفِّها.**
+        // ‏ ‏**وصلاحيّةُ الشهادة اليومَ لا وجودُ ملفِّها.**
         // ‏كان «جاهز» يعني «الملفُّ موجود» — فشهادةٌ انتهت تمرّ، والإرسالُ في الإنتاج يمضي إلى الهيئة
         // ‏**فيُرفض هناك ويُسجَّل المستندُ مرفوضاً** كأنّ العيبَ فيه. ولا إنذارَ قبل الانتهاء.
         if (certOk)
@@ -50,7 +50,7 @@ public class ZatcaConfigurationValidator(BrqoshDbContext db)
         }
         if (!apiOk) warnings.Add("عنوان API أو رمز المصادقة غير مضبوط.");
 
-        // (CEEF-229 · Z-10) بيانات البائع النظامية — لا الرقم الضريبيّ وحده.
+        // بيانات البائع النظامية — لا الرقم الضريبيّ وحده.
         //
         // كان الفحص يقتصر على الرقم الضريبيّ، فتظهر المنشأة «جاهزة للإرسال» بينما ينقصها
         // السجل التجاريّ والاسم المسجَّل والعنوان الوطنيّ — وهي حقولٌ إلزامية يُرفض المستند
@@ -114,7 +114,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
         HandlerOverride is null ? Http : new HttpClient(HandlerOverride, disposeHandler: false) { Timeout = Http.Timeout };
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) <b>ما يقوله ردٌّ غيرُ ناجحٍ عن المستند.</b>
+    /// ‏ <b>ما يقوله ردٌّ غيرُ ناجحٍ عن المستند.</b>
     ///
     /// <para>‏<see cref="HttpFailureKind.Rejected"/> وحدَه حكمٌ على المستند (٤٠٠ وبقيّةُ ٤xx). أمّا الخادمُ المتعطّل أو المزدحم
     /// ‏(٤٠٨ · ٤٢٩ · ٥xx) <b>فعارضٌ يزول</b>، والاعتمادُ المرفوض (٤٠١ · ٤٠٣) <b>خللُ إعدادٍ لا خللُ فاتورة</b> — فيبقى المستندُ
@@ -144,7 +144,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
     internal static readonly int ResubmitLockKey = DocumentSequenceLock.KeyFor("ZATCA-RESUBMIT", 0);
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) <b>إعادةُ إرسال كلِّ معلَّقٍ دفعةً واحدة — بترتيب السلسلة.</b>
+    /// ‏ <b>إعادةُ إرسال كلِّ معلَّقٍ دفعةً واحدة — بترتيب السلسلة.</b>
     ///
     /// <para>‏المعلَّقُ ما بقي «جاهزاً للإبلاغ/للاعتماد»: انقطعت الشبكةُ عند ترحيله، أو تعطّل خادمُ الهيئة، أو رُفض الاعتماد.
     /// ‏وكان لا يُعاد إلّا مستنداً مستنداً من الشاشة. <b>ويُرسَل بترتيب العدّاد (ICV)</b>، <b>ويقف عند أوّل فشل</b>: فلا يصل
@@ -157,7 +157,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١٥٦ · ‏`tax-zatca#8`) <b>إعادةُ الإرسال من المؤقّت في الخلفيّة</b> — بلا فحص دور، عمداً،
+    /// ‏ <b>إعادةُ الإرسال من المؤقّت في الخلفيّة</b> — بلا فحص دور، عمداً،
     /// ‏على مذهب <see cref="SubmitAsFollowUpToPostingAsync"/>: الإذنُ مُنح عند ترحيل المستند، والإبلاغُ واجبٌ نظاميٌّ يتبعه؛
     /// ‏فأمينُ الصندوق الجالسُ أمام المحطّة لا يمنع وصولَ مبيعاته إلى الهيئة. ‏ولا يُرسَل إلّا ما رُحِّل فعلاً (جاهزٌ للإبلاغ/للاعتماد).
     /// </summary>
@@ -236,7 +236,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · م2-١) إرسالٌ <b>كأثرٍ تابعٍ لترحيلٍ مأذونٍ به</b> — لا يُعيد فحص الدور، عمداً.
+    /// إرسالٌ <b>كأثرٍ تابعٍ لترحيلٍ مأذونٍ به</b> — لا يُعيد فحص الدور، عمداً.
     ///
     /// <para><b>العطل الذي أوجب هذا الفصل، وكيف ظهر:</b> كان المسار التلقائيّ يستدعي
     /// <see cref="SubmitAsync"/> بحارسه، وذاك يرفض <c>Cashier</c>. وأمين الصندوق هو <b>مُشغّل
@@ -272,7 +272,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 
         if (settings.Environment == ZatcaEnvironment.Simulation)
         {
-            // (CEEF-229 · م0-١٠) لا تُعلَّم مقبولةً — لم يرها أحد خارج هذا الجهاز.
+            // لا تُعلَّم مقبولةً — لم يرها أحد خارج هذا الجهاز.
             //
             // والتجربة الجافّة تبقى متاحة قبل اكتمال الإعداد — منعُها يُغلق حالة استخدام مشروعة —
             // لكنّ النواقص تُسجَّل في جسم الردّ بدل أن تُبتلع، فيعرف المالك ما يفصله عن الإرسال.
@@ -322,7 +322,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 
         if (!response.IsSuccessStatusCode)
         {
-            // ‏(جاهزيّةُ الإطلاق · ح-١٢١ · ‏`tax-zatca#8`) ‏**وكان كلُّ ردٍّ غيرِ ناجحٍ «رفضاً»** — ٥٠٣ و٤٢٩ و٥٠٠ معاً،
+            // ‏ ‏**وكان كلُّ ردٍّ غيرِ ناجحٍ «رفضاً»** — ٥٠٣ و٤٢٩ و٥٠٠ معاً،
             // ‏و«المرفوضُ» لا يلتقطه إرسالٌ لاحق: فاتورةٌ سليمةٌ تسقط لأنّ خادمَ الهيئة تعطّل دقيقة.
             var kind = ClassifyFailure(response.StatusCode);
             if (kind == HttpFailureKind.Rejected)
@@ -340,7 +340,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
             throw new AccountingException(reason);
         }
 
-        // (CEEF-237 · ز-٢) ‏**حالةُ الهيئة تُقرأ، لا تُفترض من رمز HTTP.**
+        // ‏**حالةُ الهيئة تُقرأ، لا تُفترض من رمز HTTP.**
         //
         // ‏كان أيُّ 2xx يُعلّم الفاتورة Cleared/Reported. **والهيئةُ تردّ 200 ومعها
         // ‏`clearanceStatus: NOT_CLEARED`** (أو `reportingStatus: NOT_REPORTED`) حين ترفض
@@ -418,7 +418,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
     internal readonly record struct AuthorityVerdict(bool Accepted, string Status, string? Reason);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٩) <b>بناءُ الطلب — مُستخرَجٌ كي يُقاس.</b>
+    /// <b>بناءُ الطلب — مُستخرَجٌ كي يُقاس.</b>
     ///
     /// <para><b>وترويسةُ <c>Clearance-Status</c> كانت غائبة</b>: نداءُ
     /// <c>/invoices/clearance/single</c> يشترطها، <b>وغيابُها يردّ الطلبَ وإن صحّ المسارُ
@@ -446,7 +446,7 @@ public class ZatcaSubmissionService(BrqoshDbContext db)
 
         request.Headers.Authorization = ParseAuth(apiToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        // (CEEF-206) واجهات الهيئة تشترط Accept-Version؛ غيابها يرفض الطلب رغم صحة المسار والحمولة.
+        // واجهات الهيئة تشترط Accept-Version؛ غيابها يرفض الطلب رغم صحة المسار والحمولة.
         request.Headers.Add("Accept-Version", "V2");
 
         if (mode == ZatcaTransmissionMode.Clearance)

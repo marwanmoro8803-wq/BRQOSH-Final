@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-229 · م1-١ب) <b>هويةُ المشتري النظامية على جدول العملاء.</b>
+    /// <b>هويةُ المشتري النظامية على جدول العملاء.</b>
     ///
     /// <para>الفاتورة القياسية (B2B) تذهب إلى <b>المقاصّة قبل التسليم</b> وطرفُ مشتريها
     /// معرَّف، وكان يخرج باسمٍ ورقمٍ ضريبيّ وحدهما — بلا اسمٍ مسجَّل ولا عنوانٍ وطنيّ.</para>

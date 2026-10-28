@@ -11,7 +11,7 @@ namespace Brqosh.Infrastructure.Payroll;
 public record WageProtectionResult(string Csv, int Records, decimal TotalNet, IReadOnlyList<string> Refusals);
 
 /// <summary>
-/// (CEEF-230 · ط2-٥) <b>ملفُّ حماية الأجور.</b>
+/// <b>ملفُّ حماية الأجور.</b>
 ///
 /// <para><b>ما كان:</b> صفرٌ تام — لا ملفَّ ولا حقلاً ولا ذكراً. <b>ونظامُ حماية الأجور
 /// إلزاميٌّ في السعودية</b>: الأجورُ تُدفع عبره، والمنشأةُ التي لا تُقدّم ملفَّها تُعلَّق
@@ -75,7 +75,7 @@ public class WageProtectionFileBuilder(BrqoshDbContext db)
 
             var other = line.TransportAllowance + line.OtherAllowance;
 
-            // (CEEF-231 · ط2-٧) ‏**والاستقطاعاتُ كلُّها، لا التأميناتِ وحدَها.**
+            // ‏**والاستقطاعاتُ كلُّها، لا التأميناتِ وحدَها.**
             //
             // ‏أضافت `ط2-٥` استقطاعَ السُّلفة إلى `NetPay` **ولم تُضفه إلى هذا العمود**.
             // ‏فيخرج الملفُّ بمتطابقةٍ مكسورة — `الإجماليّ − الاستقطاعات ≠ الصافي` —

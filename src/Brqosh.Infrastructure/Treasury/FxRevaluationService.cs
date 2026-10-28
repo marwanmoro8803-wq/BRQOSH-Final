@@ -96,7 +96,7 @@ public class FxRevaluationService(BrqoshDbContext db)
     private static async Task<decimal> GetBookedFunctionalBalanceAsync(
         BrqoshDbContext db, long companyId, long glAccountId, DateOnly asOfDate, CancellationToken ct)
     {
-        // (جاهزيّةُ الإطلاق · ح-٢٥) ‏**القيدُ المعكوسُ يبقى في الرصيد مع عكسه — أو يخرجان معاً.**
+        // ‏**القيدُ المعكوسُ يبقى في الرصيد مع عكسه — أو يخرجان معاً.**
         //
         // ‏كان المُرشِّحُ `Status == Posted` وحدَه. و`CreateReversal` **يضع الأصلَ في حالة
         // ‏`Reversed`** ويُرحّل العكسيَّ `Posted`. فالأصلُ **يخرج** من الجمع **وعكسُه يبقى**:
@@ -110,7 +110,7 @@ public class FxRevaluationService(BrqoshDbContext db)
         // ‏التقاريرَ التاريخية بعد الإلغاء لاحقاً (ACC-001)». **وثمانيةُ قُرّاءٍ يستعملونها،
         // ‏وهذا لم يكن منهم.**
         //
-        // ‏(جاهزيّةُ الإطلاق · ح-٩٣ · treasury-payroll-assets#13) **وسطورُ البنك وحدَها من القاعدة** — وكان يُحمّل كلَّ قيدٍ حتى التاريخ
+        // ‏ **وسطورُ البنك وحدَها من القاعدة** — وكان يُحمّل كلَّ قيدٍ حتى التاريخ
         // ‏بسطوره كلِّها، لكلّ بنكٍ أجنبيٍّ في الدفعة، ثمّ يُرشّح الحسابَ في الذاكرة.
         var lines = await db.JournalEntries
             .WhereReportable(companyId, to: asOfDate)

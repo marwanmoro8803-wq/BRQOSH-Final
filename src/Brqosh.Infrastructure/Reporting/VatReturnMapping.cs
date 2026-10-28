@@ -4,7 +4,7 @@ using Brqosh.Domain.Tax;
 namespace Brqosh.Infrastructure.Reporting;
 
 /// <summary>
-/// (CEEF-229 · م1-١٠ / Z-12) <b>عبورُ الإقرار من الاستعلام إلى الحدّ — وهو ما كان مقطوعاً.</b>
+/// <b>عبورُ الإقرار من الاستعلام إلى الحدّ — وهو ما كان مقطوعاً.</b>
 ///
 /// <para><c>VatReturnQuery</c> يحسب الصناديقَ بالفئة منذ A-15، و<b>صفرُ قارئٍ لها خارج ملفّه</b>.
 /// فالمستخدمُ يرى مجموعاً كلّياً بنسبةٍ مخلوطة — ربعٌ فيه مبيعاتٌ محلية 1,000,000 وصادراتٌ
@@ -24,7 +24,7 @@ public static class VatReturnMapping
             r.CreditNotesSubtotal, r.CreditNotesVat,
             r.PurchasesSubtotal, r.DeductibleInputVat,
             r.DebitNotesSubtotal, r.DebitNotesVat, r.DebitNotesDeductibleVat,
-            // ‏(جاهزيّةُ الإطلاق · ح-٤٠) **والحدودُ الأربعةُ تعبر الحدّ** — وكانت تُحسب في
+            // ‏ **والحدودُ الأربعةُ تعبر الحدّ** — وكانت تُحسب في
             // ‏الإقرار وتسقط هنا، فتقول الشاشةُ صافياً غيرَ المُقدَّم.
             CancelledOutputVat: r.CancelledOutputVat,
             CancelledInputVat: r.CancelledInputVat,
@@ -35,7 +35,7 @@ public static class VatReturnMapping
             GlVatNetPayableBalance: r.GlVatNetPayableBalance,
             Map(r.SalesByCategory),
             Map(r.PurchasesByCategory),
-            // ‏(جاهزيّةُ الإطلاق · ح-١٦٥) ‏وخاناتُ النموذج تعبر الحدَّ كذلك — وصلةٌ تُقاس هنا لا في المُحوِّل.
+            // ‏ ‏وخاناتُ النموذج تعبر الحدَّ كذلك — وصلةٌ تُقاس هنا لا في المُحوِّل.
             Map(r.SalesBoxes),
             Map(r.PurchaseBoxes),
             r.JournalOutputVatInBoxes,

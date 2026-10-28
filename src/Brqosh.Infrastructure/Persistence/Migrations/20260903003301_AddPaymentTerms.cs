@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-230 · ط4-٣ج) ‏مهلةُ السداد للعملاء والموردين.
+        /// ‏مهلةُ السداد للعملاء والموردين.
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b>: المُرقِّعُ يضيف العمودَ
         /// نفسَه على القواعد القائمة، <b>و<c>AddColumn</c> المُولَّد يرمي على عمودٍ

@@ -18,7 +18,7 @@ public class Company
     public string? AddressAr { get; private set; }
 
     /// <summary>
-    /// (CEEF-229 · Z-10) الاسم المسجَّل في السجل التجاريّ — <c>cbc:RegistrationName</c>.
+    /// الاسم المسجَّل في السجل التجاريّ — <c>cbc:RegistrationName</c>.
     /// قد يختلف عن الاسم التجاريّ المعروض، والفاتورة الإلكترونية تلزم المسجَّل.
     /// </summary>
     public string? RegistrationName { get; private set; }
@@ -27,7 +27,7 @@ public class Company
     public string? CommercialRegistrationNumber { get; private set; }
 
     /// <summary>
-    /// (CEEF-229 · Z-10) العنوان الوطنيّ بحقوله المفكَّكة — <c>cac:PostalAddress</c>.
+    /// العنوان الوطنيّ بحقوله المفكَّكة — <c>cac:PostalAddress</c>.
     /// كان غائباً من النموذج كلياً، فيستحيل توليد الفاتورة الإلكترونية مهما صحّ المولّد.
     /// </summary>
     public NationalAddress NationalAddress { get; private set; } = NationalAddress.Empty;
@@ -62,7 +62,7 @@ public class Company
     public CompanyOperationalMode OperationalMode { get; private set; } = CompanyOperationalMode.Active;
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>accounting-core#6</c> · قرارُ المالك 2026-10-18) <b>حدُّ اعتماد القيد اليدويّ</b> — قيدٌ يدويٌّ
+    /// ‏ <b>حدُّ اعتماد القيد اليدويّ</b> — قيدٌ يدويٌّ
     /// ‏مجموعُ مدينه فوقه لا يُرحَّل إلّا بسلسلة موافقاتٍ مكتملة، ومعتمدُها غيرُ منشئه. والافتراضُ ١٠٬٠٠٠ ريال يغيّره المدير.
     /// </summary>
     public decimal ManualJournalApprovalThreshold { get; private set; } = DefaultManualJournalApprovalThreshold;
@@ -145,7 +145,7 @@ public class Company
     }
 
     /// <summary>
-    /// (CEEF-229 · Z-10) بيانات المنشأة النظامية للفوترة الإلكترونية.
+    /// بيانات المنشأة النظامية للفوترة الإلكترونية.
     /// تُحفَظ كما هي؛ اكتمالُها يُفحَص عند تفعيل التكامل لا عند الإدخال — فالمستخدم يملأ
     /// على دفعات، ومنعُ الحفظ الجزئيّ يعني إعادة الإدخال من الصفر في كل مرّة.
     /// </summary>

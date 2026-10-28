@@ -11,7 +11,7 @@ namespace Brqosh.Infrastructure.Inventory;
 /// <summary>
 /// حركة المخزون وتكلفته.
 ///
-/// <para>(CEEF-229 · م2-١٨) <b>قراءات الأصناف هنا تتجاوز مرشّح الحذف الناعم عمداً.</b>
+/// <para> <b>قراءات الأصناف هنا تتجاوز مرشّح الحذف الناعم عمداً.</b>
 /// كلُّها تُحمِّل صنفاً <b>يشير إليه مستندٌ أو رصيدٌ قائم</b> — لا صنفاً يختاره المستخدم
 /// من قائمة. وحذفُ الصنف لاحقاً لا يُلغي مستنداً مرحَّلاً ولا رصيداً في مستودع.</para>
 ///
@@ -22,7 +22,7 @@ namespace Brqosh.Infrastructure.Inventory;
 /// </summary>
 public class InventoryService(BrqoshDbContext db)
 {
-    // ‏(جاهزيّةُ الإطلاق · ح-١١٢) ‏**مصادرُ عُكست تكلفتُها في وحدة العمل هذه، باتّجاهها.** الطبقاتُ مفتاحُها المستند لا الحركة، والإلغاءُ يعكس
+    // ‏ ‏**مصادرُ عُكست تكلفتُها في وحدة العمل هذه، باتّجاهها.** الطبقاتُ مفتاحُها المستند لا الحركة، والإلغاءُ يعكس
     // ‏حركةً حركة — فمستندٌ بحركتين (فاتورةٌ ووصفةُ مطبخها، إشعارٌ مدينٌ من مستودعين) كانت تُرمَّم طبقاتُه مرّتين.
     private readonly HashSet<(string Source, bool Inbound)> _costReversed = [];
 
@@ -33,7 +33,7 @@ public class InventoryService(BrqoshDbContext db)
         warehouse ??= await db.Warehouses
             .FirstOrDefaultAsync(w => w.CompanyId == companyId && w.IsActive);
 
-        // (CEEF-229 · م2-١٧د) **الاختراعُ لمن لا مستودعَ له، لا لمن أوقف مستودعاته.**
+        // **الاختراعُ لمن لا مستودعَ له، لا لمن أوقف مستودعاته.**
         //
         // كان الإنشاءُ أدناه يقع في الحالتين. وُضع لأوّل تشغيلٍ في منشأةٍ فارغة — وهو صواب.
         // لكنّ منشأةً أوقفت مستودعاتها كلَّها كانت تحصل على مستودعٍ **لم يطلبه أحد**، فتنقسم
@@ -94,7 +94,7 @@ public class InventoryService(BrqoshDbContext db)
         var product = await db.Products.IgnoreQueryFilters().SingleAsync(p => p.Id == productId && p.CompanyId == companyId);
         if (!product.IsStockable() || qtyOut <= 0) return;
 
-        // (CEEF-228) المستدعيان (إلغاء فاتورة مشتريات وإلغاء إذن استلام) يخصمان الرصيد
+        // المستدعيان (إلغاء فاتورة مشتريات وإلغاء إذن استلام) يخصمان الرصيد
         // بحركة Issue *قبل* هذا النداء - فالمقروء هنا هو الرصيد المتبقّي بعد السحب.
         //
         // كانت المعادلة تطرح qtyOut من البسط ولا تطرحه من المقام، وتفترض أن المقروء رصيدٌ
@@ -123,7 +123,7 @@ public class InventoryService(BrqoshDbContext db)
 
     /// <summary>تسجيل حركة مخزنية من مستند — يُفترض تنفيذها داخل معاملة الترحيل.</summary>
     /// <summary>
-    /// (CEEF-230 · ط1-٣) ‏التحميلُ القديم — <b>مسارٌ بلا هويّةِ دفعة</b>.
+    /// ‏التحميلُ القديم — <b>مسارٌ بلا هويّةِ دفعة</b>.
     ///
     /// <para>يُفوّض إلى التحميل الحامل للهويّة بـ<c>null</c> لكلّ سطر. <b>ومسارٌ يستعمله
     /// يرفض الصنفَ المتتبَّع رفضاً مسمّى</b> عند المَخنَق — ولا يمرّره بلا رقم. فتحويلُ
@@ -186,7 +186,7 @@ public class InventoryService(BrqoshDbContext db)
     /// يُحوّل بضاعةً بين مستودعين — <b>والتكلفةُ تنتقل معها</b>.
     /// </summary>
     /// <remarks>
-    /// <para>(CEEF-231 · ط4-٤) <b>وما كان:</b> التحويلُ يُحرّك الكمّياتِ <b>ولا يمسّ
+    /// <para> <b>وما كان:</b> التحويلُ يُحرّك الكمّياتِ <b>ولا يمسّ
     /// طبقاتِ التكلفة البتّة</b>. فمستودعٌ يُفرَّغ عن آخره تبقى طبقاتُه فيه كاملةً،
     /// <b>والمستودعُ المستقبِل يمتلئ بضاعةً بلا طبقةٍ واحدة</b>.</para>
     ///
@@ -201,7 +201,7 @@ public class InventoryService(BrqoshDbContext db)
     public async Task<StockMovement> TransferAsync(long companyId, long fromWarehouseId, long toWarehouseId,
         DateOnly date, string description, IEnumerable<(long ProductId, decimal Qty)> lines)
     {
-        // (CEEF-231 · ط4-٤) ‏**الرقمُ يُخصَّص قبل استهلاك الطبقات** — فهو مفتاحُ سجلّ
+        // ‏**الرقمُ يُخصَّص قبل استهلاك الطبقات** — فهو مفتاحُ سجلّ
         // ‏الاستهلاك الذي يُرمَّم منه عند الإلغاء. ولو خُصّص بعده لَسُجّل الاستهلاكُ باسمٍ
         // ‏فارغ **فلا يجده الإلغاءُ ولا تعود الطبقات** — وهو درسُ `م0-٣` بعينه.
         var number = await DocumentNumberGenerator.NextAsync(db,
@@ -240,7 +240,7 @@ public class InventoryService(BrqoshDbContext db)
 
             movement.AddLine(productId, qty, unitCost);
 
-            // (CEEF-230 · ط1-٣) ‏**التحويلُ لا يحمل هويّةَ دفعةٍ بعد** — ووسيطُه
+            // ‏**التحويلُ لا يحمل هويّةَ دفعةٍ بعد** — ووسيطُه
             // ‏`(ProductId, Qty)` بلا رقم. فيمرّ `null`، ويرفض المَخنَقُ الصنفَ المتتبَّع
             // ‏**رفضاً مسمّى**. وهو مقصود: نقلُ دفعةٍ بلا رقمها يُفقدها هويّتَها في
             // ‏المستودع الآخر، **والرفضُ أصدقُ من نقلٍ يمحو الصلاحية**.
@@ -281,7 +281,7 @@ public class InventoryService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · م2-١٧ب) <b>الإيقافُ يمنع تجارةً جديدة — لا يمنع ردَّ ما بيع.</b>
+    /// <b>الإيقافُ يمنع تجارةً جديدة — لا يمنع ردَّ ما بيع.</b>
     ///
     /// <para>زرُّ «إيقاف» في شاشة الأصناف كان تسميةً بلا أثر: يضبط <c>IsActive = false</c>
     /// ولا يفحصه مسارُ ترحيلٍ واحد، فيُباع الصنفُ الموقوف ويُشترى كأنّ شيئاً لم يكن.</para>
@@ -388,7 +388,7 @@ public class InventoryService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-229 · م0-١) عكسٌ كاملٌ لحركة مخزنية: الكمية <b>والتكلفة</b> معاً.
+    /// عكسٌ كاملٌ لحركة مخزنية: الكمية <b>والتكلفة</b> معاً.
     ///
     /// <para><b>لماذا مسارٌ واحد:</b> كان كلُّ مستدعٍ يعكس بطريقته. إلغاء فاتورة المشتريات
     /// وإذن الاستلام يعكسان التكلفة عبر <see cref="ReverseReceiptCostAsync"/>، بينما
@@ -416,7 +416,7 @@ public class InventoryService(BrqoshDbContext db)
     {
         await ReverseMovementBalancesAsync(movement);
 
-        // (CEEF-231 · ط4-٤) ‏**والتحويلُ يُعكَس في الطرفين معاً.**
+        // ‏**والتحويلُ يُعكَس في الطرفين معاً.**
         //
         // ‏هو صادرٌ ووارِدٌ في مستندٍ واحد: **استهلك طبقةً هنا وأنشأ طبقةً هناك**.
         // ‏فعكسٌ يُرمّم المستهلَكَ ولا يُزيل المُنشأ **يُضاعف قيمةَ المخزون** بقيمة كلّ
@@ -438,7 +438,7 @@ public class InventoryService(BrqoshDbContext db)
 
         if (!movement.IsInbound)
         {
-            // (CEEF-229 · م0-٣) **الصادرُ يُرمّم طبقاتِه المستهلَكة — لا يُنشئ طبقةً جديدة.**
+            // **الصادرُ يُرمّم طبقاتِه المستهلَكة — لا يُنشئ طبقةً جديدة.**
             //
             // كان التعليقُ هنا يُقرّ بأنّ `InventoryCostLayer.Restore()` بصفر مستدعٍ وأنّ
             // البند مفتوح. وقد أُغلق: `ConsumeForIssueAsync` يُسجّل ما أُخذ من كلّ طبقة
@@ -454,7 +454,7 @@ public class InventoryService(BrqoshDbContext db)
                 if (restored)
                     _costReversed.Add((movement.SourceDocument, false));
 
-                // (جاهزيّةُ الإطلاق · ح-٣١ب) ‏**و«لا سجلّ» لا يُبتلع.**
+                // ‏**و«لا سجلّ» لا يُبتلع.**
                 //
                 // ‏`RestoreConsumedLayersAsync` **موثّقٌ فيها** أنّ `false` يعني «مستندٌ
                 // ‏رُحّل قبل هذه الدفعة — **فيُقرّر المستدعي** ولا يُبتلع الأمرُ
@@ -490,7 +490,7 @@ public class InventoryService(BrqoshDbContext db)
             return;
         }
 
-        // (CEEF-229 · م0-٣ب) وللداخل: تُزال الطبقةُ التي أنشأها هذا المستند بعينها.
+        // وللداخل: تُزال الطبقةُ التي أنشأها هذا المستند بعينها.
         // ‏وإن لم توجد طبقاتٌ (منشأةٌ على المتوسط المرجّح) فالعكسُ بحساب المتوسط وحده.
         // ‏(ح-١١٢) ‏وطبقاتُ المستند كلُّها أُزيلت مع حركته الأولى — فلا تسقط الثانيةُ إلى عكس المتوسّط ثانيةً.
         if (!string.IsNullOrWhiteSpace(movement.SourceDocument) && _costReversed.Contains((movement.SourceDocument, true)))
@@ -505,7 +505,7 @@ public class InventoryService(BrqoshDbContext db)
             return;
         }
 
-        // (CEEF-229 · م0-٥ / I-NEW-2) ‏**التجميعُ بالصنف قبل عكس التكلفة.**
+        // ‏**التجميعُ بالصنف قبل عكس التكلفة.**
         //
         // ‏`ReverseReceiptCostAsync` **موثَّقٌ فيها** أنّ الرصيد المقروء نقص بكمّية هذا النداء
         // ‏سلفاً، فتُعيد بناء ما قبله بـ `remainingQty + qtyOut`. و`ReverseMovementBalancesAsync`
@@ -536,7 +536,7 @@ public class InventoryService(BrqoshDbContext db)
     {
         foreach (var line in movement.Lines)
         {
-            // (CEEF-230 · ط1-٣) ‏الدفعةُ تُقرأ من السطر المحفوظ — **فيعود ما خرج بعينه**.
+            // ‏الدفعةُ تُقرأ من السطر المحفوظ — **فيعود ما خرج بعينه**.
             // ‏ولو رُدّت الكمّيةُ بلا رقمٍ لانكسرت هـ-٩ عند أوّل إلغاء.
             var batch = BatchRef.From(line.BatchNumber, line.ExpiryDate);
 
@@ -558,7 +558,7 @@ public class InventoryService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٣) <b>المَخنَقُ الوحيد لكلّ تغيّرٍ في كمّية المخزون.</b>
+    /// <b>المَخنَقُ الوحيد لكلّ تغيّرٍ في كمّية المخزون.</b>
     ///
     /// <para>ولذلك <b>لا قيمةَ افتراضية</b> لـ<paramref name="batch"/> ولا لـ<paramref name="type"/>:
     /// المُصرِّفُ يُجبر كلَّ مستدعٍ من الاثني عشر على أن <b>يُقرّر</b> هل يحمل هويّةَ دفعةٍ أم
@@ -598,7 +598,7 @@ public class InventoryService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٣) يفرض هويّةَ الدفعة ويُحرّك رصيدَها.
+    /// يفرض هويّةَ الدفعة ويُحرّك رصيدَها.
     ///
     /// <para><b>وثلاثةُ قراراتٍ محسومةٌ هنا:</b></para>
     /// <list type="number">
@@ -657,7 +657,7 @@ public class InventoryService(BrqoshDbContext db)
 
         row.EnsureExpiry(batch.Value.Expiry);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٠٥) ‏**والمنتهيةُ تخرج إلى مورّدها وحدَه** — `expiredMayLeave` يمرّره مرتجعُ المشتريات لا غيرُه،
+        // ‏ ‏**والمنتهيةُ تخرج إلى مورّدها وحدَه** — `expiredMayLeave` يمرّره مرتجعُ المشتريات لا غيرُه،
         // ‏وافتراضيُّه الرفض: فالبيعُ والصرفُ والمطبخُ والإنتاجُ على حالها. وكان مرتجعُ الدفعة المنتهية يُدفع إلى الإتلاف فيضيع رصيدُ المورّد.
         if (delta < 0 && type == StockMovementType.Issue && !expiredMayLeave && row.IsExpiredOn(onDate))
             throw new AccountingException(

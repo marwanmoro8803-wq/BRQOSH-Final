@@ -11,7 +11,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-230 · ط3-٢ب) ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
+        /// ‏دفعاتُ المطالبات وقراراتُ الشركة عليها.
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b>: المُرقِّعُ اليدويّ يُنشئ
         /// الجدولين على القواعد القائمة، <b>و<c>CreateTable</c> المُولَّد يرمي على جدولٍ

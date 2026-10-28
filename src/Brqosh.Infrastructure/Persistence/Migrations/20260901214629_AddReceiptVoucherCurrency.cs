@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٤) عملةُ سند القبض وسعرُ صرفها.
+    /// عملةُ سند القبض وسعرُ صرفها.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> — المُرقِّع يسبقها. <b>والافتراضُ ريالٌ بسعرِ واحد</b>،
     /// فسندٌ قائمٌ لا يتغيّر قيدُه ولا مبلغُه.</para>

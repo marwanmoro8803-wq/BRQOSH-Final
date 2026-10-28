@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Hospitality;
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٨٢ · <c>sector-modules#4</c>) <b>ليالي الإقامة تبلغ الأستاذَ في شهرها — وكانت تُقيَّد في حساب النزيل
+/// <b>ليالي الإقامة تبلغ الأستاذَ في شهرها — وكانت تُقيَّد في حساب النزيل
 /// وحدَه.</b>
 ///
 /// <para><b>ما كان:</b> <see cref="FolioService.AccrueNightsAsync"/> يُضيف الليلةَ إلى حساب النزيل (الدفتر المساعد) <b>ولا يُرحّل

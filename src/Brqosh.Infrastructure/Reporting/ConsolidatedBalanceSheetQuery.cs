@@ -91,7 +91,7 @@ public class ConsolidatedBalanceSheetQuery(BrqoshDbContext db, ExchangeRateServi
         var equityTotal = equity.Values.Sum(v => v.Amount);
         var ctaPlug = assetTotal - liabilityTotal - equityTotal;
 
-        // (جاهزيّةُ الإطلاق · ح-٤٥) ‏**والفرقُ «احتياطيُ ترجمة» حيث وقعت ترجمةٌ فقط.**
+        // ‏**والفرقُ «احتياطيُ ترجمة» حيث وقعت ترجمةٌ فقط.**
         //
         // ‏بطريقة السعر الجاري فرقُ الترجمة هو الموازنُ بتعريفه — الأصولُ بسعر الإقفال والأرباحُ
         // ‏بالمتوسّط — **فيبقى حيث تُرجِمت شركةٌ واحدةٌ على الأقلّ**. **أمّا مجموعةٌ لا ترجمةَ فيها
@@ -119,7 +119,7 @@ public class ConsolidatedBalanceSheetQuery(BrqoshDbContext db, ExchangeRateServi
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٤٥ · accounting-core#5) <b>أرباحُ الشركة غير المقفلة منذ التأسيس —
+    /// <b>أرباحُ الشركة غير المقفلة منذ التأسيس —
     /// كلُّ سنةٍ بمتوسّط سنتِها.</b>
     ///
     /// <para><b>وكان الموحَّدُ يأخذ السنةَ التقويميّةَ الجاريةَ وحدَها</b> ويُسقط 3999 المفرد

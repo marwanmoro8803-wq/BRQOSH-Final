@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Payroll;
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٨٤ · <c>treasury-payroll-assets#3</c>) <b>صرفُ الرواتب وسدادُ التأمينات ودفعُ مستحقّ نهاية الخدمة — وكان
+/// <b>صرفُ الرواتب وسدادُ التأمينات ودفعُ مستحقّ نهاية الخدمة — وكان
 /// <c>2108</c> و<c>2109</c> يُدانان ولا يُمَسّان.</b>
 ///
 /// <para><b>ما كان:</b> ترحيلُ الدورة يُقيّد الصافيَ دائناً في <c>2108</c> والتأميناتِ (حصّتا الموظّف وصاحب العمل) في <c>2109</c>،
@@ -86,7 +86,7 @@ public class PayrollPaymentService(BrqoshDbContext db)
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٨٨ · <c>treasury-payroll-assets#10</c>) <b>عكسُ صرف رواتب الدورة</b> — وكان الصرفُ لا يُعكس، فدورةٌ صُرفت
+    /// <b>عكسُ صرف رواتب الدورة</b> — وكان الصرفُ لا يُعكس، فدورةٌ صُرفت
     /// خطأً لا تُصحَّح: عكسُها يُرفض لأنّها صُرفت (ح-٨٤)، وصرفُها لا عكسَ له. والقيدُ العكسيُّ يُقاصّ قيدَ الصرف فيعود المستحقُّ قائماً.
     /// </summary>
     public Task ReverseSalariesPaymentAsync(long companyId, long runId, DateOnly reversalDate, string username,

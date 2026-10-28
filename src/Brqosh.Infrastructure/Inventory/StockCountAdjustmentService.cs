@@ -12,7 +12,7 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
     /// <summary>
     /// ترحيل فروقات الجرد.
     ///
-    /// <para>(CEEF-229 · م2-٢٤) <c>OpeningUnitCost</c> تكلفةٌ يُدخلها المالك لصنفٍ <b>لا تكلفة
+    /// <para> <c>OpeningUnitCost</c> تكلفةٌ يُدخلها المالك لصنفٍ <b>لا تكلفة
     /// له بعد</b> — وهو حال كل صنفٍ في أوّل جردٍ تُجريه المنشأة. وبدونها يدخل المخزون بكميّةٍ
     /// بلا قيمة، فيُقيَّد أوّلُ بيعٍ له تكلفةً صفراً <b>ويُضخَّم مجمل الربح</b>.</para>
     ///
@@ -29,7 +29,7 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
             username, ct);
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٩ · <c>order-to-cash-procure-to-pay-inventory#7</c>) ‏**الجردُ بالدفعة.** الصنفُ المتتبَّع يُجرد بدفعاته:
+    /// ‏**الجردُ بالدفعة.** الصنفُ المتتبَّع يُجرد بدفعاته:
     /// السطرُ يحمل <c>BatchNumber</c> ولقطتُه رصيدُ تلك الدفعة، وبلا دفعةٍ يُرفض باسم الصنف. وغيرُ المتتبَّع كما كان.
     /// </summary>
     public async Task<int> PostVariancesAsync(
@@ -40,7 +40,7 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
         SecurityContext.EnsureCanPost();
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            // (CEEF-229 · م1-١٢ / A-5) ‏**اللقطةُ تُعاد قراءتُها هنا — داخل المعاملة.**
+            // ‏**اللقطةُ تُعاد قراءتُها هنا — داخل المعاملة.**
             //
             // ‏`SystemQty` تأتي من المستدعي: من لقطةِ الشاشة لحظةَ فُتحت ورقةُ الجرد. والفرقُ
             // ‏يُرحَّل حركةً **مطلقة** (`SystemQty − CountedQty`)، فإن تحرّك الرصيدُ بين العدّ
@@ -63,7 +63,7 @@ public class StockCountAdjustmentService(BrqoshDbContext db)
             // ‏**والرفضُ لا الإصلاحُ الصامت:** ضبطُ الرصيد على المعدود مباشرةً كان يمحو حركةً
             // ‏حقيقية وقعت بين العدّ والترحيل. من عدّ لا يعلم بها، فالقرارُ له لا للنظام.
             //
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٩ · `order-to-cash-procure-to-pay-inventory#7`) ‏**والمتتبَّع يُقارَن بدفعته لا بمجموعه** — وبلا دفعةٍ يُرفض:
+            // ‏ ‏**والمتتبَّع يُقارَن بدفعته لا بمجموعه** — وبلا دفعةٍ يُرفض:
             // ‏فالحركةُ التي لا تحمل هويّةً يرفضها المَخنَقُ، والأجدى أن يُرفض هنا باسم الصنف وقبل أيّ ترحيل.
             var inventory = new InventoryService(db);
             foreach (var line in lines)

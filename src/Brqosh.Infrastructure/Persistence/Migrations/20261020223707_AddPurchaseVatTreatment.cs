@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>tax-zatca#12</c>) معاملةُ ضريبة فاتورة الشراء — **والقائمةُ «Domestic»** لا سلسلةً فارغةً (والمولِّدُ كتبها
+    /// ‏ معاملةُ ضريبة فاتورة الشراء — **والقائمةُ «Domestic»** لا سلسلةً فارغةً (والمولِّدُ كتبها
     /// ‏فارغة، فيقرأ EF قيمةً ليست في التعداد)، والمبلغان صفرٌ. ومُطاوِعةٌ للتكرار كأخواتها: المُرقِّعُ قد يكون أضافها قبلها.
     /// </summary>
     public partial class AddPurchaseVatTreatment : Migration

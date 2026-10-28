@@ -20,7 +20,7 @@ public class Product : ISoftDeletable
     public decimal WeightedAverageCost { get; private set; }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٣) نمطُ التتبّع — <b>والأصلُ <c>None</c></b>، فلا يتغيّر سلوكُ أيّ
+    /// نمطُ التتبّع — <b>والأصلُ <c>None</c></b>، فلا يتغيّر سلوكُ أيّ
     /// صنفٍ قائم بإضافة هذه الميزة.
     /// </summary>
     public InventoryTracking Tracking { get; private set; } = InventoryTracking.None;
@@ -102,7 +102,7 @@ public class Product : ISoftDeletable
         Barcode = (barcode ?? "").Trim();
     }
 
-    // (جاهزيّةُ الإطلاق · ح-٢١) ‏**نُزعت `ApplyReceipt`** — دالّةٌ ميّتةٌ تُفسد المتوسّطَ
+    // ‏**نُزعت `ApplyReceipt`** — دالّةٌ ميّتةٌ تُفسد المتوسّطَ
     // ‏لو استُدعيت، وكانت تعليقُها يُقرّ بذلك: «placeholder — InventoryService يحسب WAC الصحيح».
     //
     // ‏**وجسمُها لم يكن متوسّطاً مرجّحاً بل إحلالاً**: `WeightedAverageCost = unitCost` —
@@ -123,7 +123,7 @@ public class Product : ISoftDeletable
     /// <summary>
     /// إيقاف الصنف — <b>حالةٌ تشغيلية لا واقعةُ حذف</b>.
     ///
-    /// <para>(CEEF-229 · م2-١٧) كان يضبط <c>DeletedAtUtc</c> أيضاً، ومرشّح الاستعلام العامّ
+    /// <para> كان يضبط <c>DeletedAtUtc</c> أيضاً، ومرشّح الاستعلام العامّ
     /// يُخفي كلَّ ما له تاريخ حذف — <b>فيختفي من قوائمه تماماً</b> لا يظهر موقوفاً. وزرُّ
     /// الشاشة مكتوبٌ عليه «إيقاف» ورسالةُ التأكيد تسأل «إيقاف …؟»، فكان الوعد إيقافاً
     /// والفعلُ حذفاً. ولا رجعة: لا <c>Reactivate</c> في الكيان أصلاً.</para>
@@ -137,7 +137,7 @@ public class Product : ISoftDeletable
     public void Reactivate() => IsActive = true;
 
     /// <summary>
-    /// (CEEF-230 · ط1-٣) <b>يضبط نمطَ التتبّع — ويُرفض ما دام للصنف رصيد.</b>
+    /// <b>يضبط نمطَ التتبّع — ويُرفض ما دام للصنف رصيد.</b>
     ///
     /// <para><b>ولماذا يُرفض:</b> صنفٌ في المستودع منه مئةُ حبّةٍ بلا دفعات، فإن صار
     /// «يُتتبَّع بالدفعة» صارت المئةُ <b>بضاعةً بلا هويّة</b>: لا رقمَ لها ولا صلاحية،

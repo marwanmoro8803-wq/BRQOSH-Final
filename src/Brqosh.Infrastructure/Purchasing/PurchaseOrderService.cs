@@ -10,7 +10,7 @@ namespace Brqosh.Infrastructure.Purchasing;
 public class PurchaseOrderService(BrqoshDbContext db)
 {
     /// <summary>
-    /// (CEEF-229 · م1-١٤) داخل معاملة — فقفلُ التسلسل مربوطٌ بها، وخارجَها يُحرَّر فوراً
+    /// داخل معاملة — فقفلُ التسلسل مربوطٌ بها، وخارجَها يُحرَّر فوراً
     /// فيقرأ متزاحمان الرقمَ نفسَه. وكانت القراءةُ والكتابة هنا بلا معاملةٍ إطلاقاً.
     /// </summary>
     public Task<PurchaseOrder> ApproveAsync(PurchaseOrder order)
@@ -46,7 +46,7 @@ public class PurchaseOrderService(BrqoshDbContext db)
                 && g.Status == GoodsReceiptStatus.Posted, ct);
             if (!hasGrn)
             {
-                // ‏(جاهزيّةُ الإطلاق · ح-١٠٦ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**الاستلامُ الآليُّ لا يخترع دفعة.** سطرُ
+                // ‏ ‏**الاستلامُ الآليُّ لا يخترع دفعة.** سطرُ
                 // ‏أمر الشراء لا يحمل رقمَ دفعةٍ ولا انتهاء، والمَخنَقُ كان يرفض المتتبَّعَ «بلا هويّة» دون أن يقول ما العمل —
                 // ‏فيُرفض هنا باسم الصنف ويُدَلّ على إذن الاستلام، وهو يُسجّل الدفعةَ وانتهاءها ثمّ تُنشأ الفاتورة منه.
                 var products = await new InventoryService(db).LoadProductsForLinesAsync(
@@ -56,7 +56,7 @@ public class PurchaseOrderService(BrqoshDbContext db)
                     throw new Domain.Accounting.AccountingException(
                         $"الصنف '{tracked.NameAr}' يُتتبَّع بالدفعة — استلِمه بإذن استلامٍ يُسجّل دفعتَه وانتهاءها، ثمّ أنشئ الفاتورة من الأمر.");
 
-                // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الاستلامُ الآليُّ يدخل المستودعَ المختار** — لا الافتراضيَّ أبداً؛ والموقوفُ يُرفض باسمه.
+                // ‏ ‏**الاستلامُ الآليُّ يدخل المستودعَ المختار** — لا الافتراضيَّ أبداً؛ والموقوفُ يُرفض باسمه.
                 var warehouse = await PurchaseInvoicePostingService.ResolveWarehouseAsync(
                     db, new InventoryService(db), companyId, warehouseId, ct);
                 var receipt = GoodsReceipt.CreateDraft(

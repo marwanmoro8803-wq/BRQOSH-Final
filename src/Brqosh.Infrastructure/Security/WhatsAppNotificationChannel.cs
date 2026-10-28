@@ -16,7 +16,7 @@ public sealed class InAppOtpNotificationChannel : IWhatsAppNotificationChannel
     public WhatsAppSendResult SendOtp(string phoneE164, string messageAr)
     {
         var hint = ExtractCode(messageAr);
-        // أمن (إغلاق ح-1، CEEF-200): لا يُكشف الرمز في الواجهة في الإنتاج — يمنع الاستيلاء
+        // أمن : لا يُكشف الرمز في الواجهة في الإنتاج — يمنع الاستيلاء
         // على الحساب عبر «نسيت كلمة المرور». الإنتاج يتطلب قناة إرسال خارجية أو إعادة تعيين بيد المدير.
         var revealed = Brqosh.Application.Setup.AppEnvironmentConfig.IsProduction ? null : hint;
         return new WhatsAppSendResult(true, revealed, null);
@@ -39,7 +39,7 @@ public sealed class LocalWhatsAppNotificationChannel : IWhatsAppNotificationChan
 }
 
 /// <summary>
-/// (CEEF-229 · م0-١١) لا قناة تسليم مهيّأة في الإنتاج — تفشل <b>صراحةً</b>.
+/// لا قناة تسليم مهيّأة في الإنتاج — تفشل <b>صراحةً</b>.
 ///
 /// <para>كان <see cref="InAppOtpNotificationChannel"/> يعيد في الإنتاج <c>Success: true</c> مع
 /// <c>DevHint: null</c>: الرمز يُولَّد ويُحفَظ في القاعدة و<b>لا يُسلَّم لأحد</b>، والمستخدم يقرأ

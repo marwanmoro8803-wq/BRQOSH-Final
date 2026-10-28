@@ -94,7 +94,7 @@ public class ReceiptVoucher : IBranchScoped
     }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٤) عملةُ السند — و<c>SAR</c> هي الأصل، و<see cref="Amount"/> بها.
+    /// عملةُ السند — و<c>SAR</c> هي الأصل، و<see cref="Amount"/> بها.
     /// </summary>
     public string CurrencyCode { get; private set; } = "SAR";
 
@@ -102,7 +102,7 @@ public class ReceiptVoucher : IBranchScoped
     public decimal ExchangeRate { get; private set; } = 1m;
 
     /// <summary>
-    /// (CEEF-230 · ط1-٤) <b>ما حُرِّر من ذمّة العميل بعملة الدفاتر</b> — وهو ما قُيّد
+    /// <b>ما حُرِّر من ذمّة العميل بعملة الدفاتر</b> — وهو ما قُيّد
     /// دائناً في حساب الذمم.
     ///
     /// <para><b>ويخالف <see cref="FunctionalAmount"/> بمقدار فرق العملة</b>: النقدُ يدخل
@@ -120,7 +120,7 @@ public class ReceiptVoucher : IBranchScoped
         Math.Round(Amount * ExchangeRate, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
-    /// (CEEF-231 · ط1-٢ج) <b>خصمُ السداد المبكر — والحسابُ 4103 كان بلا كاتب.</b>
+    /// <b>خصمُ السداد المبكر — والحسابُ 4103 كان بلا كاتب.</b>
     /// </summary>
     /// <remarks>
     /// <para><b>وهو ممارسةٌ قائمةٌ لا حالةٌ شاذّة</b>: «٢٪ خلال عشرة أيام، وإلا فثلاثون».
@@ -181,7 +181,7 @@ public class ReceiptVoucher : IBranchScoped
     /// <summary>
     /// الترحيل: مدين الصندوق/البنك، دائن العملاء — <b>وسطرُ فرقِ عملةٍ إن اختلف السعران</b>.
     ///
-    /// <para>(CEEF-230 · ط1-٤) <paramref name="receivableFunctional"/> هو <b>القيمةُ التي
+    /// <para> <paramref name="receivableFunctional"/> هو <b>القيمةُ التي
     /// نشأت بها الذمّة</b> (بسعرِ يوم الفاتورة)، والنقدُ يدخل بسعرِ يوم التحصيل.
     /// <b>والفرقُ ربحٌ أو خسارةٌ محقَّقة</b> — لا تقديرٌ يُعاد ولا يُعكس.</para>
     ///
@@ -209,7 +209,7 @@ public class ReceiptVoucher : IBranchScoped
         entry.AddLine(cashOrBankAccount, cash, 0m,
             Method == ReceiptMethod.Cash ? "تحصيل نقدي" : $"تحصيل بنكي {Reference}".Trim());
 
-        // (CEEF-231 · ط1-٢ج) ‏**والخصمُ يُطفئ من الذمّة ما لم يدخل الصندوق.**
+        // ‏**والخصمُ يُطفئ من الذمّة ما لم يدخل الصندوق.**
         //
         // ‏فالمُحرَّرُ من الذمّة = النقدُ + الخصم، **والقيدُ يحمل الخصمَ مديناً على `4103`**.
         // ‏وبغيره تبقى قيمةُ الخصم ذمّةً مفتوحةً تُقرأ ديناً وتُطالَب، **أو تُشطب بقيدٍ

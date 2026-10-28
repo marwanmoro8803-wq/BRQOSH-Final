@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Operations;
 
 /// <summary>
-/// ‏(جاهزيّةُ الإطلاق · ح-١٢٩ · <c>data-upgrade-performance#2</c>) <b>الترقيةُ تنسخ الدفاترَ قبل أن تُهاجرها.</b>
+/// ‏ <b>الترقيةُ تنسخ الدفاترَ قبل أن تُهاجرها.</b>
 ///
 /// <para>‏<b>ما كان:</b> إصدارٌ جديدٌ يُقلع على قاعدةٍ فيها هجراتٌ معلَّقة فيُطبّقها <c>MigrateAsync</c> فوراً —
 /// <b>بلا نسخةٍ قبلها</b>. والنسخةُ المجدولةُ قد تكون بنت يومٍ أو أسبوع، أو لم تُؤخذ أصلاً (أدواتُ PostgreSQL غائبة،

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Security;
 
 /// <summary>
-/// (CEEF-237 · ت-٦) <b>قفلُ الدخول صار يعيش في القاعدة — وكان يُمحى بإعادة تشغيل التطبيق.</b>
+/// <b>قفلُ الدخول صار يعيش في القاعدة — وكان يُمحى بإعادة تشغيل التطبيق.</b>
 ///
 /// <para><b>ما كان:</b> <see cref="LoginLockoutTracker"/> قاموسٌ ثابتٌ <b>في ذاكرة العملية</b>،
 /// ويُفرَض في <c>LoginWindow</c> <b>لا في <c>UserAuthService.AuthenticateAsync</c></b>.

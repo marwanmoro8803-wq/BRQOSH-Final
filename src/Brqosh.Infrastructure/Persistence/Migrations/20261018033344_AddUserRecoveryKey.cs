@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>security-licensing-tenancy#7</c>) تجزئةُ مفتاح استعادة المدير — فارغةٌ للمستخدمين القائمين
+    /// ‏ تجزئةُ مفتاح استعادة المدير — فارغةٌ للمستخدمين القائمين
     /// ‏حتى يُصدر المديرُ مفتاحاً. ومُطاوِعةٌ للتكرار كأخواتها.
     /// </summary>
     public partial class AddUserRecoveryKey : Migration

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٠ · treasury-payroll-assets#12) آخرُ يومٍ أُهلك قبل الدفاتر — عمودٌ يقبل الفراغ، وفارغُه أصلٌ يُقتنى
+    /// آخرُ يومٍ أُهلك قبل الدفاتر — عمودٌ يقبل الفراغ، وفارغُه أصلٌ يُقتنى
     /// في الدفاتر كما كان كلُّ أصلٍ قبله؛ فلا تعبئةَ ولا تغيُّرَ لأصلٍ قائم.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار</b> على سُنّة الهجرات قبلها — <c>BrqoshSchemaUpdater</c> يُضيف العمودَ عند الإقلاع كذلك،

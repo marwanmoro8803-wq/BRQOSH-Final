@@ -20,7 +20,7 @@ public sealed class BackupVerifierUnavailableException(string message)
     : AccountingException(message);
 
 /// <summary>
-/// (CEEF-229 · م3-٢) <b>نسخٌ احتياطيّ واستعادة — وكانا غائبَين عن المنتج كلِّه.</b>
+/// <b>نسخٌ احتياطيّ واستعادة — وكانا غائبَين عن المنتج كلِّه.</b>
 ///
 /// <para><b>البند:</b> بحثٌ في المستودع عن <c>Backup</c> و<c>Restore</c> و<c>pg_dump</c>
 /// أعاد صفراً. ومنشأةٌ تُمسك دفاترَها الحقيقية بلا طريقِ عودة لا تُسلَّم — والعطلُ هنا
@@ -74,7 +74,7 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     private const string StagingSuffix = ".partial";
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٥) <b>رفيقُ النسخة — ما لا تحمله القاعدة.</b>
+    /// <b>رفيقُ النسخة — ما لا تحمله القاعدة.</b>
     ///
     /// <para><b>البند:</b> النسخةُ الاحتياطيّة كانت <b>القاعدةَ وحدَها</b>. وأرشيفُ فواتير
     /// ZATCA ومفتاحُ التوقيع وشهادتُه <b>ملفّاتٌ على القرص لا صفوفٌ في جدول</b> — فاستعادةٌ

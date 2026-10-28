@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Reporting;
 
-/// <summary>نقطة شهرية حقيقية في اتجاه النقد (CEEF-216).</summary>
+/// <summary>نقطة شهرية حقيقية في اتجاه النقد .</summary>
 public record CashTrendPoint(int Year, int Month, decimal Collected, decimal Paid)
 {
     public decimal Net => Collected - Paid;
@@ -31,12 +31,12 @@ public record DashboardKpis(
     decimal InventoryValue,
     int OpenPeriods,
     int ClosedPeriods,
-    // (CEEF-214) مؤشرات محاسبية حقيقية من قائمة الدخل — لا من إجماليات المستندات.
+    // مؤشرات محاسبية حقيقية من قائمة الدخل — لا من إجماليات المستندات.
     // المبيعات والمشتريات أعلاه شاملة الضريبة وتصلح لمؤشرات حجم النشاط فقط.
     decimal RevenueThisMonth = 0m,
     decimal ExpensesThisMonth = 0m,
     decimal NetProfitThisMonth = 0m,
-    // (CEEF-216) اتجاه نقد حقيقي من القاعدة — كان يُصطنع بضرب رقم الشهر الجاري
+    // اتجاه نقد حقيقي من القاعدة — كان يُصطنع بضرب رقم الشهر الجاري
     // في معاملات ثابتة (0.7 و0.85) ويُعرض كأنه تاريخ فعلي.
     IReadOnlyList<CashTrendPoint>? CashTrend = null);
 
@@ -47,7 +47,7 @@ public class DashboardQuery(BrqoshDbContext db)
         var today = DateOnly.FromDateTime(DateTime.Today);
         var monthStart = new DateOnly(today.Year, today.Month, 1);
 
-        // (CEEF-214) الإيراد والمصروف والربح تُقرأ من قائمة الدخل — المصدر المحاسبي
+        // الإيراد والمصروف والربح تُقرأ من قائمة الدخل — المصدر المحاسبي
         // الموثوق — فلا يمكن أن تتناقض لوحة التحكم معها كما كان يحدث.
         var pnl = await new IncomeStatementQuery(db).ExecuteAsync(companyId, monthStart, today);
 

@@ -12,7 +12,7 @@ namespace Brqosh.Infrastructure.Treasury;
 public class BankAccountService(BrqoshDbContext db)
 {
     /// <param name="currencyCode">
-    /// (CEEF-231 · ط1-٤ب) <b>عملةُ الحساب</b> — و<c>null</c> تعني الريال.
+    /// <b>عملةُ الحساب</b> — و<c>null</c> تعني الريال.
     /// <b>وكان النطاقُ يحملها ولا يصل إليها شيء</b>: فحسابٌ بالدولار لا يُنشأ من الشاشة،
     /// <b>وشاشةُ إعادة تقييم العملات مبنيّةٌ لتقييمه</b> — فتبقى بلا شيءٍ تُقيّمه.
     /// </param>
@@ -22,7 +22,7 @@ public class BankAccountService(BrqoshDbContext db)
     {
         code = code.Trim().ToUpperInvariant();
 
-        // (CEEF-229 · م2-١٠ / D-6) ‏الفحصُ يشمل **المحذوف**.
+        // ‏الفحصُ يشمل **المحذوف**.
         //
         // ‏كان `AnyAsync` وحدَه، وهو مُرشَّحٌ بالحذف الناعم — فكودُ حسابٍ محذوف يمرّ الفحصَ
         // ‏ثمّ يصطدم بالفهرس الفريد، فيُعرض نصُّ المحرّك الإنجليزيّ في واجهةٍ عربية.

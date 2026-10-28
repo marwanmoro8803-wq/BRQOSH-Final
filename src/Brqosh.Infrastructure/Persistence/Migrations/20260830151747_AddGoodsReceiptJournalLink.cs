@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-229 · م1-١٩) ربطُ إذن الاستلام بقيد استحقاقه — مرساةُ عكسه عند الإلغاء.
+    /// ربطُ إذن الاستلام بقيد استحقاقه — مرساةُ عكسه عند الإلغاء.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار:</b> <c>BrqoshSchemaUpdater</c> يُضيف العمودَ قبل تشغيل
     /// الهجرات لإصلاح القواعد القائمة، فـ<c>AddColumn</c> تصطدم بعمودٍ موجود وترمي

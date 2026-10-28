@@ -31,7 +31,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
             await FinancialPostingSupport.ValidateAsync(
                 db, invoice.CompanyId, invoice.InvoiceDate, PostingDocumentKind.PurchaseInvoice, ct: ct);
             var inv = new InventoryService(db);
-            // ‏(جاهزيّةُ الإطلاق · ح-١١١ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الشراءُ المباشر يدخل مستودعَ الفاتورة — لا الافتراضيَّ أبداً.**
+            // ‏ ‏**الشراءُ المباشر يدخل مستودعَ الفاتورة — لا الافتراضيَّ أبداً.**
             // ‏يُسأل المستودعُ هنا قبل أيّ قيد: موقوفٌ أو مفقودٌ يُرفض باسمه فلا يُرحَّل شيء. والفارغُ هو الافتراضيّ كما كان.
             var receiptWarehouse = invoice.WarehouseId is null
                 ? null
@@ -46,7 +46,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
                 throw new AccountingException(
                     $"فاتورة المورد بالمرجع '{invoice.SupplierInvoiceReference}' مسجلة مسبقاً لنفس المورد.");
 
-            // ‏(جاهزيّةُ الإطلاق · tax-zatca#12) ‏**مستندُ التخليص ضريبةٌ لا بضاعة** — فلا أمرَ شراءٍ ولا مشروعَ ولا أصلَ ولا مستودع:
+            // ‏ ‏**مستندُ التخليص ضريبةٌ لا بضاعة** — فلا أمرَ شراءٍ ولا مشروعَ ولا أصلَ ولا مستودع:
             // ‏كلُّها تُحمَّل بفاتورة المورّد الأجنبيّ، وتحميلُها هنا يُثبت التكلفةَ مرّتين.
             if (invoice.VatTreatment == PurchaseVatTreatment.ImportPaidAtCustoms
                 && (invoice.PurchaseOrderId is not null || invoice.ProjectId is not null
@@ -65,7 +65,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
             var products = await inv.LoadProductsForLinesAsync(invoice.CompanyId, invoice.Lines.Select(l => l.ProductId));
             InventoryService.EnsureTradable(products, "شراء");
 
-            // ‏(جاهزيّةُ الإطلاق · ح-١٤) ‏**فاتورةٌ بلا أمرِ شراءٍ لبضاعةٍ وصلت بإذنِ استلام
+            // ‏ ‏**فاتورةٌ بلا أمرِ شراءٍ لبضاعةٍ وصلت بإذنِ استلام
             // ‏تُدخلها المخزونَ مرّةً ثانية.**
             //
             // ‏مسارُ «بلا إذن» أدناه يُضيف الكمّيةَ إلى المستودع. **وهو الصوابُ لشراءٍ مباشر**
@@ -81,11 +81,11 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
                 await EnsureNoOpenAccrualForUnlinkedInvoiceAsync(invoice, products, ct);
             decimal inventorySubtotal = 0;
             var inventoryByProduct = new List<(long ProductId, decimal Amount)>();
-            // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**الدفعةُ وانتهاؤها** تسافران مع السطر إلى حركة الاستلام —
+            // ‏ ‏**الدفعةُ وانتهاؤها** تسافران مع السطر إلى حركة الاستلام —
             // ‏وكان التحميلُ القديمُ يُسقطهما فيرفض المَخنَقُ الصنفَ المتتبَّع.
             var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
 
-            // (CEEF-229 · م1-١٩) **مع إذنِ استلامٍ لا يُمَسّ 1107 إطلاقاً.**
+            // **مع إذنِ استلامٍ لا يُمَسّ 1107 إطلاقاً.**
             //
             // وجودُ الإذن يمنع الحركةَ المخزنية، فمتوسطُ التكلفة لا يُعاد حسابه — وأيُّ ريالٍ
             // يُضاف إلى 1107 هنا بلا مقابلٍ في الدفتر المساعد **يكسر الهوية هـ-٣ كسراً دائماً**.
@@ -96,7 +96,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
                 ? await OpenAccrualByProductAsync(invoice, ct)
                 : [];
 
-            // (جاهزيّةُ الإطلاق · ح-٤) ‏**سطورُ المستند بعملته، والدفترُ بالريال.**
+            // ‏**سطورُ المستند بعملته، والدفترُ بالريال.**
             //
             // ‏`RecalculateTotals` يحسب `ForeignSubtotal` من السطور **ثمّ** يضربه في السعر
             // ‏ليُخرج `Subtotal` بالريال. **وهذه الحلقةُ كانت تجمع `LineTotal` خامّاً** —
@@ -138,7 +138,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
                     continue;
                 }
 
-                // (CEEF-229 · م1-٢٠) ‏الاستهلاكُ بالكمية، والقيمةُ المُحرَّرة تتبعها.
+                // ‏الاستهلاكُ بالكمية، والقيمةُ المُحرَّرة تتبعها.
                 // ‏والفرقُ = ما تقوله الفاتورة ناقصَ ما حُرّر — **موجباً أو سالباً**:
                 // ‏موجبٌ حين تُفوتَر البضاعةُ بأغلى ممّا استُلمت، وسالبٌ حين بأرخص.
                 // ‏وكان يُحسب بالقيمة فيصير صفراً في حالة الانخفاض، فيبقى الفرقُ التزاماً
@@ -156,7 +156,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
             var project = invoice.ProjectId is long projectId
                 ? await ProjectForCostAsync(invoice.CompanyId, projectId, ct)
                 : null;
-            // ‏(جاهزيّةُ الإطلاق · ح-١٥٨ · ‏`treasury-payroll-assets#12`) ‏**فاتورةُ أصلٍ تُدين حسابَ الأصل لا المشتريات** — وكلُّها له:
+            // ‏ ‏**فاتورةُ أصلٍ تُدين حسابَ الأصل لا المشتريات** — وكلُّها له:
             // ‏لا صنفَ مخزنيّاً فيها، وصافيها (أو إجماليُّها لغير القابل للخصم) تكلفتُه المسجَّلة.
             var asset = invoice.FixedAssetId is long assetId
                 ? await AssetForInvoiceAsync(invoice, assetId, project, inventorySubtotal, grniRelief, receiptLines.Count, ct)
@@ -198,7 +198,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
             }
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
 
-            // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
+            // ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
             // ‏الترحيل**، فالقيدُ المرحَّل لا يُعدَّل. ويُتحقَّق من المركز أوّلاً: مرجعٌ
             // ‏لمركزٍ محذوفٍ يُنتج تقريراً يعرض «غير مُصنَّف» ويُقرأ نقصَ تصنيف.
             await FinancialPostingSupport.EnsureCostCenterAsync(db, invoice.CompanyId, invoice.CostCenterId, ct);
@@ -206,7 +206,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
             entry.Post(entryNumber);
 
             db.JournalEntries.Add(entry);
-            // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+            // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
             // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
             // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
             // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -245,7 +245,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
     }
 
     /// <summary>
-    /// (CEEF-229 · م1-٢٠ / I-8) الاستحقاقُ المفتوح لكلّ صنف — <b>كمّيةً وقيمةً معاً</b>:
+    /// الاستحقاقُ المفتوح لكلّ صنف — <b>كمّيةً وقيمةً معاً</b>:
     /// ما استُلم ناقصَ ما <b>فوترته</b> فواتيرُ سابقة على أمر الشراء نفسه.
     ///
     /// <para><b>وكان يُتابَع بالقيمة وحدها، فيُخطئ متى اختلف سعرُ الفاتورة عن سعر الاستلام.</b>
@@ -262,7 +262,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
     /// شراء، لكنّهما لا يُقفلان أبداً ويتراكمان</b>. والتسامحُ معاملٌ قابلٌ للرفع.</para>
     /// </summary>
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٤) <b>يمنع فاتورةً غيرَ مربوطةٍ أن تُدخل بضاعةً دخلت بإذنِ استلام.</b>
+    /// <b>يمنع فاتورةً غيرَ مربوطةٍ أن تُدخل بضاعةً دخلت بإذنِ استلام.</b>
     ///
     /// <para><b>والحكمُ من الدفتر لا من النيّة:</b> يُسأل عن استحقاقٍ مفتوحٍ لهذا المورِّد
     /// على هذا الصنف — أي بضاعةٍ استُلمت منه ولم تُفوتَر بعد. <b>فإن وُجد، فالفاتورةُ
@@ -333,7 +333,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
     {
         var poId = invoice.PurchaseOrderId!.Value;
 
-        // (جاهزيّةُ الإطلاق · ح-١٧) ‏**والترتيبُ جزءٌ من الجواب لا زينةٌ في الاستعلام.**
+        // ‏**والترتيبُ جزءٌ من الجواب لا زينةٌ في الاستعلام.**
         //
         // ‏كلُّ سطرِ إذنٍ **طبقةٌ بقيمتها التي قُيّدت في `2112` يومَها**، والفوترةُ تُحرِّرها
         // ‏بالترتيب (الأقدمُ أوّلاً). **ولولا الترتيبُ لَما كان للتحرير معنًى محدَّد**: أيُّ
@@ -362,7 +362,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db) : Brqosh.Applicat
         var open = new Dictionary<long, AccrualState>();
         foreach (var group in received.GroupBy(l => l.ProductId))
         {
-            // (جاهزيّةُ الإطلاق · ح-١٧) ‏**طبقةٌ لكلّ سطرِ إذن — لا متوسّطٌ لكلّ الأذون.**
+            // ‏**طبقةٌ لكلّ سطرِ إذن — لا متوسّطٌ لكلّ الأذون.**
             //
             // ‏كان المتبقّي يُحسب بمتوسّطٍ مُرجَّح: **مجموعُ قيمة ما استُلم كلِّه** مضروباً
             // ‏في نسبة الكمّية المتبقّية. **وهو صحيحٌ ما دامت كلُّ الأذون بسعرٍ واحد**، فإن

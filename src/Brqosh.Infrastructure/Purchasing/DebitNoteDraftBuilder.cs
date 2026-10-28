@@ -27,7 +27,7 @@ public sealed record ReturnableInvoiceLine(
 public sealed record RequestedReturn(int LineIndex, decimal Quantity, decimal? UnitPrice = null, string? BatchNumber = null);
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٣٧) <b>الإشعارُ المدين يُرجع السطرَ الذي اختاره المستخدم —
+/// <b>الإشعارُ المدين يُرجع السطرَ الذي اختاره المستخدم —
 /// لا أوّلَ سطرٍ في الفاتورة مهما كتب.</b>
 ///
 /// <para><b>ما كان — ثلاثةُ عيوبٍ في سطرٍ واحد</b> (<c>DebitNoteDialog</c>):</para>
@@ -94,13 +94,13 @@ public class DebitNoteDraftBuilder(BrqoshDbContext db)
 
         var note = DebitNote.CreateDraft(companyId, invoice.SupplierId, invoiceId, noteDate, reason);
 
-        // (جاهزيّةُ الإطلاق · ح-٣٩) ‏**والعملةُ تُورَّث قبل السطور** — فسعرُ السطر
+        // ‏**والعملةُ تُورَّث قبل السطور** — فسعرُ السطر
         // ‏المنسوخُ أدناه بعملة الفاتورة، **وبلا وراثتها يصير الدولارُ ريالاً**.
         // ‏وكان هذا الباني (ح-٣٧) يحمل المنتَجَ والثلاثيَّ ويُغفل العملة.
         if (invoice.IsForeignCurrency)
             note.SetCurrency(invoice.CurrencyCode, invoice.ExchangeRate);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-١٠٥) ‏**ولا يُخمِّن الإشعارُ المدينُ دفعةً من الشاشة.** سطرُ فاتورة الشراء لا يحمل دفعة، والدفعاتُ على
+        // ‏ ‏**ولا يُخمِّن الإشعارُ المدينُ دفعةً من الشاشة.** سطرُ فاتورة الشراء لا يحمل دفعة، والدفعاتُ على
         // ‏الاستلام — فإن بقيت للصنف المتتبَّع دفعتان أو أكثر ولم تُسمَّ واحدة، رُفض الطلبُ بأسمائها وكمّيّاتها؛ وإلا خرج مرتجعُ دفعةٍ
         // ‏مسحوبةٍ أو تالفةٍ من غيرها بلا خطأ، واختلف رصيدُ الدفعات عن الرفّ.
         var inv = new InventoryService(db);

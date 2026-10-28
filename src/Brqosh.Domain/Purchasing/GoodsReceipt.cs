@@ -20,13 +20,13 @@ public class GoodsReceiptLine
     public decimal ReceivedQuantity { get; private set; }
     public decimal UnitCost { get; private set; }
 
-    /// <summary>(CEEF-230 · ط1-٣) رقمُ الدفعة أو الرقمُ التسلسليّ — هويّةُ ما دخل.</summary>
+    /// <summary> رقمُ الدفعة أو الرقمُ التسلسليّ — هويّةُ ما دخل.</summary>
     public string? BatchNumber { get; private set; }
 
-    /// <summary>(CEEF-230 · ط1-٣) تاريخُ انتهاء صلاحية الدفعة — اختياريّ.</summary>
+    /// <summary> تاريخُ انتهاء صلاحية الدفعة — اختياريّ.</summary>
     public DateOnly? ExpiryDate { get; private set; }
 
-    /// <summary>(CEEF-230 · ط1-١) وحدةُ الاستلام — و<c>null</c> تعني وحدةَ الصنف.</summary>
+    /// <summary> وحدةُ الاستلام — و<c>null</c> تعني وحدةَ الصنف.</summary>
     public string? UnitCode { get; private set; }
 
     private GoodsReceiptLine() { Description = null!; }
@@ -74,7 +74,7 @@ public class GoodsReceipt : IBranchScoped
     public long? StockMovementId { get; private set; }
 
     /// <summary>
-    /// (CEEF-229 · م1-١٩) قيدُ الاستحقاق — <b>ومرساةُ عكسه عند الإلغاء</b>.
+    /// قيدُ الاستحقاق — <b>ومرساةُ عكسه عند الإلغاء</b>.
     ///
     /// <para>ولا يُبحث عنه بـ<c>SourceDocument</c>: عكسُ القيد ينسخ المصدرَ نفسَه، وخدمةُ
     /// الإلغاء تستعمل السلسلةَ عينَها لحركتها المخزنية — فيصير المفتاحُ ملتبساً ببنائه.</para>
@@ -108,7 +108,7 @@ public class GoodsReceipt : IBranchScoped
     }
 
     /// <summary>
-    /// (CEEF-230 · ط1-٣) ‏و<paramref name="batchNumber"/> هويّةُ ما دخل.
+    /// ‏و<paramref name="batchNumber"/> هويّةُ ما دخل.
     ///
     /// <para><b>والاستلامُ هو الموضعُ الوحيد الذي تُولَد فيه الهويّة</b>: ما لم يُسمَّ هنا
     /// لا يُسمّى بعدُ أبداً — فالبضاعةُ صارت في المستودع مختلطةً بغيرها.</para>

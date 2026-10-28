@@ -16,7 +16,7 @@ namespace Brqosh.Infrastructure.Assets;
 public class FixedAssetDisposalPostingService(BrqoshDbContext db)
 {
     /// <param name="saleProceeds">
-    /// (CEEF-232 · ض-٢) <b>المقابلُ قبل الضريبة</b> — لا المحصَّل.
+    /// <b>المقابلُ قبل الضريبة</b> — لا المحصَّل.
     ///
     /// <para><b>والربحُ والخسارةُ يُقاسان عليه</b>، وهذا أخطرُ التباسٍ في البند: أصلٌ
     /// دفتريّتُه ٩٦٬٠٠٠ يُباع بمئة ألفٍ ربحُه أربعةُ آلاف. <b>ولو قِيس على المحصَّل
@@ -24,14 +24,14 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
     /// ويُوزَّع</b>، وهو مالُ الهيئة في يد المنشأة.</para>
     /// </param>
     /// <param name="vatCategory">
-    /// (CEEF-232 · ض-٢) فئةُ التوريد — <b>والأساسيّةُ هي الأصل</b>: بيعُ أصلٍ من أصول
+    /// فئةُ التوريد — <b>والأساسيّةُ هي الأصل</b>: بيعُ أصلٍ من أصول
     /// النشاط توريدٌ خاضعٌ نظاماً.
     ///
     /// <para><b>وغيرُها يقع فعلاً:</b> تصديرُ معدّةٍ إلى الخارج توريدٌ صفريُّ النسبة —
     /// <b>وفرضُ خمسةَ عشرَ بالمئة عليه يجعل المنشأةَ تدفع من مالها ضريبةً لا تُحصّلها</b>.</para>
     /// </param>
     /// <param name="buyerCustomerId">
-    /// (جاهزيّةُ الإطلاق · ح-١٦) <b>المشتري — ولم يكن للاستبعاد مشترٍ قطّ.</b>
+    /// <b>المشتري — ولم يكن للاستبعاد مشترٍ قطّ.</b>
     ///
     /// <para><b>وفارغٌ مقبولٌ عمداً</b>: بيعُ خردةٍ نقداً لمشترٍ لا يُعرَّف عن نفسه واقعٌ
     /// يوميّ، <b>ويُفوتَر مبسَّطةً</b> كما تفعل نقطةُ البيع — وهو مسارٌ نظاميّ.
@@ -56,7 +56,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             if (saleProceeds < 0)
                 throw new AccountingException("عائد البيع لا يكون سالباً.");
 
-            // (CEEF-229 · م0-١٥) العائد يُقرَّب إلى منزلتين قبل أيّ استعمال.
+            // العائد يُقرَّب إلى منزلتين قبل أيّ استعمال.
             //
             // كان `gainLoss` وحده مُقرَّباً وسطرُ النقدية يأخذ الرقم خاماً، و`NumericInput` يقبل
             // أيّ عدد منازل. فعائد 4,000.005 على أصلٍ تكلفته 5,000 بلا إهلاك يُنتج فرقاً بـ0.005
@@ -82,7 +82,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             var miscExpense = await db.Accounts.SingleAsync(
                 a => a.CompanyId == asset.CompanyId && a.Code == miscCode, token);
 
-            // (CEEF-232 · ض-٤) ‏**ومنشأةٌ غير مسجَّلةٍ لا تُصدر ضريبةً أصلاً.**
+            // ‏**ومنشأةٌ غير مسجَّلةٍ لا تُصدر ضريبةً أصلاً.**
             //
             // ‏وكانت الفئةُ تُفترض «أساسيّةً» لكلّ مستدعٍ — **والشاشةُ الوحيدةُ لا تُمرّر فئة**.
             // ‏فمنشأةٌ بلا رقمٍ ضريبيٍّ تبيع معدّةً بمئة ألفٍ **تُقيّد التزاماً مُختلَقاً بخمسةَ
@@ -96,7 +96,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
                 ? vatCategory
                 : VatCategory.OutOfScope;
 
-            // (CEEF-232 · ض-٢) ‏وحسابُ المخرجات يُقرأ عند الحاجة وحدَها — فمنشأةٌ لا تبيع
+            // ‏وحسابُ المخرجات يُقرأ عند الحاجة وحدَها — فمنشأةٌ لا تبيع
             // ‏أصولَها إلا خردةً لا يلزمها الحسابُ، **وقراءتُه بلا حاجةٍ تُسقط استبعاداً
             // ‏صحيحاً على دليلٍ ناقص**.
             var vat = Math.Round(
@@ -147,7 +147,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
 
             if (asset.AccumulatedDepreciation > 0)
                 entry.AddLine(accumAccount, asset.AccumulatedDepreciation, 0m, "إقفال مجمع الإهلاك");
-            // (CEEF-232 · ض-٢) ‏والنقدُ الداخل هو المقابلُ **زائد الضريبة** — وهو ما يقبضه
+            // ‏والنقدُ الداخل هو المقابلُ **زائد الضريبة** — وهو ما يقبضه
             // ‏البائع فعلاً. **والضريبةُ ليست إيراداً ولا تمسّ الربح**: أمانةٌ تُورَّد.
             if (saleProceeds + vat > 0)
                 entry.AddLine(cash, saleProceeds + vat, 0m, "عائد بيع/خردة");
@@ -168,7 +168,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
             asset.MarkDisposed();
             await db.SaveChangesAsync(token);
 
-            // (جاهزيّةُ الإطلاق · ح-١٦) ‏**وبيعُ أصلٍ توريدٌ خاضعٌ نظاماً — فله فاتورةُ ضريبة.**
+            // ‏**وبيعُ أصلٍ توريدٌ خاضعٌ نظاماً — فله فاتورةُ ضريبة.**
             //
             // ‏كان القيدُ يُنشئ التزاماً على `2106` **بلا مستندٍ خلفَه**: لا رقمَ فاتورةٍ
             // ‏ولا مشترياً ولا مستنداً إلكترونيّاً. **والضريبةُ تبلغ الإقرارَ منذ ض-١**،

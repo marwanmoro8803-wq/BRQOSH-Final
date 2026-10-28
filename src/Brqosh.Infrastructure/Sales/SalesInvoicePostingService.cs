@@ -45,7 +45,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
         SecurityContext.EnsureCanPost();
         await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
         {
-            // (CEEF-230 · ط6-٧) ‏**والتوليدُ نزل إلى `PostCoreAsync`** فصار كلُّ قناةٍ
+            // ‏**والتوليدُ نزل إلى `PostCoreAsync`** فصار كلُّ قناةٍ
             // ‏تُصيبه، وارتفع من هنا. ولو بقي في الموضعين لرمى المولّدُ «مستند ZATCA
             // ‏موجود مسبقاً» على **كلّ** فاتورةٍ تُرحَّل من هذا الباب.
             await PostCoreAsync(invoice, ct);
@@ -89,12 +89,12 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
 
 
 
-        // (CEEF-229 · م0-٣) **الرقمُ يُخصَّص قبل استهلاك الطبقات** — فهو مفتاحُ سجلّ
+        // **الرقمُ يُخصَّص قبل استهلاك الطبقات** — فهو مفتاحُ سجلّ
         // الاستهلاك الذي يُرمَّم منه عند الإلغاء. ولو خُصّص بعده لَسُجّل الاستهلاكُ
         // باسمٍ فارغ، فلا يجده الإلغاءُ ولا تعود الطبقات — عطلٌ صامتٌ تماماً.
         var invoiceNumber = await NextInvoiceNumberAsync(invoice.CompanyId, invoice.InvoiceDate);
 
-        // ‏(جاهزيّةُ الإطلاق · ح-٩٥ · order-to-cash#13) **حدُّ ائتمان العميل** — قبل استهلاك الطبقات، و**بعد** قفل التسلسل
+        // ‏ **حدُّ ائتمان العميل** — قبل استهلاك الطبقات، و**بعد** قفل التسلسل
         // ‏الاستشاريّ (`NextInvoiceNumberAsync`): فحصٌ قبل القفل يدع فاتورتين متزامنتين تقرآن الرصيدَ نفسَه فتتجاوزان الحدَّ معاً.
         // ‏والرفضُ هنا يُرجِع المعاملةَ كلَّها فلا يُستهلك الرقم. والبيعُ الآجلُ وحدَه: بيعُ نقطة البيع نقدٌ أو بطاقة لا يمسّ الذمّة.
         if (invoice.PosShiftId is null || invoice.PosPaymentMethod is null)
@@ -105,14 +105,14 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
         var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
             string? BatchNumber, DateOnly? ExpiryDate)>();
         var costing = new InventoryCostingService(db);
-        // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**البيعُ يُصرف من مستودع الفاتورة — لا الافتراضيِّ أبداً.**
+        // ‏ ‏**البيعُ يُصرف من مستودع الفاتورة — لا الافتراضيِّ أبداً.**
         // ‏والفارغُ هو الافتراضيّ كما كانت كلُّ فاتورةٍ قبله؛ **والمستودعُ يُسأل هنا قبل أيّ صرف** — فمستودعٌ أُوقف بعد
         // ‏اختياره يُرفض باسمه ولا تُرحَّل حركةٌ ولا قيد. والإلغاءُ يعكس كلَّ حركةٍ في مستودعها هي.
         var warehouse = await ResolveWarehouseAsync(inv, invoice, ct);
 
         foreach (var (productId, entered, batchNumber, unitCode) in stockLines)
         {
-            // (CEEF-230 · ط1-١) ‏يُحوَّل **قبل** فحص الرصيد: بيعُ كرتونٍ من مئةِ حبّةٍ
+            // ‏يُحوَّل **قبل** فحص الرصيد: بيعُ كرتونٍ من مئةِ حبّةٍ
             // ‏يجب أن يُقارَن باثنتَي عشرة لا بواحدة، **وإلا مرّ بيعٌ لا رصيدَ له**.
             var qty = await new UnitConversionService(db).ToProductUnitAsync(
                 invoice.CompanyId, products[productId], entered, unitCode, ct);
@@ -209,7 +209,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
         entry.Post(entryNumber);
 
         db.JournalEntries.Add(entry);
-        // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+        // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
         // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
         // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
         // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -238,7 +238,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
             await db.SaveChangesAsync(ct);
         }
 
-        // (CEEF-230 · ط3-٣ج) ‏**وبيعُ طبقٍ مرتبطٍ بوصفةٍ يصرف مكوّناتِه** — ومن هنا لأنّ
+        // ‏**وبيعُ طبقٍ مرتبطٍ بوصفةٍ يصرف مكوّناتِه** — ومن هنا لأنّ
         // ‏كلَّ بيعٍ يمرّ بهذا المسار: نقطةُ البيع والفاتورة معاً. **فالعطلُ يُغلق صنفاً
         // ‏لا حالةً**، ولا يعتمد على أن يتذكّر أحدٌ ضغطَ زرّ.
         //
@@ -249,7 +249,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
                 .Select(l => (ProductId: l.ProductId!.Value, Quantity: l.Quantity))],
             $"SalesInvoice:{invoiceNumber}", warehouseId: warehouse.Id, ct: ct);
 
-        // (CEEF-230 · ط6-٧) ‏**والمستندُ الإلكترونيُّ يُولَّد من هنا لا من فوق** — فكلُّ
+        // ‏**والمستندُ الإلكترونيُّ يُولَّد من هنا لا من فوق** — فكلُّ
         // ‏فاتورةِ ضريبةٍ في النظام تلتقي في هذا المسار: الفاتورةُ المباشرة وأمرُ البيع
         // ‏ونقطةُ البيع **والزيارةُ الطبّية وحسابُ النزيل والفوترةُ الدورية**. وكانت
         // ‏الثلاثُ الأخيرةُ تُصدر فاتورةَ ضريبةٍ **بلا مستندٍ إلكترونيّ البتّة** — مخالفةُ
@@ -291,7 +291,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-٩٥ · <c>order-to-cash-procure-to-pay-inventory#13</c>) <b>البيعُ الآجلُ لا يتجاوز حدَّ ائتمان العميل</b> — المفتوحُ
+    /// <b>البيعُ الآجلُ لا يتجاوز حدَّ ائتمان العميل</b> — المفتوحُ
     /// عليه (<c>CustomerBalanceQuery</c>: الفواتيرُ والمستخلصاتُ بعد الإشعارات والمقبوض) زائداً إجماليَّ هذه الفاتورة بضريبتها.
     /// <b>وكان لا حدَّ في الشجرة كلِّها</b> — عميلٌ متعثّرٌ يُباع له بلا سقف. <b>وبلا حدٍّ ⟵ كما كان.</b>
     /// </summary>
@@ -321,13 +321,13 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
 
         {
 
-            // (CEEF-206) الدفع المختلط لا يُرحَّل: لا يوجد في النموذج أي حقل يحمل تقسيم
+            // الدفع المختلط لا يُرحَّل: لا يوجد في النموذج أي حقل يحمل تقسيم
             // المبلغ بين النقد والشبكة، وكان يُقيَّد بالكامل على الصندوق — فتخالف عهدة
             // الصندوق الدفترية الفعلية وتفشل مطابقة الوردية، ولا تظهر حصة الشبكة في البنك.
             // ترحيل قيد نعلم أنه خاطئ أسوأ من رفضه. البديل التشغيلي: فاتورتان منفصلتان.
             // ‏الدفع المختلط: المدينُ الأوّل النقد، وحصّةُ البطاقة سطرٌ ثانٍ (انظر `secondDebit`).
 
-            // (CEEF-229 · م2-١٥) بيعُ البطاقة يذهب إلى **حساب البنك نفسه** لا إلى الأب 1102.
+            // بيعُ البطاقة يذهب إلى **حساب البنك نفسه** لا إلى الأب 1102.
             //
             // كان يحلّ الكود الحرفيّ 1102، وكلُّ مسارٍ آخر يحلّ `bank.GlAccountId` أي الابن
             // (110201). و1102 قابلٌ للترحيل في القالب، فالأب وابنُه يتقاسمان نقد البنوك:
@@ -366,7 +366,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
         var fiscalYear = await Accounting.FiscalYearResolver.StartYearForAsync(db, companyId, date);
         var prefix = $"INV-{fiscalYear}-";
 
-        // (CEEF-229 · م1-١٤) **قبل القراءة** — وهذا المسارُ خاصٌّ بالفواتير ولا يمرّ
+        // **قبل القراءة** — وهذا المسارُ خاصٌّ بالفواتير ولا يمرّ
         // بـ`DocumentNumberGenerator`، فلا يكفي إلزامُ ذاك بالسياق. وقياسُ العطل قبل
         // الإصلاح: ستّةُ كتّابٍ متزامنين ⟵ **نجح ٣ وأخفق ٣** بـ`23505` على
         // `IX_sales_invoices_CompanyId_InvoiceNumber` — أي أنّ كاشيرين يبيعان معاً
@@ -377,7 +377,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db) : Brqosh.Application
 
             .Where(i => i.CompanyId == companyId && i.InvoiceNumber != null && i.InvoiceNumber.StartsWith(prefix))
 
-            // (CEEF-206) الترتيب بالطول أولاً ثم نصياً: التسلسل مصفوف بست خانات، فبعد
+            // الترتيب بالطول أولاً ثم نصياً: التسلسل مصفوف بست خانات، فبعد
             // تجاوز 999,999 يصبح الترتيب النصي وحده خاطئاً ("INV-2026-999999" أكبر من
             // "INV-2026-1000000") فيتكرر الرقم أو يقفز — والمنشآت عالية الحجم تبلغه.
             .OrderByDescending(i => i.InvoiceNumber!.Length)

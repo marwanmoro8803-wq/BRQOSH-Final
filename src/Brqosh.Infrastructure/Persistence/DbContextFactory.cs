@@ -23,14 +23,14 @@ public static class BrqoshDbContextFactory
         var builder = new DbContextOptionsBuilder<BrqoshDbContext>()
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             // نزاهة: حارس ثبات سجل التدقيق يجب أن يسري على كل السياقات — بما فيها مسار سطح المكتب
-            // (المصنع)، لا مسار DI فقط. إغلاق ح-3 (CEEF-200).
-            // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏وحارسُ الفترة المقفلة عند الحفظ — بالسُّنّة نفسِها: المساران معاً.
+            // (المصنع)، لا مسار DI فقط. إغلاق ح-3 .
+            // ‏ ‏وحارسُ الفترة المقفلة عند الحفظ — بالسُّنّة نفسِها: المساران معاً.
             .AddInterceptors(new AuditLogImmutabilityInterceptor(), new ClosedPeriodPostingInterceptor(), new BooksCurrencyInterceptor(),
                 new ReadOnlyBooksInterceptor());
         switch (provider)
         {
             case DatabaseProvider.PostgreSql:
-            // (CEEF-231 · ط5-٧) ‏**إعادةُ المحاولة على الأعطال العابرة — وكانت الآليةُ
+            // ‏**إعادةُ المحاولة على الأعطال العابرة — وكانت الآليةُ
             // ‏مبنيّةً وخاملة.**
             //
             // ‏`UnitOfWork.ExecuteInTransactionAsync` يستدعي `CreateExecutionStrategy()`
@@ -60,7 +60,7 @@ public static class BrqoshDbContextFactory
 
     /// <summary>
     /// مسار قاعدة SQLite الافتراضية داخل جذر البيانات الموحّد — يحترم BRQOSH_DATA_ROOT
-    /// فلا تكتب الاختبارات في قاعدة المستخدم الحقيقية (CEEF-203).
+    /// فلا تكتب الاختبارات في قاعدة المستخدم الحقيقية .
     /// </summary>
     public static string DefaultSqlitePath() =>
         Path.Combine(BrqoshDataRoot.Directory(), "brqosh.db");

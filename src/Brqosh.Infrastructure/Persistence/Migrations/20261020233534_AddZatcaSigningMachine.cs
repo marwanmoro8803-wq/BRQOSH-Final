@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>tax-zatca#16</c>) الجهازُ الذي يحمل مفتاحَ الختم — فارغٌ لإعدادٍ قائم (لا يُعرف جهازُه، فلا يُسأل عنه)،
+    /// ‏ الجهازُ الذي يحمل مفتاحَ الختم — فارغٌ لإعدادٍ قائم (لا يُعرف جهازُه، فلا يُسأل عنه)،
     /// ‏ومُطاوِعةٌ للتكرار كأخواتها.
     /// </summary>
     public partial class AddZatcaSigningMachine : Migration

@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-231 · O-34 · O-32) ‏مذكرةُ العملة على سطر القيد، وعلامةُ «على مستوى المنشأة».
+        /// ‏مذكرةُ العملة على سطر القيد، وعلامةُ «على مستوى المنشأة».
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b>: المُرقِّعُ اليدويّ
         /// (<c>BrqoshSchemaUpdater</c>) يُضيف هذه الأعمدةَ عند الإقلاع كذلك، <b>والمُولَّدُ

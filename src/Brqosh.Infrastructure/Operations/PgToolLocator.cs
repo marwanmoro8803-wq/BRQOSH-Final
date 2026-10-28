@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Brqosh.Infrastructure.Operations;
 
 /// <summary>
-/// (CEEF-229 · م3-٢) <b>العثورُ على <c>pg_dump</c>/<c>pg_restore</c> — ومطابقةُ إصداريهما بالخادم.</b>
+/// <b>العثورُ على <c>pg_dump</c>/<c>pg_restore</c> — ومطابقةُ إصداريهما بالخادم.</b>
 ///
 /// <para><b>ولماذا ملفٌّ كامل لهذا:</b> عطلان حقيقيّان يقتلان النسخَ الاحتياطيّ في الميدان
 /// ولا يظهران في التطوير:</para>

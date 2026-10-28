@@ -26,7 +26,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
         SecurityContext.EnsureCanPost();
         await UnitOfWork.ExecuteInTransactionAsync(db, async ct =>
         {
-            // (CEEF-230 · ط6-٧) ‏التوليدُ نزل إلى `PostCoreAsync` — انظر الشرحَ هناك.
+            // ‏التوليدُ نزل إلى `PostCoreAsync` — انظر الشرحَ هناك.
             await PostCoreAsync(note, ct);
             return note;
         });
@@ -72,11 +72,11 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
         decimal cogsReversal = 0;
         var costByProduct = new List<(long ProductId, decimal Amount)>();
         var returnLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate, long WarehouseId)>();
-        // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المرتجعُ يعود إلى المستودع الذي خرج منه البيع** —
+        // ‏ ‏**المرتجعُ يعود إلى المستودع الذي خرج منه البيع** —
         // ‏من حركة الصرف نفسِها لا من الافتراضيّ يومَ الإرجاع (وقد يتغيّر)؛ والمتتبَّعُ يعود إلى دفعته في مستودعها، وغيرُه إلى مستودع صنفه.
         var saleWarehouses = await SaleWarehousesAsync(invoice, ct);
         long? defaultWarehouseId = null;   // ‏لا يُسأل إلا لصنفٍ لا أثرَ لصرفه (بيعٌ سابقٌ على الحركات).
-        // ‏(جاهزيّةُ الإطلاق · ح-١٠٢ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**المتتبَّعُ يعود إلى دفعاته.**
+        // ‏ ‏**المتتبَّعُ يعود إلى دفعاته.**
         // ‏وكان سطرُ المرتجع بلا هويّة، والمَخنَقُ يرفض كلَّ سطرٍ متتبَّعٍ بلاها — فلا يُرجَع دواءٌ ولا غذاءٌ بإشعارٍ دائنٍ أبداً.
         var soldOut = await SoldBatchesStillOutAsync(invoice, previousCredits, products, ct);
 
@@ -135,7 +135,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
         entry.Post(entryNumber);
 
         db.JournalEntries.Add(entry);
-        // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+        // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
         // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
         // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
         // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -169,7 +169,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
             await db.SaveChangesAsync(ct);
         }
 
-        // (CEEF-230 · ط6-٧) ‏**والمستندُ الإلكترونيُّ من المسار المشترك** — كما في فاتورة
+        // ‏**والمستندُ الإلكترونيُّ من المسار المشترك** — كما في فاتورة
         // ‏المبيعات، وللسبب نفسِه. **وللإشعار قناةٌ واحدةٌ اليوم** لا خمس، لكنّ موضعَ
         // ‏التوليد يُوحَّد على الاصطلاح: **حيث يقع الترحيلُ يقع التوليد**. فمَن يبني قناةَ
         // ‏إشعارٍ غداً — إلغاءُ مطالبةٍ أو تسويةُ تأمين — لا يحتاج أن يعلم بهذا السطر.
@@ -180,7 +180,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
     }
 
     /// <summary>
-    /// (CEEF-229 · م0-٦) التحقق الكمّي لكل صنف مقابل الفاتورة الأصلية.
+    /// التحقق الكمّي لكل صنف مقابل الفاتورة الأصلية.
     ///
     /// <para>فحص <b>القيمة</b> وحده لا يكفي: فاتورة فيها حبةٌ من صنفٍ بـ1,000 ومئةُ حبةٍ من صنفٍ
     /// بريال واحد إجماليها 1,100 — وإشعارٌ بمئة حبة من الصنف الغالي إجماليه 1,100 أيضاً، فيمرّ
@@ -247,7 +247,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٢) <b>ما بيع من كلّ دفعةٍ ولم يُرجَع بعد</b> — من سطور حركة البيع نفسِها (وهي تحمل الدفعة
+    /// <b>ما بيع من كلّ دفعةٍ ولم يُرجَع بعد</b> — من سطور حركة البيع نفسِها (وهي تحمل الدفعة
     /// منذ CEEF-230) ناقصاً سطورَ مرتجعات الإشعارات المرحّلة قبله على الفاتورة نفسِها؛ <b>بترتيب البيع</b>، فيعود المرتجعُ
     /// إلى الدفعات بالترتيب الذي خرج به. وغيرُ المتتبَّع لا يُقرأ هنا.
     /// </summary>
@@ -297,7 +297,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
     }
 
     /// <summary>
-    /// (جاهزيّةُ الإطلاق · ح-١٠٢) <b>يُقسّم كمّيّةَ المرتجع على دفعات البيع</b>، وينقص ما خرج منها فلا يُرجَع إلى دفعةٍ
+    /// <b>يُقسّم كمّيّةَ المرتجع على دفعات البيع</b>، وينقص ما خرج منها فلا يُرجَع إلى دفعةٍ
     /// أكثرُ ممّا بيع منها ولو تكرّر الصنفُ في الإشعار. <b>والدفعةُ التي يسمّيها سطرُ الإشعار يعود إليها وحدَها</b> — فالشاشةُ
     /// تنسخها من سطر الفاتورة، ومرتجعُ الدفعة القريبة الانتهاء لا يُقيَّد على البعيدة؛ <b>وبترتيب البيع حين لا يُسمّي</b>.
     /// <b>وما بيع قبل أن يُتتبَّع الصنفُ لا يُعرف إلى أيّ دفعةٍ يعود — فيُرفض باسمه</b> ولا يُخمَّن.
@@ -387,7 +387,7 @@ public class CreditNotePostingService(BrqoshDbContext db) : Brqosh.Application.A
     {
         if (invoice.PosShiftId is not null && invoice.PosPaymentMethod is { } method)
         {
-            // (CEEF-229 · م2-١٥أ) المرتجع يخرج من **الحساب الذي دخلت فيه البيعة**.
+            // المرتجع يخرج من **الحساب الذي دخلت فيه البيعة**.
             //
             // كان يُعيد 1102 (الأب) بينما البيعة تنزل على ابن البنك (110201) عبر
             // BankGlAccountResolver — فبيعةُ مدى ومرتجعُها لا يُلغي أحدهما الآخر: يبقى

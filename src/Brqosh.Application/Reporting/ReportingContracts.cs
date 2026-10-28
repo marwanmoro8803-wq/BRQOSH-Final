@@ -129,7 +129,7 @@ public interface ICashFlowStatementQuery
 }
 
 /// <summary>
-/// (CEEF-229 · م1-١٠ / Z-12) <b>وعاءٌ وضريبةٌ لفئةٍ واحدة — على الحدّ الذي تقرؤه الشاشة.</b>
+/// <b>وعاءٌ وضريبةٌ لفئةٍ واحدة — على الحدّ الذي تقرؤه الشاشة.</b>
 ///
 /// <para>التفكيكُ كان محسوباً في <c>VatReturnQuery</c> منذ A-15 <b>ولا يعبر هذا الحدّ</b>:
 /// صفرُ قارئٍ لـ<c>SalesByCategory</c> خارج ملفّ الاستعلام. فكلُّ سطحٍ يراه المستخدم —
@@ -142,17 +142,17 @@ public interface ICashFlowStatementQuery
 public record VatReturnCategoryDto(string Code, decimal TaxableAmount, decimal VatAmount);
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-١٦٥ · <c>tax-zatca#12</c>) خانةٌ من نموذج الإقرار في بوّابة الهيئة — رقمُها ومبلغُها
+/// خانةٌ من نموذج الإقرار في بوّابة الهيئة — رقمُها ومبلغُها
 /// وتعديلاتُها والضريبةُ لكلٍّ منهما. والعنوانُ من <c>VatReturnBox</c> بالرقم.
 /// </summary>
 public record VatReturnBoxDto(int Box, decimal Amount, decimal Adjustments, decimal VatAmount, decimal VatAdjustments);
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٤٠) <b>صافي الإقرار — مالكٌ واحد.</b>
+/// <b>صافي الإقرار — مالكٌ واحد.</b>
 ///
 /// <para><b>وكان له مالكان</b>: <c>VatReturnResult</c> (يقرؤه المطبوع) و<c>VatReturnDto</c>
-/// (تقرؤه الشاشة)، <b>كلٌّ يشتقّ الصافيَ بنفسه</b>. فأُضيفت تسويةُ الإلغاء (CEEF-219)
-/// والضريبةُ المقيّدة بلا مستند (CEEF-232 · ض-١) إلى الأوّل <b>وبقي الثاني على المعادلة
+/// (تقرؤه الشاشة)، <b>كلٌّ يشتقّ الصافيَ بنفسه</b>. فأُضيفت تسويةُ الإلغاء
+/// والضريبةُ المقيّدة بلا مستند إلى الأوّل <b>وبقي الثاني على المعادلة
 /// الأقدم</b> — فبلغ الإصلاحان المطبوعةَ ولم يبلغا الشاشة. وقِيس: ربعٌ يُقدَّم بـ١٤٬٨٠٠
 /// <b>والشاشةُ تقول ١٥٬٠٠٠</b>، وبيعُ أصلٍ ثابتٍ يختفي منها كلُّه.</para>
 /// </summary>
@@ -175,7 +175,7 @@ public static class VatReturnNet
 }
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٤٠) <b>والحقولُ الأربعة إلزاميّةٌ بلا قيمةٍ افتراضيّة</b> — وموضعُها
+/// <b>والحقولُ الأربعة إلزاميّةٌ بلا قيمةٍ افتراضيّة</b> — وموضعُها
 /// قبل الاختياريّة عمداً. <b>فالافتراضيُّ صفراً هو بعينه ما أدخل العطل</b>: مُنشِئٌ لا يعرف
 /// الحدَّ يمرّر صفراً ولا يشكو أحد. <b>وبغير افتراضيٍّ يُسمّيه كلُّ مُنتِجٍ أو لا يُترجَم.</b>
 /// </summary>
@@ -197,7 +197,7 @@ public record VatReturnDto(
     decimal CancelledInputVat,
     decimal JournalOutputVat,
     decimal JournalInputVat,
-    // (جاهزيّةُ الإطلاق · ح-٤١) ‏الأبُ الذي تُعرض أوعيةُ الفئات تحته — صافي الوعاء من
+    // ‏الأبُ الذي تُعرض أوعيةُ الفئات تحته — صافي الوعاء من
     // ‏إجماليّات المستندات، **لا من الأوعية نفسِها**؛ فتصير المساواةُ تحته فحصاً لا تحصيلاً.
     decimal SalesBaseNet,
     decimal PurchasesBaseNet,
@@ -207,7 +207,7 @@ public record VatReturnDto(
     IReadOnlyList<VatReturnBoxDto>? SalesBoxes = null,
     IReadOnlyList<VatReturnBoxDto>? PurchaseBoxes = null,
     decimal JournalOutputVatInBoxes = 0m,
-    // (جاهزيّةُ الإطلاق · tax-zatca#12) ‏ضريبةُ الاحتساب العكسيّ — مخرجاتٌ هنا ومدخلاتٌ في `DeductibleInputVat` معاً (الخانة 9).
+    // ‏ضريبةُ الاحتساب العكسيّ — مخرجاتٌ هنا ومدخلاتٌ في `DeductibleInputVat` معاً (الخانة 9).
     decimal ReverseChargeVat = 0m)
 {
     public decimal NetOutputVat => VatReturnNet.Output(
@@ -215,7 +215,7 @@ public record VatReturnDto(
     public decimal NetDeductibleInputVat => VatReturnNet.Input(
         DeductibleInputVat, DebitNotesDeductibleVat, CancelledInputVat, JournalInputVat);
     public decimal NetVatPayable => NetOutputVat - NetDeductibleInputVat;
-    // (CEEF-229 · م2-١٦) null = «لا مطابقة ممكنة» وهو غير الصفر = «طابق تماماً».
+    // null = «لا مطابقة ممكنة» وهو غير الصفر = «طابق تماماً».
     public decimal? GlVariance =>
         GlVatNetPayableBalance is decimal gl ? NetVatPayable - gl : null;
 }

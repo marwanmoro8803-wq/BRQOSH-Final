@@ -15,7 +15,7 @@ public enum PayrollRunStatus
 public class PayrollLine
 {
     /// <summary>
-    /// (CEEF-230 · ط2-١) معرّفُ الموظّف — <b>و<c>null</c> يعني سطراً كُتب يدوياً</b> قبل
+    /// معرّفُ الموظّف — <b>و<c>null</c> يعني سطراً كُتب يدوياً</b> قبل
     /// وجود سجلّ الموظفين، أو لشخصٍ لا سجلَّ له.
     ///
     /// <para><b>والاسمُ يبقى مُخزَّناً معه لا يُستبدَل به</b>: قسيمةُ شهرٍ مضى يجب أن
@@ -31,7 +31,7 @@ public class PayrollLine
     public decimal GosiEmployer { get; private set; }
 
     /// <summary>
-    /// (CEEF-230 · ط2-٥) <b>قسطُ السُّلفة المُستقطَع هذا الشهر.</b>
+    /// <b>قسطُ السُّلفة المُستقطَع هذا الشهر.</b>
     ///
     /// <para><b>وبغير موضعٍ له كان الموظّفُ يقبض راتبَه كاملاً وقد أخذ سُلفتَه</b> —
     /// فتدفع المنشأةُ مرّتين، ولا يُكتشف إلا عند الاستقالة.</para>
@@ -39,7 +39,7 @@ public class PayrollLine
     public decimal AdvanceDeduction { get; private set; }
 
     /// <summary>
-    /// (CEEF-233 · ز-٦) <b>خصمُ الغياب بلا أجر — وهو <u>ليس</u> كخصم السُّلفة.</b>
+    /// <b>خصمُ الغياب بلا أجر — وهو <u>ليس</u> كخصم السُّلفة.</b>
     ///
     /// <para><b>والفرقُ جوهريّ لا شكليّ:</b> السُّلفةُ <b>سدادُ دَينٍ</b> — المصروفُ وقع
     /// كاملاً والموظّفُ استحقّ أجرَه كلَّه. <b>أمّا الغيابُ بلا أجرٍ فأجرٌ لم يُستحقّ</b>:
@@ -131,10 +131,10 @@ public class PayrollRun : IBranchScoped
     public decimal TotalNet => _lines.Sum(l => l.NetPay);
     public decimal TotalGosiEmployer => _lines.Sum(l => l.GosiEmployer);
 
-    /// <summary>(CEEF-230 · ط2-٥) مجموعُ أقساط السُّلَف — <b>وهو ما يُعفي حسابَ 1116</b>.</summary>
+    /// <summary> مجموعُ أقساط السُّلَف — <b>وهو ما يُعفي حسابَ 1116</b>.</summary>
     public decimal TotalAdvanceDeduction => _lines.Sum(l => l.AdvanceDeduction);
 
-    /// <summary>(CEEF-233 · ز-٦) مجموعُ خصم الغياب — <b>وهو يُنقص المصروف لا يُعفي حساباً</b>.</summary>
+    /// <summary> مجموعُ خصم الغياب — <b>وهو يُنقص المصروف لا يُعفي حساباً</b>.</summary>
     public decimal TotalAbsenceDeduction => _lines.Sum(l => l.AbsenceDeduction);
 
     private PayrollRun()
@@ -164,7 +164,7 @@ public class PayrollRun : IBranchScoped
         if (string.IsNullOrWhiteSpace(employeeName))
             throw new AccountingException("اسم الموظف مطلوب.");
 
-        // (CEEF-230 · ط2-١) ‏**ولا يُدرَج موظّفٌ مرّتين في دورةٍ واحدة**: راتبٌ مزدوجٌ
+        // ‏**ولا يُدرَج موظّفٌ مرّتين في دورةٍ واحدة**: راتبٌ مزدوجٌ
         // ‏لشخصٍ واحد، وملفُّ أجورٍ ترفضه الجهةُ المستقبِلة. والسطورُ اليدويةُ بلا معرّفٍ
         // ‏لا يشملها المنع — فلا هويّةَ تُقارَن.
         if (employeeId is long id && _lines.Any(l => l.EmployeeId == id))
@@ -181,7 +181,7 @@ public class PayrollRun : IBranchScoped
             Math.Round(advanceDeduction, 2, MidpointRounding.AwayFromZero),
             Math.Round(absenceDeduction, 2, MidpointRounding.AwayFromZero)));
 
-        // (CEEF-233 · ز-٦) ‏**وغيابٌ يتجاوز الأجرَ يُرفض** — فأجرٌ سالبٌ ليس خصماً بل
+        // ‏**وغيابٌ يتجاوز الأجرَ يُرفض** — فأجرٌ سالبٌ ليس خصماً بل
         // ‏مطالبةٌ للموظّف، **ولا يُنشئها غياب**. وهو حارسٌ مستقلٌّ عن حارس الصافي أدناه:
         // ‏**الصافي قد يبقى موجباً وأجرُ الشهر سالبٌ** لو كان الخصمُ أكبرَ من الأجر
         // ‏والتأميناتُ صفراً — فيُقيَّد مصروفُ رواتبَ سالب.
@@ -194,7 +194,7 @@ public class PayrollRun : IBranchScoped
                 + $"{attempted.FullGrossPay:N2} — ولا يكون أجرُ الشهر سالباً.");
         }
 
-        // (CEEF-230 · ط2-٥) ‏**واستقطاعٌ يبتلع الصافيَ يُرفض.**
+        // ‏**واستقطاعٌ يبتلع الصافيَ يُرفض.**
         //
         // ‏الاستقطاعُ يُنقص ما يقبضه الموظّف، **وصافٍ سالبٌ يعني أنّ الموظّف يدفع للمنشأة
         // ‏من جيبه** — ويُخرج ملفَّ حماية الأجور بمبلغٍ سالبٍ ترفضه المنظومة. والحدُّ
@@ -211,7 +211,7 @@ public class PayrollRun : IBranchScoped
     }
 
     /// <summary>
-    /// (CEEF-230 · ط2-٢) <b>يُضيف موظّفاً من سجلّه، وتُحسب تأميناتُه.</b>
+    /// <b>يُضيف موظّفاً من سجلّه، وتُحسب تأميناتُه.</b>
     ///
     /// <para><b>وهذا هو الفرق كلُّه:</b> كان صاحبُ المنشأة يكتب حصّتَي التأمينات بيده في
     /// ورقةٍ خارجية كلَّ شهر. <b>وهنا تُحسب من الأجر الخاضع والجنسية والنِّسَب المُخزَّنة</b>
@@ -227,7 +227,7 @@ public class PayrollRun : IBranchScoped
             throw new AccountingException($"الموظف «{employee.NameAr}» ليس من هذه المنشأة.");
 
         // ‏**ولا يُدرَج مَن لم يعمل يوماً في شهر الدورة**: موظّفٌ انتهت خدمتُه في مارس لا يُصرف له راتبُ أبريل.
-        // ‏(جاهزيّةُ الإطلاق · ح-٨٦) ‏**والحارسُ بالشهر لا بيوم الصرف** — وكان يرفض مغادراً في الخامس عشر لأنّه ليس على رأس العمل
+        // ‏ ‏**والحارسُ بالشهر لا بيوم الصرف** — وكان يرفض مغادراً في الخامس عشر لأنّه ليس على رأس العمل
         // ‏يومَ الصرف، فلا يُصرف له نصفُ شهرٍ عمله. وحارسٌ في النطاق أوثقُ من ترشيحٍ في شاشة.
         var (monthStart, monthEnd) = PeriodBounds();
         if (!employee.IsEmployedDuring(monthStart, monthEnd))
@@ -243,7 +243,7 @@ public class PayrollRun : IBranchScoped
     }
 
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · ح-١١٦) <b>حصّةُ الموظّف من التأمينات لا تتجاوز أجرَه المستحقّ.</b>
+    /// ‏ <b>حصّةُ الموظّف من التأمينات لا تتجاوز أجرَه المستحقّ.</b>
     ///
     /// <para>‏شهرٌ خُصم كلُّه (مرضيّةٌ بعد التسعين، أو بلا أجر) يُصفّر الأجر، <b>وكانت الحصّةُ تُستقطع منه كاملةً</b>
     /// ‏فيصير الصافي سالباً ويرفض حارسُه الدورةَ كلَّها لموظّفٍ واحد. <b>والحدُّ قرارُ المالك (2026-10-11)</b>:
@@ -252,7 +252,7 @@ public class PayrollRun : IBranchScoped
     public static decimal GosiEmployeeShareWithin(decimal gosiEmployee, decimal wageDue) =>
         Math.Min(gosiEmployee, Math.Max(0m, Math.Round(wageDue, 2, MidpointRounding.AwayFromZero)));
 
-    /// <summary>(جاهزيّةُ الإطلاق · ح-٨٦) أوّلُ شهر الدورة وآخرُه — من رمزها <c>yyyy-MM</c>.</summary>
+    /// <summary> أوّلُ شهر الدورة وآخرُه — من رمزها <c>yyyy-MM</c>.</summary>
     public (DateOnly Start, DateOnly End) PeriodBounds()
     {
         var year = int.Parse(PeriodCode[..4], CultureInfo.InvariantCulture);
@@ -269,7 +269,7 @@ public class PayrollRun : IBranchScoped
         _lines.Sum(l => l.HousingAllowance + l.TransportAllowance + l.OtherAllowance);
 
     /// <param name="employeeCostCenters">
-    /// (CEEF-232 · م-١) مركزُ تكلفةِ كلِّ موظّف — <b>وبه تُفكَّك مصروفاتُ الأجر على مراكزها</b>.
+    /// مركزُ تكلفةِ كلِّ موظّف — <b>وبه تُفكَّك مصروفاتُ الأجر على مراكزها</b>.
     ///
     /// <para><b>وكان الحقلُ موجوداً ولا يقرؤه أحد:</b> <c>Employee.CostCenterId</c> مُخزَّنٌ
     /// في المخطَّط <b>و<c>AssignCostCenter</c> بلا مستدعٍ واحد</b>، وقيدُ الرواتب سطرٌ
@@ -292,7 +292,7 @@ public class PayrollRun : IBranchScoped
         var entry = JournalEntry.CreateDraft(CompanyId, PayDate,
             $"رواتب {PeriodCode}", $"Payroll:{PeriodCode}");
 
-        // (CEEF-230 · ط2-٤) ‏**البدلاتُ تُفصَل عن الأساسيّ.**
+        // ‏**البدلاتُ تُفصَل عن الأساسيّ.**
         //
         // ‏كان الإجماليُّ كلُّه يذهب إلى `5201`، و`5202 بدلات السكن والانتقال` **حسابٌ
         // ‏ميّتٌ في الشجرة**. فمالكٌ يسأل «كم أنفقتُ على بدلات السكن؟» لا يجد جواباً —
@@ -300,7 +300,7 @@ public class PayrollRun : IBranchScoped
         //
         // ‏**والمجموعُ لا يتغيّر**، فلا تنكسر هويّةٌ ولا يتحرّك صافي الربح. وحسابُ البدلات
         // ‏اختياريٌّ في التوقيع: مستدعٍ لا يُمرّره يسلك السلوكَ القديم حرفاً.
-        // (جاهزيّةُ الإطلاق · ح-٢) ‏**والمصروفُ يُؤخذ بعد الغياب — وكان يُؤخذ كاملاً.**
+        // ‏**والمصروفُ يُؤخذ بعد الغياب — وكان يُؤخذ كاملاً.**
         //
         // ‏النيّةُ مكتوبةٌ في هذا الملفّ نفسِه (انظر `AbsenceDeduction` و`GrossPay`): الغيابُ
         // ‏بلا أجرٍ **أجرٌ لم يُستحقّ، فالمصروفُ نفسُه ينقص**. لكنّ هذه السطورَ كانت تأخذ
@@ -311,7 +311,7 @@ public class PayrollRun : IBranchScoped
         // ‏(مدينٌ = الأجرُ الكامل + حصّةُ صاحب العمل · دائنٌ = الصافي + السُّلَف + التأمينات
         // ‏= الأجرُ بعد الغياب + حصّةُ صاحب العمل)، فيرتدّ على حارس التوازن. **أيُّ شهرٍ فيه
         // ‏إجازةٌ بلا أجرٍ معتمدةٌ لموظّفٍ واحدٍ يُعطّل رواتبَ المنشأة كلِّها.**
-        // (جاهزيّةُ الإطلاق · ح-١٤٦ · ‏`sector-modules#9`) ‏**موظّفُ المشروع تُحمَّل تكلفتُه على المشروع** — فتخرج سطورُه
+        // ‏**موظّفُ المشروع تُحمَّل تكلفتُه على المشروع** — فتخرج سطورُه
         // ‏من مصروف الرواتب والبدلات والتأمينات، وتُدان تكاليفُ المشاريع بمجموعها لكلّ مشروع. ‏والدائنُ لا يتغيّر.
         var projects = employeeProjects ?? new Dictionary<long, long>();
         bool OnProject(PayrollLine l) => l.EmployeeId is long id && projects.ContainsKey(id);
@@ -339,7 +339,7 @@ public class PayrollRun : IBranchScoped
             entry.AddLine(projectCostAccount!, amount, 0m, $"رواتب على المشروع #{projectId}");
         entry.AddLine(salariesPayable, 0m, TotalNet, "رواتب مستحقة");
 
-        // (CEEF-230 · ط2-٥) ‏**والاستقطاعُ يُعفي السُّلفةَ لا يُنقص المصروف.**
+        // ‏**والاستقطاعُ يُعفي السُّلفةَ لا يُنقص المصروف.**
         //
         // ‏المصروفُ وقع كاملاً — الموظّفُ استحقّ أجرَه كلَّه. **والمُستقطَعُ سدادُ دَينٍ
         // ‏سابق**، فيُقيَّد دائناً على `1116` لا خصماً من `5201`. **وإنقاصُ المصروف
@@ -362,7 +362,7 @@ public class PayrollRun : IBranchScoped
     }
 
     /// <summary>
-    /// (CEEF-232 · م-١) يُضيف مصروفَ أجرٍ <b>مفكَّكاً على مراكز التكلفة</b> — أو سطراً
+    /// يُضيف مصروفَ أجرٍ <b>مفكَّكاً على مراكز التكلفة</b> — أو سطراً
     /// واحداً حين لا خريطةَ ولا مركز.
     /// </summary>
     /// <remarks>

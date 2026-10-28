@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.Manufacturing;
 
 /// <summary>
-/// (CEEF-230 · ط6-٨) <b>الإنتاجُ تحت التنفيذ — وكانت الشاشةُ تسقط بقائمةِ موادٍ محذوفة.</b>
+/// <b>الإنتاجُ تحت التنفيذ — وكانت الشاشةُ تسقط بقائمةِ موادٍ محذوفة.</b>
 ///
 /// <para><b>وكان <c>bomMap[o.BomId]</c> بلا حارس</b>: مُرشِّحُ الحذف الناعم يُخفي قائمةَ
 /// المواد، <b>وأمرُ الإنتاج المُطلَق يبقى</b> — فيرمي القاموسُ <c>KeyNotFoundException</c>

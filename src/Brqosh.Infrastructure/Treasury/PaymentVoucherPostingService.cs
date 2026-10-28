@@ -21,7 +21,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
         PostAsync(voucher, Array.Empty<(PaymentAllocationDocumentType, long, string, decimal)>());
 
     /// <summary>
-    /// (CEEF-230 · ط4-٥) <b>يحسب ما يُحرَّر من ذمّة المورّد، ويُحضر حسابَي فرقِ العملة.</b>
+    /// <b>يحسب ما يُحرَّر من ذمّة المورّد، ويُحضر حسابَي فرقِ العملة.</b>
     ///
     /// <para><b>وسندٌ بالريال يُعيد <c>null</c></b> — فيسلك الترحيلُ مسارَه القديم حرفاً،
     /// ولا يتغيّر رقمٌ في قاعدةٍ قائمة. <b>وهو الشرطُ الذي يحمي كلَّ منشأةٍ قائمة.</b></para>
@@ -103,12 +103,12 @@ public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
                 db.PaymentVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
                 "PV", voucher.VoucherDate, voucher.CompanyId);
 
-            // (CEEF-230 · ط4-٥) ‏**قيمةُ الذمّة كما نشأت** — بسعرِ يوم كلّ فاتورة، لا
+            // ‏**قيمةُ الذمّة كما نشأت** — بسعرِ يوم كلّ فاتورة، لا
             // ‏بسعر يوم السداد. ومن فرقِ السعرين يقع الربحُ أو الخسارةُ المحقَّقة.
             var (releasedPayable, fxGain, fxLoss) =
                 await ResolveSettlementAsync(voucher, allocations, ct);
 
-            // (CEEF-231 · ط1-٢ج) ‏حسابُ خصم السداد — **ولا يُنشأ إلا حين يوجد خصم**،
+            // ‏حسابُ خصم السداد — **ولا يُنشأ إلا حين يوجد خصم**،
             // ‏فقاعدةٌ لا تمنح خصماً لا يظهر فيها حسابٌ بلا حركة.
             var discountAccount = voucher.SettlementDiscount > 0m
                 ? await SystemAccountProvisioning.EnsureAsync(db, voucher.CompanyId, await Brqosh.Infrastructure.Accounting.PostingRoleService.ResolveAsync(db, voucher.CompanyId, SaudiChartOfAccounts.PostingRoleCodes.PurchaseDiscountsEarned, ct), ct)
@@ -118,7 +118,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
                 releasedPayable, fxGain, fxLoss, discountAccount);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(voucher.CompanyId, voucher.VoucherDate);
 
-            // (CEEF-230 · ط1-٧) ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
+            // ‏مركزُ تكلفة المستند يُختم على سطور المصروف — **وقبل
             // ‏الترحيل**، فالقيدُ المرحَّل لا يُعدَّل. ويُتحقَّق من المركز أوّلاً: مرجعٌ
             // ‏لمركزٍ محذوفٍ يُنتج تقريراً يعرض «غير مُصنَّف» ويُقرأ نقصَ تصنيف.
             await FinancialPostingSupport.EnsureCostCenterAsync(db, voucher.CompanyId, voucher.CostCenterId, ct);
@@ -127,7 +127,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
 
             db.JournalEntries.Add(entry);
             if (voucher.Id == 0)
-                // (CEEF-230 · ط2-٠) ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
+                // ‏يُضاف إن لم يكن محفوظاً — واصطلاحُ `JournalPostingService` نفسُه.
                 // ‏وكان الإضافةُ بلا شرطٍ في تسع خدمات، **وأسقطت شاشةَ الرواتب بـ`23505`** حين
                 // ‏حفظت مسودّتَها ثمّ رحّلتها. والشرطُ يجعل المسارين مقبولين معاً، **فيُغلق
                 // ‏صنفُ العطل لا حالتُه**: شاشةٌ تُكتب غداً بالاصطلاح الآخر لا تسقط.
@@ -160,7 +160,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db) : Brqosh.Applicati
 
     private async Task<Account> ResolveCashOrBankAccountAsync(long companyId, ReceiptMethod method, long? bankAccountId)
     {
-        // (CEEF-229 · م2-١٥) الحلّ من مكانٍ واحد — وكان السقوط هنا يُقيّد على الأب 1102
+        // الحلّ من مكانٍ واحد — وكان السقوط هنا يُقيّد على الأب 1102
         // بينما البنوك تُقيَّد على أبنائه، فينشقّ نقد البنوك. انظر BankGlAccountResolver.
         if (method == ReceiptMethod.Cash)
             return await db.Accounts.SingleAsync(

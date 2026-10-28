@@ -23,7 +23,7 @@ public class PosShift : IBranchScoped
     public decimal TotalSales { get; private set; }
 
     /// <summary>
-    /// (CEEF-228) المبيعات النقدية وحدها — وهي ما يُتوقَّع وجوده في الدرج.
+    /// المبيعات النقدية وحدها — وهي ما يُتوقَّع وجوده في الدرج.
     /// كانت `ExpectedCash` تُحسب من `TotalSales` الذي يضمّ الشبكة والدفع المختلط،
     /// فوردية بمبيعات شبكة 10,000 تُظهر عجزاً وهمياً 10,000 عند كل إغلاق.
     /// </summary>

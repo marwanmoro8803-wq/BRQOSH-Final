@@ -41,7 +41,7 @@ public static class CompanyBrandingStorage
   }
 
   /// <summary>
-  /// (CEEF-227) حفظ شعار مُعالَج (خلفية مفرّغة) — دائماً PNG لأن الشفافية لا تُحفَظ
+  /// حفظ شعار مُعالَج (خلفية مفرّغة) — دائماً PNG لأن الشفافية لا تُحفَظ
   /// في JPEG. تُحذف أي نسخة سابقة بأيّ امتداد فلا يبقى ملفّان يتنازعان.
   /// </summary>
   public static string SaveLogoPng(long companyId, byte[] pngBytes)

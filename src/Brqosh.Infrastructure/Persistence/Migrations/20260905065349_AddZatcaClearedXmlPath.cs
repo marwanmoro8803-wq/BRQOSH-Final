@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-237 · ز-٢) عمودُ المستند المُخلَّص العائد من الهيئة.
+    /// عمودُ المستند المُخلَّص العائد من الهيئة.
     ///
     /// <para><b>SQL خامٌ بـ<c>IF NOT EXISTS</c> لا <c>AddColumn</c>:</b> قواعدُ العملاء
     /// القائمة رقّعها <see cref="BrqoshSchemaUpdater"/> عند كلّ إقلاع، وقد يكون العمود

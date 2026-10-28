@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Brqosh.Infrastructure.RealEstate;
 
 /// <summary>
-/// (جاهزيّةُ الإطلاق · ح-٧٩ · <c>sector-modules#7</c>) <b>الإيجارُ المقدَّمُ يُكتسب شهراً بشهر — وكان يُعترف به كلُّه يومَ
+/// <b>الإيجارُ المقدَّمُ يُكتسب شهراً بشهر — وكان يُعترف به كلُّه يومَ
 /// الفاتورة.</b>
 ///
 /// <para><b>ما كان:</b> عقدٌ ربعيٌّ أو نصفيٌّ أو سنويٌّ يُفوتَر مقدَّماً عبر <c>RecurringInvoiceService</c>، والفاتورةُ تُرحَّل

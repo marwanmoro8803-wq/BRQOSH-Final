@@ -22,7 +22,7 @@ public static class UnitOfWork
         var strategy = db.Database.CreateExecutionStrategy();
         var result = await strategy.ExecuteAsync(async () =>
         {
-            // Outbox (ع-D2، CEEF-204): ربط السياق يجعل أحداث النطاق تُكتب داخل هذه المعاملة،
+            // Outbox : ربط السياق يجعل أحداث النطاق تُكتب داخل هذه المعاملة،
             // فتُلغى مع المستند إن ارتدّت — بدل حدث «شبح» عن فاتورة لا وجود لها.
             using var ambient = AmbientDbContext.Bind(db);
 
@@ -47,7 +47,7 @@ public static class UnitOfWork
             {
                 await tx.RollbackAsync(ct);
 
-                // (ع-D1، CEEF-205) رمز التزامن كشف أن صفاً تغيّر بين القراءة والكتابة —
+                // رمز التزامن كشف أن صفاً تغيّر بين القراءة والكتابة —
                 // مستخدم آخر رحّل على نفس الصنف/الرصيد. العملية ارتدّت كاملة، فلا فساد.
                 // لا نُعيد المحاولة تلقائياً: السياق يحمل كيانات قديمة، وإعادة ترحيل بحالة
                 // بائتة في نظام محاسبي أخطر من خطأ واضح يعيده المستخدم بنفسه.

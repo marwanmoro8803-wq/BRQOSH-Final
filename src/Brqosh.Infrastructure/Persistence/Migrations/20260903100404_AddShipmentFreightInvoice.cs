@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
     {
         /// <inheritdoc />
         /// <summary>
-        /// (CEEF-232 · ل-١) ‏ربطُ فاتورةِ أجرة الشحن بالبوليصة.
+        /// ‏ربطُ فاتورةِ أجرة الشحن بالبوليصة.
         ///
         /// <para>‏<b>وصياغةٌ يدويّةٌ بـ<c>IF NOT EXISTS</c></b> — على سُنّة
         /// <c>AddJournalCurrencyMemoAndEntityLevel</c>: المُرقِّعُ اليدويّ

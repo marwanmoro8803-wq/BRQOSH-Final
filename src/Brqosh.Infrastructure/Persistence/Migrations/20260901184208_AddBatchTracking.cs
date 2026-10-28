@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// (CEEF-230 · ط1-٣) تتبّعُ الدفعة والصلاحية والرقم التسلسليّ.
+    /// تتبّعُ الدفعة والصلاحية والرقم التسلسليّ.
     ///
     /// <para><b>مُطاوِعةٌ للتكرار — ولذلك كُتب DDL بيدٍ بدل ما ولّده الأداة.</b>
     /// <c>BrqoshSchemaUpdater</c> يُنشئ الجدولَ والأعمدةَ <b>قبل</b> تشغيل الهجرات لإصلاح

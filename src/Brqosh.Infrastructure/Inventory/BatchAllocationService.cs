@@ -9,7 +9,7 @@ namespace Brqosh.Infrastructure.Inventory;
 public record BatchDraw(string BatchNumber, DateOnly? ExpiryDate, decimal Quantity);
 
 /// <summary>
-/// (CEEF-231 · ط1-٣ج) <b>الصرفُ بالأقدم انتهاءً — FEFO.</b>
+/// <b>الصرفُ بالأقدم انتهاءً — FEFO.</b>
 ///
 /// <para><b>ما كان:</b> بندٌ مُعلَنٌ مفتوحاً منذ <c>ط1-٣</c>، <b>ويرفض بسببه المطبخُ كلَّ
 /// مكوّنٍ متتبَّع</b>: «والصرفُ بالأقدم انتهاءً لم يُبنَ، واختيارٌ عشوائيٌّ للدفعة يُفقد

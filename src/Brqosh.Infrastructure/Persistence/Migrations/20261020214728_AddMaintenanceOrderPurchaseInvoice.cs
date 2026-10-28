@@ -5,7 +5,7 @@
 namespace Brqosh.Infrastructure.Persistence.Migrations
 {
     /// <summary>
-    /// ‏(جاهزيّةُ الإطلاق · <c>sector-modules#11</c>) فاتورةُ المورّد التي سندُ أمر الصيانة — فارغةٌ لكلّ أمرٍ قائم (دُفع نقداً).
+    /// ‏ فاتورةُ المورّد التي سندُ أمر الصيانة — فارغةٌ لكلّ أمرٍ قائم (دُفع نقداً).
     /// ‏ومُطاوِعةٌ للتكرار كأخواتها: المُرقِّعُ قد يكون أضاف العمودَ قبلها.
     /// </summary>
     public partial class AddMaintenanceOrderPurchaseInvoice : Migration
