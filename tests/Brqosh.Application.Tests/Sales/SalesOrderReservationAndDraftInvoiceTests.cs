@@ -92,4 +92,20 @@ public class SalesOrderReservationAndDraftInvoiceTests : IDisposable
         Assert.Null(stored.JournalEntryId);
         Assert.Equal(SalesOrderStatus.Invoiced, (await _db.SalesOrders.AsNoTracking().SingleAsync(o => o.Id == order.Id)).Status);
     }
+
+    [Fact]
+    public async Task DirectSale_CannotTakeReservedStock()
+    {
+        await OrderAsync(8m);   // ‏10 في المستودع، 8 محجوزة
+        var tooMuch = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 3));
+        tooMuch.AddLine("لابتوب", 3m, 1500m, _productId);
+        await Assert.ThrowsAsync<Brqosh.Domain.Accounting.AccountingException>(
+            () => new SalesInvoicePostingService(_db).PostAsync(tooMuch));
+
+        _db.ChangeTracker.Clear();
+        var fits = SalesInvoice.CreateDraft(_companyId, _customerId, new DateOnly(2026, 7, 3));
+        fits.AddLine("لابتوب", 2m, 1500m, _productId);
+        await new SalesInvoicePostingService(_db).PostAsync(fits);
+        Assert.NotNull(fits.InvoiceNumber);
+    }
 }

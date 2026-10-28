@@ -272,5 +272,6 @@
   "كمية السطر {0} ({1}) تتجاوز المتبقّي للفوترة ({2}).": "The quantity of line {0} ({1}) exceeds the remaining quantity to invoice ({2}).",
   "سطر أمر البيع رقم {0} ليس صنفاً مخزنياً — لا يُسلَّم بإذن.": "Sales order line {0} is not a stock item — it cannot be delivered by a delivery note.",
   "كمية السطر {0} ({1}) تتجاوز المتبقّي للتسليم ({2}).": "The quantity of line {0} ({1}) exceeds the remaining quantity to deliver ({2}).",
-  "رصيد '{0}' غير كافٍ للتسليم — المتوفر {1}.": "The balance of '{0}' is insufficient for delivery — available {1}."
+  "رصيد '{0}' غير كافٍ للتسليم — المتوفر {1}.": "The balance of '{0}' is insufficient for delivery — available {1}.",
+  "'{0}' محجوزٌ لأوامر بيع مؤكَّدة — المتاح للبيع {1}.": "'{0}' is reserved for confirmed sales orders — available to sell {1}."
 }

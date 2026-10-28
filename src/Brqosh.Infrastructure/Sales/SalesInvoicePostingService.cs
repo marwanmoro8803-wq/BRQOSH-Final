@@ -125,6 +125,16 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
                     $"رصيد '{p.NameAr}' غير كافٍ للبيع — المتوفر {onHand:N2}.");
             }
 
+            // ‏والمحجوزُ لأوامر بيعٍ مؤكَّدة لا يُباع لغيرها (أمرُ هذه الفاتورة أُفرج عن حجزه قبل ترحيلها).
+            var reserved = await new SalesOrderService(db).ReservedQuantityAsync(invoice.CompanyId, productId, ct);
+            if (reserved > 0m)
+            {
+                var available = await inv.GetCompanyOnHandAsync(invoice.CompanyId, productId) - reserved;
+                if (qty > available)
+                    throw new AccountingException(
+                        $"'{products[productId].NameAr}' محجوزٌ لأوامر بيع مؤكَّدة — المتاح للبيع {Math.Max(available, 0m):N2}.");
+            }
+
             var (totalCost, unitCost) = await costing.ConsumeForIssueAsync(
                 invoice.CompanyId, productId, warehouse.Id, qty,
                 $"SalesInvoice:{invoiceNumber}", ct);

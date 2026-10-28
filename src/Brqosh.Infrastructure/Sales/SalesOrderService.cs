@@ -215,16 +215,7 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
                 }
             }
 
-            // ‏‏`postNow: false` يحفظ الفاتورةَ مسودةً قابلةً للتعديل (خصم/ملاحظات) ثمّ تُرحَّل من مسارها المعتاد.
-            if (postNow)
-                await new SalesInvoicePostingService(db).PostAsync(invoice);
-            else
-            {
-                db.SalesInvoices.Add(invoice);
-                await db.SaveChangesAsync(token);
-            }
-
-            // ‏والكمّيةُ المفوترة تخرج من الحجز.
+            // ‏والكمّيةُ المفوترة تخرج من الحجز — قبل الترحيل، فلا يحجب حجزُ الأمر نفسِه بيعَه.
             var reservations = await db.StockReservations
                 .Where(r => r.CompanyId == companyId && r.SalesOrderId == order.Id).ToListAsync(token);
             for (var index = 0; index < take.Length && !fromDelivery; index++)   // ‏المسلَّمُ أُفرج عن حجزه عند التسليم
@@ -234,6 +225,16 @@ public class SalesOrderService(BrqoshDbContext db) : Brqosh.Application.Sales.IS
                     foreach (var r in reservations.Where(r => r.ProductId == reservedPid))
                         toRelease -= r.Release(toRelease);
                 }
+            await db.SaveChangesAsync(token);
+
+            // ‏‏`postNow: false` يحفظ الفاتورةَ مسودةً قابلةً للتعديل (خصم/ملاحظات) ثمّ تُرحَّل من مسارها المعتاد.
+            if (postNow)
+                await new SalesInvoicePostingService(db).PostAsync(invoice);
+            else
+            {
+                db.SalesInvoices.Add(invoice);
+                await db.SaveChangesAsync(token);
+            }
 
             for (var index = 0; index < take.Length; index++)
                 if (take[index] > 0m)
