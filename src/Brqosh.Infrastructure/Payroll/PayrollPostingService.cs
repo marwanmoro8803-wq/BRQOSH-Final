@@ -15,6 +15,7 @@ public class PayrollPostingService(BrqoshDbContext db)
 {
     public async Task<PayrollRun> PostAsync(PayrollRun run, string username, CancellationToken ct = default)
     {
+        Brqosh.Infrastructure.Licensing.LicenseGate.Ensure(Brqosh.Application.Licensing.LicensedCapability.Payroll);
         SecurityContext.EnsureCanPostAccounting();
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {

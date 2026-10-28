@@ -46,6 +46,7 @@ public class FxClosingTranslationService(BrqoshDbContext db, ExchangeRateService
         string username,
         CancellationToken ct = default)
     {
+        Brqosh.Infrastructure.Licensing.LicenseGate.Ensure(Brqosh.Application.Licensing.LicensedCapability.MultiCurrency);
         SecurityContext.EnsureCanPostAccounting();
         _ = SecurityContext.ResolveUsername(username);
 

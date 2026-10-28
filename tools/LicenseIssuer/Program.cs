@@ -27,11 +27,14 @@ static int PrintUsage()
                                      وإعادة بناء المنتج — ويُبطل كلَّ ترخيصٍ صادرٍ قبله.
                                    ⚠ لا يستبدل ملفَّ مفتاحٍ قائماً، ويرفض الكتابةَ في جذر
                                      بيانات المنتج (هناك يصير المفتاحُ مرساةَ ثقةٍ بلا قصد).
-        sign <company> <machineId> <privateKey.pem> [days] [modules]
+        sign <company> <machineId> <privateKey.pem> [days] [modules] [edition] [companies]
                                    اسمُ المنشأة يجب أن يطابق ما في معالج التهيئة حرفاً بحرف.
                                    modules: وحداتٌ مفصولةٌ بفواصل (Sales,Inventory,...) تحصر الترخيص؛
                                      وبدونها لا يحصر شيئاً. والمحاسبةُ العامّة تُمنح دائماً،
                                      والفوترةُ الإلكترونيّة مع المبيعات.
+                                   edition: standard | professional — تُكتب «edition:» تحت التوقيع
+                                     (وبدونها لا تُحصر الفئة). و«-» في modules لتركها فارغة.
+                                   companies: حدُّ المنشآت (عددٌ ≥ 1) — «companies:» تحت التوقيع.
         """);
     return 1;
 }
@@ -153,7 +156,7 @@ static int SignLicense(string[] args)
 
     // ‏(ح-١٦٤) ‏الوحداتُ تُكتب مدخلاتِ `module:` تحت التوقيع؛ واسمٌ لا يُعرف يُرفض هنا — لا يُسقَط صامتاً فيُصدَر ترخيصٌ أضيقُ ممّا بيع.
     string[] features = ["core", "zatca", "construction"];
-    if (args.Length > 5 && !string.IsNullOrWhiteSpace(args[5]))
+    if (args.Length > 5 && !string.IsNullOrWhiteSpace(args[5]) && args[5] != "-")
     {
         var modules = new List<Brqosh.Domain.Modules.ModuleKey>();
         foreach (var name in args[5].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -168,9 +171,31 @@ static int SignLicense(string[] args)
         features = [.. features, .. LicensedModules.ToFeatures(modules)];
     }
 
+    // ‏(Phase 7) ‏الفئةُ وحدُّ المنشآت تحت التوقيع؛ وقيمةٌ لا تُعرف تُرفض هنا لا تُسقَط.
+    var edition = Brqosh.Application.Licensing.LicenseEdition.Unrestricted;
+    if (args.Length > 6 && !string.IsNullOrWhiteSpace(args[6]))
+    {
+        if (!Enum.TryParse(args[6], ignoreCase: true, out edition) || edition == Brqosh.Application.Licensing.LicenseEdition.Unrestricted)
+        {
+            Console.Error.WriteLine($"فئةٌ غيرُ معروفة: «{args[6]}». المعروفة: standard, professional");
+            return 2;
+        }
+    }
+    int? maxCompanies = null;
+    if (args.Length > 7)
+    {
+        if (!int.TryParse(args[7], out var n) || n < 1)
+        {
+            Console.Error.WriteLine($"حدُّ المنشآت يجب أن يكون عدداً ≥ 1: «{args[7]}».");
+            return 2;
+        }
+        maxCompanies = n;
+    }
+    features = [.. features, .. LicenseEntitlementsReader.ToFeatures(edition, maxCompanies)];
+
     var privatePem = File.ReadAllText(privateKeyPath);
     var payload = new LicensePayload(
-        company, machineId, "standard",
+        company, machineId, edition == Brqosh.Application.Licensing.LicenseEdition.Professional ? "professional" : "standard",
         DateTime.UtcNow.AddDays(days),
         features);
 

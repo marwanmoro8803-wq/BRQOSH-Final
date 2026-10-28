@@ -26,6 +26,9 @@ public sealed class OrganizationProvisioningService(BrqoshDbContext db) : IOrgan
             ? "saudi-arabia"
             : request.CountryTemplateId.Trim();
 
+        // ‏(Phase 7) ‏حدُّ المنشآت من الترخيص الموقَّع — هنا لا في الواجهة.
+        Licensing.LicenseGate.Current.EnsureCanAddCompany(await db.Companies.CountAsync(ct));
+
         var company = await new DatabaseInitializer(db)
             .CreateAdditionalCompanyAsync(name, vat, request.Profile, countryId);
 

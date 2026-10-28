@@ -37,6 +37,9 @@ public class TenantProvisioningService(BrqoshDbContext db) : ITenantProvisioning
         var plan = await db.BillingPlans.SingleOrDefaultAsync(p => p.Code == planCode && p.IsActive, ct)
             ?? throw new AccountingException($"خطة الفوترة '{planCode}' غير موجودة أو غير نشطة.");
 
+        // ‏(Phase 7) ‏حدُّ المنشآت من ترخيص الخادم الموقَّع — قبل حدّ الخطّة.
+        Licensing.LicenseGate.Current.EnsureCanAddCompany(await db.Companies.CountAsync(ct));
+
         var tenantId = Guid.NewGuid();
         var vat = string.IsNullOrWhiteSpace(request.VatNumber)
             ? $"3{DateTime.UtcNow.Ticks % 1_000_000_000_000_00:D14}"

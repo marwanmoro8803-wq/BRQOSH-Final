@@ -138,6 +138,7 @@ public class IntercompanyEliminationQuery(BrqoshDbContext db, ExchangeRateServic
         FxRateKind rateKind = FxRateKind.Closing,
         CancellationToken ct = default)
     {
+        Brqosh.Infrastructure.Licensing.LicenseGate.Ensure(Brqosh.Application.Licensing.LicensedCapability.Consolidation);
         var group = await db.CompanyGroups.SingleOrDefaultAsync(g => g.Id == groupId, ct)
             ?? throw new AccountingException("مجموعة الشركات غير موجودة.");
 

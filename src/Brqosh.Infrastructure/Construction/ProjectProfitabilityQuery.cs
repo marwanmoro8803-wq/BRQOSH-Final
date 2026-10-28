@@ -23,6 +23,7 @@ public class ProjectProfitabilityQuery(BrqoshDbContext db)
 {
     public async Task<IReadOnlyList<ProjectProfitabilityRow>> ExecuteAsync(long companyId, CancellationToken ct = default)
     {
+        Brqosh.Infrastructure.Licensing.LicenseGate.Ensure(Brqosh.Application.Licensing.LicensedCapability.ProjectsContracts);
         var projects = await db.ConstructionProjects
             .Where(p => p.CompanyId == companyId && p.IsActive)
             .OrderBy(p => p.Code)

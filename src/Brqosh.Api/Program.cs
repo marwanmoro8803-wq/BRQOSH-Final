@@ -241,6 +241,19 @@ app.Use(async (ctx, next) =>
     }
 });
 
+// ‏(Phase 7 · security-licensing-tenancy#2) ‏**الفئةُ تُفرض في الـAPI لا في الواجهة وحدها** — مسارُ ميزةٍ احترافيّة بترخيصٍ قياسيّ يُرفض.
+app.Use(async (ctx, next) =>
+{
+    if (Brqosh.Infrastructure.Licensing.LicensedApiRoutes.CapabilityFor(ctx.Request.Path.Value) is { } capability
+        && !Brqosh.Infrastructure.Licensing.LicenseGate.Current.Allows(capability))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await ctx.Response.WriteAsJsonAsync(new { error = "licence_tier", capability = capability.ToString() });
+        return;
+    }
+    await next();
+});
+
 app.Use(async (ctx, next) =>
 {
     if (!HttpMethods.IsPost(ctx.Request.Method) ||
