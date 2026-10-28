@@ -80,7 +80,6 @@ public static class PermissionService
         // ‏(أسئلةُ المالك 2026-10-24) ‏الدعمُ والتفضيلاتُ لكلّ دور: من يواجه المشكلةَ ليس المديرَ دائماً، والمظهرُ تفضيلُ كلِّ مستخدم.
         ["customer_support"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier, UserRole.Viewer],
         ["preferences"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier, UserRole.Viewer],
-        ["pricing_plans"] = [UserRole.Administrator],
         ["vat_return"] = [UserRole.Administrator, UserRole.Accountant],
         ["general_ledger_report"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Viewer],
         ["company_settings"] = [UserRole.Administrator],

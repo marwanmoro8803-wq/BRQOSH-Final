@@ -71,7 +71,6 @@ TITLE_TO_KEY: dict[str, str] = {
     "جودة البيانات": "data_quality",
     "أحداث المنصة": "platform_events",
     "دعم العملاء": "customer_support",
-    "الباقات والتسعير": "pricing_plans",
 }
 
 

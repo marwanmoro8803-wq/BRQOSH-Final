@@ -80,7 +80,6 @@ public static class ProgramNavCatalog
         ["platform_events"] = new("أحداث المنصة", "Platform Events"),
         ["customer_support"] = new("الدعم والشكاوى", "Support & Complaints"),
         ["preferences"] = new("تفضيلات البرنامج", "Preferences"),
-        ["pricing_plans"] = new("الباقات والتسعير", "Pricing Plans"),
         ["branch_profitability"] = new("ربحية الفروع", "Branch Profitability"),
         ["budget_variance"] = new("الموازنة والانحراف", "Budget & Variance"),
         ["cost_center_statement"] = new("كشف مراكز التكلفة", "Cost Center Statement"),

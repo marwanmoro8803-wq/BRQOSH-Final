@@ -124,7 +124,6 @@ public class NavigationCatalogTests
     [InlineData("crm_opportunities", "فرص البيع")]
     [InlineData("customer_support", "الدعم والشكاوى")]
     [InlineData("preferences", "تفضيلات البرنامج")]
-    [InlineData("pricing_plans", "الباقات والتسعير")]
     public void V13_lifecycle_pages_registered_in_catalog(string key, string titleAr)
     {
         var page = NavigationCatalog.Groups.SelectMany(g => g.Pages).Single(p => p.Key == key);
@@ -164,7 +163,6 @@ public class NavigationCatalogTests
         Assert.True(PermissionService.CanAccess(admin, "organizations"));
         Assert.True(PermissionService.CanAccess(admin, "sales_quotations"));
         Assert.True(PermissionService.CanAccess(admin, "customer_support"));
-        Assert.True(PermissionService.CanAccess(admin, "pricing_plans"));
     }
 }
 

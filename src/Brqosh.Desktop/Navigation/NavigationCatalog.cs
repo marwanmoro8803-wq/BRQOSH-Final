@@ -202,7 +202,6 @@ public static class NavigationCatalog
             new("diagnostics", "حالة النظام"),
             new("data_quality", "جودة البيانات"),
             new("platform_events", "أحداث المنصة"),
-            new("pricing_plans", "الباقات والتسعير"),
         ]),
 
         // (طلبُ المالك 2026-10-26) صفحتا «تفضيلات البرنامج» و«الدعم والشكاوى» تُعرضان في قائمة المستخدم لا في الشريط الجانبيّ؛
@@ -223,7 +222,7 @@ public static class NavigationCatalog
         new("تفضيلاتي", "My preferences", ["preferences"]),
         new("المنشأة", "Company", ["company_settings", "branches", "organizations", "company_groups"]),
         new("الامتثال والرواتب", "Compliance & payroll", ["zatca_settings", "gosi_policy"]),
-        new("المستخدمون والنظام", "Users & system", ["users", "backup", "data_migration", "diagnostics", "pricing_plans"]),
+        new("المستخدمون والنظام", "Users & system", ["users", "backup", "data_migration", "diagnostics"]),
     ];
 
     /// <summary>«الدعم والشكاوى» بند مستقلٌّ في قائمة المستخدم (متاحٌ لكلّ دور) — ليس إعداداً.</summary>
@@ -384,7 +383,6 @@ public static class NavigationCatalog
         ["platform_events"] = "Platform Events",
         ["customer_support"] = "Support & Complaints",
         ["preferences"] = "Preferences",
-        ["pricing_plans"] = "Pricing Plans",
     };
 
     private static readonly Dictionary<string, string> GroupTitlesEn = new()

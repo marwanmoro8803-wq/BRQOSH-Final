@@ -33,7 +33,6 @@ internal static class NavKeyModuleMap
         ["platform_events"] = ModuleKey.GeneralLedger,
         ["customer_support"] = ModuleKey.GeneralLedger,
         ["preferences"] = ModuleKey.GeneralLedger,
-        ["pricing_plans"] = ModuleKey.GeneralLedger,
         ["projects"] = ModuleKey.ProjectsConstruction,
         ["contracts"] = ModuleKey.ProjectsConstruction,
         ["boq"] = ModuleKey.ProjectsConstruction,

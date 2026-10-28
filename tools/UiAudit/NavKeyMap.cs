@@ -78,7 +78,6 @@ internal static class NavKeyMap
         ["أحداث المنصة"] = "platform_events",
         ["الدعم والشكاوى"] = "customer_support",
         ["تفضيلات البرنامج"] = "preferences",
-        ["الباقات والتسعير"] = "pricing_plans",
     };
 
     private static readonly Dictionary<string, string> EnTitleToKey = new(StringComparer.OrdinalIgnoreCase)
@@ -156,7 +155,6 @@ internal static class NavKeyMap
         ["Platform Events"] = "platform_events",
         ["Support & Complaints"] = "customer_support",
         ["Preferences"] = "preferences",
-        ["Pricing Plans"] = "pricing_plans",
     };
 
     public static string? KeyForTitle(string title) =>

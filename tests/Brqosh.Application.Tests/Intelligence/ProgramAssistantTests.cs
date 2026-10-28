@@ -138,7 +138,7 @@ public class ProgramAssistantTests
         foreach (var key in new[]
                  {
                      "dashboard", "sales_invoices", "projects", "pos_session", "purchase_invoices",
-                     "customer_support", "pricing_plans", "zatca_settings",
+                     "customer_support", "zatca_settings",
                  })
         {
             Assert.NotNull(ProgramKnowledge.TryGetPageGuide(key));

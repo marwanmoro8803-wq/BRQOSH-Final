@@ -421,6 +421,5 @@ internal static class PageAuditCatalog
 
         new("دعم العملاء", [], MinGridRows: 0),
 
-        new("الباقات والتسعير", [], MinGridRows: 1),
     ];
 }

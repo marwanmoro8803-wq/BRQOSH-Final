@@ -86,7 +86,7 @@ public class ScreenRoleCoverageTests
     {
         string[] mustStayAdministratorOnly =
             ["audit_log", "users", "zatca_settings", "backup", "organizations",
-             "company_settings", "platform_events", "pricing_plans",
+             "company_settings", "platform_events",
              "soft_deleted_rows", "data_migration", "diagnostics", "gosi_policy"];
 
         var widened = mustStayAdministratorOnly

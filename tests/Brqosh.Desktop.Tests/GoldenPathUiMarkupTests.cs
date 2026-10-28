@@ -237,7 +237,7 @@ public class GoldenPathUiMarkupTests
     {
         var xaml = ReadDesktopFile(@"Views\Pages\BalanceSheetPage.xaml");
         Assert.Contains("GlassPanel", xaml);
-        Assert.Contains("الميزانية العمومية", xaml);
+        Assert.Contains("قائمة المركز المالي", xaml);
     }
 
     [Fact]
