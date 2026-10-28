@@ -73,6 +73,9 @@ public static class LeastPrivilegeDatabaseRole
             $"REVOKE TRUNCATE ON journal_entries, journal_entry_lines FROM {r};",
             $"DO $$ BEGIN IF to_regclass('{LedgerImmutability.PostedInTransactionTable}') IS NOT NULL THEN "
                 + $"REVOKE ALL ON {LedgerImmutability.PostedInTransactionTable} FROM {r}; END IF; END $$;",
+            // ‏(Phase 7) ‏**ورموزُ التفعيل المستهلكة إضافةٌ فقط** — حذفُ سطرٍ كان يُعيد الرمزَ صالحاً.
+            $"DO $$ BEGIN IF to_regclass('license_activations') IS NOT NULL THEN "
+                + $"REVOKE UPDATE, DELETE, TRUNCATE ON license_activations FROM {r}; END IF; END $$;",
         ];
     }
 

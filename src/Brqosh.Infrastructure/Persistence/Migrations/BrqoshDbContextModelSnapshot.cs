@@ -2058,6 +2058,57 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("warehouses", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Licensing.LicenseActivation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("ActivatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CodeSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DeviceHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Edition")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime?>("ExpiresUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsTrial")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("IssuedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("MaxCompanies")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nonce")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nonce")
+                        .IsUnique();
+
+                    b.ToTable("license_activations", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Logistics.DeliveryTrip", b =>
                 {
                     b.Property<long>("Id")

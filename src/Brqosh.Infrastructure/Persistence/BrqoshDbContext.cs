@@ -35,6 +35,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<CompanyGroup> CompanyGroups => Set<CompanyGroup>();
     public DbSet<IntercompanyAccountMap> IntercompanyAccountMaps => Set<IntercompanyAccountMap>();
     public DbSet<BillingPlan> BillingPlans => Set<BillingPlan>();
+    public DbSet<Brqosh.Domain.Licensing.LicenseActivation> LicenseActivations => Set<Brqosh.Domain.Licensing.LicenseActivation>();
     public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<Branch> Branches => Set<Branch>();
@@ -202,6 +203,17 @@ public class BrqoshDbContext : DbContext
             entity.Property(p => p.Code).HasMaxLength(32).IsRequired();
             entity.Property(p => p.NameAr).HasMaxLength(256).IsRequired();
             entity.HasIndex(p => p.Code).IsUnique();
+        });
+
+        // ‏(Phase 7) ‏رموزُ التفعيل المستهلكة — الـnonce فريد فلا يُعاد رمز.
+        modelBuilder.Entity<Brqosh.Domain.Licensing.LicenseActivation>(entity =>
+        {
+            entity.ToTable("license_activations");
+            entity.Property(a => a.Nonce).HasMaxLength(64).IsRequired();
+            entity.Property(a => a.DeviceHash).HasMaxLength(64).IsRequired();
+            entity.Property(a => a.Edition).HasMaxLength(32).IsRequired();
+            entity.Property(a => a.CodeSha256).HasMaxLength(64).IsRequired();
+            entity.HasIndex(a => a.Nonce).IsUnique();
         });
 
         modelBuilder.Entity<TenantSubscription>(entity =>

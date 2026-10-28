@@ -55,6 +55,17 @@ public sealed class StoredLicenseEntitlementsProvider : ILicenseEntitlementsProv
 {
     public LicenseEntitlements Current()
     {
+        // ‏(Phase 7) ‏التفعيلُ دون اتصال أوّلاً — رمزٌ موقَّعٌ صالحٌ لهذا الجهاز يحمل الفئةَ والحدّ.
+        // ‏ورمزٌ قائمٌ انتهى أو رُجعت معه الساعة لا يسقط إلى «لا حصر»: أضيقُ الفئات ومنشأةٌ واحدة، وإيقافُ الإقلاع شأنُ الواجهة.
+        switch (OfflineActivationService.Current())
+        {
+            case { Verdict: ActivationVerdict.Valid, Payload: { } activation }:
+                return activation.Entitlements;
+            case { } lapsed:
+                _ = lapsed;
+                return new LicenseEntitlements(LicenseEdition.Standard, 1);
+        }
+
         var stored = LicenseStore.Load();
         if (stored is null)
             return LicenseEntitlements.Unrestricted;
