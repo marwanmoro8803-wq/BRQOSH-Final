@@ -115,6 +115,7 @@ public static class NavigationCatalog
         [
             new("products", "الأصناف والمنتجات"),
             new("product_categories", "فئات الأصناف"),
+            new("posting_accounts", "حسابات الترحيل"),
             new("units_of_measure", "وحدات القياس"),
             new("warehouses", "المستودعات"),
             new("stock_movements", "حركات المخزون"),
@@ -312,6 +313,7 @@ public static class NavigationCatalog
         ["debit_notes"] = "Debit Notes",
         ["products"] = "Products",
         ["product_categories"] = "Product categories",
+        ["posting_accounts"] = "Posting accounts",
         ["warehouses"] = "Warehouses",
         ["stock_movements"] = "Stock Movements",
         ["stock_count"] = "Stock Count",

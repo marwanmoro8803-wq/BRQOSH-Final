@@ -2074,5 +2074,21 @@
   "نعم": "Yes",
   "العميل": "Customer",
   "خصم المستند": "Document discount",
-  "رمز الحساب مطلوب.": "Account code is required."
+  "رمز الحساب مطلوب.": "Account code is required.",
+  "حسابات الترحيل": "Posting accounts",
+  "الحساب الذي يُرحَّل إليه كل دور في القيود الآلية": "The account each role posts to in automatic entries",
+  "الحساب": "Account",
+  "تعيين الحساب": "Assign account",
+  "الافتراضي": "Default",
+  "التغيير يسري على القيود الجديدة فقط، ولا يعدّل القيود المرحّلة.": "Changes apply to new entries only and do not alter posted entries.",
+  "أدوار الترحيل": "Posting roles",
+  "الدور": "Role",
+  "الحساب الحالي": "Current account",
+  "مخصّص": "Custom",
+  "اختر دوراً وحساباً.": "Select a role and an account.",
+  "تعذّر حفظ حساب الترحيل.": "Could not save the posting account.",
+  "اختر دوراً.": "Select a role.",
+  "إرجاع الحساب الافتراضي لهذا الدور؟": "Restore the default account for this role?",
+  "لا توجد أدوار ترحيل": "No posting roles",
+  "تُنشأ الأدوار تلقائياً مع المنشأة.": "Roles are created with the company."
 }

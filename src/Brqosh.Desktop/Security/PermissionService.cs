@@ -51,6 +51,7 @@ public static class PermissionService
         ["products"] = [UserRole.Administrator, UserRole.Accountant, UserRole.Cashier],
         ["warehouses"] = [UserRole.Administrator, UserRole.Accountant],
         ["product_categories"] = [UserRole.Administrator, UserRole.Accountant],
+        ["posting_accounts"] = [UserRole.Administrator],
         ["stock_movements"] = [UserRole.Administrator, UserRole.Accountant],
         ["stock_count"] = [UserRole.Administrator, UserRole.Accountant],
         ["landed_cost"] = [UserRole.Administrator, UserRole.Accountant],

@@ -75,6 +75,7 @@ internal static class NavKeyModuleMap
         ["warehouses"] = ModuleKey.Inventory,
         ["stock_movements"] = ModuleKey.Inventory,
         ["product_categories"] = ModuleKey.Inventory,
+        ["posting_accounts"] = ModuleKey.GeneralLedger,
         ["stock_count"] = ModuleKey.Inventory,
         ["landed_cost"] = ModuleKey.Inventory,
         ["receipt_vouchers"] = ModuleKey.Treasury,

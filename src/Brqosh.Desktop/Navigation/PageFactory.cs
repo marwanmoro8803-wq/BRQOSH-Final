@@ -56,6 +56,7 @@ public static class PageFactory
         ["debit_notes"] = () => new Views.Pages.DebitNotesPage(),
         ["products"] = () => new Views.Pages.ProductsPage(),
         ["product_categories"] = () => new Views.Pages.ProductCategoriesPage(),
+        ["posting_accounts"] = () => new Views.Pages.PostingAccountsPage(),
         ["warehouses"] = () => new Views.Pages.WarehousesPage(),
         ["stock_movements"] = () => new Views.Pages.StockMovementsPage(),
         ["stock_count"] = () => new Views.Pages.StockCountPage(),

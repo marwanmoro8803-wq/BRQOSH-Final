@@ -44,6 +44,7 @@ public static class ProgramNavCatalog
         ["products"] = new("الأصناف والمنتجات", "Products"),
         ["warehouses"] = new("المستودعات", "Warehouses"),
         ["product_categories"] = new("فئات الأصناف", "Product categories"),
+        ["posting_accounts"] = new("حسابات الترحيل", "Posting accounts"),
         ["stock_movements"] = new("حركات المخزون", "Stock Movements"),
         ["stock_count"] = new("الجرد", "Stock Count"),
         ["landed_cost"] = new("التكلفة الإضافية", "Landed Cost"),
