@@ -125,8 +125,13 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 if (!hasPostedGrn)
                 {
                     inventorySubtotal += lineTotalSar;
+                    // ‏تكلفةُ الوحدة تُشتقّ من إجمالي السطر بالريال (المقيَّد في 1107) بأربع خانات —
+                    // ‏لا من سعر الوحدة مقرَّباً لخانتين، وإلّا انشقّت الطبقاتُ عن الأستاذ
+                    // ‏(1000 × 1.11$ × 3.75: الأستاذ 4162.50 والطبقات 4160.00).
                     receiptLines.Add((pid, line.Quantity,
-                        Math.Round(line.UnitPrice * rate, 2, MidpointRounding.AwayFromZero),
+                        line.Quantity > 0
+                            ? Math.Round(lineTotalSar / line.Quantity, 4, MidpointRounding.AwayFromZero)
+                            : 0m,
                         line.BatchNumber, line.ExpiryDate));
                     continue;
                 }
