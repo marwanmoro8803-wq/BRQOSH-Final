@@ -183,7 +183,8 @@ public class JournalPostingService(BrqoshDbContext db)
             // ‏ومشترَكٌ لا حصريّ: المرحّلون لا ينتظر بعضُهم بعضاً، ولا يحجبهم إلا إقفالٌ
             // ‏جارٍ على السنة نفسِها. وهو يُؤخذ **قبل** قفل الفترة — فترتيبُ الأقفال
             // ‏واحدٌ في كلّ المسارات، والجمودُ المتبادل يمتنع بناءً لا بالحظّ.
-            await LedgerYearLock.AcquireForPostingAsync(db.Database, companyId, date.Year, token);
+            var fiscalYear = await FiscalYearResolver.StartYearForAsync(db, companyId, date, token);
+            await LedgerYearLock.AcquireForPostingAsync(db.Database, companyId, fiscalYear, token);
 
             await DocumentSequenceLock.AcquireAsync(
                 db.Database, companyId, $"PERIOD{date.Month:D2}", date.Year, token);
@@ -207,7 +208,7 @@ public class JournalPostingService(BrqoshDbContext db)
                 // ‏موجودة) لا يدفع استعلاماً زائداً، **وإعادةُ فتح فترةٍ عمداً تبقى نافذة**:
                 // ‏صفُّها قائمٌ ومفتوح، فلا يبلغها هذا الحارسُ أصلاً. ولولا هذا القيدُ
                 // ‏لصار الإصلاحُ عطلاً آخرَ يمنع التصحيحَ المشروع.
-                var closeMark = YearEndCloseService.SourceDocumentFor(date.Year);
+                var closeMark = YearEndCloseService.SourceDocumentFor(fiscalYear);
                 var yearClosed = await db.JournalEntries.AnyAsync(e =>
                     e.CompanyId == companyId
                     && e.SourceDocument == closeMark

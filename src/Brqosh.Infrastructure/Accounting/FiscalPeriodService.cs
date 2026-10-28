@@ -52,7 +52,8 @@ public class FiscalPeriodService(BrqoshDbContext db)
 
             // ‏**القفلُ أوّلاً، والسنةُ تُعرف من القراءة أعلاه** — وسنةُ الفترة لا تتغيّر،
             // ‏فقراءةٌ بائتةٌ تكفي لاشتقاق المفتاح وحدَه ولا تكفي لقرار الإقفال.
-            await LedgerYearLock.AcquireForClosingAsync(db.Database, companyId, period.StartDate.Year, token);
+            await LedgerYearLock.AcquireForClosingAsync(db.Database, companyId,
+                await FiscalYearResolver.StartYearForAsync(db, companyId, period.StartDate, token), token);
 
             // ‏**ثمّ تُعاد القراءة بعد القفل** — وهذا السطرُ هو الفرقُ بين حارسٍ وزينة.
             // ‏فالصفُّ الذي قُرئ قبل القفل قد يكون قد تغيّر بينما ننتظره، والمتعقّبُ يُعيد

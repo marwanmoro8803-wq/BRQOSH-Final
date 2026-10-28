@@ -163,6 +163,7 @@ public class BrqoshDbContext : DbContext
             entity.Navigation(c => c.NationalAddress).IsRequired();
             entity.Property(c => c.Profile).HasConversion<string>().HasMaxLength(32);
             entity.Property(c => c.CostingMethod).HasConversion<string>().HasMaxLength(32);
+            entity.Property(c => c.FiscalYearStartMonth).HasDefaultValue(1);
             entity.Property(c => c.AuditorName).HasMaxLength(Company.AuditorNameMaxLength);
             entity.Property(c => c.AddressEn).HasMaxLength(Company.AddressEnMaxLength);
             entity.Property(c => c.BaseCurrencyCode).HasMaxLength(3).IsRequired();

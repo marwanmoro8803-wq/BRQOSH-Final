@@ -44,6 +44,9 @@ public class Company
     public BusinessProfile Profile { get; private set; }
     public InventoryCostingMethod CostingMethod { get; private set; } = InventoryCostingMethod.WeightedAverage;
 
+    /// <summary>شهرُ بداية السنة المالية (1 = يناير، السنةُ الميلادية — الافتراضيّ).</summary>
+    public int FiscalYearStartMonth { get; private set; } = 1;
+
     /// <summary>عملة العرض الافتراضية (ISO 4217) — SAR للسوق السعودي.</summary>
     public string BaseCurrencyCode { get; private set; } = "SAR";
 
@@ -212,6 +215,13 @@ public class Company
     }
 
     public void SetCostingMethod(InventoryCostingMethod method) => CostingMethod = method;
+
+    public void SetFiscalYearStartMonth(int month)
+    {
+        if (month is < 1 or > 12)
+            throw new ArgumentException("شهر بداية السنة المالية بين 1 و 12.", nameof(month));
+        FiscalYearStartMonth = month;
+    }
 
     public void SetCurrencies(string baseCurrencyCode, string functionalCurrencyCode)
     {

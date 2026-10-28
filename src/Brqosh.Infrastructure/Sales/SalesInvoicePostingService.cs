@@ -303,14 +303,15 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
     {
 
-        var prefix = $"INV-{date.Year}-";
+        var fiscalYear = await Accounting.FiscalYearResolver.StartYearForAsync(db, companyId, date);
+        var prefix = $"INV-{fiscalYear}-";
 
         // (CEEF-229 · م1-١٤) **قبل القراءة** — وهذا المسارُ خاصٌّ بالفواتير ولا يمرّ
         // بـ`DocumentNumberGenerator`، فلا يكفي إلزامُ ذاك بالسياق. وقياسُ العطل قبل
         // الإصلاح: ستّةُ كتّابٍ متزامنين ⟵ **نجح ٣ وأخفق ٣** بـ`23505` على
         // `IX_sales_invoices_CompanyId_InvoiceNumber` — أي أنّ كاشيرين يبيعان معاً
         // فتموت إحدى البيعتين برسالةٍ إنجليزية خام.
-        await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "INV", date.Year);
+        await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "INV", fiscalYear);
 
         var last = await db.SalesInvoices
 

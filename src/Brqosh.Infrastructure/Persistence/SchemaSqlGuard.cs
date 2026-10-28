@@ -71,6 +71,7 @@ internal static class SchemaSqlGuard
         "NUMERIC(9,4) NOT NULL DEFAULT 0.5",
         "DATE NOT NULL DEFAULT DATE '2025-07-01'",
         "INTEGER NOT NULL DEFAULT 4",
+        "INTEGER NOT NULL DEFAULT 1",   // (fiscal-year-start-month)
         // (جاهزيّةُ الإطلاق · ح-١٤٧) ‏الكميّةُ التالفةُ لأمر الإنتاج — بدقّة الكميّة المنتَجة، وصفرٌ هو سلوكُ الأمر القائم.
         "NUMERIC(18,4) NOT NULL DEFAULT 0",
     };
@@ -106,6 +107,7 @@ internal static class SchemaSqlGuard
         "TEXT NOT NULL DEFAULT 'Domestic'",   // (tax-zatca#12)
         "TEXT NOT NULL DEFAULT 'StraightLine'",   // (treasury-payroll-assets#11)
         "INTEGER NOT NULL DEFAULT 4",
+        "INTEGER NOT NULL DEFAULT 1",   // (fiscal-year-start-month)
     };
 
     public static void ValidateTable(string table)

@@ -31,7 +31,7 @@ public sealed class MonthEndCloseOrchestrator(BrqoshDbContext db, ITrialBalanceQ
                 p => p.CompanyId == companyId && p.Id == periodId, token);
 
             await LedgerYearLock.AcquireForClosingAsync(
-                db.Database, companyId, period.StartDate.Year, token);
+                db.Database, companyId, await FiscalYearResolver.StartYearForAsync(db, companyId, period.StartDate, token), token);
 
             var rows = await trialBalance.ExecuteAsync(companyId, period.StartDate, period.EndDate, token);
             var totalDebit = rows.Sum(r => r.TotalDebit);

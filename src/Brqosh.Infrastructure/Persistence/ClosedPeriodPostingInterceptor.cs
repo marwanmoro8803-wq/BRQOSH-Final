@@ -84,7 +84,8 @@ public sealed class ClosedPeriodPostingInterceptor : SaveChangesInterceptor
         if (status is not null)
             return status == FiscalPeriodStatus.Closed;
 
-        var mark = YearEndCloseService.SourceDocumentFor(date.Year);
+        var mark = YearEndCloseService.SourceDocumentFor(
+            FiscalYear.StartYearFor(date, FiscalYearResolver.StartMonth(db, companyId)));
         return db.JournalEntries.IgnoreQueryFilters().Any(e =>
             e.CompanyId == companyId && e.SourceDocument == mark && e.Status != JournalEntryStatus.Draft);
     }
@@ -99,7 +100,8 @@ public sealed class ClosedPeriodPostingInterceptor : SaveChangesInterceptor
         if (status is not null)
             return status == FiscalPeriodStatus.Closed;
 
-        var mark = YearEndCloseService.SourceDocumentFor(date.Year);
+        var mark = YearEndCloseService.SourceDocumentFor(
+            await FiscalYearResolver.StartYearForAsync(db, companyId, date, ct));
         return await db.JournalEntries.IgnoreQueryFilters().AnyAsync(e =>
             e.CompanyId == companyId && e.SourceDocument == mark && e.Status != JournalEntryStatus.Draft, ct);
     }

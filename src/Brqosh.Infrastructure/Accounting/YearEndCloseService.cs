@@ -39,8 +39,10 @@ public class YearEndCloseService(BrqoshDbContext db)
 
         return await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
-            var yearStart = new DateOnly(year, 1, 1);
-            var yearEnd = new DateOnly(year, 12, 31);
+            // ‏`year` = سنةُ بداية السنة المالية (FY{year}) — بشهر بداية الشركة؛ والافتراضيُّ يناير.
+            var startMonth = await FiscalYearResolver.StartMonthAsync(db, companyId, token);
+            var yearStart = FiscalYear.StartOf(year, startMonth);
+            var yearEnd = FiscalYear.EndOf(year, startMonth);
 
             // (CEEF-229 · م1-١٥ / B-4) **القفلُ قبل الفحص — وإلا كان الفحصُ حكايةً.**
             //
@@ -88,10 +90,10 @@ public class YearEndCloseService(BrqoshDbContext db)
             // وقيس: سنةٌ ساكنة أُقفلت **ستّ مرّات** بلا اعتراضٍ واحد. فيُسأل عن الفترات نفسِها.
             var hasOpenPeriods = await db.FiscalPeriods.AnyAsync(p =>
                 p.CompanyId == companyId
-                && p.StartDate.Year == year
+                && p.StartDate >= yearStart && p.StartDate <= yearEnd
                 && p.Status == FiscalPeriodStatus.Open, token);
             var hasAnyPeriod = await db.FiscalPeriods.AnyAsync(p =>
-                p.CompanyId == companyId && p.StartDate.Year == year, token);
+                p.CompanyId == companyId && p.StartDate >= yearStart && p.StartDate <= yearEnd, token);
 
             if (hasAnyPeriod && !hasOpenPeriods)
                 throw new AccountingException($"السنة {year} مقفلة مسبقاً — فتراتُها كلُّها مغلقة.");
@@ -118,7 +120,7 @@ public class YearEndCloseService(BrqoshDbContext db)
 
             var entry = JournalEntry.CreateDraft(
                 companyId, closingDate,
-                $"إقفال السنة المالية {year}",
+                $"إقفال السنة المالية {FiscalYear.Name(year)}",
                 closeMark);
 
             // (CEEF-231 · O-32) ‏**الإقفالُ على الشخصية الاعتبارية لا على فرع.**
@@ -243,7 +245,9 @@ public class YearEndCloseService(BrqoshDbContext db)
             await LedgerYearLock.AcquireForClosingAsync(db.Database, companyId, year, token);
             await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "YEAREND", year, token);
 
-            var yearEnd = new DateOnly(year, 12, 31);
+            var startMonth = await FiscalYearResolver.StartMonthAsync(db, companyId, token);
+            var yearStart = FiscalYear.StartOf(year, startMonth);
+            var yearEnd = FiscalYear.EndOf(year, startMonth);
 
             // ‏**وسنةٌ لاحقةٌ مقفلةٌ تُفتح أوّلاً** — فأرباحُ هذه السنة رصيدُ افتتاح التي بعدها،
             // ‏وتلك أُقفلت عليه. والسؤالُ عن إقفالٍ **قائم** لا عن أثرٍ باق.
@@ -268,7 +272,7 @@ public class YearEndCloseService(BrqoshDbContext db)
                 .ToListAsync(token);
 
             var periods = await db.FiscalPeriods
-                .Where(p => p.CompanyId == companyId && p.StartDate.Year == year)
+                .Where(p => p.CompanyId == companyId && p.StartDate >= yearStart && p.StartDate <= yearEnd)
                 .ToListAsync(token);
 
             // ‏**والسنةُ الساكنةُ تُقفَل بفتراتها وحدَها** (بلا قيد) — فمقفلةٌ عند `CloseYearAsync`
@@ -278,7 +282,7 @@ public class YearEndCloseService(BrqoshDbContext db)
                 throw new AccountingException(
                     $"السنة {year} غير مقفلة — لا قيدَ إقفالٍ قائمٌ لها ولا فتراتُها مقفلة.");
 
-            var backfilled = BackfillClosedMonths(companyId, year, periods);
+            var backfilled = BackfillClosedMonths(companyId, year, startMonth, periods);
 
             var december = periods.Single(p => p.StartDate.Month == 12);
             if (december.Status == FiscalPeriodStatus.Closed)
@@ -313,14 +317,14 @@ public class YearEndCloseService(BrqoshDbContext db)
     /// فيه (حارسُ الشهر الساكن في <c>EnsurePeriodOpenAsync</c> يرى قيدَ الإقفال ولو معكوساً).
     /// <b>فتُنشأ الغائبةُ مقفلةً</b> — فيصير لكلّ شهرٍ طريقُ فتحٍ مشروعٌ واحد، ولا يُفتح منها شيءٌ صامتاً.
     /// </summary>
-    private List<string> BackfillClosedMonths(long companyId, int year, List<FiscalPeriod> periods)
+    private List<string> BackfillClosedMonths(long companyId, int year, int startMonth, List<FiscalPeriod> periods)
     {
-        var present = periods.Select(p => p.StartDate.Month).ToHashSet();
+        var present = periods.Select(p => (p.StartDate.Year, p.StartDate.Month)).ToHashSet();
         var created = new List<string>();
-        for (var month = 1; month <= 12; month++)
+        foreach (var (y, month) in FiscalYear.Months(year, startMonth))
         {
-            if (present.Contains(month)) continue;
-            var period = FiscalPeriod.Create(companyId, year, month);
+            if (present.Contains((y, month))) continue;
+            var period = FiscalPeriod.Create(companyId, y, month);
             period.Close();
             db.FiscalPeriods.Add(period);
             periods.Add(period);
@@ -357,22 +361,25 @@ public class YearEndCloseService(BrqoshDbContext db)
     /// </summary>
     private async Task CloseAllYearPeriodsAsync(long companyId, int year, string username, CancellationToken token)
     {
+        var startMonth = await FiscalYearResolver.StartMonthAsync(db, companyId, token);
+        var yearStart = FiscalYear.StartOf(year, startMonth);
+        var yearEnd = FiscalYear.EndOf(year, startMonth);
         var existing = await db.FiscalPeriods
-            .Where(p => p.CompanyId == companyId && p.StartDate.Year == year)
+            .Where(p => p.CompanyId == companyId && p.StartDate >= yearStart && p.StartDate <= yearEnd)
             .ToListAsync(token);
 
-        var byMonth = existing.ToDictionary(p => p.StartDate.Month);
+        var byMonth = existing.ToDictionary(p => (p.StartDate.Year, p.StartDate.Month));
 
-        for (var month = 1; month <= 12; month++)
+        foreach (var (y, month) in FiscalYear.Months(year, startMonth))
         {
-            if (byMonth.TryGetValue(month, out var period))
+            if (byMonth.TryGetValue((y, month), out var period))
             {
                 // ‏المقفَلُ سلفاً (إقفالٌ شهريّ سابق) يُترك على حاله — و<c>Close()</c> يرمي عليه.
                 if (period.Status == FiscalPeriodStatus.Closed) continue;
             }
             else
             {
-                period = FiscalPeriod.Create(companyId, year, month);
+                period = FiscalPeriod.Create(companyId, y, month);
                 db.FiscalPeriods.Add(period);
             }
 

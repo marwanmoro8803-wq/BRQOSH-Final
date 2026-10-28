@@ -873,6 +873,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("app_users", "MustChangePasswordOnNextLogin", "BOOLEAN NOT NULL DEFAULT false", ct);
         await EnsurePgColumnAsync("app_users", "MobilePhoneE164", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
+        await EnsurePgColumnAsync("companies", "FiscalYearStartMonth", "INTEGER NOT NULL DEFAULT 1", ct);   // ‏السنة المالية بشهر بداية
         await EnsurePgColumnAsync("companies", "BaseCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
         await EnsurePgColumnAsync("companies", "FunctionalCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
         // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ — والقائمةُ تأخذ افتراضَ المنتج.
@@ -988,6 +989,7 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("app_users", "MustChangePasswordOnNextLogin", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("app_users", "MobilePhoneE164", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);
+        await EnsureSqliteColumnAsync("companies", "FiscalYearStartMonth", "INTEGER NOT NULL DEFAULT 1", ct);
         await EnsureSqliteColumnAsync("companies", "BaseCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "FunctionalCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "ManualJournalApprovalThreshold", "TEXT NOT NULL DEFAULT '10000'", ct);   // ‏(accounting-core#6)

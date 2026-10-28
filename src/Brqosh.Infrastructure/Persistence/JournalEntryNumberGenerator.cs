@@ -11,9 +11,10 @@ public class JournalEntryNumberGenerator(BrqoshDbContext db)
 {
     public async Task<string> NextAsync(long companyId, DateOnly entryDate, CancellationToken ct = default)
     {
-        await AcquireSequenceLockAsync(companyId, entryDate.Year, ct);
+        // ‏الترقيمُ بالسنة المالية (FY بسنة بدايتها) — يبدأ من 1 في كل سنةٍ مالية؛ والافتراضيُّ يناير فلا تغيّر.
+        var year = await Accounting.FiscalYearResolver.StartYearForAsync(db, companyId, entryDate, ct);
+        await AcquireSequenceLockAsync(companyId, year, ct);
 
-        var year = entryDate.Year;
         var prefix = $"JV-{year}-";
 
         // (CEEF-229 · م2-٤أ) **الأكبرُ تأخذه القاعدة — لا يُسحب الدفترُ كلُّه إلى الذاكرة.**
