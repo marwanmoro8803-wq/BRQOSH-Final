@@ -27,8 +27,6 @@ public partial class ListFilterBar : UserControl
             Raise();
             return Task.CompletedTask;
         });
-        SearchBox.ToolTip = LocaleManager.T("بحث", "Search");
-        ClearBtn.ToolTip = LocaleManager.T("مسح الفلاتر", "Clear filters");
     }
 
     public string SearchText => SearchBox.Text.Trim();

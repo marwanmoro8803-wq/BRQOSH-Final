@@ -45,38 +45,42 @@ public static class XamlUiLocalizer
 
         switch (node)
         {
-            case TextBlock tb when tb.Text is { Length: > 0 } text:
+            case TextBlock tb when tb.Text is { Length: > 0 } text && !IsLocBound(tb, TextBlock.TextProperty):
                 tb.Text = Resolve(node, text);
                 break;
             case TextBox box when box.Text is { Length: > 0 } text && ContainsArabic(text):
                 // Preserve user input — only localize placeholders/tooltips
                 break;
-            case Button btn when btn.Content is string content:
+            case Button btn when btn.Content is string content && !IsLocBound(btn, ContentControl.ContentProperty):
                 btn.Content = Resolve(node, content);
                 break;
-            case Label lbl when lbl.Content is string content:
+            case Label lbl when lbl.Content is string content && !IsLocBound(lbl, ContentControl.ContentProperty):
                 lbl.Content = Resolve(node, content);
                 break;
-            case CheckBox cb when cb.Content is string content:
+            case CheckBox cb when cb.Content is string content && !IsLocBound(cb, ContentControl.ContentProperty):
                 cb.Content = Resolve(node, content);
                 break;
-            case RadioButton rb when rb.Content is string content:
+            case RadioButton rb when rb.Content is string content && !IsLocBound(rb, ContentControl.ContentProperty):
                 rb.Content = Resolve(node, content);
                 break;
-            case GroupBox gb when gb.Header is string header:
+            case GroupBox gb when gb.Header is string header && !IsLocBound(gb, HeaderedContentControl.HeaderProperty):
                 gb.Header = Resolve(node, header);
                 break;
-            case Expander exp when exp.Header is string header:
+            case Expander exp when exp.Header is string header && !IsLocBound(exp, HeaderedContentControl.HeaderProperty):
                 exp.Header = Resolve(node, header);
                 break;
-            case TabItem tab when tab.Header is string header:
+            case TabItem tab when tab.Header is string header && !IsLocBound(tab, HeaderedContentControl.HeaderProperty):
                 tab.Header = Resolve(node, header);
                 break;
         }
 
         if (node is FrameworkElement fe)
         {
-            if (fe.ToolTip is string tip)
+            if (IsLocBound(fe, FrameworkElement.ToolTipProperty))
+            {
+                // {loc:Str} already tracks the language; assigning here would drop its binding.
+            }
+            else if (fe.ToolTip is string tip)
                 fe.ToolTip = Resolve(node, tip);
             else if (fe.ToolTip is ToolTip tt && tt.Content is string tipContent)
                 tt.Content = Resolve(node, tipContent);
@@ -106,6 +110,10 @@ public static class XamlUiLocalizer
 
         return ResolveText(original ?? text);
     }
+
+    /// <summary>A property fed by <c>{loc:Str}</c> updates itself; overwriting it would replace the binding with a fixed string.</summary>
+    private static bool IsLocBound(DependencyObject node, DependencyProperty property) =>
+        System.Windows.Data.BindingOperations.GetBinding(node, property)?.Source is LocSource;
 
     private static string ResolveText(string arabic) =>
         LocaleManager.T(arabic, UiBilingualRegistry.Lookup(arabic));

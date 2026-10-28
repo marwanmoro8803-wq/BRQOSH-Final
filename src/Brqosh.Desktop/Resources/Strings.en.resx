@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <!-- English UI strings. Every key here must exist in Strings.resx and vice versa. -->
+  <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Common.Send" xml:space="preserve"><value>Send</value></data>
+  <data name="Common.Post" xml:space="preserve"><value>Post</value></data>
+  <data name="Shell.Tagline" xml:space="preserve"><value>Enterprise resource planning system</value></data>
+  <data name="Shell.NavSearch" xml:space="preserve"><value>Search the menu</value></data>
+  <data name="Shell.UserMenu" xml:space="preserve"><value>User menu</value></data>
+  <data name="Shell.SettingsAndSupport" xml:space="preserve"><value>Settings &amp; support</value></data>
+  <data name="Shell.LanguageToggle" xml:space="preserve"><value>Switch language</value></data>
+  <data name="Shell.AiToggle" xml:space="preserve"><value>Show/hide AI assistant</value></data>
+  <data name="Shell.ThemeToggle" xml:space="preserve"><value>Toggle theme</value></data>
+  <data name="Shell.Company" xml:space="preserve"><value>Company</value></data>
+  <data name="Shell.Branch" xml:space="preserve"><value>Branch</value></data>
+  <data name="Shell.OpenBackup" xml:space="preserve"><value>Open the backup screen</value></data>
+  <data name="Ai.Title" xml:space="preserve"><value>Intelligent finance copilot</value></data>
+  <data name="Ai.Insights" xml:space="preserve"><value>Live insights</value></data>
+  <data name="Ai.Chat" xml:space="preserve"><value>Conversation</value></data>
+  <data name="Ai.Question" xml:space="preserve"><value>Question for the AI assistant</value></data>
+  <data name="Doc.PostInvoice" xml:space="preserve"><value>Post Invoice</value></data>
+  <data name="Doc.PostVoucher" xml:space="preserve"><value>Post Voucher</value></data>
+  <data name="Doc.PostNote" xml:space="preserve"><value>Post Note</value></data>
+  <data name="Doc.AutoAllocate" xml:space="preserve"><value>Auto allocate</value></data>
+  <data name="Field.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Field.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Field.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Field.Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="Field.ExchangeRate" xml:space="preserve"><value>Exchange Rate</value></data>
+  <data name="Field.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Field.Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Field.Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Field.Description" xml:space="preserve"><value>Narrative</value></data>
+  <data name="Field.ReferenceOptional" xml:space="preserve"><value>Reference (transfer/cheque number — optional)</value></data>
+  <data name="Field.BankAccount" xml:space="preserve"><value>Bank Account</value></data>
+  <data name="Field.SupplierInvoiceRef" xml:space="preserve"><value>Supplier invoice reference</value></data>
+  <data name="Field.DocumentDiscount" xml:space="preserve"><value>Document Discount</value></data>
+  <data name="Field.VatTreatment" xml:space="preserve"><value>VAT treatment in the return</value></data>
+  <data name="Field.ExpiryDate" xml:space="preserve"><value>Expiry Date</value></data>
+  <data name="Field.PaymentMethod" xml:space="preserve"><value>Payment method</value></data>
+  <data name="Field.ReceiptMethod" xml:space="preserve"><value>Receipt method</value></data>
+  <data name="Field.SettlementDiscountEarned" xml:space="preserve"><value>Early-payment discount (earned)</value></data>
+  <data name="Field.SettlementDiscountAllowed" xml:space="preserve"><value>Early-payment discount (allowed)</value></data>
+  <data name="Filter.ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Filter.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Filter.FromDate" xml:space="preserve"><value>From date</value></data>
+  <data name="Filter.ToDate" xml:space="preserve"><value>To date</value></data>
+  <data name="CashFlow.Reconciliation" xml:space="preserve"><value>Reconciliation</value></data>
+  <data name="CashFlow.UnreconciledDifference" xml:space="preserve"><value>Unreconciled difference</value></data>
+</root>

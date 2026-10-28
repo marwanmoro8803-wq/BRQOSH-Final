@@ -1,6 +1,7 @@
 <Window x:Class="Brqosh.Desktop.Views.Pages.CreditNoteDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Brqosh.Desktop.Ui"
         xmlns:ui="clr-namespace:Brqosh.Desktop.Ui"
         Title="إشعار دائن جديد"
         Width="860" Height="600"
@@ -89,8 +90,8 @@
             <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
-                <Button Content="ترحيل الإشعار" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
-                <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
+                <Button Content="{loc:Str Key=Doc.PostNote}" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
+                <Button Content="{loc:Str Key=Common.Cancel}" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>
             </StackPanel>
         </DockPanel>
     </Grid>

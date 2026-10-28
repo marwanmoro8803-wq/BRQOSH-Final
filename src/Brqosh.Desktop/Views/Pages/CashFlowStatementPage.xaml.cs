@@ -68,8 +68,8 @@ public partial class CashFlowStatementPage : UserControl
 
         var difference = result.UnreconciledDifference;
         rows.Add(new DisplayRow(
-            LocaleManager.T("مطابقة", "Reconciliation"),
-            LocaleManager.T("فرق غير مطابق", "Unreconciled difference"),
+            Loc.T("CashFlow.Reconciliation"),
+            Loc.T("CashFlow.UnreconciledDifference"),
             difference,
             IsWarning: difference != 0m));
 
@@ -77,7 +77,7 @@ public partial class CashFlowStatementPage : UserControl
         UiTestAutomation.PublishGridCount(ReportGrid, rows.Count);
         TotalsText.Text =
             $"صافي التغيّر: {result.NetCashChange:N2} · افتتاحي: {result.OpeningCash:N2} · إغلاق: {result.ClosingCash:N2}"
-            + (difference != 0m ? $" · {LocaleManager.T("فرق غير مطابق", "Unreconciled difference")}: {difference:N2}" : "");
+            + (difference != 0m ? $" · {Loc.T("CashFlow.UnreconciledDifference")}: {difference:N2}" : "");
         UiTestAutomation.PublishSummary(TotalsText, TotalsText.Text);
     }
 

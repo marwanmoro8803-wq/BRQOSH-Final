@@ -12,6 +12,9 @@ public static class LocaleManager
     public static string T(string arabic, string english) =>
         IsEnglish ? english : arabic;
 
+    /// <summary>Lookup by stable resx key (e.g. <c>Common.Save</c>); falls back to the Arabic-text registry. See <see cref="Loc"/>.</summary>
+    public static string T(string key) => Loc.T(key);
+
     public static FlowDirection Flow =>
         IsEnglish ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
 
