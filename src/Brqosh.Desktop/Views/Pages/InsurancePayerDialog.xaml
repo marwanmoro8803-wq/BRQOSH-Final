@@ -14,7 +14,7 @@
 
         <TextBlock Grid.Row="0" Text="شركة تأمين" Style="{StaticResource PageTitleText}" Margin="0,0,0,4"/>
         <TextBlock Grid.Row="1" Text="شركة التأمين عميل له ذمة — وتنشأ له بطاقة عميل تلقائياً"
-                   Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,0,14"/>
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,14"/>
 
         <StackPanel Grid.Row="2">
             <TextBlock Text="الرمز *" Style="{StaticResource FieldLabel}"/>
@@ -31,7 +31,7 @@
         </StackPanel>
 
         <DockPanel Grid.Row="3" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13"
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}"
                        FontWeight="SemiBold" Visibility="Collapsed" TextWrapping="Wrap"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9"

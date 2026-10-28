@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="إقرار ضريبة القيمة المضافة" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="إقرار ضريبة القيمة المضافة" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="مخرجات · مدخلات · صافي مستحق/مسترد"/>
             </StackPanel>
@@ -22,9 +22,9 @@
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
             <WrapPanel>
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <DatePicker x:Name="FromDate" Width="160" FontSize="14"/>
+                <DatePicker x:Name="FromDate" Width="160" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="16,0,8,0"/>
-                <DatePicker x:Name="ToDate" Width="160" FontSize="14"/>
+                <DatePicker x:Name="ToDate" Width="160" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 <Button Content="عرض الإقرار" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
                 <Button Content="تصدير PDF" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportPdf"/>
             </WrapPanel>
@@ -35,7 +35,7 @@
         </Border>
 
         <Border Grid.Row="3" Style="{StaticResource SummaryCard}">
-            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="14"/>
+            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="{DynamicResource FontSize.BodyLarge}"/>
         </Border>
     </Grid>
 </UserControl>

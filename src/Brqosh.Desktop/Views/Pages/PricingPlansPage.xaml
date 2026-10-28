@@ -11,7 +11,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="الباقات والتسعير" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="الباقات والتسعير" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="خطط الاشتراك · حدود الشركات"/>
             </StackPanel>
@@ -24,7 +24,7 @@
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="PlansGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
-                      FontSize="14" RowHeight="36">
+                      FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" Width="120"/>
                     <DataGridTextColumn Header="الاسم" Binding="{Binding NameAr}" Width="*"/>

@@ -12,7 +12,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="17"/>
+                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock x:Name="SubtitleText" Style="{StaticResource PageSubtitleText}"/>
             </StackPanel>
         </Border>
@@ -24,7 +24,7 @@
                 <TextBlock x:Name="SupportStateText" Foreground="{StaticResource TextSecondaryBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,8"/>
                 <DataGrid x:Name="SlaGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
-                          FontSize="14" RowHeight="32" MaxHeight="140">
+                          FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="32" MaxHeight="140">
                     <DataGrid.Columns>
                         <DataGridTextColumn x:Name="SlaPlanCol" Binding="{Binding Plan}" Width="*"/>
                         <DataGridTextColumn x:Name="SlaResponseCol" Binding="{Binding Response}" Width="160"/>
@@ -47,7 +47,7 @@
             <StackPanel>
                 <TextBlock x:Name="NewTitle" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <TextBlock x:Name="KindLabel" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="KindBox" FontSize="14" Padding="10,8" Margin="0,0,0,10" MaxWidth="320" HorizontalAlignment="Left"
+                <ComboBox x:Name="KindBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,10" MaxWidth="320" HorizontalAlignment="Left"
                           AutomationProperties.AutomationId="SupportKind"/>
                 <TextBlock x:Name="SubjectLabel" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="SubjectBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,10" MaxLength="140"
@@ -64,7 +64,7 @@
                     <Button x:Name="RegisterMailBtn" Style="{StaticResource SecondaryButton}" Padding="20,9" Margin="0,0,8,6"
                             AutomationProperties.AutomationId="SupportRegisterMail" Click="OnRegisterAndMail"/>
                 </WrapPanel>
-                <TextBlock x:Name="HonestyText" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                <TextBlock x:Name="HonestyText" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
 
@@ -80,7 +80,7 @@
                     </WrapPanel>
                 </StackPanel>
                 <DataGrid x:Name="TicketsGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
-                          FontSize="14" RowHeight="34" SelectionMode="Single" MinHeight="120"
+                          FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34" SelectionMode="Single" MinHeight="120"
                           AutomationProperties.AutomationId="SupportRequestsGrid">
                     <DataGrid.Columns>
                         <DataGridTextColumn x:Name="IdCol" Binding="{Binding Id}" Width="90"/>

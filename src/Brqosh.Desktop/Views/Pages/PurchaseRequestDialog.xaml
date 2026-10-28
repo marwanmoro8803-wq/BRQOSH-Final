@@ -26,23 +26,23 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBlock Text="المورد *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="SupplierCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="SupplierCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>
 
         <StackPanel Grid.Row="2" Margin="0,0,0,10">
             <TextBlock Text="المبرر / الغرض" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="JustificationBox" MinHeight="36" Padding="10,8" FontSize="14"/>
+            <TextBox x:Name="JustificationBox" MinHeight="36" Padding="10,8" FontSize="{DynamicResource FontSize.BodyLarge}"/>
         </StackPanel>
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36"
                       CellEditEnding="OnCellEditEnding">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*"/>

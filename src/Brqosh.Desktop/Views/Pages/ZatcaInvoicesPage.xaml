@@ -12,7 +12,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="فواتير ZATCA" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="فواتير ZATCA" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="UBL · QR · ICV · إرسال هيئة الزكاة"/>
             </StackPanel>
@@ -36,7 +36,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding InvoiceNumber}" Width="140"/>
                     <DataGridTextColumn Header="النوع" Binding="{Binding TypeAr}" Width="100"/>

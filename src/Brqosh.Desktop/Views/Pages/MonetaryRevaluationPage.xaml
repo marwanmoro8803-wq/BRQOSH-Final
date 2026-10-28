@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="إعادة تقييم الذمم بالعملات" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="إعادة تقييم الذمم بالعملات" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="البنود النقدية تُترجم بسعر الإقفال — والقيد يُعكس في اليوم التالي"/>
                 </StackPanel>
@@ -28,7 +28,7 @@
                 <Button x:Name="RefreshBtn" DockPanel.Dock="Right" Content="عرض المكشوف"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnRefresh"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="تاريخ الإقفال" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>

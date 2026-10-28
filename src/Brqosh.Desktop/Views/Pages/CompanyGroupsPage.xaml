@@ -13,7 +13,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="مجموعات الشركات" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="مجموعات الشركات" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="تقارير موحّدة · خرائط IC · عملة تقرير"/>
                 </StackPanel>
@@ -50,7 +50,7 @@
             </Grid.ColumnDefinitions>
             <Border Grid.Column="0" Style="{StaticResource ContentCard}" Margin="0,0,8,0">
                 <DataGrid x:Name="GroupsGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                          BorderThickness="0" FontSize="14" RowHeight="34"
+                          BorderThickness="0" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34"
                           SelectionChanged="OnGroupSelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" Width="100"/>
@@ -78,7 +78,7 @@
                                 Margin="8,0,0,0" Padding="12,7" Click="OnRemoveMap"/>
                     </StackPanel>
                     <DataGrid x:Name="MapsGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
-                              BorderThickness="0" FontSize="14" RowHeight="32">
+                              BorderThickness="0" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="32">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="رمز الحساب" Binding="{Binding AccountCode}" Width="*"/>
                         </DataGrid.Columns>

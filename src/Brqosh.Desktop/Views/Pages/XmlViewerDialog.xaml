@@ -16,12 +16,12 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" x:Name="TitleText" Style="{StaticResource PageTitleText}"
-                   FontSize="17" Margin="0,0,0,10"/>
+                   FontSize="{DynamicResource FontSize.Title}" Margin="0,0,0,10"/>
 
         <Border Grid.Row="1" Style="{StaticResource ContentCard}">
             <TextBox x:Name="ContentBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                     FontFamily="Consolas" FontSize="12" BorderThickness="0" Background="Transparent"/>
+                     FontFamily="Consolas" FontSize="{DynamicResource FontSize.Small}" BorderThickness="0" Background="Transparent"/>
         </Border>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0"

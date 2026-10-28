@@ -23,7 +23,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="صنف الغرفة" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="KindBox" FontSize="14">
+                    <ComboBox x:Name="KindBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                         <ComboBoxItem Content="مفردة"/>
                         <ComboBoxItem Content="مزدوجة" IsSelected="True"/>
                         <ComboBoxItem Content="بسريرين"/>

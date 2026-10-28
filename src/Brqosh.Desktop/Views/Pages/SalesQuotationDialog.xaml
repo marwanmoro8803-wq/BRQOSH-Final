@@ -23,7 +23,7 @@
         <Border Grid.Row="1" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="14" RowHeight="36" Background="Transparent"
+                      FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36" Background="Transparent"
                       CellEditEnding="OnCellEditEnding">
                 <DataGrid.Columns>
                     <DataGridComboBoxColumn x:Name="ProductColumn" Header="الصنف" Width="220"

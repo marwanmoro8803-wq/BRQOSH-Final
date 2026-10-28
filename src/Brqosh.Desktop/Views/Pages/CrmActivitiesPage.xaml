@@ -13,7 +13,7 @@
                 <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="＋ نشاط"
                         Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="أنشطة CRM" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أنشطة CRM" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="مكالمات · اجتماعات · ملاحظات"/>
                 </StackPanel>
             </brq:ToolbarDockPanel>

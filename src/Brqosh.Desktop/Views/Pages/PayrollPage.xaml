@@ -43,7 +43,7 @@
                             Padding="16,9" Click="OnReversePayment"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="دورات الصرف · GOSI · ترحيل محاسبي"/>
                 </StackPanel>

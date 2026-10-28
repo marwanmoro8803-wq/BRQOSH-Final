@@ -24,7 +24,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date}" Width="120"/>
                     <DataGridTextColumn Header="عدد المعاملات" Binding="{Binding Transactions}" Width="130"/>

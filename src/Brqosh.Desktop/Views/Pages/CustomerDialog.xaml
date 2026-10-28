@@ -64,7 +64,7 @@
             <TextBox x:Name="CountrySubentityBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
         </StackPanel>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                    Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">

@@ -11,7 +11,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="17"/>
+                <TextBlock x:Name="TitleText" Style="{StaticResource PageTitleText}" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock x:Name="SubtitleText" Style="{StaticResource PageSubtitleText}"/>
             </StackPanel>
         </Border>
@@ -22,27 +22,27 @@
                 <!-- المظهر واللغة — يُحفظان لمستخدم ويندوز هذا ويعودان عند كلّ تشغيل. -->
                 <Border Style="{StaticResource ContentCard}" Padding="28" Margin="0,0,0,12">
                     <StackPanel>
-                        <TextBlock x:Name="AppearanceTitle" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="AppearanceTitle" Style="{StaticResource FieldLabel}" FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="Bold" Margin="0,0,0,12"/>
 
                         <TextBlock x:Name="ThemeLabel" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox x:Name="ThemeBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"
+                        <ComboBox x:Name="ThemeBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"
                                   AutomationProperties.AutomationId="PreferencesTheme"
                                   SelectionChanged="OnThemeChosen"/>
-                        <TextBlock x:Name="ThemeHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock x:Name="ThemeHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                         <TextBlock x:Name="DensityLabel" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox x:Name="DensityBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"
+                        <ComboBox x:Name="DensityBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"
                                   AutomationProperties.AutomationId="PreferencesDensity"
                                   SelectionChanged="OnDensityChosen"/>
-                        <TextBlock x:Name="DensityHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock x:Name="DensityHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                         <TextBlock x:Name="LanguageLabel" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox x:Name="LanguageBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"
+                        <ComboBox x:Name="LanguageBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"
                                   AutomationProperties.AutomationId="PreferencesLanguage"
                                   SelectionChanged="OnLanguageChosen"/>
-                        <TextBlock x:Name="LanguageHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock x:Name="LanguageHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                     </StackPanel>
                 </Border>
@@ -50,7 +50,7 @@
                 <!-- عن البرنامج -->
                 <Border Style="{StaticResource ContentCard}" Padding="28" Margin="0,0,0,12">
                     <StackPanel>
-                        <TextBlock x:Name="AboutTitle" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock x:Name="AboutTitle" Style="{StaticResource FieldLabel}" FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="Bold" Margin="0,0,0,12"/>
                         <ItemsControl x:Name="AboutList" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>

@@ -38,7 +38,7 @@
 
         <DockPanel Grid.Row="3" Margin="0,14,0,0" LastChildFill="False">
             <TextBlock x:Name="TotalsText" DockPanel.Dock="Left" VerticalAlignment="Center"
-                       FontWeight="Bold" FontSize="14"/>
+                       FontWeight="Bold" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             <Button Content="طباعة PDF" DockPanel.Dock="Right"
                     Style="{StaticResource SecondaryButton}" Padding="20,9" Margin="0,0,8,0"
                     Click="OnPrintPdf"/>

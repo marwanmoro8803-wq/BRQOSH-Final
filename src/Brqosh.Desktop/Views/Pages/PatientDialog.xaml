@@ -37,7 +37,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="الجنس *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="GenderBox" FontSize="14">
+                    <ComboBox x:Name="GenderBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                         <ComboBoxItem Content="ذكر" IsSelected="True"/>
                         <ComboBoxItem Content="أنثى"/>
                     </ComboBox>
@@ -50,7 +50,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="تاريخ الميلاد *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="BirthBox" FontSize="14"/>
+                    <DatePicker x:Name="BirthBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="رقم الجوال" Style="{StaticResource FieldLabel}"/>

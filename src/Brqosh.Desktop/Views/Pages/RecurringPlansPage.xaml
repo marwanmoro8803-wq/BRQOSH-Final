@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الفوترة الدورية" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الفوترة الدورية" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="إيجار · اشتراك · عقد صيانة — والتوليد دفعة يطلقها المستخدم"/>
                 </StackPanel>
@@ -24,7 +24,7 @@
                 <Button x:Name="PauseBtn" DockPanel.Dock="Right" Content="إيقاف مؤقت"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnPause"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="حتى تاريخ" VerticalAlignment="Center"
                            Margin="0,0,10,0" Style="{StaticResource FieldLabel}"/>

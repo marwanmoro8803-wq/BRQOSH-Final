@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="إعادة تقييم الحسابات بالعملات" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="إعادة تقييم الحسابات بالعملات" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="رصيد بعملة أجنبية يبقى بسعر يوم إيداعه ما لم يُعَد تقييمه"/>
                 </StackPanel>
@@ -21,7 +21,7 @@
                             Padding="18,9" Click="OnRun"/>
                 </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="AsOfBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="حتى تاريخ" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>

@@ -17,19 +17,19 @@
                 <Image x:Name="LogoImage" MaxWidth="150" MaxHeight="64" Stretch="Uniform" HorizontalAlignment="Center" Margin="0,0,0,6" Visibility="Collapsed"/>
                 <Path x:Name="MarkPath" Data="{StaticResource BrqoshMarkGeometry}" Fill="Black" Stretch="Uniform" Width="26" Height="32"
                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                <TextBlock x:Name="CompanyText" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap"/>
-                <TextBlock x:Name="VatNumberText" FontSize="11" HorizontalAlignment="Center"/>
-                <TextBlock Text="فاتورة ضريبية مبسّطة" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,8"/>
-                <TextBlock x:Name="InvoiceNumberText" FontSize="12" HorizontalAlignment="Center"/>
-                <TextBlock x:Name="IssuedAtText" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <TextBlock x:Name="CompanyText" FontSize="{DynamicResource FontSize.Title}" FontWeight="Bold" HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                <TextBlock x:Name="VatNumberText" FontSize="{DynamicResource FontSize.Caption}" HorizontalAlignment="Center"/>
+                <TextBlock Text="فاتورة ضريبية مبسّطة" FontSize="{DynamicResource FontSize.Small}" HorizontalAlignment="Center" Margin="0,4,0,8"/>
+                <TextBlock x:Name="InvoiceNumberText" FontSize="{DynamicResource FontSize.Small}" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="IssuedAtText" FontSize="{DynamicResource FontSize.Caption}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                 <ItemsControl x:Name="LinesList">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="0,2">
-                                <TextBlock Text="{Binding Description}" FontSize="12" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Description}" FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap"/>
                                 <DockPanel>
-                                    <TextBlock DockPanel.Dock="Left" FontSize="12" Text="{Binding LineTotal, StringFormat=N2}"/>
-                                    <TextBlock FontSize="11">
+                                    <TextBlock DockPanel.Dock="Left" FontSize="{DynamicResource FontSize.Small}" Text="{Binding LineTotal, StringFormat=N2}"/>
+                                    <TextBlock FontSize="{DynamicResource FontSize.Caption}">
                                         <Run Text="{Binding Quantity, StringFormat=N2, Mode=OneWay}"/>
                                         <Run Text="×"/>
                                         <Run Text="{Binding UnitPrice, StringFormat=N2, Mode=OneWay}"/>
@@ -40,11 +40,11 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <Separator Margin="0,8"/>
-                <TextBlock x:Name="SubtotalText" FontSize="12"/>
-                <TextBlock x:Name="VatText" FontSize="12"/>
-                <TextBlock x:Name="TotalText" FontSize="18" FontWeight="Bold" Margin="0,6,0,10"/>
+                <TextBlock x:Name="SubtotalText" FontSize="{DynamicResource FontSize.Small}"/>
+                <TextBlock x:Name="VatText" FontSize="{DynamicResource FontSize.Small}"/>
+                <TextBlock x:Name="TotalText" FontSize="{DynamicResource FontSize.TitleLarge}" FontWeight="Bold" Margin="0,6,0,10"/>
                 <Image x:Name="QrImage" Width="160" Height="160" Margin="0,0,0,6" Visibility="Collapsed"/>
-                <TextBlock x:Name="ZatcaStatusText" FontSize="11" HorizontalAlignment="Center"
+                <TextBlock x:Name="ZatcaStatusText" FontSize="{DynamicResource FontSize.Caption}" HorizontalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,8"/>
             </StackPanel>
         </ScrollViewer>

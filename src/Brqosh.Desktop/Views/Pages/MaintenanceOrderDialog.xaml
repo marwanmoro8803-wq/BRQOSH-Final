@@ -37,7 +37,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Margin="0,0,8,0">
                 <TextBlock Text="السبب" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="KindBox" FontSize="14" SelectedIndex="0">
+                <ComboBox x:Name="KindBox" FontSize="{DynamicResource FontSize.BodyLarge}" SelectedIndex="0">
                     <ComboBoxItem Content="دورية"/>
                     <ComboBoxItem Content="إصلاحية"/>
                     <ComboBoxItem Content="تلف مستأجر"/>
@@ -46,7 +46,7 @@
             </StackPanel>
             <StackPanel Grid.Column="3">
                 <TextBlock Text="تاريخ الطلب" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DateBox" FontSize="14"/>
+                <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
         </Grid>
 
@@ -58,7 +58,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,8,0">
                 <TextBlock Text="الوحدة (اتركها فارغة للمرافق المشتركة)" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="UnitBox" FontSize="14" DisplayMemberPath="Label"/>
+                <ComboBox x:Name="UnitBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="Label"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,8,0">
                 <TextBlock Text="المورد" Style="{StaticResource FieldLabel}"/>
@@ -72,7 +72,7 @@
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="CostGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="بند التكلفة" Binding="{Binding Description}" Width="*"/>
                     <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount}" Width="150"/>

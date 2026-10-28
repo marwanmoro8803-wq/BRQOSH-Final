@@ -17,7 +17,7 @@
 
         <TextBlock Grid.Row="0" Text="استلام من أمر شراء معتمد" Style="{StaticResource PageTitleText}" Margin="0,0,0,4"/>
         <TextBlock Grid.Row="1" Text="الكمية المستلمة تُعدَّل، والصنف المتتبَّع لا يدخل بلا رقم دفعة"
-                   Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,0,14"/>
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,14"/>
 
         <Grid Grid.Row="2" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -28,22 +28,22 @@
             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                 <TextBlock Text="أمر الشراء *" Style="{StaticResource FieldLabel}"/>
                 <ComboBox x:Name="OrderBox" DisplayMemberPath="Display" SelectedValuePath="Id"
-                          FontSize="14" Padding="10,8" SelectionChanged="OnOrderChanged"/>
+                          FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectionChanged="OnOrderChanged"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,10,0">
                 <TextBlock Text="المستودع *" Style="{StaticResource FieldLabel}"/>
                 <ComboBox x:Name="WarehouseBox" DisplayMemberPath="Display" SelectedValuePath="Id"
-                          FontSize="14" Padding="10,8"/>
+                          FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"/>
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DateBox" FontSize="14"/>
+                <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
         </Grid>
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="False"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الصنف" Binding="{Binding Description}" IsReadOnly="True" Width="*"/>
                     <DataGridTextColumn Header="المطلوب" Binding="{Binding OrderedQuantity, StringFormat=N2}" IsReadOnly="True" Width="100"/>
@@ -58,7 +58,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <DatePicker SelectedDate="{Binding ExpiryDate, UpdateSourceTrigger=PropertyChanged}"
-                                            BorderThickness="0" FontSize="13"/>
+                                            BorderThickness="0" FontSize="{DynamicResource FontSize.Body}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -68,7 +68,7 @@
 
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
             <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}"
-                       Visibility="Collapsed" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="13"/>
+                       Visibility="Collapsed" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Body}"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="ترحيل الاستلام" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

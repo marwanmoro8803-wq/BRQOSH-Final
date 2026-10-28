@@ -22,7 +22,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,8,0">
                 <TextBlock Text="الموظف *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="EmployeeBox" FontSize="14" DisplayMemberPath="Label"/>
+                <ComboBox x:Name="EmployeeBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="Label"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,8,0">
                 <TextBlock Text="رقم السلفة *" Style="{StaticResource FieldLabel}"/>
@@ -30,7 +30,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="تاريخ الطلب" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DateBox" FontSize="14"/>
+                <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
         </Grid>
 

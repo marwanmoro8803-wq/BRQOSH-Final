@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="دفتر الأستاذ العام" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="دفتر الأستاذ العام" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="حركة الحسابات · رصيد متحرك · قيود مرحّلة"/>
             </StackPanel>
@@ -22,9 +22,9 @@
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
             <WrapPanel>
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <DatePicker x:Name="FromDate" Width="150" FontSize="14"/>
+                <DatePicker x:Name="FromDate" Width="150" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="12,0,8,0"/>
-                <DatePicker x:Name="ToDate" Width="150" FontSize="14"/>
+                <DatePicker x:Name="ToDate" Width="150" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 <TextBlock Text="حساب (اختياري)" VerticalAlignment="Center" Margin="12,0,8,0"/>
                 <TextBox x:Name="AccountFilter" Style="{StaticResource AppTextBox}" Width="100"/>
                 <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnRun"/>
@@ -32,7 +32,7 @@
                 <Button x:Name="PrevBtn" Content="السابق" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="16,0,0,0" Click="OnPrev"/>
                 <Button x:Name="NextBtn" Content="التالي" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="8,0,0,0" Click="OnNext"/>
                 <TextBlock x:Name="CountText" VerticalAlignment="Center" Margin="16,0,0,0"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
             </WrapPanel>
         </Border>
 
@@ -44,7 +44,7 @@
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="13" RowHeight="32" Background="Transparent" EnableRowVirtualization="True">
+                      FontSize="{DynamicResource FontSize.Body}" RowHeight="32" Background="Transparent" EnableRowVirtualization="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الحساب" Binding="{Binding AccountCode}" Width="90"/>
                     <DataGridTextColumn Header="اسم الحساب" Binding="{Binding AccountNameAr}" Width="160"/>

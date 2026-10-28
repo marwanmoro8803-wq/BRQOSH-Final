@@ -36,7 +36,7 @@
 
         <DockPanel Grid.Row="3" Margin="0,14,0,0" LastChildFill="False">
             <TextBlock x:Name="TotalsText" DockPanel.Dock="Left" VerticalAlignment="Center"
-                       FontWeight="Bold" FontSize="14"/>
+                       FontWeight="Bold" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             <Button Content="إغلاق" DockPanel.Dock="Right"
                     Style="{StaticResource SecondaryButton}" Padding="24,9"
                     IsCancel="True" Click="OnClose"/>

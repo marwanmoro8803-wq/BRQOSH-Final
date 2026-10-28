@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الموازنة والانحراف" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الموازنة والانحراف" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="المخطط مقابل الفعلي — والموجب صالح للمنشأة في الحالتين"/>
                 </StackPanel>
@@ -27,15 +27,15 @@
                             Margin="8,0,0,0" Padding="20,9" Click="OnRun"/>
                 </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="إلى" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="FromBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="FromBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="من" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="BudgetBox" DockPanel.Dock="Right" Width="220" FontSize="14"
+                <ComboBox x:Name="BudgetBox" DockPanel.Dock="Right" Width="220" FontSize="{DynamicResource FontSize.BodyLarge}"
                           VerticalAlignment="Center" Margin="0,0,12,0"/>
                 <TextBlock DockPanel.Dock="Right" Text="الموازنة" VerticalAlignment="Center"
                            Margin="0,0,8,0" Style="{StaticResource FieldLabel}"/>

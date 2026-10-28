@@ -14,7 +14,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="دليل الحسابات" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="دليل الحسابات" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="شجرة GL · SOCPA · حسابات نظامية"/>
                 </StackPanel>
@@ -42,7 +42,7 @@
 
         <!-- شجرة الحسابات -->
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Padding="8">
-            <TreeView x:Name="AccountsTree" BorderThickness="0" FontSize="14">
+            <TreeView x:Name="AccountsTree" BorderThickness="0" FontSize="{DynamicResource FontSize.BodyLarge}">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="True"/>

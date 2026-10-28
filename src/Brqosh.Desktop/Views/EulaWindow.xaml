@@ -10,7 +10,7 @@
     <Border Style="{StaticResource AuthCard}" Margin="20">
         <DockPanel>
             <TextBlock DockPanel.Dock="Top" Text="اتفاقية ترخيص المستخدم"
-                       FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+                       FontSize="{DynamicResource FontSize.Heading}" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
             <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
                 <CheckBox x:Name="AgreeCheck" Content="قرأت الاتفاقية وأوافق عليها"
                           Checked="OnAgreeChanged" Unchecked="OnAgreeChanged"/>
@@ -23,7 +23,7 @@
             <!-- الاتفاقيّةُ فقراتٌ لكلٍّ اتجاهُها: العربيّةُ RTL والإنجليزيّةُ LTR — في TextBox واحدٍ يُقلب ترتيبُ الجمل الإنجليزيّة وتقع علاماتُ ترقيمها في الجهة الخطأ. -->
             <RichTextBox x:Name="EulaBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto"
                          Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                         Padding="12" FontSize="13"/>
+                         Padding="12" FontSize="{DynamicResource FontSize.Body}"/>
         </DockPanel>
     </Border>
 </Window>

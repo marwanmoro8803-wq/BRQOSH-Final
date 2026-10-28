@@ -14,7 +14,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="سندات القبض" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="سندات القبض" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="تحصيل · نقد/بنك · تخصيص فواتير"/>
                 </StackPanel>                <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -38,7 +38,7 @@
                         Click="OnReverse"/>
                 <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
                         CornerRadius="3" Padding="12,5" VerticalAlignment="Center">
-                    <TextBlock x:Name="CountText" FontSize="12.5" FontWeight="SemiBold"
+                    <TextBlock x:Name="CountText" FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryDarkBrush}"/>
                 </Border>
             </brq:ToolbarDockPanel>

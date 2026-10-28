@@ -9,6 +9,30 @@
         <ResourceDictionary Source="BrandWordmark.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- سلّم الخطوط والمسافات: كل حجم خط أو مسافة في الواجهة يأتي من هنا عبر DynamicResource، لا قيمة يدوية. -->
+    <sys:Double x:Key="FontSize.Caption">11</sys:Double>
+    <sys:Double x:Key="FontSize.Small">12</sys:Double>
+    <sys:Double x:Key="FontSize.Body">13</sys:Double>
+    <sys:Double x:Key="FontSize.BodyLarge">14</sys:Double>
+    <sys:Double x:Key="FontSize.Subtitle">15</sys:Double>
+    <sys:Double x:Key="FontSize.Title">17</sys:Double>
+    <sys:Double x:Key="FontSize.TitleLarge">18</sys:Double>
+    <sys:Double x:Key="FontSize.Heading">22</sys:Double>
+    <sys:Double x:Key="FontSize.Display">24</sys:Double>
+    <sys:Double x:Key="FontSize.Hero">30</sys:Double>
+    <sys:Double x:Key="Space.XS">4</sys:Double>
+    <Thickness x:Key="Spacing.XS">4</Thickness>
+    <sys:Double x:Key="Space.S">8</sys:Double>
+    <Thickness x:Key="Spacing.S">8</Thickness>
+    <sys:Double x:Key="Space.M">12</sys:Double>
+    <Thickness x:Key="Spacing.M">12</Thickness>
+    <sys:Double x:Key="Space.L">16</sys:Double>
+    <Thickness x:Key="Spacing.L">16</Thickness>
+    <sys:Double x:Key="Space.XL">24</sys:Double>
+    <Thickness x:Key="Spacing.XL">24</Thickness>
+    <sys:Double x:Key="Space.XXL">32</sys:Double>
+    <Thickness x:Key="Spacing.XXL">32</Thickness>
+
     <!-- ═══════════════════════════════════════════════
          لوحة الألوان — هوية BRQOSH
     ═══════════════════════════════════════════════ -->
@@ -1208,7 +1232,7 @@
                 <ControlTemplate TargetType="CalendarItem">
                     <ControlTemplate.Resources>
                         <DataTemplate x:Key="{x:Static CalendarItem.DayTitleTemplateResourceKey}">
-                            <TextBlock Text="{Binding}" FontWeight="SemiBold" FontSize="11" Margin="0,4"
+                            <TextBlock Text="{Binding}" FontWeight="SemiBold" FontSize="{DynamicResource FontSize.Caption}" Margin="0,4"
                                        Foreground="{DynamicResource TextMutedBrush}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </DataTemplate>
@@ -1232,7 +1256,7 @@
                                               StrokeThickness="1.6" Width="6" Height="10" Stretch="None"/>
                                     </Button>
                                     <Button x:Name="PART_HeaderButton" Grid.Column="1" Focusable="False" Cursor="Hand" FontWeight="SemiBold"
-                                            FontSize="13.5" HorizontalAlignment="Center" OverridesDefaultStyle="True"
+                                            FontSize="{DynamicResource FontSize.BodyLarge}" HorizontalAlignment="Center" OverridesDefaultStyle="True"
                                             Foreground="{DynamicResource TextPrimaryBrush}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -1632,7 +1656,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <TextBlock Text="{TemplateBinding Header}" Margin="14,10,14,3" FontSize="11" FontWeight="Bold"
+                    <TextBlock Text="{TemplateBinding Header}" Margin="14,10,14,3" FontSize="{DynamicResource FontSize.Caption}" FontWeight="Bold"
                                Foreground="{DynamicResource TextMutedBrush}"/>
                 </ControlTemplate>
             </Setter.Value>
@@ -1665,7 +1689,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
                     <Border BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,2" Margin="14,10,14,2" Padding="0,0,0,6">
-                        <TextBlock Text="{TemplateBinding Header}" FontSize="14" FontWeight="Bold"
+                        <TextBlock Text="{TemplateBinding Header}" FontSize="{DynamicResource FontSize.BodyLarge}" FontWeight="Bold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
                     </Border>
                 </ControlTemplate>

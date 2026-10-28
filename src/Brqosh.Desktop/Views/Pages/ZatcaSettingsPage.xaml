@@ -15,7 +15,7 @@
                 <StackPanel>
                     <CheckBox x:Name="EnabledCheck" Content="تفعيل ZATCA — توليد تلقائي عند ترحيل فاتورة المبيعات/إشعار الدائن" Margin="0,0,0,14"/>
                     <TextBlock Text="البيئة" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="EnvCombo" FontSize="14" Padding="10,8" Margin="0,0,0,14">
+                    <ComboBox x:Name="EnvCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,14">
                         <ComboBoxItem Content="محاكاة (Simulation)" Tag="Simulation"/>
                         <ComboBoxItem Content="إنتاج (Production)" Tag="Production"/>
                     </ComboBox>
@@ -27,7 +27,7 @@
                     <TextBox x:Name="CertPathBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
                     <TextBlock Text="مسار المفتاح الخاص (.pem)" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="KeyPathBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
-                    <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,12"/>
+                    <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,12"/>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave"/>
                         <Button x:Name="ValidateBtn" Content="فحص الجاهزية" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnValidate"/>

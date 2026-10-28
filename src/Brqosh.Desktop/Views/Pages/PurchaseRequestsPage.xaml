@@ -26,7 +26,7 @@
                     <Button Content="عرض" Padding="16,9" Click="OnView"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="طلبات الشراء" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="طلبات الشراء" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="مسودة → إرسال → مدير → مالية → أمر شراء"/>
                 </StackPanel>

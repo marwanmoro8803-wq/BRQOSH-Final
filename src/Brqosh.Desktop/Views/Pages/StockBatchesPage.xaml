@@ -12,12 +12,12 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الدفعات والصلاحية" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الدفعات والصلاحية" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="أرصدة الدفعات · وما قارب الانتهاء · وما انتهى"/>
                 </StackPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <ComboBox x:Name="FilterBox" DockPanel.Dock="Right" Width="220" FontSize="14"
+                <ComboBox x:Name="FilterBox" DockPanel.Dock="Right" Width="220" FontSize="{DynamicResource FontSize.BodyLarge}"
                           VerticalAlignment="Center" Margin="0,0,12,0" SelectionChanged="OnFilterChanged">
                     <ComboBoxItem Content="كل الدفعات" IsSelected="True"/>
                     <ComboBoxItem Content="ما يقارب الانتهاء (٩٠ يوماً)"/>

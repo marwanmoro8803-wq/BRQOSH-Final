@@ -11,7 +11,7 @@
                     Padding="24,20" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock x:Name="HeroTitleText"
-                               FontSize="26" FontWeight="Black"
+                               FontSize="{DynamicResource FontSize.Display}" FontWeight="Black"
                                Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock x:Name="HeroSubtitleText"
                                Style="{StaticResource PageSubtitleText}"

@@ -20,7 +20,7 @@
                 <Button x:Name="CancelBtn" DockPanel.Dock="Right" Content="إلغاء"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCancel"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="حركات المخزون" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="حركات المخزون" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="إدخال · إخراج · تحويل · ترحيل"/>
                 </StackPanel>

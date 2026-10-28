@@ -31,7 +31,7 @@
              ‏والفئةُ ورمزُها في مدخلٍ واحدٍ فلا تُمثَّل حالةٌ خاطئة. -->
         <StackPanel Grid.Row="2" Margin="0,0,0,12">
             <TextBlock Text="المعاملة الضريبية" Style="{StaticResource FieldLabel}"/>
-            <ComboBox x:Name="VatCombo" FontSize="14" Padding="10,8"
+            <ComboBox x:Name="VatCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                       DisplayMemberPath="Label" SelectionChanged="OnSelectionChanged"/>
         </StackPanel>
 
@@ -39,13 +39,13 @@
              ‏كما تفعل نقطةُ البيع — وهو مسارٌ نظاميّ لا تحايل. -->
         <StackPanel Grid.Row="3" Margin="0,0,0,12">
             <TextBlock Text="المشتري" Style="{StaticResource FieldLabel}"/>
-            <ComboBox x:Name="BuyerCombo" FontSize="14" Padding="10,8"
+            <ComboBox x:Name="BuyerCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                       DisplayMemberPath="Label" SelectedValuePath="Id"/>
         </StackPanel>
 
         <Border Grid.Row="4" Margin="0,6,0,0" Padding="14,12"
                 Background="{StaticResource SurfaceBrush}" CornerRadius="6">
-            <TextBlock x:Name="VerdictText" TextWrapping="Wrap" FontSize="13"/>
+            <TextBlock x:Name="VerdictText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.Body}"/>
         </Border>
 
         <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,14,0,0">

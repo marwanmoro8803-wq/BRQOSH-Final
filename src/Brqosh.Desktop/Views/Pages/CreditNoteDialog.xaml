@@ -28,11 +28,11 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBlock Text="الفاتورة الأصلية *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="InvoiceCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="InvoiceCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"
                           SelectionChanged="OnInvoiceSelected"/>
             </StackPanel>
@@ -46,7 +46,7 @@
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="14" RowHeight="36" Background="Transparent"
+                      FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36" Background="Transparent"
                       CellEditEnding="OnCellEditEnding">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الوصف / الصنف المرتجع" Binding="{Binding Description}" Width="*"/>
@@ -80,14 +80,14 @@
                 <TextBlock x:Name="VatText" Text="0.00" Margin="8,0,24,0" FontWeight="Bold"/>
                 <TextBlock Text="الإجمالي:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="TotalText" Text="0.00" Margin="8,0,24,0" FontWeight="Bold"
-                           Foreground="{StaticResource PrimaryBrush}" FontSize="16"/>
+                           Foreground="{StaticResource PrimaryBrush}" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Text="المتبقي من الفاتورة:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="RemainingText" Text="—" Margin="8,0,0,0" FontWeight="Bold"/>
             </StackPanel>
         </Border>
 
         <DockPanel Grid.Row="5" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="ترحيل الإشعار" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>

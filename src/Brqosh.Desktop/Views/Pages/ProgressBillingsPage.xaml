@@ -27,7 +27,7 @@
                 <Button x:Name="CancelBillingBtn" DockPanel.Dock="Right" Content="إلغاء"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnCancelBilling"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="المستخلصات" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="المستخلصات" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="فوترة الأعمال · المحتجزات · الترحيل"/>
                 </StackPanel>

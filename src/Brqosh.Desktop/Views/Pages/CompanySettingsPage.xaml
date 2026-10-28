@@ -10,7 +10,7 @@
         </Grid.RowDefinitions>
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="إعدادات المنشأة" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="إعدادات المنشأة" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="هوية المنشأة · الشعار والطباعة · ضريبة · عملة · ترخيص — مدير النظام فقط"/>
             </StackPanel>
@@ -18,7 +18,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <Border Style="{StaticResource ContentCard}" Padding="32" MaxWidth="{StaticResource SettingsColumnWidth}" HorizontalAlignment="Center" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="الهوية والطباعة" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                    <TextBlock Text="الهوية والطباعة" Style="{StaticResource FieldLabel}" FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="Bold" Margin="0,0,0,12"/>
 
                     <TextBlock Text="شعار الشركة" Style="{StaticResource FieldLabel}"/>
                     <Border BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8"
@@ -58,13 +58,13 @@
                     <TextBlock x:Name="AuditorLabel" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="AuditorBox" Style="{StaticResource AppTextBox}" MaxLength="120" Margin="0,0,0,4"
                              AutomationProperties.AutomationId="CompanySettingsAuditor"/>
-                    <TextBlock x:Name="AuditorHint" FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                    <TextBlock x:Name="AuditorHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <!-- (CEEF-229 · Z-10) بيانات البائع النظامية للفوترة الإلكترونية.
                          العنوان أعلاه نصّ حرّ للترويسة؛ والفاتورة الإلكترونية تلزم حقولاً مفكَّكة. -->
                     <TextBlock Text="بيانات الفاتورة الإلكترونية" Style="{StaticResource FieldLabel}"
-                               FontSize="15" FontWeight="Bold" Margin="0,8,0,4"/>
+                               FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="Bold" Margin="0,8,0,4"/>
                     <TextBlock x:Name="EInvoiceReadinessText" Style="{StaticResource FieldLabel}"
                                TextWrapping="Wrap" Margin="0,0,0,12"/>
 
@@ -111,54 +111,54 @@
                     </UniformGrid>
 
                     <TextBlock Text="خط الطباعة العربي" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="PrintFontBox" FontSize="14" Padding="10,8" Margin="0,0,0,24"/>
+                    <ComboBox x:Name="PrintFontBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,24"/>
 
-                    <TextBlock Text="الضريبة والعملة" Style="{StaticResource FieldLabel}" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                    <TextBlock Text="الضريبة والعملة" Style="{StaticResource FieldLabel}" FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="Bold" Margin="0,0,0,12"/>
 
                     <TextBlock Text="الرقم الضريبي (15 خانة)" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="VatBox" Style="{StaticResource AppTextBox}" MaxLength="15" Margin="0,0,0,16"/>
 
                     <TextBlock Text="نظام العمل" Style="{StaticResource FieldLabel}"/>
-                    <TextBlock x:Name="ProfileText" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <ComboBox x:Name="ProfileBox" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="ProfileText" FontSize="{DynamicResource FontSize.BodyLarge}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <ComboBox x:Name="ProfileBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"/>
                     <TextBlock Text="يغيّره المدير وحده، ولا يُقبل نظامٌ يُخفي وحدةً فيها بيانات. يُطبَّق على القوائم عند إعادة التشغيل."
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                    <TextBlock x:Name="ActiveModulesText" FontSize="12.5"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="ActiveModulesText" FontSize="{DynamicResource FontSize.Small}"
                                Foreground="{StaticResource InfoBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="قالب الدولة" Style="{StaticResource FieldLabel}"/>
-                    <TextBlock x:Name="CountryTemplateText" FontSize="13" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="CountryComplianceText" FontSize="12"
+                    <TextBlock x:Name="CountryTemplateText" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="CountryComplianceText" FontSize="{DynamicResource FontSize.Small}"
                                Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,16"/>
 
                     <TextBlock Text="قالب القطاع" Style="{StaticResource FieldLabel}"/>
-                    <TextBlock x:Name="IndustryTemplateText" FontSize="13" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="IndustryModulesText" FontSize="12"
+                    <TextBlock x:Name="IndustryTemplateText" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="IndustryModulesText" FontSize="{DynamicResource FontSize.Small}"
                                Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="طريقة تكلفة المخزون *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="CostingMethodBox" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
+                    <ComboBox x:Name="CostingMethodBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,16"/>
 
                     <TextBlock Text="حد اعتماد القيد اليدوي (ريال)" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="ManualJournalThresholdBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
                     <TextBlock Text="القيد اليدوي فوق هذا المبلغ لا يُرحَّل إلا بعد موافقة مستخدم آخر. يغيّره المدير وحده."
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة العرض (ISO) *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="BaseCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
+                    <ComboBox x:Name="BaseCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة القياس المحاسبي (ISO) *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="FunctionalCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="14" Padding="10,8" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="FunctionalCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"/>
                     <TextBlock x:Name="CurrencyHintText"
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="مجموعة التقارير الموحّدة" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="GroupCombo" FontSize="14" Padding="10,8" Margin="0,0,0,16"/>
+                    <ComboBox x:Name="GroupCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,16"/>
 
                     <TextBlock Text="معرّف الجهاز (للترخيص)" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="MachineIdBox" Style="{StaticResource AppTextBox}" IsReadOnly="True" Margin="0,0,0,8"/>
                     <TextBlock x:Name="LicenseStatusText"
-                               FontSize="12.5" TextWrapping="Wrap" Margin="0,4,0,16"
+                               FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" Margin="0,4,0,16"
                                Foreground="{StaticResource TextSecondaryBrush}"/>
                 </StackPanel>
             </Border>
@@ -173,7 +173,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+                <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                            TextWrapping="Wrap" Visibility="Collapsed" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}"

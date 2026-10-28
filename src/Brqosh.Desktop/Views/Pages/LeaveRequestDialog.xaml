@@ -21,11 +21,11 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,8,0">
                 <TextBlock Text="الموظف *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="EmployeeBox" FontSize="14" DisplayMemberPath="Label"/>
+                <ComboBox x:Name="EmployeeBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="Label"/>
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBlock Text="نوع الإجازة *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="TypeBox" FontSize="14" SelectedIndex="0">
+                <ComboBox x:Name="TypeBox" FontSize="{DynamicResource FontSize.BodyLarge}" SelectedIndex="0">
                     <ComboBoxItem Content="سنوية"/>
                     <ComboBoxItem Content="مرضية"/>
                     <ComboBoxItem Content="بلا أجر"/>
@@ -47,11 +47,11 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,8,0">
                 <TextBlock Text="من *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="FromBox" FontSize="14"/>
+                <DatePicker x:Name="FromBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,8,0">
                 <TextBlock Text="إلى *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="ToBox" FontSize="14"/>
+                <DatePicker x:Name="ToBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="السبب" Style="{StaticResource FieldLabel}"/>

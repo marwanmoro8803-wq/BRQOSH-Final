@@ -31,7 +31,7 @@
                 <Button x:Name="ReverseDisposalBtn" DockPanel.Dock="Right" Margin="0,0,8,0"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9" Click="OnReverseDisposal"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الأصول الثابتة" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الأصول الثابتة" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="اقتناء · إهلاك · استبعاد · قيمة دفترية"/>
                 </StackPanel>

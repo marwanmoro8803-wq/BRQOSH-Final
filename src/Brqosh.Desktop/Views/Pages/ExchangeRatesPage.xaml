@@ -12,13 +12,13 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="أسعار الصرف" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أسعار الصرف" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="SAMA · Frankfurter · إعادة تقييم FX"/>
                 </StackPanel>
                 <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <TextBlock Text="تاريخ الجلب:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <DatePicker x:Name="SyncDatePicker" Width="140" FontSize="14"/>
+                    <DatePicker x:Name="SyncDatePicker" Width="140" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                     <Button x:Name="SyncBtn" Content="جلب أسعار حية" Style="{StaticResource PrimaryButton}"
                             Margin="12,0,0,0" Padding="18,9" Click="OnSyncLive"/>
                 </WrapPanel>

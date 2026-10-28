@@ -12,14 +12,14 @@
         <TextBlock Text="تحويل بين حسابات بنكية" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
 
         <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-        <DatePicker x:Name="DatePickerBox" FontSize="14" Margin="0,0,0,14"/>
+        <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}" Margin="0,0,0,14"/>
 
         <TextBlock Text="من حساب *" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="FromBankCombo" FontSize="14" Padding="10,8" Margin="0,0,0,14"
+        <ComboBox x:Name="FromBankCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,14"
                   DisplayMemberPath="Display" SelectedValuePath="Id"/>
 
         <TextBlock Text="إلى حساب *" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="ToBankCombo" FontSize="14" Padding="10,8" Margin="0,0,0,14"
+        <ComboBox x:Name="ToBankCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,14"
                   DisplayMemberPath="Display" SelectedValuePath="Id"/>
 
         <TextBlock Text="المبلغ *" Style="{StaticResource FieldLabel}"/>
@@ -28,7 +28,7 @@
         <TextBlock Text="مرجع (اختياري)" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="ReferenceBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                    TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,12"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">

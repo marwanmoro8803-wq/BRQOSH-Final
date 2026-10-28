@@ -50,9 +50,9 @@
             </StackPanel>
 
             <StackPanel VerticalAlignment="Bottom" Margin="48,0,48,40">
-                <TextBlock x:Name="StatusText" FontSize="15" FontWeight="SemiBold" Foreground="#F7EFE4"
+                <TextBlock x:Name="StatusText" FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="SemiBold" Foreground="#F7EFE4"
                            HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Opacity="1"/>
-                <TextBlock x:Name="HintText" FontSize="12" Foreground="#B9A793" Margin="0,6,0,16"
+                <TextBlock x:Name="HintText" FontSize="{DynamicResource FontSize.Small}" Foreground="#B9A793" Margin="0,6,0,16"
                            HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
                 <!-- شريطُ تقدّمٍ غيرُ محدّد: لمعةٌ تنزلق على مسارٍ خافت -->
                 <Border Height="5" CornerRadius="2.5" Background="#3A2B1D" ClipToBounds="True" Width="300">

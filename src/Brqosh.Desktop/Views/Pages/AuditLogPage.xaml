@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="سجل التدقيق" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="سجل التدقيق" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="من · ماذا · متى · أثر مالي"/>
                 </StackPanel>
@@ -21,7 +21,7 @@
                     <Button x:Name="NextBtn" Content="التالي" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="8,0,0,0" Click="OnNext"/>
                 </WrapPanel>
                 <TextBlock x:Name="CountText" DockPanel.Dock="Left" VerticalAlignment="Center"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
             </brq:ToolbarDockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
@@ -30,7 +30,7 @@
         </Border>
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding OccurredAt}" Width="150"/>
                     <DataGridTextColumn Header="المستخدم" Binding="{Binding Username}" Width="120"/>

@@ -31,7 +31,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Margin="0,0,8,0">
                 <TextBlock Text="القسم" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="SectionBox" FontSize="14">
+                <ComboBox x:Name="SectionBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                     <ComboBoxItem Content="مقبلات"/>
                     <ComboBoxItem Content="أطباق رئيسية" IsSelected="True"/>
                     <ComboBoxItem Content="حلويات"/>
@@ -49,13 +49,13 @@
         <StackPanel Grid.Row="2" Margin="0,0,0,12">
             <TextBlock Text="صنف البيع (خدمي) — وبه يصير صرف الوصفة آلياً عند كل بيع"
                        Style="{StaticResource FieldLabel}"/>
-            <ComboBox x:Name="SaleProductBox" FontSize="14" DisplayMemberPath="Label"
+            <ComboBox x:Name="SaleProductBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="Label"
                       SelectedValuePath="Id"/>
         </StackPanel>
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ComponentsGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridComboBoxColumn x:Name="ProductColumn" Header="المكوّن المخزني"
                                             SelectedValueBinding="{Binding ProductId}"

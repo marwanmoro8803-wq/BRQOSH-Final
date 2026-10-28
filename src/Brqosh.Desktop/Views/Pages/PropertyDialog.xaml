@@ -33,7 +33,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="نوع العقار *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="KindBox" FontSize="14">
+                    <ComboBox x:Name="KindBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                         <ComboBoxItem Content="مبنى" IsSelected="True"/>
                         <ComboBoxItem Content="مجمع سكني"/>
                         <ComboBoxItem Content="فيلا"/>

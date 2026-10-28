@@ -42,7 +42,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="الجنسية *" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox x:Name="NationalityBox" FontSize="14">
+                        <ComboBox x:Name="NationalityBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                             <ComboBoxItem Content="سعودي" IsSelected="True"/>
                             <ComboBoxItem Content="وافد"/>
                         </ComboBox>
@@ -51,7 +51,7 @@
 
                 <StackPanel Margin="0,0,0,12">
                     <TextBlock Text="فئة التأمينات الاجتماعية (للسعودي)" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="GosiRegimeBox" FontSize="14">
+                    <ComboBox x:Name="GosiRegimeBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                         <ComboBoxItem Content="مسجَّل قبل 3 يوليو 2024 أو له مدد اشتراك سابقة — النظام القديم" IsSelected="True"/>
                         <ComboBoxItem Content="أول تسجيل بعد 3 يوليو 2024 بلا مدد سابقة — النظام الجديد"/>
                     </ComboBox>
@@ -68,7 +68,7 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="تاريخ التعيين *" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker x:Name="HireDateBox" FontSize="14"/>
+                        <DatePicker x:Name="HireDateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                     </StackPanel>
                 </Grid>
 
@@ -107,13 +107,13 @@
 
                 <StackPanel Margin="0,0,0,12">
                     <TextBlock Text="مركز التكلفة — وبه يظهر الأجر في قائمة المركز" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="CostCenterBox" FontSize="14" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                    <ComboBox x:Name="CostCenterBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
                 </StackPanel>
 
                 <!-- (جاهزيّةُ الإطلاق · ح-١٤٦) المشروعُ الذي يعمل عليه — فتُحمَّل عليه تكلفتُه في الرواتب. -->
                 <StackPanel Margin="0,0,0,12">
                     <TextBlock Text="المشروع" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="ProjectBox" FontSize="14" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                    <ComboBox x:Name="ProjectBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

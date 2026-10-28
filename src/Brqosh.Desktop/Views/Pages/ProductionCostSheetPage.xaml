@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="كشف تكلفة الإنتاج" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="كشف تكلفة الإنتاج" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="من قيد إكمال كل أمر: المواد والأجر والتحميل وتكلفة الوحدة"/>
             </StackPanel>
@@ -27,13 +27,13 @@
                 <DatePicker x:Name="ToDate" Width="140"/>
                 <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnRefresh"/>
                 <TextBlock x:Name="CountText" VerticalAlignment="Center" Margin="16,0,0,0"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
             </WrapPanel>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,12,0,12">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" SelectionChanged="OnOrderSelected"
-                      BorderThickness="0" FontSize="13" RowHeight="34">
+                      BorderThickness="0" FontSize="{DynamicResource FontSize.Body}" RowHeight="34">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الأمر" Binding="{Binding OrderNumber}" Width="110"/>
                     <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"/>
@@ -54,7 +54,7 @@
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="UsageGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" FontSize="13" RowHeight="30">
+                      BorderThickness="0" FontSize="{DynamicResource FontSize.Body}" RowHeight="30">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الخامة" Binding="{Binding ProductName}" Width="*"/>
                     <DataGridTextColumn Header="المخطط" Binding="{Binding PlannedQuantity, StringFormat=N4}" Width="110"/>

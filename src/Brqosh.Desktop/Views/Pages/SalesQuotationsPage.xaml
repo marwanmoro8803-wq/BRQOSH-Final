@@ -23,7 +23,7 @@
                             Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnAdd"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="عروض الأسعار" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="عروض الأسعار" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}" Text="LIFECYCLE-31 · مبيعات مبكرة"/>
                 </StackPanel>
             </brq:ToolbarDockPanel>

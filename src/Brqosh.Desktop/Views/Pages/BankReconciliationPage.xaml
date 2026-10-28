@@ -41,7 +41,7 @@
                     <DatePicker x:Name="ToDate" Width="140"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطابقة بنكية" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطابقة بنكية" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="كشف البنك مقابل دفتر الأستاذ — مطابقة يدوية أو تلقائية."/>
                 </StackPanel>
@@ -100,7 +100,7 @@
         </Grid>
 
         <Border Grid.Row="3" Style="{StaticResource SummaryCard}" Margin="0,12,0,0">
-            <TextBlock x:Name="SummaryText" Foreground="White" FontWeight="Bold" FontSize="14"/>
+            <TextBlock x:Name="SummaryText" Foreground="White" FontWeight="Bold" FontSize="{DynamicResource FontSize.BodyLarge}"/>
         </Border>
     </Grid>
 </UserControl>

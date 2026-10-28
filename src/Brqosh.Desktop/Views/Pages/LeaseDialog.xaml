@@ -18,11 +18,11 @@
             </StackPanel>
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="الوحدة *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="UnitBox" FontSize="14"/>
+                <ComboBox x:Name="UnitBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="المستأجر *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="TenantBox" FontSize="14"/>
+                <ComboBox x:Name="TenantBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
@@ -31,11 +31,11 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="تاريخ البداية *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="StartBox" FontSize="14"/>
+                    <DatePicker x:Name="StartBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="تاريخ النهاية *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="EndBox" FontSize="14"/>
+                    <DatePicker x:Name="EndBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
             </Grid>
             <Grid Margin="0,0,0,12">
@@ -50,7 +50,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,8,0">
                     <TextBlock Text="الدورية *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="FrequencyBox" FontSize="14">
+                    <ComboBox x:Name="FrequencyBox" FontSize="{DynamicResource FontSize.BodyLarge}">
                         <ComboBoxItem Content="أسبوعية"/>
                         <ComboBoxItem Content="شهرية" IsSelected="True"/>
                         <ComboBoxItem Content="ربع سنوية"/>
@@ -65,7 +65,7 @@
             </Grid>
             <TextBlock Text="التأمين أمانة تُرد عند الإخلاء — ويُقيَّد التزامًا لا إيرادًا"
                        Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
-            <CheckBox x:Name="ResidentialBox" Margin="0,12,0,0" FontSize="14"
+            <CheckBox x:Name="ResidentialBox" Margin="0,12,0,0" FontSize="{DynamicResource FontSize.BodyLarge}"
                       Content="إيجار سكني (معفى من ضريبة القيمة المضافة — المادة 30)"/>
             <TextBlock Text="السكني معفى والتجاري خاضع بنسبة 15%. والحكم على استعمال الوحدة لا على نوع المبنى — فعمارة واحدة قد تضم محلاً تجاريًا وشققًا سكنية."
                        Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>

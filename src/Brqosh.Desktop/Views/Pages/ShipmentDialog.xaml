@@ -23,12 +23,12 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="تاريخ الشحن *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="ShipDateBox" FontSize="14"/>
+                    <DatePicker x:Name="ShipDateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
             </Grid>
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="المرسِل (التاجر) *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="ShipperBox" FontSize="14"/>
+                <ComboBox x:Name="ShipperBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>

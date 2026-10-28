@@ -15,7 +15,7 @@
 
         <TextBlock Grid.Row="0" Text="موازنة سنوية" Style="{StaticResource PageTitleText}" Margin="0,0,0,4"/>
         <TextBlock Grid.Row="1" Text="سطر لكل حساب وشهر — وما لم يُخطط يظهر في التقرير إنفاقا بلا خطة"
-                   Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,0,14"/>
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,14"/>
 
         <Grid Grid.Row="2" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -39,7 +39,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridComboBoxColumn x:Name="AccountColumn" Header="الحساب" Width="*"
                                             SelectedValueBinding="{Binding AccountCode}"
@@ -51,7 +51,7 @@
         </Border>
 
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13"
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}"
                        FontWeight="SemiBold" Visibility="Collapsed" TextWrapping="Wrap"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9"

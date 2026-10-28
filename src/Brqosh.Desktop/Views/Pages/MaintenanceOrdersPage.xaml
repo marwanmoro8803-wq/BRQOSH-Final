@@ -14,7 +14,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="أوامر الصيانة" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أوامر الصيانة" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="التكلفة على وحدتها — وتحميل التلف على المستأجر هو سند مصادرة التأمين"/>
                 </StackPanel>
@@ -25,13 +25,13 @@
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
                 <Button x:Name="PostBtn" DockPanel.Dock="Right" Content="ترحيل الأمر"
                         Style="{StaticResource SecondaryButton}" Padding="16,9" Click="OnPost"/>
-                <ComboBox x:Name="SupplierInvoiceBox" DockPanel.Dock="Right" MinWidth="220" FontSize="14"
+                <ComboBox x:Name="SupplierInvoiceBox" DockPanel.Dock="Right" MinWidth="220" FontSize="{DynamicResource FontSize.BodyLarge}"
                           VerticalAlignment="Center" Margin="0,0,10,0" DisplayMemberPath="Label"
                           ToolTip="فاتورة المورّد (اختياري) — بها تُخصم ضريبة المدخلات بدل الدفع نقداً"/>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="ToBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <DatePicker x:Name="FromBox" DockPanel.Dock="Right" FontSize="14"
+                <DatePicker x:Name="FromBox" DockPanel.Dock="Right" FontSize="{DynamicResource FontSize.BodyLarge}"
                             VerticalAlignment="Center" Margin="0,0,10,0"/>
             </brq:ToolbarDockPanel>
         </Border>

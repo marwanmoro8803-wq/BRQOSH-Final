@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="المحذوفات" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="المحذوفات" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="الحذف إخفاء لا إعدام — وما لا يُرى لا يُستعاد"/>
                 </StackPanel>
@@ -21,7 +21,7 @@
                             Padding="18,9" Click="OnRestore"/>
                 </WrapPanel>
                 <Border DockPanel.Dock="Right" Style="{StaticResource ToolbarSpacer}"/>
-                <ComboBox x:Name="ScopeBox" DockPanel.Dock="Right" Width="200" FontSize="14"
+                <ComboBox x:Name="ScopeBox" DockPanel.Dock="Right" Width="200" FontSize="{DynamicResource FontSize.BodyLarge}"
                           VerticalAlignment="Center" Margin="0,0,12,0" SelectionChanged="OnScopeChanged">
                     <ComboBoxItem Content="الأصناف" IsSelected="True"/>
                     <ComboBoxItem Content="الحسابات"/>

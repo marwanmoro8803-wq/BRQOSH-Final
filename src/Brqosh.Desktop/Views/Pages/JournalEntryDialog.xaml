@@ -30,7 +30,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
@@ -77,7 +77,7 @@
                       AutoGenerateColumns="False"
                       CanUserAddRows="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal"
-                      HeadersVisibility="Column" FontSize="14" RowHeight="36"
+                      HeadersVisibility="Column" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36"
                       Background="Transparent"
                       CellEditEnding="OnCellEditEnding">
                 <DataGrid.Columns>
@@ -111,7 +111,7 @@
 
         <!-- الأزرار -->
         <DockPanel Grid.Row="5" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="ترحيل القيد" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>

@@ -34,7 +34,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="المنتج النهائي *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="ProductCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="ProductCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>
@@ -60,7 +60,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridComboBoxColumn x:Name="ProductColumn" Header="المكوّن" Width="*" SelectedValueBinding="{Binding ProductId}"
                                             DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
@@ -70,7 +70,7 @@
         </Border>
 
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Visibility="Collapsed"/>
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

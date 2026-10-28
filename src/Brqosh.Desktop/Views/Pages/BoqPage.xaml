@@ -15,7 +15,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="جدول الكميات BOQ" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="جدول الكميات BOQ" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="بنود مشروع · كميات · أسعار · إجمالي تعاقدي"/>
             </StackPanel>

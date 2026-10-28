@@ -31,7 +31,7 @@
                          DockPanel.Dock="Left" VerticalAlignment="Center"
                          TextChanged="OnSearch" ToolTip="بحث بالكود أو الاسم"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="16,0,0,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="الأصناف" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="الأصناف" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="مخزون · تسعير · متوسط تكلفة"/>
                 </StackPanel>

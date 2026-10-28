@@ -14,7 +14,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="جلسة نقطة البيع" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="جلسة نقطة البيع" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="بحث أصناف · سلة · دفع · طباعة"/>
             </StackPanel>
@@ -22,7 +22,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,0,0,12">
             <DockPanel>
-                <TextBlock x:Name="ShiftText" FontSize="14" VerticalAlignment="Center" DockPanel.Dock="Right"/>
+                <TextBlock x:Name="ShiftText" FontSize="{DynamicResource FontSize.BodyLarge}" VerticalAlignment="Center" DockPanel.Dock="Right"/>
                 <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="360"
                          DockPanel.Dock="Left" TextChanged="OnSearchChanged" KeyDown="OnSearchKeyDown"
                          ToolTip="بحث بالاسم أو الكود أو الباركود — Enter لإضافة للسلة"/>
@@ -36,7 +36,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}" Margin="0,0,0,12" MaxHeight="180">
             <DataGrid x:Name="ProductGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34"
                       MouseDoubleClick="OnProductDoubleClick">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="100"/>
@@ -48,7 +48,7 @@
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="CartGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الصنف" Binding="{Binding NameAr}" Width="*"/>
                     <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N2}" Width="90"/>
@@ -73,7 +73,7 @@
                         <ComboBoxItem Content="مختلط"/>
                     </ComboBox>
                 </StackPanel>
-                <TextBlock x:Name="TotalText" FontSize="22" FontWeight="Bold"
+                <TextBlock x:Name="TotalText" FontSize="{DynamicResource FontSize.Heading}" FontWeight="Bold"
                            DockPanel.Dock="Right" VerticalAlignment="Center"/>
             </DockPanel>
         </Border>

@@ -14,7 +14,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطالبات التأمين" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="مطالبات التأمين" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="المرفوض يخرج من ذمة الشركة بإشعار دائن — إما تحميلاً على المريض أو شطباً"/>
                 </StackPanel>
@@ -57,7 +57,7 @@
                    Foreground="{StaticResource TextSecondaryBrush}" Text="سطور الدفعة"/>
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
-                      GridLinesVisibility="Horizontal" FontSize="13">
+                      GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.Body}">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الزيارة" Binding="{Binding VisitNumber}" Width="130"/>
                     <DataGridTextColumn Header="المطالَب" Binding="{Binding Claimed, StringFormat=N2}" Width="110"/>

@@ -26,7 +26,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,10,0">
                     <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="DateBox" FontSize="14"/>
+                    <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="الطبيب *" Style="{StaticResource FieldLabel}"/>
@@ -40,19 +40,19 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="المريض *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="PatientBox" FontSize="14" SelectionChanged="OnPatientChanged"/>
+                    <ComboBox x:Name="PatientBox" FontSize="{DynamicResource FontSize.BodyLarge}" SelectionChanged="OnPatientChanged"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="وثيقة التأمين — واتركها فارغة للحساب الخاص"
                                Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="PolicyBox" FontSize="14"/>
+                    <ComboBox x:Name="PolicyBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الخدمة" Binding="{Binding Description}" Width="*"/>
                     <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity}" Width="90"/>

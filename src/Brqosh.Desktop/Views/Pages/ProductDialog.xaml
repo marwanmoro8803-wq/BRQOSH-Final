@@ -18,7 +18,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="النوع *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="TypeCombo" FontSize="14" Padding="10,8" SelectedIndex="0">
+                <ComboBox x:Name="TypeCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectedIndex="0">
                     <ComboBoxItem Content="مخزني (يتابع كمياً)"/>
                     <ComboBoxItem Content="خدمة (بلا مخزون)"/>
                 </ComboBox>
@@ -40,7 +40,7 @@
              ولا يصلح لصرف الأقدم انتهاءً — وكلُّ ما بُني من دفعاتٍ وصيدليةٍ ومطبخٍ
              خلف بابٍ لا مفتاحَ له. -->
         <TextBlock Text="التتبّع" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="TrackingCombo" FontSize="14" Padding="10,8" SelectedIndex="0" Margin="0,0,0,4">
+        <ComboBox x:Name="TrackingCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectedIndex="0" Margin="0,0,0,4">
             <ComboBoxItem Content="بلا تتبع"/>
             <ComboBoxItem Content="بالدفعة والصلاحية"/>
             <ComboBoxItem Content="بالرقم التسلسلي"/>
@@ -49,7 +49,7 @@
                    Margin="0,0,0,10"
                    Text="لا يُغيَّر نمط التتبع وللصنف رصيد قائم — صفِّ الرصيد بجرد أولا."/>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
             <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

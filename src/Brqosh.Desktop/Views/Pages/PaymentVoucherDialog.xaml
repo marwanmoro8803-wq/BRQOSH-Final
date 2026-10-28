@@ -19,17 +19,17 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                    <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="المورد *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="SupplierCombo" FontSize="14" Padding="10,8"
+                    <ComboBox x:Name="SupplierCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                               DisplayMemberPath="Display" SelectedValuePath="Id"
                               SelectionChanged="OnSupplierSelected"/>
                 </StackPanel>
             </Grid>
 
-            <TextBlock x:Name="BalanceText" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14"/>
+            <TextBlock x:Name="BalanceText" FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14"/>
 
             <Grid Margin="0,0,0,14">
                 <Grid.ColumnDefinitions>
@@ -42,7 +42,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="طريقة الصرف *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="MethodCombo" FontSize="14" Padding="10,8" SelectedIndex="0"
+                    <ComboBox x:Name="MethodCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectedIndex="0"
                               SelectionChanged="OnMethodChanged">
                         <ComboBoxItem Content="نقداً (الصندوق)"/>
                         <ComboBoxItem Content="بنك (حوالة/شبكة)"/>
@@ -89,14 +89,14 @@
 
             <StackPanel x:Name="BankPanel" Margin="0,14,0,0" Visibility="Collapsed">
                 <TextBlock Text="الحساب البنكي" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="BankCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="BankCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
 
             <TextBlock Text="تخصيص على فواتير المشتريات (اختياري — إن وُجد يجب أن يساوي المبلغ)"
                        Style="{StaticResource FormSectionTitle}"/>
             <DataGrid x:Name="AllocGrid" AutoGenerateColumns="False" CanUserAddRows="False"
-                      Height="160" HeadersVisibility="Column" FontSize="13" RowHeight="32">
+                      Height="160" HeadersVisibility="Column" FontSize="{DynamicResource FontSize.Body}" RowHeight="32">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="المستند" Binding="{Binding DocumentNumber}" Width="*" IsReadOnly="True"/>
                     <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N2}" Width="100" IsReadOnly="True"/>
@@ -105,11 +105,11 @@
             </DataGrid>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                 <Button Content="توزيع تلقائي" Style="{StaticResource GhostButton}" Padding="12,6" Click="OnAutoAllocate"/>
-                <TextBlock x:Name="AllocSumText" Margin="16,6,0,0" FontSize="13"
+                <TextBlock x:Name="AllocSumText" Margin="16,6,0,0" FontSize="{DynamicResource FontSize.Body}"
                            Foreground="{StaticResource TextSecondaryBrush}"/>
             </StackPanel>
 
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,20,0,0">

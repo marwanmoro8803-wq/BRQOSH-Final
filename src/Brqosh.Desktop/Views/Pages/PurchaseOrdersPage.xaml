@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Style="{StaticResource ToolbarCard}">
             <brq:ToolbarDockPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Style="{StaticResource PageTitleText}" Text="أوامر الشراء" FontSize="17"/>
+                    <TextBlock Style="{StaticResource PageTitleText}" Text="أوامر الشراء" FontSize="{DynamicResource FontSize.Title}"/>
                     <TextBlock Style="{StaticResource PageSubtitleText}"
                                Text="PO · اعتماد · استلام · فاتورة"/>
                 </StackPanel>
@@ -30,7 +30,7 @@
                     <!-- (جاهزيّةُ الإطلاق · ح-١١٣) مستودعُ الاستلام لفاتورة الأمر — والأوّلُ «الافتراضيّ». -->
                     <StackPanel x:Name="WarehousePanel" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
                         <TextBlock Text="المستودع" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <ComboBox x:Name="WarehouseCombo" Width="200" FontSize="14" Padding="10,8"
+                        <ComboBox x:Name="WarehouseCombo" Width="200" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                                   DisplayMemberPath="Display" SelectedValuePath="Id"/>
                     </StackPanel>
                     <Button x:Name="CreateInvoiceBtn" Content="إنشاء فاتورة من المحدد" Padding="16,9" Click="OnCreateInvoice"/>
@@ -47,7 +47,7 @@
                         Click="OnCancelOrder"/>
                 <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
                         CornerRadius="3" Padding="12,5" VerticalAlignment="Center">
-                    <TextBlock x:Name="CountText" FontSize="12.5" FontWeight="SemiBold"
+                    <TextBlock x:Name="CountText" FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
                                Foreground="{StaticResource PrimaryDarkBrush}"/>
                 </Border>
             </brq:ToolbarDockPanel>

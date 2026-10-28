@@ -8,25 +8,25 @@
         <TextBlock Text="أمر إنتاج (مسودة)" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
 
         <TextBlock Text="قائمة المواد (BOM) *" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="BomCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+        <ComboBox x:Name="BomCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 
         <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-        <DatePicker x:Name="DateBox" FontSize="14" Margin="0,0,0,14"/>
+        <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}" Margin="0,0,0,14"/>
 
         <TextBlock Text="الكمية المخططة *" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="QtyBox" Style="{StaticResource AppTextBox}" Text="1" Margin="0,0,0,14"/>
 
         <!-- (جاهزيّةُ الإطلاق · ح-٩٧) مستودعا الأمر — وكان الافتراضيَّ أبداً؛ والفارغُ هو الافتراضيّ كما كان. -->
         <TextBlock Text="مستودع المواد (تُصرف منه)" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="MaterialsWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+        <ComboBox x:Name="MaterialsWarehouseCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 
         <TextBlock Text="مستودع الإنتاج (يُسلَّم إليه)" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="OutputWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+        <ComboBox x:Name="OutputWarehouseCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 
         <TextBlock Text="ملاحظات" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="NotesBox" Style="{StaticResource AppTextBox}" MinHeight="60" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,4"/>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>

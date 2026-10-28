@@ -12,7 +12,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="ربحية المشاريع" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="ربحية المشاريع" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="هامش تقديري · إيراد معترف · تكاليف فعلية"/>
             </StackPanel>
@@ -25,7 +25,7 @@
                     <Button Content="تصدير Excel" Style="{StaticResource SecondaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnExport"/>
                 </StackPanel>
                 <TextBlock x:Name="CountText" DockPanel.Dock="Right" VerticalAlignment="Center"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
             </DockPanel>
         </Border>
 
@@ -35,7 +35,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" FontSize="13" RowHeight="34">
+                      BorderThickness="0" FontSize="{DynamicResource FontSize.Body}" RowHeight="34">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الكود" Binding="{Binding Code}" Width="90"/>
                     <DataGridTextColumn Header="المشروع" Binding="{Binding NameAr}" Width="*"/>

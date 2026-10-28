@@ -14,11 +14,11 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DateBox" FontSize="14"/>
+                <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,10,0">
                 <TextBlock Text="نوع الحركة *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="TypeCombo" FontSize="14" Padding="10,8" SelectionChanged="OnTypeChanged">
+                <ComboBox x:Name="TypeCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectionChanged="OnTypeChanged">
                     <ComboBoxItem Content="رصيد افتتاحي" Tag="Opening"/>
                     <ComboBoxItem Content="تسوية زيادة (جرد)" Tag="AdjustmentIn"/>
                     <ComboBoxItem Content="تسوية نقص (جرد)" Tag="AdjustmentOut"/>
@@ -27,18 +27,18 @@
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="المستودع *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="WarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+                <ComboBox x:Name="WarehouseCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>
         <StackPanel Grid.Row="1" x:Name="ToWarehousePanel" Visibility="Collapsed" Margin="0,0,0,12">
             <TextBlock Text="مستودع الوجهة *" Style="{StaticResource FieldLabel}"/>
-            <ComboBox x:Name="ToWarehouseCombo" FontSize="14" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
+            <ComboBox x:Name="ToWarehouseCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
         </StackPanel>
         <!-- (UI-AUDIT) أُزيلت خانةُ «البيان» المخفيّة دائماً: كانت تشارك ToWarehousePanel الصفَّ نفسَه ولا تُقرأ —
              فبيانُ الحركة في الدفتر ثابتٌ بقصد حسب نوعها (StoredDescriptions في الكود الخلفيّ). -->
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True" BorderThickness="0"
-                      GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">
+                      GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34">
                 <DataGrid.Columns>
                     <DataGridComboBoxColumn x:Name="ProductColumn" Header="الصنف" Width="*" SelectedValueBinding="{Binding ProductId}"
                                             DisplayMemberPath="NameAr" SelectedValuePath="Id"/>
@@ -48,7 +48,7 @@
             </DataGrid>
         </Border>
         <DockPanel Grid.Row="3" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" Visibility="Collapsed"/>
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="ترحيل" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

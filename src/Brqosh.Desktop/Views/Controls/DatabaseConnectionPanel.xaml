@@ -4,11 +4,11 @@
              FlowDirection="RightToLeft">
     <StackPanel>
         <TextBlock Text="تُحفظ الدفاتر على خادم PostgreSQL. تُجرَّب بيانات الاتصال قبل المتابعة، ثم تُحفظ محميّةً على هذا الجهاز — لا كلمة مرور صريحة على القرص."
-                   FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
+                   FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
                    TextWrapping="Wrap" Margin="0,0,0,12"/>
 
         <TextBlock x:Name="LoadErrorText"
-                   FontSize="12.5" FontWeight="SemiBold"
+                   FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
                    Foreground="{StaticResource DangerBrush}"
                    TextWrapping="Wrap" Margin="0,0,0,12"
                    Visibility="Collapsed"/>
@@ -20,7 +20,7 @@
                   Checked="OnDatabaseModeChanged" Unchecked="OnDatabaseModeChanged"/>
         <TextBlock x:Name="AutoDatabaseHint"
                    Text="يُجهَّز كلّ شيء داخليّاً: الخادم وكلمة المرور (عشوائيّة محميّة) والقاعدة. للمنشآت التي لها خادمٌ خاصّ: ألغِ التأشير وأدخل بياناته."
-                   FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                   FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                    TextWrapping="Wrap" Margin="0,0,0,12" Visibility="Collapsed"/>
 
         <CheckBox x:Name="UseSqliteBox"
@@ -75,11 +75,11 @@
                       Margin="0,16,0,0"
                       Checked="OnFieldChanged" Unchecked="OnFieldChanged"/>
             <TextBlock Text="أزل الاشتراط فقط إذا كان الخادم على هذا الجهاز نفسه. على شبكة، الاتصال غير المشفّر يكشف كلمة المرور والدفاتر."
-                       FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                       FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                        TextWrapping="Wrap" Margin="0,4,0,0"/>
 
             <TextBlock x:Name="ExistingConfigHint"
-                       FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                       FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                        TextWrapping="Wrap" Margin="0,8,0,0"
                        Visibility="Collapsed"/>
 
@@ -100,7 +100,7 @@
                         Click="OnTestConnection"/>
                 <TextBlock x:Name="ConnectionStatusText"
                            Grid.Column="1"
-                           FontSize="12.5" FontWeight="SemiBold"
+                           FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
                            VerticalAlignment="Center" Margin="14,0,0,0"
                            TextWrapping="Wrap"/>
             </Grid>

@@ -13,7 +13,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="ميزان مراجعة موحّد" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="ميزان مراجعة موحّد" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="مجموعة شركات · تحويل عملة · تجميع أرصدة"/>
             </StackPanel>
@@ -22,11 +22,11 @@
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
             <WrapPanel>
                 <TextBlock Text="المجموعة" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox x:Name="GroupCombo" Width="280" FontSize="14" DisplayMemberPath="Display" SelectedValuePath="Id"/>
+                <ComboBox x:Name="GroupCombo" Width="280" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="Display" SelectedValuePath="Id"/>
                 <TextBlock Text="من" VerticalAlignment="Center" Margin="16,0,8,0"/>
-                <DatePicker x:Name="FromDate" Width="140" FontSize="14"/>
+                <DatePicker x:Name="FromDate" Width="140" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 <TextBlock Text="إلى" VerticalAlignment="Center" Margin="12,0,8,0"/>
-                <DatePicker x:Name="ToDate" Width="140" FontSize="14"/>
+                <DatePicker x:Name="ToDate" Width="140" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
                 <Button Content="تصدير PDF" Style="{StaticResource SecondaryButton}" Padding="24,7" Margin="12,0,0,0" Click="OnExportPdf"/>
             </WrapPanel>
@@ -35,7 +35,7 @@
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True"
                       BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                      FontSize="14" RowHeight="34" Background="Transparent" EnableRowVirtualization="True">
+                      FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34" Background="Transparent" EnableRowVirtualization="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="رقم الحساب" Binding="{Binding AccountCode}" Width="110"/>
                     <DataGridTextColumn Header="اسم الحساب" Binding="{Binding AccountNameAr}" Width="*"/>
@@ -49,7 +49,7 @@
         </Border>
 
         <Border Grid.Row="3" Style="{StaticResource SummaryCard}">
-            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="14"/>
+            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="{DynamicResource FontSize.BodyLarge}"/>
         </Border>
     </Grid>
 </UserControl>

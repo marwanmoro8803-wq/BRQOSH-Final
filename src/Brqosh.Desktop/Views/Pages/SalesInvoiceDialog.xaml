@@ -38,11 +38,11 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,12,0">
                 <TextBlock Text="العميل *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="CustomerCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="CustomerCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Margin="0,0,12,0">
@@ -57,7 +57,7 @@
             <!-- (جاهزيّةُ الإطلاق · ح-١١٠) مستودعُ الصرف — والأوّلُ «الافتراضيّ» فلا يتغيّر شيءٌ لمن لا يختار. -->
             <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Margin="0,10,0,0">
                 <TextBlock Text="المستودع" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="WarehouseCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="WarehouseCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
         </Grid>
@@ -71,7 +71,7 @@
             <Border Grid.Column="0" Style="{StaticResource ContentCard}" Margin="0,0,12,0">
                 <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
                           BorderThickness="0" GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                          FontSize="14" RowHeight="36" Background="Transparent"
+                          FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36" Background="Transparent"
                           CellEditEnding="OnCellEditEnding">
                     <DataGrid.Columns>
                         <!-- (CEEF-229 · م2-٢٠) عمود اختيار الصنف — كان غائباً تماماً.
@@ -116,12 +116,12 @@
                         <TextBox x:Name="DocumentDiscountBox" Style="{StaticResource AppTextBox}" Text="0.00"
                                  Margin="0,0,0,8" TextChanged="OnDocumentDiscountChanged"/>
                         <TextBlock Text="قبل الضريبة" Style="{StaticResource FieldLabel}"/>
-                        <TextBlock x:Name="SubtotalText" Text="0.00" Style="{StaticResource TabularText}" FontSize="18" Margin="0,0,0,8"/>
+                        <TextBlock x:Name="SubtotalText" Text="0.00" Style="{StaticResource TabularText}" FontSize="{DynamicResource FontSize.TitleLarge}" Margin="0,0,0,8"/>
                         <TextBlock Text="الضريبة 15%" Style="{StaticResource FieldLabel}"/>
                         <TextBlock x:Name="VatText" Text="0.00" Style="{StaticResource TabularText}" Margin="0,0,0,8"/>
                         <TextBlock Text="الإجمالي" Style="{StaticResource FieldLabel}"/>
                         <TextBlock x:Name="TotalText" Text="0.00" Style="{StaticResource TabularText}"
-                                   Foreground="{StaticResource PrimaryBrush}" FontSize="22" FontWeight="Bold"/>
+                                   Foreground="{StaticResource PrimaryBrush}" FontSize="{DynamicResource FontSize.Heading}" FontWeight="Bold"/>
                     </StackPanel>
                 </Border>
 
@@ -137,7 +137,7 @@
         </Grid>
 
         <DockPanel Grid.Row="3" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="ترحيل الفاتورة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>

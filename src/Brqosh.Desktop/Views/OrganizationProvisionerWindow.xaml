@@ -10,10 +10,10 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="40,32" MaxWidth="640">
             <TextBlock Text="إنشاء منشأة جديدة"
-                       FontSize="24" FontWeight="Bold"
+                       FontSize="{DynamicResource FontSize.Display}" FontWeight="Bold"
                        Foreground="{StaticResource TextPrimaryBrush}"/>
             <TextBlock Text="يُنشئ شركة جديدة مع دليل حسابات وفرع ومستودع حسب القطاع. يتطلب صلاحية مدير النظام."
-                       FontSize="13" Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}"
                        TextWrapping="Wrap" Margin="0,12,0,20"/>
 
             <TextBlock Style="{StaticResource FormSectionTitle}" Text="① القطاع والدولة"/>
@@ -22,7 +22,7 @@
                     <TextBlock Text="نمط العمل *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="ProfileCombo" Style="{StaticResource AppComboBox}" DisplayMemberPath="NameAr"/>
                     <TextBlock x:Name="IndustryPreviewText"
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                TextWrapping="Wrap" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>

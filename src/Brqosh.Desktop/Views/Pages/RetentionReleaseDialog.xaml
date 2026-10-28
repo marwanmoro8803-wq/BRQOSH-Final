@@ -5,7 +5,7 @@
         FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}" ResizeMode="NoResize">
     <Border Padding="24" Background="{StaticResource BackgroundBrush}">
         <StackPanel>
-            <TextBlock x:Name="HintText" TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12"/>
+            <TextBlock x:Name="HintText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12"/>
             <TextBlock Text="المبلغ" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="AmountBox" Style="{StaticResource AppTextBox}"/>
             <StackPanel Orientation="Horizontal" Margin="0,20,0,0">

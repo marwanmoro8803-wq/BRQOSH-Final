@@ -18,11 +18,11 @@
             </StackPanel>
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="الغرفة *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="RoomBox" FontSize="14" SelectionChanged="OnRoomChanged"/>
+                <ComboBox x:Name="RoomBox" FontSize="{DynamicResource FontSize.BodyLarge}" SelectionChanged="OnRoomChanged"/>
             </StackPanel>
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="النزيل *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="GuestBox" FontSize="14"/>
+                <ComboBox x:Name="GuestBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
@@ -32,11 +32,11 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,8,0">
                     <TextBlock Text="الوصول *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="CheckInBox" FontSize="14"/>
+                    <DatePicker x:Name="CheckInBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="0,0,8,0">
                     <TextBlock Text="المغادرة *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="CheckOutBox" FontSize="14"/>
+                    <DatePicker x:Name="CheckOutBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="سعر الليلة *" Style="{StaticResource FieldLabel}"/>

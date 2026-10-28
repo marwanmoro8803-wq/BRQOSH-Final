@@ -31,7 +31,7 @@
                     <Button x:Name="GenerateBtn" Content="توليد مفتاح ECDSA + CSR"
                             Style="{StaticResource PrimaryButton}" Padding="18,8"
                             HorizontalAlignment="Right" Click="OnGenerate"/>
-                    <TextBlock x:Name="CsrStatusText" TextWrapping="Wrap" FontSize="12" Margin="0,8,0,16"
+                    <TextBlock x:Name="CsrStatusText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.Small}" Margin="0,8,0,16"
                                Foreground="{StaticResource TextSecondaryBrush}"/>
 
                     <TextBlock Text="2 — شهادة الامتثال (Compliance CSID)" Style="{StaticResource FormSectionTitle}" Margin="0,0,0,8"/>
@@ -52,9 +52,9 @@
                     <Button Content="تجديد شهادة الإنتاج" Style="{StaticResource SecondaryButton}"
                             Padding="18,8" HorizontalAlignment="Right" Click="OnRenew"/>
 
-                    <TextBlock x:Name="ResultText" TextWrapping="Wrap" FontSize="13" Margin="0,16,0,0"/>
+                    <TextBlock x:Name="ResultText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.Body}" Margin="0,16,0,0"/>
                     <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
-                               FontSize="13" Margin="0,10,0,0" Visibility="Collapsed"/>
+                               FontSize="{DynamicResource FontSize.Body}" Margin="0,10,0,0" Visibility="Collapsed"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>

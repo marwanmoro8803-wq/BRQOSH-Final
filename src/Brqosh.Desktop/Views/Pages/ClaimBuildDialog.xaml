@@ -27,7 +27,7 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,8,0">
                 <TextBlock Text="شركة التأمين *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="PayerBox" FontSize="14" DisplayMemberPath="Label"/>
+                <ComboBox x:Name="PayerBox" FontSize="{DynamicResource FontSize.BodyLarge}" DisplayMemberPath="Label"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,8,0">
                 <TextBlock Text="رقم المطالبة *" Style="{StaticResource FieldLabel}"/>
@@ -35,11 +35,11 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Margin="0,0,8,0">
                 <TextBlock Text="من تاريخ" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="FromBox" FontSize="14"/>
+                <DatePicker x:Name="FromBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="3">
                 <TextBlock Text="إلى تاريخ" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="ToBox" FontSize="14"/>
+                <DatePicker x:Name="ToBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
         </Grid>
 

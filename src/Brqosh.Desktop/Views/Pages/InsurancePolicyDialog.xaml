@@ -14,7 +14,7 @@
         <StackPanel Grid.Row="1">
             <StackPanel Margin="0,0,0,12">
                 <TextBlock Text="شركة التأمين *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="PayerBox" FontSize="14"/>
+                <ComboBox x:Name="PayerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
@@ -56,11 +56,11 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
                     <TextBlock Text="بداية السريان *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="StartBox" FontSize="14"/>
+                    <DatePicker x:Name="StartBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="نهاية السريان *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="EndBox" FontSize="14"/>
+                    <DatePicker x:Name="EndBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
             </Grid>
             <TextBlock Text="التحمل يُخصم أولًا ثم تُطبَّق النسبة على الباقي — والسقف سقف سنة وثيقة لا سنة ميلادية"

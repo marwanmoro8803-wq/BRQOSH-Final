@@ -27,22 +27,22 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                 <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DatePickerBox" FontSize="14"/>
+                <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Margin="0,0,12,0">
                 <TextBlock Text="المورد *" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="SupplierCombo" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="SupplierCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="التسليم المتوقع" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="ExpectedDateBox" FontSize="14"/>
+                <DatePicker x:Name="ExpectedDateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
         </Grid>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="36"
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36"
                       CellEditEnding="OnCellEditEnding">
                 <DataGrid.Columns>
                     <!-- (CEEF-229 · م2-٢٠) عمود اختيار الصنف — كان غائباً، فتُرحَّل كل

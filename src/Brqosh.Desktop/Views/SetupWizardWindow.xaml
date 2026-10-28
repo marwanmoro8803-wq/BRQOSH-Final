@@ -16,12 +16,12 @@
                 <controls:BrandLogo MarkHeight="96" NameSize="20" Animate="True" HorizontalAlignment="Center" Margin="0,0,0,18"
                                     MarkBrush="{StaticResource PrimaryLightBrush}" NameBrush="{StaticResource PrimaryLightBrush}"/>
                 <TextBlock Text="مرحباً بك في BRQOSH"
-                           FontSize="30" FontWeight="Bold"
+                           FontSize="{DynamicResource FontSize.Hero}" FontWeight="Bold"
                            Foreground="{StaticResource TextPrimaryBrush}"/>
                 <Border Height="4" Width="72" CornerRadius="2" HorizontalAlignment="Right"
                         Background="{StaticResource BrandAccentGradient}" Margin="0,12,0,0"/>
                 <TextBlock Text="اختر نمط العمل المناسب لنشاطك — سيُفعّل النظام الوحدات والقوائم والحسابات المناسبة تلقائياً."
-                           FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="{DynamicResource FontSize.BodyLarge}" Foreground="{StaticResource TextSecondaryBrush}"
                            TextWrapping="Wrap" Margin="0,16,0,0"/>
             </StackPanel>
 
@@ -32,7 +32,7 @@
                     <TextBlock Text="القطاع / نمط العمل *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="ProfileCombo" Style="{StaticResource AppComboBox}" DisplayMemberPath="NameAr"/>
                     <TextBlock x:Name="IndustryPreviewText"
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                TextWrapping="Wrap" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -42,10 +42,10 @@
             <Border Style="{StaticResource ContentCard}" Padding="20,16" Margin="0,0,0,8">
                 <StackPanel>
                     <TextBlock x:Name="CountryTemplateTitle"
-                               FontSize="15" FontWeight="SemiBold"
+                               FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="SemiBold"
                                Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock x:Name="CountryTemplateDetails"
-                               FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
                                TextWrapping="Wrap" Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>
@@ -54,18 +54,18 @@
                     Padding="20,16" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="معاينة القالب القطاعي"
-                               FontSize="14" FontWeight="SemiBold"
+                               FontSize="{DynamicResource FontSize.BodyLarge}" FontWeight="SemiBold"
                                Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock x:Name="IndustryTemplateTitle"
-                               FontSize="13" FontWeight="SemiBold" Margin="0,8,0,4"
+                               FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,8,0,4"
                                Foreground="{StaticResource TextPrimaryBrush}"/>
                     <TextBlock Text="الوحدات المفعّلة:" Style="{StaticResource FieldLabel}" Margin="0,4,0,2"/>
                     <TextBlock x:Name="TemplateModulesText"
-                               FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
                                TextWrapping="Wrap"/>
                     <TextBlock Text="الميزات:" Style="{StaticResource FieldLabel}" Margin="0,8,0,2"/>
                     <TextBlock x:Name="TemplateFeaturesText"
-                               FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
                                TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
@@ -82,7 +82,7 @@
                     <TextBox x:Name="VatNumberBox" Style="{StaticResource AppTextBox}"
                              MaxLength="15"/>
                     <TextBlock Text="مطلوب قبل تفعيل الفوترة الإلكترونية (ZATCA)."
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
@@ -103,7 +103,7 @@
                     <PasswordBox x:Name="AdminPasswordConfirmBox" Style="{StaticResource AppPasswordBox}"/>
 
                     <TextBlock x:Name="PolicyHintText"
-                               FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -122,7 +122,7 @@
 
             <TextBlock x:Name="ErrorText"
                        Foreground="{StaticResource DangerBrush}"
-                       FontSize="13" FontWeight="SemiBold"
+                       FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        Margin="0,12,0,0" TextWrapping="Wrap"
                        Visibility="Collapsed"/>
 
@@ -131,7 +131,7 @@
                     Style="{StaticResource PrimaryButton}"
                     HorizontalAlignment="Stretch"
                     Margin="0,24,0,40"
-                    FontSize="16"
+                    FontSize="{DynamicResource FontSize.Title}"
                     Padding="24,14"
                     Click="OnStartClicked"/>
         </StackPanel>

@@ -15,7 +15,7 @@
 
         <TextBlock Grid.Row="0" Text="دورة رواتب (مسودة)" Style="{StaticResource PageTitleText}" Margin="0,0,0,4"/>
         <TextBlock Grid.Row="1" Text="السطور تُبنى من سجل الموظفين — والتأمينات وأقساط السلف محسوبة لا مكتوبة"
-                   Foreground="{StaticResource TextMutedBrush}" FontSize="13" Margin="0,0,0,14"/>
+                   Foreground="{StaticResource TextMutedBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,14"/>
 
         <Grid Grid.Row="2" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -34,7 +34,7 @@
             </StackPanel>
             <StackPanel Grid.Column="2" Margin="0,0,10,0">
                 <TextBlock Text="تاريخ الصرف *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="PayDateBox" FontSize="14"/>
+                <DatePicker x:Name="PayDateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="3" VerticalAlignment="Bottom">
                 <Button x:Name="PreviewBtn" Content="تحديث القائمة" Style="{StaticResource SecondaryButton}"
@@ -45,7 +45,7 @@
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False" CanUserAddRows="False"
                       IsReadOnly="False" BorderThickness="0" GridLinesVisibility="Horizontal"
-                      FontSize="14" RowHeight="36">
+                      FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="36">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="يُدرَج" Binding="{Binding Included, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
                     <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" IsReadOnly="True" Width="90"/>
@@ -62,7 +62,7 @@
         </Border>
 
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Visibility="Collapsed"/>
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="حفظ مسودة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

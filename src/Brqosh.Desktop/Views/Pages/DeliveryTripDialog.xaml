@@ -40,7 +40,7 @@
             </StackPanel>
             <StackPanel Grid.Column="3">
                 <TextBlock Text="تاريخ المغادرة" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="DateBox" FontSize="14"/>
+                <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
         </Grid>
 
@@ -50,7 +50,7 @@
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ShipmentGrid" AutoGenerateColumns="False" BorderThickness="0"
-                      GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">
+                      GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="تحميل" Binding="{Binding Selected}" Width="80"/>
                     <DataGridTextColumn Header="البوليصة" Binding="{Binding WaybillNumber}" Width="160"

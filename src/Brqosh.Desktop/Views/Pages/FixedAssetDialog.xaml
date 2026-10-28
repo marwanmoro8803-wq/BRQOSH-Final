@@ -14,7 +14,7 @@
         <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <TextBlock Text="تاريخ الاقتناء *" Style="{StaticResource FieldLabel}"/>
-        <DatePicker x:Name="DateBox" FontSize="14" Margin="0,0,0,14"/>
+        <DatePicker x:Name="DateBox" FontSize="{DynamicResource FontSize.BodyLarge}" Margin="0,0,0,14"/>
 
         <Grid Margin="0,0,0,14">
             <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
@@ -33,24 +33,24 @@
 
         <!-- (جاهزيّةُ الإطلاق · treasury-payroll-assets#11) طريقةُ الإهلاك — الخطُّ المستقيمُ أوّلاً فلا يتغيّر شيءٌ لمن لا يختار. -->
         <TextBlock Text="طريقة الإهلاك" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="MethodCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Label" Margin="0,0,0,14"/>
+        <ComboBox x:Name="MethodCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Label" Margin="0,0,0,14"/>
 
         <TextBlock Text="حساب الأصل *" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="AssetAccountCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+        <ComboBox x:Name="AssetAccountCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 
         <TextBlock Text="حساب مجمع الإهلاك *" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="DepAccountCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
+        <ComboBox x:Name="DepAccountCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Display" SelectedValuePath="Id" Margin="0,0,0,14"/>
 
         <TextBlock Text="طريقة الدفع" Style="{StaticResource FieldLabel}"/>
-        <ComboBox x:Name="FundingCombo" FontSize="14" Padding="10,8" DisplayMemberPath="Display" Margin="0,0,0,14"/>
+        <ComboBox x:Name="FundingCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" DisplayMemberPath="Display" Margin="0,0,0,14"/>
 
-        <CheckBox x:Name="OpeningCheck" Content="أصلٌ قائمٌ قبل بدء التشغيل (رصيد افتتاحي)" FontSize="14" Margin="0,0,0,10"
+        <CheckBox x:Name="OpeningCheck" Content="أصلٌ قائمٌ قبل بدء التشغيل (رصيد افتتاحي)" FontSize="{DynamicResource FontSize.BodyLarge}" Margin="0,0,0,10"
                   Checked="OnOpeningToggled" Unchecked="OnOpeningToggled"/>
         <Grid x:Name="OpeningPanel" Visibility="Collapsed" Margin="0,0,0,4">
             <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/></Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <TextBlock Text="تاريخ الرصيد الافتتاحي *" Style="{StaticResource FieldLabel}"/>
-                <DatePicker x:Name="OpeningDateBox" FontSize="14"/>
+                <DatePicker x:Name="OpeningDateBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="مجمع الإهلاك حتى تاريخه" Style="{StaticResource FieldLabel}"/>
@@ -58,7 +58,7 @@
             </StackPanel>
         </Grid>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="13" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>

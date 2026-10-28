@@ -12,7 +12,7 @@
 
         <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleText}" Text="كشف حساب عميل" FontSize="17"/>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="كشف حساب عميل" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Style="{StaticResource PageSubtitleText}"
                            Text="فواتير · إشعارات · تحصيلات · رصيد AR"/>
             </StackPanel>
@@ -21,7 +21,7 @@
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}">
             <WrapPanel>
                 <TextBlock Text="العميل" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ComboBox x:Name="CustomerCombo" Width="280" FontSize="14" Padding="10,8"
+                <ComboBox x:Name="CustomerCombo" Width="280" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"
                           SelectionChanged="OnCustomerChanged"/>
                 <Button Content="عرض الكشف" Style="{StaticResource PrimaryButton}" Padding="24,7" Margin="16,0,0,0" Click="OnRun"/>
@@ -31,7 +31,7 @@
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="ReportGrid" AutoGenerateColumns="False" IsReadOnly="True"
-                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="14" RowHeight="34">
+                      BorderThickness="0" GridLinesVisibility="Horizontal" FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="34">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding Date}" Width="110"/>
                     <DataGridTextColumn Header="رقم المستند" Binding="{Binding DocumentNumber}" Width="130"/>
@@ -44,7 +44,7 @@
         </Border>
 
         <Border Grid.Row="3" Style="{StaticResource SummaryCard}">
-            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="14"/>
+            <TextBlock x:Name="TotalsText" Foreground="White" FontWeight="Bold" FontSize="{DynamicResource FontSize.BodyLarge}"/>
         </Border>
     </Grid>
 </UserControl>
