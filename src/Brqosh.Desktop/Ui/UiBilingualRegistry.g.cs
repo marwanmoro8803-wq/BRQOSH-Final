@@ -1274,6 +1274,7 @@ public static partial class UiBilingualRegistry
         ["تصدير PDF"] = "Export PDF",
         ["تصدير الملف"] = "Export File",
         ["تصدير بيانات الشخص"] = "Export person's data",
+        ["تصدير ملف الأجور (WPS)"] = "Export wage file (WPS)",
         ["تصفية نهاية الخدمة"] = "Settle End-of-Service",
         ["تعديل"] = "Edit",
         ["تعديل الاسم"] = "Edit Name",

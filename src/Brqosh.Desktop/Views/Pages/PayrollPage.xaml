@@ -41,6 +41,8 @@
                             Padding="16,9" Margin="0,0,8,0" Click="OnPayEndOfService"/>
                     <Button x:Name="ReversePaymentBtn" Content="عكس صرف الدورة" Style="{StaticResource SoftDangerButton}"
                             Padding="16,9" Click="OnReversePayment"/>
+                    <Button x:Name="ExportWpsBtn" Content="تصدير ملف الأجور (WPS)" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="8,0,0,0" Click="OnExportWps"/>
                 </WrapPanel>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource PageTitleText}" Text="الرواتب" FontSize="{DynamicResource FontSize.Title}"/>

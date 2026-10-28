@@ -400,6 +400,47 @@ public partial class PayrollPage : UserControl
         }
     }
 
+    /// <summary>‏(WPS) ‏تصديرُ ملفّ الأجور بتخطيط SIF من الدورة المرحّلة المحدّدة — بيانات المنشأة من BRQOSH_WPS_*، والمرفوضُ يُسمّى.</summary>
+    private async void OnExportWps(object sender, RoutedEventArgs e)
+    {
+        if (Grid.SelectedItem is not RunRow row || row.Status != PayrollRunStatus.Posted)
+        {
+            UiFeedback.ShowWarning(LocaleManager.T("اختر دورة رواتب مرحّلة لتصدير ملف الأجور.", "Select a posted payroll run to export the wage file."));
+            return;
+        }
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var establishment = WpsSifEstablishment.FromConfiguration(_ => null);
+            var result = await new WpsSifFileBuilder(facade.Db).BuildAsync(AppServices.CompanyId, row.Id, establishment);
+            if (string.IsNullOrEmpty(result.Content))
+            {
+                UiFeedback.ShowWarning(LocaleManager.T("تعذّر إنشاء ملف الأجور:", "The wage file could not be created:") + "\n" + string.Join("\n", result.Refusals));
+                return;
+            }
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = LocaleManager.T("حفظ ملف الأجور (WPS)", "Save the wage file (WPS)"),
+                FileName = result.FileName,
+                DefaultExt = ".csv",
+                Filter = "CSV (*.csv)|*.csv",
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+            await System.IO.File.WriteAllTextAsync(dialog.FileName, result.Content, new System.Text.UTF8Encoding(false));
+            var message = LocaleManager.T(
+                $"صُدِّر ملف الأجور: {result.Records:N0} موظّفاً بصافي {result.TotalNet:N2}.",
+                $"Wage file exported: {result.Records:N0} employees, net {result.TotalNet:N2}.");
+            if (result.Refusals.Count > 0)
+                message += "\n" + LocaleManager.T("لم يُصدَّر:", "Not exported:") + "\n" + string.Join("\n", result.Refusals);
+            UiFeedback.ShowInfo(message);
+        }
+        catch (Exception ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+        }
+    }
+
     /// <summary>
     /// (جاهزيّةُ الإطلاق · ح-٨٨) <b>عكسُ صرف الدورة المحدّدة</b> — رواتبُها وتأميناتُها ما كان منهما قائماً؛ وبعده تُعكس الدورةُ نفسُها إن
     /// لزم. <b>وكانت دورةٌ صُرفت خطأً لا تُصحَّح أبداً.</b>
