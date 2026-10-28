@@ -2050,5 +2050,10 @@
   "تسليم الأصناف المتتبَّعة بالدفعات بإذنٍ غير مدعوم بعد — فوترها مباشرة.": "Delivering batch-tracked items by delivery note is not supported yet — invoice them directly.",
   "إذن التسليم يتطلب أمر بيع وعميلاً ومستودعاً.": "A delivery note requires a sales order, a customer and a warehouse.",
   "رقم إذن التسليم مطلوب.": "The delivery note number is required.",
-  "سطر إذن التسليم غير صالح.": "The delivery note line is invalid."
+  "سطر إذن التسليم غير صالح.": "The delivery note line is invalid.",
+  "لا يمكن إلغاء هذا الأمر.": "This order cannot be cancelled.",
+  "اختر أمر بيع.": "Select a sales order.",
+  "إلغاء الأمر": "Cancel order",
+  "إلغاء أمر البيع المحدد؟": "Cancel the selected sales order?",
+  "تعذّر إلغاء الأمر.": "Could not cancel the order."
 }

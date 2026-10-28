@@ -17,6 +17,8 @@
                         <ComboBox x:Name="WarehouseCombo" Width="200" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                                   DisplayMemberPath="Display" SelectedValuePath="Id"/>
                     </StackPanel>
+                    <Button x:Name="CancelBtn" Content="إلغاء الأمر" Style="{StaticResource SecondaryButton}"
+                            Padding="16,9" Margin="0,0,8,0" Click="OnCancelOrder"/>
                     <Button x:Name="InvoiceBtn" Content="إنشاء فاتورة" Style="{StaticResource SecondaryButton}"
                             Padding="16,9" Margin="0,0,8,0" Click="OnCreateInvoice"/>
                     <Button x:Name="NewBtn" Content="＋ أمر بيع" Style="{StaticResource PrimaryButton}"

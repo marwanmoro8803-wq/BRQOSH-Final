@@ -1,4 +1,4 @@
-using Brqosh.Desktop.Automation;
+﻿using Brqosh.Desktop.Automation;
 ﻿using System.Windows;
 using System.Windows.Controls;
 using Brqosh.Desktop.Security;
@@ -22,6 +22,7 @@ public partial class SalesOrdersPage : UserControl
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
                 (NewBtn, PermissionService.CanPost),
                 (InvoiceBtn, PermissionService.CanPostAccounting),
+                (CancelBtn, PermissionService.CanPostAccounting),
                 (WarehousePanel, PermissionService.CanPostAccounting));
             await LoadWarehousesAsync();
             await ReloadAsync();
@@ -108,6 +109,35 @@ public partial class SalesOrdersPage : UserControl
         catch (Exception ex)
         {
             UiDialog.Show(ex.Message, "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+private async void OnCancelOrder(object sender, RoutedEventArgs e)
+    {
+        if (!PermissionService.CanPostAccounting(AppServices.CurrentUser)) return;
+        if (Grid.SelectedItem is not OrderRow row)
+        {
+            UiDialog.Show("اختر أمر بيع.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (row.RawStatus is SalesOrderStatus.Cancelled or SalesOrderStatus.Invoiced)
+        {
+            UiDialog.Show("لا يمكن إلغاء هذا الأمر.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (UiDialog.Show("إلغاء أمر البيع المحدد؟", "BRQOSH", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            await facade.GetService<SalesOrderService>().CancelAsync(AppServices.CompanyId, row.Id);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            UiDialog.Show("تعذّر إلغاء الأمر.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
