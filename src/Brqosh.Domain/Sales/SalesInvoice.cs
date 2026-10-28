@@ -282,7 +282,9 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
     /// إذا وُجدت أصناف مخزنية: يُضاف قيد تكلفة المبيعات (مدين COGS / دائن مخزون).
     /// </summary>
     public JournalEntry Post(string invoiceNumber, Account receivableAccount, Account revenueAccount,
-        Account vatOutputAccount, decimal cogsAmount = 0m, Account? cogsAccount = null, Account? inventoryAccount = null)
+        Account vatOutputAccount, decimal cogsAmount = 0m, Account? cogsAccount = null, Account? inventoryAccount = null,
+        IReadOnlyList<(Account Account, decimal Amount)>? revenueSplit = null,
+        IReadOnlyList<(Account Cogs, Account Inventory, decimal Amount)>? cogsSplit = null)
     {
         EnsureDraft();
         if (_lines.Count == 0)
@@ -301,11 +303,30 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
             sourceDocument: $"SalesInvoice:{invoiceNumber}");
 
         entry.AddLine(receivableAccount, this.GrandTotal(), 0m, "إجمالي الفاتورة شامل الضريبة");
-        entry.AddLine(revenueAccount, 0m, Subtotal, "إيراد المبيعات");
+        // ‏حساباتُ الصنف/الفئة: الإيرادُ موزَّعٌ على حساباته، ومجموعُه الإيرادُ نفسُه.
+        if (revenueSplit is { Count: > 0 })
+        {
+            if (revenueSplit.Sum(r => r.Amount) != Subtotal)
+                throw new AccountingException("توزيع الإيراد على حسابات الأصناف لا يساوي إجمالي الفاتورة.");
+            foreach (var (acc, amount) in revenueSplit.Where(r => r.Amount != 0m))
+                entry.AddLine(acc, 0m, amount, "إيراد المبيعات");
+        }
+        else
+            entry.AddLine(revenueAccount, 0m, Subtotal, "إيراد المبيعات");
         if (VatAmount > 0)
             entry.AddLine(vatOutputAccount, 0m, VatAmount, Tax.VatLineLabels.Output(SaudiVatRate));
 
-        if (cogsAmount > 0)
+        if (cogsAmount > 0 && cogsSplit is { Count: > 0 })
+        {
+            if (cogsSplit.Sum(c => c.Amount) != cogsAmount)
+                throw new AccountingException("توزيع تكلفة المبيعات على حسابات الأصناف لا يساوي التكلفة.");
+            foreach (var (cogsAcc, invAcc, amount) in cogsSplit.Where(c => c.Amount > 0m))
+            {
+                entry.AddLine(cogsAcc, amount, 0m, "تكلفة البضاعة المباعة");
+                entry.AddLine(invAcc, 0m, amount, "صرف من المخزون");
+            }
+        }
+        else if (cogsAmount > 0)
         {
             if (cogsAccount is null || inventoryAccount is null)
                 throw new AccountingException("حسابات تكلفة المبيعات والمخزون مطلوبة.");

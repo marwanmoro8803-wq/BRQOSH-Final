@@ -80,6 +80,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<InventoryCostLayer> InventoryCostLayers => Set<InventoryCostLayer>();
     public DbSet<StockBatch> StockBatches => Set<StockBatch>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
+    public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Property> Properties => Set<Property>();
@@ -668,6 +669,15 @@ public class BrqoshDbContext : DbContext
             entity.Property(u => u.BaseCode).HasMaxLength(16).IsRequired();
             entity.Property(u => u.Factor).HasPrecision(18, 6);
             entity.HasIndex(u => new { u.CompanyId, u.Code }).IsUnique();
+        });
+
+        // ‏فئاتُ الأصناف وحساباتُها (الإيراد/المخزون/تكلفة المبيعات).
+        modelBuilder.Entity<ProductCategory>(entity =>
+        {
+            entity.ToTable("product_categories");
+            entity.Property(c => c.Code).HasMaxLength(32).IsRequired();
+            entity.Property(c => c.NameAr).HasMaxLength(128).IsRequired();
+            entity.HasIndex(c => new { c.CompanyId, c.Code }).IsUnique();
         });
 
         // (CEEF-230 · ط3-١) ‏العقاراتُ والوحداتُ وعقودُ الإيجار.

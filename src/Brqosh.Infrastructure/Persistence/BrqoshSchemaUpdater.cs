@@ -873,7 +873,11 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsurePgColumnAsync("app_users", "MustChangePasswordOnNextLogin", "BOOLEAN NOT NULL DEFAULT false", ct);
         await EnsurePgColumnAsync("app_users", "MobilePhoneE164", "character varying(16) NULL", ct);
         await EnsurePgColumnAsync("companies", "CostingMethod", "character varying(32) NOT NULL DEFAULT 'WeightedAverage'", ct);
-        await EnsurePgColumnAsync("companies", "FiscalYearStartMonth", "INTEGER NOT NULL DEFAULT 1", ct);   // ‏السنة المالية بشهر بداية
+        await EnsurePgColumnAsync("companies", "FiscalYearStartMonth", "INTEGER NOT NULL DEFAULT 1", ct);
+        await EnsurePgColumnAsync("products", "CategoryId", "BIGINT NULL", ct);          // ‏فئة الصنف
+        await EnsurePgColumnAsync("products", "RevenueAccountId", "BIGINT NULL", ct);    // ‏حسابات الصنف الخاصّة
+        await EnsurePgColumnAsync("products", "InventoryAccountId", "BIGINT NULL", ct);
+        await EnsurePgColumnAsync("products", "CogsAccountId", "BIGINT NULL", ct);   // ‏السنة المالية بشهر بداية
         await EnsurePgColumnAsync("companies", "BaseCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
         await EnsurePgColumnAsync("companies", "FunctionalCurrencyCode", "character varying(3) NOT NULL DEFAULT 'SAR'", ct);
         // ‏(accounting-core#6) ‏حدُّ اعتماد القيد اليدويّ — والقائمةُ تأخذ افتراضَ المنتج.
@@ -990,6 +994,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("app_users", "MobilePhoneE164", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "CostingMethod", "TEXT NULL", ct);
         await EnsureSqliteColumnAsync("companies", "FiscalYearStartMonth", "INTEGER NOT NULL DEFAULT 1", ct);
+        await EnsureSqliteColumnAsync("products", "CategoryId", "INTEGER NULL", ct);
+        await EnsureSqliteColumnAsync("products", "RevenueAccountId", "INTEGER NULL", ct);
+        await EnsureSqliteColumnAsync("products", "InventoryAccountId", "INTEGER NULL", ct);
+        await EnsureSqliteColumnAsync("products", "CogsAccountId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("companies", "BaseCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "FunctionalCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "ManualJournalApprovalThreshold", "TEXT NOT NULL DEFAULT '10000'", ct);   // ‏(accounting-core#6)
@@ -3784,6 +3792,46 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                     Factor TEXT NOT NULL DEFAULT '1',
                     IsActive INTEGER NOT NULL DEFAULT 1
                 );
+                """, ct);
+        }
+
+        // ‏فئاتُ الأصناف — تُنشأ فارغةً، وفارغةٌ تعني «الحساباتُ العامّة» كما كان.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS product_categories (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "Code" character varying(32) NOT NULL,
+                    "NameAr" character varying(128) NOT NULL,
+                    "RevenueAccountId" BIGINT NULL,
+                    "InventoryAccountId" BIGINT NULL,
+                    "CogsAccountId" BIGINT NULL,
+                    "IsActive" BOOLEAN NOT NULL DEFAULT true
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_product_categories_CompanyId_Code"
+                    ON product_categories ("CompanyId", "Code");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS product_categories (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    Code TEXT NOT NULL,
+                    NameAr TEXT NOT NULL,
+                    RevenueAccountId INTEGER NULL,
+                    InventoryAccountId INTEGER NULL,
+                    CogsAccountId INTEGER NULL,
+                    IsActive INTEGER NOT NULL DEFAULT 1
+                );
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_product_categories_CompanyId_Code
+                    ON product_categories (CompanyId, Code);
                 """, ct);
         }
 

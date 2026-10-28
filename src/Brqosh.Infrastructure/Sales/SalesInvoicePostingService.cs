@@ -100,6 +100,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             await EnsureWithinCreditLimitAsync(invoice, ct);
 
         decimal cogsAmount = 0;
+        var costByProduct = new Dictionary<long, decimal>();
         var issueLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
             string? BatchNumber, DateOnly? ExpiryDate)>();
         var costing = new InventoryCostingService(db);
@@ -127,6 +128,7 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
                 invoice.CompanyId, productId, warehouse.Id, qty,
                 $"SalesInvoice:{invoiceNumber}", ct);
             cogsAmount += totalCost;
+            costByProduct[productId] = costByProduct.GetValueOrDefault(productId) + totalCost;
             issueLines.Add((productId, qty, unitCost, batchNumber, null));
         }
 
@@ -140,7 +142,52 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             ? await SystemAccountAsync(invoice.CompanyId, SaudiChartOfAccounts.SystemCodes.Inventory)
             : null;
 
-        var entry = invoice.Post(invoiceNumber, receivable, revenue, vatOutput, cogsAmount, cogs, inventory);
+        // ‏حساباتُ الصنف ← الفئة ← العامّ. ولا توزيعَ إن لم يُعرَّف حسابٌ خاصّ — فالقيدُ كما كان.
+        // ‏والمخزونُ يبقى الحسابَ العامّ هنا: الشراءُ والاستلامُ والتسويات تقيّده عليه بعدُ،
+        // ‏ونقلُ الصرف وحدَه إلى حسابٍ آخر يُفرغ حساباً لم يُقيَّد فيه شيء.
+        var itemAccounts = await ItemAccountResolver.ResolveAsync(db, invoice.CompanyId, products.Values, ct);
+        List<(Account, decimal)>? revenueSplit = null;
+        List<(Account, Account, decimal)>? cogsSplit = null;
+        if (itemAccounts.Values.Any(a => a.Revenue != null || a.Cogs != null))
+        {
+            var accountCache = new Dictionary<long, Account>();
+            async Task<Account> AccountByIdAsync(long id)
+            {
+                if (accountCache.TryGetValue(id, out var a)) return a;
+                a = await db.Accounts.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == invoice.CompanyId, ct)
+                    ?? throw new AccountingException($"حساب الصنف/الفئة رقم {id} غير موجود في دليل حسابات المنشأة.");
+                return accountCache[id] = a;
+            }
+
+            // ‏الإيراد: نصيبُ كلّ سطرٍ من الصافي بعد خصم المستند، والفرقُ التقريبيّ على آخر سطر.
+            var weights = invoice.Lines.Select(l => (Line: l, W: l.LineTotal)).ToList();
+            var totalW = weights.Sum(x => x.W);
+            var shares = new List<(long? AccId, decimal Amount)>();
+            decimal allocated = 0m;
+            for (var i = 0; i < weights.Count; i++)
+            {
+                var (line, w) = weights[i];
+                var amount = i == weights.Count - 1 || totalW == 0m
+                    ? (i == weights.Count - 1 ? invoice.Subtotal - allocated : 0m)
+                    : Math.Round(invoice.Subtotal * w / totalW, 2, MidpointRounding.AwayFromZero);
+                allocated += amount;
+                long? accId = line.ProductId is { } pid && itemAccounts.TryGetValue(pid, out var ia) ? ia.Revenue : null;
+                shares.Add((accId, amount));
+            }
+            revenueSplit = new();
+            foreach (var g in shares.GroupBy(s => s.AccId))
+                revenueSplit.Add((g.Key is { } id ? await AccountByIdAsync(id) : revenue, g.Sum(s => s.Amount)));
+
+            if (cogsAmount > 0)
+            {
+                cogsSplit = new();
+                foreach (var g in costByProduct.GroupBy(kv => itemAccounts.TryGetValue(kv.Key, out var ia) ? ia.Cogs : null))
+                    cogsSplit.Add((g.Key is { } id ? await AccountByIdAsync(id) : cogs!, inventory!, g.Sum(kv => kv.Value)));
+            }
+        }
+
+        var entry = invoice.Post(invoiceNumber, receivable, revenue, vatOutput, cogsAmount, cogs, inventory,
+            revenueSplit, cogsSplit);
 
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(invoice.CompanyId, invoice.InvoiceDate);
         entry.Post(entryNumber);

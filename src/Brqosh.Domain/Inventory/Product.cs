@@ -27,6 +27,29 @@ public class Product : ISoftDeletable
 
     public string Barcode { get; private set; }
     public bool IsActive { get; private set; } = true;
+
+    /// <summary>فئةُ الصنف — مصدرُ حساباته إن لم يُحدَّد له حسابٌ خاصّ.</summary>
+    public long? CategoryId { get; private set; }
+
+    /// <summary>حساباتٌ خاصّةٌ بالصنف — <b>تغلب حساباتِ الفئة</b>، والفارغُ يرجع إلى الفئة ثمّ العامّ.</summary>
+    public long? RevenueAccountId { get; private set; }
+    public long? InventoryAccountId { get; private set; }
+    public long? CogsAccountId { get; private set; }
+
+    public void SetCategory(long? categoryId)
+    {
+        if (categoryId is <= 0) throw new AccountingException("فئة الصنف غير صالحة.");
+        CategoryId = categoryId;
+    }
+
+    public void SetAccountOverrides(long? revenueAccountId, long? inventoryAccountId, long? cogsAccountId)
+    {
+        if (revenueAccountId is <= 0 || inventoryAccountId is <= 0 || cogsAccountId is <= 0)
+            throw new AccountingException("حساب الصنف غير صالح.");
+        RevenueAccountId = revenueAccountId;
+        InventoryAccountId = inventoryAccountId;
+        CogsAccountId = cogsAccountId;
+    }
     public DateTime? DeletedAtUtc { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
