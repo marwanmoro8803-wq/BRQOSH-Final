@@ -139,10 +139,15 @@ public class SalesOrderService(BrqoshDbContext db)
 
     /// <param name="orderDate">تاريخُ الأمر (والصلاحيةُ تُقاس به) — اليومُ إن لم يُمرَّر.</param>
     public async Task<SalesOrder> CreateFromQuotationAsync(long companyId, long quotationId,
-        DateOnly? orderDate = null, CancellationToken ct = default)
+        DateOnly? orderDate = null, CancellationToken ct = default) =>
+        // ‏التحويلُ كلُّه في معاملةٍ واحدةٍ تحت قفلٍ استشاريّ: فحصُ «حُوِّل سلفاً» والإنشاءُ ووسمُ العرض مقبولاً
+        // ‏إمّا تقع معاً أو لا يقع شيء — ونقرتان متزامنتان لا تُنشئان أمرين.
+        await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
     {
+        var ct = token;
         var date = orderDate ?? DateOnly.FromDateTime(DateTime.Today);
         SecurityContext.EnsureCanPost();
+        await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "SOQ", date.Year);
         var quote = await db.SalesQuotations
             .SingleAsync(q => q.CompanyId == companyId && q.Id == quotationId, ct);
 
@@ -166,6 +171,10 @@ public class SalesOrderService(BrqoshDbContext db)
             order.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
                 line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
 
+        // ‏والعرضُ المُرسَل يصير «مقبولاً» بتحويله — فالأمرُ قبولٌ فعليّ.
+        if (quote.Status == SalesQuotationStatus.Sent)
+            quote.Accept();
+
         return await ConfirmAsync(order, ct);
-    }
+    }, ct);
 }
