@@ -18,7 +18,12 @@ public record CashFlowStatementResult(
     CashFlowSection Financing,
     decimal NetCashChange,
     decimal OpeningCash,
-    decimal ClosingCash);
+    decimal ClosingCash)
+{
+    /// <summary>سطرُ المطابقة: صافي التغيّر النقديّ ناقصَ مجموع الأقسام — صفرٌ في قائمةٍ سليمة، وغيرُه يُعرض ولا يُخفى.</summary>
+    public decimal UnreconciledDifference =>
+        NetCashChange - (Operating.Subtotal + Investing.Subtotal + Financing.Subtotal);
+}
 
 /// <summary>قائمة التدفقات النقدية — طريقة غير مباشرة مبسطة من أرصدة الحسابات.</summary>
 public class CashFlowStatementService(BrqoshDbContext db)
@@ -128,6 +133,13 @@ public class CashFlowStatementService(BrqoshDbContext db)
         if (equityDelta != 0m)
             financing.Add(new("حقوق ملكية / رأس مال (صافي)", equityDelta));
 
+        // ‏توزيعاتُ الأرباح تُقيَّد على الأرباح المبقاة (3103) — وهي مستثناةٌ أعلاه لئلّا يُحسب صافي الدخل مرّتين،
+        // ‏فكان التوزيعُ النقديّ يُخفض النقدَ بلا سطرٍ يفسّره. والمستخرَج هنا: تغيّرُ «وعاء الأرباح» (3103 + 3104 + أرصدة
+        // ‏الدخل غير المقفلة) ناقصَ صافي دخل الفترة = ما وُزِّع أو سُوِّي على الأرباح المبقاة — وهو تمويل.
+        var distributions = RetainedPool(endBalances) - RetainedPool(startBalances) - pnl.NetIncome;
+        if (distributions != 0m)
+            financing.Add(new("توزيعات أرباح وتسويات على الأرباح المبقاة", distributions));
+
         var openingCash = SumCash(startBalances);
         var closingCash = SumCash(endBalances);
         var netCashChange = closingCash - openingCash;
@@ -152,6 +164,14 @@ public class CashFlowStatementService(BrqoshDbContext db)
             r => r.AccountCode,
             r => (r.Type, SignedBalance(r)));
     }
+
+    private static decimal RetainedPool(Dictionary<string, (AccountType Type, decimal SignedBalance)> balances) =>
+        balances.Where(kv =>
+                kv.Key.StartsWith(SaudiChartOfAccounts.SystemCodes.RetainedEarnings, StringComparison.Ordinal)
+                || kv.Key.StartsWith(SaudiChartOfAccounts.SystemCodes.CurrentYearProfit, StringComparison.Ordinal))
+            .Sum(kv => kv.Value.SignedBalance)
+        + balances.Values.Where(v => v.Type == AccountType.Revenue).Sum(v => v.SignedBalance)
+        - balances.Values.Where(v => v.Type == AccountType.Expense).Sum(v => v.SignedBalance);
 
     private static decimal SignedBalance(TrialBalanceRow row) => row.Type switch
     {

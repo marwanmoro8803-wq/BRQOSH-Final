@@ -115,7 +115,12 @@ public record CashFlowStatementResultDto(
     CashFlowSectionDto Financing,
     decimal NetCashChange,
     decimal OpeningCash,
-    decimal ClosingCash);
+    decimal ClosingCash)
+{
+    /// <summary>سطرُ المطابقة: صافي التغيّر النقديّ ناقصَ مجموع الأقسام — صفرٌ في قائمةٍ سليمة.</summary>
+    public decimal UnreconciledDifference =>
+        NetCashChange - (Operating.Subtotal + Investing.Subtotal + Financing.Subtotal);
+}
 
 public interface ICashFlowStatementQuery
 {
