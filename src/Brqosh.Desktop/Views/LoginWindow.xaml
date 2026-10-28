@@ -5,7 +5,6 @@
         Title="BRQOSH — تسجيل الدخول"
         Width="1060" Height="680"
         WindowStartupLocation="CenterScreen"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">

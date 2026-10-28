@@ -15,8 +15,7 @@ public static class XamlUiLocalizer
 
     public static void Apply(DependencyObject root)
     {
-        if (root is FrameworkElement fe)
-            LocaleManager.ApplyTo(fe);
+        // ‏الاتجاهُ لا يُضبط هنا: النافذةُ تأخذه من LocaleManager.RegisterWindows والصفحاتُ ترثه منها.
         Walk(root);
     }
 

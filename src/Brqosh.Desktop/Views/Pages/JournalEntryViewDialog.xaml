@@ -5,7 +5,6 @@
         Width="820" Height="520"
         MinWidth="700" MinHeight="400"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">

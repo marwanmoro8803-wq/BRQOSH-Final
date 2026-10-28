@@ -4,7 +4,6 @@
         Title="طلب شراء جديد"
         Width="900" Height="640"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">

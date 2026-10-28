@@ -1,7 +1,6 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.DashboardPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft"
              FontFamily="{StaticResource AppFont}">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel x:Name="RootPanel" Margin="0,0,0,24">

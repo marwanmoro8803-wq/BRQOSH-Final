@@ -39,4 +39,33 @@ public static class LocaleManager
 
     public static void ApplyTo(FrameworkElement element) =>
         element.FlowDirection = Flow;
+
+    private static bool _windowsRegistered;
+
+    /// <summary>
+    /// المصدرُ الوحيدُ لاتجاه الواجهة: كلُّ نافذةٍ تأخذ <see cref="Flow"/> عند تحميلها، وكلُّ النوافذ المفتوحة
+    /// تنقلب معاً عند تبديل اللغة. الصفحاتُ والعناصرُ ترث الاتجاهَ من نافذتها، فلا يُكتب <c>FlowDirection="RightToLeft"</c>
+    /// على جذر أيّ شاشة (كان مكرّراً ثابتاً في 188 ملفاً ولا يتبع الإنجليزية).
+    /// </summary>
+    public static void RegisterWindows()
+    {
+        if (_windowsRegistered)
+            return;
+        _windowsRegistered = true;
+
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((sender, _) =>
+            {
+                if (sender is Window window)
+                    ApplyTo(window);
+            }));
+
+        Changed += () =>
+        {
+            if (System.Windows.Application.Current is not { } app)
+                return;
+            foreach (Window window in app.Windows)
+                ApplyTo(window);
+        };
+    }
 }

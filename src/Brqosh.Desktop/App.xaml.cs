@@ -104,6 +104,7 @@ public partial class App : System.Windows.Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Ui.LocaleManager.RegisterWindows();   // ‏اتجاهُ كلّ نافذةٍ من مكانٍ واحد ويتبع اللغة
         Ui.UiLocalizationHost.Register();
         // ‏(UI-AUDIT · P1) كلُّ نافذةٍ تُحصر في مساحة العمل، وجسمُها يُمرَّر إن لم يتّسع.
         Ui.WindowFit.Register();

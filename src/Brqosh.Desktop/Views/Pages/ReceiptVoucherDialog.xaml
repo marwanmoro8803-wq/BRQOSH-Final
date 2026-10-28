@@ -5,7 +5,6 @@
         Title="سند قبض جديد"
         Width="720" SizeToContent="Height" MaxHeight="720"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">

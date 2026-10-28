@@ -5,7 +5,7 @@
         Title="عرض سعر جديد"
         Width="1040" Height="620"
         MinWidth="900" MinHeight="520"
-        WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
+        WindowStartupLocation="CenterOwner"
         FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>

@@ -1,7 +1,6 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Controls.DatabaseConnectionPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
         <TextBlock Text="تُحفظ الدفاتر على خادم PostgreSQL. تُجرَّب بيانات الاتصال قبل المتابعة، ثم تُحفظ محميّةً على هذا الجهاز — لا كلمة مرور صريحة على القرص."
                    FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextSecondaryBrush}"

@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
              xmlns:ctl="clr-namespace:Brqosh.Desktop.Controls"
-             FlowDirection="RightToLeft"
              FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>

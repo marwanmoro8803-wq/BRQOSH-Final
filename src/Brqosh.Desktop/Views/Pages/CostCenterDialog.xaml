@@ -4,7 +4,6 @@
         Title="مركز تكلفة جديد"
         Width="440" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">

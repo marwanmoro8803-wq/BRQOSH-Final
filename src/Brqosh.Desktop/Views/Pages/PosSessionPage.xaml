@@ -1,7 +1,7 @@
 <UserControl x:Class="Brqosh.Desktop.Views.Pages.PosSessionPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}">
+ FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

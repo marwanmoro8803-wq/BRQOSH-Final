@@ -4,7 +4,6 @@
         Title="إعادة تقييم عملة"
         Width="460" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">

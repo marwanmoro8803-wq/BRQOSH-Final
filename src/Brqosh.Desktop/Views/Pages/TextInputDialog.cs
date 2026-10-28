@@ -16,7 +16,7 @@ public class TextInputDialog : Window
         Width = 420;
         SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        FlowDirection = FlowDirection.RightToLeft;
+        FlowDirection = Brqosh.Desktop.Ui.LocaleManager.Flow;
         FontFamily = System.Windows.Application.Current.TryFindResource("AppFont") as FontFamily ?? new FontFamily("Segoe UI");
         Background = System.Windows.Application.Current.TryFindResource("BackgroundBrush") as Brush ?? Brushes.White;
 

@@ -4,7 +4,6 @@
         Title="اتفاقية ترخيص المستخدم"
         Width="720" Height="640"
         WindowStartupLocation="CenterScreen"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <Border Style="{StaticResource AuthCard}" Margin="20">

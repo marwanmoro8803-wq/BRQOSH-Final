@@ -4,7 +4,6 @@
         Title="قائمة مواد جديدة"
         Width="820" Height="620"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">

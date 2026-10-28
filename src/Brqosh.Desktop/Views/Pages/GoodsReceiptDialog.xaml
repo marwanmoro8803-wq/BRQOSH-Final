@@ -4,7 +4,7 @@
         Title="إذن استلام بضاعة"
         Width="1000" Height="640"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}"
+ FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="28,24">
         <Grid.RowDefinitions>

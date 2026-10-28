@@ -4,7 +4,6 @@
         Title="تسجيل تكلفة مشروع"
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">

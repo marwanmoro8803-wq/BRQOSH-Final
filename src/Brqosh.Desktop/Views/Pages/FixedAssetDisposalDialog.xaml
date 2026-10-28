@@ -4,7 +4,6 @@
         Title="بيع أصل ثابت"
         Width="640" Height="540"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">

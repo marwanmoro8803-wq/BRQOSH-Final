@@ -4,7 +4,6 @@
         Title="BRQOSH — إنشاء منشأة جديدة"
         Width="720" Height="640"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">

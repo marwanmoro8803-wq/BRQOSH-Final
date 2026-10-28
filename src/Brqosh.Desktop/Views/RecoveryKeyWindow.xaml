@@ -4,7 +4,6 @@
         Title="مفتاح استعادة المدير"
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
-        FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">

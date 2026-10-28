@@ -4,7 +4,7 @@
         Title="إشعار مدين مشتريات"
         Width="560" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        FlowDirection="RightToLeft" FontFamily="{StaticResource AppFont}"
+ FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
     <StackPanel Margin="28,24">
         <TextBlock Text="إشعار مدين على فاتورة مشتريات" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>

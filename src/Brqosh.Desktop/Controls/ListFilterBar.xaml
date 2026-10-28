@@ -1,7 +1,6 @@
 <UserControl x:Class="Brqosh.Desktop.Controls.ListFilterBar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             FlowDirection="RightToLeft"
              FontFamily="{StaticResource AppFont}">
     <!-- شريط بحث وفلترة مشترك لقوائم الفواتير والسندات: نص بحث (مؤجَّل 300ms) + حالة اختيارية + نطاق تاريخ.
          يطلق FilterChanged فقط عند تغيير المستخدم، والصفحة تقرأ SearchText وSelectedStatusValue وFromDate وToDate. -->
