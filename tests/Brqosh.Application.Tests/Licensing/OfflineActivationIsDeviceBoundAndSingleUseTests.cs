@@ -152,7 +152,7 @@ public class OfflineActivationIsDeviceBoundAndSingleUseTests : IDisposable
     [Fact]
     public async Task WithoutAnEmbeddedPublicKey_NoCodeIsAccepted()
     {
-        EmbeddedActivationKeys.PublicKeyPemOverride = null;
-        Assert.Equal(ActivationVerdict.NoTrustAnchor, (await Service().ActivateAsync(Code())).Verdict);
+        var noKey = new OfflineActivationService(_db, _device, () => Now, publicKeyPem: () => "");
+        Assert.Equal(ActivationVerdict.NoTrustAnchor, (await noKey.ActivateAsync(Code())).Verdict);
     }
 }

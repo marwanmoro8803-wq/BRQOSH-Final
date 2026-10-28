@@ -251,8 +251,10 @@ public class ZatcaCsidOnboardingService
             else if (root.TryGetProperty("clearanceStatus", out var cs) && cs.ValueKind == JsonValueKind.String)
                 outcome = cs.GetString();
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            // ‏ردٌّ غير JSON: يُسجَّل ويُحكم بالحالة وحدها (status/outcome يبقيان null فلا يُعدّ ناجحاً بلا PASS).
+            System.Diagnostics.Trace.TraceWarning($"ZATCA compliance response is not valid JSON: {ex.Message}");
         }
 
         var passed = response.IsSuccessStatusCode

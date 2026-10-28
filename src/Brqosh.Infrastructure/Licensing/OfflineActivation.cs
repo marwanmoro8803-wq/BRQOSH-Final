@@ -271,7 +271,7 @@ public sealed record ActivationResult(ActivationVerdict Verdict, ActivationPaylo
 /// ‏(Phase 7) <b>التفعيلُ دون اتصال</b>: البرنامجُ يعرض <see cref="CurrentRequestCode"/>، والمورّدُ يُصدر رمزَ تفعيلٍ موقَّعاً،
 /// ‏فيتحقّق البرنامجُ من التوقيع والجهاز والانتهاء والساعة، ويُسجّل الـnonce مستهلكاً في القاعدة والسجلّ المحلّيّ معاً.
 /// </summary>
-public sealed class OfflineActivationService(BrqoshDbContext db, string? deviceHash = null, Func<DateTime>? clock = null)
+public sealed class OfflineActivationService(BrqoshDbContext db, string? deviceHash = null, Func<DateTime>? clock = null, Func<string?>? publicKeyPem = null)
 {
     private const string CurrentFile = "activation.code";
 
@@ -285,7 +285,7 @@ public sealed class OfflineActivationService(BrqoshDbContext db, string? deviceH
         if (ClockRollbackDetector.Observe(now).RolledBack)
             return Refuse(ActivationVerdict.ClockRolledBack);
 
-        var verdict = Check(code, Device, now, out var payload);
+        var verdict = Check(code, Device, now, out var payload, (publicKeyPem ?? (() => EmbeddedActivationKeys.Current))());
         if (verdict != ActivationVerdict.Valid)
             return Refuse(verdict, payload);
 
@@ -319,9 +319,9 @@ public sealed class OfflineActivationService(BrqoshDbContext db, string? deviceH
             : Refuse(verdict, payload);
     }
 
-    private static ActivationVerdict Check(string code, string device, DateTime now, out ActivationPayload? payload)
+    private static ActivationVerdict Check(string code, string device, DateTime now, out ActivationPayload? payload, string? publicKey = null)
     {
-        var verdict = ActivationCodec.Verify(code, EmbeddedActivationKeys.Current, out payload);
+        var verdict = ActivationCodec.Verify(code, publicKey ?? EmbeddedActivationKeys.Current, out payload);
         if (verdict != ActivationVerdict.Valid) return verdict;
         if (!string.Equals(payload!.DeviceHash, device, StringComparison.OrdinalIgnoreCase))
             return ActivationVerdict.WrongDevice;

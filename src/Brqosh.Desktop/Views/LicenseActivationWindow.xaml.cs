@@ -154,7 +154,7 @@ public partial class LicenseActivationWindow : Window
         try
         {
             using var facade = new DesktopAccountingFacade();
-            var service = Microsoft.Extensions.DependencyInjection.ActivatorUtilities.CreateInstance<OfflineActivationService>(facade.GetService<IServiceProvider>());
+            var service = facade.GetService<OfflineActivationService>();
             var result = await service.ActivateAsync(code);
             if (result.Verdict != ActivationVerdict.Valid)
             {
