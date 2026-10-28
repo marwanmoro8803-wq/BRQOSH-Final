@@ -76,6 +76,13 @@ public static class SaudiChartOfAccounts
         new("1206", "أجهزة الحاسب والأنظمة", "Computers & IT Systems", AccountType.Asset, "12", IsGroup: false),
         new("1207", "مجمع إهلاك الأصول الثابتة", "Accumulated Depreciation", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
         new("1208", "الأصول غير الملموسة", "Intangible Assets", AccountType.Asset, "12", IsGroup: false),
+        // ‏(Phase 7) ‏مجمّعُ إهلاكٍ لكلّ فئة أصول (IAS 16.73) — بادئتُها 1207 فيلتقطها ما يبحث بها؛ و1207 يبقى لما رُحِّل عليه.
+        new("12071", "مجمع إهلاك المباني والإنشاءات", "Accumulated Depreciation - Buildings", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
+        new("12072", "مجمع إهلاك الآلات والمعدات", "Accumulated Depreciation - Machinery & Equipment", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
+        new("12073", "مجمع إهلاك السيارات ووسائل النقل", "Accumulated Depreciation - Vehicles", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
+        new("12074", "مجمع إهلاك الأثاث والتجهيزات المكتبية", "Accumulated Depreciation - Furniture & Fixtures", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
+        new("12075", "مجمع إهلاك أجهزة الحاسب والأنظمة", "Accumulated Depreciation - Computers & IT", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
+        new("12076", "مجمع إطفاء الأصول غير الملموسة", "Accumulated Amortisation - Intangible Assets", AccountType.Asset, "12", IsGroup: false, IsSystem: true),
 
         // ============ 2 — الالتزامات ============
         new("2", "الالتزامات", "Liabilities", AccountType.Liability, null, IsGroup: true),
@@ -115,6 +122,7 @@ public static class SaudiChartOfAccounts
         // ‏**الإيجارُ المقبوضُ مقدّماً التزامٌ حتى يُكتسب.** فاتورةُ ربعٍ أو سنةٍ مقدَّماً كانت إيراداً
         // ‏كلُّها يومَها — فيُعلَن ربحُ أشهرٍ لم تمضِ وتُدفع عليه زكاة، ولا يظهر ما يُستحقّ للمستأجر إن أنهى العقد.
         new("2117", "إيرادات إيجار مقبوضة مقدّماً", "Unearned Rent Revenue", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
+        new("2118", "ضريبة الاستقطاع المستحقة", "Withholding Tax Payable", AccountType.Liability, "21", IsGroup: false, IsSystem: true),
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
@@ -186,6 +194,8 @@ public static class SaudiChartOfAccounts
         new("5219", "مصروف مكافأة نهاية الخدمة", "End of Service Benefit Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         // ‏مصروفُ الإجازات — يقابل المخصّصَ 2203.
         new("5220", "مصروف الإجازات", "Leave Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
+        // ‏(Phase 7) ‏تكاليفُ التمويل بندٌ مستقلٌّ في قائمة الدخل (IAS 1.82(b)).
+        new("5221", "تكاليف التمويل", "Finance Costs", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
     ];
 
     /// <summary>
@@ -209,7 +219,27 @@ public static class SaudiChartOfAccounts
         public const string ManufacturingOverhead = "5107";
         public const string ProjectCosts = "5105";
         public const string DepreciationExpense = "5211";
+        public const string FinanceCosts = "5221";
+        public const string WithholdingTaxPayable = "2118";
     }
+
+    /// <summary>‏(Phase 7) الحساباتُ المضافةُ للدليل بعد إنشاء منشآتٍ قائمة — تُضاف لها عند الإقلاع إن غابت.</summary>
+    public static IReadOnlyList<string> AddedForExistingCompanies { get; } =
+        ["12071", "12072", "12073", "12074", "12075", "12076", "2118", "5221"];
+
+    /// <summary>
+    /// ‏مجمّعُ الإهلاك الافتراضيّ لحساب أصلٍ ثابت — لكلّ فئةٍ مجمّعُها، وما لا فئةَ له يبقى على 1207 العامّ.
+    /// </summary>
+    public static string AccumulatedDepreciationFor(string assetAccountCode) => assetAccountCode switch
+    {
+        "1202" => "12071",
+        "1203" => "12072",
+        "1204" => "12073",
+        "1205" => "12074",
+        "1206" => "12075",
+        "1208" => "12076",
+        _ => "1207",
+    };
 
     /// <summary>أكواد الحسابات النظامية التي يعتمد عليها الترحيل الآلي — مرجعية ثابتة للوحدات.</summary>
     public static class SystemCodes

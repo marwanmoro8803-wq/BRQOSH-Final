@@ -29,7 +29,11 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
 
         var existing = await db.Companies.FirstOrDefaultAsync();
         if (existing is not null)
+        {
+            // ‏(Phase 7) ‏حساباتٌ أُضيفت للدليل بعد إنشاء المنشآت — تُضاف إن غابت.
+            await Accounting.ChartTemplateSync.AddMissingAsync(db);
             return existing;
+        }
 
         var config = _templates.Resolve(countryTemplateId, profile);
         var company = Company.Create(companyName, vatNumber, profile);
