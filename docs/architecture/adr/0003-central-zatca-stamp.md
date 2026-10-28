@@ -61,3 +61,20 @@
 
 بلا OTP في simulation/production يردّ `AwaitingOtp` ولا يُرسل شيئاً — لا يتوقّف عليه شيءٌ آخر. واختُبر التسلسلُ كاملاً أمام هيئةٍ مُحاكاة
 (`TheCentralSignerOnboardsEndToEndFromConfigurationTests`)؛ والبيئةُ التجريبيّةُ الحيّة تُجرَّب بالأمر نفسِه على جهازٍ يبلغ `gw-fatoora.zatca.gov.sa`.
+
+## Simulation preflight (Phase 7) — everything before the OTP, offline
+
+`ZatcaSimulationPreflight.Run(options)` takes the same onboarding settings as `POST /zatca-signer/onboard`
+and, without any network call or key on disk, builds the CSR and every compliance sample, stamps the samples
+with a throw-away self-signed secp256k1 certificate, then checks them with an independent reader:
+CSR signature, named curve `secp256k1` (OID 1.3.132.0.10), subject C/O/OU/CN, certificate template per
+environment (TSTZATCA / PREZATCA / ZATCA), the five SAN attributes; per sample: re-computed invoice hash,
+signature against the certificate key, QR tags 1–9, ICV sequence and PIH chain.
+
+Run it with `scripts/zatca-simulation-preflight.ps1` (or `dotnet run --project tools/ZatcaPreflight`); it
+writes `request.csr`, the signed sample XMLs and `preflight-report.txt`. If the ZATCA SDK CLI (`fatoora`) is
+on PATH the script also validates the samples with it. The only remaining step is the real OTP
+("enter real OTP on registration").
+
+The preflight found and fixed one defect: the public key in the CSR (and QR tag 8) was encoded with explicit
+curve parameters instead of the named curve OID that `openssl ecparam -name secp256k1` produces.

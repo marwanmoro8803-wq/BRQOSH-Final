@@ -39,7 +39,10 @@ internal static class ZatcaSecp256k1
     internal const string CurveOid = "1.3.132.0.10";
 
     private static readonly X9ECParameters Curve = SecNamedCurves.GetByName("secp256k1");
-    private static readonly ECDomainParameters Domain = new(Curve.Curve, Curve.G, Curve.N, Curve.H);
+    // ‏(Phase 7 · فحصُ المحاكاة المحلّيّ) ‏<b>منحنًى مسمًّى لا معاملاتٌ صريحة</b>: كان المفتاحُ العامّ في الـCSR (وفي الوسم 8) يُرمَّز
+    // ‏بمعاملات المنحنى كاملةً (specifiedCurve) بدل OID ‏1.3.132.0.10 — و<c>openssl ecparam -name secp256k1</c> الذي يأمر به دليلُ الهيئة
+    // ‏يُخرج الاسم. كشفه قارئُ الـCSR المستقلّ في <see cref="ZatcaSimulationPreflight"/>.
+    private static readonly ECDomainParameters Domain = new ECNamedDomainParameters(SecObjectIdentifiers.SecP256k1, Curve);
 
     /// <summary>مفتاحٌ جديدٌ — يُعاد نصُّه بصيغة <c>EC PRIVATE KEY</c> (كمخرجات <c>openssl ecparam -genkey</c>).</summary>
     public static string GenerateKeyPem()
@@ -136,6 +139,29 @@ internal static class ZatcaSecp256k1
     {
         var priv = TryReadPrivate(keyPem) ?? throw new InvalidOperationException("المفتاحُ ليس على secp256k1.");
         return Org.BouncyCastle.X509.SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(PublicOf(priv)).GetEncoded();
+    }
+
+    /// <summary>
+    /// ‏(Phase 7 · فحصُ المحاكاة المحلّيّ) <b>شهادةٌ ذاتيّةُ التوقيع على secp256k1</b> — بديلُ شهادة الامتثال حين لا اتصالَ ولا OTP،
+    /// ‏ليُختبر مسارُ الختم كاملاً محلّيّاً. <b>لا تصلح لفاتورةٍ حقيقيّة</b>: الهيئةُ لا تعرفها.
+    /// </summary>
+    public static string CreateSelfSignedCertificatePem(string keyPem, string subjectDn, DateTime notBeforeUtc, DateTime notAfterUtc)
+    {
+        var priv = TryReadPrivate(keyPem) ?? throw new InvalidOperationException("المفتاحُ ليس على secp256k1.");
+        var generator = new X509V3CertificateGenerator();
+        var serial = new byte[16];
+        RandomNumberGenerator.Fill(serial);
+        generator.SetSerialNumber(new BigInteger(1, serial));
+        var name = new X509Name(subjectDn);
+        generator.SetIssuerDN(name);
+        generator.SetSubjectDN(name);
+        generator.SetNotBefore(notBeforeUtc);
+        generator.SetNotAfter(notAfterUtc);
+        generator.SetPublicKey(PublicOf(priv));
+        var cert = generator.Generate(new Asn1SignatureFactory("SHA256withECDSA", priv));
+        using var writer = new StringWriter();
+        new PemWriter(writer).WriteObject(new PemObject("CERTIFICATE", cert.GetEncoded()));
+        return writer.ToString();
     }
 
     private static byte[] Pad(BigInteger value)

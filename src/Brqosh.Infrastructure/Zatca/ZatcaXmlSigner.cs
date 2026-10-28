@@ -248,7 +248,7 @@ public static class ZatcaXmlSigner
     /// ويصير الملفُّ المحفوظ غيرَ المستند الذي وُقِّع عليه. الاستبعاد يجعل الاستبدال مشروعاً
     /// كما في المعيار، بلا تغيير ترتيب النداءات.</para>
     /// </summary>
-    private static string ComputeInvoiceHash(byte[] xmlBytes)
+    internal static string ComputeInvoiceHash(byte[] xmlBytes)
     {
         var xmlDoc = LoadXmlDocument(xmlBytes);
         var nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
@@ -379,7 +379,7 @@ public static class ZatcaXmlSigner
     /// <para>و<c>ds:Reference</c> هنا بلا <c>Transforms</c>، فالمتحقّقُ المطابقُ يُلغي المرجعَ
     /// داخل المستند ويُقنّنه شاملاً. فهذا بالضبط ما يُحاكى.</para>
     /// </summary>
-    private static byte[] CanonicalizeInDocument(XDocument document, string qualifiedName)
+    internal static byte[] CanonicalizeInDocument(XDocument document, string qualifiedName)
     {
         var xmlDoc = new XmlDocument { PreserveWhitespace = true };
         using (var reader = document.CreateReader())
