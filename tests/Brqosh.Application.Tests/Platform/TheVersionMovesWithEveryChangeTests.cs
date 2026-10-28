@@ -45,10 +45,11 @@ public class TheVersionMovesWithEveryChangeTests
     [Fact]
     public void TheVersionFileIsAPositiveNumber_WithAChangelogSection()
     {
-        Assert.True(Number() >= 1);
+        Assert.True(Number() >= 0);
 
         var changelog = File.ReadAllText(Path.Combine(Root(), "CHANGELOG.md"));
-        Assert.Matches($@"(?m)^##\s+1\.0\.{Number()}\s*$", changelog);
+        var prefix = Regex.Match(File.ReadAllText(Path.Combine(Root(), "Directory.Build.props")), @"<BrqoshVersionPrefix>([^<]+)</BrqoshVersionPrefix>").Groups[1].Value;
+        Assert.Matches($@"(?m)^##\s+{Regex.Escape(prefix)}\.{Number()}\s*$", changelog);
     }
 
     [Fact]

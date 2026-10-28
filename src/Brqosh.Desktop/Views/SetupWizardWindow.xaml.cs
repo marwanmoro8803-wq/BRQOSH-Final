@@ -29,6 +29,8 @@ public partial class SetupWizardWindow : Window
             $"{PasswordPolicy.MinLength} حرفاً على الأقل، مع حرف كبير وصغير ورقم ورمز خاص.",
             $"At least {PasswordPolicy.MinLength} characters, with upper and lower case, a digit and a symbol.");
         Loaded += OnLoaded;
+        Loaded += (_, _) => StartHero();
+        Closed += (_, _) => _heroTimer.Stop();
         ProfileCombo.SelectionChanged += (_, _) => UpdateTemplatePreview();
         // (CEEF-236 · ت-٣) خطوةُ قاعدة البيانات — لوحةٌ مشتركةٌ مع نافذة الإنقاذ.
         ConnectionPanel.Initialize(AppEnvironmentConfig.IsProduction);
@@ -113,8 +115,11 @@ public partial class SetupWizardWindow : Window
         StartupSplashWindow? waiting = null;
         if (ConnectionPanel.UseEmbedded && !Brqosh.Infrastructure.Persistence.EmbeddedPostgres.IsProvisioned)
         {
-            waiting = new StartupSplashWindow { Owner = this };
+            // ‏(طلبُ المالك) ‏كانت صفحةُ الانتظار مملوكةً لهذا المعالج وتُعرض فوقه — نافذتان متراكبتان. الآن: يُطوى المعالجُ وتظهر الصفحةُ وحدَها،
+            // ‏ويعود المعالجُ إن أخفق الاتصال. (الطيُّ لا الإخفاء: إخفاءُ نافذةٍ مشروطةٍ ينهي ShowDialog.)
+            waiting = new StartupSplashWindow();
             waiting.SetStatus("جارٍ إعداد خادم قاعدة البيانات على هذا الجهاز…", "Setting up the database server on this computer…");
+            WindowState = WindowState.Minimized;
             waiting.Show();
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
         }
@@ -125,12 +130,16 @@ public partial class SetupWizardWindow : Window
         }
         finally
         {
+            if (waiting is not null)
+                await waiting.FadeOutAsync();
             waiting?.Close();
             StartButton.IsEnabled = true;
         }
 
         if (connectionError is not null)
         {
+            WindowState = WindowState.Normal;
+            Activate();
             ShowError(connectionError);
             return;
         }
@@ -161,6 +170,67 @@ public partial class SetupWizardWindow : Window
 
         DialogResult = true;
         Close();
+    }
+
+    // ‏(طلبُ المالك) ‏**شاشةُ التسجيل حيّة**: لوحةٌ جانبيّةٌ تتبدّل كلَّ بضع ثوانٍ بين أنواع الأنشطة — أيقونةٌ وعنوانٌ وسطرُ خدمات —
+    // ‏بظهورٍ وانزلاقٍ خفيفين وتوهّجٍ يتنفّس خلفها (ألوانُ صفحة الانتظار نفسُها). ومن عطّل الرسومَ المتحرّكة تتبدّل النصوصُ بلا حركة.
+    private readonly System.Windows.Threading.DispatcherTimer _heroTimer = new() { Interval = TimeSpan.FromSeconds(3.4) };
+    private int _heroIndex;
+
+    private static (string Icon, string Ar, string En, string ServicesAr, string ServicesEn)[] BusinessTypes =>
+    [
+        ("\U0001F3E2", "شركات تجارية", "Trading companies", "فواتير ضريبية · مخزون · عملاء وموردون · ذمم", "Tax invoices · Inventory · Customers & suppliers · Receivables"),
+        ("\U0001F3ED", "مصانع", "Factories", "قوائم المواد · أوامر الإنتاج · تكلفة المنتج", "Bills of materials · Work orders · Product costing"),
+        ("\U0001F6D2", "متاجر وتجزئة", "Shops & retail", "نقاط البيع · الباركود · الورديات والمخزون", "Point of sale · Barcodes · Shifts and stock"),
+        ("\U0001F37D", "مطاعم", "Restaurants", "نقاط البيع · الوصفات واستهلاك المكوّنات · الورديات", "POS · Recipes and ingredient usage · Shifts"),
+        ("\U0001F3D7", "مقاولات", "Contracting", "المشاريع والمستخلصات · مقاولو الباطن · المحتجزات", "Projects and progress billing · Subcontractors · Retentions"),
+        ("\U0001F4BC", "خدمات ومكاتب", "Services & offices", "عقود وفوترة دورية · مراكز التكلفة · الرواتب", "Contracts and recurring billing · Cost centres · Payroll"),
+        ("\U0001FA7A", "عيادات", "Clinics", "مواعيد وزيارات · فوترة المرضى · صرف الأدوية", "Appointments and visits · Patient billing · Dispensing"),
+    ];
+
+    private void StartHero()
+    {
+        HeroHeadline.Text = LocaleManager.T("نظام واحد لكل نشاط", "One system for every business");
+        HeroTagline.Text = LocaleManager.T("اختر نشاطك، ويجهّز برقوش الوحدات والحسابات المناسبة له.", "Pick your business and BRQOSH prepares the right modules and accounts.");
+        HeroDots.Children.Clear();
+        foreach (var _ in BusinessTypes)
+            HeroDots.Children.Add(new System.Windows.Shapes.Ellipse
+            {
+                Width = 8, Height = 8, Margin = new Thickness(4, 0, 4, 0),
+                Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC9, 0x8A, 0x4B)),
+            });
+        ShowHero(0, animate: false);
+
+        _heroTimer.Tick += (_, _) => ShowHero((_heroIndex + 1) % BusinessTypes.Length, Motion.Enabled);
+        _heroTimer.Start();
+
+        if (!Motion.Enabled)
+            return;
+        var sine = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut };
+        var breathe = new System.Windows.Media.Animation.DoubleAnimation(0.88, 1.12, TimeSpan.FromSeconds(3.0))
+            { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, EasingFunction = sine };
+        HeroGlowScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleXProperty, breathe);
+        HeroGlowScale.BeginAnimation(System.Windows.Media.ScaleTransform.ScaleYProperty, breathe);
+        HeroGlow.BeginAnimation(System.Windows.Media.Brush.OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.35, 0.75, TimeSpan.FromSeconds(3.0))
+            { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, EasingFunction = sine });
+    }
+
+    private void ShowHero(int index, bool animate)
+    {
+        _heroIndex = index;
+        var (icon, ar, en, servicesAr, servicesEn) = BusinessTypes[index];
+        HeroIcon.Text = icon;
+        HeroTitle.Text = LocaleManager.T(ar, en);
+        HeroServices.Text = LocaleManager.T(servicesAr, servicesEn);
+        for (var i = 0; i < HeroDots.Children.Count; i++)
+            HeroDots.Children[i].Opacity = i == index ? 1.0 : 0.3;
+
+        if (!animate)
+            return;
+        var ease = new System.Windows.Media.Animation.QuarticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut };
+        HeroCard.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(450)) { EasingFunction = ease });
+        HeroCardShift.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(18, 0, TimeSpan.FromMilliseconds(450)) { EasingFunction = ease });
     }
 
     private void ShowError(string message)

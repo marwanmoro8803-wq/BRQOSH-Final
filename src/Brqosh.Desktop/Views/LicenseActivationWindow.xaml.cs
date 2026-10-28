@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Ui;
 using Brqosh.Infrastructure.Licensing;
 
@@ -16,12 +17,14 @@ public partial class LicenseActivationWindow : Window
         InitializeComponent();
         _companyName = companyName;
         MachineIdBox.Text = LicenseService.MachineId();
+        RequestCodeBox.Text = RequestCode.FromDeviceHash(DeviceIdentity.CurrentDeviceHash());
         CompanyBox.Text = companyName;
         KeyBox.Text = LicenseStore.Load()?.Code ?? "";
         KeyHint.Text = LocaleManager.T(
             "مفتاحٌ رقميٌّ من ٢٥ رقماً في خمس مجموعات — يصلك من فريق الدعم، ولا يعمل إلا على هذا الجهاز ولهذه المنشأة.",
             "A 25-digit code in five groups — sent by the support team; it works only on this machine and for this company.");
         ShowCurrentStatus();
+        ShowOfflineLock();
     }
 
     private void ShowCurrentStatus()
@@ -77,6 +80,13 @@ public partial class LicenseActivationWindow : Window
         }
 
         // ‏ملفُّ ترخيصٍ موقَّعٌ (قديم) يُلصَق كما كان — يبدأ بقوسٍ معقوف.
+        // ‏رمزُ تفعيلٍ موقَّعٌ من المورّد (BRQA1…) — يُستهلك مرّةً واحدةً لهذا الجهاز.
+        if (input.StartsWith(ActivationCodec.Prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            _ = UiFeedback.RunSafeAsync(() => ActivateOfflineAsync(input));
+            return;
+        }
+
         if (input.StartsWith('{'))
         {
             var verdict = RsaLicenseValidator.Validate(company, machineId, input, out _);
@@ -107,6 +117,72 @@ public partial class LicenseActivationWindow : Window
         DialogResult = true;
         Close();
     }
+
+    /// <summary>‏(قفل البدء) تفعيلٌ قائمٌ مرفوض — جهازٌ آخر أو ساعةٌ مُرجَعة أو سجلٌّ معبوثٌ به — يُعرض سببُه هنا نصّاً لا نافذة.</summary>
+    private void ShowOfflineLock()
+    {
+        var offline = OfflineActivationService.Current();
+        if (offline is null) return;
+        if (offline.Verdict == ActivationVerdict.Valid)
+        {
+            StatusText.Text = LocaleManager.T("هذا الجهاز مفعّلٌ برمز تفعيلٍ من المورّد.", "This device is activated with a vendor activation code.");
+            StatusPanel.Background = (Brush)FindResource("SuccessSoftBrush");
+            return;
+        }
+
+        ShowError(DescribeOffline(offline.Verdict));
+    }
+
+    private void OnCopyRequest(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText(RequestCodeBox.Text);
+            CopiedText.Text = LocaleManager.T("نُسخ رقم الطلب — أرسله إلى فريق الدعم ليصلك رمز التفعيل.", "Request number copied — send it to the support team to receive your activation code.");
+            CopiedText.Visibility = Visibility.Visible;
+        }
+        catch (System.Runtime.InteropServices.ExternalException ex)
+        {
+            ShowError(LocaleManager.T("تعذّر النسخ إلى الحافظة — حدّد الرقم وانسخه يدوياً.", "Could not copy to the clipboard — select the number and copy it manually.") + " " + ex.Message);
+        }
+    }
+
+    private async System.Threading.Tasks.Task ActivateOfflineAsync(string code)
+    {
+        ActivateButton.IsEnabled = false;
+        ErrorText.Visibility = Visibility.Collapsed;
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var result = await new OfflineActivationService(db).ActivateAsync(code);
+            if (result.Verdict != ActivationVerdict.Valid)
+            {
+                ShowError(DescribeOffline(result.Verdict));
+                return;
+            }
+
+            LicenseActivated = true;
+            DialogResult = true;
+            Close();
+        }
+        finally
+        {
+            ActivateButton.IsEnabled = true;
+        }
+    }
+
+    private static string DescribeOffline(ActivationVerdict verdict) => verdict switch
+    {
+        ActivationVerdict.Malformed => LocaleManager.T("رمز التفعيل غير مكتمل أو محرَّف — انسخه كاملاً كما وصلك.", "The activation code is incomplete or altered — copy it in full exactly as you received it."),
+        ActivationVerdict.NoTrustAnchor => LocaleManager.T("لا مفتاح تحقّق مضمَّن في هذا الإصدار — تواصل مع الدعم.", "This build has no embedded verification key — contact support."),
+        ActivationVerdict.BadSignature => LocaleManager.T("رمز التفعيل لم يصدر من المورّد أو عُدِّل.", "The activation code was not issued by the vendor or has been altered."),
+        ActivationVerdict.WrongDevice => LocaleManager.T("رمز التفعيل صدر لجهاز آخر — أرسل رقم الطلب الظاهر أعلاه.", "The activation code was issued for another device — send the request number shown above."),
+        ActivationVerdict.Expired => LocaleManager.T("انتهت مدّة هذا التفعيل — اطلب رمزاً جديداً من المورّد.", "This activation has expired — request a new code from the vendor."),
+        ActivationVerdict.AlreadyUsed => LocaleManager.T("استُعمل رمز التفعيل هذا من قبل — لكلّ تفعيل رمز جديد.", "This activation code has already been used — each activation needs a new code."),
+        ActivationVerdict.ClockRolledBack => LocaleManager.T("ساعة الجهاز أُرجعت إلى الوراء — صحّح التاريخ ثمّ أعد المحاولة.", "The device clock was set back — correct the date and try again."),
+        ActivationVerdict.LedgerTampered => LocaleManager.T("سجلّ التفعيل المحلّي عُبث به — تواصل مع المورّد.", "The local activation log was tampered with — contact the vendor."),
+        _ => LocaleManager.T("تعذّر التفعيل.", "Activation failed."),
+    };
 
     private void ShowError(string message)
     {

@@ -24,13 +24,13 @@ public class TheReleasePipelineTests : IDisposable
     [Fact]
     public void TheVersionIsThePrefixAndTheRunNumber_AndTheNotesAreItsSection()
     {
-        File.WriteAllText(_changelog, "# x\n\n## 1.0.8\n\n- لاحق\n\n## 1.0.7\n\n- إصلاحٌ أمنيّ\n- تحسينٌ في الطباعة\n\n## 1.0.6\n\n- سابق\n");
+        File.WriteAllText(_changelog, "# x\n\n## 1.1.8\n\n- لاحق\n\n## 1.1.7\n\n- إصلاحٌ أمنيّ\n- تحسينٌ في الطباعة\n\n## 1.1.6\n\n- سابق\n");
 
         var r = Describe(7);
 
         Assert.Equal(0, r.Exit);
         using var json = JsonDocument.Parse(r.Stdout.Trim());
-        Assert.Equal("1.0.7", json.RootElement.GetProperty("Version").GetString());
+        Assert.Equal("1.1.7", json.RootElement.GetProperty("Version").GetString());
         Assert.Equal("- إصلاحٌ أمنيّ\n- تحسينٌ في الطباعة", json.RootElement.GetProperty("Notes").GetString());
     }
 
@@ -38,18 +38,18 @@ public class TheReleasePipelineTests : IDisposable
     [Fact]
     public void AVersionWithoutAChangelogSection_IsRefused()
     {
-        File.WriteAllText(_changelog, "## 1.0.6\n\n- سابق\n");
+        File.WriteAllText(_changelog, "## 1.1.6\n\n- سابق\n");
 
         var r = Describe(7);
 
         Assert.Equal(2, r.Exit);
-        Assert.Contains("1.0.7", r.Stderr, StringComparison.Ordinal);
+        Assert.Contains("1.1.7", r.Stderr, StringComparison.Ordinal);
     }
 
     [Fact]
     public void AnEmptySection_IsRefused()
     {
-        File.WriteAllText(_changelog, "## 1.0.7\n\n\n## 1.0.6\n\n- سابق\n");
+        File.WriteAllText(_changelog, "## 1.1.7\n\n\n## 1.1.6\n\n- سابق\n");
 
         Assert.Equal(2, Describe(7).Exit);
     }
@@ -58,7 +58,7 @@ public class TheReleasePipelineTests : IDisposable
     [Fact]
     public void BuildNumberZero_IsNotARelease()
     {
-        File.WriteAllText(_changelog, "## 1.0.0\n\n- شيء\n");
+        File.WriteAllText(_changelog, "## 1.1.0\n\n- شيء\n");
 
         Assert.Equal(2, Describe(0).Exit);
     }

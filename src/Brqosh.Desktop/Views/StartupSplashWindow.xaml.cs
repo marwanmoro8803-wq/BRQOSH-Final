@@ -43,6 +43,40 @@ public partial class StartupSplashWindow : Window
         _messages.Start();
     }
 
+    /// <summary>
+    /// ‏(طلبُ المالك) <b>حركةُ انتقالٍ بين خطوتين</b> — نافذةٌ وحدَها على الشاشة (لا مالكَ لها ولا شيءَ خلفها) نحو ثانيتين ونصف،
+    /// وتُتخطّى بنقرة. لا تحجب الخيط: الانتظارُ <c>await</c> والرسائلُ تُضخّ.
+    /// </summary>
+    public static async Task PlayTransitionAsync(string arabic, string english, double seconds = 2.4)
+    {
+        var splash = new StartupSplashWindow();
+        splash.SetStatus(arabic, english);
+        splash.HintText.Text = LocaleManager.T("انقر للمتابعة", "Click to continue");
+        var skipped = new TaskCompletionSource();
+        splash.MouseLeftButtonDown += (_, _) => skipped.TrySetResult();
+        splash.Show();
+        splash.Activate();
+        await Task.WhenAny(Task.Delay(TimeSpan.FromSeconds(seconds)), skipped.Task);
+        await splash.FadeOutAsync();
+        splash.Close();
+    }
+
+    /// <summary>‏يتلاشى ثمّ يعود (لا يُغلق) — ومن عطّل الرسومَ المتحرّكة لا ينتظر شيئاً.</summary>
+    public Task FadeOutAsync()
+    {
+        if (!Motion.Enabled || !IsVisible)
+            return Task.CompletedTask;
+
+        var done = new TaskCompletionSource();
+        var fade = new DoubleAnimation(Opacity, 0, TimeSpan.FromMilliseconds(220))
+        {
+            EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut },
+        };
+        fade.Completed += (_, _) => done.TrySetResult();
+        BeginAnimation(OpacityProperty, fade);
+        return done.Task;
+    }
+
     private void ShowStep()
     {
         var (ar, en) = Steps[Math.Min(_step, Steps.Length - 1)];

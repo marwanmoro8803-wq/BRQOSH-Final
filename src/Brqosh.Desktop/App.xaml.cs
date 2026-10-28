@@ -403,17 +403,20 @@ public partial class App : System.Windows.Application
             // ‏التطبيق — **وكان الرجوعُ يُسجَّل ثمّ يُقاس على الساعة الراجعة نفسِها**، فيُمدَّد الترخيصُ. ولا إقفال: المنتهي يُفتح للقراءة.
             var effectiveNow = LicenseClock.EffectiveNowUtc(DateTime.UtcNow, clock.HighWaterUtc);
 
-            if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow))
+            if (!OfflineGate(LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow)))
             {
                 var license = new LicenseActivationWindow(licensedName);
                 if (license.ShowDialog() == true)
                 {
                     // ‏قُبل مفتاحٌ في النافذة — يُعاد القياس؛ فمفتاحٌ وُضع بلا قبولٍ لا يُفتح به شيء.
-                    if (!LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow))
+                    if (!OfflineGate(LicenseStore.ValidateForCompany(licensedName, setup.CompletedAtUtc, effectiveNow)))
                     {
                         Shutdown();
                         return;
                     }
+
+                    // ‏(طلبُ المالك) ‏نافذةُ التفعيل أُغلقت — حركةُ انتقالٍ قصيرةٌ وحدَها على الشاشة قبل الخطوة التالية (تُتخطّى بنقرة).
+                    await Views.StartupSplashWindow.PlayTransitionAsync("تم تفعيل الترخيص — أهلاً بك", "Licence activated — welcome");
                 }
                 else
                 {
@@ -498,11 +501,16 @@ public partial class App : System.Windows.Application
                 await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             }
 
+            // ‏(طلبُ المالك) ‏**لا نافذةَ خلف صفحة الانتظار ولا فوقها**: كانت الرئيسةُ تُعرض والصفحةُ ما زالت ظاهرة فتتراكبان لحظة.
+            // ‏تُبنى الرئيسةُ (غيرَ ظاهرة) والصفحةُ وحدَها، ثمّ تتلاشى الصفحةُ وتُغلق، ثمّ تظهر الرئيسة. ‏ShutdownMode=OnExplicitShutdown
+            // ‏فلا يُنهي الفاصلُ بلا نوافذ العمليّة.
             var main = new MainWindow(setup!);
             MainWindow = main;
             main.Closed += (_, _) => Shutdown();
-            main.Show();
+            if (opening is not null)
+                await opening.FadeOutAsync();
             opening?.Close();
+            main.Show();
             main.Activate();
             main.Focus();
         }
@@ -750,5 +758,15 @@ public partial class App : System.Windows.Application
             // ‏مقصودٍ وسهوٍ نُسي.
             System.Diagnostics.Debug.WriteLine($"UI diag write failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// ‏(قفل البدء) إن وُجد رمزُ تفعيلٍ على هذا الجهاز فهو الحَكَم: صالحٌ يكفي للتشغيل، ومرفوضٌ (جهازٌ آخر، انتهاء،
+    /// ساعةٌ مُرجَعة، سجلٌّ معبوثٌ به) يقفل البدءَ على شاشة التفعيل ولو كان الترخيصُ القديم صالحاً. وبلا رمزٍ يبقى الترخيصُ القديم.
+    /// </summary>
+    private static bool OfflineGate(bool legacyValid)
+    {
+        var offline = OfflineActivationService.Current();
+        return offline is null ? legacyValid : offline.Verdict == ActivationVerdict.Valid;
     }
 }

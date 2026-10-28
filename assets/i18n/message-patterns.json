@@ -276,5 +276,7 @@
   "'{0}' محجوزٌ لأوامر بيع مؤكَّدة — المتاح للبيع {1}.": "'{0}' is reserved for confirmed sales orders — available to sell {1}.",
   "دورُ الترحيل '{0}' غير معروف.": "Unknown posting role '{0}'.",
   "الحساب {0} غير موجود في دليل حسابات المنشأة.": "Account {0} does not exist in the company chart of accounts.",
-  "الحساب {0} تجميعيٌّ أو موقوف — اختر حساباً تفصيليّاً نشطاً.": "Account {0} is a group or inactive account — choose an active detail account."
+  "الحساب {0} تجميعيٌّ أو موقوف — اختر حساباً تفصيليّاً نشطاً.": "Account {0} is a group or inactive account — choose an active detail account.",
+  "هذه الميزة ({0}) متاحةٌ في الفئة الاحترافيّة (Professional) فقط — ترخيصُك قياسيّ (Standard).": "This feature ({0}) is available in the Professional edition only — your licence is Standard.",
+  "بلغتَ حدَّ المنشآت في ترخيصك ({0}) — لإضافة منشأةٍ يلزم ترخيصٌ بعددٍ أكبر.": "You have reached your licence's company limit ({0}) — adding a company needs a licence with a higher limit."
 }

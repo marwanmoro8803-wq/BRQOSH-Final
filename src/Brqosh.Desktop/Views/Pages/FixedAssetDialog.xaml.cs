@@ -73,6 +73,17 @@ public partial class FixedAssetDialog : Window
         FundingCombo.IsEnabled = !opening;
     }
 
+    /// <summary>‏لكلّ فئة أصولٍ مجمّعُ إهلاكها (12071-12076) — يُقترح تلقائياً عند اختيار حساب الأصل ويبقى قابلاً للتغيير.</summary>
+    private void SuggestDepreciationAccount()
+    {
+        if (AssetAccountCombo.SelectedItem is not AccountOption asset) return;
+        var code = asset.Display.Split(' ')[0];
+        var target = Brqosh.Domain.Accounting.SaudiChartOfAccounts.AccumulatedDepreciationFor(code.Length > 4 ? code[..4] : code);
+        var match = DepAccountCombo.Items.OfType<AccountOption>().FirstOrDefault(a => a.Display.Split(' ')[0] == target);
+        if (match is not null)
+            DepAccountCombo.SelectedItem = match;
+    }
+
     private async Task LoadAccountsAsync()
     {
         await using var db = AppServices.CreateDb();
@@ -84,6 +95,7 @@ public partial class FixedAssetDialog : Window
 
         AssetAccountCombo.ItemsSource = accounts.Where(a => a.Display.StartsWith("12") && !a.Display.StartsWith("1207")).ToList();
         DepAccountCombo.ItemsSource = accounts.Where(a => a.Display.StartsWith("1207")).ToList();
+        AssetAccountCombo.SelectionChanged += (_, _) => SuggestDepreciationAccount();
 
         var banks = await db.BankAccounts
             .Where(b => b.CompanyId == AppServices.CompanyId && b.IsActive)
@@ -108,7 +120,7 @@ public partial class FixedAssetDialog : Window
 
         if (AssetAccountCombo.Items.Count > 0)
             AssetAccountCombo.SelectedIndex = 0;
-        if (DepAccountCombo.Items.Count > 0)
+        if (DepAccountCombo.SelectedIndex < 0 && DepAccountCombo.Items.Count > 0)
             DepAccountCombo.SelectedIndex = 0;
     }
 

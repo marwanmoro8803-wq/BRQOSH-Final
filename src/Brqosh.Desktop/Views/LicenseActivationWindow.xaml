@@ -34,6 +34,17 @@
                      IsReadOnly="True" Margin="0,0,0,16"
                      Background="#FFFDF8"/>
 
+            <!-- رقم الطلب (التفعيل دون اتصال): يُنسخ ويُرسل للمورّد فيعود رمزُ تفعيلٍ لهذا الجهاز -->
+            <TextBlock Text="رقم الطلب" Style="{StaticResource FieldLabel}"/>
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <TextBox x:Name="RequestCodeBox" Style="{StaticResource AppTextBox}" IsReadOnly="True" Background="#FFFDF8"
+                         FlowDirection="LeftToRight" FontFamily="{StaticResource FigureFont}"/>
+                <Button x:Name="CopyRequestButton" Grid.Column="1" Content="نسخ" Margin="8,0,0,0" Padding="16,6" Click="OnCopyRequest"/>
+            </Grid>
+            <TextBlock x:Name="CopiedText" FontSize="{DynamicResource FontSize.Caption}" Foreground="{DynamicResource TextSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="0,0,0,12" Visibility="Collapsed"/>
+
             <!-- اسم المنشأة -->
             <TextBlock Text="اسم المنشأة" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="CompanyBox" Style="{StaticResource AppTextBox}"

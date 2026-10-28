@@ -3,12 +3,57 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Brqosh.Desktop.Views.Controls"
         Title="BRQOSH — إعداد النظام"
-        Width="900" Height="760"
-        MinWidth="800" MinHeight="560"
+        Width="1240" Height="760"
+        MinWidth="1040" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         FontFamily="{StaticResource AppFont}"
         Background="{DynamicResource BackgroundBrush}">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- (طلبُ المالك) لوحةٌ حيّة: أنواعُ الأنشطة تتبدّل بأيقونةٍ وعنوانٍ وسطرِ خدمات، بألوان صفحة الانتظار وتوهّجها -->
+        <Border Grid.Column="0" ClipToBounds="True">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0.15,0" EndPoint="0.85,1">
+                    <GradientStop Color="#1A1411" Offset="0"/>
+                    <GradientStop Color="#2B1D12" Offset="0.55"/>
+                    <GradientStop Color="#1A1411" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Border>
+                <Border.Background>
+                    <RadialGradientBrush x:Name="HeroGlow" Opacity="0.5" RadiusX="0.5" RadiusY="0.32">
+                        <RadialGradientBrush.RelativeTransform><ScaleTransform x:Name="HeroGlowScale" CenterX="0.5" CenterY="0.5" ScaleX="0.9" ScaleY="0.9"/></RadialGradientBrush.RelativeTransform>
+                        <GradientStop Color="#66C98A4B" Offset="0"/>
+                        <GradientStop Color="#00C98A4B" Offset="1"/>
+                    </RadialGradientBrush>
+                </Border.Background>
+                <StackPanel VerticalAlignment="Center" Margin="32,0">
+                    <TextBlock x:Name="HeroHeadline" FontSize="{DynamicResource FontSize.Title}" FontWeight="Bold" Foreground="#F7EFE4"
+                               TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBlock x:Name="HeroTagline" FontSize="{DynamicResource FontSize.Small}" Foreground="#B9A793"
+                               TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,36"/>
+                    <Border x:Name="HeroCard" CornerRadius="16" Padding="22,26" Background="#26F7EFE4" BorderBrush="#55C98A4B" BorderThickness="1">
+                        <Border.RenderTransform><TranslateTransform x:Name="HeroCardShift"/></Border.RenderTransform>
+                        <StackPanel>
+                            <Viewbox Height="72" HorizontalAlignment="Center">
+                                <TextBlock x:Name="HeroIcon" FontFamily="Segoe UI Emoji" Foreground="#E3B07A"/>
+                            </Viewbox>
+                            <TextBlock x:Name="HeroTitle" FontSize="{DynamicResource FontSize.Title}" FontWeight="SemiBold" Foreground="#F7EFE4"
+                                       HorizontalAlignment="Center" Margin="0,14,0,8"/>
+                            <TextBlock x:Name="HeroServices" FontSize="{DynamicResource FontSize.Body}" Foreground="#D9C7B0"
+                                       TextWrapping="Wrap" TextAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel x:Name="HeroDots" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,22,0,0"/>
+                </StackPanel>
+            </Border>
+        </Border>
+
+    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="52,40" MaxWidth="800">
 
             <StackPanel Margin="0,0,0,8">
@@ -135,4 +180,5 @@
                     Click="OnStartClicked"/>
         </StackPanel>
     </ScrollViewer>
+    </Grid>
 </Window>
