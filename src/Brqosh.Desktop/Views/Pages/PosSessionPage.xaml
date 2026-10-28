@@ -67,11 +67,12 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="طريقة الدفع" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <ComboBox x:Name="PaymentCombo" Width="120" Padding="8,6">
+                    <ComboBox x:Name="PaymentCombo" Width="120" Padding="8,6" SelectionChanged="OnPaymentChanged">
                         <ComboBoxItem Content="نقداً"/>
                         <ComboBoxItem Content="بطاقة"/>
                         <ComboBoxItem Content="مختلط"/>
                     </ComboBox>
+                    <TextBox x:Name="CardAmountBox" Width="110" Margin="8,0,0,0" Padding="8,6" Visibility="Collapsed" ToolTip="مبلغ البطاقة" AutomationProperties.Name="مبلغ البطاقة"/>
                 </StackPanel>
                 <TextBlock x:Name="TotalText" FontSize="{DynamicResource FontSize.Heading}" FontWeight="Bold"
                            DockPanel.Dock="Right" VerticalAlignment="Center"/>

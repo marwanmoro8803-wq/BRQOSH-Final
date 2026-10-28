@@ -176,6 +176,17 @@ public partial class PosSessionPage : UserControl
         _ => PosPaymentMethod.Cash,
     };
 
+    // ‏الدفع المختلط: حقلُ مبلغ البطاقة يظهر وحده، والباقي من الإجمالي نقد.
+    private void OnPaymentChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CardAmountBox is null) return;
+        CardAmountBox.Visibility = SelectedPayment() == PosPaymentMethod.Mixed ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static bool TryReadAmount(string? text, out decimal value) =>
+        decimal.TryParse(text?.Trim(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out value)
+        || decimal.TryParse(text?.Trim(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out value);
+
     private async void OnPay(object sender, RoutedEventArgs e)
     {
         // (CEEF-229 · م0-١٦) ضغطة مزدوجة كانت تُنشئ مستندين — الزرّ لا يُعطَّل أثناء الانتظار.
@@ -202,10 +213,22 @@ public partial class PosSessionPage : UserControl
             var username = SecurityContext.ResolveUsername();
             var payment = SelectedPayment();
 
+            decimal? cardAmount = null;
+            if (payment == PosPaymentMethod.Mixed)
+            {
+                if (!TryReadAmount(CardAmountBox.Text, out var card) || card <= 0m)
+                {
+                    UiDialog.Show("أدخل مبلغ البطاقة في الدفع المختلط.", "BRQOSH", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CardAmountBox.Focus();
+                    return;
+                }
+                cardAmount = card;
+            }
+
             var lines = _cart.Select(c => (c.ProductId, c.Quantity)).ToList();
             var result = await facade.GetService<PosSaleService>().SellAsync(
                 AppServices.CompanyId, shiftId, null, lines,
-                company.VatRegistrationNumber.Length == 15, payment, username);
+                company.VatRegistrationNumber.Length == 15, payment, username, cardAmount: cardAmount);
 
             // ‏(ح-١٢٣) ‏الإيصالُ من النموذج المقيس — بأصنافه ورقمِ تسجيل البائع ووقته — ويُطبع من نافذته.
             var receipt = new PosReceiptWindow(
@@ -215,6 +238,7 @@ public partial class PosSessionPage : UserControl
             receipt.ShowDialog();
 
             _cart.Clear();
+            CardAmountBox.Clear();
             UpdateTotal();
         }
         catch (Exception ex)
