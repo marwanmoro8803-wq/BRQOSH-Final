@@ -69,6 +69,10 @@ public static class LeastPrivilegeDatabaseRole
             "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO " + r + ";",
             // ‏**وسجلُّ التدقيق إضافةٌ فقط.**
             $"REVOKE UPDATE, DELETE, TRUNCATE ON {AuditTable} FROM {r};",
+            // ‏**والدفترُ لا يُفرَّغ**، وسجلُّ «رُحِّل في هذه المعاملة» للمشغِّلات وحدها (انظر LedgerImmutability).
+            $"REVOKE TRUNCATE ON journal_entries, journal_entry_lines FROM {r};",
+            $"DO $$ BEGIN IF to_regclass('{LedgerImmutability.PostedInTransactionTable}') IS NOT NULL THEN "
+                + $"REVOKE ALL ON {LedgerImmutability.PostedInTransactionTable} FROM {r}; END IF; END $$;",
         ];
     }
 
