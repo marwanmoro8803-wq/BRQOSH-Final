@@ -18,6 +18,7 @@ public static class PermissionService
         ["fixed_assets"] = [UserRole.Administrator, UserRole.Accountant],
         ["payroll"] = [UserRole.Administrator, UserRole.Accountant],
         ["audit_log"] = [UserRole.Administrator],
+        ["privacy_data"] = [UserRole.Administrator],
         ["users"] = [UserRole.Administrator],
         ["projects"] = [UserRole.Administrator, UserRole.Accountant],
         ["contracts"] = [UserRole.Administrator, UserRole.Accountant],

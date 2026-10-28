@@ -18,6 +18,7 @@ internal static class NavKeyModuleMap
         ["branches"] = ModuleKey.GeneralLedger,
         ["users"] = ModuleKey.GeneralLedger,
         ["audit_log"] = ModuleKey.GeneralLedger,
+        ["privacy_data"] = ModuleKey.GeneralLedger,
         ["soft_deleted_rows"] = ModuleKey.GeneralLedger,
         ["fx_revaluation"] = ModuleKey.Treasury,
         ["monetary_revaluation"] = ModuleKey.Treasury,

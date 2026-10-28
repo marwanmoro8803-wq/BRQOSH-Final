@@ -76,6 +76,7 @@ public static class ProgramNavCatalog
         ["branches"] = new("الفروع", "Branches"),
         ["users"] = new("المستخدمون", "Users"),
         ["audit_log"] = new("سجل التدقيق", "Audit Log"),
+        ["privacy_data"] = new("الخصوصية وحماية البيانات", "Privacy & Data Protection"),
         ["data_quality"] = new("جودة البيانات", "Data Quality"),
         ["platform_events"] = new("أحداث المنصة", "Platform Events"),
         ["customer_support"] = new("الدعم والشكاوى", "Support & Complaints"),

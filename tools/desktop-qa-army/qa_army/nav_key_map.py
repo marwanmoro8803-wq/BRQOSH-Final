@@ -68,6 +68,7 @@ TITLE_TO_KEY: dict[str, str] = {
     "الفروع": "branches",
     "المستخدمون": "users",
     "سجل التدقيق": "audit_log",
+    "الخصوصية وحماية البيانات": "privacy_data",
     "جودة البيانات": "data_quality",
     "أحداث المنصة": "platform_events",
     "دعم العملاء": "customer_support",

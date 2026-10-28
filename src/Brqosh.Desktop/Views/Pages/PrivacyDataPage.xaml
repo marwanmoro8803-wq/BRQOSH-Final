@@ -1,0 +1,44 @@
+<UserControl x:Class="Brqosh.Desktop.Views.Pages.PrivacyDataPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="{StaticResource AppFont}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource GlassPanel}" Padding="20,16" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleText}" Text="الخصوصية وحماية البيانات" FontSize="{DynamicResource FontSize.Title}"/>
+                <TextBlock Style="{StaticResource PageSubtitleText}"
+                           Text="سياسة الخصوصية · حق الاطلاع والنسخ · إخفاء البيانات الشخصية"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Margin="0,0,0,12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="PolicyText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.BodyLarge}"
+                           Foreground="{DynamicResource TextPrimaryBrush}" LineHeight="26"/>
+            </ScrollViewer>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ToolbarCard}">
+            <WrapPanel>
+                <TextBlock Text="صاحب البيانات" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="SubjectTypeCombo" Width="140" Style="{StaticResource AppComboBox}"/>
+                <ComboBox x:Name="SubjectCombo" Width="280" Margin="12,0,0,0" Style="{StaticResource AppComboBox}" DisplayMemberPath="Name"/>
+                <Button Content="تصدير بيانات الشخص" Style="{StaticResource SecondaryButton}" Padding="20,7" Margin="16,0,0,0" Click="OnExport"/>
+                <CheckBox x:Name="ConfirmBox" Content="أؤكد الإخفاء — لا يمكن التراجع عنه" VerticalAlignment="Center" Margin="24,0,0,0"/>
+                <Button x:Name="AnonymizeButton" Content="إخفاء البيانات الشخصية" Style="{StaticResource PrimaryButton}" Padding="20,7" Margin="12,0,0,0"
+                        IsEnabled="False" Click="OnAnonymize"/>
+            </WrapPanel>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource SummaryCard}">
+            <TextBlock x:Name="ResultText" Foreground="White" FontWeight="Bold" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.BodyLarge}"/>
+        </Border>
+    </Grid>
+</UserControl>

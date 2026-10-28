@@ -85,7 +85,7 @@ public class ScreenRoleCoverageTests
     public void TheAdministratorOnlyDecisions_SurviveTheFill()
     {
         string[] mustStayAdministratorOnly =
-            ["audit_log", "users", "zatca_settings", "backup", "organizations",
+            ["audit_log", "privacy_data", "users", "zatca_settings", "backup", "organizations",
              "company_settings", "platform_events",
              "soft_deleted_rows", "data_migration", "diagnostics", "gosi_policy"];
 

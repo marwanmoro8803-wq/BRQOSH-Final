@@ -119,6 +119,7 @@ public static class PageFactory
         ["zatca_settings"] = () => new Views.Pages.ZatcaSettingsPage(),
         ["users"] = () => new Views.Pages.UsersPage(),
         ["audit_log"] = () => new Views.Pages.AuditLogPage(),
+        ["privacy_data"] = () => new Views.Pages.PrivacyDataPage(),
         ["soft_deleted_rows"] = () => new Views.Pages.SoftDeletedRowsPage(),
         ["fx_revaluation"] = () => new Views.Pages.FxRevaluationPage(),
         ["monetary_revaluation"] = () => new Views.Pages.MonetaryRevaluationPage(),

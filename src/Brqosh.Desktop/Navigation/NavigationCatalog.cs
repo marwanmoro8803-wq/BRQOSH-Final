@@ -196,6 +196,7 @@ public static class NavigationCatalog
             new("branches", "الفروع"),
             new("users", "المستخدمون"),
             new("audit_log", "سجل التدقيق"),
+            new("privacy_data", "الخصوصية وحماية البيانات"),
             new("soft_deleted_rows", "المحذوفات"),
             new("data_migration", "ترحيل البيانات"),
             new("backup", "النسخ الاحتياطي"),
@@ -221,7 +222,7 @@ public static class NavigationCatalog
     [
         new("تفضيلاتي", "My preferences", ["preferences"]),
         new("المنشأة", "Company", ["company_settings", "branches", "organizations", "company_groups"]),
-        new("الامتثال والرواتب", "Compliance & payroll", ["zatca_settings", "gosi_policy"]),
+        new("الامتثال والرواتب", "Compliance & payroll", ["zatca_settings", "gosi_policy", "privacy_data"]),
         new("المستخدمون والنظام", "Users & system", ["users", "backup", "data_migration", "diagnostics"]),
     ];
 
@@ -372,6 +373,7 @@ public static class NavigationCatalog
         ["branches"] = "Branches",
         ["users"] = "Users",
         ["audit_log"] = "Audit Log",
+        ["privacy_data"] = "Privacy & Data Protection",
         ["soft_deleted_rows"] = "Deleted Records",
         ["fx_revaluation"] = "FX Revaluation",
         ["monetary_revaluation"] = "Monetary Revaluation",

@@ -73,6 +73,7 @@ public static class NavIconGlyphs
         ["branches"] = "BR",
         ["users"] = "US",
         ["audit_log"] = "AU",
+        ["privacy_data"] = "PDP",
     };
 
     public static string Get(string pageKey)
