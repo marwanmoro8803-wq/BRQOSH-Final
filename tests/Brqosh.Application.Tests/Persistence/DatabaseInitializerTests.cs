@@ -36,7 +36,7 @@ public class DatabaseInitializerTests : IDisposable
 
         Assert.True(company.Id > 0);
         var accountCount = await _db.Accounts.CountAsync(a => a.CompanyId == company.Id);
-        Assert.Equal(SaudiChartOfAccounts.Template.Count, accountCount);
+        Assert.Equal(SaudiChartOfAccounts.Template.Count(t => !t.SeedOnDemand), accountCount);
 
         // الشجرة سليمة: حساب النقدية ابن لمجموعة الأصول المتداولة
         var cash = await _db.Accounts.SingleAsync(a => a.Code == "1101");

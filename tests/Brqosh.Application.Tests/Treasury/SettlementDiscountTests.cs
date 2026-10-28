@@ -130,7 +130,7 @@ public class SettlementDiscountTests : IDisposable
         await PayAsync(1_127m, discount: 23m, allocateTo: invoice);
 
         // ‏دائنٌ ⟵ رصيدٌ سالبٌ بمنطق «مدين − دائن».
-        Assert.Equal(-23m, await BalanceAsync("5214"));
+        Assert.Equal(-23m, await BalanceAsync(SaudiChartOfAccounts.PostingRoleCodes.PurchaseDiscountsEarned));
 
         var payable = (await new SupplierBalanceQuery(_db)
             .AllBalancesAsync(_companyId))[_supplierId];

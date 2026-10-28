@@ -32,6 +32,7 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
         {
             // ‏(Phase 7) ‏حساباتٌ أُضيفت للدليل بعد إنشاء المنشآت — تُضاف إن غابت.
             await Accounting.ChartTemplateSync.AddMissingAsync(db);
+            await Accounting.ChartTemplateSync.ApplyNamingCorrectionsAsync(db);
             return existing;
         }
 
@@ -159,7 +160,7 @@ public class DatabaseInitializer(BrqoshDbContext db, IConfigurationTemplateLoade
             throw new NotSupportedException($"قالب الدليل غير مدعوم بعد: {chartTemplate}");
 
         var idByCode = new Dictionary<string, long>();
-        foreach (var seed in SaudiChartOfAccounts.Template)
+        foreach (var seed in SaudiChartOfAccounts.Template.Where(s => !s.SeedOnDemand))
         {
             long? parentId = seed.ParentCode is null ? null : idByCode[seed.ParentCode];
             var account = Account.Create(

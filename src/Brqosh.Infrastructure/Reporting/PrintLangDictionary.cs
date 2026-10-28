@@ -144,6 +144,7 @@ internal static class PrintLangDictionary
         ["تغيّر ضريبة القيمة المضافة — مدخلات"] = "Change in VAT — input",
         ["تغيّر ضريبة القيمة المضافة — مخرجات"] = "Change in VAT — output",
         ["تغيّر أعمال تحت التنفيذ"] = "Change in contract work in progress",
+        ["تغيّر أصول العقود"] = "Change in contract assets",
         ["تغيّر إنتاج تحت التشغيل"] = "Change in production work in progress",
         ["تغيّر محتجزات لدى العملاء"] = "Change in retentions held by customers",
         ["تغيّر محتجزات مقاولي الباطن"] = "Change in subcontractor retentions",

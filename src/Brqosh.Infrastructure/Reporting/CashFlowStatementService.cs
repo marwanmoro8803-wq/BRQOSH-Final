@@ -74,7 +74,7 @@ public class CashFlowStatementService(BrqoshDbContext db)
             // لم يحدث قطّ (الصحيح صفر: لم يُقبض شيء).
             (SaudiChartOfAccounts.SystemCodes.VatInput, "تغيّر ضريبة القيمة المضافة — مدخلات"),
             (SaudiChartOfAccounts.SystemCodes.VatOutput, "تغيّر ضريبة القيمة المضافة — مخرجات"),
-            (SaudiChartOfAccounts.SystemCodes.WorkInProgress, "تغيّر أعمال تحت التنفيذ"),
+            (SaudiChartOfAccounts.SystemCodes.WorkInProgress, "تغيّر أصول العقود"),
             // ‏(ح-٩٨) ‏إنتاجُ المصنع تحت التشغيل — يُصفَّر بإكمال الأمر، ويُسمّى إن تحرّك.
             (SaudiChartOfAccounts.SystemCodes.ProductionWorkInProcess, "تغيّر إنتاج تحت التشغيل"),
             (SaudiChartOfAccounts.SystemCodes.RetentionReceivable, "تغيّر محتجزات لدى العملاء"),

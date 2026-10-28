@@ -8,7 +8,8 @@ public record SeedAccount(
     AccountType Type,
     string? ParentCode,
     bool IsGroup,
-    bool IsSystem = false);
+    bool IsSystem = false,
+    bool SeedOnDemand = false);
 
 /// <summary>
 /// دليل الحسابات السعودي الجاهز — يُزرع تلقائياً عند إنشاء شركة جديدة.
@@ -28,14 +29,14 @@ public static class SaudiChartOfAccounts
         new("1103", "شيكات برسم التحصيل", "Cheques Under Collection", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1104", "العملاء (المدينون التجاريون)", "Accounts Receivable - Trade", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1105", "أوراق القبض", "Notes Receivable", AccountType.Asset, "11", IsGroup: false),
-        new("1106", "مخصص الديون المشكوك في تحصيلها", "Allowance for Doubtful Debts", AccountType.Asset, "11", IsGroup: false),
+        new("1106", "مخصص خسائر الائتمان المتوقعة", "Allowance for Expected Credit Losses (ECL)", AccountType.Asset, "11", IsGroup: false),
         new("1107", "المخزون", "Inventory", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1108", "بضاعة بالطريق", "Goods in Transit", AccountType.Asset, "11", IsGroup: false),
         new("1109", "مصروفات مدفوعة مقدماً", "Prepaid Expenses", AccountType.Asset, "11", IsGroup: false),
         new("1110", "دفعات مقدمة للموردين", "Advances to Suppliers", AccountType.Asset, "11", IsGroup: false),
         new("1111", "ضريبة القيمة المضافة — مدخلات", "VAT Input (Recoverable)", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
-        new("1112", "عهد وسلف الموظفين", "Employee Advances & Custodies", AccountType.Asset, "11", IsGroup: false),
-        new("1113", "أعمال تحت التنفيذ (مستخلصات غير مفوترة)", "Work in Progress - Unbilled", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
+        new("1112", "عُهد نقدية لدى الموظفين", "Employee Cash Custodies", AccountType.Asset, "11", IsGroup: false),
+        new("1113", "أصول العقود (أعمال منفذة غير مفوترة)", "Contract Assets (Unbilled Work)", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         new("1114", "محتجزات لدى العملاء", "Retention Receivable", AccountType.Asset, "11", IsGroup: false, IsSystem: true),
         // ‏تسويةُ إعادة تقييم الذمم بعملةٍ أجنبية — **حسابٌ مستقلٌّ
         // ‏عن 1104 عمداً**. فالدفترُ المساعد يُبنى من المستندات بأسعار نشأتها، وإعادةُ
@@ -126,7 +127,8 @@ public static class SaudiChartOfAccounts
 
         new("22", "الالتزامات غير المتداولة", "Non-Current Liabilities", AccountType.Liability, "2", IsGroup: true),
         new("2201", "قروض طويلة الأجل", "Long-Term Loans", AccountType.Liability, "22", IsGroup: false),
-        new("2202", "مخصص مكافأة نهاية الخدمة", "End of Service Benefits Provision", AccountType.Liability, "22", IsGroup: false),
+        // ‏(Phase 7) ‏اختياريّ: لا يُزرع لمنشأةٍ جديدة، ويُنشأ عند أوّل تخصيصٍ أو تصفيةٍ لمكافأة نهاية الخدمة.
+        new("2202", "مخصص مكافأة نهاية الخدمة", "End of Service Benefits Provision", AccountType.Liability, "22", IsGroup: false, SeedOnDemand: true),
 
         // ‏مخصّصُ الإجازات — **التزامٌ يتراكم يوماً بيوم** (المادة 109)،
         // ‏ويُدفع نقداً عند انتهاء الخدمة عمّا لم يُستعمل (المادة 111).
@@ -160,8 +162,10 @@ public static class SaudiChartOfAccounts
 
         new("51", "تكلفة الإيرادات", "Cost of Revenue", AccountType.Expense, "5", IsGroup: true),
         new("5101", "تكلفة البضاعة المباعة", "Cost of Goods Sold", AccountType.Expense, "51", IsGroup: false, IsSystem: true),
-        new("5102", "مشتريات", "Purchases", AccountType.Expense, "51", IsGroup: false),
-        new("5103", "مردودات ومسموحات المشتريات", "Purchase Returns & Allowances", AccountType.Expense, "51", IsGroup: false),
+        // ‏(Phase 7) ‏5102 مشترياتُ ما لا يُخزَّن (خدماتٌ وبنودٌ تُحمَّل مصروفاً) — المخزونُ الدائم يمرّ على 1107 لا عليه.
+        new("5102", "مشتريات غير مخزنية (تُحمَّل مصروفاً)", "Non-Inventory Purchases (Expensed)", AccountType.Expense, "51", IsGroup: false),
+        // ‏(Phase 7) ‏5103 لا يكتبه شيء (إشعارُ المدين يعكس 5102 أو 1107) — فلا يُزرع، ويُوقَف في القواعد القائمة إن خلا من الحركة.
+        new("5103", "مردودات ومسموحات المشتريات (جرد دوري — لا يُرحَّل عليه آلياً)", "Purchase Returns & Allowances (periodic inventory; not auto-posted)", AccountType.Expense, "51", IsGroup: false, SeedOnDemand: true),
         new("5104", "تكاليف مقاولي الباطن", "Subcontractor Costs", AccountType.Expense, "51", IsGroup: false, IsSystem: true),
         new("5105", "مواد ومهمات المشاريع", "Project Materials & Supplies", AccountType.Expense, "51", IsGroup: false),
         new("5106", "أجور عمالة مباشرة", "Direct Labor", AccountType.Expense, "51", IsGroup: false),
@@ -170,6 +174,8 @@ public static class SaudiChartOfAccounts
         // ‏الدورةُ العريضة تستلم وتُفوتر بالسعر نفسه فلا تُنتج فرقاً، وحارسُ تغطية الحسابات
         // ‏النظامية يشترط أن يستقبل كلُّ نظاميٍّ قيداً — فوسمُه نظامياً يُسقطه من أوّل يوم.
         new("5108", "فروق أسعار المشتريات", "Purchase Price Variance", AccountType.Expense, "51", IsGroup: false),
+        // ‏(Phase 7) ‏الخصمُ المكتسب يُخفّض تكلفةَ الشراء (IAS 2.11) — فمكانُه تحت تكلفة الإيرادات 51 لا المصروفات التشغيلية 52.
+        new("5109", "خصم مكتسب على المشتريات", "Purchase Discounts Earned", AccountType.Expense, "51", IsGroup: false),
 
         new("52", "المصروفات التشغيلية والإدارية", "Operating & Administrative Expenses", AccountType.Expense, "5", IsGroup: true),
         new("5201", "الرواتب والأجور", "Salaries & Wages", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
@@ -185,7 +191,8 @@ public static class SaudiChartOfAccounts
         new("5211", "مصروف إهلاك الأصول الثابتة", "Depreciation Expense", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
         new("5212", "ديون معدومة", "Bad Debts Expense", AccountType.Expense, "52", IsGroup: false),
         new("5213", "عمولات ورسوم بنكية", "Bank Charges & Commissions", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
-        new("5214", "خصم مكتسب", "Purchase Discounts Earned", AccountType.Expense, "52", IsGroup: false),
+        // ‏(Phase 7) ‏5214 خرج من 52 إلى 5109 — يبقى لقواعدَ قائمةٍ رُحِّل عليه، ولا يُزرع لمنشأةٍ جديدة.
+        new("5214", "خصم مكتسب (قديم — يُرحَّل الآن على 5109)", "Purchase Discounts Earned (legacy — now 5109)", AccountType.Expense, "52", IsGroup: false, SeedOnDemand: true),
         new("5215", "مصروفات متنوعة", "Miscellaneous Expenses", AccountType.Expense, "52", IsGroup: false),
         new("5216", "مصروف الزكاة", "Zakat Expense", AccountType.Expense, "52", IsGroup: false),
         new("5217", "خسائر فروق عملة غير محققة", "Unrealized FX Loss", AccountType.Expense, "52", IsGroup: false, IsSystem: true),
@@ -210,7 +217,7 @@ public static class SaudiChartOfAccounts
         public const string SalariesPayable = "2108";
         public const string GosiPayable = "2109";
         public const string SalesDiscounts = "4103";
-        public const string PurchaseDiscountsEarned = "5214";
+        public const string PurchaseDiscountsEarned = "5109";
         public const string Allowances = "5202";
         public const string EndOfServiceExpense = "5219";
         public const string EndOfServiceProvision = "2202";
@@ -225,7 +232,7 @@ public static class SaudiChartOfAccounts
 
     /// <summary>‏(Phase 7) الحساباتُ المضافةُ للدليل بعد إنشاء منشآتٍ قائمة — تُضاف لها عند الإقلاع إن غابت.</summary>
     public static IReadOnlyList<string> AddedForExistingCompanies { get; } =
-        ["12071", "12072", "12073", "12074", "12075", "12076", "2118", "5221"];
+        ["12071", "12072", "12073", "12074", "12075", "12076", "2118", "5221", "5109"];
 
     /// <summary>
     /// ‏مجمّعُ الإهلاك الافتراضيّ لحساب أصلٍ ثابت — لكلّ فئةٍ مجمّعُها، وما لا فئةَ له يبقى على 1207 العامّ.
