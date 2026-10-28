@@ -106,7 +106,9 @@ public partial class SalesInvoiceDialog : Window
     public SalesInvoiceDialog()
     {
         InitializeComponent();
-        CurrencyBox.Text = Brqosh.Desktop.Ui.CurrencyLabel.Code;
+        Brqosh.Desktop.Ui.CurrencyChoices.Fill(CurrencyBox, Brqosh.Desktop.Ui.CurrencyLabel.Code);
+        Loaded += async (_, _) => Brqosh.Desktop.Ui.CurrencyChoices.Fill(
+            CurrencyBox, Brqosh.Desktop.Ui.CurrencyLabel.Code, await _vm.LoadCurrenciesAsync());
         DatePickerBox.SelectedDate = DateTime.Today;
         LinesGrid.ItemsSource = _rows;
         Loaded += async (_, _) =>
@@ -131,7 +133,7 @@ public partial class SalesInvoiceDialog : Window
     public SalesInvoiceDialog(CorrectedInvoiceSeed seed) : this()
     {
         _seed = seed;
-        CurrencyBox.Text = seed.CurrencyCode;
+        Brqosh.Desktop.Ui.CurrencyChoices.Select(CurrencyBox, seed.CurrencyCode);
         RateBox.Text = seed.ExchangeRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
         DocumentDiscountBox.Text = seed.DocumentDiscountAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
         foreach (var line in seed.Lines)
@@ -366,7 +368,7 @@ public partial class SalesInvoiceDialog : Window
     /// </summary>
     private void ApplyCurrency(Brqosh.Domain.Sales.SalesInvoice invoice)
     {
-        var code = (CurrencyBox.Text ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
+        var code = (CurrencyBox.SelectedItem as string ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
         if (code.Length == 0) code = Brqosh.Desktop.Ui.CurrencyLabel.Code;
         if (code == Brqosh.Desktop.Ui.CurrencyLabel.Code) return;
 

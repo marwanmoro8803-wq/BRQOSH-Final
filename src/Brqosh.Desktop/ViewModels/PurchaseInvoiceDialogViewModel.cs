@@ -54,6 +54,26 @@ public sealed class PurchaseInvoiceDialogViewModel
             .ToList();
     }
 
+    /// <summary>
+    /// عملاتُ المنشأة المستعملة (لها سعرُ صرفٍ مسجَّل) لتتقدّم في قائمة العملة بعد عملة الأساس.
+    /// <b>ترتيبٌ لا قيد</b>: فإن تعذّرت القراءةُ بقيت القائمةُ كاملةً من <c>CurrencyCatalog</c>.
+    /// </summary>
+    public async Task<List<string>> LoadCurrenciesAsync()
+    {
+        try
+        {
+            await using var db = AppServices.CreateDb();
+            var rates = db.ExchangeRates.Where(r => r.CompanyId == AppServices.CompanyId);
+            return await rates.Select(r => r.FromCurrencyCode)
+                .Union(rates.Select(r => r.ToCurrencyCode))
+                .ToListAsync();
+        }
+        catch (Exception)
+        {
+            return [];
+        }
+    }
+
     public async Task PostAsync(PurchaseInvoice invoice)
     {
         using var facade = new DesktopAccountingFacade();

@@ -60,13 +60,8 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="العملة" Style="{StaticResource FieldLabel}"/>
-                    <DockPanel>
-                    <Border DockPanel.Dock="Left" Width="30" Height="22" Margin="0,0,8,0" CornerRadius="2" ClipToBounds="True" VerticalAlignment="Center"
-                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" ToolTip="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyCountry}}">
-                        <Image Source="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyFlag}}" Stretch="UniformToFill"/>
-                    </Border>
-                    <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR"/>
-                </DockPanel>
+                    <ComboBox x:Name="CurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
+                              FlowDirection="LeftToRight" AutomationProperties.Name="العملة"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>

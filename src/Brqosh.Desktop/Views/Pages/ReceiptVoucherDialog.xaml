@@ -60,7 +60,8 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="العملة" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR"/>
+                    <ComboBox x:Name="CurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
+                              FlowDirection="LeftToRight" AutomationProperties.Name="العملة"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>

@@ -41,7 +41,9 @@ public partial class PaymentVoucherDialog : Window
     public PaymentVoucherDialog()
     {
         InitializeComponent();
-        CurrencyBox.Text = Brqosh.Desktop.Ui.CurrencyLabel.Code;
+        Brqosh.Desktop.Ui.CurrencyChoices.Fill(CurrencyBox, Brqosh.Desktop.Ui.CurrencyLabel.Code);
+        Loaded += async (_, _) => Brqosh.Desktop.Ui.CurrencyChoices.Fill(
+            CurrencyBox, Brqosh.Desktop.Ui.CurrencyLabel.Code, await _vm.LoadCurrenciesAsync());
         DatePickerBox.SelectedDate = DateTime.Today;
         AllocGrid.ItemsSource = _allocations;
         Loaded += async (_, _) =>
@@ -178,7 +180,7 @@ public partial class PaymentVoucherDialog : Window
     /// </remarks>
     private (string Code, decimal Rate)? ReadCurrency()
     {
-        var code = (CurrencyBox.Text ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
+        var code = (CurrencyBox.SelectedItem as string ?? Brqosh.Desktop.Ui.CurrencyLabel.Code).Trim().ToUpperInvariant();
         if (code.Length == 0) code = Brqosh.Desktop.Ui.CurrencyLabel.Code;
         if (code == Brqosh.Desktop.Ui.CurrencyLabel.Code) return null;
 
