@@ -56,7 +56,7 @@
                     <DataGridTextColumn Header="رقم السند" Binding="{Binding VoucherNumber}" Width="140"/>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding VoucherDate}" Width="110"/>
                     <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
-                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="130"/>
+                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" Width="130"/>
                     <DataGridTextColumn Header="طريقة القبض" Binding="{Binding MethodAr}" Width="110"/>
                     <DataGridTextColumn Header="المرجع" Binding="{Binding Reference}" Width="140"/>
                     <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="200"/>

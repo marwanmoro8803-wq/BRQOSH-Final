@@ -1,6 +1,6 @@
-using Brqosh.Domain.Accounting;
 using Brqosh.Desktop.Ui;
 using Brqosh.Desktop.Views.Pages;
+using Brqosh.Domain.Accounting;
 using Brqosh.Domain.Purchasing;
 using Brqosh.Infrastructure.Accounting;
 using Brqosh.Infrastructure.Purchasing;
@@ -19,13 +19,29 @@ public sealed class PurchaseInvoicesViewModel
     public decimal MonthTotal { get; private set; }
     public decimal VatTotal { get; private set; }
 
+    /// <summary>معايير شريط البحث والفلترة؛ تُطبَّق على القائمة والترقيم فقط، والمؤشرات تبقى على كل الفواتير.</summary>
+    public string? Search { get; set; }
+    public PurchaseInvoiceStatus? StatusFilter { get; set; }
+    public DateOnly? FromDate { get; set; }
+    public DateOnly? ToDate { get; set; }
+
     internal async Task LoadAsync(PagingState paging)
     {
         await using var db = AppServices.CreateDb();
         var baseQuery = db.PurchaseInvoices.Where(i => i.CompanyId == AppServices.CompanyId);
-        paging.SetTotal(await baseQuery.CountAsync());
+        var listQuery = baseQuery;
+        if (!string.IsNullOrWhiteSpace(Search))
+        {
+            var term = Search.Trim();
+            listQuery = listQuery.Where(i => (i.InvoiceNumber != null && i.InvoiceNumber.Contains(term)) || i.SupplierInvoiceReference.Contains(term)
+                || db.Suppliers.Any(p => p.Id == i.SupplierId && p.NameAr.Contains(term)));
+        }
+        if (StatusFilter is { } status) listQuery = listQuery.Where(i => i.Status == status);
+        if (FromDate is { } from) listQuery = listQuery.Where(i => i.InvoiceDate >= from);
+        if (ToDate is { } to) listQuery = listQuery.Where(i => i.InvoiceDate <= to);
+        paging.SetTotal(await listQuery.CountAsync());
 
-        var invoices = await baseQuery
+        var invoices = await listQuery
             .OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id)
             .Skip(paging.Skip)
             .Take(paging.PageSize)

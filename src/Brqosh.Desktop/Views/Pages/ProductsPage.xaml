@@ -49,8 +49,8 @@
                     <DataGridTextColumn Header="اسم الصنف" Binding="{Binding NameAr}" Width="*"/>
                     <DataGridTextColumn Header="الوحدة" Binding="{Binding Unit}" Width="80"/>
                     <DataGridTextColumn Header="النوع" Binding="{Binding TypeAr}" Width="90"/>
-                    <DataGridTextColumn Header="سعر البيع" Binding="{Binding SalePrice, StringFormat=N2}" Width="110"/>
-                    <DataGridTextColumn Header="متوسط التكلفة" Binding="{Binding WeightedAverageCost, StringFormat=N4}" Width="120"/>
+                    <DataGridTextColumn Header="سعر البيع" Binding="{Binding SalePrice, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" Width="110"/>
+                    <DataGridTextColumn Header="متوسط التكلفة" Binding="{Binding WeightedAverageCost, StringFormat=N4}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" Width="120"/>
                     <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode}" Width="130"/>
                 </DataGrid.Columns>
             </DataGrid>

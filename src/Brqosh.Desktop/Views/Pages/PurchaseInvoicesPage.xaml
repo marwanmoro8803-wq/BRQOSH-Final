@@ -2,10 +2,12 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:brq="clr-namespace:Brqosh.Desktop.Ui"
+             xmlns:ctl="clr-namespace:Brqosh.Desktop.Controls"
              FlowDirection="RightToLeft"
              FontFamily="{StaticResource AppFont}">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -50,11 +52,16 @@
             </brq:ToolbarDockPanel>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Padding="8" Margin="0,12,0,12">
+        <!-- ══ البحث والفلترة ══ -->
+        <Border Grid.Row="1" Style="{StaticResource ContentCard}" Padding="12,8" Margin="0,12,0,0">
+            <ctl:ListFilterBar x:Name="FilterBar" FilterChanged="OnFilterChanged"/>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource ContentCard}" Padding="8" Margin="0,12,0,12">
             <UniformGrid x:Name="KpiGrid" Columns="3"/>
         </Border>
 
-        <Border Grid.Row="2" Style="{StaticResource ContentCard}">
+        <Border Grid.Row="3" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="InvoicesGrid" AutoGenerateColumns="False" IsReadOnly="True"
                       BorderThickness="0" Background="Transparent"
                       MouseDoubleClick="OnGridDoubleClick">
@@ -63,9 +70,9 @@
                     <DataGridTextColumn Header="مرجع المورد" Binding="{Binding SupplierReference}" Width="130"/>
                     <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate}" Width="110"/>
                     <DataGridTextColumn Header="المورد" Binding="{Binding SupplierName}" Width="*"/>
-                    <DataGridTextColumn Header="قبل الضريبة" Binding="{Binding Subtotal, StringFormat=N2}" Width="120"/>
-                    <DataGridTextColumn Header="الضريبة" Binding="{Binding VatAmount, StringFormat=N2}" Width="100"/>
-                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding GrandTotal, StringFormat=N2}" Width="120"/>
+                    <DataGridTextColumn Header="قبل الضريبة" Binding="{Binding Subtotal, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" Width="120"/>
+                    <DataGridTextColumn Header="الضريبة" Binding="{Binding VatAmount, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" Width="100"/>
+                    <DataGridTextColumn Header="الإجمالي" Binding="{Binding GrandTotal, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" Width="120"/>
                     <DataGridTextColumn Header="الحالة" Binding="{Binding StatusAr}" Width="90"/>
                 </DataGrid.Columns>
             </DataGrid>

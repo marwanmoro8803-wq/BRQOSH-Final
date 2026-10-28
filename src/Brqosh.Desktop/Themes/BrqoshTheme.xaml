@@ -1403,6 +1403,41 @@
         </Style.Triggers>
     </Style>
 
+    <!-- أعمدة الأرقام (المبالغ والكميات والأرصدة): أرقامٌ بعرضٍ ثابت ومحاذاةٌ يمنى واتجاهٌ LTR
+         كي تصطفّ المنازلُ العشرية وتبقى إشارةُ السالب في مكانها. تُستعمل على DataGridTextColumn:
+         ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}" -->
+    <Style x:Key="NumericCellText" TargetType="TextBlock">
+        <Setter Property="FlowDirection"               Value="LeftToRight"/>
+        <Setter Property="TextAlignment"               Value="Right"/>
+        <Setter Property="HorizontalAlignment"         Value="Stretch"/>
+        <Setter Property="VerticalAlignment"           Value="Center"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <Setter Property="Typography.NumeralStyle"     Value="Lining"/>
+    </Style>
+
+    <Style x:Key="DataGridNumericCell" TargetType="DataGridCell">
+        <Setter Property="Padding"          Value="16,0"/>
+        <Setter Property="BorderThickness"  Value="0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          HorizontalAlignment="Stretch"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource PrimarySoftBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style TargetType="DataGridRow">
         <Setter Property="MinHeight" Value="{DynamicResource GridRowHeight}"/>
         <Style.Triggers>

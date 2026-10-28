@@ -1,0 +1,39 @@
+<UserControl x:Class="Brqosh.Desktop.Controls.ListFilterBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FlowDirection="RightToLeft"
+             FontFamily="{StaticResource AppFont}">
+    <!-- شريط بحث وفلترة مشترك لقوائم الفواتير والسندات: نص بحث (مؤجَّل 300ms) + حالة اختيارية + نطاق تاريخ.
+         يطلق FilterChanged فقط عند تغيير المستخدم، والصفحة تقرأ SearchText وSelectedStatusValue وFromDate وToDate. -->
+    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="280"
+                 VerticalAlignment="Center"
+                 TextChanged="OnSearchTextChanged"
+                 AutomationProperties.Name="بحث"/>
+        <Button x:Name="ClearBtn" Content="✕" Padding="10,6" Margin="6,0,0,0"
+                VerticalAlignment="Center"
+                Click="OnClear"
+                AutomationProperties.Name="مسح الفلاتر"/>
+
+        <StackPanel x:Name="StatusPanel" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="الحالة" VerticalAlignment="Center" Margin="0,0,8,0"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <ComboBox x:Name="StatusCombo" Width="140" DisplayMemberPath="Label"
+                      SelectionChanged="OnStatusChanged"
+                      AutomationProperties.Name="الحالة"/>
+        </StackPanel>
+
+        <StackPanel x:Name="DatePanel" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="من تاريخ" VerticalAlignment="Center" Margin="0,0,8,0"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <DatePicker x:Name="FromPicker" Width="140"
+                        SelectedDateChanged="OnDateChanged"
+                        AutomationProperties.Name="من تاريخ"/>
+            <TextBlock Text="إلى تاريخ" VerticalAlignment="Center" Margin="12,0,8,0"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <DatePicker x:Name="ToPicker" Width="140"
+                        SelectedDateChanged="OnDateChanged"
+                        AutomationProperties.Name="إلى تاريخ"/>
+        </StackPanel>
+    </WrapPanel>
+</UserControl>

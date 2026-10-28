@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Brqosh.Desktop.Automation;
+using Brqosh.Desktop.Controls;
 using Brqosh.Desktop.Reporting;
 using Brqosh.Desktop.Security;
 using Brqosh.Desktop.Ui;
@@ -29,6 +30,14 @@ public partial class PurchaseInvoicesPage : UserControl
     public PurchaseInvoicesPage()
     {
         InitializeComponent();
+        FilterBar.SearchToolTip = LocaleManager.T("بحث بالرقم أو مرجع المورد أو اسمه", "Search by number, supplier reference or supplier name");
+        FilterBar.SetStatusOptions(new[]
+        {
+            new ListFilterOption(LocaleManager.T("كل الحالات", "All statuses"), null),
+            new ListFilterOption(LocaleManager.T("مسودة", "Draft"), PurchaseInvoiceStatus.Draft),
+            new ListFilterOption(LocaleManager.T("مرحّلة", "Posted"), PurchaseInvoiceStatus.Posted),
+            new ListFilterOption(LocaleManager.T("ملغاة", "Cancelled"), PurchaseInvoiceStatus.Cancelled),
+        });
         Loaded += async (_, _) =>
         {
             PermissionService.ApplyActionVisibility(AppServices.CurrentUser,
@@ -47,6 +56,17 @@ public partial class PurchaseInvoicesPage : UserControl
         PrevBtn.IsEnabled = _paging.CanPrev;
         NextBtn.IsEnabled = _paging.CanNext;
         RenderKpis();
+    }
+
+    /// <summary>شريط البحث والفلترة: يمرّر المعايير للنموذج ويعود للصفحة الأولى ثم يعيد التحميل نفسه.</summary>
+    private async void OnFilterChanged(object? sender, EventArgs e)
+    {
+        _vm.Search = FilterBar.SearchText;
+        _vm.StatusFilter = FilterBar.SelectedStatusValue as PurchaseInvoiceStatus?;
+        _vm.FromDate = FilterBar.FromDate;
+        _vm.ToDate = FilterBar.ToDate;
+        _paging.Reset();
+        await UiFeedback.RunSafeAsync(ReloadAsync);
     }
 
     private void RenderKpis()
