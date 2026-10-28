@@ -73,9 +73,9 @@ internal static class PrintLangDictionary
         ["حقوق ملكية"] = "Equity",
         ["الأصول"] = "Assets",
         ["الالتزامات + حقوق الملكية"] = "Liabilities + equity",
-        ["المركز متوازن"] = "The balance sheet is balanced",
-        ["المركز غير متوازن"] = "The balance sheet is NOT balanced",
-        ["قائمة المركز المالي"] = "Balance Sheet",
+        ["المركز متوازن"] = "The statement of financial position is balanced",
+        ["المركز غير متوازن"] = "The statement of financial position is NOT balanced",
+        ["قائمة المركز المالي"] = "Statement of Financial Position",
         ["حتى {0}"] = "As of {0}",
 
         // — إقرار القيمة المضافة —
@@ -161,7 +161,7 @@ internal static class PrintLangDictionary
         ["قائمة دخل موحّدة"] = "Consolidated Income Statement",
         ["الإيرادات"] = "Revenue",
         ["المصروفات"] = "Expenses",
-        ["مركز مالي موحّد"] = "Consolidated Balance Sheet",
+        ["مركز مالي موحّد"] = "Consolidated Statement of Financial Position",
         ["كما في {0} · {1}"] = "As of {0} · {1}",
         ["من {0} إلى {1} · {2}"] = "From {0} to {1} · {2}",
         ["الالتزامات + الملكية"] = "Liabilities + equity",
