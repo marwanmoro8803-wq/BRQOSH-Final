@@ -46,16 +46,48 @@ public class SalesOrderService(BrqoshDbContext db)
     /// <b>ومسارُ التراجُع لا يُفرِّقُه اختبارٌ هنا</b> — يلزمُه حقنُ عطلٍ،
     /// <b>وذلك يُقال ولا يُدّعى خلافُه</b>.</para>
     /// </summary>
-    public async Task<SalesInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId,
+    public Task<SalesInvoice> CreateInvoiceFromOrderAsync(long companyId, long orderId,
         DateOnly invoiceDate, long? warehouseId = null, CancellationToken ct = default) =>
+        CreatePartialInvoiceFromOrderAsync(companyId, orderId, invoiceDate, null, warehouseId, ct);
+
+    /// <summary>
+    /// ‏فاتورةٌ بجزءٍ من الأمر: <paramref name="quantities"/> كمّيةٌ لكلّ رقم سطر (من الصفر)، و<c>null</c> = كلُّ المتبقّي.
+    /// ‏ولا تُفوتر كمّيةٌ تزيد على المتبقّي — والمتبقّي = المطلوب − ما فُوتر بفواتيرَ غيرِ ملغاة.
+    /// </summary>
+    public async Task<SalesInvoice> CreatePartialInvoiceFromOrderAsync(long companyId, long orderId,
+        DateOnly invoiceDate, IReadOnlyDictionary<int, decimal>? quantities, long? warehouseId = null,
+        CancellationToken ct = default) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
         {
             SecurityContext.EnsureCanPost();
+            // ‏فاتورتان جزئيّتان متزامنتان لا تقرآن المتبقّي نفسَه.
+            await DocumentSequenceLock.AcquireAsync(db.Database, companyId, "SOI", (int)(orderId % int.MaxValue));
             var order = await db.SalesOrders
                 .SingleAsync(o => o.CompanyId == companyId && o.Id == orderId, token);
 
-            if (order.Status != SalesOrderStatus.Confirmed)
+            if (order.Status is not (SalesOrderStatus.Confirmed or SalesOrderStatus.PartInvoiced))
                 throw new Domain.Accounting.AccountingException("يُنشأ الفاتورة من أمر بيع مؤكد فقط.");
+
+            var invoicedLines = await db.SalesOrderInvoiceLines.AsNoTracking()
+                .Where(l => l.CompanyId == companyId && l.SalesOrderId == orderId && !l.IsCancelled)
+                .ToListAsync(token);
+            var remaining = order.Lines.Select((l, i) =>
+                l.Quantity - invoicedLines.Where(x => x.LineIndex == i).Sum(x => x.Quantity)).ToList();
+            var take = new decimal[order.Lines.Count];
+            if (quantities is null)
+                for (var i = 0; i < take.Length; i++) take[i] = remaining[i];
+            else
+                foreach (var (index, qty) in quantities)
+                {
+                    if (index < 0 || index >= take.Length)
+                        throw new Domain.Accounting.AccountingException($"سطر أمر البيع رقم {index + 1} غير موجود.");
+                    if (qty < 0m || qty > remaining[index])
+                        throw new Domain.Accounting.AccountingException(
+                            $"كمية السطر {index + 1} ({qty:N2}) تتجاوز المتبقّي للفوترة ({remaining[index]:N2}).");
+                    take[index] = qty;
+                }
+            if (take.All(q => q <= 0m))
+                throw new Domain.Accounting.AccountingException("لا كمية متبقّية للفوترة في أمر البيع.");
 
             var invoice = SalesInvoice.CreateDraft(companyId, order.CustomerId, invoiceDate);
             // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**الفاتورةُ تُصرف من المستودع المختار** (والفارغُ
@@ -83,43 +115,50 @@ public class SalesOrderService(BrqoshDbContext db)
                 var allocator = new BatchAllocationService(db);
                 foreach (var trackedId in trackedIds)
                 {
-                    var wanted = order.Lines.Where(l => l.ProductId == trackedId).Sum(l => l.Quantity);
+                    var wanted = order.Lines.Select((l, i) => (l, i)).Where(x => x.l.ProductId == trackedId).Sum(x => take[x.i]);
                     draws[trackedId] = (await allocator.AllocateAsync(
                         companyId, trackedId, warehouse.Id, wanted, invoiceDate, token)).ToList();
                 }
             }
 
             // ‏(م-٥ · ن-٥٢) الثلاثيُّ الضريبيُّ يعبر التحويل — انظر `PurchaseOrderService`.
-            foreach (var line in order.Lines)
+            for (var index = 0; index < order.Lines.Count; index++)
             {
+                var line = order.Lines[index];
+                if (take[index] <= 0m)
+                    continue;
                 if (line.ProductId is not long productId || !draws.TryGetValue(productId, out var available))
                 {
-                    invoice.AddLine(line.Description, line.Quantity, line.UnitPrice, line.ProductId,
+                    invoice.AddLine(line.Description, take[index], line.UnitPrice, line.ProductId,
                         line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason);
                     continue;
                 }
 
                 // ‏سطرٌ للفاتورة لكلّ دفعةٍ يسحب منها هذا السطر، وما بقي من دفعةٍ يُترك لسطر الأمر التالي.
-                var remaining = line.Quantity;
-                while (remaining > 0m)
+                var toDraw = take[index];
+                while (toDraw > 0m)
                 {
                     // ‏المُخصِّصُ يقبل نقصاً دون ٠٫٠٠٠١ — فيُرفض هنا باسم الصنف لا بخطأ فهرسٍ خامّ.
                     if (available.Count == 0)
                         throw new Domain.Accounting.AccountingException(
                             $"لا يبقى من دفعات '{products[productId].NameAr}' السارية ما يستوعب أمرَ البيع.");
                     var draw = available[0];
-                    var take = Math.Min(remaining, draw.Quantity);
-                    invoice.AddLine(line.Description, take, line.UnitPrice, line.ProductId,
+                    var drawn = Math.Min(toDraw, draw.Quantity);
+                    invoice.AddLine(line.Description, drawn, line.UnitPrice, line.ProductId,
                         line.VatCategory, line.TaxExemptionReasonCode, line.TaxExemptionReason,
                         batchNumber: draw.BatchNumber);
-                    remaining -= take;
-                    if (take >= draw.Quantity) available.RemoveAt(0);
-                    else available[0] = draw with { Quantity = draw.Quantity - take };
+                    toDraw -= drawn;
+                    if (drawn >= draw.Quantity) available.RemoveAt(0);
+                    else available[0] = draw with { Quantity = draw.Quantity - drawn };
                 }
             }
 
             await new SalesInvoicePostingService(db).PostAsync(invoice);
-            order.MarkInvoiced(invoice.Id);
+            for (var index = 0; index < take.Length; index++)
+                if (take[index] > 0m)
+                    db.SalesOrderInvoiceLines.Add(
+                        SalesOrderInvoiceLine.Create(companyId, order.Id, invoice.Id, index, take[index]));
+            order.RecordInvoice(invoice.Id, fullyInvoiced: take.Select((q, i) => remaining[i] - q).All(r => r <= 0m));
             await db.SaveChangesAsync(token);
             return invoice;
         });

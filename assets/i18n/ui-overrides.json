@@ -2016,5 +2016,7 @@
   "اسم الفئة مطلوب.": "The category name is required.",
   "حساب الفئة غير صالح.": "The category account is invalid.",
   "فئة الصنف غير صالحة.": "The item category is invalid.",
-  "حساب الصنف غير صالح.": "The item account is invalid."
+  "حساب الصنف غير صالح.": "The item account is invalid.",
+  "ربط سطر أمر البيع بالفاتورة غير صالح.": "The link between the sales order line and the invoice is invalid.",
+  "لا كمية متبقّية للفوترة في أمر البيع.": "There is no remaining quantity to invoice on the sales order."
 }

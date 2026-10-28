@@ -124,6 +124,7 @@ public class BrqoshDbContext : DbContext
     public DbSet<LoginAuditEntry> LoginAuditEntries => Set<LoginAuditEntry>();
     public DbSet<SalesQuotation> SalesQuotations => Set<SalesQuotation>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
+    public DbSet<SalesOrderInvoiceLine> SalesOrderInvoiceLines => Set<SalesOrderInvoiceLine>();
     public DbSet<CrmLead> CrmLeads => Set<CrmLead>();
     public DbSet<CrmOpportunity> CrmOpportunities => Set<CrmOpportunity>();
     public DbSet<CrmActivity> CrmActivities => Set<CrmActivity>();
@@ -1738,6 +1739,15 @@ public class BrqoshDbContext : DbContext
                 lines.Property(l => l.VatCategory).HasConversion<string>().HasMaxLength(16);
             });
             entity.Navigation(q => q.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        // ‏ما فُوتر من كلّ سطر أمر بيع (الفوترة الجزئية).
+        modelBuilder.Entity<SalesOrderInvoiceLine>(entity =>
+        {
+            entity.ToTable("sales_order_invoice_lines");
+            entity.Property(l => l.Quantity).HasPrecision(18, 4);
+            entity.HasIndex(l => new { l.CompanyId, l.SalesOrderId });
+            entity.HasIndex(l => l.SalesInvoiceId);
         });
 
         modelBuilder.Entity<SalesOrder>(entity =>

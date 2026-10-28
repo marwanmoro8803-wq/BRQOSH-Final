@@ -4030,6 +4030,42 @@ namespace Brqosh.Infrastructure.Persistence.Migrations
                     b.ToTable("sales_orders", (string)null);
                 });
 
+            modelBuilder.Entity("Brqosh.Domain.Sales.SalesOrderInvoiceLine", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CompanyId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LineIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<long>("SalesInvoiceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("SalesOrderId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalesInvoiceId");
+
+                    b.HasIndex("CompanyId", "SalesOrderId");
+
+                    b.ToTable("sales_order_invoice_lines", (string)null);
+                });
+
             modelBuilder.Entity("Brqosh.Domain.Sales.SalesQuotation", b =>
                 {
                     b.Property<long>("Id")

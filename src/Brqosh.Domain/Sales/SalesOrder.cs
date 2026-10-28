@@ -8,6 +8,8 @@ public enum SalesOrderStatus
     Confirmed = 1,
     Invoiced = 2,
     Cancelled = 3,
+    /// <summary>فُوتر بعضُه — ويبقى قابلاً لفاتورةٍ أخرى بالمتبقّي.</summary>
+    PartInvoiced = 4,
 }
 
 /// <summary>أمر بيع — LIFECYCLE-32/33 (Draft → Confirmed → Invoiced).</summary>
@@ -99,6 +101,24 @@ public class SalesOrder : ILineDocumentTotals
     }
 
     /// <summary>عند إلغاء الفاتورة الصادرة من الأمر يعود الأمر «مؤكداً» ويُفكّ ربطه بها ليُفوتر من جديد.</summary>
+    /// <summary>‏فاتورةٌ (كاملةٌ أو جزئيّة) صدرت من الأمر — <paramref name="fullyInvoiced"/> حين لا يبقى شيء.</summary>
+    public void RecordInvoice(long invoiceId, bool fullyInvoiced)
+    {
+        if (Status is not (SalesOrderStatus.Confirmed or SalesOrderStatus.PartInvoiced))
+            throw new AccountingException("يُفوتر أمر مؤكد فقط.");
+        SalesInvoiceId = invoiceId;
+        Status = fullyInvoiced ? SalesOrderStatus.Invoiced : SalesOrderStatus.PartInvoiced;
+    }
+
+    /// <summary>‏أُلغيت إحدى فواتير الأمر: يعود «مؤكداً» إن لم تبقَ فاتورةٌ قائمة، وإلا «مفوتراً جزئياً».</summary>
+    public void AfterInvoiceCancelled(long? latestStandingInvoiceId)
+    {
+        if (Status is not (SalesOrderStatus.Invoiced or SalesOrderStatus.PartInvoiced))
+            throw new AccountingException("أمر البيع غير مرتبط بهذه الفاتورة.");
+        SalesInvoiceId = latestStandingInvoiceId;
+        Status = latestStandingInvoiceId is null ? SalesOrderStatus.Confirmed : SalesOrderStatus.PartInvoiced;
+    }
+
     public void ReopenAfterInvoiceCancelled(long invoiceId)
     {
         if (Status != SalesOrderStatus.Invoiced || SalesInvoiceId != invoiceId)
@@ -109,7 +129,7 @@ public class SalesOrder : ILineDocumentTotals
 
     public void Cancel()
     {
-        if (Status == SalesOrderStatus.Invoiced)
+        if (Status is SalesOrderStatus.Invoiced or SalesOrderStatus.PartInvoiced)
             throw new AccountingException("لا يُلغى أمر مفوتر.");
         Status = SalesOrderStatus.Cancelled;
     }

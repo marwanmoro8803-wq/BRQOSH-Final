@@ -88,12 +88,28 @@ public class SalesInvoiceCancellationService(BrqoshDbContext db)
             invoice.MarkCancelled(cancellationDate);
 
             // ‏وأمرُ البيع الذي فُوتر بها يعود «مؤكداً» ليُفوتر من جديد — داخل المعاملة نفسها.
+            // ‏وفي الفوترة الجزئية: تُعلَّم سطورُ هذه الفاتورة ملغاةً فتعود كمّيتُها متبقّية،
+            // ‏ويبقى الأمرُ «مفوتراً جزئياً» إن بقيت له فاتورةٌ قائمة.
+            var links = await db.SalesOrderInvoiceLines
+                .Where(l => l.CompanyId == companyId && l.SalesInvoiceId == invoiceId && !l.IsCancelled)
+                .ToListAsync(token);
+            foreach (var link in links)
+                link.MarkCancelled();
+            var linkedOrderIds = links.Select(l => l.SalesOrderId).Distinct().ToList();
             var salesOrders = await db.SalesOrders
-                .Where(o => o.CompanyId == companyId && o.SalesInvoiceId == invoiceId
-                    && o.Status == SalesOrderStatus.Invoiced)
+                .Where(o => o.CompanyId == companyId
+                    && (o.SalesInvoiceId == invoiceId || linkedOrderIds.Contains(o.Id))
+                    && (o.Status == SalesOrderStatus.Invoiced || o.Status == SalesOrderStatus.PartInvoiced))
                 .ToListAsync(token);
             foreach (var order in salesOrders)
-                order.ReopenAfterInvoiceCancelled(invoiceId);
+            {
+                var latestStanding = await db.SalesOrderInvoiceLines
+                    .Where(l => l.SalesOrderId == order.Id && !l.IsCancelled && l.SalesInvoiceId != invoiceId)
+                    .OrderByDescending(l => l.SalesInvoiceId)
+                    .Select(l => (long?)l.SalesInvoiceId)
+                    .FirstOrDefaultAsync(token);
+                order.AfterInvoiceCancelled(latestStanding);
+            }
             await db.SaveChangesAsync(token);
 
             await new AuditService(db).LogAsync(companyId, username, "إلغاء فاتورة مبيعات",

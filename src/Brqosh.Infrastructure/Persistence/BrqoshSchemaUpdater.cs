@@ -3797,6 +3797,52 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
                 """, ct);
         }
 
+        // ‏سطورُ فوترة أوامر البيع (الفوترة الجزئية) — فارغةٌ تعني أنّ الأوامرَ القائمة تُفوتر كاملةً كما كانت.
+        if (isPg)
+        {
+            await SafePgIndexAsync("""
+                CREATE TABLE IF NOT EXISTS sales_order_invoice_lines (
+                    "Id" BIGSERIAL PRIMARY KEY,
+                    "CompanyId" BIGINT NOT NULL,
+                    "SalesOrderId" BIGINT NOT NULL,
+                    "SalesInvoiceId" BIGINT NOT NULL,
+                    "LineIndex" INTEGER NOT NULL,
+                    "Quantity" NUMERIC(18,4) NOT NULL,
+                    "IsCancelled" BOOLEAN NOT NULL DEFAULT false
+                );
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_sales_order_invoice_lines_CompanyId_SalesOrderId"
+                    ON sales_order_invoice_lines ("CompanyId", "SalesOrderId");
+                """, ct);
+            await SafePgIndexAsync("""
+                CREATE INDEX IF NOT EXISTS "IX_sales_order_invoice_lines_SalesInvoiceId"
+                    ON sales_order_invoice_lines ("SalesInvoiceId");
+                """, ct);
+        }
+        else
+        {
+            await SafeSqliteIndexAsync("""
+                CREATE TABLE IF NOT EXISTS sales_order_invoice_lines (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    CompanyId INTEGER NOT NULL,
+                    SalesOrderId INTEGER NOT NULL,
+                    SalesInvoiceId INTEGER NOT NULL,
+                    LineIndex INTEGER NOT NULL,
+                    Quantity TEXT NOT NULL,
+                    IsCancelled INTEGER NOT NULL DEFAULT 0
+                );
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE INDEX IF NOT EXISTS IX_sales_order_invoice_lines_CompanyId_SalesOrderId
+                    ON sales_order_invoice_lines (CompanyId, SalesOrderId);
+                """, ct);
+            await SafeSqliteIndexAsync("""
+                CREATE INDEX IF NOT EXISTS IX_sales_order_invoice_lines_SalesInvoiceId
+                    ON sales_order_invoice_lines (SalesInvoiceId);
+                """, ct);
+        }
+
         // ‏فئاتُ الأصناف — تُنشأ فارغةً، وفارغةٌ تعني «الحساباتُ العامّة» كما كان.
         if (isPg)
         {
