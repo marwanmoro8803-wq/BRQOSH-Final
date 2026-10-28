@@ -74,6 +74,16 @@
                     <TextBlock Text="رقم السجل التجاري" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="CrnBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
 
+                    <TextBlock Text="بيانات المورّد — الطرف الأول في اتفاقية الترخيص" Style="{StaticResource FieldLabel}" FontWeight="SemiBold" Margin="0,8,0,8"/>
+                    <TextBlock Text="اسم المورّد" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="VendorNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
+                    <TextBlock Text="السجل التجاري للمورّد" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="VendorCrnBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
+                    <TextBlock Text="الرقم الضريبي للمورّد" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="VendorVatBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
+                    <TextBlock Text="عنوان المورّد" Style="{StaticResource FieldLabel}"/>
+                    <TextBox x:Name="VendorAddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,16"/>
+
                     <TextBlock Text="العنوان الوطني" Style="{StaticResource FieldLabel}" Margin="0,0,0,8"/>
                     <UniformGrid Columns="2" Margin="0,0,0,16">
                         <StackPanel Margin="0,0,8,8">

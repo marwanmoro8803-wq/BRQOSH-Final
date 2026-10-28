@@ -10,15 +10,37 @@ namespace Brqosh.Infrastructure.Reporting;
 public sealed record LicenseAgreementParty(string Name, string? CommercialRegistration, string? VatNumber, string? Address);
 
 /// <summary>
-/// ‏بيانات المورِّد (الطرف الأول) — تُعبّأ مرّةً واحدة هنا، فتظهر في كل اتفاقيةٍ تُنشأ تلقائياً.
+/// ‏بيانات المورِّد (الطرف الأول) — تُدخَل من إعدادات المنشأة وتُحفظ على الجهاز، فتظهر في كل اتفاقيةٍ تُنشأ تلقائياً.
 /// </summary>
 public static class LicenseAgreementVendor
 {
-    public static LicenseAgreementParty Party { get; } = new(
-        Name: "برقوش",
-        CommercialRegistration: "",
-        VatNumber: "",
-        Address: "");
+    private static string FilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Brqosh", "vendor-identity.json");
+
+    public static LicenseAgreementParty Party => Load();
+
+    public static LicenseAgreementParty Load()
+    {
+        try
+        {
+            if (File.Exists(FilePath))
+                return System.Text.Json.JsonSerializer.Deserialize<LicenseAgreementParty>(File.ReadAllText(FilePath))
+                       ?? Empty;
+        }
+        catch (Exception)
+        {
+            // ‏ملفٌّ تالف يُعامَل كأنه غير موجود.
+        }
+        return Empty;
+    }
+
+    public static void Save(LicenseAgreementParty party)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+        File.WriteAllText(FilePath, System.Text.Json.JsonSerializer.Serialize(party));
+    }
+
+    private static LicenseAgreementParty Empty => new("", null, null, null);
 }
 
 /// <summary>

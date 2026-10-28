@@ -88,6 +88,11 @@ public partial class CompanySettingsPage : UserControl
         // (CEEF-229 · Z-10) بيانات البائع النظامية
         RegistrationNameBox.Text = company.RegistrationName ?? "";
         CrnBox.Text = company.CommercialRegistrationNumber ?? "";
+        var vendor = LicenseAgreementVendor.Load();
+        VendorNameBox.Text = vendor.Name;
+        VendorCrnBox.Text = vendor.CommercialRegistration ?? "";
+        VendorVatBox.Text = vendor.VatNumber ?? "";
+        VendorAddressBox.Text = vendor.Address ?? "";
         var addr = company.NationalAddress;
         BuildingNumberBox.Text = addr.BuildingNumber;
         AdditionalNumberBox.Text = addr.AdditionalNumber;
@@ -341,6 +346,8 @@ public partial class CompanySettingsPage : UserControl
             await db.SaveChangesAsync();
 
             // اتفاقية الترخيص تُحفظ تلقائياً بمجرّد توفّر اسم المنشأة ورقمها الضريبي.
+            LicenseAgreementVendor.Save(new LicenseAgreementParty(
+                VendorNameBox.Text.Trim(), VendorCrnBox.Text.Trim(), VendorVatBox.Text.Trim(), VendorAddressBox.Text.Trim()));
             SaveLicenseAgreement(company);
 
             // (CEEF-229 · م1-٢٢) ‏طريقةُ التكلفة **لا تُبدَّل بالسنّارة**: تمرّ بخدمةٍ تمنع
