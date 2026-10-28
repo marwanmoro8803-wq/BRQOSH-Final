@@ -1000,6 +1000,10 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
         await EnsureSqliteColumnAsync("products", "RevenueAccountId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("products", "InventoryAccountId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("products", "CogsAccountId", "INTEGER NULL", ct);
+        // ‏(مساران متوازيان) ‏عمودان كانا يُضمَنان في PostgreSQL وحده — فقاعدةُ SQLite قديمةٌ تفقدهما.
+        // ‏والجدولان من وحدتين قد لا تُنشآن في SQLite، فيُضاف العمودُ حيث وُجد الجدولُ فقط.
+        await EnsureSqliteColumnIfTableAsync("shipments", "FreightInvoiceId", "INTEGER NULL", ct);
+        await EnsureSqliteColumnIfTableAsync("properties", "FixedAssetId", "INTEGER NULL", ct);
         await EnsureSqliteColumnAsync("companies", "BaseCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "FunctionalCurrencyCode", "TEXT NOT NULL DEFAULT 'SAR'", ct);
         await EnsureSqliteColumnAsync("companies", "ManualJournalApprovalThreshold", "TEXT NOT NULL DEFAULT '10000'", ct);   // ‏(accounting-core#6)
@@ -1479,6 +1483,16 @@ public class BrqoshSchemaUpdater(BrqoshDbContext db)
 
         if (exists == 0)
             await db.Database.ExecuteSqlRawAsync(SchemaSqlGuard.BuildPgAddColumnSql(table, column, type), ct);
+    }
+
+    private async Task EnsureSqliteColumnIfTableAsync(string table, string column, string type, CancellationToken ct)
+    {
+        SchemaSqlGuard.ValidateTable(table);
+        FormattableString exists = $"""
+            SELECT name AS "Value" FROM sqlite_master WHERE type = 'table' AND name = {table}
+            """;
+        if ((await db.Database.SqlQuery<string>(exists).ToListAsync(ct)).Count > 0)
+            await EnsureSqliteColumnAsync(table, column, type, ct);
     }
 
     private async Task EnsureSqliteColumnAsync(string table, string column, string type, CancellationToken ct)
