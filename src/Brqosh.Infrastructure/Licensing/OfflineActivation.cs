@@ -206,7 +206,12 @@ public static class ActivationCodec
 /// </summary>
 public static class EmbeddedActivationKeys
 {
-    public const string PublicKeyPem = "";
+    public const string PublicKeyPem = """
+        -----BEGIN PUBLIC KEY-----
+        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqibAHWvQKlqGlj72oRpco4NSFBC6
+        lWOyNQF2bonNpjTg4lG+xDA6a7zNVJqijCnHBraqe+3Fg5l5oaCWLGa8yw==
+        -----END PUBLIC KEY-----
+        """;
 
     /// <summary>‏للاختبارات وحدها.</summary>
     internal static string? PublicKeyPemOverride { get; set; }
