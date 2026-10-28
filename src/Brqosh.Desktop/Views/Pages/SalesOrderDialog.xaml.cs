@@ -19,6 +19,7 @@ public partial class SalesOrderDialog : Window
     {
         InitializeComponent();
         LinesGrid.ItemsSource = _rows;
+        CurrencyChoices.Fill(CurrencyBox, CurrencyLabel.Code);
         Loaded += async (_, _) =>
         {
             await using var db = AppServices.CreateDb();
@@ -42,7 +43,7 @@ public partial class SalesOrderDialog : Window
 
     private void UpdateTotals()
     {
-        var (subtotal, vat) = SalesInvoiceDialog.TotalsOf(_rows, 0m);
+        var (subtotal, vat) = SalesInvoiceDialog.TotalsOf(_rows, DocumentDiscount());
         SubtotalText.Text = subtotal.ToString("N2");
         VatText.Text = vat.ToString("N2");
         TotalText.Text = (subtotal + vat).ToString("N2");
@@ -52,12 +53,16 @@ public partial class SalesOrderDialog : Window
     internal SalesOrder BuildOrderFromRows(long companyId, long customerId, DateOnly orderDate)
     {
         var order = SalesOrder.CreateDraft(companyId, customerId, orderDate);
+        ApplyCurrency(order);
         foreach (var row in _rows.Where(r =>
                      !string.IsNullOrWhiteSpace(r.Description) || r.Quantity != 0 || r.UnitPrice != 0))
         {
             order.AddLine(row.Description ?? "", row.Quantity, row.UnitPrice, row.ProductId,
                 row.VatCategory, row.TaxExemptionReasonCode, row.TaxExemptionReason);
         }
+        var documentDiscount = DocumentDiscount();
+        if (documentDiscount > 0m)
+            order.ApplyDocumentDiscount(documentDiscount);
         return order;
     }
 
@@ -92,5 +97,22 @@ public partial class SalesOrderDialog : Window
     {
         DialogResult = false;
         Close();
+    }
+
+    private void OnDocumentDiscountChanged(object sender, TextChangedEventArgs e)
+    {
+        if (IsLoaded) UpdateTotals();
+    }
+
+    private decimal DocumentDiscount() =>
+        DocumentDiscountBox is not null && NumericInput.TryParsePositive(DocumentDiscountBox.Text, out var value) ? value : 0m;
+
+    private void ApplyCurrency(SalesOrder order)
+    {
+        var code = (CurrencyBox?.SelectedItem as string ?? CurrencyLabel.Code).Trim().ToUpperInvariant();
+        if (code.Length == 0 || code == CurrencyLabel.Code) return;
+        if (!NumericInput.TryParse(RateBox.Text, out var rate))
+            throw new AccountingException("سعر الصرف غير صالح.");
+        order.SetCurrency(code, rate, CurrencyLabel.Code);
     }
 }

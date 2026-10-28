@@ -2071,5 +2071,7 @@
   "تعذّر إنشاء إذن التسليم.": "Could not create the delivery note.",
   "تم إنشاء إذن التسليم.": "Delivery note created.",
   "يُسلَّم أمر مؤكد فقط.": "Only a confirmed order can be delivered.",
-  "نعم": "Yes"
+  "نعم": "Yes",
+  "العميل": "Customer",
+  "خصم المستند": "Document discount"
 }

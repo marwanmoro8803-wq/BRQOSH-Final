@@ -33,6 +33,7 @@ public class DocumentCurrencyEntryTests
     private static readonly Dictionary<string, string?> DialogForDocument = new(StringComparer.Ordinal)
     {
         ["SalesInvoice"] = "SalesInvoiceDialog",
+        ["SalesOrder"] = "SalesOrderDialog",
         ["PurchaseInvoice"] = "PurchaseInvoiceDialog",
         ["ReceiptVoucher"] = "ReceiptVoucherDialog",
         ["PaymentVoucher"] = "PaymentVoucherDialog",

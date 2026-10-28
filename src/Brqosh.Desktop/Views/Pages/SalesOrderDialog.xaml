@@ -17,10 +17,32 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Text="أمر بيع" Style="{StaticResource PageTitleText}" Margin="0,0,0,12"/>
-        <StackPanel Grid.Row="1" Margin="0,0,0,12">
-            <TextBlock Text="العميل *" Style="{StaticResource FieldLabel}"/>
-            <ComboBox x:Name="CustomerCombo" Style="{StaticResource AppComboBox}" DisplayMemberPath="NameAr"/>
-        </StackPanel>
+        <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <TextBlock Text="العميل *" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="CustomerCombo" Style="{StaticResource AppComboBox}" DisplayMemberPath="NameAr" AutomationProperties.Name="العميل"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                <TextBlock Text="العملة" Style="{StaticResource FieldLabel}"/>
+                <ComboBox x:Name="CurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" Padding="10,8"
+                          FlowDirection="LeftToRight" AutomationProperties.Name="العملة"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="RateBox" Style="{StaticResource AppTextBox}" Text="1" AutomationProperties.Name="سعر الصرف"/>
+            </StackPanel>
+            <StackPanel Grid.Column="3">
+                <TextBlock Text="خصم المستند" Style="{StaticResource FieldLabel}"/>
+                <TextBox x:Name="DocumentDiscountBox" Style="{StaticResource AppTextBox}" Text="0.00"
+                         AutomationProperties.Name="خصم المستند" TextChanged="OnDocumentDiscountChanged"/>
+            </StackPanel>
+        </Grid>
 
         <!-- (جاهزيّةُ الإطلاق · ح-١١٥ · order-to-cash-procure-to-pay-inventory#8) شبكةُ سطورٍ كشبكة فاتورة المبيعات:
              الصنفُ والفئةُ الضريبيّةُ وسببُ الإعفاء — وكان الأمرُ سطراً نصّيّاً واحداً بلا صنفٍ ولا فئة. -->

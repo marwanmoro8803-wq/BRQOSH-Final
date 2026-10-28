@@ -1411,6 +1411,7 @@ public static partial class UiBilingualRegistry
         ["خرائط حسابات المعاملات بين الشركات"] = "Intercompany account maps",
         ["خصم %"] = "Discount %",
         ["خصم السداد لا يكون سالباً."] = "The settlement discount cannot be negative.",
+        ["خصم المستند"] = "Document discount",
         ["خصم المستند لا يكون سالباً."] = "The document discount cannot be negative.",
         ["خصم سداد مبكر (مسموح به)"] = "Early-payment discount (allowed)",
         ["خصم سداد مبكر (مكتسب)"] = "Early-payment discount (earned)",
