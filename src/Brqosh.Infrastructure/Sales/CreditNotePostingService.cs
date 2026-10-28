@@ -70,6 +70,7 @@ public class CreditNotePostingService(BrqoshDbContext db)
         var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
         var originalCosts = await ResolveOriginalSaleUnitCostsAsync(invoice, ct);
         decimal cogsReversal = 0;
+        var costByProduct = new List<(long ProductId, decimal Amount)>();
         var returnLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate, long WarehouseId)>();
         // ‏(جاهزيّةُ الإطلاق · ح-١١٠ · ‏`order-to-cash-procure-to-pay-inventory#12`) ‏**المرتجعُ يعود إلى المستودع الذي خرج منه البيع** —
         // ‏من حركة الصرف نفسِها لا من الافتراضيّ يومَ الإرجاع (وقد يتغيّر)؛ والمتتبَّعُ يعود إلى دفعته في مستودعها، وغيرُه إلى مستودع صنفه.
@@ -88,7 +89,9 @@ public class CreditNotePostingService(BrqoshDbContext db)
                     : product.WeightedAverageCost;
                 if (!product.IsTracked)
                 {
-                    cogsReversal += Math.Round(line.Quantity * unitCost, 2, MidpointRounding.AwayFromZero);
+                    var cost = Math.Round(line.Quantity * unitCost, 2, MidpointRounding.AwayFromZero);
+                    cogsReversal += cost;
+                    costByProduct.Add((pid, cost));
                     if (!saleWarehouses.TryGetValue(pid, out var returnWarehouseId))
                         returnWarehouseId = defaultWarehouseId ??= (await inv.GetDefaultWarehouseAsync(note.CompanyId)).Id;
                     returnLines.Add((pid, line.Quantity, unitCost, null, null, returnWarehouseId));
@@ -99,7 +102,9 @@ public class CreditNotePostingService(BrqoshDbContext db)
                 // ‏المتتبَّع سطرٌ لكلّ دفعةٍ بطبقاتٍ مختلفة: مرتجعُ أربعٍ بعشرةٍ يُعكس بثمانيةٍ وأربعين لا بأربعين.
                 foreach (var draw in DrawReturnedBatches(product, line.Quantity, line.BatchNumber, soldOut))
                 {
-                    cogsReversal += Math.Round(draw.Quantity * draw.UnitCost, 2, MidpointRounding.AwayFromZero);
+                    var drawCost = Math.Round(draw.Quantity * draw.UnitCost, 2, MidpointRounding.AwayFromZero);
+                    cogsReversal += drawCost;
+                    costByProduct.Add((pid, drawCost));
                     returnLines.Add((pid, draw.Quantity, draw.UnitCost, draw.Batch, draw.Expiry, draw.WarehouseId));
                 }
             }
@@ -120,6 +125,12 @@ public class CreditNotePostingService(BrqoshDbContext db)
             "CN", note.NoteDate.Year, note.CompanyId);
 
         var entry = note.Post(noteNumber, salesReturns, vatOutput, receivable, cogsReversal, cogs, inventory);
+        if (cogsReversal > 0)
+        {
+            // ‏المرتجعُ يعود إلى حساب مخزون الصنف ويعكس تكلفتَه من حساب تكلفته — كما خرج في البيع.
+            await ItemAccountResolver.RerouteAsync(db, note.CompanyId, entry, inventory!, costByProduct, a => a.Inventory, debitSide: true, ct);
+            await ItemAccountResolver.RerouteAsync(db, note.CompanyId, entry, cogs!, costByProduct, a => a.Cogs, debitSide: false, ct);
+        }
         var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(note.CompanyId, note.NoteDate);
         entry.Post(entryNumber);
 

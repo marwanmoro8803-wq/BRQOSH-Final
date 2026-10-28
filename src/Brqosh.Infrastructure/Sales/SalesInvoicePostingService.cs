@@ -143,12 +143,11 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             : null;
 
         // ‏حساباتُ الصنف ← الفئة ← العامّ. ولا توزيعَ إن لم يُعرَّف حسابٌ خاصّ — فالقيدُ كما كان.
-        // ‏والمخزونُ يبقى الحسابَ العامّ هنا: الشراءُ والاستلامُ والتسويات تقيّده عليه بعدُ،
-        // ‏ونقلُ الصرف وحدَه إلى حسابٍ آخر يُفرغ حساباً لم يُقيَّد فيه شيء.
+        // ‏والمخزونُ كذلك — فالشراءُ والاستلامُ والتسوياتُ والمرتجعاتُ تقيّده على الحساب نفسِه.
         var itemAccounts = await ItemAccountResolver.ResolveAsync(db, invoice.CompanyId, products.Values, ct);
         List<(Account, decimal)>? revenueSplit = null;
         List<(Account, Account, decimal)>? cogsSplit = null;
-        if (itemAccounts.Values.Any(a => a.Revenue != null || a.Cogs != null))
+        if (itemAccounts.Values.Any(a => a.Revenue != null || a.Cogs != null || a.Inventory != null))
         {
             var accountCache = new Dictionary<long, Account>();
             async Task<Account> AccountByIdAsync(long id)
@@ -181,8 +180,9 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
             if (cogsAmount > 0)
             {
                 cogsSplit = new();
-                foreach (var g in costByProduct.GroupBy(kv => itemAccounts.TryGetValue(kv.Key, out var ia) ? ia.Cogs : null))
-                    cogsSplit.Add((g.Key is { } id ? await AccountByIdAsync(id) : cogs!, inventory!, g.Sum(kv => kv.Value)));
+                foreach (var g in costByProduct.GroupBy(kv => itemAccounts.TryGetValue(kv.Key, out var ia) ? (ia.Cogs, ia.Inventory) : (null, null)))
+                    cogsSplit.Add((g.Key.Cogs is { } cid ? await AccountByIdAsync(cid) : cogs!,
+                        g.Key.Inventory is { } iid ? await AccountByIdAsync(iid) : inventory!, g.Sum(kv => kv.Value)));
             }
         }
 

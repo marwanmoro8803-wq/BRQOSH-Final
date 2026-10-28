@@ -71,6 +71,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
             var inv = new InventoryService(db);
             var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));
             decimal inventoryReduction = 0;
+            var reductionByProduct = new List<(long ProductId, decimal Amount)>();
             var issueLines = new List<(long WarehouseId, long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
             var costing = new InventoryCostingService(db);
             var defaultWarehouse = await inv.GetDefaultWarehouseAsync(note.CompanyId);
@@ -101,6 +102,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
                             note.CompanyId, pid, whId, whQty,
                             $"DebitNote:{noteNumber}", token, preferredSources: receiptSources);
                         inventoryReduction += total;
+                        reductionByProduct.Add((pid, total));
                         if (draws is null)
                             issueLines.Add((whId, pid, whQty, unit, null, null));
                         else
@@ -141,6 +143,9 @@ public class DebitNotePostingService(BrqoshDbContext db)
 
             var entry = note.Post(noteNumber, purchases, vatInput, payable, inventoryReduction, inventory, purchases,
                 invoice.VatDeductible, variance);
+            if (inventory is not null)
+                await ItemAccountResolver.RerouteAsync(db, note.CompanyId, entry, inventory,
+                    reductionByProduct, a => a.Inventory, debitSide: false, token);
             var entryNumber = await new JournalEntryNumberGenerator(db).NextAsync(note.CompanyId, note.NoteDate, token);
             entry.Post(entryNumber);
 

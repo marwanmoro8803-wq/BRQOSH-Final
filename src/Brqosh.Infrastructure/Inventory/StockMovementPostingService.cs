@@ -207,6 +207,7 @@ public class StockMovementPostingService(BrqoshDbContext db)
         var entry = JournalEntry.CreateDraft(movement.CompanyId, movement.MovementDate,
             movement.Description, "StockOpening");
         entry.AddLine(inventory, movement.TotalValue, 0m, "رصيد افتتاحي للمخزون");
+        await RerouteInboundAsync(movement, entry, inventory);
         entry.AddLine(counter, 0m, movement.TotalValue, afterTheOpeningTrialBalance
             ? "رصيد افتتاحي — تفصيلُ مخزون الميزان"
             : "رصيد افتتاحي — حقوق ملكية");
@@ -243,6 +244,7 @@ public class StockMovementPostingService(BrqoshDbContext db)
             movement.Description, "StockAdjustmentIn");
         entry.AddLine(inventory, movement.TotalValue, 0m, "زيادة مخزون — جرد");
         entry.AddLine(otherIncome, 0m, movement.TotalValue, "فائض جرد — إيراد");
+        await RerouteInboundAsync(movement, entry, inventory);
         return entry;
     }
 
@@ -250,12 +252,14 @@ public class StockMovementPostingService(BrqoshDbContext db)
     {
         var costing = new InventoryCostingService(db);
         decimal total = 0;
+        var byProduct = new List<(long ProductId, decimal Amount)>();
         foreach (var line in movement.Lines)
         {
             var (lineCost, _) = await costing.ConsumeForIssueAsync(
                 movement.CompanyId, line.ProductId, movement.WarehouseId, line.Quantity,
                 movement.SourceDocument ?? movement.Description ?? "StockMovement");
             total += lineCost;
+            byProduct.Add((line.ProductId, lineCost));
         }
         if (total == 0m) return null;
 
@@ -264,8 +268,15 @@ public class StockMovementPostingService(BrqoshDbContext db)
             movement.Description, "StockAdjustmentOut");
         entry.AddLine(misc, total, 0m, "نقص مخزون — جرد");
         entry.AddLine(inventory, 0m, total, "تخفيض المخزون");
+        await ItemAccountResolver.RerouteAsync(db, movement.CompanyId, entry, inventory, byProduct, a => a.Inventory, debitSide: false);
         return entry;
     }
+
+    // ‏حسابُ مخزون الصنف/الفئة للحركات الداخلة — بقيمة كلّ سطر.
+    private Task RerouteInboundAsync(StockMovement movement, JournalEntry entry, Account inventory) =>
+        ItemAccountResolver.RerouteAsync(db, movement.CompanyId, entry, inventory,
+            movement.Lines.Select(l => (l.ProductId, Math.Round(l.Quantity * l.UnitCost, 2, MidpointRounding.AwayFromZero))),
+            a => a.Inventory, debitSide: true);
 
     private async Task<Account> AccountAsync(long companyId, string code) =>
         await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code);

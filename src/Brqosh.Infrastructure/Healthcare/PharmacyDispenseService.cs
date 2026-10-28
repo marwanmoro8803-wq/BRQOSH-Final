@@ -89,6 +89,7 @@ public class PharmacyDispenseService(BrqoshDbContext db)
 
         var issueLines = new List<(long, decimal, decimal, string?, DateOnly?)>();
         var totalCost = 0m;
+        var costByProduct = new List<(long ProductId, decimal Amount)>();
 
         foreach (var (productId, batchNumber, quantity) in requested)
         {
@@ -101,6 +102,7 @@ public class PharmacyDispenseService(BrqoshDbContext db)
                 companyId, productId, warehouse.Id, quantity, sourceDocument, ct);
 
             totalCost += lineCost;
+            costByProduct.Add((productId, lineCost));
             issueLines.Add((productId, quantity, unitCost, batchNumber, null));
         }
 
@@ -112,7 +114,7 @@ public class PharmacyDispenseService(BrqoshDbContext db)
 
         long? entryId = null;
         if (totalCost > 0m)
-            entryId = await PostCostAsync(companyId, visit.VisitDate, totalCost, sourceDocument, ct);
+            entryId = await PostCostAsync(companyId, visit.VisitDate, totalCost, costByProduct, sourceDocument, ct);
 
         await db.SaveChangesAsync(ct);
 
@@ -121,6 +123,7 @@ public class PharmacyDispenseService(BrqoshDbContext db)
     }
 
     private async Task<long> PostCostAsync(long companyId, DateOnly date, decimal totalCost,
+        List<(long ProductId, decimal Amount)> costByProduct,
         string sourceDocument, CancellationToken ct)
     {
         var cogs = await SystemAccountProvisioning.EnsureAsync(
@@ -137,6 +140,9 @@ public class PharmacyDispenseService(BrqoshDbContext db)
         entry.AddLine(cogs, totalCost, 0m, "تكلفة المبيعات — صيدلية");
         entry.AddLine(inventory, 0m, totalCost, "صرف مخزون الصيدلية");
 
+        // ‏حساباتُ تكلفة الصنف ومخزونه (الصنف ← الفئة ← العامّ).
+        await ItemAccountResolver.RerouteAsync(db, companyId, entry, cogs, costByProduct, a => a.Cogs, debitSide: true, ct);
+        await ItemAccountResolver.RerouteAsync(db, companyId, entry, inventory, costByProduct, a => a.Inventory, debitSide: false, ct);
         var number = await new JournalEntryNumberGenerator(db).NextAsync(companyId, date);
         entry.Post(number);
         db.JournalEntries.Add(entry);

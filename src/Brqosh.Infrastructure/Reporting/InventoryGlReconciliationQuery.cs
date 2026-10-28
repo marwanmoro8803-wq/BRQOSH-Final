@@ -36,6 +36,9 @@ public class InventoryGlReconciliationQuery(BrqoshDbContext db)
             .Where(a => a.CompanyId == companyId && a.Code == inventoryAccountCode)
             .Select(a => a.Id)
             .ToListAsync(ct);
+        // ‏والمخزونُ موزَّعٌ على حسابات الأصناف/الفئات أيضاً — فالأستاذُ مجموعُها كلِّها.
+        if (inventoryAccountCode == DefaultInventoryAccountCode && accountIds.Count > 0)
+            accountIds = accountIds.Concat(await ItemAccountResolver.InventoryAccountIdsAsync(db, companyId, ct)).Distinct().ToList();
 
         var lines = await db.JournalEntries.AsNoTracking()
             .Where(e => e.CompanyId == companyId

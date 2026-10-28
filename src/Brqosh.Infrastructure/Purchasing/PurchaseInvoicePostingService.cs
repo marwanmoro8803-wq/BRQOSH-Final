@@ -80,6 +80,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
             if (invoice.PurchaseOrderId is null)
                 await EnsureNoOpenAccrualForUnlinkedInvoiceAsync(invoice, products, ct);
             decimal inventorySubtotal = 0;
+            var inventoryByProduct = new List<(long ProductId, decimal Amount)>();
             // ‏(جاهزيّةُ الإطلاق · ح-١٠٨ · ‏`order-to-cash-procure-to-pay-inventory#7`) ‏**الدفعةُ وانتهاؤها** تسافران مع السطر إلى حركة الاستلام —
             // ‏وكان التحميلُ القديمُ يُسقطهما فيرفض المَخنَقُ الصنفَ المتتبَّع.
             var receiptLines = new List<(long ProductId, decimal Qty, decimal UnitCost, string? BatchNumber, DateOnly? ExpiryDate)>();
@@ -125,6 +126,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
                 if (!hasPostedGrn)
                 {
                     inventorySubtotal += lineTotalSar;
+                    inventoryByProduct.Add((pid, lineTotalSar));
                     // ‏تكلفةُ الوحدة تُشتقّ من إجمالي السطر بالريال (المقيَّد في 1107) بأربع خانات —
                     // ‏لا من سعر الوحدة مقرَّباً لخانتين، وإلّا انشقّت الطبقاتُ عن الأستاذ
                     // ‏(1000 × 1.11$ × 3.75: الأستاذ 4162.50 والطبقات 4160.00).
@@ -184,6 +186,9 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             var entry = invoice.Post(invoiceNumber, purchases, vatInput, payable,
                 inventorySubtotal, inventoryAccount, grniRelief, grniAccount, priceVariance, varianceAccount, vatOutput);
+            if (inventoryAccount is not null)   // ‏حسابُ مخزون الصنف/الفئة
+                await ItemAccountResolver.RerouteAsync(db, invoice.CompanyId, entry, inventoryAccount,
+                    inventoryByProduct, a => a.Inventory, debitSide: true, ct);
             if (asset is not null)
             {
                 var booked = entry.Lines.Where(l => l.AccountId == asset.GlAssetAccountId).Sum(l => l.Debit - l.Credit);

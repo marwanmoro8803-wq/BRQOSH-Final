@@ -69,12 +69,14 @@ public class KitchenIssueService(BrqoshDbContext db)
             var costing = new InventoryCostingService(db);
             var issueLines = new List<(long, decimal, decimal, string?, DateOnly?)>();
             var totalCost = 0m;
+            var costByProduct = new List<(long ProductId, decimal Amount)>();
 
             foreach (var (productId, quantity) in required)
             {
                 var (lineCost, unitCost) = await costing.ConsumeForIssueAsync(
                     companyId, productId, warehouse.Id, quantity, sourceDocument, token);
                 totalCost += lineCost;
+                costByProduct.Add((productId, lineCost));
 
                 if (!tracked.Contains(productId))
                 {
@@ -97,7 +99,7 @@ public class KitchenIssueService(BrqoshDbContext db)
 
             long? entryId = null;
             if (totalCost > 0m)
-                entryId = await PostCostAsync(companyId, date, totalCost, sourceDocument, token);
+                entryId = await PostCostAsync(companyId, date, totalCost, costByProduct, sourceDocument, token);
 
             await db.SaveChangesAsync(token);
 
@@ -222,6 +224,7 @@ public class KitchenIssueService(BrqoshDbContext db)
             .ToListAsync(ct)];
 
     private async Task<long> PostCostAsync(long companyId, DateOnly date, decimal totalCost,
+        List<(long ProductId, decimal Amount)> costByProduct,
         string sourceDocument, CancellationToken ct)
     {
         var cogs = await SystemAccountProvisioning.EnsureAsync(
@@ -238,6 +241,9 @@ public class KitchenIssueService(BrqoshDbContext db)
         entry.AddLine(cogs, totalCost, 0m, "تكلفة المبيعات — مكوّنات");
         entry.AddLine(inventory, 0m, totalCost, "صرف مخزون المطبخ");
 
+        // ‏حساباتُ تكلفة الصنف ومخزونه (الصنف ← الفئة ← العامّ).
+        await ItemAccountResolver.RerouteAsync(db, companyId, entry, cogs, costByProduct, a => a.Cogs, debitSide: true, ct);
+        await ItemAccountResolver.RerouteAsync(db, companyId, entry, inventory, costByProduct, a => a.Inventory, debitSide: false, ct);
         var number = await new JournalEntryNumberGenerator(db).NextAsync(companyId, date);
         entry.Post(number);
         db.JournalEntries.Add(entry);

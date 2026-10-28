@@ -36,6 +36,7 @@ public class LandedCostAllocationService(BrqoshDbContext db)
 
             var method = await new InventoryCostingService(db).GetMethodAsync(companyId, token);
             decimal allocated = 0;
+            var byProduct = new List<(long ProductId, decimal Amount)>();
             for (var i = 0; i < shares.Count; i++)
             {
                 var share = shares[i];
@@ -43,6 +44,7 @@ public class LandedCostAllocationService(BrqoshDbContext db)
                     ? totalAdditionalCost - allocated
                     : Math.Round(totalAdditionalCost * (share.QtyShare / shareSum), 2, MidpointRounding.AwayFromZero);
                 allocated += amount;
+                byProduct.Add((share.ProductId, amount));
 
                 if (method == InventoryCostingMethod.Fifo)
                 {
@@ -97,6 +99,7 @@ public class LandedCostAllocationService(BrqoshDbContext db)
                 sourceDocument: $"LandedCost:{costDate:yyyyMMdd}");
             je.AddLine(inventory, totalAdditionalCost, 0m, description);
             je.AddLine(creditAccount, 0m, totalAdditionalCost, "مقابل تكلفة إضافية");
+            await ItemAccountResolver.RerouteAsync(db, companyId, je, inventory, byProduct, a => a.Inventory, debitSide: true, token);
             var num = await new JournalEntryNumberGenerator(db).NextAsync(companyId, costDate, token);
             je.Post(num);
             db.JournalEntries.Add(je);

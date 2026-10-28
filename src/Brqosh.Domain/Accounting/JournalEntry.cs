@@ -298,6 +298,44 @@ public class JournalEntry : IBranchScoped
     /// <para>ويبقى الحساب <b>التجميعيّ</b> مرفوضاً هنا أيضاً: الإيقاف حالةٌ عارضة، أمّا التجميع
     /// فبنيةٌ في الدليل لا تقبل رصيداً بحال.</para>
     /// </summary>
+    /// <summary>
+    /// ‏ينقل <paramref name="amount"/> من سطور <paramref name="fromAccountId"/> (في الجانب المحدَّد) إلى
+    /// <paramref name="to"/> — لحسابات الصنف/الفئة: يبني المُرحِّلُ القيدَ على الحساب العامّ ثمّ يُوجَّه نصيبُ
+    /// الأصناف ذات الحساب الخاصّ إليه. ‏والقيدُ متوازنٌ قبلُ وبعدُ لأنّ الجانبَ لا يتغيّر. فرقُ تقريبٍ دون ريالٍ يُقصّ.
+    /// </summary>
+    public void RerouteAmount(long fromAccountId, Account to, decimal amount, bool debitSide)
+    {
+        EnsureDraft("توجيه مبلغ إلى حساب الصنف");
+        amount = Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+        if (amount <= 0m || to.Id == fromAccountId) return;
+        var source = _lines.Where(l => l.AccountId == fromAccountId && (debitSide ? l.Debit > 0 : l.Credit > 0)).ToList();
+        var available = source.Sum(l => debitSide ? l.Debit : l.Credit);
+        if (amount > available)
+        {
+            if (amount - available >= 1m)
+                throw new AccountingException("المبلغ الموجَّه إلى حساب الصنف يتجاوز سطر الحساب العامّ في القيد.");
+            amount = available;
+        }
+        foreach (var line in source)
+        {
+            if (amount <= 0m) break;
+            var have = debitSide ? line.Debit : line.Credit;
+            var take = Math.Min(have, amount);
+            var idx = _lines.IndexOf(line);
+            var left = have - take;
+            if (left > 0m)
+                _lines[idx] = line with
+                {
+                    Debit = debitSide ? left : 0m, Credit = debitSide ? 0m : left,
+                    CurrencyCode = null, ExchangeRate = null, ForeignAmount = null,
+                };
+            else
+                _lines.RemoveAt(idx);
+            AddLine(to, debitSide ? take : 0m, debitSide ? 0m : take, line.Description, line.CostCenterId);
+            amount -= take;
+        }
+    }
+
     public void AddClosingLine(Account account, decimal debit, decimal credit, string? lineDescription = null)
     {
         EnsureDraft("إضافة سطر إقفال");

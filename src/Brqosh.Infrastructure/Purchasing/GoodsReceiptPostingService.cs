@@ -42,6 +42,7 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
             var stockLines = new List<(long ProductId, decimal Qty, decimal UnitCost,
                 string? BatchNumber, DateOnly? ExpiryDate)>();
             decimal accruedValue = 0m;
+            var accruedByProduct = new List<(long ProductId, decimal Amount)>();
             foreach (var line in receipt.Lines)
             {
                 if (line.ProductId is not long pid)
@@ -68,8 +69,11 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
                 // التزامٌ على خدمةٍ لا تُقفله الفاتورةُ أبداً — **رصيدٌ مفتوحٌ صامتٌ إلى الأبد**،
                 // وكسرٌ دائمٌ للهوية هـ-٣.
                 if (products.TryGetValue(pid, out var product) && product.IsStockable())
-                    accruedValue += Math.Round(
-                        line.ReceivedQuantity * line.UnitCost, 2, MidpointRounding.AwayFromZero);
+                {
+                    var value = Math.Round(line.ReceivedQuantity * line.UnitCost, 2, MidpointRounding.AwayFromZero);
+                    accruedValue += value;
+                    accruedByProduct.Add((pid, value));
+                }
             }
 
             var number = await DocumentNumberGenerator.NextAsync(db, 
@@ -106,6 +110,8 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
                     $"GoodsReceipt:{number}");
                 accrual.AddLine(inventoryAccount, accruedValue, 0m, "بضاعة مستلمة");
                 accrual.AddLine(grniAccount, 0m, accruedValue, "استحقاق بضاعة غير مفوترة");
+                await ItemAccountResolver.RerouteAsync(db, receipt.CompanyId, accrual, inventoryAccount,
+                    accruedByProduct, a => a.Inventory, debitSide: true, token);
                 accrual.Post(await new JournalEntryNumberGenerator(db)
                     .NextAsync(receipt.CompanyId, receipt.ReceiptDate, token));
                 db.JournalEntries.Add(accrual);
