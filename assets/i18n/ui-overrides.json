@@ -1,4 +1,6 @@
 {
+  "العميل غير موجود.": "Customer not found.",
+  "لا تُخفى بيانات موظف على رأس العمل — أنهِ خدمته أولاً.": "An active employee's personal data cannot be anonymized — end their service first.",
   "إيقاف الفئة المحددة؟": "Deactivate the selected category?",
   "كود الفئة مستخدم من قبل.": "This category code is already in use.",
   "فئات الأصناف": "Product categories",

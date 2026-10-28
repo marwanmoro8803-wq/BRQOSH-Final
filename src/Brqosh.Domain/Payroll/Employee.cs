@@ -209,6 +209,21 @@ public class Employee : IBranchScoped
         IsActive = false;
     }
 
+    /// <summary>
+    /// ‏(PDPL) <b>إخفاءُ البيانات الشخصيّة</b> لموظفٍ انتهت خدمتُه: الاسمُ بديلٌ ثابت، والهويّةُ والآيبان يُمحيان.
+    /// والرمزُ والأجرُ والتواريخُ تبقى — فالرواتبُ المرحَّلةُ وقيودُها لا تُمسّ.
+    /// </summary>
+    public void ErasePersonalData(string placeholderName)
+    {
+        if (IsActive)
+            throw new AccountingException("لا تُخفى بيانات موظف على رأس العمل — أنهِ خدمته أولاً.");
+        if (string.IsNullOrWhiteSpace(placeholderName))
+            throw new AccountingException("اسم الموظف مطلوب.");
+        NameAr = placeholderName.Trim();
+        NationalId = "";
+        Iban = null;
+    }
+
     public void Reinstate()
     {
         TerminationDate = null;

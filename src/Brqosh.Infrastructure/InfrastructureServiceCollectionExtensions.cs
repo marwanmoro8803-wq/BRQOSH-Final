@@ -224,6 +224,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IGeneralLedgerQuery, GeneralLedgerQueryAdapter>();
         services.AddScoped<IBalanceSheetQuery, BalanceSheetQueryAdapter>();
         services.AddScoped<IStatementOfChangesInEquityQuery, StatementOfChangesInEquityQuery>();
+        services.AddScoped<Brqosh.Application.Privacy.IPersonalDataService, Brqosh.Infrastructure.Privacy.PersonalDataService>();
         services.AddScoped<IIncomeStatementQuery, IncomeStatementQueryAdapter>();
         services.AddScoped<ICashFlowStatementQuery, CashFlowStatementQueryAdapter>();
         services.AddScoped<IVatReturnQuery, VatReturnQueryAdapter>();
