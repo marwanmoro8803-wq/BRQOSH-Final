@@ -105,7 +105,7 @@ public class ThemeBrushesAndAccessibilityTests
                     ? m.Value
                     : m.Value + SafeInner(text, m.Index + m.Length, "</" + m.Groups[1].Value);
                 var shown = string.Join(" ", visible.Matches(body).Select(v => v.Groups[1].Value));
-                if (!arabic.IsMatch(shown))
+                if (!arabic.IsMatch(shown) && !shown.Contains("{loc:Str", StringComparison.Ordinal))
                     missing.Add($"{rel}: {Trim(m.Value)}");
             }
 

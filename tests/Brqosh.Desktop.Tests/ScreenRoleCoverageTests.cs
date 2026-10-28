@@ -250,6 +250,7 @@ public class ScreenRoleCoverageTests
         var body = MethodBody(Blank(source), handler);
 
         var write = body.IndexOf("SaveChangesAsync", StringComparison.Ordinal);
+        if (write < 0) write = body.IndexOf("await _vm.", StringComparison.Ordinal); // after MVVM the write lives in the ViewModel
         if (write < 0) return false;
 
         var call = body.IndexOf("PermissionService.Can", StringComparison.Ordinal);
