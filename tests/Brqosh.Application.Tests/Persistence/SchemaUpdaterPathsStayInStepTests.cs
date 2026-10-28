@@ -14,7 +14,7 @@ public class SchemaUpdaterPathsStayInStepTests
     [Fact]
     public void EveryEnsuredColumn_IsEnsuredOnBothEngines()
     {
-        var source = File.ReadAllText(Path.Combine(RepoRoot(), "src", "Brqosh.Infrastructure", "Persistence", "BrqoshSchemaUpdater.cs"));
+        var source = SchemaUpdaterSourceFiles.ReadAll(RepoRoot());
         var pg = Pg.Matches(source).Select(m => $"{m.Groups[1].Value}.{m.Groups[2].Value}").ToHashSet();
         var sqlite = Sqlite.Matches(source)
             .Select(m => $"{m.Groups[1].Value}.{m.Groups[2].Value}")

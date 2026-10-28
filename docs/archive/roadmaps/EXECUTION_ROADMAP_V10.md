@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V10-1** | IC Elimination Report | ✅ | [CEEF-090](../تقارير/CEEF-090_IC_Elimination_Report.md) |
-| **V10-2** | Data Quality Surface | ✅ | [CEEF-091](../تقارير/CEEF-091_Data_Quality_Surface.md) |
-| **V10-3** | Platform Events Surface | ✅ | [CEEF-092](../تقارير/CEEF-092_Platform_Events_Surface.md) |
-| **V10-4** | Dashboard Rules Engine + Health Bar | ✅ | [CEEF-093](../تقارير/CEEF-093_Intelligence_Observability_UI.md) |
-| **V10-5** | إغلاق تشغيلي | ⏭ | [CEEF-094](../تقارير/CEEF-094_External_Gates_V10_Closure.md) |
+| **V10-1** | IC Elimination Report | ✅ | [CEEF-090](../../../تقارير/CEEF-090_IC_Elimination_Report.md) |
+| **V10-2** | Data Quality Surface | ✅ | [CEEF-091](../../../تقارير/CEEF-091_Data_Quality_Surface.md) |
+| **V10-3** | Platform Events Surface | ✅ | [CEEF-092](../../../تقارير/CEEF-092_Platform_Events_Surface.md) |
+| **V10-4** | Dashboard Rules Engine + Health Bar | ✅ | [CEEF-093](../../../تقارير/CEEF-093_Intelligence_Observability_UI.md) |
+| **V10-5** | إغلاق تشغيلي | ⏭ | [CEEF-094](../../../تقارير/CEEF-094_External_Gates_V10_Closure.md) |
 
 ---
 
@@ -79,4 +79,4 @@
 | MSI على VM نظيف | ⏭ | تشغيل ميداني |
 | Load 1M | ⏭ | بيئة أجهزة |
 | OWASP ZAP | ⏭ | ماسح حي |
-| Global Platform SaaS (مرحلة 7) | ⏭ | [`EXECUTION_ROADMAP_V11.md`](EXECUTION_ROADMAP_V11.md) — إغلاق نهائي |
+| Global Platform SaaS (مرحلة 7) | ⏭ | [`EXECUTION_ROADMAP_V11.md`](../../EXECUTION_ROADMAP_V11.md) — إغلاق نهائي |

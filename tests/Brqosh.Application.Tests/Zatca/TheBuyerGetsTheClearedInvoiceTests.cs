@@ -294,7 +294,7 @@ public class TheBuyerGetsTheClearedInvoiceTests : IDisposable
     {
         ["Brqosh.Infrastructure/Zatca/ZatcaHandOverCopy.cs"] =
             (1, "القارئُ الواحد: يختار بين رمزنا ورمز الهيئة ولا رمز"),
-        ["Brqosh.Infrastructure/Persistence/BrqoshDbContext.cs"] =
+        ["Brqosh.Infrastructure/Persistence/BrqoshDbContext.PayrollTreasuryZatca.cs"] =
             (1, "تعيينُ العمود — لا قراءة"),
         ["Brqosh.Desktop/Views/Pages/ZatcaInvoicesPage.xaml.cs"] =
             (3, "عمودُ «QR» في جدول المستندات يعرض أوّلَ ما ولّدناه — لا يُطبع ولا يُسلَّم"),

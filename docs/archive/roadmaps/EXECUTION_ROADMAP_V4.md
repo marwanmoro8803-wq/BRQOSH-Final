@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V4-1** | Luxury — Sales & AR | ✅ | [CEEF-060](../تقارير/CEEF-060_Sales_AR_Luxury_UI.md) |
-| **V4-2** | Luxury — Purchases & AP | ✅ | [CEEF-061](../تقارير/CEEF-061_Purchases_AP_Luxury_UI.md) |
-| **V4-3** | Luxury — GL & Reports | ✅ | [CEEF-062](../تقارير/CEEF-062_GL_Reports_Luxury_UI.md) |
-| **V4-4** | Use Cases — موجة 3 (تقارير) | ✅ | [CEEF-063](../تقارير/CEEF-063_TrialBalance_UseCase_DI.md) |
-| **V4-5** | إغلاق تشغيلي + M7.5 نهائي | ⏭ | [CEEF-064](../تقارير/CEEF-064_External_Gates_V4_Closure.md) |
+| **V4-1** | Luxury — Sales & AR | ✅ | [CEEF-060](../../../تقارير/CEEF-060_Sales_AR_Luxury_UI.md) |
+| **V4-2** | Luxury — Purchases & AP | ✅ | [CEEF-061](../../../تقارير/CEEF-061_Purchases_AP_Luxury_UI.md) |
+| **V4-3** | Luxury — GL & Reports | ✅ | [CEEF-062](../../../تقارير/CEEF-062_GL_Reports_Luxury_UI.md) |
+| **V4-4** | Use Cases — موجة 3 (تقارير) | ✅ | [CEEF-063](../../../تقارير/CEEF-063_TrialBalance_UseCase_DI.md) |
+| **V4-5** | إغلاق تشغيلي + M7.5 نهائي | ⏭ | [CEEF-064](../../../تقارير/CEEF-064_External_Gates_V4_Closure.md) |
 
 ---
 

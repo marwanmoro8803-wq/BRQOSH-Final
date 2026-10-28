@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V9-1** | Luxury — Platform & FX | ✅ | [CEEF-085](../تقارير/CEEF-085_Platform_FX_Luxury_UI.md) |
-| **V9-2** | Luxury — Manufacturing | ✅ | [CEEF-086](../تقارير/CEEF-086_Manufacturing_Luxury_UI.md) |
-| **V9-3** | Luxury — POS | ✅ | [CEEF-087](../تقارير/CEEF-087_POS_Luxury_UI.md) |
-| **V9-4** | Luxury sweep — تحقق إغلاق | ✅ | [CEEF-088](../تقارير/CEEF-088_Luxury_Sweep_Closure.md) |
-| **V9-5** | إغلاق تشغيلي | ⏭ | [CEEF-089](../تقارير/CEEF-089_External_Gates_V9_Closure.md) |
+| **V9-1** | Luxury — Platform & FX | ✅ | [CEEF-085](../../../تقارير/CEEF-085_Platform_FX_Luxury_UI.md) |
+| **V9-2** | Luxury — Manufacturing | ✅ | [CEEF-086](../../../تقارير/CEEF-086_Manufacturing_Luxury_UI.md) |
+| **V9-3** | Luxury — POS | ✅ | [CEEF-087](../../../تقارير/CEEF-087_POS_Luxury_UI.md) |
+| **V9-4** | Luxury sweep — تحقق إغلاق | ✅ | [CEEF-088](../../../تقارير/CEEF-088_Luxury_Sweep_Closure.md) |
+| **V9-5** | إغلاق تشغيلي | ⏭ | [CEEF-089](../../../تقارير/CEEF-089_External_Gates_V9_Closure.md) |
 
 ---
 

@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V8-1** | Luxury — Platform & Security | ✅ | [CEEF-080](../تقارير/CEEF-080_Platform_Security_Luxury_UI.md) |
-| **V8-2** | Luxury — Construction Extended | ✅ | [CEEF-081](../تقارير/CEEF-081_Construction_Extended_Luxury_UI.md) |
-| **V8-3** | Luxury — Consolidated Reports | ✅ | [CEEF-082](../تقارير/CEEF-082_Consolidated_Reports_Luxury_UI.md) |
-| **V8-4** | Use Cases — موجة 7 (Consolidated) | ✅ | [CEEF-083](../تقارير/CEEF-083_Consolidated_UseCase_DI.md) |
-| **V8-5** | إغلاق تشغيلي | ⏭ | [CEEF-084](../تقارير/CEEF-084_External_Gates_V8_Closure.md) |
+| **V8-1** | Luxury — Platform & Security | ✅ | [CEEF-080](../../../تقارير/CEEF-080_Platform_Security_Luxury_UI.md) |
+| **V8-2** | Luxury — Construction Extended | ✅ | [CEEF-081](../../../تقارير/CEEF-081_Construction_Extended_Luxury_UI.md) |
+| **V8-3** | Luxury — Consolidated Reports | ✅ | [CEEF-082](../../../تقارير/CEEF-082_Consolidated_Reports_Luxury_UI.md) |
+| **V8-4** | Use Cases — موجة 7 (Consolidated) | ✅ | [CEEF-083](../../../تقارير/CEEF-083_Consolidated_UseCase_DI.md) |
+| **V8-5** | إغلاق تشغيلي | ⏭ | [CEEF-084](../../../تقارير/CEEF-084_External_Gates_V8_Closure.md) |
 
 ---
 

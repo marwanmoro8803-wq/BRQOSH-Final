@@ -51,5 +51,5 @@ Release · `BRQOSH_SKIP_STRESS=1` · coverlet ≥75%
 
 ## 4. مراجع
 
-- [`docs/EXECUTION_ROADMAP_V2.md`](../docs/EXECUTION_ROADMAP_V2.md) — N1 ✅
+- [`docs/archive/roadmaps/EXECUTION_ROADMAP_V2.md`](../docs/archive/roadmaps/EXECUTION_ROADMAP_V2.md) — N1 ✅
 - V1 M4.7 — مُحدَّث في `EXECUTION_ROADMAP.md`

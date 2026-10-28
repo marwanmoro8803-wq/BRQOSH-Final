@@ -10,7 +10,7 @@ namespace Brqosh.Domain.Modules;
 /// <b>فإدراجُ عضوٍ في المنتصف يُعيد تفسيرَ كلّ تركيبٍ قائم</b>: ملفٌّ كُتب
 /// <c>Manufacturing</c> يُقرأ <c>Construction</c>، بلا خطأٍ ولا تحذير.</para>
 ///
-/// <para><b>والقاعدةُ نجت من هذا بالتصميم</b>: <c>BrqoshDbContext.cs:160</c> يخزّن الخاصّيّةَ
+/// <para><b>والقاعدةُ نجت من هذا بالتصميم</b>: <c>BrqoshDbContext.CoreAndLedger.cs</c> يخزّن الخاصّيّةَ
 /// نفسَها نصّاً (<c>HasConversion&lt;string&gt;()</c>) — <b>فالتعدادُ الواحدُ بترميزَين،
 /// وأحدُهما وحدَه ينجو من الإدراج</b>.</para>
 ///

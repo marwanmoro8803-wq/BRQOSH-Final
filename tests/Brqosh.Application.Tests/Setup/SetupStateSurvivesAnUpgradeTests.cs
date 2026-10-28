@@ -12,7 +12,7 @@ namespace Brqosh.Application.Tests.Setup;
 ///
 /// <para><b>ن-٤٩:</b> <c>BusinessProfile</c> كان بلا قيمةٍ صريحةٍ واحدة، و<c>setup.json</c>
 /// يخزّن الترتيب. <b>فإدراجُ عضوٍ في المنتصف يُعيد تفسيرَ كلّ تركيبٍ قائم</b> — بينما
-/// القاعدةُ تخزّن الاسمَ نصّاً فتنجو (<c>BrqoshDbContext.cs:160</c>).</para>
+/// القاعدةُ تخزّن الاسمَ نصّاً فتنجو (<c>BrqoshDbContext.CoreAndLedger.cs</c>).</para>
 ///
 /// <para><b>ن-٥٠:</b> <c>catch (JsonException) → null</c> يجعل الملفَّ التالفَ «أوّلَ تشغيل»،
 /// فيُعرض المعالجُ فوق دفاترَ حيّة. <b>والقاعدةُ تنجو</b> (المُهيّئُ يعود عند أوّل منشأة)،

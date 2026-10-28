@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V5-1** | Luxury — Cash & Bank | ✅ | [CEEF-065](../تقارير/CEEF-065_Cash_Bank_Luxury_UI.md) |
-| **V5-2** | Luxury — ZATCA | ✅ | [CEEF-066](../تقارير/CEEF-066_ZATCA_Luxury_UI.md) |
-| **V5-3** | Luxury — Financial Reports | ✅ | [CEEF-067](../تقارير/CEEF-067_Financial_Reports_Luxury_UI.md) |
-| **V5-4** | Use Cases — موجة 4 (GL) | ✅ | [CEEF-068](../تقارير/CEEF-068_GeneralLedger_UseCase_DI.md) |
-| **V5-5** | إغلاق تشغيلي | ⏭ | [CEEF-069](../تقارير/CEEF-069_External_Gates_V5_Closure.md) |
+| **V5-1** | Luxury — Cash & Bank | ✅ | [CEEF-065](../../../تقارير/CEEF-065_Cash_Bank_Luxury_UI.md) |
+| **V5-2** | Luxury — ZATCA | ✅ | [CEEF-066](../../../تقارير/CEEF-066_ZATCA_Luxury_UI.md) |
+| **V5-3** | Luxury — Financial Reports | ✅ | [CEEF-067](../../../تقارير/CEEF-067_Financial_Reports_Luxury_UI.md) |
+| **V5-4** | Use Cases — موجة 4 (GL) | ✅ | [CEEF-068](../../../تقارير/CEEF-068_GeneralLedger_UseCase_DI.md) |
+| **V5-5** | إغلاق تشغيلي | ⏭ | [CEEF-069](../../../تقارير/CEEF-069_External_Gates_V5_Closure.md) |
 
 ---
 

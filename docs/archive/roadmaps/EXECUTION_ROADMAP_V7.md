@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V7-1** | Luxury — AR/AP Statements | ✅ | [CEEF-075](../تقارير/CEEF-075_AR_AP_Statements_Luxury_UI.md) |
-| **V7-2** | Luxury — Inventory Ops | ✅ | [CEEF-076](../تقارير/CEEF-076_Inventory_Ops_Luxury_UI.md) |
-| **V7-3** | Luxury — Master & Construction | ✅ | [CEEF-077](../تقارير/CEEF-077_Master_Construction_Luxury_UI.md) |
-| **V7-4** | Use Cases — موجة 6 | ✅ | [CEEF-078](../تقارير/CEEF-078_Statement_VAT_UseCase_DI.md) |
-| **V7-5** | إغلاق تشغيلي | ⏭ | [CEEF-079](../تقارير/CEEF-079_External_Gates_V7_Closure.md) |
+| **V7-1** | Luxury — AR/AP Statements | ✅ | [CEEF-075](../../../تقارير/CEEF-075_AR_AP_Statements_Luxury_UI.md) |
+| **V7-2** | Luxury — Inventory Ops | ✅ | [CEEF-076](../../../تقارير/CEEF-076_Inventory_Ops_Luxury_UI.md) |
+| **V7-3** | Luxury — Master & Construction | ✅ | [CEEF-077](../../../تقارير/CEEF-077_Master_Construction_Luxury_UI.md) |
+| **V7-4** | Use Cases — موجة 6 | ✅ | [CEEF-078](../../../تقارير/CEEF-078_Statement_VAT_UseCase_DI.md) |
+| **V7-5** | إغلاق تشغيلي | ⏭ | [CEEF-079](../../../تقارير/CEEF-079_External_Gates_V7_Closure.md) |
 
 ---
 

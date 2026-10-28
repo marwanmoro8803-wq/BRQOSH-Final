@@ -69,3 +69,6 @@ TestResults-measure/
 TestResults*/
 *.sqlite*
 .env
+
+# Windows shortcuts (local only)
+*.lnk

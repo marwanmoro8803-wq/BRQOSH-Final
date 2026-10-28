@@ -23,11 +23,11 @@
 
 | الطبقة | المشروع | الإطار | الدور |
 |--------|---------|--------|-------|
-| النطاق | `Brqosh.Domain` | `net9.0` | الكيانات والقواعد — `JournalEntry` وحارسُ التوازن وسُلَّمُ الهللة |
-| التطبيق | `Brqosh.Application` | `net9.0` | العقود و`AppEnvironment` |
-| البنية | `Brqosh.Infrastructure` | `net9.0` | EF Core · `*PostingService` · الاستعلامات · ZATCA |
-| الواجهة | `Brqosh.Desktop` | `net9.0-windows` | WPF · عربيّةُ RTL |
-| الخدمة | `Brqosh.Api` | `net9.0` | مفتاحٌ إلزاميّ + `TenantGuard` |
+| النطاق | `Brqosh.Domain` | `net10.0` | الكيانات والقواعد — `JournalEntry` وحارسُ التوازن وسُلَّمُ الهللة |
+| التطبيق | `Brqosh.Application` | `net10.0` | العقود و`AppEnvironment` |
+| البنية | `Brqosh.Infrastructure` | `net10.0` | EF Core · `*PostingService` · الاستعلامات · ZATCA |
+| الواجهة | `Brqosh.Desktop` | `net10.0-windows` | WPF · عربيّةُ RTL |
+| الخدمة | `Brqosh.Api` | `net10.0` | مفتاحٌ إلزاميّ + `TenantGuard` |
 
 **مصفوفةُ الدعم:** [`SUPPORT_MATRIX.md`](SUPPORT_MATRIX.md) — **نُشرت في هذه الدورة**.
 

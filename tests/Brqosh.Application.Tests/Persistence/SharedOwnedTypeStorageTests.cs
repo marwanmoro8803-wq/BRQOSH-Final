@@ -32,7 +32,7 @@ namespace Brqosh.Application.Tests.Persistence;
 ///   <b>القيمة</b>: نصٌّ بسقف ١٦ عند كلّ مالك، و<c>TEXT</c> على القرص — بلا حاجةٍ إلى PostgreSQL.</item>
 ///   <item><b>مقارنةُ نوع CLR وحدَه.</b> <c>HasConversion&lt;string&gt;()</c> بلا
 ///   <c>HasMaxLength</c> يُعطي <c>String</c> نفسَه ويُنشئ <c>text</c> بلا حدّ — والمستودعُ
-///   عُضّ بهذا من قبل (<c>BrqoshDbContext.cs:1304-1305</c>). فالمقارنةُ <b>رباعيّة</b>:
+///   عُضّ بهذا من قبل (<c>BrqoshDbContext.PayrollTreasuryZatca.cs</c>). فالمقارنةُ <b>رباعيّة</b>:
 ///   نوعُ المزوّد ونوعُ العمود والسقفُ والقابليّةُ للعدم.</item>
 ///   <item><b>اختبارٌ ذاتيٌّ فوق طبقة العطل.</b> فحصُ دالّةِ المقارنة بخريطةٍ مصنوعةٍ باليد
 ///   يُثبت المقارنةَ ولا يُثبت <b>القارئ</b> — والعطلُ يسكن القارئ. فالاختبارُ الذاتيُّ هنا
@@ -282,25 +282,27 @@ public class SharedOwnedTypeStorageTests
     [Fact]
     public void TheHandWrittenDdl_NeverDeclaresVatCategoryAsInteger()
     {
-        var path = Path.Combine(FindRepoRoot(),
-            "src", "Brqosh.Infrastructure", "Persistence", "BrqoshSchemaUpdater.cs");
-        Assert.True(File.Exists(path), $"‏المُرقِّعُ غيرُ موجود: {path}");
+        var files = SchemaUpdaterSourceFiles.Paths(FindRepoRoot());
+        Assert.True(File.Exists(files[0]), $"‏المُرقِّعُ غيرُ موجود: {files[0]}");
 
-        var lines = File.ReadAllLines(path);
+        var located = files
+            .SelectMany(f => File.ReadAllLines(f).Select((text, index) => (File: Path.GetFileName(f), Line: index + 1, Text: text)))
+            .ToList();
+        var lines = located.Select(l => l.Text).ToArray();
 
         // ‏شاهدُ ضبط: التقنيةُ تجد مواضعَ VatCategory في هذا الملفّ فعلاً.
         var mentions = lines.Count(l => l.Contains("VatCategory", StringComparison.Ordinal));
         Assert.True(mentions > 0, "‏لا ذكرَ لـVatCategory في المُرقِّع — الفحصُ يقيس ملفّاً خطأً.");
 
-        var offenders = lines
-            .Select((text, index) => (Line: index + 1, Text: StripLineComment(text).Trim()))
+        var offenders = located
+            .Select(l => (l.File, l.Line, Text: StripLineComment(l.Text).Trim()))
             .Where(x => DeclaresVatCategoryAsInteger(x.Text))
             .ToList();
 
         Assert.True(offenders.Count == 0,
             "‏DDL مكتوبٌ باليد يُعلن VatCategory عدداً صحيحاً — **وهذا الفرعُ هو مُنشئُ المخطّط الوحيد** "
             + "للقواعد القديمة (DatabaseSchemaService: coreTableExists && appliedCount == 0)، فلا هجرةَ تصلها:\n  "
-            + string.Join("\n  ", offenders.Select(o => $"BrqoshSchemaUpdater.cs:{o.Line}  {o.Text}")));
+            + string.Join("\n  ", offenders.Select(o => $"{o.File}:{o.Line}  {o.Text}")));
     }
 
     // ───────────────────────── PostgreSQL ─────────────────────────

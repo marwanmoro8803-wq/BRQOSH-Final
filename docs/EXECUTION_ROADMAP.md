@@ -315,7 +315,7 @@
 
 ---
 
-**الخارطة V2 (N1–N5) مكتملة.** المتابعة في [`EXECUTION_ROADMAP_V3.md`](EXECUTION_ROADMAP_V3.md) … [`EXECUTION_ROADMAP_V11.md`](EXECUTION_ROADMAP_V11.md) (**إغلاق نهائي V11** · CEEF-099).
+**الخارطة V2 (N1–N5) مكتملة.** المتابعة في [`EXECUTION_ROADMAP_V3.md`](archive/roadmaps/EXECUTION_ROADMAP_V3.md) … [`EXECUTION_ROADMAP_V11.md`](EXECUTION_ROADMAP_V11.md) (**إغلاق نهائي V11** · CEEF-099).
 
 ---
 

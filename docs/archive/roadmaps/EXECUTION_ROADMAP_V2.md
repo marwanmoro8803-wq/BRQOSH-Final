@@ -2,9 +2,9 @@
 
 > **الإصدار:** 1.1 · **تاريخ الاعتماد:** 2026-07-09  
 > **آخر تحديث:** 2026-07-09 — **N1–N5 موثّقة بالكامل**  
-> **الحالة:** **الوثيقة المتبعة بعد إغلاق** [`EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md) (M1–M12)  
+> **الحالة:** **الوثيقة المتبعة بعد إغلاق** [`EXECUTION_ROADMAP.md`](../../EXECUTION_ROADMAP.md) (M1–M12)  
 > **المنهج:** توثيق المرحلة → تنفيذ → إغلاق CEEF → التالية  
-> **المراجع:** [`docs/مهم`](مهم) · [`OPEN_ITEMS.md`](OPEN_ITEMS.md) · [`LIFECYCLE-ROADMAP-100.md`](../design-system/LIFECYCLE-ROADMAP-100.md)
+> **المراجع:** [`docs/مهم`](../../مهم) · [`OPEN_ITEMS.md`](../../OPEN_ITEMS.md) · [`LIFECYCLE-ROADMAP-100.md`](../../../design-system/LIFECYCLE-ROADMAP-100.md)
 
 ---
 
@@ -124,6 +124,6 @@
 
 | وثيقة | دور |
 |-------|-----|
-| [`EXECUTION_ROADMAP.md`](EXECUTION_ROADMAP.md) | V1 M1–M12 |
+| [`EXECUTION_ROADMAP.md`](../../EXECUTION_ROADMAP.md) | V1 M1–M12 |
 | **هذا الملف** | V2 N1–N5 (مغلق) |
 | `docs/مهم` | استراتيجية مجلس |

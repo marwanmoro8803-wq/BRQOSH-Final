@@ -15,7 +15,7 @@ public class SchemaUpdaterIsFrozenTests
     public void TheUpdaterAddsNoSchemaBeyondItsFrozenBaseline()
     {
         var root = RepoRoot();
-        var source = File.ReadAllText(Path.Combine(root, "src", "Brqosh.Infrastructure", "Persistence", "BrqoshSchemaUpdater.cs"));
+        var source = SchemaUpdaterSourceFiles.ReadAll(root);
         var baseline = File.ReadAllLines(Path.Combine(root, "tests", "Brqosh.Application.Tests", "Persistence", "SchemaUpdaterFrozen.baseline.txt"))
             .Where(l => l.Length > 0).ToHashSet(StringComparer.Ordinal);
 

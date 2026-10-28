@@ -12,11 +12,11 @@
 
 | المرحلة | الاسم | الحالة | التقرير |
 |---------|-------|--------|---------|
-| **V6-1** | Luxury — Period Close & VAT | ✅ | [CEEF-070](../تقارير/CEEF-070_Period_Close_VAT_Luxury_UI.md) |
-| **V6-2** | Luxury — Master Data & Audit | ✅ | [CEEF-071](../تقارير/CEEF-071_Master_Data_Audit_Luxury_UI.md) |
-| **V6-3** | Luxury — Purchase Docs | ✅ | [CEEF-072](../تقارير/CEEF-072_Purchase_Docs_Luxury_UI.md) |
-| **V6-4** | Use Cases — موجة 5 (BS/P&L) | ✅ | [CEEF-073](../تقارير/CEEF-073_BalanceSheet_IncomeStatement_UseCase_DI.md) |
-| **V6-5** | إغلاق تشغيلي | ⏭ | [CEEF-074](../تقارير/CEEF-074_External_Gates_V6_Closure.md) |
+| **V6-1** | Luxury — Period Close & VAT | ✅ | [CEEF-070](../../../تقارير/CEEF-070_Period_Close_VAT_Luxury_UI.md) |
+| **V6-2** | Luxury — Master Data & Audit | ✅ | [CEEF-071](../../../تقارير/CEEF-071_Master_Data_Audit_Luxury_UI.md) |
+| **V6-3** | Luxury — Purchase Docs | ✅ | [CEEF-072](../../../تقارير/CEEF-072_Purchase_Docs_Luxury_UI.md) |
+| **V6-4** | Use Cases — موجة 5 (BS/P&L) | ✅ | [CEEF-073](../../../تقارير/CEEF-073_BalanceSheet_IncomeStatement_UseCase_DI.md) |
+| **V6-5** | إغلاق تشغيلي | ⏭ | [CEEF-074](../../../تقارير/CEEF-074_External_Gates_V6_Closure.md) |
 
 ---
 

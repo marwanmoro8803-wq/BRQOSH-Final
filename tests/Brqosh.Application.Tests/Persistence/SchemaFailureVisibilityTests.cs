@@ -152,7 +152,7 @@ public class SchemaFailureVisibilityTests
             var path = Path.Combine(dir.FullName,
                 "src", "Brqosh.Infrastructure", "Persistence", "BrqoshSchemaUpdater.cs");
 
-            if (File.Exists(path)) return File.ReadAllText(path);
+            if (File.Exists(path)) return SchemaUpdaterSourceFiles.ReadAll(dir.FullName);
             dir = dir.Parent;
         }
 

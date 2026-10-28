@@ -17,7 +17,7 @@ public class EveryPatchedColumnTypeIsAllowedTests
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Brqosh.sln")))
             dir = dir.Parent;
-        return File.ReadAllText(Path.Combine(dir!.FullName, "src", "Brqosh.Infrastructure", "Persistence", "BrqoshSchemaUpdater.cs"));
+        return SchemaUpdaterSourceFiles.ReadAll(dir!.FullName);
     }
 
     private static List<string> Types(string method)
