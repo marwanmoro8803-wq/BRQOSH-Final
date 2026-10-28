@@ -45,8 +45,8 @@ public static class BrqoshDbContextFactory
             // ‏**وثلاثُ محاولاتٍ لا أكثر**: عطلٌ مستمرٌّ يجب أن يظهر، **وإعادةٌ بلا حدٍّ
             // ‏تُحوّل انقطاعاً إلى تعليقٍ صامت**. والمهلةُ خمسُ ثوانٍ — أطولُ من ومضة،
             // ‏وأقصرُ من صبر المستخدم.
-                builder.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(
-                    maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null));
+                builder.UseNpgsql(connectionString, npgsql => npgsql.ExecutionStrategy(deps =>
+                    new WriteSafeNpgsqlExecutionStrategy(deps, maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5))));
                 break;
             case DatabaseProvider.Sqlite:
                 builder.UseSqlite(connectionString);

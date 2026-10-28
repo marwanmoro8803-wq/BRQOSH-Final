@@ -17,6 +17,8 @@ public static class UnitOfWork
         if (db.Database.CurrentTransaction is not null)
             return await action(ct);
 
+        // ‏الكتابةُ تُنفَّذ مرّةً واحدة: لا إعادةَ تلقائيّةً لترحيلٍ غير متكرّر الأثر على سياقٍ يحمل حالةَ المحاولة الأولى.
+        using var noRetry = WriteSafeNpgsqlExecutionStrategy.SuspendForWrite();
         var strategy = db.Database.CreateExecutionStrategy();
         var result = await strategy.ExecuteAsync(async () =>
         {

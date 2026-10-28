@@ -44,8 +44,8 @@ public static class InfrastructureServiceCollectionExtensions
             if (usePostgres)
                 // (CEEF-231 · ط5-٧) ‏**والمساران معاً** — ودرسُ `ط4-٣`: إصلاحُ أحد
                 // ‏مسارَي شيءٍ واحدٍ يترك العطلَ حيّاً حيث يُستعمل الآخر.
-                options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure(
-                    maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null));
+                options.UseNpgsql(connectionString, npgsql => npgsql.ExecutionStrategy(deps =>
+                    new WriteSafeNpgsqlExecutionStrategy(deps, maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5))));
             else
                 options.UseSqlite(connectionString);
             // ‏(جاهزيّةُ الإطلاق · ح-٧٨) ‏وحارسُ الفترة المقفلة عند الحفظ — كما في المصنع.
