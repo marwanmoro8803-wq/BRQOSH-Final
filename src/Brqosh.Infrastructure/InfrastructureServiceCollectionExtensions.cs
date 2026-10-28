@@ -190,6 +190,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ZatcaSubmissionService>();
         services.AddScoped<ZatcaCsidOnboardingService>();
         services.AddScoped<Brqosh.Infrastructure.Licensing.OfflineActivationService>(sp => new Brqosh.Infrastructure.Licensing.OfflineActivationService(sp.GetRequiredService<BrqoshDbContext>()));
+        services.AddScoped<Brqosh.Infrastructure.Licensing.LicenseAgreementService>(sp => new Brqosh.Infrastructure.Licensing.LicenseAgreementService(sp.GetRequiredService<BrqoshDbContext>()));
         services.AddScoped<OrganizationProvisioningService>();
         services.AddScoped<IOrganizationProvisioningService>(sp => sp.GetRequiredService<OrganizationProvisioningService>());
         services.AddScoped<UserAuthService>();

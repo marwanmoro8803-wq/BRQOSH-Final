@@ -1,4 +1,7 @@
 {
+  "ملفّ بيانات المورّد تالف ({0}): {1}": "The vendor details file is corrupt ({0}): {1}",
+  "المنشأة {0} غير موجودة.": "Company {0} does not exist.",
+  "اتفاقية الترخيص {0} غير موجودة.": "Licence agreement {0} does not exist.",
   "المرتجعُ دون التكلفة بخسارة {0} يتطلّب تأكيدَ مدير النظام.": "A return below cost with a loss of {0} requires the system administrator's confirmation.",
   "صافي فاتورة المورّد {0} غير تكلفة الأمر {1} — وحّدهما.": "The supplier invoice net {0} differs from the order cost {1} — make them match.",
   "لا يُغيَّر ملف النشاط إلى «{0}»: يُخفي وحداتٍ فيها بيانات — {1}.": "The business profile cannot change to “{0}”: it would hide modules that hold data — {1}.",

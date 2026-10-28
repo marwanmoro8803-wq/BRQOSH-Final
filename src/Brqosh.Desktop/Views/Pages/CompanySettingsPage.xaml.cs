@@ -13,6 +13,8 @@ using Brqosh.Infrastructure.Accounting;
 using Brqosh.Domain.Modules;
 using Brqosh.Infrastructure.Companies;
 using Brqosh.Infrastructure.Licensing;
+using Brqosh.Domain.Accounting;
+using Brqosh.Infrastructure.Operations;
 using Brqosh.Infrastructure.Reporting;
 using Brqosh.Infrastructure.Setup;
 using Microsoft.EntityFrameworkCore;
@@ -283,6 +285,27 @@ public partial class CompanySettingsPage : UserControl
         }
     }
 
+    /// <summary>‏(Phase 7) ‏يحفظ سجلَّ الاتفاقية في القاعدة ويُرفق PDF مرّةً واحدة للمنشأة — وفي التجربة (لا تفعيل) أو بلا بيانات مورّد يُسجَّل السبب ولا يمنع الحفظ.</summary>
+    private static async Task SaveLicenseAgreementRecordAsync(Company company, string? pdfPath)
+    {
+        if (string.IsNullOrWhiteSpace(pdfPath) || !File.Exists(pdfPath))
+            return;
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            if (await facade.Db.LicenseAgreements.AnyAsync(a => a.CompanyId == company.Id))
+                return;
+            var service = facade.GetService<LicenseAgreementService>();
+            var secondName = string.IsNullOrWhiteSpace(company.RegistrationName) ? company.NameAr : company.RegistrationName!;
+            var agreement = await service.GenerateAndSaveAsync(company.Id, secondName, company.VatRegistrationNumber ?? "");
+            await service.AttachPdfAsync(agreement.Id, await File.ReadAllBytesAsync(pdfPath), pdfPath);
+        }
+        catch (AccountingException ex)
+        {
+            CrashLog.Write(ex, "CompanySettings.SaveLicenseAgreementRecord");
+        }
+    }
+
     private async void OnOpenLicenseAgreement(object sender, RoutedEventArgs e)
     {
         await using var db = AppServices.CreateDb();
@@ -348,7 +371,7 @@ public partial class CompanySettingsPage : UserControl
             // اتفاقية الترخيص تُحفظ تلقائياً بمجرّد توفّر اسم المنشأة ورقمها الضريبي.
             LicenseAgreementVendor.Save(new LicenseAgreementParty(
                 VendorNameBox.Text.Trim(), VendorCrnBox.Text.Trim(), VendorVatBox.Text.Trim(), VendorAddressBox.Text.Trim()));
-            SaveLicenseAgreement(company);
+            await SaveLicenseAgreementRecordAsync(company, SaveLicenseAgreement(company));
 
             // (CEEF-229 · م1-٢٢) ‏طريقةُ التكلفة **لا تُبدَّل بالسنّارة**: تمرّ بخدمةٍ تمنع
             // ‏التبديلَ وفي المستودعات بضاعة. وكان السطرُ هنا `company.SetCostingMethod(...)`
