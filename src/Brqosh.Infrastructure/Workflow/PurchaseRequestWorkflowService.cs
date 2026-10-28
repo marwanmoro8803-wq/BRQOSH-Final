@@ -26,7 +26,7 @@ public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflow
 
         var requestNumber = await Persistence.DocumentNumberGenerator.NextAsync(
             db, db.PurchaseRequests.Where(r => r.CompanyId == request.CompanyId).Select(r => r.RequestNumber),
-            "PR", request.RequestDate.Year, request.CompanyId);
+            "PR", request.RequestDate, request.CompanyId);
         request.MarkSubmitted(requestNumber, instance.Id);
         await db.SaveChangesAsync(token);
         return request;
@@ -86,7 +86,7 @@ public sealed class PurchaseRequestWorkflowService(BrqoshDbContext db, IWorkflow
 
         var orderNumber = await Persistence.DocumentNumberGenerator.NextAsync(
             db, db.PurchaseOrders.Where(o => o.CompanyId == po.CompanyId).Select(o => o.OrderNumber),
-            "PO", po.OrderDate.Year, po.CompanyId);
+            "PO", po.OrderDate, po.CompanyId);
         po.Approve(orderNumber);
         request.MarkConvertedToPo(po.Id);
         await db.SaveChangesAsync(ct);

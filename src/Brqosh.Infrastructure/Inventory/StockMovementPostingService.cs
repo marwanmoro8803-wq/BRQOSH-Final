@@ -88,7 +88,7 @@ public class StockMovementPostingService(BrqoshDbContext db)
 
             var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.StockMovements.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber),
-                "SM", movement.MovementDate.Year, movement.CompanyId,
+                "SM", movement.MovementDate, movement.CompanyId,
                 db.StockMovements.Local.Where(m => m.CompanyId == movement.CompanyId).Select(m => m.MovementNumber));
 
             // (CEEF-231 · ط4-٤) ‏**والتحويلُ ينقل طبقاتِ التكلفة معه.**

@@ -25,7 +25,7 @@ public class WorkOrderService(BrqoshDbContext db)
             var bom = await db.BillsOfMaterials.SingleAsync(b => b.CompanyId == companyId && b.Id == order.BomId, token);
             var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.WorkOrders.Where(w => w.CompanyId == companyId).Select(w => w.OrderNumber),
-                "WO", order.OrderDate.Year, companyId);
+                "WO", order.OrderDate, companyId);
             order.Release(number, bom);
             await db.SaveChangesAsync(token);
             return order;

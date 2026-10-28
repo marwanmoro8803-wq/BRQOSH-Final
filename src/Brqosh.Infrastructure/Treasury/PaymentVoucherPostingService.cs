@@ -101,7 +101,7 @@ public class PaymentVoucherPostingService(BrqoshDbContext db)
 
             var voucherNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.PaymentVouchers.Where(v => v.CompanyId == voucher.CompanyId).Select(v => v.VoucherNumber),
-                "PV", voucher.VoucherDate.Year, voucher.CompanyId);
+                "PV", voucher.VoucherDate, voucher.CompanyId);
 
             // (CEEF-230 · ط4-٥) ‏**قيمةُ الذمّة كما نشأت** — بسعرِ يوم كلّ فاتورة، لا
             // ‏بسعر يوم السداد. ومن فرقِ السعرين يقع الربحُ أو الخسارةُ المحقَّقة.

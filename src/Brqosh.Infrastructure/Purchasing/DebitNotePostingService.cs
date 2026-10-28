@@ -66,7 +66,7 @@ public class DebitNotePostingService(BrqoshDbContext db)
             // ‏ناقصاً» بل **مفتاحُ مستندٍ آخر** — والترميمُ به يردُّ طبقاتَ إشعارٍ سواه.
             var noteNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.DebitNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
-                "DN", note.NoteDate.Year, note.CompanyId);
+                "DN", note.NoteDate, note.CompanyId);
 
             var inv = new InventoryService(db);
             var products = await inv.LoadProductsForLinesAsync(note.CompanyId, note.Lines.Select(l => l.ProductId));

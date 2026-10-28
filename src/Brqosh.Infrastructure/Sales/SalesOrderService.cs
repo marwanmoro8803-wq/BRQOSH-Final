@@ -18,7 +18,7 @@ public class SalesOrderService(BrqoshDbContext db)
 
         var number = await DocumentNumberGenerator.NextAsync(db, 
             db.SalesOrders.Where(o => o.CompanyId == order.CompanyId).Select(o => o.OrderNumber),
-            "SO", order.OrderDate.Year, order.CompanyId);
+            "SO", order.OrderDate, order.CompanyId);
 
         order.Confirm(number);
         db.SalesOrders.Add(order);

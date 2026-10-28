@@ -175,7 +175,7 @@ public class InventoryService(BrqoshDbContext db)
 
         var number = await DocumentNumberGenerator.NextAsync(db, 
             db.StockMovements.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber),
-            "SM", date.Year, companyId,
+            "SM", date, companyId,
             db.StockMovements.Local.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber));
         movement.MarkPosted(number);
         db.StockMovements.Add(movement);
@@ -206,7 +206,7 @@ public class InventoryService(BrqoshDbContext db)
         // ‏فارغ **فلا يجده الإلغاءُ ولا تعود الطبقات** — وهو درسُ `م0-٣` بعينه.
         var number = await DocumentNumberGenerator.NextAsync(db,
             db.StockMovements.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber),
-            "SM", date.Year, companyId,
+            "SM", date, companyId,
             db.StockMovements.Local.Where(m => m.CompanyId == companyId).Select(m => m.MovementNumber));
 
         // ‏**ولا يُخزَّن في `SourceDocument`** — فذاك معناه «حركةٌ يملكها مستندٌ آخر»،

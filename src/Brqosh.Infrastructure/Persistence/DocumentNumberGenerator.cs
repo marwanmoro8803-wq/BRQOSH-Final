@@ -19,6 +19,21 @@ public static class DocumentNumberGenerator
     /// السياق يصير القفلُ <b>مفروضاً بالمترجِم</b>: لا يُمكن استدعاءُ المولّد بلا تمريره،
     /// فلا يوجد «موضعٌ نُسي».</para>
     /// </summary>
+    /// <summary>
+    /// ‏بتاريخ المستند: السنةُ في الرقم والقفل هي <b>سنةُ البداية المالية</b> (FY) — فيبدأ التسلسلُ من 1 كلَّ سنةٍ مالية.
+    /// ‏ولمنشأةٍ تبدأ سنتُها في يناير هي السنةُ الميلادية نفسُها، فلا يتغيّر رقمٌ قائم.
+    /// </summary>
+    public static Task<string> NextAsync(
+        BrqoshDbContext db, IQueryable<string?> existingNumbers, string prefix, DateOnly documentDate, long companyId) =>
+        NextAsync(db, existingNumbers, prefix, documentDate, companyId, []);
+
+    public static async Task<string> NextAsync(
+        BrqoshDbContext db, IQueryable<string?> existingNumbers, string prefix, DateOnly documentDate, long companyId,
+        IEnumerable<string?> extraNumbers) =>
+        await NextAsync(db, existingNumbers, prefix,
+            await Accounting.FiscalYearResolver.StartYearForAsync(db, companyId, documentDate),
+            companyId, extraNumbers);
+
     public static async Task<string> NextAsync(
         BrqoshDbContext db,
         IQueryable<string?> existingNumbers,

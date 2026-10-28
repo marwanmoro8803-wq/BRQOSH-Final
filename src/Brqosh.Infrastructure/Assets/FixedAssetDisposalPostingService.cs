@@ -183,7 +183,7 @@ public class FixedAssetDisposalPostingService(BrqoshDbContext db)
                     db.FixedAssets.IgnoreQueryFilters()
                         .Where(a => a.CompanyId == asset.CompanyId)
                         .Select(a => a.DisposalInvoiceNumber),
-                    "FAS", disposalDate.Year, asset.CompanyId);
+                    "FAS", disposalDate, asset.CompanyId);
 
                 asset.RecordDisposalSale(
                     buyerCustomerId, invoiceNumber, saleProceeds, effectiveCategory, vatExemptionReasonCode);

@@ -26,7 +26,7 @@ public class ProgressBillingPostingService(BrqoshDbContext db)
 
             var billingNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.ProgressBillings.Where(b => b.CompanyId == billing.CompanyId).Select(b => b.BillingNumber),
-                "PB", billing.BillingDate.Year, billing.CompanyId);
+                "PB", billing.BillingDate, billing.CompanyId);
 
             var receivable = await SystemAccountAsync(billing.CompanyId, SaudiChartOfAccounts.SystemCodes.AccountsReceivable, token);
             var retention = await SystemAccountAsync(billing.CompanyId, SaudiChartOfAccounts.SystemCodes.RetentionReceivable, token);

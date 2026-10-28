@@ -20,7 +20,7 @@ public class PurchaseOrderService(BrqoshDbContext db)
         {
             var orderNumber = await DocumentNumberGenerator.NextAsync(
                 db, db.PurchaseOrders.Where(o => o.CompanyId == order.CompanyId).Select(o => o.OrderNumber),
-                "PO", order.OrderDate.Year, order.CompanyId);
+                "PO", order.OrderDate, order.CompanyId);
 
             order.Approve(orderNumber);
             db.PurchaseOrders.Add(order);

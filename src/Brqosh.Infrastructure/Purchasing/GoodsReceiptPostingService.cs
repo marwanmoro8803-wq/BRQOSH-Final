@@ -78,7 +78,7 @@ public class GoodsReceiptPostingService(BrqoshDbContext db)
 
             var number = await DocumentNumberGenerator.NextAsync(db, 
                 db.GoodsReceipts.Where(g => g.CompanyId == receipt.CompanyId).Select(g => g.ReceiptNumber),
-                "GRN", receipt.ReceiptDate.Year, receipt.CompanyId);
+                "GRN", receipt.ReceiptDate, receipt.CompanyId);
 
             long? movementId = null;
             if (stockLines.Count > 0)

@@ -14,7 +14,7 @@ public class SalesQuotationService(BrqoshDbContext db)
 
         var number = await DocumentNumberGenerator.NextAsync(db, 
             db.SalesQuotations.Where(q => q.CompanyId == quotation.CompanyId).Select(q => q.QuotationNumber),
-            "QT", quotation.QuotationDate.Year, quotation.CompanyId);
+            "QT", quotation.QuotationDate, quotation.CompanyId);
 
         quotation.MarkSent(number);
         db.SalesQuotations.Add(quotation);

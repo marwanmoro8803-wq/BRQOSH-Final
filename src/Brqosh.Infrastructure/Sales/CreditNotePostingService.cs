@@ -122,7 +122,7 @@ public class CreditNotePostingService(BrqoshDbContext db)
 
         var noteNumber = await DocumentNumberGenerator.NextAsync(db, 
             db.CreditNotes.Where(n => n.CompanyId == note.CompanyId).Select(n => n.NoteNumber),
-            "CN", note.NoteDate.Year, note.CompanyId);
+            "CN", note.NoteDate, note.CompanyId);
 
         var entry = note.Post(noteNumber, salesReturns, vatOutput, receivable, cogsReversal, cogs, inventory);
         if (cogsReversal > 0)

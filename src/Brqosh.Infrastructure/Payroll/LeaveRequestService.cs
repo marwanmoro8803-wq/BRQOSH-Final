@@ -47,7 +47,7 @@ public class LeaveRequestService(BrqoshDbContext db)
             var number = await DocumentNumberGenerator.NextAsync(db,
                 db.LeaveRequests.Where(r => r.CompanyId == companyId)
                     .Select(r => (string?)r.RequestNumber),
-                "LV", fromDate.Year, companyId);
+                "LV", fromDate, companyId);
 
             var request = LeaveRequest.Create(companyId, employeeId, number, type, fromDate, toDate, reason);
 

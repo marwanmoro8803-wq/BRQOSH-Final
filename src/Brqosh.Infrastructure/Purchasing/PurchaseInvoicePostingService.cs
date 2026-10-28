@@ -175,7 +175,7 @@ public class PurchaseInvoicePostingService(BrqoshDbContext db)
 
             var invoiceNumber = await DocumentNumberGenerator.NextAsync(db, 
                 db.PurchaseInvoices.Where(i => i.CompanyId == invoice.CompanyId).Select(i => i.InvoiceNumber),
-                "PI", invoice.InvoiceDate.Year, invoice.CompanyId);
+                "PI", invoice.InvoiceDate, invoice.CompanyId);
 
             var grniAccount = grniRelief > 0
                 ? await PurchaseAccountProvisioning.GoodsReceivedNotInvoicedAsync(db, invoice.CompanyId, ct)
