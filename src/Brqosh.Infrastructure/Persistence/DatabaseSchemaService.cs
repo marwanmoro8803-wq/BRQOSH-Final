@@ -37,6 +37,8 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
 
             await db.Database.EnsureCreatedAsync(ct);
             await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
+            // ‏المُرقِّعُ مجمَّد — وما بعده (جدولاً أو عموداً) يُكمَل من نموذج EF، فقاعدةُ SQLite القائمة لا يفوتها جديد.
+            await SchemaBaseline.CompleteSqliteFromModelAsync(db, ct);
             return;
         }
 
@@ -57,6 +59,23 @@ public class DatabaseSchemaService(BrqoshDbContext db, PreUpgradeBackup? preUpgr
         if (coreTableExists && appliedCount == 0)
         {
             await new BrqoshSchemaUpdater(db).ApplyAsync(ct);
+
+            // ‏المُرقِّعُ مجمَّدٌ عند `FrozenAtMigration` — فما يُغطّيه يُسجَّل في التاريخ، والأحدثُ يُطبَّق هجرةً
+            // ‏(بنسخةٍ قبله كمسار الترقية المعتاد). وسقوطُ الهجرة يُسجَّل ولا يوقف الإقلاع، والإقلاعُ التالي يُعيدها.
+            await SchemaBaseline.RecordUpToFreezeAsync(db, ct);
+            var newer = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
+            if (newer.Count > 0)
+            {
+                await (preUpgradeBackup ?? new PreUpgradeBackup(db)).TakeAsync(newer, isProduction, ct);
+                try
+                {
+                    await db.Database.MigrateAsync(ct);
+                }
+                catch (Exception ex) when (IsIgnorableSchemaConflict(ex) || ex is InvalidOperationException)
+                {
+                    CrashLog.Write(ex, "schema-migrate-after-baseline");
+                }
+            }
             return;
         }
 

@@ -10,9 +10,14 @@ namespace Brqosh.Infrastructure.Persistence;
 /// <summary>
 /// ترقية تدريجية للمخطط — أعمدة وفهارس ناقصة فقط.
 /// أسماء الأعمدة PascalCase لتتوافق مع EF Core EnsureCreated.
+/// <para>‏<b>مجمَّدٌ</b> عند <see cref="FrozenAtMigration"/>: يُكمل القواعدَ القديمةَ إلى ذلك المستوى فقط، ولا يُضاف إليه
+/// ‏جدولٌ ولا عمود — المخطّطُ الجديدُ هجرةُ EF وحدها (يحرسه <c>SchemaUpdaterIsFrozenTests</c>).</para>
 /// </summary>
 public class BrqoshSchemaUpdater(BrqoshDbContext db)
 {
+    /// <summary>‏آخرُ هجرةٍ يُغطّي المُرقِّعُ مخطّطَها — وما بعدها لا يصل إلا بـ<c>MigrateAsync</c>.</summary>
+    public const string FrozenAtMigration = "20261028091642_AddPostingRoleAccounts";
+
     private readonly List<SchemaStepFailure> _suppressed = [];
 
     /// <summary>
