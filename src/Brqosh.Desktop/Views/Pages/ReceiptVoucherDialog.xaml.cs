@@ -9,6 +9,7 @@ using Brqosh.Infrastructure.Sales;
 using Brqosh.Infrastructure.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Brqosh.Desktop.Ui;
+using Brqosh.Desktop.ViewModels;
 
 namespace Brqosh.Desktop.Views.Pages;
 
@@ -36,6 +37,7 @@ public partial class ReceiptVoucherDialog : Window
     }
 
     private readonly ObservableCollection<AllocRow> _allocations = [];
+    private readonly ReceiptVoucherDialogViewModel _vm = new();
 
     public ReceiptVoucherDialog()
     {
@@ -52,27 +54,18 @@ public partial class ReceiptVoucherDialog : Window
 
     private async Task LoadCustomersAsync()
     {
-        await using var db = AppServices.CreateDb();
         // (CEEF-229 · م2-٢٢) «من عليه رصيدٌ يُحصَّل منه» لا «النشط يُحصَّل منه».
         // كان الترشيح بـ IsActive وحده، فيصير العميل الموقوف غير قابلٍ للتحصيل بينما ذمّتُه
         // باقيةٌ في الأستاذ — مالٌ مسجَّل بلا طريقٍ لإقفاله. والقاعدة في استعلامٍ مستقلّ
         // كي تُقاس بهوية «مجموع أرصدة القابلين للاختيار == رصيد المدينين».
-        var customers = (await new CollectableCustomersQuery(db).ExecuteAsync(AppServices.CompanyId))
-            .Select(c => new CustomerOption(c.Id, c.IsActive ? c.NameAr : $"{c.NameAr} (موقوف)"))
-            .ToList();
+        var customers = await _vm.LoadCustomersAsync();
         CustomerCombo.ItemsSource = customers;
         // (ح-٦١) لا طرفَ يُختار سلفاً — «Enter» وأوّلُ اسمٍ أبجديّاً كانا يُرحّلان لمن لم يُقصد.
     }
 
     private async Task LoadBanksAsync()
     {
-        await using var db = AppServices.CreateDb();
-        var banks = await db.BankAccounts
-            .Where(b => b.CompanyId == AppServices.CompanyId && b.IsActive)
-            .OrderByDescending(b => b.IsDefault)
-            .ThenBy(b => b.Code)
-            .Select(b => new BankOption(b.Id, $"{b.Code} — {b.NameAr} ({b.BankName})"))
-            .ToListAsync();
+        var banks = await _vm.LoadBanksAsync();
         BankCombo.ItemsSource = banks;
         if (banks.Count > 0)
             BankCombo.SelectedIndex = 0;
@@ -100,30 +93,12 @@ public partial class ReceiptVoucherDialog : Window
         if (CustomerCombo.SelectedValue is not long customerId)
             return;
 
-        using var facade = new DesktopAccountingFacade();
-        var db = facade.Db;
-        var balance = await new CustomerBalanceQuery(db).ForCustomerAsync(AppServices.CompanyId, customerId);
-        BalanceText.Text = $"الرصيد المستحق على العميل: {balance.Balance:N2}";
+        var (balance, open) = await _vm.LoadCustomerDocumentsAsync(customerId);
+        BalanceText.Text = $"الرصيد المستحق على العميل: {balance:N2}";
 
         _allocations.Clear();
-        var open = await facade.GetService<PaymentAllocationService>().OpenSalesDocumentsAsync(AppServices.CompanyId, customerId);
-        foreach (var d in open)
-        {
-            _allocations.Add(new AllocRow
-            {
-                DocumentType = d.DocumentType,
-                DocumentId = d.DocumentId,
-                DocumentNumber = d.DocumentNumber,
-                TypeLabel = d.DocumentType switch
-                {
-                    PaymentAllocationDocumentType.SalesInvoice => LocaleManager.T("فاتورة", "Invoice"),
-                    PaymentAllocationDocumentType.ProgressBilling => LocaleManager.T("مستخلص", "Progress billing"),
-                    _ => d.DocumentType.ToString(),
-                },
-                RemainingAmount = d.RemainingAmount,
-                AllocateAmount = 0m,
-            });
-        }
+        foreach (var row in open)
+            _allocations.Add(row);
         UpdateAllocSum();
     }
 
@@ -192,8 +167,7 @@ public partial class ReceiptVoucherDialog : Window
             if (discount > 0m)
                 voucher.GrantSettlementDiscount(discount);
 
-            using var facade = new DesktopAccountingFacade();
-            await facade.GetService<ReceiptVoucherPostingService>().PostAsync(voucher, allocLines);
+            await _vm.PostAsync(voucher, allocLines);
 
             DialogResult = true;
             Close();
