@@ -30,6 +30,9 @@ public partial class SalesInvoicesPage : UserControl
     public SalesInvoicesPage()
     {
         InitializeComponent();
+        VatColumn.Header = LocaleManager.T(
+            Brqosh.Domain.Tax.VatLineLabels.Output(SalesInvoice.SaudiVatRate),
+            $"VAT {Brqosh.Domain.Tax.VatLineLabels.Percent(SalesInvoice.SaudiVatRate)}");
         FilterBar.SearchToolTip = LocaleManager.T("بحث برقم الفاتورة أو اسم العميل", "Search by invoice number or customer name");
         FilterBar.SetStatusOptions(new[]
         {

@@ -116,7 +116,7 @@
                     <DataGridTextColumn Header="قبل الضريبة"
                                         Binding="{Binding Subtotal, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}"
                                         Width="120"/>
-                    <DataGridTextColumn Header="الضريبة 15%"
+                    <DataGridTextColumn x:Name="VatColumn"
                                         Binding="{Binding VatAmount, StringFormat=N2}" ElementStyle="{StaticResource NumericCellText}" CellStyle="{StaticResource DataGridNumericCell}"
                                         Width="110"/>
                     <DataGridTextColumn Header="الإجمالي"

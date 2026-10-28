@@ -3,13 +3,14 @@ using System.Windows.Controls;
 using Brqosh.Application.Reporting;
 using Brqosh.Desktop.Automation;
 using Brqosh.Desktop.Reporting;
+using Brqosh.Desktop.Ui;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Brqosh.Desktop.Views.Pages;
 
 public partial class CashFlowStatementPage : UserControl
 {
-    public record DisplayRow(string Section, string Label, decimal Amount);
+    public record DisplayRow(string Section, string Label, decimal Amount, bool IsWarning = false);
 
     private CashFlowStatementResultDto? _lastResult;
 
@@ -65,10 +66,18 @@ public partial class CashFlowStatementPage : UserControl
         AppendSection(rows, result.Investing);
         AppendSection(rows, result.Financing);
 
+        var difference = result.UnreconciledDifference;
+        rows.Add(new DisplayRow(
+            LocaleManager.T("مطابقة", "Reconciliation"),
+            LocaleManager.T("فرق غير مطابق", "Unreconciled difference"),
+            difference,
+            IsWarning: difference != 0m));
+
         ReportGrid.ItemsSource = rows;
         UiTestAutomation.PublishGridCount(ReportGrid, rows.Count);
         TotalsText.Text =
-            $"صافي التغيّر: {result.NetCashChange:N2} · افتتاحي: {result.OpeningCash:N2} · إغلاق: {result.ClosingCash:N2}";
+            $"صافي التغيّر: {result.NetCashChange:N2} · افتتاحي: {result.OpeningCash:N2} · إغلاق: {result.ClosingCash:N2}"
+            + (difference != 0m ? $" · {LocaleManager.T("فرق غير مطابق", "Unreconciled difference")}: {difference:N2}" : "");
         UiTestAutomation.PublishSummary(TotalsText, TotalsText.Text);
     }
 
