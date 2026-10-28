@@ -28,21 +28,21 @@
                         <ComboBox x:Name="ThemeBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"
                                   AutomationProperties.AutomationId="PreferencesTheme"
                                   SelectionChanged="OnThemeChosen"/>
-                        <TextBlock x:Name="ThemeHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock x:Name="ThemeHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                         <TextBlock x:Name="DensityLabel" Style="{StaticResource FieldLabel}"/>
                         <ComboBox x:Name="DensityBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"
                                   AutomationProperties.AutomationId="PreferencesDensity"
                                   SelectionChanged="OnDensityChosen"/>
-                        <TextBlock x:Name="DensityHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock x:Name="DensityHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                         <TextBlock x:Name="LanguageLabel" Style="{StaticResource FieldLabel}"/>
                         <ComboBox x:Name="LanguageBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"
                                   AutomationProperties.AutomationId="PreferencesLanguage"
                                   SelectionChanged="OnLanguageChosen"/>
-                        <TextBlock x:Name="LanguageHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock x:Name="LanguageHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                     </StackPanel>
                 </Border>
@@ -59,11 +59,11 @@
                                             <ColumnDefinition Width="170"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Label}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Label}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
                                         <!-- قيمٌ لاتينيّةٌ (إصدار · مسار · حقوق نشر): أرقامٌ لاتينيّة واتجاهُ يسارٍ-يمين، وإلّا قُلب ترتيبُ «© 2026 BRQOSH». -->
                                         <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap"
                                                    NumberSubstitution.Substitution="European"
-                                                   Foreground="{StaticResource TextPrimaryBrush}">
+                                                   Foreground="{DynamicResource TextPrimaryBrush}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Style.Triggers>
@@ -93,7 +93,7 @@
                                     AutomationProperties.AutomationId="PreferencesStatus" Click="OnStatus"/>
                         </WrapPanel>
                         <TextBlock x:Name="UpdateText" FontWeight="SemiBold" TextWrapping="Wrap"
-                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"/>
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

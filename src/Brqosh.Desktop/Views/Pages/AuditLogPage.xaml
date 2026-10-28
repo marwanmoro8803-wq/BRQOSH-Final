@@ -21,12 +21,12 @@
                     <Button x:Name="NextBtn" Content="التالي" Style="{StaticResource SecondaryButton}" Padding="14,7" Margin="8,0,0,0" Click="OnNext"/>
                 </WrapPanel>
                 <TextBlock x:Name="CountText" DockPanel.Dock="Left" VerticalAlignment="Center"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
             </brq:ToolbarDockPanel>
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="AuditSummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True"

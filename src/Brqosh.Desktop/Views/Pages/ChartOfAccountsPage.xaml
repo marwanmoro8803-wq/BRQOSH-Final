@@ -37,7 +37,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="CoaSummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <!-- شجرة الحسابات -->

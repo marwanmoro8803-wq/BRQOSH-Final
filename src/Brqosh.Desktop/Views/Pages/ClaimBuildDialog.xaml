@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="دفعة مطالبة جديدة" Height="330" Width="640"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -46,7 +46,7 @@
         <Border Grid.Row="3" Style="{StaticResource AlertStrip}" Margin="0,16,0,0" Padding="16,12"
                 VerticalAlignment="Top">
             <TextBlock x:Name="PreviewText" TextWrapping="Wrap" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="اختر الشركة والمدة ثم اضغط «معاينة» لترى ما سيضم."/>
         </Border>
 

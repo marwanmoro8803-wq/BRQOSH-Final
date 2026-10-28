@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -80,14 +80,14 @@
                 <TextBlock x:Name="VatText" Text="0.00" Margin="8,0,24,0" FontWeight="Bold"/>
                 <TextBlock Text="الإجمالي:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="TotalText" Text="0.00" Margin="8,0,24,0" FontWeight="Bold"
-                           Foreground="{StaticResource PrimaryBrush}" FontSize="{DynamicResource FontSize.Title}"/>
+                           Foreground="{DynamicResource PrimaryBrush}" FontSize="{DynamicResource FontSize.Title}"/>
                 <TextBlock Text="المتبقي من الفاتورة:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="RemainingText" Text="—" Margin="8,0,0,0" FontWeight="Bold"/>
             </StackPanel>
         </Border>
 
         <DockPanel Grid.Row="5" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="ترحيل الإشعار" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>

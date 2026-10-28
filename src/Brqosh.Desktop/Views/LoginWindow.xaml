@@ -7,7 +7,7 @@
         WindowStartupLocation="CenterScreen"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -27,7 +27,7 @@
                 <StackPanel Grid.Row="1" VerticalAlignment="Center">
                     <!-- في الواجهة العربيّة «Left» هو الطرفُ البصريّ الأيمن — حيث يبدأ النصُّ تحته. -->
                     <controls:BrandLogo MarkHeight="150" NameSize="30" HorizontalAlignment="Left" Animate="True"/>
-                    <Border Height="4" Width="80" Background="{StaticResource AccentBrush}"
+                    <Border Height="4" Width="80" Background="{DynamicResource AccentBrush}"
                             CornerRadius="2" HorizontalAlignment="Left"
                             Margin="0,20,0,20"/>
                     <TextBlock Text="نظام تخطيط موارد المؤسسة"
@@ -39,21 +39,21 @@
                     <StackPanel Margin="0,32,0,0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Border Width="6" Height="6" CornerRadius="3"
-                                    Background="{StaticResource AccentBrush}"
+                                    Background="{DynamicResource AccentBrush}"
                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="فوترة إلكترونية متوافقة مع هيئة الزكاة والضريبة"
                                        FontSize="{DynamicResource FontSize.Body}" Foreground="#E9DCC9" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                             <Border Width="6" Height="6" CornerRadius="3"
-                                    Background="{StaticResource AccentBrush}"
+                                    Background="{DynamicResource AccentBrush}"
                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="تقارير مالية احترافية وتحليل الأداء"
                                        FontSize="{DynamicResource FontSize.Body}" Foreground="#E9DCC9" VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Width="6" Height="6" CornerRadius="3"
-                                    Background="{StaticResource AccentBrush}"
+                                    Background="{DynamicResource AccentBrush}"
                                     VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBlock Text="إدارة المخزون والمستودعات المتعددة"
                                        FontSize="{DynamicResource FontSize.Body}" Foreground="#E9DCC9" VerticalAlignment="Center"/>
@@ -68,8 +68,8 @@
             </Grid>
         </Border>
 
-        <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+        <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
                 <Grid MinHeight="640">
                     <Grid.RowDefinitions>
@@ -81,7 +81,7 @@
 
                     <Border Grid.Row="1" Style="{StaticResource AuthCard}" Margin="28,24">
                         <StackPanel>
-                            <Border Height="3" Width="48" Background="{StaticResource PrimaryBrush}"
+                            <Border Height="3" Width="48" Background="{DynamicResource PrimaryBrush}"
                                     CornerRadius="2" HorizontalAlignment="Right"
                                     Margin="0,0,0,20"/>
 
@@ -98,9 +98,9 @@
                             <StackPanel x:Name="LoginPanel">
                                 <TextBlock Text="مرحباً بعودتك"
                                            FontSize="{DynamicResource FontSize.Display}" FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="سجّل دخولك للمتابعة"
-                                           FontSize="{DynamicResource FontSize.BodyLarge}" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="{DynamicResource FontSize.BodyLarge}" Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,6,0,24"/>
 
                                 <TextBlock Text="اسم المستخدم" Style="{StaticResource FieldLabel}"/>
@@ -154,7 +154,7 @@
 
                                 <TextBlock x:Name="ErrorText"
                                            AutomationProperties.AutomationId="LoginError"
-                                           Foreground="{StaticResource DangerBrush}"
+                                           Foreground="{DynamicResource DangerBrush}"
                                            FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                                            Margin="0,14,0,0"
                                            TextWrapping="Wrap"
@@ -173,12 +173,12 @@
                             <StackPanel x:Name="RegisterPanel" Visibility="Collapsed">
                                 <TextBlock Text="طلب حساب مستخدم"
                                            FontSize="{DynamicResource FontSize.Display}" FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                                 <TextBlock Text="أدخل بياناتك ورمز التحقق — يفعّل المدير الحساب بعد المراجعة."
-                                           FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="{DynamicResource FontSize.Body}" Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap" Margin="0,6,0,8"/>
                                 <TextBlock Text="إنشاء منشأة جديدة يتطلب صلاحية مدير النظام أو معالج المنشآت — من إعدادات المنشأة بعد تسجيل الدخول."
-                                           FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource InfoBrush}"
+                                           FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource InfoBrush}"
                                            TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                                 <TextBlock Text="الاسم المعروض" Style="{StaticResource FieldLabel}"/>
@@ -227,7 +227,7 @@
                                         Click="OnSendRegistrationOtp"/>
 
                                 <TextBlock x:Name="RegOtpHintText"
-                                           FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource InfoBrush}"
+                                           FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource InfoBrush}"
                                            TextWrapping="Wrap" Margin="0,10,0,0"
                                            Visibility="Collapsed"/>
 
@@ -235,14 +235,14 @@
                                 <TextBox x:Name="RegOtpBox" Style="{StaticResource AppTextBox}" MaxLength="6"/>
 
                                 <TextBlock x:Name="RegisterErrorText"
-                                           Foreground="{StaticResource DangerBrush}"
+                                           Foreground="{DynamicResource DangerBrush}"
                                            FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                                            Margin="0,14,0,0"
                                            TextWrapping="Wrap"
                                            Visibility="Collapsed"/>
 
                                 <TextBlock x:Name="RegisterSuccessText"
-                                           Foreground="{StaticResource SuccessBrush}"
+                                           Foreground="{DynamicResource SuccessBrush}"
                                            FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                                            Margin="0,14,0,0"
                                            TextWrapping="Wrap"
@@ -257,9 +257,9 @@
                     </Border>
 
                     <StackPanel Grid.Row="3" Margin="44,0,44,24" Opacity="0.6">
-                        <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,0,0,14"/>
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,0,0,14"/>
                         <TextBlock x:Name="EnvironmentFooterText" Text="BRQOSH ERP v4"
-                                   FontSize="{DynamicResource FontSize.Caption}" Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="{DynamicResource FontSize.Caption}" Foreground="{DynamicResource TextMutedBrush}"
                                    HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Grid>

@@ -31,19 +31,19 @@
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,10" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,0,0,10" Padding="16,12"
                 x:Name="RefusalCard" Visibility="Collapsed">
             <StackPanel>
                 <TextBlock Text="⚠️ موظفون لم يدخلوا الملف — ولكلٍّ سبب:" FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <ItemsControl x:Name="RefusalList">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" Margin="0,2" TextWrapping="Wrap"
-                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

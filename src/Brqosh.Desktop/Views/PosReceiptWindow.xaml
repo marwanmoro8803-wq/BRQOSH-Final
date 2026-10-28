@@ -4,7 +4,7 @@
         Title="إيصال البيع — BRQOSH" Height="680" Width="380"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}" ResizeMode="NoResize">
-    <DockPanel Background="{StaticResource SurfaceBrush}">
+    <DockPanel Background="{DynamicResource SurfaceBrush}">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,16">
             <Button Content="طباعة" Style="{StaticResource PrimaryButton}" Padding="28,10" Click="OnPrint"/>
             <Button Content="إغلاق" Style="{StaticResource SecondaryButton}" Padding="28,10" Margin="12,0,0,0" Click="OnClose"/>

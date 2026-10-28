@@ -6,14 +6,14 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="40,32" MaxWidth="640">
             <TextBlock Text="إنشاء منشأة جديدة"
                        FontSize="{DynamicResource FontSize.Display}" FontWeight="Bold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
             <TextBlock Text="يُنشئ شركة جديدة مع دليل حسابات وفرع ومستودع حسب القطاع. يتطلب صلاحية مدير النظام."
-                       FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="{DynamicResource FontSize.Body}" Foreground="{DynamicResource TextSecondaryBrush}"
                        TextWrapping="Wrap" Margin="0,12,0,20"/>
 
             <TextBlock Style="{StaticResource FormSectionTitle}" Text="① القطاع والدولة"/>
@@ -22,7 +22,7 @@
                     <TextBlock Text="نمط العمل *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="ProfileCombo" Style="{StaticResource AppComboBox}" DisplayMemberPath="NameAr"/>
                     <TextBlock x:Name="IndustryPreviewText"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -47,7 +47,7 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}"
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}"
                        Visibility="Collapsed" TextWrapping="Wrap" Margin="0,8,0,0"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,20,0,0">

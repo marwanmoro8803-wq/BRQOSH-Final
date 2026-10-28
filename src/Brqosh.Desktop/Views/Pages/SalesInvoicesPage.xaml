@@ -76,12 +76,12 @@
 
                 <!-- عداد النتائج (يسار الشريط = يمين الشاشة في RTL) -->
                 <Border DockPanel.Dock="Left"
-                        Background="{StaticResource PrimarySoftBrush}"
+                        Background="{DynamicResource PrimarySoftBrush}"
                         CornerRadius="3" Padding="12,5"
                         VerticalAlignment="Center">
                     <TextBlock x:Name="CountText"
                                FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
-                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                               Foreground="{DynamicResource PrimaryDarkBrush}"/>
                 </Border>
             </brq:ToolbarDockPanel>
         </Border>

@@ -37,7 +37,7 @@
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>

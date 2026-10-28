@@ -6,7 +6,7 @@
         Width="1040" Height="620"
         MinWidth="900" MinHeight="520"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -56,11 +56,11 @@
             <TextBlock x:Name="VatText" Text="0.00" Style="{StaticResource TabularText}" Margin="8,0,24,0"/>
             <TextBlock Text="الإجمالي" Style="{StaticResource FieldLabel}" VerticalAlignment="Center"/>
             <TextBlock x:Name="TotalText" Text="0.00" Style="{StaticResource TabularText}" Margin="8,0,0,0"
-                       Foreground="{StaticResource PrimaryBrush}" FontWeight="Bold"/>
+                       Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold"/>
         </StackPanel>
 
         <DockPanel Grid.Row="3" Margin="0,12,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}"
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}"
                        Visibility="Collapsed" TextWrapping="Wrap" VerticalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="إرسال العرض" Style="{StaticResource PrimaryButton}" Padding="20,9" Click="OnSave"/>

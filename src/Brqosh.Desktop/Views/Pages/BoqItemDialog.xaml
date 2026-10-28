@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">
     <StackPanel Margin="28,24">
         <TextBlock x:Name="TitleText" Text="إضافة بند لجدول الكميات" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
@@ -26,7 +26,7 @@
         <TextBlock Text="سعر الوحدة *" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="PriceBox" Style="{StaticResource AppTextBox}" Text="0" Margin="0,0,0,4"/>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,12,0,0" Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,12,0,0" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button x:Name="SaveButton" Content="إضافة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>

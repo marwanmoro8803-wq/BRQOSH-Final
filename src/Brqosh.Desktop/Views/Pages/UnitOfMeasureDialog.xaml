@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="وحدة قياس" Width="560" Height="420"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

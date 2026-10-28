@@ -41,13 +41,13 @@
                 <!-- ‏(ح-١٤١) ‏**القناةُ تُحفظ مرّة** — مسارُ ملفٍّ أو مشاركةٌ أو https. -->
                 <DockPanel Margin="0,0,0,8">
                     <TextBlock x:Name="ChannelLabel" DockPanel.Dock="Left" VerticalAlignment="Center"
-                               Margin="0,0,8,0" Foreground="{StaticResource TextPrimaryBrush}"/>
+                               Margin="0,0,8,0" Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <Button x:Name="BrowseChannelBtn" DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
                             Margin="8,0,0,0" Padding="14,6" Click="OnBrowseChannel"/>
                     <TextBox x:Name="ChannelBox" FlowDirection="LeftToRight"/>
                 </DockPanel>
                 <TextBlock x:Name="UpdateText" FontWeight="SemiBold" TextWrapping="Wrap"
-                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
             </StackPanel>
         </Border>
 

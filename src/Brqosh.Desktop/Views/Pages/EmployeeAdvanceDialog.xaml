@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="سلفة موظف" Height="300" Width="640"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -56,7 +56,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource AlertStrip}" Margin="0,14,0,0" Padding="16,10"
                 VerticalAlignment="Top">
-            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}"
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
                        Text="الحفظ يسجل السلفة بانتظار الصرف — ولا تصير ذمة على الموظف حتى تصرف."/>
         </Border>
 

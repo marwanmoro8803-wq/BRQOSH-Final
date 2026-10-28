@@ -21,7 +21,7 @@
         <Border Grid.Row="1" Style="{StaticResource ToolbarCard}" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock x:Name="SlaTitle" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <TextBlock x:Name="SupportStateText" Foreground="{StaticResource TextSecondaryBrush}"
+                <TextBlock x:Name="SupportStateText" Foreground="{DynamicResource TextSecondaryBrush}"
                            TextWrapping="Wrap" Margin="0,0,0,8"/>
                 <DataGrid x:Name="SlaGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
                           FontSize="{DynamicResource FontSize.BodyLarge}" RowHeight="32" MaxHeight="140">
@@ -32,11 +32,11 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <WrapPanel x:Name="EmailRow" Margin="0,12,0,0">
-                    <TextBlock x:Name="EmailLabel" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="EmailLabel" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                     <TextBlock x:Name="EmailText" FlowDirection="LeftToRight"/>
                 </WrapPanel>
                 <WrapPanel x:Name="PhoneRow" Margin="0,4,0,0">
-                    <TextBlock x:Name="PhoneLabel" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,6,0"/>
+                    <TextBlock x:Name="PhoneLabel" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0"/>
                     <TextBlock x:Name="PhoneText" FlowDirection="LeftToRight"/>
                 </WrapPanel>
             </StackPanel>
@@ -56,7 +56,7 @@
                 <TextBox x:Name="DetailsBox" Style="{StaticResource AppTextBox}" TextWrapping="Wrap" AcceptsReturn="True"
                          MinHeight="84" MaxHeight="160" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10" MaxLength="4000"
                          AutomationProperties.AutomationId="SupportDetails"/>
-                <TextBlock x:Name="FormError" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap"
+                <TextBlock x:Name="FormError" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap"
                            Visibility="Collapsed" Margin="0,0,0,8"/>
                 <WrapPanel>
                     <Button x:Name="RegisterBtn" Style="{StaticResource PrimaryButton}" Padding="20,9" Margin="0,0,8,6"
@@ -64,7 +64,7 @@
                     <Button x:Name="RegisterMailBtn" Style="{StaticResource SecondaryButton}" Padding="20,9" Margin="0,0,8,6"
                             AutomationProperties.AutomationId="SupportRegisterMail" Click="OnRegisterAndMail"/>
                 </WrapPanel>
-                <TextBlock x:Name="HonestyText" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                <TextBlock x:Name="HonestyText" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
 

@@ -8,20 +8,20 @@
         WindowStartupLocation="CenterScreen"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="52,40" MaxWidth="800">
 
             <StackPanel Margin="0,0,0,8">
                 <controls:BrandLogo MarkHeight="96" NameSize="20" Animate="True" HorizontalAlignment="Center" Margin="0,0,0,18"
-                                    MarkBrush="{StaticResource PrimaryLightBrush}" NameBrush="{StaticResource PrimaryLightBrush}"/>
+                                    MarkBrush="{DynamicResource PrimaryLightBrush}" NameBrush="{DynamicResource PrimaryLightBrush}"/>
                 <TextBlock Text="مرحباً بك في BRQOSH"
                            FontSize="{DynamicResource FontSize.Hero}" FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                 <Border Height="4" Width="72" CornerRadius="2" HorizontalAlignment="Right"
                         Background="{StaticResource BrandAccentGradient}" Margin="0,12,0,0"/>
                 <TextBlock Text="اختر نمط العمل المناسب لنشاطك — سيُفعّل النظام الوحدات والقوائم والحسابات المناسبة تلقائياً."
-                           FontSize="{DynamicResource FontSize.BodyLarge}" Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="{DynamicResource FontSize.BodyLarge}" Foreground="{DynamicResource TextSecondaryBrush}"
                            TextWrapping="Wrap" Margin="0,16,0,0"/>
             </StackPanel>
 
@@ -32,7 +32,7 @@
                     <TextBlock Text="القطاع / نمط العمل *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="ProfileCombo" Style="{StaticResource AppComboBox}" DisplayMemberPath="NameAr"/>
                     <TextBlock x:Name="IndustryPreviewText"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -43,9 +43,9 @@
                 <StackPanel>
                     <TextBlock x:Name="CountryTemplateTitle"
                                FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock x:Name="CountryTemplateDetails"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextSecondaryBrush}"
                                TextWrapping="Wrap" Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>
@@ -55,17 +55,17 @@
                 <StackPanel>
                     <TextBlock Text="معاينة القالب القطاعي"
                                FontSize="{DynamicResource FontSize.BodyLarge}" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock x:Name="IndustryTemplateTitle"
                                FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,8,0,4"
-                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="الوحدات المفعّلة:" Style="{StaticResource FieldLabel}" Margin="0,4,0,2"/>
                     <TextBlock x:Name="TemplateModulesText"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextSecondaryBrush}"
                                TextWrapping="Wrap"/>
                     <TextBlock Text="الميزات:" Style="{StaticResource FieldLabel}" Margin="0,8,0,2"/>
                     <TextBlock x:Name="TemplateFeaturesText"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextSecondaryBrush}"
                                TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
@@ -82,7 +82,7 @@
                     <TextBox x:Name="VatNumberBox" Style="{StaticResource AppTextBox}"
                              MaxLength="15"/>
                     <TextBlock Text="مطلوب قبل تفعيل الفوترة الإلكترونية (ZATCA)."
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
@@ -103,7 +103,7 @@
                     <PasswordBox x:Name="AdminPasswordConfirmBox" Style="{StaticResource AppPasswordBox}"/>
 
                     <TextBlock x:Name="PolicyHintText"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
@@ -121,7 +121,7 @@
             </Border>
 
             <TextBlock x:Name="ErrorText"
-                       Foreground="{StaticResource DangerBrush}"
+                       Foreground="{DynamicResource DangerBrush}"
                        FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        Margin="0,12,0,0" TextWrapping="Wrap"
                        Visibility="Collapsed"/>

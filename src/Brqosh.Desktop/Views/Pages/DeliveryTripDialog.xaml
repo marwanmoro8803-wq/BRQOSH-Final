@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="رحلة توصيل جديدة" Height="560" Width="860"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -45,7 +45,7 @@
         </Grid>
 
         <TextBlock Grid.Row="3" Margin="4,4,4,6" FontWeight="SemiBold"
-                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
                    Text="الشحنات المحملة — والشحنة المسلمة لا تحمل"/>
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">

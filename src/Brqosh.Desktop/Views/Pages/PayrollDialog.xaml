@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="دورة رواتب جديدة" Width="1020" Height="620"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -15,7 +15,7 @@
 
         <TextBlock Grid.Row="0" Text="دورة رواتب (مسودة)" Style="{StaticResource PageTitleText}" Margin="0,0,0,4"/>
         <TextBlock Grid.Row="1" Text="السطور تُبنى من سجل الموظفين — والتأمينات وأقساط السلف محسوبة لا مكتوبة"
-                   Foreground="{StaticResource TextMutedBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,14"/>
+                   Foreground="{DynamicResource TextMutedBrush}" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,14"/>
 
         <Grid Grid.Row="2" Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -62,7 +62,7 @@
         </Border>
 
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Visibility="Collapsed"/>
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="حفظ مسودة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

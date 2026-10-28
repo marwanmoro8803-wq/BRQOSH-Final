@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="حركة مخزنية" Width="780" Height="560" MinWidth="700"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
@@ -48,7 +48,7 @@
             </DataGrid>
         </Border>
         <DockPanel Grid.Row="3" Margin="0,14,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" Visibility="Collapsed"/>
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Content="ترحيل" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

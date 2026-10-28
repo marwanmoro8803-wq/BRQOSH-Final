@@ -37,17 +37,17 @@
                 <Button x:Name="CancelNoteBtn" DockPanel.Dock="Right" Content="إلغاء"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9"
                         Click="OnCancelNote"/>
-                <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
+                <Border DockPanel.Dock="Left" Background="{DynamicResource PrimarySoftBrush}"
                         CornerRadius="3" Padding="12,5" VerticalAlignment="Center">
                     <TextBlock x:Name="CountText" FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
-                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                               Foreground="{DynamicResource PrimaryDarkBrush}"/>
                 </Border>
             </brq:ToolbarDockPanel>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="NoteSummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">

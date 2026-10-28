@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterScreen"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="CanResize"
         MinHeight="420" MinWidth="560">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -16,12 +16,12 @@
 
             <TextBlock Text="إعدادات الاتصال بقاعدة البيانات"
                        FontSize="{DynamicResource FontSize.Heading}" FontWeight="Bold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
             <Border Height="3" Width="44" CornerRadius="2" HorizontalAlignment="Right"
-                    Background="{StaticResource AccentBrush}" Margin="0,12,0,0"/>
+                    Background="{DynamicResource AccentBrush}" Margin="0,12,0,0"/>
 
             <TextBlock x:Name="ReasonText"
-                       FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="{DynamicResource FontSize.Body}" Foreground="{DynamicResource TextSecondaryBrush}"
                        TextWrapping="Wrap" Margin="0,16,0,0"/>
 
             <Border Style="{StaticResource ContentCard}" Padding="28,24" Margin="0,20,0,0">
@@ -29,7 +29,7 @@
             </Border>
 
             <TextBlock x:Name="ErrorText"
-                       Foreground="{StaticResource DangerBrush}"
+                       Foreground="{DynamicResource DangerBrush}"
                        FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        Margin="0,12,0,0" TextWrapping="Wrap"
                        Visibility="Collapsed"/>

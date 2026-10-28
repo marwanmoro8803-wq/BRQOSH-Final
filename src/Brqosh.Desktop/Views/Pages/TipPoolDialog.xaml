@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="وعاء إكراميات جديد" Height="520" Width="760"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -52,7 +52,7 @@
         </Border>
 
         <Border Grid.Row="4" Style="{StaticResource AlertStrip}" Margin="0,12,0,0" Padding="16,10">
-            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}"
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="تقسم الحصص بالتساوي على العاملين المختارين — وآخر حصة تأخذ الباقي فلا يبقى فلس بلا صاحب"/>
         </Border>
 

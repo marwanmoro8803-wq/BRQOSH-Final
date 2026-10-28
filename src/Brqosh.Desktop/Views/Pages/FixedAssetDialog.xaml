@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="أصل ثابت" Width="540" SizeToContent="Height"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}" ResizeMode="NoResize">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}" ResizeMode="NoResize">
     <StackPanel Margin="28,24">
         <TextBlock x:Name="TitleText" Text="إضافة أصل ثابت" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
 
@@ -58,7 +58,7 @@
             </StackPanel>
         </Grid>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold" Margin="0,12,0,0" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
             <Button Content="حفظ" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave" IsDefault="True"/>

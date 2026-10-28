@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">
     <StackPanel Margin="28,24">
         <TextBlock Text="تحويل بين حسابات بنكية" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
@@ -28,7 +28,7 @@
         <TextBlock Text="مرجع (اختياري)" Style="{StaticResource FieldLabel}"/>
         <TextBox x:Name="ReferenceBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                    TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,12"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">

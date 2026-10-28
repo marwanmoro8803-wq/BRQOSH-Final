@@ -21,12 +21,12 @@
                     <TextBlock Text="الهوية والطباعة" Style="{StaticResource FieldLabel}" FontSize="{DynamicResource FontSize.Subtitle}" FontWeight="Bold" Margin="0,0,0,12"/>
 
                     <TextBlock Text="شعار الشركة" Style="{StaticResource FieldLabel}"/>
-                    <Border BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="8"
+                    <Border BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" CornerRadius="8"
                             Padding="12" Margin="0,0,0,8" HorizontalAlignment="Left">
                         <Grid Width="180" Height="100">
                             <TextBlock x:Name="LogoPreviewPlaceholder" Text="لا يوجد شعار"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Foreground="{StaticResource TextMutedBrush}"/>
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
                             <Image x:Name="LogoPreviewImage" Stretch="Uniform" MaxHeight="96" MaxWidth="168"/>
                         </Grid>
                     </Border>
@@ -58,7 +58,7 @@
                     <TextBlock x:Name="AuditorLabel" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="AuditorBox" Style="{StaticResource AppTextBox}" MaxLength="120" Margin="0,0,0,4"
                              AutomationProperties.AutomationId="CompanySettingsAuditor"/>
-                    <TextBlock x:Name="AuditorHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}"
+                    <TextBlock x:Name="AuditorHint" FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <!-- (CEEF-229 · Z-10) بيانات البائع النظامية للفوترة الإلكترونية.
@@ -122,19 +122,19 @@
                     <TextBlock x:Name="ProfileText" FontSize="{DynamicResource FontSize.BodyLarge}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <ComboBox x:Name="ProfileBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"/>
                     <TextBlock Text="يغيّره المدير وحده، ولا يُقبل نظامٌ يُخفي وحدةً فيها بيانات. يُطبَّق على القوائم عند إعادة التشغيل."
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                     <TextBlock x:Name="ActiveModulesText" FontSize="{DynamicResource FontSize.Small}"
-                               Foreground="{StaticResource InfoBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                               Foreground="{DynamicResource InfoBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="قالب الدولة" Style="{StaticResource FieldLabel}"/>
                     <TextBlock x:Name="CountryTemplateText" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,4"/>
                     <TextBlock x:Name="CountryComplianceText" FontSize="{DynamicResource FontSize.Small}"
-                               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,16"/>
+                               Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,16"/>
 
                     <TextBlock Text="قالب القطاع" Style="{StaticResource FieldLabel}"/>
                     <TextBlock x:Name="IndustryTemplateText" FontSize="{DynamicResource FontSize.Body}" Margin="0,0,0,4"/>
                     <TextBlock x:Name="IndustryModulesText" FontSize="{DynamicResource FontSize.Small}"
-                               Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                               Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="طريقة تكلفة المخزون *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="CostingMethodBox" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,16"/>
@@ -142,7 +142,7 @@
                     <TextBlock Text="حد اعتماد القيد اليدوي (ريال)" Style="{StaticResource FieldLabel}"/>
                     <TextBox x:Name="ManualJournalThresholdBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
                     <TextBlock Text="القيد اليدوي فوق هذا المبلغ لا يُرحَّل إلا بعد موافقة مستخدم آخر. يغيّره المدير وحده."
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="عملة العرض (ISO) *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="BaseCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,16"/>
@@ -150,7 +150,7 @@
                     <TextBlock Text="عملة القياس المحاسبي (ISO) *" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="FunctionalCurrencyBox" ItemTemplate="{StaticResource CurrencyFlagItem}" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,4"/>
                     <TextBlock x:Name="CurrencyHintText"
-                               FontSize="{DynamicResource FontSize.Small}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                               FontSize="{DynamicResource FontSize.Small}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <TextBlock Text="مجموعة التقارير الموحّدة" Style="{StaticResource FieldLabel}"/>
                     <ComboBox x:Name="GroupCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" Margin="0,0,0,16"/>
@@ -159,13 +159,13 @@
                     <TextBox x:Name="MachineIdBox" Style="{StaticResource AppTextBox}" IsReadOnly="True" Margin="0,0,0,8"/>
                     <TextBlock x:Name="LicenseStatusText"
                                FontSize="{DynamicResource FontSize.Small}" TextWrapping="Wrap" Margin="0,4,0,16"
-                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
             </Border>
         </ScrollViewer>
 
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
                 Padding="24,14" Effect="{StaticResource CardShadow}">
             <Grid>
                 <!-- (UI-AUDIT) عمودان: رسالةُ خطأٍ طويلةٌ تلتفّ في عمودها ولا تمرّ تحت زرّ الحفظ. -->
@@ -173,7 +173,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
+                <TextBlock x:Name="ErrorText" Grid.Column="0" Margin="0,0,16,0" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                            TextWrapping="Wrap" Visibility="Collapsed" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button x:Name="SaveBtn" Content="حفظ" Style="{StaticResource PrimaryButton}"

@@ -1,4 +1,5 @@
 <Window x:Class="Brqosh.Desktop.Views.Pages.ReceiptVoucherDialog"
+        KeyboardNavigation.TabNavigation="Cycle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="سند قبض جديد"
@@ -6,7 +7,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,24">
@@ -19,17 +20,17 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="التاريخ *" Style="{StaticResource FieldLabel}"/>
-                    <DatePicker x:Name="DatePickerBox" FontSize="{DynamicResource FontSize.BodyLarge}"/>
+                    <DatePicker x:Name="DatePickerBox" AutomationProperties.Name="التاريخ" FontSize="{DynamicResource FontSize.BodyLarge}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="العميل *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="CustomerCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
+                    <ComboBox x:Name="CustomerCombo" AutomationProperties.Name="العميل" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                               DisplayMemberPath="Display" SelectedValuePath="Id"
                               SelectionChanged="OnCustomerSelected"/>
                 </StackPanel>
             </Grid>
 
-            <TextBlock x:Name="BalanceText" FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,14"/>
+            <TextBlock x:Name="BalanceText" FontSize="{DynamicResource FontSize.Body}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,14"/>
 
             <Grid Margin="0,0,0,14">
                 <Grid.ColumnDefinitions>
@@ -38,11 +39,11 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,12,0">
                     <TextBlock Text="المبلغ *" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="AmountBox" Style="{StaticResource AppTextBox}"/>
+                    <TextBox x:Name="AmountBox" AutomationProperties.Name="المبلغ" Style="{StaticResource AppTextBox}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="طريقة القبض *" Style="{StaticResource FieldLabel}"/>
-                    <ComboBox x:Name="MethodCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectedIndex="0"
+                    <ComboBox x:Name="MethodCombo" AutomationProperties.Name="طريقة القبض" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8" SelectedIndex="0"
                               SelectionChanged="OnMethodChanged">
                         <ComboBoxItem Content="نقداً (الصندوق)"/>
                         <ComboBoxItem Content="بنك (حوالة/شبكة)"/>
@@ -65,7 +66,7 @@
                 </StackPanel>
                 <StackPanel Grid.Column="1">
                     <TextBlock Text="سعر الصرف" Style="{StaticResource FieldLabel}"/>
-                    <TextBox x:Name="RateBox" Style="{StaticResource AppTextBox}" Text="1"/>
+                    <TextBox x:Name="RateBox" AutomationProperties.Name="سعر الصرف" Style="{StaticResource AppTextBox}" Text="1"/>
                 </StackPanel>
             </Grid>
 
@@ -73,18 +74,18 @@
                  كاتبٍ في المستودع كلِّه. وبغيره تبقى قيمةُ الخصم ذمّةً مفتوحةً تُطالَب،
                  أو تُشطب بقيدٍ يدويٍّ لا يراه الدفترُ المساعد فتنكسر هـ-١. -->
             <TextBlock Text="خصم سداد مبكر (مسموح به)" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="SettlementDiscountBox" Style="{StaticResource AppTextBox}"
+            <TextBox x:Name="SettlementDiscountBox" AutomationProperties.Name="خصم سداد مبكر (مسموح به)" Style="{StaticResource AppTextBox}"
                      Text="0.00" Margin="0,0,0,14"/>
 
             <TextBlock Text="البيان *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="DescriptionBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+            <TextBox x:Name="DescriptionBox" AutomationProperties.Name="البيان" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
             <TextBlock Text="المرجع (رقم حوالة/شيك — اختياري)" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="ReferenceBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+            <TextBox x:Name="ReferenceBox" AutomationProperties.Name="المرجع (رقم حوالة/شيك — اختياري)" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
 
             <StackPanel x:Name="BankPanel" Margin="0,14,0,0" Visibility="Collapsed">
                 <TextBlock Text="الحساب البنكي" Style="{StaticResource FieldLabel}"/>
-                <ComboBox x:Name="BankCombo" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
+                <ComboBox x:Name="BankCombo" AutomationProperties.Name="الحساب البنكي" FontSize="{DynamicResource FontSize.BodyLarge}" Padding="10,8"
                           DisplayMemberPath="Display" SelectedValuePath="Id"/>
             </StackPanel>
 
@@ -102,10 +103,10 @@
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                 <Button Content="توزيع تلقائي" Style="{StaticResource GhostButton}" Padding="12,6" Click="OnAutoAllocate"/>
                 <TextBlock x:Name="AllocSumText" Margin="16,6,0,0" FontSize="{DynamicResource FontSize.Body}"
-                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
 
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,20,0,0">

@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -61,11 +61,11 @@
             <TextBlock x:Name="VatText" Text="0.00" Style="{StaticResource TabularText}" Margin="8,0,24,0"/>
             <TextBlock Text="الإجمالي" Style="{StaticResource FieldLabel}" VerticalAlignment="Center"/>
             <TextBlock x:Name="TotalText" Text="0.00" Style="{StaticResource TabularText}" Margin="8,0,0,0"
-                       Foreground="{StaticResource PrimaryBrush}" FontWeight="Bold"/>
+                       Foreground="{DynamicResource PrimaryBrush}" FontWeight="Bold"/>
         </StackPanel>
 
         <DockPanel Grid.Row="4" Margin="0,12,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" Visibility="Collapsed"
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" Visibility="Collapsed"
                        TextWrapping="Wrap" VerticalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="تأكيد الأمر" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSave"/>

@@ -42,7 +42,7 @@
 
         <Border Grid.Row="2" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="PeriodSummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <Border Grid.Row="3" Style="{StaticResource ContentCard}">

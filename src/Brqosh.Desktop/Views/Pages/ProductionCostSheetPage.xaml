@@ -27,7 +27,7 @@
                 <DatePicker x:Name="ToDate" Width="140"/>
                 <Button Content="عرض" Style="{StaticResource PrimaryButton}" Padding="18,8" Margin="12,0,0,0" Click="OnRefresh"/>
                 <TextBlock x:Name="CountText" VerticalAlignment="Center" Margin="16,0,0,0"
-                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="{DynamicResource FontSize.Body}"/>
             </WrapPanel>
         </Border>
 

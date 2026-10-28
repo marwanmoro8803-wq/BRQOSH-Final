@@ -94,7 +94,7 @@ public partial class SalesQuotationsPage : UserControl
     private void ShowStatus(string message, bool isError)
     {
         StatusText.Text = UiDialog.Localize(message);
-        StatusText.Foreground = (System.Windows.Media.Brush)FindResource(isError ? "DangerBrush" : "PrimaryBrush");
+        StatusText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, isError ? "DangerBrush" : "PrimaryBrush");
         StatusText.Visibility = Visibility.Visible;
     }
 

@@ -44,10 +44,10 @@
                 <Button DockPanel.Dock="Right" x:Name="CancelInvoiceBtn" Content="إلغاء"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9"
                         Click="OnCancelInvoice"/>
-                <Border DockPanel.Dock="Left" Background="{StaticResource PrimarySoftBrush}"
+                <Border DockPanel.Dock="Left" Background="{DynamicResource PrimarySoftBrush}"
                         CornerRadius="3" Padding="12,5" VerticalAlignment="Center">
                     <TextBlock x:Name="CountText" FontSize="{DynamicResource FontSize.Small}" FontWeight="SemiBold"
-                               Foreground="{StaticResource PrimaryDarkBrush}"/>
+                               Foreground="{DynamicResource PrimaryDarkBrush}"/>
                 </Border>
             </brq:ToolbarDockPanel>
         </Border>

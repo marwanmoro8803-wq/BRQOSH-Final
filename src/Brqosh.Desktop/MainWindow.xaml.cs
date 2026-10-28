@@ -346,7 +346,7 @@ public partial class MainWindow : Window
         {
             await using var db = AppServices.CreateDb();
             var ok = await db.Database.CanConnectAsync();
-            StatusDbDot.Background = (System.Windows.Media.Brush)FindResource(ok ? "SuccessBrush" : "DangerBrush");
+            StatusDbDot.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, ok ? "SuccessBrush" : "DangerBrush");
             var state = ok
                 ? LocaleManager.T("متصل", "Connected")
                 : LocaleManager.T("غير متصل", "Disconnected");
@@ -354,7 +354,7 @@ public partial class MainWindow : Window
         }
         catch
         {
-            StatusDbDot.Background = (System.Windows.Media.Brush)FindResource("DangerBrush");
+            StatusDbDot.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "DangerBrush");
             StatusDbText.Text =
                 $"{LocaleManager.T("قاعدة البيانات", "Database")}: {AppServices.ActiveProviderLabel} · " +
                 LocaleManager.T("خطأ اتصال", "Connection error");

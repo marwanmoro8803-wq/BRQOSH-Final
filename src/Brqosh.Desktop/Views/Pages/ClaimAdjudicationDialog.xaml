@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="قرار شركة التأمين" Height="560" Width="980"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -39,7 +39,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource AlertStrip}" Margin="0,12,0,0" Padding="16,10">
             <TextBlock x:Name="HintText" TextWrapping="Wrap" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="اترك المرفوض صفراً لسطر اعتمد كاملاً — والمعتمد يملأ المطالب."/>
         </Border>
 

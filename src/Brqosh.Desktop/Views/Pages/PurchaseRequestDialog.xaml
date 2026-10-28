@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -55,11 +55,11 @@
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,12,0,0">
             <TextBlock Text="الإجمالي:" FontWeight="SemiBold"/>
-            <TextBlock x:Name="TotalText" Margin="8,0,0,0" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}"/>
+            <TextBlock x:Name="TotalText" Margin="8,0,0,0" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}"/>
         </StackPanel>
 
         <DockPanel Grid.Row="5" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontWeight="SemiBold" Visibility="Collapsed"/>
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontWeight="SemiBold" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                 <Button Content="حفظ مسودة" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnSaveDraft" IsDefault="True"/>
                 <Button Content="إلغاء" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Padding="24,9" Click="OnCancel" IsCancel="True"/>

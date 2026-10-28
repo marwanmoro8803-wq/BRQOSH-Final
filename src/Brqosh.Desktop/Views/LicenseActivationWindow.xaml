@@ -6,27 +6,27 @@
         WindowStartupLocation="CenterScreen"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">
     <Border Style="{StaticResource AuthCard}" Margin="28">
         <StackPanel>
             <!-- رأس البطاقة -->
             <StackPanel Margin="0,0,0,24">
-                <Border Height="3" Width="44" Background="{StaticResource AccentBrush}"
+                <Border Height="3" Width="44" Background="{DynamicResource AccentBrush}"
                         CornerRadius="2" HorizontalAlignment="Right" Margin="0,0,0,18"/>
                 <TextBlock Text="تفعيل الترخيص"
                            FontSize="{DynamicResource FontSize.Heading}" FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
                 <TextBlock Text="أدخل مفتاح الترخيص المرسل من فريق الدعم الفني."
-                           FontSize="{DynamicResource FontSize.Body}" Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="{DynamicResource FontSize.Body}" Foreground="{DynamicResource TextSecondaryBrush}"
                            TextWrapping="Wrap" Margin="0,6,0,0"/>
             </StackPanel>
 
             <!-- حالةُ الترخيص الحالية -->
             <Border x:Name="StatusPanel" CornerRadius="2" Padding="12,9" Margin="0,0,0,16"
-                    Background="{StaticResource WarningSoftBrush}" Visibility="Collapsed">
+                    Background="{DynamicResource WarningSoftBrush}" Visibility="Collapsed">
                 <TextBlock x:Name="StatusText" TextWrapping="Wrap" FontSize="{DynamicResource FontSize.Small}"
-                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
             </Border>
 
             <!-- معرّف الجهاز (قراءة فقط) -->
@@ -48,12 +48,12 @@
                      FontSize="{DynamicResource FontSize.TitleLarge}" TextAlignment="Center" MinHeight="46"
                      VerticalContentAlignment="Center"/>
             <TextBlock x:Name="KeyHint" FontSize="{DynamicResource FontSize.Caption}"
-                       Foreground="{StaticResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        TextWrapping="Wrap" Margin="0,6,0,0"/>
 
             <!-- رسالة الخطأ -->
             <TextBlock x:Name="ErrorText"
-                       Foreground="{StaticResource DangerBrush}"
+                       Foreground="{DynamicResource DangerBrush}"
                        FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        Margin="0,12,0,0" TextWrapping="Wrap"
                        Visibility="Collapsed"/>

@@ -49,7 +49,7 @@
 
         <Border Grid.Row="3" Style="{StaticResource AlertStrip}" Margin="0,0,0,12" Padding="16,10">
             <TextBlock x:Name="BoqSummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">

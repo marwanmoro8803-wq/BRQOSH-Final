@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="16,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -27,7 +27,7 @@
                 <Border x:Name="FallbackPanel" Visibility="Collapsed" Padding="24">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="FallbackText" TextWrapping="Wrap"
-                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <Button Content="فتح في العارض الخارجي" Style="{StaticResource PrimaryButton}"
                                 Padding="20,9" Margin="0,16,0,0" HorizontalAlignment="Left"
                                 Click="OnOpenExternal"/>

@@ -39,7 +39,6 @@ public static class ThemeManager
     /// </summary>
     public static void ApplyHighContrast(ResourceDictionary r)
     {
-        EnsureMutableBrushes(r);
         var window = SystemColors.WindowColor;
         var text = SystemColors.WindowTextColor;
         var hi = SystemColors.HighlightColor;
@@ -66,7 +65,6 @@ public static class ThemeManager
     /// </summary>
     public static void ApplyTo(ResourceDictionary r, bool dark, bool highContrast = false)
     {
-        EnsureMutableBrushes(r);
         if (dark)
             ApplyLuxuryDark(r);
         else
@@ -169,22 +167,20 @@ public static class ThemeManager
         UpdateSidebarGradient(r, "#2B1E12", "#2B1E12", "#2B1E12");   // ‏مصمَتٌ: لا تدرّج
     }
 
-    /// <summary>يحدّث لون الفرشاة المشتركة — كل العناصر المرتبطة تتحدّث فوراً.</summary>
+    /// <summary>
+    /// يستبدل الفرشاة في قاموس الموارد بفرشاة جديدة مجمَّدة — لا يعدّل فرشاةً قائمة في مكانها.
+    /// كل استخدام لمفاتيح الفُرَش في XAML صار DynamicResource فيلتقط البديل فوراً عند تبديل الثيم،
+    /// والفرشاة المجمَّدة آمنة بين الخيوط وأخفّ في الرسم من فرشاة قابلة للتعديل يتشاركها الكل.
+    /// </summary>
     private static void SetColor(ResourceDictionary r, string colorKey, string brushKey, string hex) =>
         SetColor(r, colorKey, brushKey, ParseColor(hex));
 
     private static void SetColor(ResourceDictionary r, string colorKey, string brushKey, Color color)
     {
         r[colorKey] = color;
-        if (r[brushKey] is SolidColorBrush brush)
-        {
-            if (brush.IsFrozen)
-                r[brushKey] = new SolidColorBrush(color);
-            else
-                brush.Color = color;
-        }
-        else
-            r[brushKey] = new SolidColorBrush(color);
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        r[brushKey] = brush;
     }
 
     private static void UpdateSidebarGradient(ResourceDictionary r, string top, string mid, string bottom) =>
@@ -200,32 +196,10 @@ public static class ThemeManager
         brush.GradientStops.Add(new GradientStop(top, 0));
         brush.GradientStops.Add(new GradientStop(mid, 0.55));
         brush.GradientStops.Add(new GradientStop(bottom, 1));
+        brush.Freeze();
         r["SidebarGradientBrush"] = brush;
     }
 
     private static Color ParseColor(string hex) =>
         (Color)ColorConverter.ConvertFromString(hex)!;
-
-    /// <summary>
-    /// (CEEF-217) يضمن أن فُرش الثيم قابلة للتعديل في مكانها.
-    ///
-    /// فرشاة XAML في قاموس موارد تُجمَّد عادةً، فيضطر <see cref="SetColor"/> إلى
-    /// **استبدالها** بنسخة جديدة — وكل عنصر التقط النسخة القديمة (عبر FindResource)
-    /// يبقى بلونها إلى الأبد. أثره مقيس بلقطة شاشة: نصّ لوحة المساعد ظلّ بألوان
-    /// الثيم الداكن (#F8FAFC و#CBD5E1) فوق خلفية فاتحة، بتباين 1.05 و1.48 مقابل
-    /// 4.5 المطلوبة — نصّ يكاد لا يُرى، وهو مصدر انطباع «الواجهة مبهمة».
-    ///
-    /// بإذابة التجميد مرة واحدة قبل أول رسم، تصير كل التبديلات تعديلاً في المكان
-    /// فيتتبّعها كل عنصر تلقائياً — دون تعديل عشرات مواضع الاستخدام.
-    /// </summary>
-    private static void EnsureMutableBrushes(ResourceDictionary r)
-    {
-        // بلا علَم ساكن: المرور مُبطِل لذاته (بعد أول مرّة لا فرشاة مجمّدة)، والعلَم
-        // كان يمنع تحرير قاموس ثانٍ — وهو ما يحتاجه الاختبار.
-        foreach (var key in r.Keys.Cast<object>().ToList())
-        {
-            if (r[key] is SolidColorBrush { IsFrozen: true } frozen)
-                r[key] = new SolidColorBrush(frozen.Color);
-        }
-    }
 }

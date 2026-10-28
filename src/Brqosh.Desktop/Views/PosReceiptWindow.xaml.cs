@@ -53,7 +53,7 @@ public partial class PosReceiptWindow : Window
                 ZatcaStatusText.Text = LocaleManager.T(
                     "تعذّر رسم رمز QR لهذا الإيصال — لا تسلّمه للعميل؛ أعد طباعته من سجلّ الفواتير الإلكترونية.",
                     "The QR code could not be drawn — do not hand this receipt over; reprint it from the e-invoice log.");
-                ZatcaStatusText.Foreground = (System.Windows.Media.Brush)FindResource("DangerBrush");
+                ZatcaStatusText.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "DangerBrush");
             }
         }
     }

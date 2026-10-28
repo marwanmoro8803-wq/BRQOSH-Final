@@ -28,7 +28,7 @@
                 <Button x:Name="DeactivateBtn" DockPanel.Dock="Right" Content="إيقاف"
                         Style="{StaticResource SoftDangerButton}" Padding="16,9"
                         Click="OnDeactivate"/>
-                <TextBox x:Name="SearchBox" Style="{StaticResource AppTextBox}" Width="320"
+                <TextBox x:Name="SearchBox" AutomationProperties.Name="بحث بالاسم أو الرقم الضريبي" Style="{StaticResource AppTextBox}" Width="320"
                          DockPanel.Dock="Left" VerticalAlignment="Center"
                          TextChanged="OnSearchChanged" ToolTip="بحث بالاسم أو الرقم الضريبي"/>
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="16,0,0,0">
@@ -41,7 +41,7 @@
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="CustomerSummaryText" FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">

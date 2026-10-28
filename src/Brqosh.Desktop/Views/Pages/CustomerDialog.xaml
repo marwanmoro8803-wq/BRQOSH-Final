@@ -1,4 +1,5 @@
 <Window x:Class="Brqosh.Desktop.Views.Pages.CustomerDialog"
+        KeyboardNavigation.TabNavigation="Cycle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="عميل جديد"
@@ -6,31 +7,31 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         ResizeMode="NoResize">
     <StackPanel Margin="28,24">
         <TextBlock Text="إضافة عميل" Style="{StaticResource PageTitleText}" Margin="0,0,0,20"/>
 
         <TextBlock Text="اسم العميل *" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="NameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+        <TextBox x:Name="NameBox" AutomationProperties.Name="اسم العميل" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <TextBlock Text="الرقم الضريبي (15 خانة — يلزم للفاتورة الضريبية B2B)" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="VatBox" Style="{StaticResource AppTextBox}" MaxLength="15" Margin="0,0,0,14"
+        <TextBox x:Name="VatBox" AutomationProperties.Name="الرقم الضريبي (15 خانة — يلزم للفاتورة الضريبية B2B)" Style="{StaticResource AppTextBox}" MaxLength="15" Margin="0,0,0,14"
                  TextChanged="OnVatChanged"/>
 
         <TextBlock Text="الهاتف" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="PhoneBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+        <TextBox x:Name="PhoneBox" AutomationProperties.Name="الهاتف" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <TextBlock Text="العنوان" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="AddressBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+        <TextBox x:Name="AddressBox" AutomationProperties.Name="العنوان" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <!-- (جاهزيّةُ الإطلاق · ح-٩٥) حدُّ الائتمان — يوقف البيعَ الآجلَ الذي يتجاوزه؛ وفارغُه بلا حدّ. -->
         <TextBlock Text="حد الائتمان (اختياري — فارغ يعني بلا حد)" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="CreditLimitBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+        <TextBox x:Name="CreditLimitBox" AutomationProperties.Name="حد الائتمان (اختياري — فارغ يعني بلا حد)" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <!-- (جاهزيّةُ الإطلاق · ح-٩٦) مهلةُ السداد — يقرؤها تنبّؤُ التدفّق النقديّ؛ وكانت لا تُضبط من أيّ مكان. -->
         <TextBlock Text="مهلة السداد بالأيام (0 = نقداً)" Style="{StaticResource FieldLabel}"/>
-        <TextBox x:Name="PaymentTermsBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+        <TextBox x:Name="PaymentTermsBox" AutomationProperties.Name="مهلة السداد بالأيام (0 = نقداً)" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
         <!-- (CEEF-229 · م1-١ب) هوية المشتري النظامية — تلزم الفاتورة القياسية (B2B) وحدها،
              فتظهر عند إدخال رقم ضريبيّ من خمس عشرة خانة وتُخفى دونه. والعميلُ النقديّ لا
@@ -40,31 +41,31 @@
                        FontWeight="Bold" Margin="0,6,0,10"/>
 
             <TextBlock Text="الاسم المسجَّل في السجل التجاري *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="RegistrationNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+            <TextBox x:Name="RegistrationNameBox" AutomationProperties.Name="الاسم المسجَّل في السجل التجاري" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
             <TextBlock Text="رقم المبنى *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="BuildingNumberBox" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
+            <TextBox x:Name="BuildingNumberBox" AutomationProperties.Name="رقم المبنى" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
 
             <TextBlock Text="الرقم الإضافي" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="AdditionalNumberBox" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
+            <TextBox x:Name="AdditionalNumberBox" AutomationProperties.Name="الرقم الإضافي" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
 
             <TextBlock Text="اسم الشارع *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="StreetNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+            <TextBox x:Name="StreetNameBox" AutomationProperties.Name="اسم الشارع" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
             <TextBlock Text="الحي *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="DistrictNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+            <TextBox x:Name="DistrictNameBox" AutomationProperties.Name="الحي" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
             <TextBlock Text="المدينة *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="CityNameBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
+            <TextBox x:Name="CityNameBox" AutomationProperties.Name="المدينة" Style="{StaticResource AppTextBox}" Margin="0,0,0,14"/>
 
             <TextBlock Text="الرمز البريدي *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="PostalZoneBox" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
+            <TextBox x:Name="PostalZoneBox" AutomationProperties.Name="الرمز البريدي" Style="{StaticResource AppTextBox}" MaxLength="16" Margin="0,0,0,14"/>
 
             <TextBlock Text="المنطقة *" Style="{StaticResource FieldLabel}"/>
-            <TextBox x:Name="CountrySubentityBox" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
+            <TextBox x:Name="CountrySubentityBox" AutomationProperties.Name="المنطقة" Style="{StaticResource AppTextBox}" Margin="0,0,0,4"/>
         </StackPanel>
 
-        <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                    Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
 
         <StackPanel Orientation="Horizontal" Margin="0,20,0,0">

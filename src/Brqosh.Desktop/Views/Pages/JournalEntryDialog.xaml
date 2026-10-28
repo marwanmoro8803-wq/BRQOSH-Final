@@ -7,7 +7,7 @@
         WindowStartupLocation="CenterOwner"
         FlowDirection="RightToLeft"
         FontFamily="{StaticResource AppFont}"
-        Background="{StaticResource BackgroundBrush}">
+        Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -44,7 +44,7 @@
                 <TextBlock Text="عملة المعاملة" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <Border DockPanel.Dock="Left" Width="30" Height="22" Margin="0,0,8,0" CornerRadius="2" ClipToBounds="True" VerticalAlignment="Center"
-                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" ToolTip="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyCountry}}">
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" ToolTip="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyCountry}}">
                         <Image Source="{Binding Text, ElementName=CurrencyBox, Converter={StaticResource CurrencyFlag}}" Stretch="UniformToFill"/>
                     </Border>
                     <TextBox x:Name="CurrencyBox" Style="{StaticResource AppTextBox}" Text="SAR"
@@ -99,10 +99,10 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="إجمالي المدين:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="TotalDebitText" Text="0.00" Margin="8,0,32,0" FontWeight="Bold"
-                           Foreground="{StaticResource PrimaryBrush}"/>
+                           Foreground="{DynamicResource PrimaryBrush}"/>
                 <TextBlock Text="إجمالي الدائن:" FontWeight="SemiBold"/>
                 <TextBlock x:Name="TotalCreditText" Text="0.00" Margin="8,0,32,0" FontWeight="Bold"
-                           Foreground="{StaticResource PrimaryBrush}"/>
+                           Foreground="{DynamicResource PrimaryBrush}"/>
                 <TextBlock x:Name="BalanceText" FontWeight="Bold"/>
                 <TextBlock x:Name="TranslationText" Margin="32,0,0,0" FontWeight="SemiBold"
                            Visibility="Collapsed"/>
@@ -111,7 +111,7 @@
 
         <!-- الأزرار -->
         <DockPanel Grid.Row="5" Margin="0,16,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="{StaticResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="{DynamicResource FontSize.Body}" FontWeight="SemiBold"
                        VerticalAlignment="Center" TextWrapping="Wrap" Visibility="Collapsed"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" DockPanel.Dock="Left">
                 <Button Content="ترحيل القيد" Style="{StaticResource PrimaryButton}" Padding="24,9" Click="OnPost"/>

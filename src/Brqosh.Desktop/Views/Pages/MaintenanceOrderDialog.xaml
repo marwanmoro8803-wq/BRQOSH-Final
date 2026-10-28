@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="أمر صيانة جديد" Height="560" Width="880"
         WindowStartupLocation="CenterOwner" FlowDirection="RightToLeft"
-        FontFamily="{StaticResource AppFont}" Background="{StaticResource BackgroundBrush}">
+        FontFamily="{StaticResource AppFont}" Background="{DynamicResource BackgroundBrush}">
     <Grid Margin="24,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -81,7 +81,7 @@
         </Border>
 
         <Border Grid.Row="5" Style="{StaticResource AlertStrip}" Margin="0,12,0,0" Padding="16,10">
-            <TextBlock TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}"
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="التكلفة سطور لا رقم واحد — وبها يصير الأمر سندا يراجع ويطعن فيه"/>
         </Border>
 

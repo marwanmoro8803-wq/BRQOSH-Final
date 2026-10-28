@@ -19,7 +19,7 @@
                 </StackPanel>
                 <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <TextBlock Text="تاريخ بدء التشغيل" VerticalAlignment="Center" Margin="0,0,8,0"
-                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <DatePicker x:Name="OpeningDatePicker" Width="140" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <Button x:Name="ImportOpeningBtn" Content="استيراد الميزان الافتتاحي"
                             Style="{StaticResource PrimaryButton}" Padding="18,9" Click="OnImportOpening"/>
@@ -45,14 +45,14 @@
 
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,10" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
-                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="اختر ملفًا بصيغة CSV. والصف الأول عناوين، وما تعذّر يُعرض بسطره وسببه."/>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}" Margin="0,0,0,10" Padding="16,12">
             <StackPanel>
                 <TextBlock Text="الأعمدة المتوقعة" FontWeight="Bold"
-                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,6"/>
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"/>
                 <TextBlock Text="دليل الحسابات: Code · NameAr · NameEn · Type (Asset/Liability/Equity/Revenue/Expense) · IsGroup اختياري"
                            Style="{StaticResource PageSubtitleText}" TextWrapping="Wrap"/>
                 <TextBlock Text="العملاء والموردون: NameAr · VatNumber (خمسة عشر رقماً أو فارغ)"

@@ -37,7 +37,7 @@
         </Border>
         <Border Grid.Row="1" Style="{StaticResource AlertStrip}" Margin="0,12,0,12" Padding="16,10">
             <TextBlock x:Name="SummaryText" FontWeight="SemiBold" TextWrapping="Wrap"
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
         </Border>
 
         <Border Grid.Row="2" Style="{StaticResource ContentCard}">
@@ -52,7 +52,7 @@
         </Border>
 
         <TextBlock Grid.Row="3" Margin="4,12,4,6" FontWeight="SemiBold"
-                   Foreground="{StaticResource TextSecondaryBrush}" Text="الأوامر"/>
+                   Foreground="{DynamicResource TextSecondaryBrush}" Text="الأوامر"/>
 
         <Border Grid.Row="4" Style="{StaticResource ContentCard}">
             <DataGrid x:Name="Grid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0"
