@@ -15,9 +15,11 @@ public class EveryApplicationUseCaseContractResolvesTests
         var contracts = typeof(Brqosh.Application.ApplicationServiceCollectionExtensions).Assembly.GetTypes()
             .Where(t => t.IsInterface && t.IsPublic
                         && (t.Name.EndsWith("PostingService", StringComparison.Ordinal)
-                            || t.Name is "ISalesOrderService" or "IDeliveryNoteService"))
+                            || t.Name is "ISalesOrderService" or "IDeliveryNoteService"
+                            || t.Namespace == "Brqosh.Application.Manufacturing"
+                            || t.Name is "IReceivableAgingQuery" or "IPayableAgingQuery"))
             .ToList();
-        Assert.True(contracts.Count >= 10, $"لم يُعثر إلا على {contracts.Count} عقداً.");
+        Assert.True(contracts.Count >= 16, $"لم يُعثر إلا على {contracts.Count} عقداً.");
 
         var services = new ServiceCollection();
         services.AddBrqoshInfrastructure(

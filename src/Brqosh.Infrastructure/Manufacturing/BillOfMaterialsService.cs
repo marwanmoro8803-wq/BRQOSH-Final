@@ -20,7 +20,7 @@ namespace Brqosh.Infrastructure.Manufacturing;
 /// <para><b>وبلا حارسِ صلاحيّةٍ جديد</b>: مَن يحقّ له تعديلُ القائمة قرارُ صلاحيّاتٍ خارجَ هذا البند، والصفحةُ
 /// محكومةٌ بالوحدة والدور كما كانت.</para>
 /// </summary>
-public class BillOfMaterialsService(BrqoshDbContext db)
+public class BillOfMaterialsService(BrqoshDbContext db) : Brqosh.Application.Manufacturing.IBillOfMaterialsService
 {
     /// <summary>حدُّ عمود التفاصيل في سجلّ التدقيق — وPostgreSQL يرفض ما يتجاوزه.</summary>
     private const int DetailsLimit = 2048;

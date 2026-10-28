@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Brqosh.Infrastructure.Manufacturing;
 
-public class WorkOrderService(BrqoshDbContext db)
+public class WorkOrderService(BrqoshDbContext db) : Brqosh.Application.Manufacturing.IWorkOrderService
 {
     public async Task<WorkOrder> ReleaseAsync(long companyId, long workOrderId, CancellationToken ct = default) =>
         await UnitOfWork.ExecuteInTransactionAsync(db, async token =>
