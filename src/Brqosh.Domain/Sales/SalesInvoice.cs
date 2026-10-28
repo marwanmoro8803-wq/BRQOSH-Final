@@ -287,12 +287,13 @@ public class SalesInvoice : IBranchScoped, ILineDocumentTotals
         EnsureDraft();
         if (_lines.Count == 0)
             throw new AccountingException("الفاتورة بلا سطور — أضف صنفاً واحداً على الأقل.");
-        if (Subtotal <= 0)
-            throw new AccountingException("إجمالي الفاتورة يجب أن يكون أكبر من صفر.");
         if (string.IsNullOrWhiteSpace(invoiceNumber))
             throw new AccountingException("رقم الفاتورة مطلوب عند الترحيل.");
 
+        // ‏الفحصُ بعد إعادة الحساب — لا على إجماليٍّ قديمٍ قد لا يطابق السطور.
         RecalculateTotals();
+        if (Subtotal <= 0)
+            throw new AccountingException("إجمالي الفاتورة يجب أن يكون أكبر من صفر.");
 
         var entry = JournalEntry.CreateDraft(
             CompanyId, InvoiceDate,

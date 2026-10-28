@@ -292,9 +292,10 @@ public class SalesInvoicePostingService(BrqoshDbContext db)
 
     private async Task<Account> SystemAccountAsync(long companyId, string code) =>
 
-        await db.Accounts.SingleAsync(a => a.CompanyId == companyId && a.Code == code)
+        await db.Accounts.SingleOrDefaultAsync(a => a.CompanyId == companyId && a.Code == code)
 
-        ?? throw new AccountingException($"الحساب النظامي {code} غير موجود.");
+        ?? throw new AccountingException(
+            $"الحساب النظامي {code} غير موجود في دليل حسابات المنشأة — أضفه من شاشة دليل الحسابات ثم أعد الترحيل.");
 
 
 
