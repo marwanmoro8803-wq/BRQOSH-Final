@@ -40,6 +40,8 @@ public class EveryHostHasAProductionCallerTests
          "‏حاصرُ النوافذ في مساحة العمل (UI-AUDIT) — بلا تسجيلٍ تعود الحواراتُ مقصوصةً على شاشة 1366×768."),
         ("src/Brqosh.Desktop/Themes/ThemeDefaults.cs", "Register",
          "‏لونُ النصّ الافتراضيّ للنوافذ يتبع الثيم — بلا تسجيلٍ تعود تسمياتُ الحقول سوداءَ على الخلفيّة الداكنة (تباين ١٫٢:١)."),
+        ("src/Brqosh.Desktop/Ui/LocaleManager.cs", "RegisterWindows",
+         "‏اتجاهُ كلّ نافذةٍ يتبع اللغة — بلا تسجيلٍ تُفتح النوافذُ الجديدةُ على اتجاه الإقلاع لا على اللغة المختارة."),
     ];
 
     private static string RepoRoot()
