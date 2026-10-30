@@ -1,0 +1,168 @@
+{
+	"servers": {
+		"io.github.oleksiijko/pmb-ai": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"pmb-ai@1.1.0"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.1.0"
+		},
+		"oraios/serena": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"--from",
+				"git+https://github.com/oraios/serena",
+				"serena",
+				"start-mcp-server",
+				"serena@latest",
+				"--context",
+				"ide-assistant"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
+		},
+		"io.github.mapbox/mcp-server": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"--registry",
+				"https://registry.npmjs.org",
+				"@mapbox/mcp-server@99.0.0-dev"
+			],
+			"env": {
+				"MAPBOX_ACCESS_TOKEN": "${input:MAPBOX_ACCESS_TOKEN}"
+			},
+			"gallery": "https://api.mcp.github.com",
+			"version": "99.0.0-dev"
+		},
+		"io.github.uizze/uizze": {
+			"type": "http",
+			"url": "https://uizze.com/mcp",
+			"gallery": "https://api.mcp.github.com",
+			"version": "3.0.2"
+		},
+		"io.github.Krv-Labs/topos": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"topos-mcp@0.14.0"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.14.0"
+		},
+		"io.github.rigour-labs/rigour": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"@rigour-labs/mcp@7.0.14"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "7.0.14"
+		},
+		"pl.gamedev/creator": {
+			"type": "http",
+			"url": "https://www.gamedev.pl/api/mcp",
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.1"
+		},
+		"io.github.AnimaApp/anima": {
+			"type": "http",
+			"url": "https://public-api.animaapp.com/v1/mcp",
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.0"
+		},
+		"io.github.uxkin/uxkin": {
+			"type": "http",
+			"url": "https://uxkin.com/mcp",
+			"headers": {
+				"Authorization": "${input:Authorization}"
+			},
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.3.1"
+		},
+		"io.github.laaielichter/reverseport": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"--registry",
+				"https://registry.npmjs.org",
+				"reverseport@1.9.0",
+				"mcp"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.9.0"
+		},
+		"io.pathrule/pathrule": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"--registry",
+				"https://registry.npmjs.org",
+				"@pathrule/mcp@1.0.6"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.6"
+		},
+		"io.github.chriswu727/argus": {
+			"type": "stdio",
+			"command": "uvx",
+			"args": [
+				"argus-testing@0.12.0"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.12.0"
+		},
+		"io.github.AKzar1el/god-prompt-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"god-prompt-mcp@1.0.44"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.44"
+		},
+		"ai.hypaware/hypaware": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"hypaware@1.43.0",
+				"mcp",
+				"serve"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.43.0"
+		},
+		"com.getfootgun/footgun": {
+			"type": "http",
+			"url": "https://getfootgun.com/api/mcp",
+			"headers": {
+				"Authorization": "${input:Authorization}"
+			},
+			"gallery": "https://api.mcp.github.com",
+			"version": "1.0.1"
+		},
+		"tools.structura/structura": {
+			"type": "http",
+			"url": "https://mcp.structura.tools/",
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.5.3"
+		}
+	},
+	"inputs": [
+		{
+			"id": "MAPBOX_ACCESS_TOKEN",
+			"type": "promptString",
+			"description": "Your Mapbox access token",
+			"password": true
+		},
+		{
+			"id": "Authorization",
+			"type": "promptString",
+			"description": "Optional. Clients with MCP sign-in (OAuth) just log in to UXKIN. Others send Bearer and a UXKIN agent token.",
+			"password": true
+		}
+	]
+}

@@ -44,6 +44,98 @@ public class ProgramAssistantTests
         Assert.Contains("تحصيلات", reply.AnswerAr);
     }
 
+    [Fact]
+    public async Task EveryScreenAnswersHowDoIWork_WithItsOwnActionGuideInBothLanguages()
+    {
+        var financial = new StubFinancialAssistant();
+        var assistant = new ProgramAssistantService(financial);
+
+        foreach (var key in ProgramNavCatalog.Keys)
+        {
+            var guide = ProgramKnowledge.TryGetPageGuide(key)!;
+            var context = new ProgramAssistantContext(1, key, "Accountant", "Retail");
+
+            var replyAr = await assistant.AskAsync(context, $"كيف أعمل في {guide.TitleAr}؟");
+            var replyEn = await assistant.AskAsync(context, $"How do I work in {guide.TitleEn}?");
+
+            Assert.Contains(guide.GuideAr, replyAr.AnswerAr);
+            Assert.Contains(guide.GuideEn, replyEn.AnswerEn);
+            Assert.Contains(guide.TitleAr, replyAr.AnswerAr);
+            Assert.Contains(guide.TitleEn, replyEn.AnswerEn);
+            Assert.Contains("Accountant", replyAr.AnswerAr);
+            Assert.Contains("Accountant", replyEn.AnswerEn);
+            Assert.Contains("Retail", replyAr.AnswerAr);
+            Assert.Contains("Retail", replyEn.AnswerEn);
+            Assert.DoesNotContain(key, replyAr.AnswerAr, StringComparison.Ordinal);
+            Assert.DoesNotContain(key, replyEn.AnswerEn, StringComparison.Ordinal);
+        }
+
+        Assert.False(financial.Called, "Page/workflow instructions must not be routed to the financial-data engine.");
+    }
+
+    [Fact]
+    public async Task GenericHowToQuestionIncludesMatchedWorkflowStepsNotOnlyDashboardDescription()
+    {
+        var financial = new StubFinancialAssistant();
+        var assistant = new ProgramAssistantService(financial);
+        var context = new ProgramAssistantContext(1, "dashboard", "Accountant", "Retail");
+
+        var reply = await assistant.AskAsync(context, "How do I close the month?");
+
+        Assert.Contains("Month-end close", reply.AnswerEn);
+        Assert.Contains("Balanced trial balance", reply.AnswerEn);
+        Assert.Contains("Open fiscal period", reply.AnswerEn);
+        Assert.False(financial.Called);
+    }
+
+    [Fact]
+    public async Task UnsupportedHowToActionIsNotPresentedAsVerifiedSteps()
+    {
+        var assistant = new ProgramAssistantService(new StubFinancialAssistant());
+        var context = new ProgramAssistantContext(1, "dashboard", "Accountant", "Retail");
+
+        var reply = await assistant.AskAsync(context, "How do I configure a custom widget?");
+
+        Assert.Contains("don't have verified steps for that specific action", reply.AnswerEn);
+        Assert.Contains("available screen guide", reply.AnswerEn);
+        Assert.Contains("لا أملك خطوات موثّقة لهذا الإجراء بعينه", reply.AnswerAr);
+        Assert.False(reply.AnswerEn.Contains("How to work in Dashboard", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task HelpExplainsDeterministicSourcesAndDoesNotClaimLiveModelAccuracy()
+    {
+        var assistant = new ProgramAssistantService(new StubFinancialAssistant());
+
+        var reply = await assistant.AskAsync(
+            new ProgramAssistantContext(1, "dashboard", "Accountant", "Retail"),
+            "help");
+
+        Assert.Contains("قواعد", reply.AnswerAr);
+        Assert.Contains("معرفة مدمجة", reply.AnswerAr);
+        Assert.Contains("تقريبية", reply.AnswerAr);
+        Assert.Contains("rule-based", reply.AnswerEn);
+        Assert.Contains("not a language model", reply.AnswerEn);
+        Assert.Contains("estimates", reply.AnswerEn);
+        Assert.DoesNotContain("live company data", reply.AnswerEn, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task PermissionAnswerDoesNotOverstateRoleAccess()
+    {
+        var assistant = new ProgramAssistantService(new StubFinancialAssistant());
+
+        var reply = await assistant.AskAsync(
+            new ProgramAssistantContext(1, "preferences", "Cashier", "Retail"),
+            "My permissions");
+
+        Assert.Contains("Cashier", reply.AnswerEn);
+        Assert.Contains("depends on both your role and the licence", reply.AnswerEn);
+        Assert.Contains("I can't confirm your full permission list", reply.AnswerEn);
+        Assert.DoesNotContain("Cashier: treasury/POS", reply.AnswerEn);
+        Assert.DoesNotContain("أمين الصندوق: قبض/صرف", reply.AnswerAr);
+    }
+
     /// <summary>
     /// (أسئلةُ المالك 2026-10-24) «ماذا أفعل في هذه الشاشة؟» على <b>كلِّ</b> شاشةٍ في الفهرس: الردُّ يحمل عنوانَها ودليلَها وسياقَ المستخدم،
     /// ولا يذكر مفتاحَها البرمجيّ — لا على «بعض» الشاشات التي كُتب لها دليلٌ يدويّ.

@@ -47,6 +47,18 @@ public class UpdateChannelIsReachedTests
         Assert.Matches(new Regex("x:Name=\"StageBtn\"[^>]*Click=\"OnStageUpdate\""), xaml);
     }
 
+    [Fact]
+    public void PreferencesPage_LetsUsersStageAnAvailableUpdate()
+    {
+        var source = Source("Views", "Pages", "PreferencesPage.xaml.cs");
+        var xaml = Source("Views", "Pages", "PreferencesPage.xaml");
+
+        Assert.Contains("StageFromChannelAsync(", Body(source, "private async void OnStageUpdate("), StringComparison.Ordinal);
+        Assert.Contains("UpdateStatus.UpdateAvailable", Body(source, "private async void OnCheckUpdate("), StringComparison.Ordinal);
+        Assert.Matches(new Regex("x:Name=\"StageUpdateBtn\"[^>]*Click=\"OnStageUpdate\""), xaml);
+        Assert.Contains("StageUpdateBtn.Visibility = result.Status == UpdateStatus.UpdateAvailable", source, StringComparison.Ordinal);
+    }
+
     private static string Body(string source, string signature)
     {
         var start = source.IndexOf(signature, StringComparison.Ordinal);

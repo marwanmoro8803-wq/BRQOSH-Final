@@ -87,6 +87,9 @@
                                     AutomationProperties.AutomationId="PreferencesManual" Click="OnManual"/>
                             <Button x:Name="UpdateBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
                                     AutomationProperties.AutomationId="PreferencesUpdate" Click="OnCheckUpdate"/>
+                            <Button x:Name="StageUpdateBtn" Style="{StaticResource PrimaryButton}" Padding="16,8" Margin="0,0,8,8"
+                                    AutomationProperties.AutomationId="PreferencesStageUpdate" Visibility="Collapsed"
+                                    Click="OnStageUpdate"/>
                             <Button x:Name="SupportBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"
                                     AutomationProperties.AutomationId="PreferencesSupport" Click="OnSupport"/>
                             <Button x:Name="StatusBtn" Style="{StaticResource SecondaryButton}" Padding="16,8" Margin="0,0,8,8"

@@ -1261,7 +1261,7 @@ public partial class MainWindow : Window
                 UiFeedback.ShowInfo(
                     LocaleManager.T("يوجد إصدارٌ أحدث من برقوش: ", "A newer BRQOSH version is available: ")
                     + result.AvailableVersion
-                    + LocaleManager.T(" — نزّله من «حالة النظام».", " — download it from System status."));
+                    + LocaleManager.T(" — افتح «التفضيلات» ثمّ افحص التحديث لتنزيله.", " — open Preferences and check for updates to download it."));
             }
             else if (result.Status == UpdateStatus.Untrusted)
             {

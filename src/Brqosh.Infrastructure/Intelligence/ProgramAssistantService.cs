@@ -25,7 +25,9 @@ public sealed class ProgramAssistantService(
         var inferredNav = ProgramQuestionMatcher.GuessNavKey(q);
         var workflows = ProgramWorkflowKnowledge.Match(q);
         var lower = q.ToLowerInvariant();
-        var topic = Classify(q, lower);
+        var pageHowTo = inferredNav is not null &&
+                        ContainsAny(lower, q, "كيف أعمل في", "how do i work in");
+        var topic = pageHowTo ? ProgramTopic.HowTo : Classify(q, lower);
 
         var core = topic switch
         {
@@ -143,23 +145,28 @@ public sealed class ProgramAssistantService(
         string? inferredNav,
         IReadOnlyList<ProgramWorkflowKnowledge.WorkflowHint> workflows)
     {
-        var targetKey = inferredNav ?? context.NavPageKey;
+        var targetKey = inferredNav ?? workflows.FirstOrDefault()?.RelatedNavKey ?? context.NavPageKey;
         var guide = targetKey is not null
             ? ProgramKnowledge.TryGetPageGuide(targetKey) ?? ProgramKnowledge.FallbackPage(targetKey)
             : null;
 
-        if (guide is not null)
+        if (workflows.Count > 0)
         {
+            var workflow = workflows[0];
+            var guideAr = guide is null ? string.Empty : $"\n\nدليل الشاشة «{guide.TitleAr}»: {guide.GuideAr}";
+            var guideEn = guide is null ? string.Empty : $"\n\nScreen guide for “{guide.TitleEn}”: {guide.GuideEn}";
             return new FinancialAssistantReply(
-                $"كيفية العمل في {guide.TitleAr}: {guide.GuideAr}",
-                $"How to work in {guide.TitleEn}: {guide.GuideEn}",
+                $"{workflow.TitleAr}: {workflow.StepsAr}{guideAr}",
+                $"{workflow.TitleEn}: {workflow.StepsEn}{guideEn}",
                 ProgramKnowledge.SourceId);
         }
 
-        if (workflows.Count > 0)
+        if (guide is not null)
         {
-            var wf = workflows[0];
-            return new FinancialAssistantReply(wf.StepsAr, wf.StepsEn, ProgramKnowledge.SourceId);
+            return new FinancialAssistantReply(
+                $"لا أملك خطوات موثّقة لهذا الإجراء بعينه؛ إليك دليل الشاشة المتاح «{guide.TitleAr}»: {guide.GuideAr}",
+                $"I don't have verified steps for that specific action; here is the available screen guide for “{guide.TitleEn}”: {guide.GuideEn}",
+                ProgramKnowledge.SourceId);
         }
 
         return ProgramKnowledge.ProgramHelp();

@@ -19,7 +19,7 @@ namespace Brqosh.Desktop.Views.Pages;
 /// <para><b>ما كان:</b> الثيمُ زرٌّ في الترويسة لا يحفظ اختيارَه، ولا موضعَ في أيّ شاشة إعدادات يُختار منه المظهر؛ وإعداداتُ المنشأة
 /// للمدير وحده. وبيانات البرنامج نفسِه (الإصدار والمورّد والشروط والتصنيف) مبعثرةٌ بين نافذة الإقلاع و«حالة النظام» (للمدير)
 /// فلا يراها غيرُه. <b>الآن</b> لكلّ دورٍ هذه الصفحة: يختار المظهرَ واللغة (يُحفظان)، ويرى «عن البرنامج»، ويفتح الشروطَ والدليل
-/// والدعم، ويفحص التحديثَ إن كانت له قناةٌ محفوظة.</para>
+/// والدعم، ويفحص التحديثَ ويُهيّئ تنزيلَه إن كانت له قناةٌ محفوظة.</para>
 /// </summary>
 public partial class PreferencesPage : UserControl
 {
@@ -96,6 +96,7 @@ public partial class PreferencesPage : UserControl
             TermsBtn.Content = LocaleManager.T("الشروط والأحكام", "Terms and conditions");
             ManualBtn.Content = LocaleManager.T("دليل المستخدم", "User manual");
             UpdateBtn.Content = LocaleManager.T("فحص التحديث", "Check for update");
+            StageUpdateBtn.Content = LocaleManager.T("تنزيل التحديث", "Download update");
             SupportBtn.Content = LocaleManager.T("الدعم والشكاوى", "Support and complaints");
             StatusBtn.Content = LocaleManager.T("حالة النظام", "System status");
             StatusBtn.Visibility = PermissionService.CanAccess(AppServices.CurrentUser, "diagnostics")
@@ -229,6 +230,7 @@ public partial class PreferencesPage : UserControl
         using var busy = UiBusyGuard.Enter(sender);
         if (!busy.Acquired) return;
 
+        StageUpdateBtn.Visibility = Visibility.Collapsed;
         var source = UpdateChannelSettings.Load();
         if (string.IsNullOrWhiteSpace(source))
         {
@@ -245,8 +247,8 @@ public partial class PreferencesPage : UserControl
             UpdateText.Text = result.Status switch
             {
                 UpdateStatus.UpdateAvailable => LocaleManager.T(
-                    $"يوجد إصدارٌ أحدث: {result.AvailableVersion} (المثبَّت {result.InstalledVersion}) — يُنزَّل من «حالة النظام».",
-                    $"A newer version is available: {result.AvailableVersion} (installed {result.InstalledVersion}) — download it from 'System status'."),
+                    $"يوجد إصدارٌ أحدث: {result.AvailableVersion} (المثبَّت {result.InstalledVersion}) — نزّله من الزر أدناه.",
+                    $"A newer version is available: {result.AvailableVersion} (installed {result.InstalledVersion}) — download it using the button below."),
                 UpdateStatus.UpToDate => LocaleManager.T(
                     $"أنت على أحدث إصدار ({result.InstalledVersion}).",
                     $"You are on the latest version ({result.InstalledVersion})."),
@@ -255,6 +257,43 @@ public partial class PreferencesPage : UserControl
                     $"The update manifest was refused: {result.Failure}"),
                 _ => result.Failure ?? LocaleManager.T("لا قناة تحديث.", "No update channel."),
             };
+
+            StageUpdateBtn.Visibility = result.Status == UpdateStatus.UpdateAvailable
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            UpdateText.Text = ex.Message;
+        }
+    }
+
+    private async void OnStageUpdate(object sender, RoutedEventArgs e)
+    {
+        using var busy = UiBusyGuard.Enter(sender);
+        if (!busy.Acquired) return;
+
+        var source = UpdateChannelSettings.Load();
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            StageUpdateBtn.Visibility = Visibility.Collapsed;
+            UpdateText.Text = LocaleManager.T(
+                "لم تُضبط قناة تحديث على هذا الجهاز بعد — يضبطها المدير من «حالة النظام».",
+                "No update channel is set on this device yet — the administrator sets it in 'System status'.");
+            return;
+        }
+
+        try
+        {
+            using var facade = new DesktopAccountingFacade();
+            var staged = await facade.GetService<UpdateCheckService>()
+                .StageFromChannelAsync(source, UpdateChannelSettings.StagingDirectory());
+
+            UpdateText.Text = LocaleManager.T(
+                "نُزّلت الحزمةُ وطابقت بصمتُها البيانَ الموقَّع — أغلق البرنامجَ ثمّ شغّل المُنصِّب: ",
+                "The package was downloaded and matches the signed manifest — close the program, then run the installer: ")
+                + staged;
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{staged}\"") { UseShellExecute = true });
         }
         catch (Exception ex)
         {

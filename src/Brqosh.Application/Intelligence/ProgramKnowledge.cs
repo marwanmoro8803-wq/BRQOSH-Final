@@ -55,14 +55,14 @@ public static class ProgramKnowledge
 
     public static FinancialAssistantReply RbacGuide(string? roleName) =>
         new(
-            $"الصلاحيات الحالية: {roleName ?? "غير معروف"}. المدير: كامل. المحاسب: ترحيل ومحاسبة. أمين الصندوق: قبض/صرف وPOS. المشاهد: قراءة فقط. إن رُفضت شاشة فالدور لا يملك صلاحية فتحها — اطلب من المدير تعديل دورك.",
-            $"Current role: {roleName ?? "unknown"}. Admin: full. Accountant: posting. Cashier: treasury/POS. Viewer: read-only. A denied screen means your role lacks permission to open it — ask the administrator to adjust your role.",
+            $"دورك الحالي: {roleName ?? "غير معروف"}. يختلف السماح بفتح الشاشات حسب الدور والترخيص، كما أن بعض الإجراءات — مثل الترحيل أو العكس — لها قيود مستقلة عن فتح الشاشة. لا أستطيع تأكيد قائمة صلاحياتك كاملة من هذا الرد وحده. دور المشاهد لا يسمح بترحيل المستندات. إذا رُفضت شاشة أو عملية، اطلب من المدير مراجعة دورك وترخيص المنشأة.",
+            $"Your current role: {roleName ?? "unknown"}. Screen access depends on both your role and the licence, and actions such as posting or reversing have separate restrictions from opening a screen. I can't confirm your full permission list from this answer alone. The Viewer role cannot post documents. If a screen or action is denied, ask the administrator to review your role and the company licence.",
             SourceId);
 
     public static FinancialAssistantReply ProgramHelp() =>
         new(
-            "مساعد BRQOSH يجيب من بيانات شركتك الحقيقية + معرفة البرنامج. اسأل: «ماذا أفعل في هذه الشاشة؟» · «كيف أرحّل فاتورة؟» · «ZATCA» · «VAT» · «ذمم» · «التدفق النقدي» · «صلاحياتي». ⏭ لا يستبدل مراجع SOCPA أو OTP الحي.",
-            "BRQOSH assistant uses your live company data + in-app knowledge. Ask about this screen, posting, ZATCA, VAT, AR/AP, cash flow, permissions. ⏭ Not a substitute for live OTP or SOCPA review.",
+            "الإجابات المالية تُحسب بقواعد على سجلات المنشأة؛ وإرشادات الشاشات ومسارات العمل معرفة مدمجة، لا نموذجاً لغوياً. بعض المؤشرات تقريبية. اسأل: «ماذا أفعل في هذه الشاشة؟» · «كيف أرحّل فاتورة؟» · «ZATCA» · «VAT» · «ذمم» · «التدفق النقدي» · «صلاحياتي». لا يستبدل الرد مراجعة SOCPA أو اعتماد ZATCA.",
+            "Financial answers are rule-based calculations over company records; screen and workflow guidance comes from built-in knowledge, not a language model. Some indicators are estimates. Ask about this screen, posting, ZATCA, VAT, AR/AP, cash flow, or permissions. This is not a substitute for SOCPA review or ZATCA approval.",
             SourceId);
 
     public sealed record PageGuide(
