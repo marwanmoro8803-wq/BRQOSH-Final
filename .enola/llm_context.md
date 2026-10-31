@@ -2,13 +2,13 @@
 
 ## Repository Map
 
-337 modules, 32676 symbols, grouped by area. Every module is in `facts.jsonl`, or query_facts(kind="module").
+346 modules, 33768 symbols, grouped by area. Every module is in `facts.jsonl`, or query_facts(kind="module").
 
 | Area | Modules | Symbols | Languages |
 |------|---------|---------|-----------|
 | `.claude` | 224 | 21694 | csharp, python, xaml |
-| `src` | 81 | 9942 | csharp, xaml |
-| `tools` | 23 | 585 | csharp, python |
+| `src` | 86 | 11000 | csharp, xaml |
+| `tools` | 27 | 619 | csharp, python, xaml |
 | `ShuraCouncil` | 1 | 354 | csharp |
 | `PromptAuditEngine` | 1 | 75 | csharp |
 | `scripts` | 2 | 22 | python |
@@ -16,37 +16,37 @@
 | `tests` | 4 | 0 | csharp |
 
 Largest modules:
-- `src/Brqosh.Desktop/Views/Pages` — 2469 symbols (csharp)
+- `src/Brqosh.Desktop/Views/Pages` — 2551 symbols (csharp)
 - `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Views/Pages` — 2468 symbols (csharp)
 - `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Desktop/Views/Pages` — 2468 symbols (csharp)
+- `src/Brqosh.Infrastructure/Reporting` — 754 symbols (csharp)
 - `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting` — 718 symbols (csharp)
 - `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Reporting` — 718 symbols (csharp)
-- `src/Brqosh.Infrastructure/Reporting` — 718 symbols (csharp)
+- `src/Brqosh.Infrastructure/Persistence` — 365 symbols (csharp)
 - `.claude/worktrees/brqosh-dream-program-53744f/ShuraCouncil` — 354 symbols (csharp)
 - `.claude/worktrees/sleepy-tesla-4ea32c/ShuraCouncil` — 354 symbols (csharp)
 - `ShuraCouncil` — 354 symbols (csharp)
-- `src/Brqosh.Infrastructure/Persistence` — 336 symbols (csharp)
+- `src/Brqosh.Infrastructure/Zatca` — 347 symbols (csharp)
 - `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence` — 311 symbols (csharp)
 - `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Persistence` — 311 symbols (csharp)
-- `src/Brqosh.Desktop/Ui` — 290 symbols (csharp)
+- `src/Brqosh.Desktop/Ui` — 309 symbols (csharp)
+- `src/Brqosh.Domain/Sales` — 295 symbols (csharp)
+- `src/Brqosh.Application/Reporting` — 283 symbols (csharp)
+- `src/Brqosh.Domain/Accounting` — 279 symbols (csharp)
+- `src/Brqosh.Infrastructure/Licensing` — 272 symbols (csharp)
+- `src/Brqosh.Infrastructure/Persistence/Migrations` — 270 symbols (csharp)
 - `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui` — 269 symbols (csharp)
-- `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Desktop/Ui` — 263 symbols (csharp)
-- `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting` — 241 symbols (csharp)
-- `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Domain/Accounting` — 241 symbols (csharp)
-- `src/Brqosh.Domain/Accounting` — 241 symbols (csharp)
-- `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Application/Reporting` — 240 symbols (csharp)
-- `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Application/Reporting` — 240 symbols (csharp)
 
 ## Extraction Quality
 
-- Files parsed: **4746** / 12329 seen (1833 file(s) + 41 directory tree(s) skipped by ignore globs)
+- Files parsed: **4851** / 14535 seen (1870 file(s) + 47 directory tree(s) skipped by ignore globs)
 - Parse errors: 0
 
 ## Architecture Pattern
 
 **Architecture pattern: dotnet-clean** (confidence: 67%)
 
-Recognised dotnet-clean from directory names: 201 of 301 csharp/xaml modules classified — 93% of this repository's 325 modules. All 39 imports between ordered layers run inward; none run against the order.
+Recognised dotnet-clean from directory names: 207 of 310 csharp/xaml modules classified — 93% of this repository's 334 modules. All 49 imports between ordered layers run inward; none run against the order.
 
 Layer mapping:
 - module ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Api" maps to layer "api"
@@ -61,7 +61,7 @@ Layer mapping:
 - module ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Application/Setup" maps to layer "application"
 - module ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Application/Treasury" maps to layer "application"
 - module ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain" maps to layer "domain"
-- … and 189 more (query_insights(explainer="layers") for all)
+- … and 195 more (query_insights(explainer="layers") for all)
 
 ## How to Add a Feature
 
@@ -112,7 +112,7 @@ This code is laid out as **dotnet-clean**. A dependency runs from an outer layer
 - **main**: `tools/desktop-omni-audit/audit_orchestrator.main` (tools/desktop-omni-audit/audit_orchestrator.py)
 - **main**: `tools/desktop-qa-army/audit_orchestrator.main` (tools/desktop-qa-army/audit_orchestrator.py)
 - **main**: `tools/pg-latency-proxy.main` (tools/pg-latency-proxy.py)
-102 routes, 15 shown:
+103 routes, 15 shown:
 - **route** DELETE `/api/v1/company-groups/{groupId:long}/intercompany-account-maps/{accountCode}` (.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Api/Program.cs)
 - **route** DELETE `/api/v1/company-groups/{groupId:long}/intercompany-account-maps/{accountCode}` (.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Api/Program.cs)
 - **route** DELETE `/api/v1/company-groups/{groupId:long}/intercompany-account-maps/{accountCode}` (src/Brqosh.Api/Program.cs)
@@ -128,28 +128,29 @@ This code is laid out as **dotnet-clean**. A dependency runs from an outer layer
 - **route** GET `/api/v1/companies` (.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Api/Program.cs)
 - **route** GET `/api/v1/companies` (.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Api/Program.cs)
 - **route** GET `/api/v1/companies` (src/Brqosh.Api/Program.cs)
-- … and 87 more (query_facts(kind="route") for all)
+- … and 88 more (query_facts(kind="route") for all)
 
 ## Routes
 
-102 routes, grouped by path prefix. query_facts(kind="route") for all of them.
+103 routes, grouped by path prefix. query_facts(kind="route") for all of them.
 
 | Prefix | Routes | Methods | Example |
 |--------|--------|---------|----------|
 | `/api` | 93 | DELETE, GET, POST | `/api/v1/billing-plans` |
 | `/health` | 9 | GET | `/health` |
+| `/zatca-signer` | 1 | POST | `/zatca-signer/onboard` |
 
 ## Storage
 
-321 data stores. query_facts(kind="storage") for all of them.
+340 data stores. query_facts(kind="storage") for all of them.
 
 - **context** (3): `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence.BrqoshDbContext`, `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Persistence.BrqoshDbContext`, `src/Brqosh.Infrastructure/Persistence.BrqoshDbContext`
-- **entity** (84): `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.Account`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.Budget`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.CostCenter`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.FiscalPeriod`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.JournalEntry`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.OpeningBalanceItem`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Assets.FixedAsset`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.Branch`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.Company`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.CompanyGroup`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.IntercompanyAccountMap`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ConstructionContract`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ConstructionProject`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ProgressBilling`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ProjectCostEntry`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.SubcontractAgreement`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Crm.CrmActivity`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Crm.CrmLead`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Crm.CrmOpportunity`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.InsuranceClaim`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.InsurancePayer`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.InsurancePolicy`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.Patient`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.Visit`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Hospitality.GuestFolio` … and 59 more
-- **migration** (234): `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBatchTracking`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBomConversionCosts`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBudgets`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBuyerRegulatoryIdentity`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCancelledAtToTaxDocuments`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCodCollectionPostedFlag`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCompanyAddressEn`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCompanyAuditorName`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCostCenterToDocuments`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCostConcurrencyTokens`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCreditNoteCurrency`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCreditNoteDocumentDiscount`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCustomerCreditLimit`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddDebitNoteCurrency`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddDocumentCurrency`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddEmployeeAdvances`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddEmployeeProject`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddEmployeesAndGosi`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetCancelledOn`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetDepreciatedThrough`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetDepreciationMethod`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetDisposalSale` … and 209 more
+- **entity** (91): `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.Account`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.Budget`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.CostCenter`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.FiscalPeriod`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.JournalEntry`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Accounting.OpeningBalanceItem`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Assets.FixedAsset`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.Branch`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.Company`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.CompanyGroup`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Companies.IntercompanyAccountMap`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ConstructionContract`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ConstructionProject`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ProgressBilling`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.ProjectCostEntry`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Construction.SubcontractAgreement`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Crm.CrmActivity`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Crm.CrmLead`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Crm.CrmOpportunity`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.InsuranceClaim`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.InsurancePayer`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.InsurancePolicy`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.Patient`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Healthcare.Visit`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Hospitality.GuestFolio` … and 66 more
+- **migration** (246): `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBatchTracking`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBomConversionCosts`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBudgets`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddBuyerRegulatoryIdentity`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCancelledAtToTaxDocuments`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCodCollectionPostedFlag`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCompanyAddressEn`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCompanyAuditorName`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCostCenterToDocuments`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCostConcurrencyTokens`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCreditNoteCurrency`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCreditNoteDocumentDiscount`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddCustomerCreditLimit`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddDebitNoteCurrency`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddDocumentCurrency`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddEmployeeAdvances`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddEmployeeProject`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddEmployeesAndGosi`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetCancelledOn`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetDepreciatedThrough`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetDepreciationMethod`, `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations.AddFixedAssetDisposalSale` … and 221 more
 
 ## Dependency Rules
 
-173 internal module dependencies. The modules that reach furthest; traverse() or query_facts(kind="dependency") for the edges themselves.
+201 internal module dependencies. The modules that reach furthest; traverse() or query_facts(kind="dependency") for the edges themselves.
 
 | Module | Depends on |
 |--------|------------|
@@ -157,26 +158,30 @@ This code is laid out as **dotnet-clean**. A dependency runs from an outer layer
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure` | 29 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain` | 23 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Domain` | 23 modules |
-| `src/Brqosh.Infrastructure` | 6 modules |
+| `src/Brqosh.Infrastructure` | 12 modules |
+| `src` | 11 modules |
+| `src/Brqosh.Desktop/Views` | 8 modules |
+| `.claude/worktrees/brqosh-dream-program-53744f/tools` | 6 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Application` | 5 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop` | 5 modules |
-| `.claude/worktrees/brqosh-dream-program-53744f/tools` | 5 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Application` | 5 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Desktop` | 5 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/tools` | 5 modules |
-| `src/Brqosh.Desktop/Views` | 5 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Views` | 4 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Desktop/Views` | 4 modules |
+| `src/Brqosh.Desktop` | 4 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/src` | 3 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src` | 3 modules |
-| `src` | 3 modules |
+| `src/Brqosh.Desktop/Views/Pages` | 3 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f` | 2 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c` | 2 modules |
+| `src/Brqosh.Infrastructure/Licensing` | 2 modules |
 | `tools` | 2 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Api` | 1 modules |
 | `.claude/worktrees/brqosh-dream-program-53744f/tools/desktop-qa-army` | 1 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Api` | 1 modules |
 | `.claude/worktrees/sleepy-tesla-4ea32c/tools/desktop-qa-army` | 1 modules |
+| `src/Brqosh.Infrastructure/Privacy` | 1 modules |
 | `tools/desktop-qa-army` | 1 modules |
 
 ## Critical Modules
@@ -185,15 +190,15 @@ This code is laid out as **dotnet-clean**. A dependency runs from an outer layer
 |--------|--------|---------|-------------|
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure` | 0 | 40 | high |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure` | 0 | 40 | high |
-| `src/Brqosh.Application/Intelligence` | 30 | 0 | high |
+| `src/Brqosh.Application/Intelligence` | 31 | 0 | high |
+| `src/Brqosh.Infrastructure` | 2 | 27 | high |
 | `.claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain` | 0 | 23 | high |
 | `.claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Domain` | 0 | 23 | high |
-| `src/Brqosh.Infrastructure` | 2 | 15 | high |
-| `src/Brqosh.Domain/Accounting` | 14 | 0 | high |
+| `src/Brqosh.Desktop/Views/Pages` | 2 | 13 | high |
+| `src/Brqosh.Domain/Accounting` | 15 | 0 | high |
 | `tools/desktop-cognitive-audit` | 11 | 0 | high |
-| `.claude/worktrees/brqosh-dream-program-53744f/tools` | 0 | 7 | medium |
-| `.claude/worktrees/sleepy-tesla-4ea32c/tools` | 0 | 7 | medium |
+| `src/Brqosh.Desktop/ViewModels` | 10 | 0 | high |
 
 ---
 
-*Generated at 2026-10-27T00:28:34Z in 2m23.0213954s. 67276 facts, 184 insights.*
+*Generated at 2026-10-31T07:13:39Z in 1m39.2635248s. 69064 facts, 185 insights.*

@@ -2,8 +2,8 @@
   {
     "title": "Architecture pattern: dotnet-clean",
     "source": "layers",
-    "description": "Recognised dotnet-clean from directory names: 201 of 301 csharp/xaml modules classified — 93% of this repository's 325 modules. All 15 imports between ordered layers run inward; none run against the order.",
-    "confidence": 0.6677740863787376,
+    "description": "Recognised dotnet-clean from directory names: 207 of 310 csharp/xaml modules classified — 93% of this repository's 334 modules. All 49 imports between ordered layers run inward; none run against the order.",
+    "confidence": 0.667741935483871,
     "evidence": [
       {
         "fact": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Api",
@@ -706,6 +706,16 @@
         "fact_id": "eafa4e1e3f9dadf6b013383e71439844"
       },
       {
+        "fact": "src/Brqosh.Application/Licensing",
+        "detail": "module \"src/Brqosh.Application/Licensing\" maps to layer \"application\"",
+        "fact_id": "410073e5b0a0df7aa9e2dbf5f134d640"
+      },
+      {
+        "fact": "src/Brqosh.Application/Manufacturing",
+        "detail": "module \"src/Brqosh.Application/Manufacturing\" maps to layer \"application\"",
+        "fact_id": "430ae9530a6a7e7d218d3835013ddd95"
+      },
+      {
         "fact": "src/Brqosh.Application/MasterData",
         "detail": "module \"src/Brqosh.Application/MasterData\" maps to layer \"application\"",
         "fact_id": "9e912f71c17dd19df5bad491443b65df"
@@ -716,9 +726,19 @@
         "fact_id": "354b4718d2e6d1f12503d2267caf3459"
       },
       {
+        "fact": "src/Brqosh.Application/Privacy",
+        "detail": "module \"src/Brqosh.Application/Privacy\" maps to layer \"application\"",
+        "fact_id": "5185315af3707f195cfdb11a6b4df339"
+      },
+      {
         "fact": "src/Brqosh.Application/Reporting",
         "detail": "module \"src/Brqosh.Application/Reporting\" maps to layer \"application\"",
         "fact_id": "ffe110f54db4d91d576f19bfafbcabf5"
+      },
+      {
+        "fact": "src/Brqosh.Application/Sales",
+        "detail": "module \"src/Brqosh.Application/Sales\" maps to layer \"application\"",
+        "fact_id": "b4fef98d63a0f170f69db46f3a30e6d3"
       },
       {
         "fact": "src/Brqosh.Application/Setup",
@@ -774,6 +794,11 @@
         "fact": "src/Brqosh.Domain/Inventory",
         "detail": "module \"src/Brqosh.Domain/Inventory\" maps to layer \"domain\"",
         "fact_id": "f9fec6bf51bbb596024c793b5466e5f1"
+      },
+      {
+        "fact": "src/Brqosh.Domain/Licensing",
+        "detail": "module \"src/Brqosh.Domain/Licensing\" maps to layer \"domain\"",
+        "fact_id": "c05bc0211ccbb4820911278e49db9d34"
       },
       {
         "fact": "src/Brqosh.Domain/Logistics",
@@ -956,6 +981,11 @@
         "fact_id": "c5a69cac4502aa03248ef710a5ddb024"
       },
       {
+        "fact": "src/Brqosh.Infrastructure/Privacy",
+        "detail": "module \"src/Brqosh.Infrastructure/Privacy\" maps to layer \"infrastructure\"",
+        "fact_id": "ecd81316003647a12d7c6b99c99f306f"
+      },
+      {
         "fact": "src/Brqosh.Infrastructure/Purchasing",
         "detail": "module \"src/Brqosh.Infrastructure/Purchasing\" maps to layer \"infrastructure\"",
         "fact_id": "863360154b185ac86ef9e869871e9054"
@@ -1022,8 +1052,8 @@
         "xaml"
       ],
       "imports_against": 0,
-      "imports_inward": 15,
-      "imports_same_level": 114,
+      "imports_inward": 49,
+      "imports_same_level": 121,
       "layer_examples": {
         "api": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Api",
         "application": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Application",
@@ -1043,9 +1073,9 @@
         "domain"
       ],
       "layers_unordered": null,
-      "modules_classified": 201,
-      "modules_graded": 201,
-      "modules_scanned": 301
+      "modules_classified": 207,
+      "modules_graded": 207,
+      "modules_scanned": 310
     }
   },
   {
@@ -1060,15 +1090,15 @@
     ]
   },
   {
-    "title": "High fan-in symbol: docs/OPEN_ITEMS.md (149 dependents)",
+    "title": "High fan-in symbol: docs/OPEN_ITEMS.md (150 dependents)",
     "source": "god-class",
-    "description": "\"docs/OPEN_ITEMS.md\" is depended upon by 149 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"docs/OPEN_ITEMS.md\" is depended upon by 150 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
         "file": "docs/OPEN_ITEMS.md",
         "symbol": "docs/OPEN_ITEMS.md",
-        "detail": "149 symbols depend on this",
+        "detail": "150 symbols depend on this",
         "line": 1,
         "fact_id": "3cad3d1385989f9212e50667d37dfe6a"
       },
@@ -1180,6 +1210,66 @@
     ]
   },
   {
+    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintBranding (107 dependents)",
+    "source": "god-class",
+    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintBranding\" is depended upon by 107 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Reporting/PrintBranding.cs",
+        "symbol": "src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "detail": "107 symbols depend on this",
+        "line": 8,
+        "fact_id": "e823edf3eb6703f6ee38c2de71010c7d"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ConsolidatedReportPdfGenerator.BuildSectionReport",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "bac3cb201ac42dda5b701899d9a5eed2"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ConsolidatedReportPdfGenerator.TrialBalance",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "9c2ec191d11489863c93df04826de505"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.CreditNoteRequestAsync",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "ffae84801d8dd8c8d62aa115eee04c2f"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.DebitNoteRequestAsync",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "f386b1b89f0dec2503a8214db93bc701"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportAssetDisposalAsync",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "bfee61740bcb61ab63fc56931cac38cd"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportBalanceSheetAsync",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "e9d587fe9d600a249ca598b19f06f3ae"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportCashFlowStatementAsync",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "7de663ff76cfa818d57f5bd8731d56b9"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportCustomerStatementAsync",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
+        "fact_id": "555b3cf2f660f27a16c3da8543a4cc1d"
+      }
+    ],
+    "suggested_actions": [
+      "Split the symbol along distinct responsibilities its callers use",
+      "Introduce narrower interfaces so callers depend only on what they need",
+      "Stabilize its public contract to limit churn for dependents"
+    ]
+  },
+  {
     "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintLang.T (107 dependents)",
     "source": "god-class",
     "description": "\"src/Brqosh.Infrastructure/Reporting.PrintLang.T\" is depended upon by 107 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
@@ -1240,15 +1330,15 @@
     ]
   },
   {
-    "title": "High fan-in symbol: src/Brqosh.Desktop/Ui.LocaleManager (105 dependents)",
+    "title": "High fan-in symbol: src/Brqosh.Desktop/Ui.LocaleManager (106 dependents)",
     "source": "god-class",
-    "description": "\"src/Brqosh.Desktop/Ui.LocaleManager\" is depended upon by 105 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"src/Brqosh.Desktop/Ui.LocaleManager\" is depended upon by 106 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
         "file": "src/Brqosh.Desktop/Ui/LocaleManager.cs",
         "symbol": "src/Brqosh.Desktop/Ui.LocaleManager",
-        "detail": "105 symbols depend on this",
+        "detail": "106 symbols depend on this",
         "line": 6,
         "fact_id": "a93aba2c16d5630c660cafa516daf0ba"
       },
@@ -1300,75 +1390,15 @@
     ]
   },
   {
-    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintBranding (105 dependents)",
+    "title": "High fan-in symbol: src/Brqosh.Desktop/Ui.LocaleManager.T (89 dependents)",
     "source": "god-class",
-    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintBranding\" is depended upon by 105 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
-    "confidence": 0.95,
-    "evidence": [
-      {
-        "file": "src/Brqosh.Infrastructure/Reporting/PrintBranding.cs",
-        "symbol": "src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "detail": "105 symbols depend on this",
-        "line": 8,
-        "fact_id": "e823edf3eb6703f6ee38c2de71010c7d"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ConsolidatedReportPdfGenerator.BuildSectionReport",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "bac3cb201ac42dda5b701899d9a5eed2"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ConsolidatedReportPdfGenerator.TrialBalance",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "9c2ec191d11489863c93df04826de505"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.CreditNoteRequestAsync",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "ffae84801d8dd8c8d62aa115eee04c2f"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.DebitNoteRequestAsync",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "f386b1b89f0dec2503a8214db93bc701"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportAssetDisposalAsync",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "bfee61740bcb61ab63fc56931cac38cd"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportBalanceSheetAsync",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "e9d587fe9d600a249ca598b19f06f3ae"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportCashFlowStatementAsync",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "7de663ff76cfa818d57f5bd8731d56b9"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.DocumentPrintService.ExportCustomerStatementAsync",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintBranding",
-        "fact_id": "555b3cf2f660f27a16c3da8543a4cc1d"
-      }
-    ],
-    "suggested_actions": [
-      "Split the symbol along distinct responsibilities its callers use",
-      "Introduce narrower interfaces so callers depend only on what they need",
-      "Stabilize its public contract to limit churn for dependents"
-    ]
-  },
-  {
-    "title": "High fan-in symbol: src/Brqosh.Desktop/Ui.LocaleManager.T (88 dependents)",
-    "source": "god-class",
-    "description": "\"src/Brqosh.Desktop/Ui.LocaleManager.T\" is depended upon by 88 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"src/Brqosh.Desktop/Ui.LocaleManager.T\" is depended upon by 89 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
         "file": "src/Brqosh.Desktop/Ui/LocaleManager.cs",
         "symbol": "src/Brqosh.Desktop/Ui.LocaleManager.T",
-        "detail": "88 symbols depend on this",
+        "detail": "89 symbols depend on this",
         "line": 12,
         "fact_id": "64faefb97a33fd3e224fb91198e81a89"
       },
@@ -1420,15 +1450,15 @@
     ]
   },
   {
-    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintText (87 dependents)",
+    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintText (88 dependents)",
     "source": "god-class",
-    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintText\" is depended upon by 87 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintText\" is depended upon by 88 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
         "file": "src/Brqosh.Infrastructure/Reporting/PrintText.cs",
         "symbol": "src/Brqosh.Infrastructure/Reporting.PrintText",
-        "detail": "87 symbols depend on this",
+        "detail": "88 symbols depend on this",
         "line": 18,
         "fact_id": "0034918a1e9c3412eb638f7e11d4cfd9"
       },
@@ -1600,15 +1630,15 @@
     ]
   },
   {
-    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany (64 dependents)",
+    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany (65 dependents)",
     "source": "god-class",
-    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany\" is depended upon by 64 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany\" is depended upon by 65 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
         "file": "src/Brqosh.Infrastructure/Reporting/PrintBranding.cs",
         "symbol": "src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany",
-        "detail": "64 symbols depend on this",
+        "detail": "65 symbols depend on this",
         "line": 35,
         "fact_id": "15b0304bdd4a67ae4f6b49ad4ea5814e"
       },
@@ -2020,6 +2050,66 @@
     ]
   },
   {
+    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintTheme (55 dependents)",
+    "source": "god-class",
+    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintTheme\" is depended upon by 55 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "confidence": 0.95,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Reporting/PrintTheme.cs",
+        "symbol": "src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "detail": "55 symbols depend on this",
+        "line": 14,
+        "fact_id": "e6b5b35f6a7671828d6341062b8ac853"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.JournalEntryPdfGenerator.Generate",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "9e607eb385f1e70fa6e727fd67212556"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PayslipPdfGenerator.Build",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "4a12d3402e3102c401f38eba20cee7fd"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PayslipPdfGenerator.Line",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "0241f3a987132ed8e78f18e1f452b041"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PrintBranding.RenderFooterMeta",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "6e4acd8435a982ed5197cc8f23d8a3b9"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PrintBranding.RenderHeader",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "5126bdbf943934c5011849589d29137a"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PrintReport.Table",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "928bfe5707d11b92a0effb7c7888e3b7"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ProgressBillingPdfGenerator.Generate",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "c6779c8cab1a3bbf90bbd2bbf5671481"
+      },
+      {
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ProgressBillingPdfGenerator.InfoCard",
+        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
+        "fact_id": "6a609fa2780e472d2d1ec648c567c22e"
+      }
+    ],
+    "suggested_actions": [
+      "Split the symbol along distinct responsibilities its callers use",
+      "Introduce narrower interfaces so callers depend only on what they need",
+      "Stabilize its public contract to limit churn for dependents"
+    ]
+  },
+  {
     "title": "High fan-in symbol: ShuraCouncil.VoteKind.Approve (54 dependents)",
     "source": "god-class",
     "description": "\"ShuraCouncil.VoteKind.Approve\" is depended upon by 54 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
@@ -2080,75 +2170,15 @@
     ]
   },
   {
-    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintTheme (54 dependents)",
+    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintText.Money (53 dependents)",
     "source": "god-class",
-    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintTheme\" is depended upon by 54 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
-    "confidence": 0.95,
-    "evidence": [
-      {
-        "file": "src/Brqosh.Infrastructure/Reporting/PrintTheme.cs",
-        "symbol": "src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "detail": "54 symbols depend on this",
-        "line": 14,
-        "fact_id": "e6b5b35f6a7671828d6341062b8ac853"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.JournalEntryPdfGenerator.Generate",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "9e607eb385f1e70fa6e727fd67212556"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PayslipPdfGenerator.Build",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "4a12d3402e3102c401f38eba20cee7fd"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PayslipPdfGenerator.Line",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "0241f3a987132ed8e78f18e1f452b041"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PrintBranding.RenderFooterMeta",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "6e4acd8435a982ed5197cc8f23d8a3b9"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PrintBranding.RenderHeader",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "5126bdbf943934c5011849589d29137a"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.PrintReport.Table",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "928bfe5707d11b92a0effb7c7888e3b7"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ProgressBillingPdfGenerator.Generate",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "c6779c8cab1a3bbf90bbd2bbf5671481"
-      },
-      {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.ProgressBillingPdfGenerator.InfoCard",
-        "detail": "depends on src/Brqosh.Infrastructure/Reporting.PrintTheme",
-        "fact_id": "6a609fa2780e472d2d1ec648c567c22e"
-      }
-    ],
-    "suggested_actions": [
-      "Split the symbol along distinct responsibilities its callers use",
-      "Introduce narrower interfaces so callers depend only on what they need",
-      "Stabilize its public contract to limit churn for dependents"
-    ]
-  },
-  {
-    "title": "High fan-in symbol: src/Brqosh.Infrastructure/Reporting.PrintText.Money (52 dependents)",
-    "source": "god-class",
-    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintText.Money\" is depended upon by 52 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintText.Money\" is depended upon by 53 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
         "file": "src/Brqosh.Infrastructure/Reporting/PrintText.cs",
         "symbol": "src/Brqosh.Infrastructure/Reporting.PrintText.Money",
-        "detail": "52 symbols depend on this",
+        "detail": "53 symbols depend on this",
         "line": 40,
         "fact_id": "94b43621460aa613c87ba11fcbf3cfc0"
       },
@@ -2500,57 +2530,57 @@
     ]
   },
   {
-    "title": "High fan-in symbol: src/Brqosh.Desktop/Ui.UiResources (45 dependents)",
+    "title": "High fan-in symbol: src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain (45 dependents)",
     "source": "god-class",
-    "description": "\"src/Brqosh.Desktop/Ui.UiResources\" is depended upon by 45 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
+    "description": "\"src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain\" is depended upon by 45 other symbols — well above the repo average. High fan-in concentrates change risk: edits here ripple across many call sites, and it often indicates a missing or overly broad abstraction.",
     "confidence": 0.95,
     "evidence": [
       {
-        "file": "src/Brqosh.Desktop/Ui/UiResources.cs",
-        "symbol": "src/Brqosh.Desktop/Ui.UiResources",
+        "file": "src/Brqosh.Application/Intelligence/PageAssistantPrompts.cs",
+        "symbol": "src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
         "detail": "45 symbols depend on this",
-        "line": 10,
-        "fact_id": "b9151953e5a19fe60ac7edb18d657148"
+        "line": 18,
+        "fact_id": "a596780dde26b0aac8f48f2b0e5f130f"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.AiAssistantPanelBuilder.AppendAssistantBubble",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "777b9e9199185fb98732eb3975782f61"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Views/Pages.EmployeeDialog.LoadProjectsAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "c14274ba510e1b32c6fb3dcf72c89fce"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.AiAssistantPanelBuilder.AppendUserBubble",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "d9f67a793ace19aa861e0ce36a15ee63"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Views/Pages.PurchaseInvoiceDialog.LoadProjectsAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "7922bd10331c2628a8cb18b34a8ced9e"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.AiAssistantPanelBuilder.BuildInsightCard",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "22451f15f4337e26a2a8782d7dec4ce7"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Construction.RetentionSummaryQuery.LoadReleasedAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "56e17d30aef5c16f142698f38ec26d62"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.AiAssistantPanelBuilder.RenderStarterTips",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "06a9f8de9c313161023365a4da65bb71"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Construction.RetentionSummaryQuery.LoadSubcontractHeldAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "500cec78a40964a24646af4c4c32ce3d"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.EmptyStateHelper.GetOrCreateOverlay",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "67b06f3a2bd2fb85c3c4d89d3ab99a91"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Payroll.PayrollPostingService.EmployeeProjectsAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "8cd76b1265b4272c05c6969631624b8e"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.ExecutiveDashboardBuilder.BuildActivityFeed",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "59010ff0f5a89c0f8015068ce2c8d903"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Payroll.PayrollPostingService.PostAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "e763028fae3039d7d6e49a31327d786e"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.ExecutiveDashboardBuilder.BuildAiCard",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "cb1d51a69b2e3627cc554ccbe79162e9"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.PromoteSystemAccountsAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "c757e0987274d7ee7d7832586d12b8c0"
       },
       {
-        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Desktop/Ui.ExecutiveDashboardBuilder.BuildAiInsightsPanel",
-        "detail": "depends on src/Brqosh.Desktop/Ui.UiResources",
-        "fact_id": "10b7c8d9daa21c0950b5952291b8396c"
+        "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Platform.TenantProvisioningService.ProvisionAsync",
+        "detail": "depends on src/Brqosh.Application/Intelligence.PageAssistantPrompts.Domain",
+        "fact_id": "95bd62dfe1fdded33722c1e302348fc2"
       }
     ],
     "suggested_actions": [
@@ -2560,15 +2590,15 @@
     ]
   },
   {
-    "title": "Call-graph hotspot: docs/OPEN_ITEMS.md (fan-in 149, fan-out 153)",
+    "title": "Call-graph hotspot: docs/OPEN_ITEMS.md (fan-in 150, fan-out 153)",
     "source": "hotspots",
-    "description": "\"docs/OPEN_ITEMS.md\" is a pinch point: 149 symbols call into it and it calls out to 153 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "description": "\"docs/OPEN_ITEMS.md\" is a pinch point: 150 symbols call into it and it calls out to 153 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
     "confidence": 0.7,
     "evidence": [
       {
         "file": "docs/OPEN_ITEMS.md",
         "symbol": "docs/OPEN_ITEMS.md",
-        "detail": "fan-in 149 × fan-out 153 = score 22797",
+        "detail": "fan-in 150 × fan-out 153 = score 22950",
         "line": 1,
         "fact_id": "3cad3d1385989f9212e50667d37dfe6a"
       },
@@ -2757,16 +2787,17 @@
     ]
   },
   {
-    "title": "Call-graph hotspot: src/Brqosh.Infrastructure/Persistence.BrqoshDbContext (fan-in 18, fan-out 87)",
+    "title": "Call-graph hotspot: src/Brqosh.Infrastructure/Persistence.BrqoshDbContext (fan-in 18, fan-out 94)",
     "source": "hotspots",
-    "description": "\"src/Brqosh.Infrastructure/Persistence.BrqoshDbContext\" is a pinch point: 18 symbols call into it and it calls out to 87 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "description": "\"src/Brqosh.Infrastructure/Persistence.BrqoshDbContext\" is a pinch point: 18 symbols call into it and it calls out to 94 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
     "confidence": 0.7,
     "evidence": [
       {
-        "file": "src/Brqosh.Infrastructure/Persistence/BrqoshDbContext.cs",
+        "file": "src/Brqosh.Infrastructure/Persistence/BrqoshDbContext.BranchScopes.cs",
         "symbol": "src/Brqosh.Infrastructure/Persistence.BrqoshDbContext",
-        "detail": "fan-in 18 × fan-out 87 = score 1566",
-        "line": 28
+        "detail": "fan-in 18 × fan-out 94 = score 1692",
+        "line": 29,
+        "fact_id": "86c2e24b6837a948dfc7482c42b8c630"
       },
       {
         "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence.AmbientDbContext.Scope",
@@ -3297,15 +3328,15 @@
     ]
   },
   {
-    "title": "Call-graph hotspot: src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany (fan-in 64, fan-out 7)",
+    "title": "Call-graph hotspot: src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany (fan-in 65, fan-out 7)",
     "source": "hotspots",
-    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany\" is a pinch point: 64 symbols call into it and it calls out to 7 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "description": "\"src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany\" is a pinch point: 65 symbols call into it and it calls out to 7 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
     "confidence": 0.7,
     "evidence": [
       {
         "file": "src/Brqosh.Infrastructure/Reporting/PrintBranding.cs",
         "symbol": "src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany",
-        "detail": "fan-in 64 × fan-out 7 = score 448",
+        "detail": "fan-in 65 × fan-out 7 = score 455",
         "line": 35,
         "fact_id": "15b0304bdd4a67ae4f6b49ad4ea5814e"
       },
@@ -3357,6 +3388,71 @@
         "symbol": "src/Brqosh.Infrastructure/Reporting.CompanyBrandingStorage.TryReadLogo",
         "detail": "called by src/Brqosh.Infrastructure/Reporting.PrintBranding.FromCompany",
         "fact_id": "e9243a8a0df2231fbb5b1ba499c7a1d0"
+      }
+    ],
+    "suggested_actions": [
+      "Add focused tests around this chokepoint before refactoring",
+      "Consider decomposing it so call paths don't all funnel through one symbol",
+      "Verify it isn't doing orchestration that belongs in callers"
+    ]
+  },
+  {
+    "title": "Call-graph hotspot: src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync (fan-in 11, fan-out 41)",
+    "source": "hotspots",
+    "description": "\"src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync\" is a pinch point: 11 symbols call into it and it calls out to 41 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Zatca/ZatcaEInvoiceGenerator.cs",
+        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
+        "detail": "fan-in 11 × fan-out 41 = score 451",
+        "line": 560,
+        "fact_id": "fe29bd0c4666f2d394efad2c98897932"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator",
+        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
+        "fact_id": "58c98f92c103d9524f4ef2baac5554d6"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForAssetDisposalAsync",
+        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
+        "fact_id": "6c7e74312c2aa3781d5c5c8b4900ffcf"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForCreditNoteAsync",
+        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
+        "fact_id": "1b2e64a740dc73dcb4376ee6fa8aee17"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForProgressBillingAsync",
+        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
+        "fact_id": "6c6ec376c189ecaebfb96d3c22f7379d"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForSalesInvoiceAsync",
+        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
+        "fact_id": "ceb7a29b5cbc444aa4b9a00218c47c7f"
+      },
+      {
+        "symbol": "AccountingException",
+        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
+      },
+      {
+        "symbol": "Add",
+        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
+      },
+      {
+        "symbol": "CancellationToken.None",
+        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
+      },
+      {
+        "symbol": "DateTime.SpecifyKind",
+        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
+      },
+      {
+        "symbol": "DateTime.UtcNow",
+        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
       }
     ],
     "suggested_actions": [
@@ -3711,15 +3807,15 @@
     ]
   },
   {
-    "title": "Call-graph hotspot: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync (fan-in 11, fan-out 37)",
+    "title": "Call-graph hotspot: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync (fan-in 11, fan-out 38)",
     "source": "hotspots",
-    "description": "\".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync\" is a pinch point: 11 symbols call into it and it calls out to 37 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "description": "\".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync\" is a pinch point: 11 symbols call into it and it calls out to 38 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
     "confidence": 0.7,
     "evidence": [
       {
         "file": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Zatca/ZatcaEInvoiceGenerator.cs",
         "symbol": ".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "detail": "fan-in 11 × fan-out 37 = score 407",
+        "detail": "fan-in 11 × fan-out 38 = score 418",
         "line": 560,
         "fact_id": "cbd968806af0996d3a4c288f6c8af0c0"
       },
@@ -3781,15 +3877,15 @@
     ]
   },
   {
-    "title": "Call-graph hotspot: .claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync (fan-in 11, fan-out 37)",
+    "title": "Call-graph hotspot: .claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync (fan-in 11, fan-out 38)",
     "source": "hotspots",
-    "description": "\".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync\" is a pinch point: 11 symbols call into it and it calls out to 37 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
+    "description": "\".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync\" is a pinch point: 11 symbols call into it and it calls out to 38 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
     "confidence": 0.7,
     "evidence": [
       {
         "file": ".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Zatca/ZatcaEInvoiceGenerator.cs",
         "symbol": ".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "detail": "fan-in 11 × fan-out 37 = score 407",
+        "detail": "fan-in 11 × fan-out 38 = score 418",
         "line": 560,
         "fact_id": "1fce8de55833e9f52f059df2acbc43f1"
       },
@@ -3851,68 +3947,212 @@
     ]
   },
   {
-    "title": "Call-graph hotspot: src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync (fan-in 11, fan-out 37)",
-    "source": "hotspots",
-    "description": "\"src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync\" is a pinch point: 11 symbols call into it and it calls out to 37 others, so a large share of call chains pass through it (degree-centrality proxy for betweenness). Such chokepoints are high-risk to change and high-value to test.",
-    "confidence": 0.7,
+    "title": "Large public surface: src/Brqosh.Application/Reporting exports 283 of 283 symbols (100%)",
+    "source": "exported-surface",
+    "description": "Module \"src/Brqosh.Application/Reporting\" exports 283 of its 283 symbols (100%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
+    "confidence": 0.6,
     "evidence": [
       {
-        "file": "src/Brqosh.Infrastructure/Zatca/ZatcaEInvoiceGenerator.cs",
-        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "detail": "fan-in 11 × fan-out 37 = score 407",
-        "line": 560,
-        "fact_id": "fe29bd0c4666f2d394efad2c98897932"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto",
+        "detail": "exported",
+        "fact_id": "535eee2f5ee208a2454d66d794248b2c"
       },
       {
-        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator",
-        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "fact_id": "58c98f92c103d9524f4ef2baac5554d6"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.AsOfDate",
+        "detail": "exported",
+        "fact_id": "27a7cd8baf4ed52c6cb3e77efb807c96"
       },
       {
-        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForAssetDisposalAsync",
-        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "fact_id": "6c7e74312c2aa3781d5c5c8b4900ffcf"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.Assets",
+        "detail": "exported",
+        "fact_id": "acf8ad33c93135be11ac6a521c7cda36"
       },
       {
-        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForCreditNoteAsync",
-        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "fact_id": "1b2e64a740dc73dcb4376ee6fa8aee17"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.Equity",
+        "detail": "exported",
+        "fact_id": "18b7c104ce0b73a7e4c767bdddf9de55"
       },
       {
-        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForProgressBillingAsync",
-        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "fact_id": "6c6ec376c189ecaebfb96d3c22f7379d"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.IsBalanced",
+        "detail": "exported",
+        "fact_id": "df70eb947a3748e99271d2e2529c8d6b"
       },
       {
-        "symbol": "src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.TryGenerateCancellationForSalesInvoiceAsync",
-        "detail": "calls into src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync",
-        "fact_id": "ceb7a29b5cbc444aa4b9a00218c47c7f"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.Liabilities",
+        "detail": "exported",
+        "fact_id": "b43bb0dabf92514e758cad06798100b2"
       },
       {
-        "symbol": "AccountingException",
-        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.TotalAssets",
+        "detail": "exported",
+        "fact_id": "81679b293ddca0399cc4a83c736813f4"
       },
       {
-        "symbol": "Add",
-        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
-      },
-      {
-        "symbol": "CancellationToken.None",
-        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
-      },
-      {
-        "symbol": "DateTime.SpecifyKind",
-        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
-      },
-      {
-        "symbol": "DateTime.UtcNow",
-        "detail": "called by src/Brqosh.Infrastructure/Zatca.ZatcaEInvoiceGenerator.GenerateAsync"
+        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.TotalEquity",
+        "detail": "exported",
+        "fact_id": "a6abc31c9bc913758db999b0cb15e93e"
       }
     ],
     "suggested_actions": [
-      "Add focused tests around this chokepoint before refactoring",
-      "Consider decomposing it so call paths don't all funnel through one symbol",
-      "Verify it isn't doing orchestration that belongs in callers"
+      "Unexport symbols that are only used within the module",
+      "Define a small, intentional public API and hide the rest",
+      "Split the module if it has several independent public responsibilities"
+    ]
+  },
+  {
+    "title": "Large public surface: src/Brqosh.Domain/Sales exports 272 of 295 symbols (92%)",
+    "source": "exported-surface",
+    "description": "Module \"src/Brqosh.Domain/Sales\" exports 272 of its 295 symbols (92%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote",
+        "detail": "exported",
+        "fact_id": "386b068b816c885767ae856d2819e4cf"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.AddLine",
+        "detail": "exported",
+        "fact_id": "9a7b06c04325bad1fe995f54d8dafab9"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.AlignToBooksCurrency",
+        "detail": "exported",
+        "fact_id": "fc86fc59a58901c669ba7ab58d7ef6f9"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.ApplyDocumentDiscount",
+        "detail": "exported",
+        "fact_id": "ae34fdea495f82c3c3b60bdc78091913"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.AssignBranch",
+        "detail": "exported",
+        "fact_id": "1a6045eb9d7162da625cc10b68202ce1"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.BranchId",
+        "detail": "exported",
+        "fact_id": "d7ca81fa28fbe37ac11ee1eececce777"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.CancelledAt",
+        "detail": "exported",
+        "fact_id": "2df49ce9e9f6097cf9c594c4b7390eb2"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Sales.CreditNote.CompanyId",
+        "detail": "exported",
+        "fact_id": "21fbbc2c675dee67667332f783abaceb"
+      }
+    ],
+    "suggested_actions": [
+      "Unexport symbols that are only used within the module",
+      "Define a small, intentional public API and hide the rest",
+      "Split the module if it has several independent public responsibilities"
+    ]
+  },
+  {
+    "title": "Large public surface: src/Brqosh.Infrastructure/Persistence/Migrations exports 270 of 270 symbols (100%)",
+    "source": "exported-surface",
+    "description": "Module \"src/Brqosh.Infrastructure/Persistence/Migrations\" exports 270 of its 270 symbols (100%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice",
+        "detail": "exported"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice.Down",
+        "detail": "exported",
+        "fact_id": "7d22ec8ba2b7c85b87557a5b8860a7bb"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice.Up",
+        "detail": "exported",
+        "fact_id": "e438b09cdf43244d9eb94ef751e3c3c8"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain",
+        "detail": "exported"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain.Down",
+        "detail": "exported",
+        "fact_id": "b7c8bc96070a27d01e5083919c56544e"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain.Up",
+        "detail": "exported",
+        "fact_id": "8371247cf85162e76a7dbdf73dd035aa"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances",
+        "detail": "exported"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances.Down",
+        "detail": "exported",
+        "fact_id": "a04c5e0cc6589fd8a1e3facfab2308e0"
+      }
+    ],
+    "suggested_actions": [
+      "Unexport symbols that are only used within the module",
+      "Define a small, intentional public API and hide the rest",
+      "Split the module if it has several independent public responsibilities"
+    ]
+  },
+  {
+    "title": "Large public surface: src/Brqosh.Domain/Accounting exports 261 of 279 symbols (94%)",
+    "source": "exported-surface",
+    "description": "Module \"src/Brqosh.Domain/Accounting\" exports 261 of its 279 symbols (94%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
+    "confidence": 0.6,
+    "evidence": [
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account",
+        "detail": "exported",
+        "fact_id": "69899838b5489411457e70a513a03514"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.Code",
+        "detail": "exported",
+        "fact_id": "87cb23a172e86209243f55fa1f9a8829"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.CompanyId",
+        "detail": "exported",
+        "fact_id": "23f38c9139f91855ddc074d76cc5f2f8"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.Create",
+        "detail": "exported",
+        "fact_id": "f5934df6c7a9b5e8d88f52aeb83bf35b"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.Deactivate",
+        "detail": "exported",
+        "fact_id": "cbefe0c02c83967d0661ae90e3d605f4"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.DeletedAtUtc",
+        "detail": "exported",
+        "fact_id": "a42cfb938a06ccc051de1c2944c03301"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.Id",
+        "detail": "exported",
+        "fact_id": "433c63ffab8975a9ad17003a46a14548"
+      },
+      {
+        "symbol": "src/Brqosh.Domain/Accounting.Account.IsActive",
+        "detail": "exported",
+        "fact_id": "a4c5e56c8fc4835a27cf732147b570fc"
+      }
+    ],
+    "suggested_actions": [
+      "Unexport symbols that are only used within the module",
+      "Define a small, intentional public API and hide the rest",
+      "Split the module if it has several independent public responsibilities"
     ]
   },
   {
@@ -4022,59 +4262,6 @@
     ]
   },
   {
-    "title": "Large public surface: src/Brqosh.Application/Reporting exports 240 of 240 symbols (100%)",
-    "source": "exported-surface",
-    "description": "Module \"src/Brqosh.Application/Reporting\" exports 240 of its 240 symbols (100%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
-    "confidence": 0.6,
-    "evidence": [
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto",
-        "detail": "exported",
-        "fact_id": "535eee2f5ee208a2454d66d794248b2c"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.AsOfDate",
-        "detail": "exported",
-        "fact_id": "27a7cd8baf4ed52c6cb3e77efb807c96"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.Assets",
-        "detail": "exported",
-        "fact_id": "acf8ad33c93135be11ac6a521c7cda36"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.Equity",
-        "detail": "exported",
-        "fact_id": "18b7c104ce0b73a7e4c767bdddf9de55"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.IsBalanced",
-        "detail": "exported",
-        "fact_id": "df70eb947a3748e99271d2e2529c8d6b"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.Liabilities",
-        "detail": "exported",
-        "fact_id": "b43bb0dabf92514e758cad06798100b2"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.TotalAssets",
-        "detail": "exported",
-        "fact_id": "81679b293ddca0399cc4a83c736813f4"
-      },
-      {
-        "symbol": "src/Brqosh.Application/Reporting.BalanceSheetResultDto.TotalEquity",
-        "detail": "exported",
-        "fact_id": "a6abc31c9bc913758db999b0cb15e93e"
-      }
-    ],
-    "suggested_actions": [
-      "Unexport symbols that are only used within the module",
-      "Define a small, intentional public API and hide the rest",
-      "Split the module if it has several independent public responsibilities"
-    ]
-  },
-  {
     "title": "Large public surface: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations exports 234 of 234 symbols (100%)",
     "source": "exported-surface",
     "description": "Module \".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence/Migrations\" exports 234 of its 234 symbols (100%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
@@ -4166,56 +4353,6 @@
         "symbol": ".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances.Down",
         "detail": "exported",
         "fact_id": "cb31c79576fc22e0d320d01934c58bdf"
-      }
-    ],
-    "suggested_actions": [
-      "Unexport symbols that are only used within the module",
-      "Define a small, intentional public API and hide the rest",
-      "Split the module if it has several independent public responsibilities"
-    ]
-  },
-  {
-    "title": "Large public surface: src/Brqosh.Infrastructure/Persistence/Migrations exports 234 of 234 symbols (100%)",
-    "source": "exported-surface",
-    "description": "Module \"src/Brqosh.Infrastructure/Persistence/Migrations\" exports 234 of its 234 symbols (100%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
-    "confidence": 0.6,
-    "evidence": [
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice",
-        "detail": "exported"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice.Down",
-        "detail": "exported",
-        "fact_id": "7d22ec8ba2b7c85b87557a5b8860a7bb"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAssetPurchaseInvoice.Up",
-        "detail": "exported",
-        "fact_id": "e438b09cdf43244d9eb94ef751e3c3c8"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain",
-        "detail": "exported"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain.Down",
-        "detail": "exported",
-        "fact_id": "b7c8bc96070a27d01e5083919c56544e"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddAuditChain.Up",
-        "detail": "exported",
-        "fact_id": "8371247cf85162e76a7dbdf73dd035aa"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances",
-        "detail": "exported"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Persistence/Migrations.AddBankStatementBalances.Down",
-        "detail": "exported",
-        "fact_id": "a04c5e0cc6589fd8a1e3facfab2308e0"
       }
     ],
     "suggested_actions": [
@@ -4330,59 +4467,6 @@
     ]
   },
   {
-    "title": "Large public surface: src/Brqosh.Domain/Accounting exports 224 of 241 symbols (93%)",
-    "source": "exported-surface",
-    "description": "Module \"src/Brqosh.Domain/Accounting\" exports 224 of its 241 symbols (93%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
-    "confidence": 0.6,
-    "evidence": [
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account",
-        "detail": "exported",
-        "fact_id": "69899838b5489411457e70a513a03514"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.Code",
-        "detail": "exported",
-        "fact_id": "87cb23a172e86209243f55fa1f9a8829"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.CompanyId",
-        "detail": "exported",
-        "fact_id": "23f38c9139f91855ddc074d76cc5f2f8"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.Create",
-        "detail": "exported",
-        "fact_id": "f5934df6c7a9b5e8d88f52aeb83bf35b"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.Deactivate",
-        "detail": "exported",
-        "fact_id": "cbefe0c02c83967d0661ae90e3d605f4"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.DeletedAtUtc",
-        "detail": "exported",
-        "fact_id": "a42cfb938a06ccc051de1c2944c03301"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.Id",
-        "detail": "exported",
-        "fact_id": "433c63ffab8975a9ad17003a46a14548"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Accounting.Account.IsActive",
-        "detail": "exported",
-        "fact_id": "a4c5e56c8fc4835a27cf732147b570fc"
-      }
-    ],
-    "suggested_actions": [
-      "Unexport symbols that are only used within the module",
-      "Define a small, intentional public API and hide the rest",
-      "Split the module if it has several independent public responsibilities"
-    ]
-  },
-  {
     "title": "Large public surface: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Sales exports 209 of 227 symbols (92%)",
     "source": "exported-surface",
     "description": "Module \".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Sales\" exports 209 of its 227 symbols (92%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
@@ -4488,50 +4572,50 @@
     ]
   },
   {
-    "title": "Large public surface: src/Brqosh.Domain/Sales exports 209 of 227 symbols (92%)",
+    "title": "Large public surface: src/Brqosh.Domain/Treasury exports 208 of 230 symbols (90%)",
     "source": "exported-surface",
-    "description": "Module \"src/Brqosh.Domain/Sales\" exports 209 of its 227 symbols (92%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
+    "description": "Module \"src/Brqosh.Domain/Treasury\" exports 208 of its 230 symbols (90%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
     "confidence": 0.6,
     "evidence": [
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount",
         "detail": "exported",
-        "fact_id": "386b068b816c885767ae856d2819e4cf"
+        "fact_id": "88db97f1faded751654f72f928c12c84"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.AddLine",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.AccountNumber",
         "detail": "exported",
-        "fact_id": "9a7b06c04325bad1fe995f54d8dafab9"
+        "fact_id": "c44950c228db4bc97bcbcfba89828a58"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.AlignToBooksCurrency",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.AssignBranch",
         "detail": "exported",
-        "fact_id": "fc86fc59a58901c669ba7ab58d7ef6f9"
+        "fact_id": "e90cabd4318386bf04dd4326e677910d"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.ApplyDocumentDiscount",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.BankName",
         "detail": "exported",
-        "fact_id": "ae34fdea495f82c3c3b60bdc78091913"
+        "fact_id": "9a1698f47a40681c8aaa9c6bdd12d807"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.AssignBranch",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.BranchId",
         "detail": "exported",
-        "fact_id": "1a6045eb9d7162da625cc10b68202ce1"
+        "fact_id": "54a1a7d6a6544062534cfb6eddd6a213"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.BranchId",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.ClearDefault",
         "detail": "exported",
-        "fact_id": "d7ca81fa28fbe37ac11ee1eececce777"
+        "fact_id": "cc2264dea8125c53bf87eaff2a058db5"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.CancelledAt",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.Code",
         "detail": "exported",
-        "fact_id": "2df49ce9e9f6097cf9c594c4b7390eb2"
+        "fact_id": "1ef870347275f32fa6cde3c1936cbc0b"
       },
       {
-        "symbol": "src/Brqosh.Domain/Sales.CreditNote.CompanyId",
+        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.CompanyId",
         "detail": "exported",
-        "fact_id": "21fbbc2c675dee67667332f783abaceb"
+        "fact_id": "3a3052d9d46fe8db175215481121b4ef"
       }
     ],
     "suggested_actions": [
@@ -4646,50 +4730,50 @@
     ]
   },
   {
-    "title": "Large public surface: src/Brqosh.Domain/Treasury exports 205 of 227 symbols (90%)",
+    "title": "Large public surface: src/Brqosh.Domain/Payroll exports 202 of 216 symbols (94%)",
     "source": "exported-surface",
-    "description": "Module \"src/Brqosh.Domain/Treasury\" exports 205 of its 227 symbols (90%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
+    "description": "Module \"src/Brqosh.Domain/Payroll\" exports 202 of its 216 symbols (94%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
     "confidence": 0.6,
     "evidence": [
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount",
+        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus",
         "detail": "exported",
-        "fact_id": "88db97f1faded751654f72f928c12c84"
+        "fact_id": "283aed70ce33501ce3b8618725b32f0d"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.AccountNumber",
+        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Approved",
         "detail": "exported",
-        "fact_id": "c44950c228db4bc97bcbcfba89828a58"
+        "fact_id": "24ee6bcd323105b9055dfea62ef4392c"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.AssignBranch",
+        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Cancelled",
         "detail": "exported",
-        "fact_id": "e90cabd4318386bf04dd4326e677910d"
+        "fact_id": "9a25ecc13c85bb6de7eccfe40a67f354"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.BankName",
+        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Outstanding",
         "detail": "exported",
-        "fact_id": "9a1698f47a40681c8aaa9c6bdd12d807"
+        "fact_id": "12a0377a52161833e902c172f6582cfb"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.BranchId",
+        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Settled",
         "detail": "exported",
-        "fact_id": "54a1a7d6a6544062534cfb6eddd6a213"
+        "fact_id": "6f63a8f3370c43459a54554a8ca0ecc0"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.ClearDefault",
+        "symbol": "src/Brqosh.Domain/Payroll.Employee",
         "detail": "exported",
-        "fact_id": "cc2264dea8125c53bf87eaff2a058db5"
+        "fact_id": "2230a063267aeb127002f60d670e14c7"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.Code",
+        "symbol": "src/Brqosh.Domain/Payroll.Employee.AssignBranch",
         "detail": "exported",
-        "fact_id": "1ef870347275f32fa6cde3c1936cbc0b"
+        "fact_id": "56b925cded5e9f89a9277a8f7b57533d"
       },
       {
-        "symbol": "src/Brqosh.Domain/Treasury.BankAccount.CompanyId",
+        "symbol": "src/Brqosh.Domain/Payroll.Employee.AssignCostCenter",
         "detail": "exported",
-        "fact_id": "3a3052d9d46fe8db175215481121b4ef"
+        "fact_id": "6fc61b74a93811229cc1f7f5d8212a54"
       }
     ],
     "suggested_actions": [
@@ -4804,59 +4888,6 @@
     ]
   },
   {
-    "title": "Large public surface: src/Brqosh.Domain/Payroll exports 201 of 215 symbols (93%)",
-    "source": "exported-surface",
-    "description": "Module \"src/Brqosh.Domain/Payroll\" exports 201 of its 215 symbols (93%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
-    "confidence": 0.6,
-    "evidence": [
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus",
-        "detail": "exported",
-        "fact_id": "283aed70ce33501ce3b8618725b32f0d"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Approved",
-        "detail": "exported",
-        "fact_id": "24ee6bcd323105b9055dfea62ef4392c"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Cancelled",
-        "detail": "exported",
-        "fact_id": "9a25ecc13c85bb6de7eccfe40a67f354"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Outstanding",
-        "detail": "exported",
-        "fact_id": "12a0377a52161833e902c172f6582cfb"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.AdvanceStatus.Settled",
-        "detail": "exported",
-        "fact_id": "6f63a8f3370c43459a54554a8ca0ecc0"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.Employee",
-        "detail": "exported",
-        "fact_id": "2230a063267aeb127002f60d670e14c7"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.Employee.AssignBranch",
-        "detail": "exported",
-        "fact_id": "56b925cded5e9f89a9277a8f7b57533d"
-      },
-      {
-        "symbol": "src/Brqosh.Domain/Payroll.Employee.AssignCostCenter",
-        "detail": "exported",
-        "fact_id": "6fc61b74a93811229cc1f7f5d8212a54"
-      }
-    ],
-    "suggested_actions": [
-      "Unexport symbols that are only used within the module",
-      "Define a small, intentional public API and hide the rest",
-      "Split the module if it has several independent public responsibilities"
-    ]
-  },
-  {
     "title": "Large public surface: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Purchasing exports 197 of 217 symbols (91%)",
     "source": "exported-surface",
     "description": "Module \".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Domain/Purchasing\" exports 197 of its 217 symbols (91%). A large, near-fully-exported module hides little of its implementation, so consumers can couple to internals and it is hard to change without breaking them. Worth a visibility review — though a deliberate library API may legitimately export most of its surface.",
@@ -4962,6 +4993,26 @@
     ]
   },
   {
+    "title": "High cyclomatic complexity: src/Brqosh.Infrastructure/Sales.SalesOrderService.CreatePartialInvoiceFromOrderAsync (139)",
+    "source": "complexity-outliers",
+    "description": "\"src/Brqosh.Infrastructure/Sales.SalesOrderService.CreatePartialInvoiceFromOrderAsync\" has a cyclomatic complexity of 139 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Sales/SalesOrderService.cs",
+        "symbol": "src/Brqosh.Infrastructure/Sales.SalesOrderService.CreatePartialInvoiceFromOrderAsync",
+        "detail": "cyclomatic complexity 139 at line 113",
+        "line": 113,
+        "fact_id": "cd9ca4a4283bbc08b30873bb2514c654"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
     "title": "High cyclomatic complexity: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.VatReturnQuery.ExecuteAsync (105)",
     "source": "complexity-outliers",
     "description": "\".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Reporting.VatReturnQuery.ExecuteAsync\" has a cyclomatic complexity of 105 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
@@ -5022,6 +5073,46 @@
     ]
   },
   {
+    "title": "High cyclomatic complexity: src/Brqosh.Infrastructure/Sales.DeliveryNoteService.DeliverFromOrderAsync (89)",
+    "source": "complexity-outliers",
+    "description": "\"src/Brqosh.Infrastructure/Sales.DeliveryNoteService.DeliverFromOrderAsync\" has a cyclomatic complexity of 89 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Sales/DeliveryNoteService.cs",
+        "symbol": "src/Brqosh.Infrastructure/Sales.DeliveryNoteService.DeliverFromOrderAsync",
+        "detail": "cyclomatic complexity 89 at line 20",
+        "line": 20,
+        "fact_id": "6db8250e4111bf53fbb16dc65112de50"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
+    "title": "High cyclomatic complexity: src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync (68)",
+    "source": "complexity-outliers",
+    "description": "\"src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync\" has a cyclomatic complexity of 68 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
+    "confidence": 0.7,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Persistence/BrqoshSchemaUpdater.BatchTracking.cs",
+        "symbol": "src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync",
+        "detail": "cyclomatic complexity 68 at line 24",
+        "line": 24,
+        "fact_id": "543eca2f5244ae2e2f6e2ecc9669b75a"
+      }
+    ],
+    "suggested_actions": [
+      "Extract guard clauses and nested branches into helper functions",
+      "Replace deep conditionals with table/strategy dispatch where possible",
+      "Add tests covering the distinct branches before refactoring"
+    ]
+  },
+  {
     "title": "High cyclomatic complexity: .claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync (62)",
     "source": "complexity-outliers",
     "description": "\".claude/worktrees/brqosh-dream-program-53744f/src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync\" has a cyclomatic complexity of 62 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
@@ -5053,26 +5144,6 @@
         "detail": "cyclomatic complexity 62 at line 2620",
         "line": 2620,
         "fact_id": "a8fee12b1b6433aa7b088004a3eda75f"
-      }
-    ],
-    "suggested_actions": [
-      "Extract guard clauses and nested branches into helper functions",
-      "Replace deep conditionals with table/strategy dispatch where possible",
-      "Add tests covering the distinct branches before refactoring"
-    ]
-  },
-  {
-    "title": "High cyclomatic complexity: src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync (62)",
-    "source": "complexity-outliers",
-    "description": "\"src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync\" has a cyclomatic complexity of 62 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
-    "confidence": 0.7,
-    "evidence": [
-      {
-        "file": "src/Brqosh.Infrastructure/Persistence/BrqoshSchemaUpdater.cs",
-        "symbol": "src/Brqosh.Infrastructure/Persistence.BrqoshSchemaUpdater.EnsureBatchTrackingAsync",
-        "detail": "cyclomatic complexity 62 at line 2620",
-        "line": 2620,
-        "fact_id": "e6a2afb5fc7663b43772046e9a5bb9a5"
       }
     ],
     "suggested_actions": [
@@ -5222,43 +5293,19 @@
     ]
   },
   {
-    "title": "High cyclomatic complexity: .claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Platform.CodeAvailabilityQuery.FindAsync (50)",
-    "source": "complexity-outliers",
-    "description": "\".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Platform.CodeAvailabilityQuery.FindAsync\" has a cyclomatic complexity of 50 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
-    "confidence": 0.7,
+    "title": "Off main sequence: src/Brqosh.Desktop/ViewModels (D=1.00)",
+    "source": "package-metrics",
+    "description": "Package \"src/Brqosh.Desktop/ViewModels\" sits 1.00 from the main sequence (I=0.00, A=0.00) — rigid (zone of pain: stable + concrete — many packages depend on it, so it is hard to change without editing dependents).",
+    "confidence": 0.9,
     "evidence": [
       {
-        "file": ".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Platform/CodeAvailabilityQuery.cs",
-        "symbol": ".claude/worktrees/sleepy-tesla-4ea32c/src/Brqosh.Infrastructure/Platform.CodeAvailabilityQuery.FindAsync",
-        "detail": "cyclomatic complexity 50 at line 73",
-        "line": 73,
-        "fact_id": "da2a20b91a0a19efc54875e5d5dcd9a4"
+        "fact": "src/Brqosh.Desktop/ViewModels",
+        "detail": "Ca=1 Ce=0 N=10 I=0.00 A=0.00 D=1.00",
+        "fact_id": "53a6125fdce513295143e51d636f52e0"
       }
     ],
     "suggested_actions": [
-      "Extract guard clauses and nested branches into helper functions",
-      "Replace deep conditionals with table/strategy dispatch where possible",
-      "Add tests covering the distinct branches before refactoring"
-    ]
-  },
-  {
-    "title": "High cyclomatic complexity: src/Brqosh.Infrastructure/Platform.CodeAvailabilityQuery.FindAsync (50)",
-    "source": "complexity-outliers",
-    "description": "\"src/Brqosh.Infrastructure/Platform.CodeAvailabilityQuery.FindAsync\" has a cyclomatic complexity of 50 — well above the repo average. Highly branched functions are hard to test fully and are frequent defect sites.",
-    "confidence": 0.7,
-    "evidence": [
-      {
-        "file": "src/Brqosh.Infrastructure/Platform/CodeAvailabilityQuery.cs",
-        "symbol": "src/Brqosh.Infrastructure/Platform.CodeAvailabilityQuery.FindAsync",
-        "detail": "cyclomatic complexity 50 at line 73",
-        "line": 73,
-        "fact_id": "ee30bcd3cb99b88e5bd78cfad6c18917"
-      }
-    ],
-    "suggested_actions": [
-      "Extract guard clauses and nested branches into helper functions",
-      "Replace deep conditionals with table/strategy dispatch where possible",
-      "Add tests covering the distinct branches before refactoring"
+      "Stable hub: keep its public contract small, cohesive and stable; split it if it spans multiple responsibilities. (Abstractness is only an approximation for dynamically-typed languages, so \"extract interfaces\" may not apply.)"
     ]
   },
   {
@@ -6305,9 +6352,9 @@
     ]
   },
   {
-    "title": "Additional dead-code candidates: 20997 more (see find_orphans)",
+    "title": "Additional dead-code candidates: 21120 more (see find_orphans)",
     "source": "dead-code",
-    "description": "205 further high/medium-confidence orphan(s) were omitted from individual insights and 20792 low-confidence orphan(s) (methods/types/consts/vars — usage not edge-tracked) were not surfaced individually. Use the find_orphans tool (output_mode=full) for the complete list.",
+    "description": "217 further high/medium-confidence orphan(s) were omitted from individual insights and 20903 low-confidence orphan(s) (methods/types/consts/vars — usage not edge-tracked) were not surfaced individually. Use the find_orphans tool (output_mode=full) for the complete list.",
     "confidence": 0.4,
     "evidence": null,
     "suggested_actions": [
@@ -6485,6 +6532,30 @@
     ]
   },
   {
+    "title": "Performance risk (call-in-loop, O(n³)): src/Brqosh.Infrastructure/Persistence.SchemaBaseline.CompleteSqliteFromModelAsync",
+    "source": "performance",
+    "description": "Calls src/Brqosh.Infrastructure/Persistence.SchemaBaseline.QueryAsync inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.9,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Persistence/SchemaBaseline.cs",
+        "symbol": "src/Brqosh.Infrastructure/Persistence.SchemaBaseline.CompleteSqliteFromModelAsync",
+        "detail": "Calls src/Brqosh.Infrastructure/Persistence.SchemaBaseline.QueryAsync inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 39,
+        "fact_id": "6860ddf9a072cd09ac14d90b1bcf0a2b"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Persistence.SchemaBaseline.CompleteSqliteFromModelAsync",
+        "detail": "call_in_loop=src/Brqosh.Infrastructure/Persistence.SchemaBaseline.QueryAsync",
+        "fact_id": "6860ddf9a072cd09ac14d90b1bcf0a2b"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
     "title": "Performance risk (call-in-loop, O(n³)): src/Brqosh.Infrastructure/Reporting.BranchProfitabilityQuery.ExecuteAsync",
     "source": "performance",
     "description": "Calls db.Accounts.IgnoreQueryFilters().AsNoTracking()\n                .Where(a =\u003e accountIds.Contains(a.Id)).ToDictionaryAsync, db.Accounts.IgnoreQueryFilters().AsNoTracking, db.Accounts.IgnoreQueryFilters inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
@@ -6511,6 +6582,40 @@
         "symbol": "src/Brqosh.Infrastructure/Reporting.BranchProfitabilityQuery.ExecuteAsync",
         "detail": "call_in_loop=db.Accounts.IgnoreQueryFilters",
         "fact_id": "a6dc2078c4827b5c11e9e66ada4f974a"
+      }
+    ],
+    "suggested_actions": [
+      "Confirm the hot path with a profiler or benchmark before optimizing",
+      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
+    ]
+  },
+  {
+    "title": "Performance risk (call-in-loop, O(n³)): src/Brqosh.Infrastructure/Sales.SalesInvoiceCancellationService.CancelAsync",
+    "source": "performance",
+    "description": "Calls db.SalesOrderInvoiceLines\n                    .Where(l =\u003e l.SalesOrderId == order.Id \u0026\u0026 !l.IsCancelled \u0026\u0026 l.SalesInvoiceId != invoiceId)\n                    .OrderByDescending(l =\u003e l.SalesInvoiceId)\n                    .Select(l =\u003e (long?)l.SalesInvoiceId).FirstOrDefaultAsync, db.SalesOrderInvoiceLines\n                    .Where(l =\u003e l.SalesOrderId == order.Id \u0026\u0026 !l.IsCancelled \u0026\u0026 l.SalesInvoiceId != invoiceId).OrderByDescending, db.StockReservations\n                    .Where(r =\u003e r.CompanyId == companyId \u0026\u0026 r.SalesOrderId == order.Id).ToListAsync inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
+    "confidence": 0.9,
+    "evidence": [
+      {
+        "file": "src/Brqosh.Infrastructure/Sales/SalesInvoiceCancellationService.cs",
+        "symbol": "src/Brqosh.Infrastructure/Sales.SalesInvoiceCancellationService.CancelAsync",
+        "detail": "Calls db.SalesOrderInvoiceLines\n                    .Where(l =\u003e l.SalesOrderId == order.Id \u0026\u0026 !l.IsCancelled \u0026\u0026 l.SalesInvoiceId != invoiceId)\n                    .OrderByDescending(l =\u003e l.SalesInvoiceId)\n                    .Select(l =\u003e (long?)l.SalesInvoiceId).FirstOrDefaultAsync, db.SalesOrderInvoiceLines\n                    .Where(l =\u003e l.SalesOrderId == order.Id \u0026\u0026 !l.IsCancelled \u0026\u0026 l.SalesInvoiceId != invoiceId).OrderByDescending, db.StockReservations\n                    .Where(r =\u003e r.CompanyId == companyId \u0026\u0026 r.SalesOrderId == order.Id).ToListAsync inside a loop — a likely N+1 / per-iteration I/O pattern; batch or hoist out of the loop.",
+        "line": 20,
+        "fact_id": "d469660211c175b98461b4c2735ac51d"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Sales.SalesInvoiceCancellationService.CancelAsync",
+        "detail": "call_in_loop=db.SalesOrderInvoiceLines\n                    .Where(l =\u003e l.SalesOrderId == order.Id \u0026\u0026 !l.IsCancelled \u0026\u0026 l.SalesInvoiceId != invoiceId)\n                    .OrderByDescending(l =\u003e l.SalesInvoiceId)\n                    .Select(l =\u003e (long?)l.SalesInvoiceId).FirstOrDefaultAsync",
+        "fact_id": "d469660211c175b98461b4c2735ac51d"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Sales.SalesInvoiceCancellationService.CancelAsync",
+        "detail": "call_in_loop=db.SalesOrderInvoiceLines\n                    .Where(l =\u003e l.SalesOrderId == order.Id \u0026\u0026 !l.IsCancelled \u0026\u0026 l.SalesInvoiceId != invoiceId).OrderByDescending",
+        "fact_id": "d469660211c175b98461b4c2735ac51d"
+      },
+      {
+        "symbol": "src/Brqosh.Infrastructure/Sales.SalesInvoiceCancellationService.CancelAsync",
+        "detail": "call_in_loop=db.StockReservations\n                    .Where(r =\u003e r.CompanyId == companyId \u0026\u0026 r.SalesOrderId == order.Id).ToListAsync",
+        "fact_id": "d469660211c175b98461b4c2735ac51d"
       }
     ],
     "suggested_actions": [
@@ -7527,57 +7632,9 @@
     ]
   },
   {
-    "title": "Performance risk (nested-loop, O(n³)): ShuraCouncil.Program.PrintSummary",
+    "title": "Additional performance risks: 993 more (see analyze_performance)",
     "source": "performance",
-    "description": "Loops nest 3 deep, so the body runs about O(n³) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
-    "confidence": 0.8,
-    "evidence": [
-      {
-        "file": "ShuraCouncil/Program.cs",
-        "symbol": "ShuraCouncil.Program.PrintSummary",
-        "detail": "Loops nest 3 deep, so the body runs about O(n³) in the loop bounds.",
-        "line": 59,
-        "fact_id": "913a629aa0ba018922f68ec8813b9da1"
-      },
-      {
-        "symbol": "ShuraCouncil.Program.PrintSummary",
-        "detail": "loop_depth=3, loop_count=10, cyclomatic=21",
-        "fact_id": "913a629aa0ba018922f68ec8813b9da1"
-      }
-    ],
-    "suggested_actions": [
-      "Confirm the hot path with a profiler or benchmark before optimizing",
-      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
-    ]
-  },
-  {
-    "title": "Performance risk (nested-loop, O(n³)): src/Brqosh.Infrastructure/Accounting.StandingOpeningBalanceItems.Standing",
-    "source": "performance",
-    "description": "Loops nest 3 deep, so the body runs about O(n³) in the loop bounds. Big-O is a deterministic estimate of structural worst case from parser facts, not a proof — treat as a lead to verify.",
-    "confidence": 0.8,
-    "evidence": [
-      {
-        "file": "src/Brqosh.Infrastructure/Accounting/StandingOpeningBalanceItems.cs",
-        "symbol": "src/Brqosh.Infrastructure/Accounting.StandingOpeningBalanceItems.Standing",
-        "detail": "Loops nest 3 deep, so the body runs about O(n³) in the loop bounds.",
-        "line": 20,
-        "fact_id": "6655fa1c53d83cba195fbb17fc4f491f"
-      },
-      {
-        "symbol": "src/Brqosh.Infrastructure/Accounting.StandingOpeningBalanceItems.Standing",
-        "detail": "loop_depth=3, loop_count=6, cyclomatic=27",
-        "fact_id": "6655fa1c53d83cba195fbb17fc4f491f"
-      }
-    ],
-    "suggested_actions": [
-      "Confirm the hot path with a profiler or benchmark before optimizing",
-      "Batch or hoist per-iteration I/O out of loops; add memoization or an iterative rewrite for recursion"
-    ]
-  },
-  {
-    "title": "Additional performance risks: 966 more (see analyze_performance)",
-    "source": "performance",
-    "description": "966 further findings at medium severity or above are not listed individually. They are ranked below those above, not dismissed: call analyze_performance for the full set, with min_severity and package/repo filters.",
+    "description": "993 further findings at medium severity or above are not listed individually. They are ranked below those above, not dismissed: call analyze_performance for the full set, with min_severity and package/repo filters.",
     "confidence": 0.5,
     "evidence": null,
     "suggested_actions": [
