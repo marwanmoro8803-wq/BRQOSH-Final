@@ -60,6 +60,16 @@ public static class EmbeddedPostgres
 
     public static bool IsAvailable => BundleRoot() is not null;
 
+    /// <summary>
+    /// قاعدةٌ مدمجةٌ <b>معدّةٌ</b> على هذا الجهاز (بياناتُها في APPDATA) لكنّ <b>الخادمَ المشحونَ غائبٌ بجوار البرنامج</b> — كتشغيل نسخةِ البناءِ
+    /// (<c>bin\Release</c>) بدل النسخةِ المنشورةِ أو المُنصَّبة. وعندئذٍ لا يُسأل المستخدمُ خادماً ومنفذاً وكلمةَ مرور: <b>لا شيءَ مما يُدخله يُصلح هذا</b>،
+    /// وقد يُحوِّل البرنامجَ إلى قاعدةٍ أخرى. فيُقال السببُ الحقيقيّ ويُغلق البرنامجُ والبياناتُ لا تُمسّ.
+    /// </summary>
+    public static bool NeedsBundleButMissing => NeedsBundleButMissingFor(IsProvisioned, IsAvailable);
+
+    /// <summary>القرارُ نفسُه دالّةً صرفاً ليُقاس بلا قرصٍ ولا خادم.</summary>
+    public static bool NeedsBundleButMissingFor(bool provisioned, bool bundleAvailable) => provisioned && !bundleAvailable;
+
     private static string DataDir => System.IO.Path.Combine(BrqoshDataRoot.Path(), "pgdata");
     private static string MarkerPath => System.IO.Path.Combine(BrqoshDataRoot.Path(), MarkerFile);
     private static string LogPath => System.IO.Path.Combine(BrqoshDataRoot.Path(), "logs", "postgres.log");
