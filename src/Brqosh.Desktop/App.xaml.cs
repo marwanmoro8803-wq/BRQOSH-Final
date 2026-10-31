@@ -238,12 +238,16 @@ public partial class App : System.Windows.Application
             while (true)
             {
                 string? problem;
+                var embeddedStartFailed = false;
                 try
                 {
                     // ‏(إعدادُ القاعدة التلقائيّ) ‏القاعدةُ المدمجةُ تُشغَّل قبل قراءة الاتصال — لا أثرَ لها إن لم تكن معدّة.
                     var embedded = await Brqosh.Infrastructure.Persistence.EmbeddedPostgres.EnsureRunningAsync();
                     if (!embedded.Ok)
+                    {
+                        embeddedStartFailed = Brqosh.Infrastructure.Persistence.EmbeddedPostgres.IsProvisioned;
                         throw new InvalidOperationException(embedded.Message);
+                    }
                     AppServices.LoadDatabaseConfig();
                     await AppServices.EnsureDatabaseReachableAsync();
                     // (CEEF-236 · م-٢٩) ‏**والسؤالُ يُطرح على كلّ تركيبٍ قائم، لا على المُصلَح وحدَه.**
@@ -286,8 +290,20 @@ public partial class App : System.Windows.Application
                 if (Brqosh.Infrastructure.Persistence.EmbeddedPostgres.NeedsBundleButMissing)
                 {
                     UiDialog.Show(
-                        "قاعدة البيانات المدمجة مُعدّة على هذا الجهاز لكنّ ملفّات خادمها (مجلد pgserver) غير موجودة بجوار البرنامج — غالباً شُغّل البرنامج من مجلد البناء. شغّله من النسخة المنشورة أو المُنصَّبة. بياناتك سليمة ولم تُمسّ.",
+                        "قاعدة البيانات المدمجة مُعدّة على هذا الجهاز لكنّ ملفّات خادمها (مجلد pgserver) غير موجودة بجوار البرنامج — غالباً شُغّل البرنامج من مجلد البناء. شغّله من نسخته المُنصَّبة (Program Files). بياناتك سليمة ولم تُمسّ.",
                         "BRQOSH — القاعدة المدمجة غير متاحة", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Shutdown();
+                    return;
+                }
+
+                // ‏(إعدادُ القاعدة التلقائيّ · لا نافذةَ اتصالٍ لمن قاعدتُه مدمجة) ‏وكذلك حين يحضر الخادمُ المشحونُ ويعجز عن الإقلاع (كمجلّدٍ لا يمنح
+                // ‏صلاحيةَ التشغيل للرمز المقيَّد الذي يُطلق به pg_ctl الخادمَ — «Access is denied» ثمّ «رمز 1»): النموذجُ لا يُصلح هذا. التفصيلُ في سجلّ الأعطال.
+                if (embeddedStartFailed)
+                {
+                    Brqosh.Infrastructure.Operations.CrashLog.Write(new InvalidOperationException(problem), "EmbeddedPostgres.StartFailed");
+                    UiDialog.Show(
+                        "تعذّر تشغيل قاعدة البيانات المدمجة على هذا الجهاز — غالباً لأنّ البرنامج يعمل من مجلد لا يسمح بتشغيل خادمها (كمجلد على سطح المكتب). شغّله من نسخته المُنصَّبة (Program Files). بياناتك سليمة ولم تُمسّ، والتفصيل في سجل الأعطال.",
+                        "BRQOSH — القاعدة المدمجة لم تبدأ", MessageBoxButton.OK, MessageBoxImage.Warning);
                     Shutdown();
                     return;
                 }

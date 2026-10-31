@@ -27,6 +27,17 @@ public class EmbeddedBundleMissingTests
         Assert.True(guard < window, "الفحصُ يجب أن يسبق بناءَ نافذة الاتصال.");
     }
 
+    [Fact]
+    public void TheStartup_NeverOpensTheConnectionWindow_WhenAProvisionedEmbeddedServerFailsToStart()
+    {
+        var source = File.ReadAllText(Path.Combine(FindRepoRoot(), "src", "Brqosh.Desktop", "App.xaml.cs"));
+        var flag = source.IndexOf("embeddedStartFailed = Brqosh.Infrastructure.Persistence.EmbeddedPostgres.IsProvisioned", StringComparison.Ordinal);
+        var guard = source.IndexOf("if (embeddedStartFailed)", StringComparison.Ordinal);
+        var window = source.IndexOf("new DatabaseConnectionWindow(", StringComparison.Ordinal);
+        Assert.True(flag > 0, "الإقلاعُ لا يسجّل إخفاقَ تشغيل القاعدة المدمجة.");
+        Assert.True(guard > flag && guard < window, "فحصُ الإخفاق يجب أن يسبق بناءَ نافذة الاتصال.");
+    }
+
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
