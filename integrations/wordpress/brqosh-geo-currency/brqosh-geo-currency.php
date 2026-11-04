@@ -141,6 +141,9 @@ if ( ! class_exists( 'Brqosh_Geo_Currency' ) ) :
 			add_filter( 'rest_pre_dispatch', array( $this, 'maybe_recalculate_cart_for_rest' ), 10, 1 );
 			add_action( 'woocommerce_after_calculate_totals', array( $this, 'remember_cart_currency' ) );
 
+			// Payment gateways limited to the base currency.
+			add_filter( 'woocommerce_available_payment_gateways', array( $this, 'filter_gateways' ), 999 );
+
 			// Orders.
 			add_action( 'woocommerce_checkout_create_order', array( $this, 'stamp_order' ) );
 			add_action( 'woocommerce_store_api_checkout_update_order_meta', array( $this, 'stamp_order' ) );
@@ -189,6 +192,12 @@ if ( ! class_exists( 'Brqosh_Geo_Currency' ) ) :
 			}
 
 			if ( $is_ajax || $is_rest ) {
+				// Page URLs (wc_get_cart_url, url_to_postid) need the rewrite layer, which
+				// does not exist yet while plugins load. Other plugins can ask for the
+				// currency that early; answer with the base currency and decide later.
+				if ( ! did_action( 'init' ) || empty( $GLOBALS['wp_rewrite'] ) ) {
+					return false;
+				}
 				// Background calls inherit the page they were fired from.
 				return $this->scope_cache = $this->referer_is_checkout_page();
 			}
@@ -459,6 +468,56 @@ if ( ! class_exists( 'Brqosh_Geo_Currency' ) ) :
 			// Round each converted amount to the store precision so line items,
 			// subtotals and totals always add up exactly as displayed.
 			return null === $rate ? $amount : round( (float) $amount * $rate, wc_get_price_decimals() );
+		}
+
+		/**
+		 * Public helper for other code (e.g. shipping snippets with SAR thresholds):
+		 * base-currency amount -> amount in the currency of the current request.
+		 *
+		 * @param float $amount Amount in base currency.
+		 * @return float
+		 */
+		public function from_base( $amount ) {
+			return (float) $this->to_currency( (float) $amount );
+		}
+
+		/**
+		 * Public helper: amount in the currency of the current request -> base currency.
+		 *
+		 * @param float $amount Amount in the active currency.
+		 * @return float
+		 */
+		public function to_base( $amount ) {
+			$currency = $this->active_currency();
+			if ( $currency === $this->base_currency() ) {
+				return (float) $amount;
+			}
+			$rate = $this->rate( $currency );
+			return $rate ? (float) $amount / $rate : (float) $amount;
+		}
+
+		/**
+		 * Gateways that only accept the base currency are hidden when the cart is
+		 * priced in another currency (Moyasar accounts accept SAR unless the merchant
+		 * enabled more). Filter `brqosh_geo_currency_base_only_gateways` to change.
+		 *
+		 * @param array $gateways Available gateways.
+		 * @return array
+		 */
+		public function filter_gateways( $gateways ) {
+			if ( ! is_array( $gateways ) || $this->active_currency() === $this->base_currency() ) {
+				return $gateways;
+			}
+			$prefixes = (array) apply_filters( 'brqosh_geo_currency_base_only_gateways', array( 'moyasar' ) );
+			foreach ( array_keys( $gateways ) as $id ) {
+				foreach ( $prefixes as $prefix ) {
+					if ( '' !== $prefix && 0 === strpos( (string) $id, $prefix ) ) {
+						unset( $gateways[ $id ] );
+						break;
+					}
+				}
+			}
+			return $gateways;
 		}
 
 		/**

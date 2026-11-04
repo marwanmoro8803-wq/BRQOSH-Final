@@ -51,3 +51,16 @@
 ```php
 add_filter( 'brqosh_geo_currency_rates', fn() => array( 'BHD' => 0.1003, 'KWD' => 0.0819 ) );
 ```
+
+## النشر الفعلي على brqosh.com (4 نوفمبر 2026)
+
+نُشر الحل كـ Code Snippet بدل الإضافة (نفس الكود، نسخة بملف واحد تُولَّد بـ `tools/build_snippet.py`):
+
+| Snippet | التغيير |
+|---|---|
+| #95 «BRQOSH — عملة بلد التوصيل في السلة والدفع» | جديد — الحل كاملاً (`snippets/95-geo-currency.snippet.php`) |
+| #42 «BRQOSH — شحن مجاني تلقائي» | عتبات الشحن (بالريال) تُقارن الآن بقيمة السلة محوّلة للريال، ونص التلميح يُعرض بعملة العميل (`snippets/42-free-shipping-auto.snippet.php`) |
+
+- Moyasar يُخفى عندما تكون العملة غير الريال (حسابات Moyasar تقبل SAR افتراضياً). للسماح به: `add_filter( 'brqosh_geo_currency_base_only_gateways', '__return_empty_array' );`
+- التراجع: تعطيل snippet #95 فقط يعيد كل شيء كما كان (snippet #42 يعود تلقائياً لسلوكه الأصلي حين لا يجد الحل مفعّلاً).
+- درس من الإنتاج: إضافات أخرى تطلب العملة أثناء `plugins_loaded` قبل جاهزية الروابط؛ لذلك لا يُقيَّم نطاق الطلبات الخلفية قبل `init`.
