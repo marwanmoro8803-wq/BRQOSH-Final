@@ -72,3 +72,6 @@ TestResults*/
 
 # Windows shortcuts (local only)
 *.lnk
+
+# Website build output
+website/dist/
