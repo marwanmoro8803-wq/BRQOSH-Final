@@ -2176,5 +2176,10 @@
   "BRQOSH — القاعدة المدمجة غير متاحة": "BRQOSH — Built-in database unavailable",
   "قاعدة البيانات المدمجة مُعدّة على هذا الجهاز لكنّ ملفّات خادمها (مجلد pgserver) غير موجودة بجوار البرنامج — غالباً شُغّل البرنامج من مجلد البناء. شغّله من نسخته المُنصَّبة (Program Files). بياناتك سليمة ولم تُمسّ.": "The built-in database is set up on this computer, but its server files (the pgserver folder) are not next to the program — most likely it was started from the build folder. Start it from its installed copy (Program Files). Your data is intact and was not touched.",
   "تعذّر تشغيل قاعدة البيانات المدمجة على هذا الجهاز — غالباً لأنّ البرنامج يعمل من مجلد لا يسمح بتشغيل خادمها (كمجلد على سطح المكتب). شغّله من نسخته المُنصَّبة (Program Files). بياناتك سليمة ولم تُمسّ، والتفصيل في سجل الأعطال.": "The built-in database could not be started on this computer — most likely the program is running from a folder that does not allow its server to run (such as a folder on the desktop). Start it from its installed copy (Program Files). Your data is intact and was not touched; details are in the crash log.",
-  "BRQOSH — القاعدة المدمجة لم تبدأ": "BRQOSH — Built-in database did not start"
+  "BRQOSH — القاعدة المدمجة لم تبدأ": "BRQOSH — Built-in database did not start",
+  "مفتاحُ النسخ في هذا الجهاز ليس المفتاحَ الذي شُفّرت به هذه النسخة — افتحها بمفتاح الاستعادة الذي كان قائماً عند أخذها.": "The backup key on this computer is not the key this backup was encrypted with — open it with the recovery key that was current when it was taken.",
+  "رأسُ النسخة الاحتياطيّة معدَّلٌ أو تالف — مفتاحُ البيانات لا يُفكّ.": "The backup header has been altered or is damaged — its data key cannot be unwrapped.",
+  "رأسُ النسخة الاحتياطيّة معدَّل: عددُ دورات الاشتقاق خارج الحدّ.": "The backup header has been altered: the key-derivation iteration count is out of range.",
+  "مفتاحُ الاستعادة غير صحيح لهذه النسخة (أو رأسُها معدَّل). استعمل المفتاحَ الذي كان قائماً عند أخذها أو أحدثَ منه.": "The recovery key is not correct for this backup (or its header has been altered). Use the key that was current when it was taken, or a newer one.",
+  "أُلغيت الاستعادة — لم يُدخَل مفتاحُ الاستعادة.": "Restore cancelled — no recovery key was entered."
 }

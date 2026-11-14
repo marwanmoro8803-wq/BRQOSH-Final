@@ -30,6 +30,12 @@ public sealed class BackupVerifierUnavailableException(string message)
 /// أنّه يُستعاد</b>. ولذلك يُقاس هذا الملفّ بهوية <b>ح-٦</b>: تُؤخذ نسخة، ثمّ <b>تُتلَف
 /// القاعدة</b>، ثمّ تُستعاد، ثمّ تُطابَق بصمةُ الدفاتر. ونسخةٌ لا تجتاز ذلك أمنيةٌ لا نسخة.</para>
 /// </summary>
+/// <summary>
+/// (جاهزيّةُ الإنتاج · H) <b>نسخةٌ مشفّرةٌ لا يفتحها مفتاحُ هذا الجهاز</b> — فتسأل الشاشةُ عن مفتاح الاستعادة وتُعيد.
+/// وليس حكماً بفساد الملفّ، كـ<see cref="BackupVerifierUnavailableException"/>.
+/// </summary>
+public sealed class BackupRecoveryKeyRequiredException(string message) : AccountingException(message);
+
 public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder = null)
 {
     /// <param name="Pruned">
@@ -40,7 +46,7 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     /// <b>لكنّ تكرارَه يعني أنّ التنظيفَ لا يعمل والقرصَ يمتلئ رغم الحدّ</b>.
     /// </param>
     public sealed record BackupResult(
-        string Path, long SizeBytes, string Provider, int Pruned = 0, int PruneFailures = 0);
+        string Path, long SizeBytes, string Provider, int Pruned = 0, int PruneFailures = 0, bool Encrypted = false);
 
     /// <summary>
     /// (م-٤ · ن-٣٦) <b>كم نسخةً محلّيّةً تبقى.</b>
@@ -131,14 +137,32 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
             // ‏**والحجمُ ليس دليلاً.** يُسأل المحرّكُ نفسُه: أتقرأ هذا الملفَّ أم لا؟
             await VerifyAsync(staging, ct);
 
-            File.Move(staging, targetPath, overwrite: true);
+            // ‏(جاهزيّةُ الإنتاج · H) ‏الصريحُ فُحص أعلاه، ثمّ يُشفَّر للمفتاح العامّ الرئيسيّ إن وُجد — ويُنقل إلى اسمه ذرّيّاً كما كان.
+            var keyring = BackupKeyring.Load();
+            if (keyring is null)
+            {
+                File.Move(staging, targetPath, overwrite: true);
+            }
+            else
+            {
+                var sealedStaging = TransientName(targetPath, "sealed");
+                try
+                {
+                    BackupCipher.Encrypt(staging, sealedStaging, keyring.MasterPoint, keyring.Recovery);
+                    File.Move(sealedStaging, targetPath, overwrite: true);
+                }
+                finally
+                {
+                    DiscardStaging(sealedStaging);
+                }
+            }
 
             // ‏(ح-٥) ‏**ثمّ الرفيقُ — وفشلُه يُسقط النسخة.**
             //
             // ‏وهو حكمُ هذا الملفّ نفسِه في `.partial`: نسخةٌ ناقصةٌ تقول «تمّت» **أسوأُ من
             // ‏غياب النسخة، إذ تمنع الشكوى**. فلو بقي الرفيقُ اختياريّاً لعاد العطلُ صامتاً:
             // ‏مجلّدٌ فيه أربعَ عشرةَ نسخةً خضراء، ولا واحدةٌ فيها مفتاحُ التوقيع.
-            WriteCompanion(targetPath);
+            WriteCompanion(targetPath, keyring);
 
             // ‏(م-٤ · ن-٣٦) ‏**التنظيفُ بعد الترقية لا قبلها** — وهو مبدأٌ مكتوبٌ في
             // ‏`OffsiteBackupService`: «تنظيفُ القديم ثمّ فشلُ الجديد **يترك المنشأةَ بلا
@@ -152,7 +176,7 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
 
             var promoted = new FileInfo(targetPath);
             return new BackupResult(targetPath, promoted.Length,
-                db.Database.IsNpgsql() ? "PostgreSQL" : "SQLite", pruned, pruneFailures);
+                db.Database.IsNpgsql() ? "PostgreSQL" : "SQLite", pruned, pruneFailures, keyring is not null);
         }
         finally
         {
@@ -173,6 +197,36 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     /// <para><b>ويبقى الكنسُ الشبكيُّ حارساً بعده</b>: <c>PruneOldBackups</c> يمسح ما بقي
     /// من مرحليّاتٍ بعد مهلةٍ — فملفٌّ تعذّر حذفُه هنا لا يبيت ليلتين.</para>
     /// </summary>
+    /// <summary>هل هذه النسخةُ مشفّرةٌ ولا يفتحها مفتاحُ هذا الجهاز — أي تحتاج مفتاحَ الاستعادة؟</summary>
+    public static bool NeedsRecoveryKey(string backupPath)
+    {
+        if (!BackupCipher.IsEncrypted(backupPath)) return false;
+        var keyring = BackupKeyring.Load();
+        if (keyring is null || !keyring.MasterPoint.AsSpan().SequenceEqual(BackupCipher.MasterPointOf(backupPath)))
+            return true;
+        using var local = keyring.OpenLocal();
+        return local is null;
+    }
+
+    private static System.Security.Cryptography.ECDiffieHellman OpenMaster(string backupPath, string? recoveryKey)
+    {
+        if (!string.IsNullOrWhiteSpace(recoveryKey))
+            return BackupCipher.OpenWithRecoveryKey(backupPath, recoveryKey);
+
+        var keyring = BackupKeyring.Load();
+        if (keyring is not null && keyring.MasterPoint.AsSpan().SequenceEqual(BackupCipher.MasterPointOf(backupPath))
+            && keyring.OpenLocal() is { } local)
+            return local;
+
+        throw new BackupRecoveryKeyRequiredException(
+            $"هذه النسخةُ مشفّرةٌ ولا يفتحها مفتاحُ هذا الجهاز — أدخِل مفتاحَ استعادة المدير لفتحها: {Path.GetFileName(backupPath)}");
+    }
+
+    // ‏(جاهزيّةُ الإنتاج · H) ‏اسمٌ مؤقّتٌ ينتهي بـ«{الامتداد}.partial» — فيلتقطه كنسُ البقايا إن انقطع شيء، ولا يُحسب نسخة.
+    private static string TransientName(string path, string role) =>
+        Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path))!,
+            $"{Path.GetFileNameWithoutExtension(path)}.{role}-{Guid.NewGuid():N}{Path.GetExtension(path)}{StagingSuffix}");
+
     private static void DiscardStaging(string staging)
     {
         try { if (File.Exists(staging)) File.Delete(staging); }
@@ -189,10 +243,41 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     /// <para>‏(ح-١٣٠) <b>وعلى PostgreSQL: نسخةٌ لما سيُتلَف أوّلاً</b> (<see cref="DefaultPreRestoreFolder"/>)، <b>ثمّ مخطَّطٌ فارغ،
     /// ثمّ الاستعادة</b> — فقاعدةٌ أحدثُ من النسخة لا تتركها نصفَ مستعادة.</para>
     /// </summary>
-    public async Task RestoreAsync(string backupPath, CancellationToken ct = default)
+    public Task RestoreAsync(string backupPath, CancellationToken ct = default) =>
+        RestoreAsync(backupPath, recoveryKey: null, ct);
+
+    /// <summary>
+    /// (جاهزيّةُ الإنتاج · H) <b>والمشفّرةُ تُستعاد أيضاً</b>: تُفكّ إلى ملفٍّ مؤقّتٍ بجوارها يُحذف في كلّ حال، ومفتاحُها مفتاحُ النسخ
+    /// المحلّيّ إن كانت لهذا الجهاز وإلّا <paramref name="recoveryKey"/> — وغيابُهما يرمي
+    /// <see cref="BackupRecoveryKeyRequiredException"/> فتسأل الشاشةُ عنه. والصريحةُ القديمةُ تمرّ بالمسار كما كان.
+    /// </summary>
+    public async Task RestoreAsync(string backupPath, string? recoveryKey, CancellationToken ct = default)
     {
         if (!File.Exists(backupPath))
             throw new AccountingException($"ملفُّ النسخة الاحتياطية غير موجود: {backupPath}");
+
+        if (BackupCipher.IsEncrypted(backupPath))
+        {
+            using var master = OpenMaster(backupPath, recoveryKey);
+            var opened = TransientName(backupPath, "open");
+            try
+            {
+                BackupCipher.Decrypt(backupPath, opened, master);
+                await VerifyAsync(opened, ct);
+
+                if (db.Database.IsNpgsql())
+                    await RestorePostgresAsync(opened, ct);
+                else
+                    await RestoreSqliteAsync(opened, ct);
+
+                RestoreCompanion(backupPath, master);
+            }
+            finally
+            {
+                DiscardStaging(opened);
+            }
+            return;
+        }
 
         // ‏(م-٣ · ن-٣٢) ‏**يُقرأ الملفُّ قبل أن تُتلَف القاعدة، لا بعدها.**
         //
@@ -213,7 +298,7 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
         // ‏(ح-٥) ‏**وبعد القاعدة: ملفّاتُها.** وترتيبُه مقصود — فالقاعدةُ هي المتلِفةُ التي
         // ‏قد تسقط، والرفيقُ نسخُ ملفّاتٍ لا يُتلف شيئاً. واستعادةٌ بلا رفيقٍ تبقى استعادةً
         // ‏صحيحةً لنسخةٍ قديمةٍ أُخذت قبل هذا التعديل — **فغيابُه ليس فشلاً**.
-        RestoreCompanion(backupPath);
+        RestoreCompanion(backupPath, master: null);
     }
 
     /// <summary>
@@ -225,7 +310,7 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     /// <para><b>والقراءةُ بـ<c>FileShare.ReadWrite</c></b>: الأرشيفُ مجلّدٌ حيٌّ يكتب فيه
     /// المُولِّدُ بينما يجري النسخ، <b>وقفلٌ واحدٌ كان سيُسقط النسخةَ الليليّة كلَّها</b>.</para>
     /// </summary>
-    private static void WriteCompanion(string targetPath)
+    private static void WriteCompanion(string targetPath, BackupKeyring? keyring)
     {
         var companion = targetPath + CompanionSuffix;
         var staging = companion + StagingSuffix;
@@ -258,7 +343,24 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
                 }
             }
 
-            File.Move(staging, companion, overwrite: true);
+            if (keyring is null)
+            {
+                File.Move(staging, companion, overwrite: true);
+            }
+            else
+            {
+                // ‏(جاهزيّةُ الإنتاج · H) ‏المستنداتُ المعتمَدة فيها أسماءُ المشترين وأرقامُهم الضريبيّة — تُشفَّر كالنسخة نفسِها.
+                var sealedCompanion = companion + ".sealed" + StagingSuffix;
+                try
+                {
+                    BackupCipher.Encrypt(staging, sealedCompanion, keyring.MasterPoint, keyring.Recovery);
+                    File.Move(sealedCompanion, companion, overwrite: true);
+                }
+                finally
+                {
+                    DiscardStaging(sealedCompanion);
+                }
+            }
         }
         finally
         {
@@ -273,7 +375,7 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     /// فمفتاحٌ أحدثُ من النسخة لا يُمحى باستعادةِ دفاترَ أقدم — <b>وضياعُ مفتاحٍ خاصٍّ
     /// لا يُعوَّض بتسجيلٍ جديدٍ لدى الهيئة وحدَه</b>.</para>
     /// </summary>
-    private static void RestoreCompanion(string backupPath)
+    private static void RestoreCompanion(string backupPath, System.Security.Cryptography.ECDiffieHellman? master)
     {
         var companion = backupPath + CompanionSuffix;
         if (!File.Exists(companion)) return;
@@ -282,7 +384,26 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
         Directory.CreateDirectory(target);
 
         // ‏و`ExtractToDirectory` يرفض مدخلاً يخرج عن المجلّد الهدف — فلا يُكتب خارجَ الجذر.
-        ZipFile.ExtractToDirectory(companion, target, overwriteFiles: true);
+        if (!BackupCipher.IsEncrypted(companion))
+        {
+            ZipFile.ExtractToDirectory(companion, target, overwriteFiles: true);
+            return;
+        }
+
+        if (master is null)
+            throw new BackupRecoveryKeyRequiredException(
+                $"ملفُّ مستندات الهيئة المرافقُ مشفّرٌ والنسخةُ نفسُها غيرُ مشفّرة — لا يُفكّ بلا مفتاح: {Path.GetFileName(companion)}");
+
+        var openedCompanion = companion + ".open" + StagingSuffix;
+        try
+        {
+            BackupCipher.Decrypt(companion, openedCompanion, master);
+            ZipFile.ExtractToDirectory(openedCompanion, target, overwriteFiles: true);
+        }
+        finally
+        {
+            DiscardStaging(openedCompanion);
+        }
     }
 
     /// <summary>
@@ -363,10 +484,32 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
     /// صفٍّ فيه سليم</b> — ذلك يلزمه استعادةٌ فعليّةٌ إلى قاعدةٍ منفصلة، وهي هويّةُ ح-٦
     /// المقيسة في <c>BackupRestoreIdentityTests</c>.</para>
     /// </summary>
-    public async Task VerifyAsync(string backupPath, CancellationToken ct = default)
+    public Task VerifyAsync(string backupPath, CancellationToken ct = default) =>
+        VerifyAsync(backupPath, recoveryKey: null, ct);
+
+    /// <summary>
+    /// (جاهزيّةُ الإنتاج · H) <b>والمشفّرةُ تُفحص بفكّها كاملةً</b>: وسومُ المصادقة كلُّها، ثمّ فحصُ المحرّك على الناتج المؤقّت.
+    /// </summary>
+    public async Task VerifyAsync(string backupPath, string? recoveryKey, CancellationToken ct = default)
     {
         if (!File.Exists(backupPath))
             throw new AccountingException($"ملفُّ النسخة الاحتياطية غير موجود: {backupPath}");
+
+        if (BackupCipher.IsEncrypted(backupPath))
+        {
+            using var master = OpenMaster(backupPath, recoveryKey);
+            var opened = TransientName(backupPath, "open");
+            try
+            {
+                BackupCipher.Decrypt(backupPath, opened, master);
+                await VerifyAsync(opened, recoveryKey: null, ct);
+            }
+            finally
+            {
+                DiscardStaging(opened);
+            }
+            return;
+        }
 
         // ‏(م-٥ · ن-٤٤) **ملفٌّ فارغٌ ليس قاعدةً — وSQLite يقول إنّه سليم.**
         //
@@ -435,6 +578,11 @@ public sealed class BackupService(BrqoshDbContext db, string? preRestoreFolder =
             {
                 // ‏**بيئةٌ لا تُسأل ليست حكماً على البيانات.** ولو ابتُلعت هنا لقيل للمالك
                 // ‏«فُحصت نسخُك وسقطت كلُّها» وسببُها أنّ `pg_restore` غيرُ مُنصَّب.
+                throw;
+            }
+            catch (BackupRecoveryKeyRequiredException)
+            {
+                // ‏«لا مفتاحَ هنا» عطلُ مفتاحٍ لا حكمٌ على الملفّ — كغياب الأداة تماماً.
                 throw;
             }
             catch (AccountingException ex)

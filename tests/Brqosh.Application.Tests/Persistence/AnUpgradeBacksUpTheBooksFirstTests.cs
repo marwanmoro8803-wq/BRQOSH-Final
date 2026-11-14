@@ -24,7 +24,12 @@ public sealed class AnUpgradeBacksUpTheBooksFirstTests : IDisposable
     private readonly string _folder = Path.Combine(
         Path.GetTempPath(), "brqosh-preupgrade-" + Guid.NewGuid().ToString("N")[..8]);
 
-    public AnUpgradeBacksUpTheBooksFirstTests() => Directory.CreateDirectory(_folder);
+    public AnUpgradeBacksUpTheBooksFirstTests()
+    {
+        Directory.CreateDirectory(_folder);
+        // ‏(جاهزيّةُ الإنتاج · H) ‏تفتح النسخةَ قاعدةً مباشرةً — فتقيس الصيغةَ الصريحة بجذر حلقةٍ خالٍ (المشفّرةُ في BackupEncryptionTests).
+        Brqosh.Infrastructure.Operations.BackupKeyring.RootOverrideSlot.Value = _folder;
+    }
 
     public void Dispose()
     {

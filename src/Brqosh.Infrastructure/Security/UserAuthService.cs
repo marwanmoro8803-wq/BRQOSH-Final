@@ -130,6 +130,7 @@ public class UserAuthService(BrqoshDbContext db)
         var recoveryKey = AdminRecoveryKey.IssueFor(admin);
         db.AppUsers.Add(admin);
         await db.SaveChangesAsync(ct);
+        AdminRecoveryKey.ArmBackupEncryption(recoveryKey);
         return recoveryKey;
     }
 

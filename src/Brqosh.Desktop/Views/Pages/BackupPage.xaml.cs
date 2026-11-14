@@ -44,8 +44,13 @@ public partial class BackupPage : UserControl
                     ? $" · حُذفت {result.Pruned} نسخةً قديمة"
                     : "";
 
+            // ‏(جاهزيّةُ الإنتاج · H) ‏ويُقال إن كانت مشفّرةً أم لا — فتنصيبٌ لم يُصدَر له مفتاحُ استعادة يعرف أنّ نسخَه صريحة.
+            var sealing = result.Encrypted
+                ? " · مشفّرة (يفتحها مفتاحُ استعادة المدير)"
+                : " · غيرُ مشفّرة — أعِد إصدارَ مفتاح الاستعادة من نافذة «تغيير كلمة المرور» لتشفير النسخ";
+
             Show($"تمّت النسخة: {Path.GetFileName(result.Path)} "
-                 + $"({result.SizeBytes / 1024.0 / 1024.0:N1} ميجابايت) — {result.Provider}{pruning}");
+                 + $"({result.SizeBytes / 1024.0 / 1024.0:N1} ميجابايت) — {result.Provider}{pruning}{sealing}");
         }
         catch (Exception ex)
         {
@@ -285,7 +290,25 @@ public partial class BackupPage : UserControl
         try
         {
             using var facade = new DesktopAccountingFacade();
-            await facade.GetService<BackupService>().RestoreAsync(dialog.FileName);
+            // ‏(جاهزيّةُ الإنتاج · H) ‏نسخةٌ مشفّرةٌ من جهازٍ آخر (أو قبل تدوير المفتاح هنا) تُفتح بمفتاح استعادة المدير.
+            string? recoveryKey = null;
+            if (BackupService.NeedsRecoveryKey(dialog.FileName))
+            {
+                var keyPrompt = new TextInputDialog(
+                    "مفتاح الاستعادة",
+                    "هذه النسخة مشفّرة. أدخل مفتاح استعادة المدير الذي كان قائماً عند أخذها:")
+                {
+                    Owner = Window.GetWindow(this),
+                };
+                recoveryKey = keyPrompt.ShowDialog() == true ? keyPrompt.Value : null;
+                if (string.IsNullOrWhiteSpace(recoveryKey))
+                {
+                    Show("أُلغيت الاستعادة — لم يُدخَل مفتاحُ الاستعادة.");
+                    return;
+                }
+            }
+
+            await facade.GetService<BackupService>().RestoreAsync(dialog.FileName, recoveryKey);
             Show("تمّت الاستعادة. أغلِق التطبيق وأعِد فتحه لتحميل البيانات المستعادة.");
         }
         catch (Exception ex)

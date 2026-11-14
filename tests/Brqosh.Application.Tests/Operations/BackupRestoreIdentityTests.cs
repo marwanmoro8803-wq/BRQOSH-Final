@@ -105,6 +105,8 @@ public class BackupRestoreIdentityTests
         TestActor.Administrator();
         var root = Path.Combine(Path.GetTempPath(), $"brqosh-sqlite-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
+        // ‏(جاهزيّةُ الإنتاج · H) ‏يفتح الملفَّ قاعدةً مباشرةً — فيقيس الصيغةَ الصريحة بجذر حلقةٍ خالٍ (المشفّرةُ في BackupEncryptionTests).
+        BackupKeyring.RootOverrideSlot.Value = root;
         var livePath = Path.Combine(root, "live.db");
         var backupPath = Path.Combine(root, "backup.db");
 

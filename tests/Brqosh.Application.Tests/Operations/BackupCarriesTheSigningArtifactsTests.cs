@@ -28,6 +28,9 @@ public sealed class BackupCarriesTheSigningArtifactsTests : IDisposable
     {
         Directory.CreateDirectory(_folder);
         if (Directory.Exists(ZatcaRoot)) Directory.Delete(ZatcaRoot, recursive: true);
+        // ‏(جاهزيّةُ الإنتاج · H) ‏هذا الصفُّ يقرأ الرفيقَ zip مباشرةً — فيقيس الصيغةَ الصريحة بجذر حلقةٍ خالٍ، ولا يتبع ترتيبَ
+        // ‏تشغيلِ صفٍّ آخر أنشأ مفتاحَ نسخٍ في جذر الاختبار المشترك. والمشفّرةُ تقيسها BackupEncryptionTests.
+        BackupKeyring.RootOverrideSlot.Value = _folder;
     }
 
     public void Dispose()

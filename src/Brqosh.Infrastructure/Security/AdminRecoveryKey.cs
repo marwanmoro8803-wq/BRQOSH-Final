@@ -33,6 +33,25 @@ public class AdminRecoveryKey(BrqoshDbContext db)
     }
 
     /// <summary>الصيغةُ المعياريّة للمقارنة — حروفٌ كبيرةٌ بلا شرطاتٍ ولا مسافات؛ فالمنقولُ باليد يُقبل كما كُتب.</summary>
+    /// <summary>
+    /// (جاهزيّةُ الإنتاج · H · قرارُ المالك) <b>مفتاحُ الاستعادة يفتح النسخَ الاحتياطيّة أيضاً.</b> يُستدعى بعد حفظ التجزئة لا قبلها —
+    /// فلا تُغلَّف النسخُ لمفتاحٍ لم يُحفظ ولم يُعرض. ينشئ مفتاحَ النسخ أوّلَ مرّة، أو يُعيد تغليفَه والنسخَ القائمة للمفتاح الجديد
+    /// (المحتوى لا يُعاد تشفيرُه). <b>وآخرُ مفتاحٍ صدر لمديرٍ هو الذي يفتح النسخ</b>.
+    /// <para>فشلُه لا يُسقط إصدارَ المفتاح (الدخولُ به يعمل) — يُسجَّل، والنسخُ تبقى كما كانت حتى يُعاد الإصدار.</para>
+    /// </summary>
+    public static void ArmBackupEncryption(string recoveryKey)
+    {
+        try
+        {
+            Operations.BackupKeyring.OnRecoveryKeyIssued(recoveryKey);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or CryptographicException
+                                       or System.Text.Json.JsonException or InvalidDataException)
+        {
+            Operations.CrashLog.Write(ex, "backup-keyring-arm");
+        }
+    }
+
     public static string Normalize(string key) =>
         new(key.Where(c => !char.IsWhiteSpace(c) && c != '-').Select(char.ToUpperInvariant).ToArray());
 
@@ -56,6 +75,7 @@ public class AdminRecoveryKey(BrqoshDbContext db)
 
         var key = IssueFor(user);
         await db.SaveChangesAsync(ct);
+        ArmBackupEncryption(key);
         return key;
     }
 
@@ -86,6 +106,7 @@ public class AdminRecoveryKey(BrqoshDbContext db)
         user.InvalidateSessions();
         var next = IssueFor(user);
         await db.SaveChangesAsync(ct);
+        ArmBackupEncryption(next);
         await new LoginAuditService(db).LogAsync(companyId, normalized, true, "استعادة بمفتاح الاستعادة");
         return next;
     }
