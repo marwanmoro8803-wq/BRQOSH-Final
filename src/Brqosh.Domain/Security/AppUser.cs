@@ -8,7 +8,7 @@ public enum UserRole
     Viewer = 3,
 }
 
-/// <summary>مستخدم النظام — كلمة المرور مُخزَّنة كهاش SHA-256.</summary>
+/// <summary>مستخدم النظام — كلمة المرور مُخزَّنة تجزئةَ PBKDF2-SHA256 بملحٍ عشوائيّ (<c>UserAuthService.HashPassword</c>)؛ SHA-256 القديمة بلا ملح تُرقّى عند أوّل دخولٍ ناجح.</summary>
 public class AppUser : ISoftDeletable
 {
     public long Id { get; private set; }
