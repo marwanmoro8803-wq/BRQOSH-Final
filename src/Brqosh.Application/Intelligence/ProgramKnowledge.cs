@@ -62,7 +62,7 @@ public static class ProgramKnowledge
     public static FinancialAssistantReply ProgramHelp() =>
         new(
             "الإجابات المالية تُحسب بقواعد على سجلات المنشأة؛ وإرشادات الشاشات ومسارات العمل معرفة مدمجة، لا نموذجاً لغوياً. بعض المؤشرات تقريبية. اسأل: «ماذا أفعل في هذه الشاشة؟» · «كيف أرحّل فاتورة؟» · «ZATCA» · «VAT» · «ذمم» · «التدفق النقدي» · «صلاحياتي». لا يستبدل الرد مراجعة SOCPA أو اعتماد ZATCA.",
-            "Financial answers are rule-based calculations over company records; screen and workflow guidance comes from built-in knowledge, not a language model. Some indicators are estimates. Ask about this screen, posting, ZATCA, VAT, AR/AP, cash flow, or permissions. This is not a substitute for SOCPA review or ZATCA approval.",
+            "Financial answers are rule-based calculations over company records; screen and procedure guidance comes from built-in knowledge, not a language model. Some indicators are estimates. Ask about this screen, posting, ZATCA, VAT, AR/AP, cash flow, or permissions. This is not a substitute for SOCPA review or ZATCA approval.",
             SourceId);
 
     public sealed record PageGuide(
