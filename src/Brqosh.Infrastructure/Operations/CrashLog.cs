@@ -147,7 +147,8 @@ public static class CrashLog
         for (var current = exception; current is not null; current = current.InnerException)
         {
             text.AppendLine($"[{depth}] {current.GetType().FullName}");
-            text.AppendLine($"    {current.Message}");
+            // ‏(جاهزيّةُ الإنتاج · F) ‏الرسالةُ نصُّ مكتبةٍ لا نصُّنا — قد تقتبس كلمةَ مرورٍ أو رمزاً، والسجلُّ يُرسَل إلى الدعم.
+            text.AppendLine($"    {LogRedactor.Redact(current.Message)}");
 
             if (!string.IsNullOrWhiteSpace(current.StackTrace))
                 text.AppendLine(current.StackTrace);

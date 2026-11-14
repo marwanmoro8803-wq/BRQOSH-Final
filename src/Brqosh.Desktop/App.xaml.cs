@@ -45,9 +45,11 @@ public partial class App : System.Windows.Application
         var title = headline.StartsWith("خطأ حرج", StringComparison.Ordinal)
             ? LocaleManager.T("خطأ حرج:", "Critical error:")
             : LocaleManager.T("خطأ غير متوقع:", "Unexpected error:");
+        // ‏(جاهزيّةُ الإنتاج · F) ‏ما يُعرض يمرّ بالحاجب نفسِه الذي يمرّ به السجلّ — فلا يُعرض سرٌّ حجبه السجلّ.
+        var shown = Brqosh.Infrastructure.Operations.LogRedactor.Redact(ex.Message) ?? string.Empty;
         var detail = ex.InnerException is null
-            ? UiDialog.Localize(ex.Message)
-            : $"{UiDialog.Localize(ex.Message)}\n\n{UiDialog.Localize(ex.InnerException.Message)}";
+            ? UiDialog.Localize(shown)
+            : $"{UiDialog.Localize(shown)}\n\n{UiDialog.Localize(Brqosh.Infrastructure.Operations.LogRedactor.Redact(ex.InnerException.Message) ?? string.Empty)}";
 
         UiDialog.Show(
             $"{title}\n{detail}" + CrashHint(path),
