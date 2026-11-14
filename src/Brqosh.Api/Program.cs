@@ -19,6 +19,8 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+// (جاهزيّةُ الإنتاج · C) لا ترويسةَ Server تُعلن الخادمَ وإصدارَه.
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 builder.Host.UseSerilog((ctx, lc) => lc
     .Enrich.WithProperty("EnvironmentName", ctx.HostingEnvironment.EnvironmentName)
@@ -180,6 +182,10 @@ app.Use(async (ctx, next) =>
 // (CEEF-210) حدّ المعدل **قبل** فحص المفتاح: كان بعده، فكل محاولة مفتاح خاطئ تُردّ 401
 // دون أن تمرّ على العدّاد إطلاقاً — تخمين المفاتيح بالقوة الغاشمة بلا أي حدّ، والعقوبة
 // تقع على أصحاب المفاتيح الصحيحة وحدهم.
+// (جاهزيّةُ الإنتاج · C/F) ترويساتُ الأمان ومعرّفُ الترابط وآخرُ مُلتقِطٍ للاستثناء — داخلَ عدّاد المقاييس
+// فيرى العدّادُ ٥٠٠ الذي يكتبه المُلتقِط، وقبلَ كلّ حارسٍ فتحمل ردودُ ٤٠١/٤٠٣/٤٢٩ الترويساتِ نفسَها.
+app.UseMiddleware<ApiResponseHardeningMiddleware>();
+
 app.UseMiddleware<ApiRateLimitMiddleware>();
 
 // مفتاح API — إلزامي في Production · اختياري في Development للتجريب المحلي
