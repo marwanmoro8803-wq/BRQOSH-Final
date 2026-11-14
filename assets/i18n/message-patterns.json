@@ -282,5 +282,8 @@
   "الحساب {0} تجميعيٌّ أو موقوف — اختر حساباً تفصيليّاً نشطاً.": "Account {0} is a group or inactive account — choose an active detail account.",
   "هذه الميزة ({0}) متاحةٌ في الفئة الاحترافيّة (Professional) فقط — ترخيصُك قياسيّ (Standard).": "This feature ({0}) is available in the Professional edition only — your licence is Standard.",
   "بلغتَ حدَّ المنشآت في ترخيصك ({0}) — لإضافة منشأةٍ يلزم ترخيصٌ بعددٍ أكبر.": "You have reached your licence's company limit ({0}) — adding a company needs a licence with a higher limit.",
-  "الملفُّ ليس نسخةً مشفّرةً بصيغة BRQOSH: {0}": "The file is not an encrypted BRQOSH backup: {0}"
+  "الملفُّ ليس نسخةً مشفّرةً بصيغة BRQOSH: {0}": "The file is not an encrypted BRQOSH backup: {0}",
+  "الملفّ غير موجود: {0}": "The file does not exist: {0}",
+  "الملفّ فارغ: {0}": "The file is empty: {0}",
+  "الملفّ «{0}» أكبر من المسموح للاستيراد ({1} من {2} ميجابايت) — تأكّد أنّه الملفّ المقصود.": "The file «{0}» is larger than allowed for import ({1} of {2} MB) — make sure it is the intended file."
 }

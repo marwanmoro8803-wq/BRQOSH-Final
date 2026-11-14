@@ -157,7 +157,7 @@ public partial class BankStatementsPage : UserControl
             // ‏**ويُقرأ بترميزٍ يكشف نفسَه**: كشوفُ البنوك تخرج بترميزاتٍ مختلفة،
             // ‏**وقراءةٌ بترميزٍ خاطئ تُفسد البياناتِ لا الأسماءَ وحدَها** — فمرجعُ
             // ‏الحوالة يصير رموزاً ولا يُطابق شيئاً.
-            var csv = await File.ReadAllTextAsync(dialog.FileName, Encoding.UTF8);
+            var csv = await Brqosh.Infrastructure.Operations.ImportFileGuard.ReadCsvAsync(dialog.FileName, Encoding.UTF8);
 
             using var facade = new DesktopAccountingFacade();
             var statement = await facade.GetService<BankStatementImportService>().ImportCsvAsync(

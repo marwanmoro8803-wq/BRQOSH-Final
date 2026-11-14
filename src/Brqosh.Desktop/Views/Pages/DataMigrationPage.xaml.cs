@@ -78,7 +78,7 @@ public partial class DataMigrationPage : UserControl
 
         try
         {
-            var csv = await File.ReadAllTextAsync(dialog.FileName, Encoding.UTF8);
+            var csv = await Brqosh.Infrastructure.Operations.ImportFileGuard.ReadCsvAsync(dialog.FileName, Encoding.UTF8);
 
             using var facade = new DesktopAccountingFacade();
             var service = facade.GetService<CsvDataMigrationService>();

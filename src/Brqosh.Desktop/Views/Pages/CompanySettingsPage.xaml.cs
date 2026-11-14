@@ -188,6 +188,18 @@ public partial class CompanySettingsPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
+        // ‏(جاهزيّةُ الإنتاج · C) ‏صورةٌ بالغيغابايت تُجمّد المعاينةَ والمعالجة — يُقال الحدُّ قبل الفتح.
+        try
+        {
+            Brqosh.Infrastructure.Operations.ImportFileGuard.EnsureWithinLimit(
+                dialog.FileName, Brqosh.Infrastructure.Operations.ImportFileGuard.MaxImageBytes);
+        }
+        catch (Brqosh.Domain.Accounting.AccountingException ex)
+        {
+            UiFeedback.ShowWarning(ex.Message);
+            return;
+        }
+
         _pendingLogoSourcePath = dialog.FileName;
         _removeLogoRequested = false;
         ShowLogoPreview(_pendingLogoSourcePath);

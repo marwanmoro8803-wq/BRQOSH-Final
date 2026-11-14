@@ -237,7 +237,7 @@ public partial class BankReconciliationPage : UserControl
         if (dialog.ShowDialog() != true)
             return;
 
-        var csv = await File.ReadAllTextAsync(dialog.FileName);
+        var csv = await Brqosh.Infrastructure.Operations.ImportFileGuard.ReadCsvAsync(dialog.FileName);
 
         // ‏(ح-١٥٤) ‏رصيدا الكشف كما يقولهما البنك — اختياريّان معاً؛ وبهما يُرفض الكشفُ الناقصُ وتُبنى مذكّرةُ التسوية.
         decimal? opening = null, closing = null;
