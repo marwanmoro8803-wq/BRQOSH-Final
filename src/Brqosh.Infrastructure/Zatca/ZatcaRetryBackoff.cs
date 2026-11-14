@@ -1,4 +1,4 @@
-namespace Brqosh.Infrastructure.Zatca;
+﻿namespace Brqosh.Infrastructure.Zatca;
 
 /// <summary>
 /// ‏ <b>متى تُعاد محاولةُ إرسال المعلَّق في الخلفيّة.</b>
@@ -10,10 +10,21 @@ namespace Brqosh.Infrastructure.Zatca;
 ///
 /// <para>‏حالةٌ في الذاكرة لكلّ جلسة عمداً: إعادةُ تشغيل البرنامج محاولةٌ فوريّة، وهي ما يريده من أعاد التشغيلَ بعد عطل.</para>
 /// </summary>
-public sealed class ZatcaRetryBackoff
+public sealed class ZatcaRetryBackoff(Func<double>? jitterSource = null)
 {
     public static readonly TimeSpan BaseInterval = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan MaxInterval = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// ‏(جاهزيّةُ الإنتاج · E) <b>تشتيتٌ يُضاف بعد المهلة لا قبلها — حتى خُمسِها.</b>
+    ///
+    /// <para>‏المهلةُ المحسوبة وحدَها حتميّة: فكلُّ الأجهزة التي تعطّل عندها الإرسالُ في انقطاعٍ واحدٍ للهيئة تعود
+    /// ‏<b>في الدقيقة نفسِها</b> بعد ٥ ثمّ ١٠ ثمّ ٢٠ — موجةٌ متزامنةٌ تضرب الخادمَ لحظةَ عودته. ‏والتشتيتُ يُضاف فوق
+    /// ‏المهلة فلا تُحاوَل الدفعةُ <b>أبكرَ</b> ممّا يقوله <see cref="Delay"/> أبداً — فالسقفُ والتباعدُ كما كانا.</para>
+    /// </summary>
+    public const double MaxJitterFraction = 0.2;
+
+    private readonly Func<double> _jitter = jitterSource ?? Random.Shared.NextDouble;
 
     private DateTime? _nextDueUtc;
 
@@ -34,7 +45,9 @@ public sealed class ZatcaRetryBackoff
     public void RecordFailure(DateTime nowUtc)
     {
         ConsecutiveFailures++;
-        _nextDueUtc = nowUtc + Delay(ConsecutiveFailures);
+        var delay = Delay(ConsecutiveFailures);
+        var fraction = Math.Clamp(_jitter(), 0d, 1d) * MaxJitterFraction;
+        _nextDueUtc = nowUtc + delay + TimeSpan.FromTicks((long)(delay.Ticks * fraction));
     }
 
     public static TimeSpan Delay(int consecutiveFailures)

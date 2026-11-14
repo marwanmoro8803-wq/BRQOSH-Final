@@ -1,4 +1,4 @@
-using Brqosh.Infrastructure.Zatca;
+﻿using Brqosh.Infrastructure.Zatca;
 
 namespace Brqosh.Application.Tests.Zatca;
 
@@ -27,7 +27,7 @@ public class ZatcaRetryBackoffTests
     [Fact]
     public void AFailure_IsNotDueBeforeItsWait_AndIsDueAfterIt()
     {
-        var backoff = new ZatcaRetryBackoff();
+        var backoff = new ZatcaRetryBackoff(() => 0d);
         backoff.RecordFailure(Now);
         backoff.RecordFailure(Now);
 
@@ -39,7 +39,7 @@ public class ZatcaRetryBackoffTests
     [Fact]
     public void ASuccess_ResetsTheFailures_AndWaitsTheBaseInterval()
     {
-        var backoff = new ZatcaRetryBackoff();
+        var backoff = new ZatcaRetryBackoff(() => 0d);
         backoff.RecordFailure(Now);
         backoff.RecordFailure(Now);
         backoff.RecordFailure(Now);
@@ -49,5 +49,45 @@ public class ZatcaRetryBackoffTests
         Assert.Equal(0, backoff.ConsecutiveFailures);
         Assert.False(backoff.IsDue(Now.AddMinutes(4)));
         Assert.True(backoff.IsDue(Now.AddMinutes(5)));
+    }
+
+    // ‏(جاهزيّةُ الإنتاج · E) ‏التشتيتُ يقع بعد المهلة الحتميّة وحتى خُمسِها: ٢٠ دقيقةً للفشل الثالث ⟵ بين ٢٠ و٢٤.
+    [Theory]
+    [InlineData(0.0, 20.0)]
+    [InlineData(0.5, 22.0)]
+    [InlineData(1.0, 24.0)]
+    public void TheJitter_IsAddedAfterTheWait_UpToAFifthOfIt(double draw, double expectedMinutes)
+    {
+        var backoff = new ZatcaRetryBackoff(() => draw);
+        backoff.RecordFailure(Now);
+        backoff.RecordFailure(Now);
+        backoff.RecordFailure(Now);
+
+        Assert.Equal(Now.AddMinutes(expectedMinutes), backoff.NextDueUtc);
+    }
+
+    // ‏مصدرٌ معطوبٌ يُعيد خارج [0,1] لا يُبكّر المحاولةَ ولا يمدّها فوق الخُمس.
+    [Theory]
+    [InlineData(-5.0, 5.0)]
+    [InlineData(9.0, 6.0)]
+    public void AnOutOfRangeDraw_IsClamped(double draw, double expectedMinutes)
+    {
+        var backoff = new ZatcaRetryBackoff(() => draw);
+        backoff.RecordFailure(Now);
+
+        Assert.Equal(Now.AddMinutes(expectedMinutes), backoff.NextDueUtc);
+    }
+
+    // ‏والافتراضيُّ عشوائيٌّ حقّاً: لا يُبكّر أبداً، ولا يتجاوز الخُمس.
+    [Fact]
+    public void TheDefaultJitter_StaysWithinTheWindow()
+    {
+        for (var i = 0; i < 200; i++)
+        {
+            var backoff = new ZatcaRetryBackoff();
+            backoff.RecordFailure(Now);
+            var due = backoff.NextDueUtc!.Value;
+            Assert.InRange(due, Now.AddMinutes(5), Now.AddMinutes(6));
+        }
     }
 }
